@@ -1,5 +1,6 @@
 import random
 from datetime import timedelta
+from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import AccessError
@@ -444,6 +445,69 @@ class TestAccessGraph(TransactionCase):
         self.assertIn('"id" IN (SELECT grant_row.', statement.code)
         self.assertNotIn('"id" = ANY(', statement.code)
         self.assertNotIn("unnest(", statement.code)
+
+    def test_opened_groups_read_each_set_of_granted_nodes_once(self):
+        # web_read_group searches every opened group with the same domain,
+        # narrowed to the group: the statement states each set of granted
+        # containers once for all its parts, and each group holds what a
+        # search of its own finds
+        companies = (self.company_a | self.company_b).ids
+        nodes = self.Node.create(
+            [
+                {"name": f"g{index}", "company_id": company}
+                for index, company in enumerate([False, *companies] * 2)
+            ]
+        )
+        self.Grant.create(
+            [
+                {
+                    "node_id": node.id,
+                    "partner_id": self.alice.partner_id.id,
+                    "role": "view",
+                }
+                for node in nodes
+            ]
+        )
+        Node = self.Node.with_user(self.alice).with_context(
+            allowed_company_ids=companies
+        )
+        reach = Node._access_graph_reach("view") & Domain("id", "in", nodes.ids)
+        containers = "AS held JOIN"
+        sets = Node.sudo()._search(reach).statement().code.count(containers)
+        self.assertTrue(sets)
+
+        statements = []
+        execute_query = type(self.env).execute_query
+
+        def capture(env, query):
+            statements.append(query.code)
+            return execute_query(env, query)
+
+        with patch.object(type(self.env), "execute_query", capture):
+            result = Node.sudo().web_read_group(
+                reach,
+                ["company_id"],
+                auto_unfold=True,
+                unfold_read_specification={"name": {}},
+            )
+        self.assertEqual(len(result["groups"]), 3)
+        [opened] = [code for code in statements if "__gidx" in code]
+        self.assertEqual(
+            opened.count(containers), sets, "one set per expression, not per group"
+        )
+        # a relational group without a value is not opened by auto_unfold
+        opened_groups = [group for group in result["groups"] if group["company_id"]]
+        self.assertEqual(len(opened_groups), 2)
+        for group in result["groups"]:
+            if not group["company_id"]:
+                self.assertNotIn("__records", group)
+                continue
+            expected = Node.sudo().search(
+                reach & Domain("company_id", "=", group["company_id"][0])
+            )
+            self.assertEqual(
+                {values["id"] for values in group["__records"]}, set(expected.ids)
+            )
 
     def test_a_folder_grant_reaches_its_subtree_live_and_leaves_with_a_move(self):
         root_a = self.Node.create({"name": "A"})

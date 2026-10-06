@@ -1,5 +1,6 @@
 from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools import SQL, Query
+from odoo.tools.query import SharedOnce
 
 
 class QueryTestCase(BaseCase):
@@ -261,6 +262,56 @@ class QueryTestCase(BaseCase):
 
         with self.assertRaises(ValueError):
             other.set_result_ids([3])
+
+    def test_shared_once_states_the_parts_expressions_one_time(self):
+        granted = SQL("ARRAY(SELECT n FROM g WHERE r = %s)", "a")
+        owned = SQL("ARRAY(SELECT id FROM foo AS node WHERE owner_id = %s)", 7)
+        first = Query(None, "foo")
+        first.add_where(
+            SQL(
+                "foo.id IN (SELECT unnest(%s::int4[])) AND foo.x = %s",
+                first.once(granted),
+                1,
+            )
+        )
+        # the same expressions, asked for in the other order
+        second = Query(None, "foo")
+        second.add_where(
+            SQL(
+                "foo.up IN (SELECT unnest(%s::int4[])) "
+                "AND foo.id IN (SELECT unnest(%s::int4[])) AND foo.x = %s",
+                second.once(owned),
+                second.once(granted),
+                2,
+            )
+        )
+
+        shared = SharedOnce("foo")
+        statement = shared.statement(
+            SQL(" UNION ALL ").join([shared.select(first), shared.select(second)])
+        )
+        self.assertEqual(
+            statement.code,
+            'WITH "foo__$once0" AS MATERIALIZED (SELECT ARRAY(SELECT n FROM g '
+            "WHERE r = %s) AS v), "
+            '"foo__$once1" AS MATERIALIZED (SELECT ARRAY(SELECT id FROM foo AS node '
+            "WHERE owner_id = %s) AS v) "
+            'SELECT "foo"."id" FROM "foo" WHERE foo.id IN (SELECT unnest('
+            '(SELECT v FROM "foo__$once0")::int4[])) AND foo.x = %s '
+            'UNION ALL SELECT "foo"."id" FROM "foo" WHERE foo.up IN (SELECT unnest('
+            '(SELECT v FROM "foo__$once1")::int4[])) AND foo.id IN (SELECT unnest('
+            '(SELECT v FROM "foo__$once0")::int4[])) AND foo.x = %s',
+        )
+        self.assertEqual(statement.params, ("a", 7, 1, 2))
+
+        # a part without expressions of its own reads as its select
+        plain = Query(None, "foo")
+        self.assertEqual(shared.select(plain, "foo.a"), plain.select("foo.a"))
+        # nor does a scope with none open with a WITH
+        self.assertEqual(SharedOnce("foo").statement(plain.select()), plain.select())
+
+        with self.assertRaises(ValueError):
+            shared.select(Query(None, "bar"))
 
 
 class TestQuery(TransactionCase):

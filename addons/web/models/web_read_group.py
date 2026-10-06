@@ -9,6 +9,7 @@ from odoo.fields import Domain
 from odoo.models import regex_order
 from odoo.tools import SQL, unique
 from odoo.tools.cache_version import versioned
+from odoo.tools.query import SharedOnce
 
 from .web_read_group_helpers import AND
 
@@ -123,8 +124,13 @@ class Base(models.AbstractModel):
             )
             return result
 
+        # each part is the same domain narrowed to its group: read through
+        # one scope, what the domain states once (Query.once: an access
+        # rule's granted containers) is in the statement's WITH, not in each
+        # part
         ids_by_index: dict[int, list[int]] = {}
         for chunk in self._chunk_opened_groups(to_fetch):
+            shared = SharedOnce(self._table)
             parts = []
             for index, sub_search in chunk:
                 query = self._search(
@@ -141,16 +147,18 @@ class Base(models.AbstractModel):
                         " SELECT %s AS __gidx,"
                         " ROW_NUMBER() OVER () AS __rn,"
                         " __g.id AS __id FROM __g)",
-                        query.select(),
+                        shared.select(query),
                         index,
                     )
                 )
             if not parts:
                 continue
             rows = self.env.execute_query(
-                SQL(
-                    "SELECT __gidx, __id FROM (%s) AS __u ORDER BY __gidx, __rn",
-                    SQL(" UNION ALL ").join(parts),
+                shared.statement(
+                    SQL(
+                        "SELECT __gidx, __id FROM (%s) AS __u ORDER BY __gidx, __rn",
+                        SQL(" UNION ALL ").join(parts),
+                    )
                 )
             )
             for group_index, record_id in rows:
@@ -194,8 +202,11 @@ class Base(models.AbstractModel):
             spec: self._read_group_groupby(self._table, spec, query) for spec in groupby
         }
         query.groupby = SQL(", ").join(groupby_terms.values())
-        grouped = query.select(SQL("1"))
-        [(count,)] = self.env.execute_query(SQL("SELECT COUNT(*) FROM (%s) t", grouped))
+        shared = SharedOnce(query.table)
+        grouped = shared.select(query, SQL("1"))
+        [(count,)] = self.env.execute_query(
+            shared.statement(SQL("SELECT COUNT(*) FROM (%s) t", grouped))
+        )
         return count
 
     def _add_groupby_values(

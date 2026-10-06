@@ -43,6 +43,63 @@ def _count_placeholders(code: str) -> int:
     return sum(match[0] == "%s" for match in _PLACEHOLDER_RE.finditer(code))
 
 
+def _once_reference(table: str, index: int) -> SQL:
+    identifier = SQL.identifier(_generate_table_alias(table, f"$once{index}"))
+    return SQL("(SELECT v FROM %s)", identifier)
+
+
+def _with_once(table: str, expressions: list[SQL]) -> SQL:
+    if not expressions:
+        return SQL.EMPTY
+    # MATERIALIZED: one evaluation whatever the number of references; left
+    # to itself PostgreSQL inlines an expression referenced once
+    return SQL(
+        "WITH %s ",
+        SQL(", ").join(
+            SQL(
+                "%s AS MATERIALIZED (SELECT %s AS v)",
+                SQL.identifier(_generate_table_alias(table, f"$once{index}")),
+                expression,
+            )
+            for index, expression in enumerate(expressions)
+        ),
+    )
+
+
+def _splice_once(sql: SQL, replacements: dict[str, SQL]) -> SQL:
+    # `sql` with each once reference, by its code, replaced in one pass --
+    # by the expression itself or by another reference -- and the parameters
+    # of what comes in placed where it lands
+    if not replacements or not sql:
+        return sql
+    references = re.compile("|".join(map(re.escape, replacements)))
+    code: list[str] = []
+    params: list = []
+    pending = list(sql.params)
+    position = 0
+    for match in references.finditer(sql.code):
+        before = sql.code[position : match.start()]
+        taken = _count_placeholders(before)
+        replacement = replacements[match[0]]
+        code += (before, replacement.code)
+        params += pending[:taken]
+        params += replacement.params
+        del pending[:taken]
+        position = match.end()
+    if not position:
+        return sql
+    code.append(sql.code[position:])
+    return SQL(
+        "".join(code),
+        *params,
+        *pending,
+        to_flush=(
+            *sql.to_flush,
+            *(field for each in replacements.values() for field in each.to_flush),
+        ),
+    )
+
+
 class Query:
     __slots__ = (
         "_any_value_orderby",
@@ -135,7 +192,8 @@ class Query:
         What goes into another statement stays whole on its own -- `select`,
         `subselect`, `from_clause` and `where_clause` have the expression
         back inline: a subquery that opens with WITH is one PostgreSQL no
-        longer folds into the query around it.
+        longer folds into the query around it. A statement composed of
+        several queries reads theirs from one WITH through `SharedOnce`.
 
         Keep it to small sets. The reference is a parameter computed at run
         time, not a constant: PostgreSQL hashes ``x = ANY(array)`` only for a
@@ -153,61 +211,19 @@ class Query:
             index = len(self._once)
             self._once.append(expression)
             self._invalidate_ids()
-        return SQL("(SELECT v FROM %s)", self._once_identifier(index))
-
-    def _once_identifier(self, index: int) -> SQL:
-        return SQL.identifier(_generate_table_alias(self.table, f"$once{index}"))
+        return _once_reference(self.table, index)
 
     def _inline_once(self, sql: SQL) -> SQL:
-        if not self._once or not sql:
-            return sql
-        expressions = {
-            SQL("(SELECT v FROM %s)", self._once_identifier(index)).code: expression
-            for index, expression in enumerate(self._once)
-        }
-        references = re.compile("|".join(map(re.escape, expressions)))
-        code: list[str] = []
-        params: list = []
-        pending = list(sql.params)
-        position = 0
-        for match in references.finditer(sql.code):
-            before = sql.code[position : match.start()]
-            taken = _count_placeholders(before)
-            expression = expressions[match[0]]
-            code += (before, expression.code)
-            params += pending[:taken]
-            params += expression.params
-            del pending[:taken]
-            position = match.end()
-        if not position:
-            return sql
-        code.append(sql.code[position:])
-        return SQL(
-            "".join(code),
-            *params,
-            *pending,
-            to_flush=(
-                *sql.to_flush,
-                *(field for each in self._once for field in each.to_flush),
-            ),
+        return _splice_once(
+            sql,
+            {
+                _once_reference(self.table, index).code: expression
+                for index, expression in enumerate(self._once)
+            },
         )
 
     def _with_sql(self) -> SQL:
-        if not self._once:
-            return SQL.EMPTY
-        # MATERIALIZED: one evaluation whatever the number of references; left
-        # to itself PostgreSQL inlines an expression referenced once
-        return SQL(
-            "WITH %s ",
-            SQL(", ").join(
-                SQL(
-                    "%s AS MATERIALIZED (SELECT %s AS v)",
-                    self._once_identifier(index),
-                    expression,
-                )
-                for index, expression in enumerate(self._once)
-            ),
-        )
+        return _with_once(self.table, self._once)
 
     def copy(self) -> Query:
         """A query with this one's state, sharing none of its mutable parts.
@@ -539,3 +555,53 @@ class Query:
 
     def __iter__(self) -> Iterator[int]:
         return iter(self.get_result_ids())
+
+
+class SharedOnce:
+    """The once-expressions of the queries composed into one statement,
+    stated one time at its head.
+
+    `Query.statement` states a query's own expressions. A statement built of
+    several queries -- a search per opened group, a count around a grouped
+    select -- embeds each with `select()`, which puts every expression back
+    inline: the same grant subqueries, planned and run once per part and per
+    alias. Rendered through one scope, the parts read them from a single
+    WITH::
+
+        shared = SharedOnce(model._table)
+        parts = [shared.select(query) for query in queries]
+        env.execute_query(shared.statement(SQL(" UNION ALL ").join(parts)))
+
+    The queries are over one table: a reference names its table, and the
+    parts share it.
+    """
+
+    __slots__ = ("_expressions", "_table")
+
+    def __init__(self, table: str) -> None:
+        self._table = table
+        self._expressions: list[SQL] = []
+
+    def select(self, query: Query, *args: str | SQL) -> SQL:
+        """`query.select(*args)`, reading its once-expressions from this scope."""
+        if query.table != self._table:
+            msg = f"{query.table!r} is not this scope's table {self._table!r}"
+            raise ValueError(msg)
+        references: dict[str, SQL] = {}
+        for index, expression in enumerate(query._once):
+            try:
+                shared = self._expressions.index(expression)
+            except ValueError:
+                shared = len(self._expressions)
+                self._expressions.append(expression)
+            references[_once_reference(self._table, index).code] = _once_reference(
+                self._table, shared
+            )
+        return _splice_once(
+            query._select_sql(args, query._from_sql(), query._where_sql()),
+            references,
+        )
+
+    def statement(self, body: SQL) -> SQL:
+        """``body``, composed of this scope's selects, as the statement to run."""
+        return SQL("%s%s", _with_once(self._table, self._expressions), body)
