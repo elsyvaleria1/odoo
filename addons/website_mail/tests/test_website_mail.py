@@ -31,3 +31,15 @@ class TestWebsiteMail(TransactionCase):
                     email="brand-new-follower@example.com",
                 )
         self.assertFalse(result)
+
+    def test_is_follower_answers_who_asks_and_what_they_follow(self):
+        website = self.env["website"].search([], limit=1)
+        partner = self.env["res.partner"].create({"name": "Followed"})
+        partner.message_subscribe(self.env.user.partner_id.ids)
+        controller = WebsiteMail()
+        with MockRequest(self.env, website=website) as request:
+            request.website = website
+            identity, followed = controller.is_follower({"res.partner": [partner.id]})
+        self.assertEqual(identity["email"], self.env.user.partner_id.email or "")
+        self.assertIn("is_user", identity)
+        self.assertEqual(followed["res.partner"], [partner.id])

@@ -73,7 +73,7 @@ class WebsiteMail(http.Controller):
         website=True,
         readonly=True,
     )
-    def is_follower(self, records, **post) -> bool:
+    def is_follower(self, records, **post) -> list:
         user = request.env.user
         partner = None
         public_user = request.website.user_id
@@ -109,12 +109,10 @@ class WebsiteMail(http.Controller):
                 )
                 res[model].extend(res_id for [res_id] in mail_followers_ids)
 
-        return bool(
-            [
-                {
-                    "is_user": user != public_user,
-                    "email": partner.email if partner else "",
-                },
-                res,
-            ]
-        )
+        return [
+            {
+                "is_user": user != public_user,
+                "email": partner.email if partner else "",
+            },
+            res,
+        ]

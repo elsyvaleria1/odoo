@@ -17,7 +17,7 @@ class MassMailController(main.MassMailController):
         website=True,
         auth="public",
     )
-    def is_subscriber(self, list_id, subscription_type, **post) -> bool:
+    def is_subscriber(self, list_id, subscription_type, **post) -> dict:
         value = self._get_value(subscription_type)
         fname = self._get_fname(subscription_type)
         is_subscriber = False
@@ -43,7 +43,7 @@ class MassMailController(main.MassMailController):
             has_value=bool(value),
             is_subscriber=is_subscriber,
         )
-        return bool({"is_subscriber": is_subscriber, "value": value})
+        return {"is_subscriber": is_subscriber, "value": value}
 
     def _get_value(self, subscription_type):
         value = None
