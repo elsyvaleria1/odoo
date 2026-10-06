@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from odoo import api, fields, models
 from odoo.db import get_or_create_row
 from odoo.exceptions import ValidationError
+from odoo.libs.json import loads as json_loads
 from odoo.libs.secret import Secret
 from odoo.tools.authority_keys import declare_authority_keys
 
@@ -15,6 +16,14 @@ from ..tools.api_client import is_private_host
 declare_authority_keys("integration", "allow_http_production")
 
 _logger = logging.getLogger(__name__)
+
+OAUTH_CALLBACK_PATH = "/integration/oauth/callback"
+# registered with providers before the standard path existed: they keep
+# answering until no connection was authorized through them
+OAUTH_LEGACY_CALLBACK_PATHS = (
+    "/api_gateway/oauth/callback",
+    "/api_transport/oauth/callback",
+)
 
 
 class IntegrationService(models.Model):
@@ -213,6 +222,98 @@ class IntegrationService(models.Model):
     oauth_auth_endpoint = fields.Char()
     oauth_token_endpoint = fields.Char()
     oauth_scope = fields.Char(default="read write")
+    oauth_redirect_path = fields.Char(
+        string="OAuth Redirect Path",
+        default=OAUTH_CALLBACK_PATH,
+        help="Path of the redirect URI registered with the provider. A service "
+        "registered under an older path keeps it until that provider's console "
+        "lists the standard one, then switches.",
+    )
+    oauth_authorize_params = fields.Text(
+        string="Extra Authorization Parameters",
+        help="A JSON object added to every authorization request, e.g. "
+        '{"access_type": "offline", "prompt": "consent"} for a provider that '
+        "issues a refresh token only when asked.",
+    )
+    oauth_token_sends_scope = fields.Boolean(
+        string="Send Scope With Tokens",
+        help="Send the scope again with the code exchange and every refresh, for "
+        "a provider that requires it there (Microsoft).",
+    )
+    oauth_use_pkce = fields.Boolean(
+        string="Use PKCE",
+        default=True,
+        help="Prove with a one-time verifier that the code is redeemed by the "
+        "server that asked for it. Turn off only for a provider that rejects it.",
+    )
+    oauth_legacy_connection_count = fields.Integer(
+        string="Connections On Another Path",
+        compute="_compute_oauth_legacy_connection_count",
+        help="Connections last authorized through another redirect path than the "
+        "service's: its console must keep listing that path until they are "
+        "authorized again.",
+    )
+
+    @api.depends("oauth_redirect_path")
+    def _compute_oauth_legacy_connection_count(self) -> None:
+        groups = self.env["integration.connection"]._read_group(
+            [("service_id", "in", self.ids), ("oauth_redirect_uri", "!=", False)],
+            ["service_id", "oauth_redirect_uri"],
+            ["__count"],
+        )
+        for service in self:
+            service.oauth_legacy_connection_count = sum(
+                count
+                for group_service, uri, count in groups
+                if group_service == service
+                and urlparse(uri).path != service.oauth_redirect_path
+            )
+
+    def _oauth_authorize_extra(self) -> dict[str, str]:
+        self.check_singleton()
+        return (
+            json_loads(self.oauth_authorize_params)
+            if self.oauth_authorize_params
+            else {}
+        )
+
+    @api.constrains("oauth_authorize_params")
+    def _check_oauth_authorize_params(self) -> None:
+        for service in self.filtered("oauth_authorize_params"):
+            try:
+                params = json_loads(service.oauth_authorize_params)
+            except ValueError:
+                params = None
+            if not isinstance(params, dict) or not all(
+                isinstance(value, str) for value in params.values()
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "Extra Authorization Parameters must be a JSON object of "
+                        "text values."
+                    )
+                )
+
+    @api.model
+    def _oauth_callback_paths(self) -> tuple[str, ...]:
+        return (OAUTH_CALLBACK_PATH, *OAUTH_LEGACY_CALLBACK_PATHS)
+
+    @api.constrains("oauth_redirect_path")
+    def _check_oauth_redirect_path_is_served(self) -> None:
+        served = self._oauth_callback_paths()
+        for service in self:
+            if (
+                service.oauth_redirect_path
+                and service.oauth_redirect_path not in served
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "No route answers the OAuth redirect path %(path)s; use one "
+                        "of %(served)s.",
+                        path=service.oauth_redirect_path,
+                        served=", ".join(served),
+                    )
+                )
 
     max_response_bytes = fields.Integer(
         string="Max Response (bytes)",

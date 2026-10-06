@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import timedelta
 from typing import Any, Self
 from urllib.parse import urlparse
 
@@ -7,7 +8,7 @@ import requests
 
 from odoo import api, fields, models
 from odoo.db import get_or_create_row
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs import guarded_http, redact
 from odoo.libs.breaker import Attempt
 from odoo.libs.json import loads as json_loads
@@ -21,8 +22,20 @@ from ..tools.connection_gate import (
     breaker_for,
     is_failure,
 )
+from ..tools.exceptions import AuthenticationError
 
 _logger = logging.getLogger(__name__)
+
+
+def _is_revoked_grant(response) -> bool:
+    # RFC 6749 5.2: a refresh token revoked, expired or issued to another client
+    if response is None or response.status_code not in (400, 401):
+        return False
+    try:
+        return response.json().get("error") == "invalid_grant"
+    except ValueError, AttributeError:
+        return False
+
 
 _CIRCUIT_PENDING_KEY = "integration.connection.circuit"
 
@@ -82,6 +95,11 @@ class IntegrationConnection(models.Model):
     service_environment = fields.Selection(
         related="service_id.environment",
         string="Service Environment",
+        readonly=True,
+    )
+    service_auth_type = fields.Selection(
+        related="service_id.auth_type",
+        string="Authentication",
         readonly=True,
     )
     base_url = fields.Char(
@@ -145,6 +163,22 @@ class IntegrationConnection(models.Model):
     last_success_at = fields.Datetime(readonly=True)
     last_failure_at = fields.Datetime(readonly=True)
     last_error = fields.Char(readonly=True)
+    oauth_scope = fields.Char(
+        string="OAuth Scope",
+        help="The permissions this connection asks for, when they differ from the "
+        "service's: a calendar asks for one scope, a mailbox for another, on one "
+        "OAuth client.",
+    )
+    oauth_redirect_uri = fields.Char(
+        string="Authorized Through",
+        readonly=True,
+        help="The redirect URI this connection was last authorized through.",
+    )
+    needs_reauthorization = fields.Boolean(
+        readonly=True,
+        help="The provider refused to refresh this connection's grant (revoked, "
+        "expired or its client changed): it must be authorized again.",
+    )
 
     _record_unique = models.UniqueIndex(
         "(res_model, res_id) WHERE res_model IS NOT NULL",
@@ -174,9 +208,11 @@ class IntegrationConnection(models.Model):
         "service_id", "company_id", "environment", "active", "user_id", "credential_id"
     )
     def _check_one_active_connection(self) -> None:
+        # a connection bound to a record is unique by its record already
         constrained = self.filtered(
             lambda connection: (
                 connection.active
+                and not connection.res_model
                 and not connection.service_id.allow_multiple_credentials
                 and not connection.service_id.per_record_connections
             )
@@ -188,6 +224,7 @@ class IntegrationConnection(models.Model):
                 ("service_id", "in", constrained.service_id.ids),
                 ("environment", "in", list(set(constrained.mapped("environment")))),
                 ("active", "=", True),
+                ("res_model", "=", False),
             ]
         )
         ids_by_key: dict[tuple, set[int]] = {}
@@ -258,6 +295,7 @@ class IntegrationConnection(models.Model):
             ("service_id", "=", service.id),
             ("environment", "=", environment),
             ("active", "=", True),
+            ("res_model", "=", False),
             "|",
             ("credential_id", "=", False),
             ("credential_id.active", "=", True),
@@ -341,11 +379,7 @@ class IntegrationConnection(models.Model):
             if api_key:
                 headers.update(self.service_id._api_key_headers(api_key))
         elif auth_type == "oauth2":
-            access_token = Secret.of(
-                credential._use_secret_payload("integration:oauth").get(
-                    "oauth_access_token"
-                )
-            )
+            access_token = Secret.of(self._oauth2_access_token())
             if access_token:
                 headers["Authorization"] = access_token.prefixed("Bearer ")
         if credential.custom_headers:
@@ -367,7 +401,175 @@ class IntegrationConnection(models.Model):
                 )
         return headers
 
-    @api.model
+    def _check_oauth_authorizer(self) -> None:
+        self.check_singleton()
+        user = self.env.user
+        # read under privilege_oauth_authorization: who the user is, and what
+        # they may write, decides, not their access to connections
+        connection = self
+        if connection.service_id.auth_type != "oauth2":
+            raise UserError(
+                self.env._(
+                    "Service '%s' is not configured for OAuth 2.0 authentication",
+                    connection.service_id.name,
+                )
+            )
+        if connection.user_id:
+            if (
+                connection.user_id != user
+                or not connection.service_id.allow_user_credentials
+            ):
+                raise AccessError(
+                    self.env._("Only its own user authorizes a personal connection.")
+                )
+            return
+        if connection.res_model:
+            record = (
+                self.env[connection.res_model]
+                .with_user(user)
+                .browse(connection.res_id)
+                .exists()
+            )
+            if not record:
+                raise UserError(self.env._("This connection's record is gone."))
+            record.check_access("write")
+            return
+        if not user.has_group("credential.group_credential_admin"):
+            raise AccessError(
+                self.env._("You are not allowed to authorize API credentials.")
+            )
+
+    def _oauth_scope(self) -> str:
+        self.check_singleton()
+        return self.oauth_scope or self.service_id.oauth_scope or ""
+
+    def _oauth_app_connection(self) -> Self:
+        self.check_singleton()
+        if self.credential_id and not self.user_id and not self.res_model:
+            return self
+        candidates = self.search(
+            [
+                ("service_id", "=", self.service_id.id),
+                ("active", "=", True),
+                ("user_id", "=", False),
+                ("res_model", "=", False),
+                ("credential_id", "!=", False),
+                ("company_id", "in", [self.company_id.id, False]),
+            ],
+            order="company_id, sequence, id",
+        )
+        return candidates[:1]
+
+    def _oauth_client(self) -> tuple[str, str | None]:
+        self.check_singleton()
+        # the vault: a client secret is readable by no user's rights
+        vault = self.sudo()
+        client_id = vault.service_id.oauth_client_id or ""
+        client_secret = None
+        for credential in (
+            vault.credential_id,
+            vault._oauth_app_connection().credential_id,
+        ):
+            if not credential:
+                continue
+            client_id = client_id or credential.oauth_client_id or ""
+            client_secret = client_secret or credential._use_secret_payload(
+                "integration:oauth_client"
+            ).get("oauth_client_secret")
+        return client_id, client_secret
+
+    def _oauth_store_tokens(self, tokens: dict[str, Any], redirect_uri: str) -> None:
+        self.check_singleton()
+        # the vault: tokens are written by no user's rights
+        connection = self.sudo()
+        expires_in = int(tokens.get("expires_in") or 0)
+        values: dict[str, Any] = {
+            "oauth_access_token": tokens["access_token"],
+            "oauth_token_date_expiration": fields.Datetime.now()
+            + timedelta(seconds=expires_in)
+            if expires_in
+            else False,
+        }
+        if tokens.get("refresh_token"):
+            values["oauth_refresh_token"] = tokens["refresh_token"]
+        if connection.credential_id:
+            connection.credential_id.write(values)
+        else:
+            # no endpoint_id: the connection binds it, and a bound credential
+            # would sync a second connection of its own
+            connection.credential_id = connection.env["credential.credential"].create(
+                {
+                    "name": connection.display_name,
+                    "category_id": self.env.ref(
+                        "credential.credential_category_oauth2"
+                    ).id,
+                    "company_id": (connection.company_id or self.env.company).id,
+                    "owner_user_id": connection.user_id.id,
+                    "environment": connection.environment,
+                    **values,
+                }
+            )
+        connection.write(
+            {"oauth_redirect_uri": redirect_uri, "needs_reauthorization": False}
+        )
+
+    def _oauth2_access_token(self, force: bool = False) -> str | bool:
+        self.check_singleton()
+        # the API client's connection: elevated, as every secret it reads
+        credential = self.credential_id
+        tokens = credential._use_secret_payload("integration:oauth")
+        expired = bool(credential.oauth_token_date_expiration) and not (
+            credential._oauth2_access_token_is_current()
+        )
+        if not (force or expired) or not tokens.get("oauth_refresh_token"):
+            return tokens.get("oauth_access_token") or False
+        service = self.service_id
+        client_id, client_secret = self._oauth_client()
+        try:
+            access_token, _seconds = credential._oauth2_refresh(
+                service.oauth_token_endpoint,
+                client_id,
+                client_secret,
+                purpose="integration",
+                policy="private",
+                extra={"scope": self._oauth_scope()}
+                if service.oauth_token_sends_scope
+                else None,
+                force=force,
+            )
+        except requests.HTTPError as error:
+            if _is_revoked_grant(error.response):
+                self.needs_reauthorization = True
+                # the caller's failure rolls its transaction back: keep the flag
+                self._queue_circuit_values({"needs_reauthorization": True})
+                _logger.warning(
+                    "OAuth grant of connection %s was refused on refresh", self.id
+                )
+                raise AuthenticationError(
+                    self.env._(
+                        "%(connection)s must be authorized again: the provider "
+                        "refused its grant.",
+                        connection=self.display_name,
+                    ),
+                    error.response.status_code,
+                ) from None
+            raise AuthenticationError(
+                self.env._(
+                    "The provider refused to refresh %(connection)s's access token.",
+                    connection=self.display_name,
+                ),
+                error.response.status_code,
+            ) from None
+        return access_token
+
+    def action_oauth_authorize(self) -> dict[str, Any]:
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/integration/oauth/authorize/{self.id}",
+            "target": "self",
+        }
+
     @api.model
     def _shared(self, service, company=None) -> Self:
         connections = self.sudo().with_context(active_test=False)

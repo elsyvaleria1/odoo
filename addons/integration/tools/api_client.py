@@ -411,6 +411,15 @@ class OutboundAPIClient:
         try:
             _logger.info("API Request: %s %s", method, redact.mask_url(url))
             response = self._send(method, url, kwargs, attempt)
+            if response.status_code == 401 and self._may_refresh_oauth2():
+                # an access token can be revoked before its expiry: refresh
+                # once and send again; a second refusal is the answer
+                self.connection._oauth2_access_token(force=True)
+                kwargs["headers"].update(self.connection._get_auth_headers())
+                attempt = self.admit(
+                    self.session.get_worst_case_seconds(url, kwargs["timeout"])
+                )
+                response = self._send(method, url, kwargs, attempt)
 
             elapsed_ms = (datetime.now() - start_time).total_seconds() * 1000
 
@@ -478,6 +487,9 @@ class OutboundAPIClient:
             raise CommError(
                 self.env._("Request failed: %s") % error
             ) from _masked_cause(e)
+
+        except CommError:
+            raise
 
         except Exception as e:
             error = redact.mask_text(str(e))
@@ -789,6 +801,17 @@ class OutboundAPIClient:
         return headers
 
     _HTTP_AUTH_TYPES = ("basic", "digest")
+
+    def _may_refresh_oauth2(self) -> bool:
+        if self.service.auth_type != "oauth2" or not self.connection:
+            return False
+        if not self._credential_usable:
+            return False
+        return bool(
+            self.credential._use_secret_payload("integration:oauth").get(
+                "oauth_refresh_token"
+            )
+        )
 
     def _get_auth(self):
         if self.service.auth_type not in self._HTTP_AUTH_TYPES:

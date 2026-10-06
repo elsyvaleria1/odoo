@@ -53,4 +53,10 @@
             eval="[Command.link(ref('group_api_transport_admin'))]" />
     </record>
 
+    <record id="privilege_oauth_authorization" model="res.groups">
+        <field
+            name="name">Privilege: a user authorizes a connection they own or whose record they may write</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

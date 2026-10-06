@@ -42,3 +42,4 @@ from . import test_openapi_receiver_security
 from . import test_record_receiver
 from . import test_connection_gate
 from . import test_stream
+from . import test_oauth2_once

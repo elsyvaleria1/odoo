@@ -32,7 +32,22 @@
         <field name="model">integration.connection</field>
         <field name="arch" type="xml">
             <form>
+                <field name="service_auth_type" invisible="1" />
+                <header>
+                    <button
+                        name="action_oauth_authorize"
+                        type="object"
+                        string="Authorize"
+                        invisible="service_auth_type != 'oauth2'"
+                        class="btn-primary" />
+                </header>
                 <sheet>
+                    <div
+                        class="alert alert-danger"
+                        role="alert"
+                        invisible="not needs_reauthorization">
+                        The provider refused this connection's grant: authorize it again.
+                    </div>
                     <div
                         class="alert alert-warning"
                         role="alert"
@@ -83,6 +98,20 @@
                                 <group string="Serves" invisible="not res_model">
                                     <field name="res_model" />
                                     <field name="res_id" />
+                                </group>
+                            </group>
+                        </page>
+                        <page
+                            name="oauth"
+                            string="OAuth 2.0"
+                            invisible="service_auth_type != 'oauth2'">
+                            <group>
+                                <group>
+                                    <field
+                                        name="oauth_scope"
+                                        placeholder="The service's scope" />
+                                    <field name="oauth_redirect_uri" />
+                                    <field name="needs_reauthorization" />
                                 </group>
                             </group>
                         </page>

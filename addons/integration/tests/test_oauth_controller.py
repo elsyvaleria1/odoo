@@ -51,15 +51,15 @@ class TestOAuthTokenExchange(TransactionCase):
             "expires_in": 3600,
         }
         response.raise_for_status.return_value = None
-        with (
-            patch.object(
-                OAuthController,
-                "_get_redirect_uri",
-                return_value="https://odoo.test/api_gateway/oauth/callback",
-            ),
-            patch.object(requests.Session, "post", return_value=response) as mock_post,
-        ):
-            tokens = self.controller._exchange_code_for_tokens(credential, "auth-code")
+        connection = self.env["integration.connection"]._for_credential(
+            self.service, credential
+        )
+        with patch.object(requests.Session, "post", return_value=response) as mock_post:
+            tokens = self.controller._exchange_code_for_tokens(
+                connection,
+                "auth-code",
+                "https://odoo.test/integration/oauth/callback",
+            )
         return tokens, mock_post
 
     def test_exchange_sends_secret_from_credential(self):

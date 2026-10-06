@@ -166,6 +166,11 @@
                                     <field name="oauth_auth_endpoint" />
                                     <field name="oauth_token_endpoint" />
                                     <field name="oauth_scope" />
+                                    <field name="oauth_redirect_path" />
+                                    <field name="oauth_legacy_connection_count" />
+                                    <field name="oauth_authorize_params" />
+                                    <field name="oauth_token_sends_scope" />
+                                    <field name="oauth_use_pkce" />
                                 </group>
                             </group>
                         </page>

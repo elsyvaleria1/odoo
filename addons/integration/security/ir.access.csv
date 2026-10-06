@@ -24,3 +24,6 @@ access_integration_stream_outbox_user,integration.stream.outbox.user,model_integ
 access_integration_stream_outbox_manager,integration.stream.outbox.manager,model_integration_stream_outbox,group_api_transport_manager,permission,cud,,,
 rule_integration_receiver_company,Receiver: Company isolation,model_integration_receiver,base.group_everyone,guard,crud,company,,
 rule_integration_connection_company,Connection: Company isolation,model_integration_connection,base.group_everyone,guard,crud,company,,
+privilege_oauth_authorization_connection,OAuth authorization: the connection authorized,model_integration_connection,privilege_oauth_authorization,permission,r,,,
+privilege_oauth_authorization_service,OAuth authorization: its service,model_integration_service,privilege_oauth_authorization,permission,r,,,
+privilege_oauth_authorization_credential,OAuth authorization: the credential a legacy authorize names,credential.model_credential_credential,privilege_oauth_authorization,permission,r,,,

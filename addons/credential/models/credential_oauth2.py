@@ -24,7 +24,7 @@ class CredentialCredential(models.Model):
         refresh committed first, and the request is retried on a fresh snapshot.
         """
         self.check_singleton()
-        self.sudo().lock_for_update(allow_referencing=True)
+        self.lock_for_update(allow_referencing=True)
 
     def _post_oauth2_refresh_grant(
         self,
@@ -63,13 +63,17 @@ class CredentialCredential(models.Model):
         policy="public",
         timeout=10,
         extra=None,
+        force=False,
     ) -> tuple:
         self.check_singleton()
         credential = self.sudo()
         credential._lock_for_oauth2_refresh()
         tokens = credential._use_secret_payload(f"{purpose}:oauth2_refresh")
-        if credential._oauth2_access_token_is_current() and tokens.get(
-            "oauth_access_token"
+        # force: the provider refused the token its expiry still calls current
+        if (
+            not force
+            and credential._oauth2_access_token_is_current()
+            and tokens.get("oauth_access_token")
         ):
             return tokens["oauth_access_token"], credential._oauth2_seconds_left()
         response = credential._post_oauth2_refresh_grant(
