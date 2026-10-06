@@ -207,14 +207,21 @@ class DocumentsDocument(models.Model):
             unique_folder_id = self.env.context.get("documents_unique_folder_id")
             if unique_folder_id:
                 domain &= Domain("folder_id", "child_of", unique_folder_id)
+            # without counters the tree is the same whatever the search: a
+            # search domain here is a refetch that changes nothing
             _debug.pipeline(
                 "search_panel_range",
                 counters=enable_counters,
                 unique_folder=unique_folder_id or False,
+                search_domain_unused=bool(
+                    not enable_counters and kwargs.get("search_domain")
+                ),
             )
-            records = self.env["document.document"].search_read(
-                domain, search_panel_fields
-            )
+            with _debug.perf("search_panel_folders", cr=self.env.cr) as span:
+                records = self.env["document.document"].search_read(
+                    domain, search_panel_fields
+                )
+                span.set(folders=len(records))
             alias_tag_data = {}
             if not self.env.user.share:
                 alias_tag_ids = {

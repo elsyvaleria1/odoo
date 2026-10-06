@@ -71,31 +71,32 @@ class DocumentsDocument(models.Model):
         if not saved:
             return
 
-        self._access_graph_flush()
-        self.flush_model(self._user_permission_domain_fields())
+        with _debug.perf("user_permission_reach", cr=self.env.cr, documents=len(saved)):
+            self._access_graph_flush()
+            self.flush_model(self._user_permission_domain_fields())
 
-        documents_sudo = (
-            self.env["document.document"].sudo().with_context(active_test=False)
-        )
-        in_scope = Domain("id", "in", saved.ids)
-        reachable = documents_sudo._search(
-            in_scope & self._search_user_permission("in", ["view", "edit"])
-        )
-        editable = documents_sudo._search(
-            in_scope & self._search_user_permission("in", ["edit"])
-        )
-        self.env.cr.execute(
-            SQL(
-                """SELECT reachable.id, reachable.id IN (%(editable)s)
-                     FROM (%(reachable)s) AS reachable""",
-                editable=editable.select(),
-                reachable=reachable.select(),
+            documents_sudo = (
+                self.env["document.document"].sudo().with_context(active_test=False)
             )
-        )
-        levels = {
-            document_id: "edit" if is_editable else "view"
-            for document_id, is_editable in self.env.cr.fetchall()
-        }
+            in_scope = Domain("id", "in", saved.ids)
+            reachable = documents_sudo._search(
+                in_scope & self._search_user_permission("in", ["view", "edit"])
+            )
+            editable = documents_sudo._search(
+                in_scope & self._search_user_permission("in", ["edit"])
+            )
+            self.env.cr.execute(
+                SQL(
+                    """SELECT reachable.id, reachable.id IN (%(editable)s)
+                         FROM (%(reachable)s) AS reachable""",
+                    editable=editable.select(),
+                    reachable=reachable.select(),
+                )
+            )
+            levels = {
+                document_id: "edit" if is_editable else "view"
+                for document_id, is_editable in self.env.cr.fetchall()
+            }
         _debug.perf.count(
             "user_permission_computed", documents=saved, resolved=len(levels)
         )
