@@ -220,8 +220,12 @@ class CalendarEvent(models.Model):
     total_capacity_reserved = fields.Integer(
         compute="_compute_total_capacity",
         inverse="_inverse_resource_ids_or_capacity",
+        aggregator="sum",
     )
-    total_capacity_used = fields.Integer(compute="_compute_total_capacity")
+    total_capacity_used = fields.Integer(
+        compute="_compute_total_capacity",
+        aggregator="sum",
+    )
     user_id = fields.Many2one(
         comodel_name="res.users",
         group_expand="_read_group_user_id",

@@ -80,6 +80,7 @@ class EventEventTicket(models.Model):
         string="Taken Seats",
         compute="_compute_seats",
         store=False,
+        aggregator="sum",
     )
     limit_max_per_order = fields.Integer(
         string="Limit per Order",

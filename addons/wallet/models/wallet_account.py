@@ -82,6 +82,7 @@ class WalletAccount(models.Model):
     )
     amount_balance = fields.Monetary(
         compute="_compute_amount_balance",
+        aggregator="sum",
         help="Sum of the cards' latest balances.",
     )
     # Card block

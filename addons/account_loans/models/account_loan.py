@@ -148,7 +148,8 @@ class AccountLoan(models.Model):
     interest_difference = fields.Monetary(compute="_compute_interest_difference")
     duration_difference = fields.Integer(compute="_compute_duration_difference")
     outstanding_balance = fields.Monetary(
-        compute="_compute_outstanding_balance"
+        compute="_compute_outstanding_balance",
+        aggregator="sum",
     )  # Based on the posted entries
     nb_posted_entries = fields.Integer(compute="_compute_nb_posted_entries")
     linked_assets_ids = fields.One2many(

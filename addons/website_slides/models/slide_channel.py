@@ -334,6 +334,7 @@ class SlideChannel(models.Model):
     members_count = fields.Integer(
         string="# Enrolled Attendees",
         compute="_compute_members_counts",
+        aggregator="sum",
     )
     members_all_count = fields.Integer(
         string="# Enrolled or Invited Attendees",
@@ -347,6 +348,7 @@ class SlideChannel(models.Model):
     members_completed_count = fields.Integer(
         string="# Completed Attendees",
         compute="_compute_members_counts",
+        aggregator="sum",
     )
     members_invited_count = fields.Integer(
         string="# Invited Attendees",

@@ -238,6 +238,7 @@ class ProductProduct(models.Model):
         currency_field="company_currency_id",
         compute="_compute_value",
         compute_sudo=True,
+        aggregator="sum",
     )
     company_currency_id = fields.Many2one(
         comodel_name="res.currency",

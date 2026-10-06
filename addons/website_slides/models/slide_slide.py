@@ -189,6 +189,7 @@ class SlideSlide(models.Model):
     questions_count = fields.Integer(
         string="Number of Questions",
         compute="_compute_questions_count",
+        aggregator="sum",
     )
     quiz_first_attempt_reward = fields.Integer(
         string="Reward: first attempt",

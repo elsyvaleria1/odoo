@@ -124,6 +124,7 @@ class MrpRoutingWorkcenter(models.Model):
     time_total = fields.Float(
         string="Total Duration",
         compute="_compute_operation_times",
+        aggregator="sum",
     )
     show_time_total = fields.Boolean(
         string="Show Total Duration?",

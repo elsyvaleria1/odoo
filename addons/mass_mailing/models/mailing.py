@@ -395,24 +395,46 @@ class MailingMailing(models.Model):
     scheduled = fields.Integer(compute="_compute_statistics")
     expected = fields.Integer(compute="_compute_statistics")
     canceled = fields.Integer(compute="_compute_statistics")
-    sent = fields.Integer(compute="_compute_statistics")
+    sent = fields.Integer(
+        compute="_compute_statistics",
+        aggregator="sum",
+    )
     process = fields.Integer(compute="_compute_statistics")
     pending = fields.Integer(
         compute="_compute_statistics"
     )  # used with SMS when not yet 'delivered'
     delivered = fields.Integer(compute="_compute_statistics")
     opened = fields.Integer(compute="_compute_statistics")
-    clicked = fields.Integer(compute="_compute_statistics")
+    clicked = fields.Integer(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
     replied = fields.Integer(compute="_compute_statistics")
-    bounced = fields.Integer(compute="_compute_statistics")
+    bounced = fields.Integer(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
     failed = fields.Integer(compute="_compute_statistics")
-    received_ratio = fields.Float(compute="_compute_statistics")
-    opened_ratio = fields.Float(compute="_compute_statistics")
-    replied_ratio = fields.Float(compute="_compute_statistics")
-    bounced_ratio = fields.Float(compute="_compute_statistics")
+    received_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    opened_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    replied_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    bounced_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
     clicks_ratio = fields.Float(
         string="Number of Clicks",
         compute="_compute_clicks_ratio",
+        aggregator="avg",
     )
     link_trackers_count = fields.Integer(compute="_compute_link_trackers_count")
     next_departure = fields.Datetime(

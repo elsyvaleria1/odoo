@@ -195,6 +195,7 @@ class EventEvent(models.Model):
         compute="_compute_seats",
         store=False,
         readonly=True,
+        aggregator="sum",
     )
     seats_available = fields.Integer(
         string="Available Seats",
@@ -207,12 +208,14 @@ class EventEvent(models.Model):
         compute="_compute_seats",
         store=False,
         readonly=True,
+        aggregator="sum",
     )
     seats_taken = fields.Integer(
         string="Number of Taken Seats",
         compute="_compute_seats",
         store=False,
         readonly=True,
+        aggregator="sum",
     )
     # Registration fields
     registration_ids = fields.One2many(

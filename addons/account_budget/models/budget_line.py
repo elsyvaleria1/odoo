@@ -41,6 +41,7 @@ class BudgetLine(models.Model):
     achieved_amount = fields.Monetary(
         string="Achieved",
         compute="_compute_achieved",
+        aggregator="sum",
         help="Amount Billed/Invoiced.",
     )
     achieved_percentage = fields.Float(
@@ -51,6 +52,7 @@ class BudgetLine(models.Model):
     theoretical_amount = fields.Monetary(
         string="Theoretical",
         compute="_compute_theoretical",
+        aggregator="sum",
         help="Amount supposed to be Billed/Invoiced, formula = (Budget Amount / Budget Days) x Budget Days Completed",
     )
     theoretical_percentage = fields.Float(

@@ -80,8 +80,14 @@ class MixinOrderLineStockMatch(models.AbstractModel):
         comodel_name="product.trace",
         compute="_compute_trace_ids",
     )
-    transferred_qty = fields.Float(compute="_compute_side_quantities")
-    ordered_qty = fields.Float(compute="_compute_side_quantities")
+    transferred_qty = fields.Float(
+        compute="_compute_side_quantities",
+        aggregator="sum",
+    )
+    ordered_qty = fields.Float(
+        compute="_compute_side_quantities",
+        aggregator="sum",
+    )
 
     @api.depends("line_qty", "move_id", "order_id")
     def _compute_side_quantities(self) -> None:

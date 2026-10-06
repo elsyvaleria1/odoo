@@ -127,10 +127,12 @@ class ForumForum(models.Model):
     total_posts = fields.Integer(
         string="# Posts",
         compute="_compute_forum_statistics",
+        aggregator="sum",
     )
     total_views = fields.Integer(
         string="# Views",
         compute="_compute_forum_statistics",
+        aggregator="sum",
     )
     total_answers = fields.Integer(
         string="# Answers",

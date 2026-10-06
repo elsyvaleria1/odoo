@@ -124,13 +124,14 @@ class TestSearchAge(TransactionCase):
             with self.assertRaises(UserError):
                 self.Partner.search([("age", ">", value)])
 
-    def test_age_declares_no_aggregator_and_folds_through_records_when_asked(self):
+    def test_age_has_no_aggregator_and_folds_through_records_when_asked(self):
         """`web/static/src/model/relational_model/field_values.js` asks the
         server for `<field>:<aggregator>` for every aggregatable field a view
-        holds; Integer defaults to `sum`, which is meaningless for ages, so the
-        field declares none. Asked for explicitly, an aggregate of this
-        non-stored compute folds through the group's records (odoo
-        1700ca96ddc1), so a grouped list that wants an average gets one.
+        holds; Integer defaults to `sum`, which is meaningless for ages, and a
+        non-stored compute takes no aggregator it does not declare. Asked for
+        explicitly, an aggregate of this non-stored compute folds through the
+        group's records (odoo 1700ca96ddc1), so a grouped list that wants an
+        average gets one.
         """
         self.assertFalse(self.Partner._fields["age"].aggregator)
         adults = self.Partner.browse(

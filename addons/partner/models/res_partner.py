@@ -15,11 +15,6 @@ class ResPartner(models.Model):
     age = fields.Integer(
         compute="_compute_age",
         search="_search_age",
-        # Not "avg", and not the Integer default of "sum": the client asks the
-        # server for `<field>:<aggregator>` for every aggregatable field a view
-        # holds, and this one is not stored, so any answer but None turns a
-        # grouped list containing it into a 500.
-        aggregator=None,
     )
     age_range_id = fields.Many2one(
         comodel_name="res.partner.age.range",

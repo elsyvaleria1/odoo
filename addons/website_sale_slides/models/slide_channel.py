@@ -23,6 +23,7 @@ class SlideChannel(models.Model):
     product_sale_revenues = fields.Monetary(
         string="Total revenues",
         compute="_compute_product_sale_revenues",
+        aggregator="sum",
         groups="sale.group_sale_salesman",
     )
     currency_id = fields.Many2one(related="product_id.currency_id")

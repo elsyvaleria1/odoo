@@ -139,6 +139,7 @@ class StockQuant(models.Model):
     available_quantity = fields.Float(
         min_display_digits="Product Unit",
         compute="_compute_available_quantity",
+        aggregator="sum",
         help="On hand quantity which hasn't been reserved on a transfer, in the default unit of measure of the product",
     )
     in_date = fields.Datetime(
@@ -176,6 +177,7 @@ class StockQuant(models.Model):
         min_display_digits="Product Unit",
         compute="_compute_inventory_quantity_auto_apply",
         inverse="_inverse_inventory_quantity_auto_apply",
+        aggregator="sum",
         groups="stock.group_stock_manager",
     )
     inventory_diff_quantity = fields.Float(

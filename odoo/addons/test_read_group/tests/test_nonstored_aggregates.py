@@ -22,6 +22,28 @@ class TestNonStoredAggregates(common.TransactionCase):
         )
         cls.domain = [("id", "in", cls.tasks.ids)]
 
+    def test_a_non_stored_compute_advertises_only_the_aggregator_it_declares(self):
+        info = self.Task.fields_get(
+            ["integer", "integer_doubled", "integer_doubled_peak", "integer_squared"],
+            ["aggregator"],
+        )
+        self.assertEqual(info["integer"]["aggregator"], "sum")
+        self.assertFalse(info["integer_doubled"].get("aggregator"))
+        self.assertEqual(info["integer_doubled_peak"]["aggregator"], "max")
+        # composes its own SQL: aggregated by the database, not through records
+        self.assertEqual(info["integer_squared"]["aggregator"], "sum")
+        self.assertFalse(
+            self.Task._aggregates_through_records(
+                self.Task._fields["integer_squared"], "sum"
+            )
+        )
+
+    def test_an_undeclared_aggregate_still_folds_when_asked(self):
+        [(total, peak)] = self.Task._read_group(
+            self.domain, [], ["integer_doubled:sum", "integer_doubled_peak:max"]
+        )
+        self.assertEqual((total, peak), (30, 16))
+
     def test_numeric_folds_match_python(self):
         groups = self.Task._read_group(
             self.domain,

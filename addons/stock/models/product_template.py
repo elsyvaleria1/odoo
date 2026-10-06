@@ -77,6 +77,7 @@ class ProductTemplate(models.Model):
         inverse="_inverse_qty_available",
         search="_search_qty_available",
         compute_sudo=False,
+        aggregator="sum",
         help="Sum of the quantity on hand of every variant of this product, "
         "scoped by the location or warehouse selected in the search view.",
     )
@@ -86,6 +87,7 @@ class ProductTemplate(models.Model):
         compute="_compute_quantities",
         search="_search_qty_available_virtual",
         compute_sudo=False,
+        aggregator="sum",
         help="Sum of the forecasted quantity (on hand - outgoing + incoming) of "
         "every variant of this product.",
     )

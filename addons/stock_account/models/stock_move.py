@@ -80,10 +80,12 @@ class StockMove(models.Model):
         string="Remaining Quantity",
         compute="_compute_remaining_qty",
         search="_search_remaining_qty",
+        aggregator="sum",
     )
     remaining_value = fields.Monetary(
         currency_field="company_currency_id",
         compute="_compute_remaining_value",
+        aggregator="sum",
     )
 
     analytic_account_line_ids = fields.Many2many(

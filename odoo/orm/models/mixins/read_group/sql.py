@@ -121,6 +121,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
         return (
             not field.store
             and not field.related
+            and not field.value_sql
             and bool(field.compute)
             and func in READ_GROUP_THROUGH_RECORDS
         )

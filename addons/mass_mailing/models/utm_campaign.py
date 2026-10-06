@@ -60,10 +60,22 @@ class UtmCampaign(models.Model):
     )
 
     # stat fields
-    received_ratio = fields.Float(compute="_compute_statistics")
-    opened_ratio = fields.Float(compute="_compute_statistics")
-    replied_ratio = fields.Float(compute="_compute_statistics")
-    bounced_ratio = fields.Float(compute="_compute_statistics")
+    received_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    opened_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    replied_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
+    bounced_ratio = fields.Float(
+        compute="_compute_statistics",
+        aggregator="avg",
+    )
 
     @api.depends("ab_testing_winner_mailing_id")
     def _compute_ab_testing_completed(self) -> None:

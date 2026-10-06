@@ -61,6 +61,7 @@ from . import test_access_migrations
 from . import test_access_rows
 from . import test_elevation
 from . import test_view_depends
+from . import test_view_totals
 from . import test_field_class_gates
 from . import test_authority_keys
 from . import test_readonly_tiers

@@ -12,6 +12,7 @@ class StockQuant(models.Model):
 
     value = fields.Monetary(
         compute="_compute_value",
+        aggregator="sum",
         groups="stock.group_stock_manager",
     )
     currency_id = fields.Many2one(

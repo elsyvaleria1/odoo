@@ -68,9 +68,18 @@ class AccountAnalyticAccount(models.Model):
         tracking=True,
     )
 
-    balance = fields.Monetary(compute="_compute_debit_credit_balance")
-    debit = fields.Monetary(compute="_compute_debit_credit_balance")
-    credit = fields.Monetary(compute="_compute_debit_credit_balance")
+    balance = fields.Monetary(
+        compute="_compute_debit_credit_balance",
+        aggregator="sum",
+    )
+    debit = fields.Monetary(
+        compute="_compute_debit_credit_balance",
+        aggregator="sum",
+    )
+    credit = fields.Monetary(
+        compute="_compute_debit_credit_balance",
+        aggregator="sum",
+    )
 
     currency_id = fields.Many2one(
         related="company_id.currency_id",

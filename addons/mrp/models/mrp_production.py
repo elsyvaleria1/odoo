@@ -258,11 +258,13 @@ class MrpProduction(models.Model):
     duration_expected = fields.Float(
         string="Expected Duration",
         compute="_compute_duration_expected",
+        aggregator="sum",
         help="Total expected duration (in minutes)",
     )
     duration = fields.Float(
         string="Real Duration",
         compute="_compute_duration",
+        aggregator="sum",
         help="Total real duration (in minutes)",
     )
 

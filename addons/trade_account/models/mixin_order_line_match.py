@@ -93,10 +93,12 @@ class MixinOrderLineMatch(models.AbstractModel):
     invoiced_amount_taxexc = fields.Monetary(
         currency_field="currency_id",
         compute="_compute_amount_untaxed_fields",
+        aggregator="sum",
     )
     ordered_amount_taxexc = fields.Monetary(
         currency_field="currency_id",
         compute="_compute_amount_untaxed_fields",
+        aggregator="sum",
     )
 
     @api.depends("line_amount_taxexc", "account_move_id", "order_id")

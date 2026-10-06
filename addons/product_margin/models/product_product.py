@@ -28,6 +28,7 @@ class ProductProduct(models.Model):
     sale_avg_price = fields.Float(
         string="Avg. Sale Unit Price",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Avg. Price in Customer Invoices.",
     )
@@ -40,65 +41,77 @@ class ProductProduct(models.Model):
     sale_num_invoiced = fields.Float(
         string="# Invoiced in Sale",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Quantity in Customer Invoices",
     )
     purchase_num_invoiced = fields.Float(
         string="# Invoiced in Purchase",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Quantity in Vendor Bills",
     )
     sales_gap = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Expected Sale - Turn Over",
     )
     purchase_gap = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Normal Cost - Total Cost",
     )
     turnover = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Multiplication of Invoice price and quantity of Customer Invoices",
     )
     total_cost = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Multiplication of Invoice price and quantity of Vendor Bills ",
     )
     sale_expected = fields.Float(
         string="Expected Sale",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Multiplication of Sale Catalog price and quantity of Customer Invoices",
     )
     normal_cost = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Sum of Multiplication of Cost price and quantity of Vendor Bills",
     )
     total_margin = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Turnover - Total cost",
     )
     expected_margin = fields.Float(
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Expected Sale - Normal Cost",
     )
     total_margin_rate = fields.Float(
         string="Total Margin Rate(%)",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Total margin * 100 / Turnover",
     )
     expected_margin_rate = fields.Float(
         string="Expected Margin (%)",
         compute="_compute_product_margin_fields_values",
+        aggregator="sum",
         classification="finance.receivable",
         help="Expected margin * 100 / Expected Sale",
     )

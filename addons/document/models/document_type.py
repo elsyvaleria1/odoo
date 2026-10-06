@@ -66,14 +66,17 @@ class DocumentType(models.Model):
     )
     document_count = fields.Integer(
         compute="_compute_document_counts",
+        aggregator="sum",
         help="Total number of documents of this type",
     )
     expired_document_count = fields.Integer(
         compute="_compute_document_counts",
+        aggregator="sum",
         help="Number of documents of this type that are currently expired",
     )
     expiring_soon_count = fields.Integer(
         compute="_compute_document_counts",
+        aggregator="sum",
         help="Number of documents of this type expiring within the next 30 days",
     )
 

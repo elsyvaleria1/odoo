@@ -270,6 +270,9 @@ class Test_Read_GroupTask(models.Model):
         value_sql="_integer_squared_sql",
     )
     integer_doubled = fields.Integer(compute="_compute_integer_doubled")
+    integer_doubled_peak = fields.Integer(
+        compute="_compute_integer_doubled", aggregator="max"
+    )
     is_big = fields.Boolean(compute="_compute_integer_doubled")
 
     @api.depends("user_ids")
@@ -300,7 +303,7 @@ class Test_Read_GroupTask(models.Model):
     @api.depends("integer")
     def _compute_integer_doubled(self):
         for task in self:
-            task.integer_doubled = task.integer * 2
+            task.integer_doubled = task.integer_doubled_peak = task.integer * 2
             task.is_big = task.integer >= 4
 
     @api.depends("integer")

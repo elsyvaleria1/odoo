@@ -55,10 +55,12 @@ class ResPartner(models.Model):
     )
     total_due = fields.Monetary(
         compute="_compute_total_due",
+        aggregator="sum",
         classification="finance.receivable",
     )
     total_overdue = fields.Monetary(
         compute="_compute_total_due",
+        aggregator="sum",
         classification="finance.receivable",
     )
     total_overdue_followup = fields.Monetary(
