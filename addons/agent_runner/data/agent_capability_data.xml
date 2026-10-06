@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="capability_sandbox" model="agent.capability">
+        <field name="name">Sandbox</field>
+        <field name="code">sandbox</field>
+    </record>
+
+    <record id="capability_test" model="agent.capability">
+        <field name="name">Test</field>
+        <field name="code">test</field>
+    </record>
+
+    <record id="capability_deploy" model="agent.capability">
+        <field name="name">Deploy</field>
+        <field name="code">deploy</field>
+    </record>
+
+</odoo>

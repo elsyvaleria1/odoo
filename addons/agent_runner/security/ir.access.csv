@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_agent_capability_system,agent.capability system,model_agent_capability,base.group_system,permission,crud,,,
+access_agent_runner_system,agent.runner system,model_agent_runner,base.group_system,permission,crud,,,
+access_agent_run_system,agent.run system,model_agent_run,base.group_system,permission,crud,,,
+access_agent_run_event_system,agent.run.event: events are appended by runs and read by administrators,model_agent_run_event,base.group_system,permission,r,,,

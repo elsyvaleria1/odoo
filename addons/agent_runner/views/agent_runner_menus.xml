@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_agent_runner_root"
+        name="Agent Runners"
+        parent="base.menu_custom"
+        sequence="111"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_agent_run"
+        name="Runs"
+        parent="menu_agent_runner_root"
+        action="action_agent_run"
+        sequence="10" />
+
+    <menuitem
+        id="menu_agent_runner"
+        name="Runners"
+        parent="menu_agent_runner_root"
+        action="action_agent_runner"
+        sequence="20" />
+
+</odoo>

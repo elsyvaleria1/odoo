@@ -1,0 +1,139 @@
+import threading
+
+import pytest
+
+from . import runner as agent
+
+
+class FakeClient:
+    """Odoo's side of the protocol, in memory, with the failures a network
+    and a busy server cause."""
+
+    def __init__(self, leases=(), *, cancel_after=None, lose_on=None, flaky=0):
+        self.leases = list(leases)
+        self.calls = []
+        self.beats = 0
+        self.cancel_after = cancel_after
+        self.lose_on = lose_on
+        self.flaky = flaky
+
+    def claim(self):
+        self.calls.append(("claim",))
+        return self.leases.pop(0) if self.leases else None
+
+    def heartbeat(self, run, lease_token):
+        self.beats += 1
+        if self.lose_on == "heartbeat":
+            raise agent.LeaseLost("heartbeat")
+        cancel = self.cancel_after is not None and self.beats >= self.cancel_after
+        return {"cancel": cancel}
+
+    def events(self, run, lease_token, events):
+        self.calls.append(("events", run, events[0]["message"]))
+
+    def complete(self, run, lease_token, result, usage):
+        if self.flaky:
+            self.flaky -= 1
+            raise agent.TransportError("reset")
+        if self.lose_on == "complete":
+            raise agent.LeaseLost("complete")
+        self.calls.append(("complete", run, result, usage))
+        return {"state": "succeeded"}
+
+    def fail(self, run, lease_token, error, *, retryable):
+        self.calls.append(("fail", run, error, retryable))
+        return {"state": "queued" if retryable else "failed"}
+
+
+def _lease(run=1, kind="probe", lease_seconds=3, **payload):
+    return {
+        "id": run,
+        "kind": kind,
+        "attempt": 1,
+        "lease_token": "t",
+        "lease_seconds": lease_seconds,
+        "payload": payload,
+    }
+
+
+def _runner(client, **executors):
+    return agent.Runner(client, executors or None, backoff=lambda attempt: 0)
+
+
+def _finished(client):
+    return [call for call in client.calls if call[0] in ("complete", "fail")]
+
+
+def test_an_empty_queue_is_no_work():
+    client = FakeClient()
+    assert _runner(client).run_once() is False
+
+
+def test_a_run_is_worked_and_completed_with_its_usage():
+    client = FakeClient([_lease(question=6, cost=0.5, input_tokens=10)])
+    assert _runner(client).run_once() is True
+    [(verb, run, result, usage)] = _finished(client)
+    assert (verb, run) == ("complete", 1)
+    assert result["echo"]["question"] == 6
+    assert usage == {"input_tokens": 10, "output_tokens": 0, "cost": 0.5}
+    assert ("events", 1, "step 1 of 1") in client.calls
+
+
+def test_an_unexpected_failure_is_retryable():
+    client = FakeClient([_lease(fail="boom")])
+    _runner(client).run_once()
+    assert _finished(client) == [("fail", 1, "RuntimeError: boom", True)]
+
+
+def test_a_permanent_failure_is_not():
+    client = FakeClient([_lease(fail="no such repo", permanent=True)])
+    _runner(client).run_once()
+    assert _finished(client) == [("fail", 1, "no such repo", False)]
+
+
+def test_a_kind_it_cannot_run_fails_for_good():
+    client = FakeClient([_lease(kind="deploy")])
+    _runner(client).run_once()
+    assert _finished(client) == [("fail", 1, "this runner cannot run 'deploy'", False)]
+
+
+def test_a_cancelled_run_stops_and_is_reported_as_stopped():
+    client = FakeClient([_lease(seconds=10, lease_seconds=3)], cancel_after=1)
+    _runner(client).run_once()
+    assert _finished(client) == [("fail", 1, "stopped", False)]
+    assert client.beats == 1
+
+
+def test_a_lost_lease_reports_nothing():
+    client = FakeClient([_lease(seconds=10, lease_seconds=3)], lose_on="heartbeat")
+    _runner(client).run_once()
+    assert _finished(client) == []
+
+
+def test_a_completion_lost_on_the_network_is_sent_again():
+    client = FakeClient([_lease()], flaky=2)
+    _runner(client).run_once()
+    assert [call[0] for call in _finished(client)] == ["complete"]
+
+
+def test_a_completion_refused_for_a_lost_lease_is_given_up():
+    client = FakeClient([_lease()], lose_on="complete")
+    _runner(client).run_once()
+    assert _finished(client) == []
+
+
+def test_serve_stops_when_asked():
+    client = FakeClient([_lease()])
+    stop = threading.Event()
+    runner = agent.Runner(client, poll_seconds=0.01, backoff=lambda attempt: 0)
+    thread = threading.Thread(target=runner.serve, args=(stop,))
+    thread.start()
+    stop.set()
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+
+
+def test_the_token_is_read_from_the_environment_only(monkeypatch):
+    monkeypatch.delenv("AGENT_RUNNER_TOKEN", raising=False)
+    with pytest.raises(SystemExit):
+        agent.main(["--url", "http://127.0.0.1:1", "--once"])

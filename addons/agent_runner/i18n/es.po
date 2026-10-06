@@ -1,0 +1,923 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* agent_runner
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 19:17+0000\n"
+"PO-Revision-Date: 2026-10-06 19:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "%(run)s: %(state)s."
+msgstr "%(run)s: %(state)s."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_runner.py:0
+msgid ""
+"%(token)s\n"
+"\n"
+"It is shown once: hand it to the runner now. Any token issued before no longer works."
+msgstr "%(token)s\n\nSe muestra una sola vez: entrégalo ahora al runner. Cualquier token emitido antes deja de funcionar."
+
+#. module: agent_runner
+#: model:ir.model.constraint,message:agent_runner.constraint_agent_capability_code_uniq
+msgid "A capability with this code already exists."
+msgstr "Ya existe una capacidad con este código."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_runner.py:0
+msgid "A new token was issued."
+msgstr "Se emitió un token nuevo."
+
+#. module: agent_runner
+#: model:ir.model.constraint,message:agent_runner.constraint_agent_run_max_attempts_positive
+msgid "A run is handed out at least once."
+msgstr "Una ejecución se entrega al menos una vez."
+
+#. module: agent_runner
+#: model:ir.model.constraint,message:agent_runner.constraint_agent_runner_concurrency_positive
+msgid "A runner holds at least one run at a time."
+msgstr "Un runner tiene al menos una ejecución a la vez."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_runner.py:0
+msgid ""
+"A runner token is stored encrypted, and this server has no "
+"ODOO_API_ENCRYPTION_KEY."
+msgstr "El token de un runner se guarda cifrado, y este servidor no tiene ODOO_API_ENCRYPTION_KEY."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_needaction
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__credential_id
+msgid "Active Credential"
+msgstr "Credencial activa"
+
+#. module: agent_runner
+#: model:ir.model,name:agent_runner.model_agent_capability
+msgid "Agent Capability"
+msgstr "Capacidad de agente"
+
+#. module: agent_runner
+#: model:ir.model,name:agent_runner.model_agent_run
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Agent Run"
+msgstr "Ejecución de agente"
+
+#. module: agent_runner
+#: model:ir.model,name:agent_runner.model_agent_run_event
+msgid "Agent Run Event"
+msgstr "Evento de ejecución de agente"
+
+#. module: agent_runner
+#: model:ir.model,name:agent_runner.model_agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Agent Runner"
+msgstr "Runner de agentes"
+
+#. module: agent_runner
+#: model:ir.actions.act_window,name:agent_runner.action_agent_runner
+#: model:ir.ui.menu,name:agent_runner.menu_agent_runner_root
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_list
+msgid "Agent Runners"
+msgstr "Runners de agentes"
+
+#. module: agent_runner
+#: model:ir.actions.server,name:agent_runner.ir_cron_reap_expired_leases_ir_actions_server
+msgid "Agent Runners: Re-queue Expired Leases"
+msgstr "Runners de agentes: reencolar arrendamientos vencidos"
+
+#. module: agent_runner
+#: model:ir.actions.act_window,name:agent_runner.action_agent_run
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_list
+msgid "Agent Runs"
+msgstr "Ejecuciones de agentes"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_runner.py:0
+msgid "Agent runner token: %(runner)s [#%(id)s]"
+msgstr "Token de runner de agentes: %(runner)s [#%(id)s]"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Any token issued before stops working. Continue?"
+msgstr "Cualquier token emitido antes deja de funcionar. ¿Continuar?"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_attachment_count
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__count_attempt
+msgid "Attempts"
+msgstr "Intentos"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__auth_type
+msgid "Authentication Type"
+msgstr "Tipo de autenticación"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__contract_routes
+msgid "Called At"
+msgstr "Llamado en"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__cancelled
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Cancelled."
+msgstr "Cancelada."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__capability_ids
+msgid "Capabilities"
+msgstr "Capacidades"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__capability_id
+msgid "Capability"
+msgstr "Capacidad"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__code
+msgid "Code"
+msgstr "Código"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__ip_whitelist
+msgid ""
+"Comma-separated list of allowed IPs or CIDRs (e.g., '192.168.1.0/24, "
+"10.0.0.5'). Leave empty to allow all IPs."
+msgstr "Lista separada por comas de IP o CIDR permitidos (p. ej., '192.168.1.0/24, 10.0.0.5'). Déjala vacía para permitir todas las IP."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__company_id
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__concurrency
+msgid "Concurrency"
+msgstr "Concurrencia"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Connection"
+msgstr "Conexión"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__cost
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_list
+msgid "Cost"
+msgstr "Coste"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__create_uid
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__create_uid
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__create_date
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__create_date
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr "Huella de la credencial"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__data
+msgid "Data"
+msgstr "Datos"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__date_event
+msgid "Date"
+msgstr "Fecha"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__log_retention_days
+msgid ""
+"Delete this gate's exchange rows older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr "Elimina las filas de intercambio de esta puerta con más de estos días. 0 usa la retención definida en los ajustes de transporte de API."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr "Rechaza la solicitud cuando no se puede leer el contador del límite de frecuencia (bloqueo, tiempo de espera, error interno) en lugar de permitirla. Actívalo donde el límite sea un control de seguridad y no un tope de mejor esfuerzo."
+
+#. module: agent_runner
+#: model:agent.capability,name:agent_runner.capability_deploy
+msgid "Deploy"
+msgstr "Desplegar"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__display_name
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__display_name
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__display_name
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: agent_runner
+#: model_terms:ir.actions.act_window,help:agent_runner.action_agent_runner
+msgid ""
+"Each runner claims work of the capabilities it is given, with a token of its"
+" own."
+msgstr "Cada runner reclama trabajo de las capacidades que se le dan, con un token propio."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr "Activar límite de frecuencia"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr "Activa el límite de frecuencia con el algoritmo de cubeta de tokens"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__timestamp_verification_enabled
+msgid "Enable timestamp verification to prevent replay attacks"
+msgstr "Activa la verificación de marca de tiempo para evitar ataques de repetición"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr "Credencial cifrada para autenticación. Gestionada por credential."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__error
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run_event__event_type__error
+msgid "Error"
+msgstr "Error"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__event_ids
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Events"
+msgstr "Eventos"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__failed
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__date_finished
+msgid "Finished"
+msgstr "Terminado"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_follower_ids
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_partner_ids
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__signature_header
+msgid "HTTP header containing the HMAC signature"
+msgstr "Encabezado HTTP que contiene la firma HMAC"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__timestamp_header
+msgid "HTTP header containing the request timestamp"
+msgstr "Encabezado HTTP que contiene la marca de tiempo de la solicitud"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__has_message
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__contract_limits
+msgid "Held To"
+msgstr "Sujeto a"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__priority
+msgid "Higher first."
+msgstr "Mayor primero."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__max_attempts
+msgid ""
+"How many leases it may be handed before an expiry or a retryable failure "
+"fails it for good."
+msgstr "Cuántos arrendamientos puede recibir antes de que un vencimiento o un fallo reintentable la haga fallar definitivamente."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__concurrency
+msgid "How many runs it may hold at once."
+msgstr "Cuántas ejecuciones puede tener a la vez."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__id
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__id
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__id
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__id
+msgid "ID"
+msgstr "ID"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__message_needaction
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__message_has_error
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run_event__event_type__info
+msgid "Info"
+msgstr "Información"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__count_input_token
+msgid "Input Tokens"
+msgstr "Tokens de entrada"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__ip_whitelist
+msgid "Ip Whitelist"
+msgstr "Lista de IP permitidas"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_is_follower
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Issue Token"
+msgstr "Emitir token"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__kind
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
+msgid "Kind"
+msgstr "Clase"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__contract_last_call
+msgid "Last Call"
+msgstr "Última llamada"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__date_last_seen
+msgid "Last Seen"
+msgstr "Visto por última vez"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__write_uid
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__write_uid
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__write_date
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__write_date
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Lease"
+msgstr "Arrendamiento"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__lease_digest
+msgid "Lease Digest"
+msgstr "Resumen del arrendamiento"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__date_lease_until
+msgid "Lease Until"
+msgstr "Arrendada hasta"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__leased
+msgid "Leased"
+msgstr "Arrendada"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Leased to %(runner)s, attempt %(attempt)s."
+msgstr "Arrendada a %(runner)s, intento %(attempt)s."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__rate_limit_window_seconds
+msgid "Length of the rate-limit window in seconds."
+msgstr "Duración de la ventana del límite de frecuencia, en segundos."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__log_request_payload_max_bytes
+msgid "Log Request Payload Max Bytes"
+msgstr "Bytes máximos del cuerpo registrado"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__log_retention_days
+msgid "Log Retention Days"
+msgstr "Días de retención del registro"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__max_attempts
+msgid "Max Attempts"
+msgstr "Intentos máximos"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__max_payload_size
+msgid "Max Payload Size"
+msgstr "Tamaño máximo del cuerpo"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__rate_limit_requests
+msgid "Max Requests"
+msgstr "Solicitudes máximas"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__timestamp_max_age_seconds
+msgid "Maximum age of request timestamp. Default: 5 minutes"
+msgstr "Antigüedad máxima de la marca de tiempo de la solicitud. Predeterminado: 5 minutos"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__max_payload_size
+msgid "Maximum allowed payload size for DoS prevention. Default: 1MB"
+msgstr "Tamaño máximo permitido del cuerpo, para prevenir denegación de servicio. Predeterminado: 1 MB"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr "Número máximo de solicitudes permitidas por periodo"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__message
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_has_error
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_ids
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__auth_type
+msgid "Method used for authentication"
+msgstr "Método de autenticación"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__contract_scheme
+msgid "Must Send"
+msgstr "Debe enviar"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_capability__name
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__name
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: agent_runner
+#: model_terms:ir.actions.act_window,help:agent_runner.action_agent_run
+msgid "No run is waiting"
+msgstr "No hay ejecuciones en espera"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_needaction_counter
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_has_error_counter
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__message_needaction_counter
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__message_has_error_counter
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__is_online
+msgid "Online"
+msgstr "En línea"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Only a failed or cancelled run is retried."
+msgstr "Solo se reintenta una ejecución fallida o cancelada."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__capability_id
+msgid "Only a runner with this capability claims the run."
+msgstr "Solo un runner con esta capacidad reclama la ejecución."
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
+msgid "Open"
+msgstr "Abierto"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__count_output_token
+msgid "Output Tokens"
+msgstr "Tokens de salida"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__res_id
+msgid "Owner"
+msgstr "Propietario"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__res_model
+msgid "Owner Model"
+msgstr "Modelo propietario"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__payload
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Payload"
+msgstr "Carga efectiva"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__signature_prefix
+msgid "Prefix before signature value (e.g., 'sha256=')"
+msgstr "Prefijo antes del valor de la firma (p. ej., 'sha256=')"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__priority
+msgid "Priority"
+msgstr "Prioridad"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__kind__probe
+msgid "Probe"
+msgstr "Sonda"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run_event__event_type__progress
+msgid "Progress"
+msgstr "Progreso"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__verification_method
+msgid ""
+"Python method path for custom verification (format: 'model.method_name'). "
+"Method signature: method(headers: dict, body: str) -> bool"
+msgstr "Ruta del método Python para verificación personalizada (formato: 'model.method_name'). Firma del método: method(headers: dict, body: str) -> bool"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__queued
+msgid "Queued"
+msgstr "En cola"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__rate_limit_window_seconds
+msgid "Rate Window (s)"
+msgstr "Ventana de frecuencia (s)"
+
+#. module: agent_runner
+#: model_terms:ir.actions.act_window,help:agent_runner.action_agent_runner
+msgid "Register a runner machine"
+msgstr "Registra una máquina runner"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__result
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Result"
+msgstr "Resultado"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Retry"
+msgstr "Volver a intentar"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__run_id
+msgid "Run"
+msgstr "Ejecutar"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__runner_id
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
+msgid "Runner"
+msgstr "Runner"
+
+#. module: agent_runner
+#: model:ir.ui.menu,name:agent_runner.menu_agent_runner
+msgid "Runners"
+msgstr "Runners"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__running
+msgid "Running"
+msgstr "En curso"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__run_ids
+#: model:ir.ui.menu,name:agent_runner.menu_agent_run
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Runs"
+msgstr "Ejecuciones"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__service_user_id
+msgid "Runs As"
+msgstr "Se ejecuta como"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr "SHA-256 del secreto de la credencial. Permite verificar un token presentado, y encontrar su canal, sin descifrar nada."
+
+#. module: agent_runner
+#: model:agent.capability,name:agent_runner.capability_sandbox
+msgid "Sandbox"
+msgstr "Entorno de pruebas"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__signature_header
+msgid "Signature Header"
+msgstr "Encabezado de firma"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__signature_prefix
+msgid "Signature Prefix"
+msgstr "Prefijo de firma"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__date_started
+msgid "Started"
+msgstr "Iniciado"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__run_state
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
+msgid "State"
+msgstr "Provincia"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__log_request_payload_max_bytes
+msgid ""
+"Store at most this many bytes of each request body on the integration.exchange row; 0 keeps the whole body.\n"
+"\n"
+"For an endpoint that accepts a file the body is the file: a phone posting a call recording as base64 wrote roughly 48 MB of text into a log column, beside the same audio already stored as an attachment. Duplicate detection is unaffected -- the hash of the body as received is kept either way. Ignored for an asynchronous endpoint, where the stored body is the work queue and not merely a record of it."
+msgstr "Guarda como máximo estos bytes del cuerpo de cada solicitud en la fila de integration.exchange; 0 guarda el cuerpo completo.\n\nEn un endpoint que acepta un archivo, el cuerpo es el archivo: un teléfono que enviaba una grabación de llamada en base64 escribía unos 48 MB de texto en una columna de registro, junto al mismo audio ya guardado como adjunto. La detección de duplicados no cambia: el hash del cuerpo recibido se guarda en cualquier caso. Se ignora en un endpoint asíncrono, donde el cuerpo guardado es la cola de trabajo y no solo su registro."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr "Límite de frecuencia estricto"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run__run_state__succeeded
+msgid "Succeeded"
+msgstr "Exitosa"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Succeeded."
+msgstr "Exitosa."
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run_event__event_type__system
+msgid "System"
+msgstr "Sistema"
+
+#. module: agent_runner
+#: model:agent.capability,name:agent_runner.capability_test
+msgid "Test"
+msgstr "Prueba"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_last_call
+msgid ""
+"The body of the last call this gate admitted, as it was logged (masked, and "
+"capped at the gate's own payload limit)."
+msgstr "El cuerpo de la última llamada que admitió esta puerta, tal como se registró (enmascarado y limitado al tope de cuerpo de la propia puerta)."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_limits
+msgid "The caps a call is refused for crossing."
+msgstr "Los topes cuyo cruce hace rechazar una llamada."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__company_id
+msgid ""
+"The company its calls are recorded under. The runs it claims may belong to "
+"any company it is allowed to serve."
+msgstr "La empresa bajo la que se registran sus llamadas. Las ejecuciones que reclama pueden pertenecer a cualquier empresa a la que pueda servir."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__capability_ids
+msgid "The kinds of work this runner may claim."
+msgstr "Los tipos de trabajo que este runner puede reclamar."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "The lease held by %(runner)s expired."
+msgstr "Venció el arrendamiento que tenía %(runner)s."
+
+#. module: agent_runner
+#: model_terms:ir.actions.act_window,help:agent_runner.action_agent_run
+msgid "The modules that hand work to runners queue it here."
+msgstr "Los módulos que entregan trabajo a los runners lo encolan aquí."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_routes
+msgid "The routes that reach this gate, as the server serves them."
+msgstr "Las rutas que llegan a esta puerta, tal como las sirve el servidor."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "The runner gave no reason."
+msgstr "El runner no dio ningún motivo."
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "The runner stopped answering."
+msgstr "El runner dejó de responder."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__service_user_id
+msgid ""
+"The service principal an admitted call runs as, instead of the public user: "
+"what it writes is its own, and its grants are what it may do."
+msgstr "El principal de servicio con el que se ejecuta una llamada admitida, en lugar del usuario público: lo que escribe es suyo, y sus permisos son lo que puede hacer."
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__timestamp_header
+msgid "Timestamp Header"
+msgstr "Encabezado de marca de tiempo"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__timestamp_max_age_seconds
+msgid "Timestamp Max Age Seconds"
+msgstr "Antigüedad máxima de la marca de tiempo (s)"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__timestamp_verification_enabled
+msgid "Timestamp Verification Enabled"
+msgstr "Verificación de marca de tiempo activada"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Token Fingerprint"
+msgstr "Huella del token"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_runner.py:0
+msgid "Token for %(runner)s"
+msgstr "Token de %(runner)s"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__event_type
+msgid "Type"
+msgstr "Tipo"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+msgid "Usage"
+msgstr "Uso"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_runner__verification_method
+msgid "Verification Method"
+msgstr "Método de verificación"
+
+#. module: agent_runner
+#: model:ir.model.fields.selection,name:agent_runner.selection__agent_run_event__event_type__warning
+msgid "Warning"
+msgstr "Advertencia"
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_capability__code
+msgid "What a runner names to claim work of this kind."
+msgstr "Lo que un runner nombra para reclamar trabajo de este tipo."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_scheme
+msgid "What the caller proves itself with."
+msgstr "Con qué se identifica quien llama."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__result
+msgid "What the runner handed back."
+msgstr "Lo que devolvió el runner."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr "Lo que se pide al runner; los módulos que entregan trabajo añaden los suyos."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__payload
+msgid "What the runner is handed."
+msgstr "Lo que se entrega al runner."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__company_id
+msgid "Whose budget the run's spend counts against."
+msgstr "A cargo de qué presupuesto cuenta el gasto de la ejecución."
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_form
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "Work"
+msgstr "Trabajo"
+
+#. module: agent_runner
+#: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_runner_form
+msgid "e.g. runner-1"
+msgstr "p. ej. runner-1"
