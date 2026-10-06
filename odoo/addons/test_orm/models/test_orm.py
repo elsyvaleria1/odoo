@@ -674,6 +674,52 @@ class TestOrmComputeSudo(models.Model):
             record.name_for_uid = self.env.user.name
 
 
+class TestOrmComputeCommands(models.Model):
+    _name = "test_orm.compute.commands"
+    _description = "Non-stored one2many fields computed from command lists"
+
+    user_ids = fields.Many2many(comodel_name="res.users")
+    linked_user_ids = fields.One2many(
+        comodel_name="res.users",
+        compute="_compute_linked_user_ids",
+    )
+    working_user_ids = fields.One2many(
+        comodel_name="res.users",
+        compute="_compute_working_user_ids",
+    )
+    last_working_user_id = fields.Many2one(
+        comodel_name="res.users",
+        compute="_compute_working_user_ids",
+    )
+    watcher_ids = fields.Many2many(
+        comodel_name="res.users",
+        compute="_compute_watcher_ids",
+    )
+
+    @api.depends("user_ids")
+    def _compute_linked_user_ids(self):
+        for record in self:
+            record.linked_user_ids = [Command.link(user.id) for user in record.user_ids]
+
+    # the shape of mrp.workorder's working users: a compute that depends on
+    # the context and reads back the command list it assigned
+    @api.depends("user_ids")
+    @api.depends_context("uid")
+    def _compute_working_user_ids(self):
+        for record in self:
+            record.working_user_ids = [
+                Command.link(user.id) for user in record.user_ids
+            ]
+            record.last_working_user_id = record.working_user_ids[-1:]
+
+    @api.depends("user_ids")
+    @api.depends_context("uid")
+    def _compute_watcher_ids(self):
+        for record in self:
+            record.watcher_ids = [Command.link(user.id) for user in record.user_ids]
+            _ = record.watcher_ids  # read back, as the one2many compute does
+
+
 class TestOrmMulti_Compute_Inverse(models.Model):
     _name = "test_orm.multi_compute_inverse"
     _description = "Test ORM Multi Compute Inverse"

@@ -238,6 +238,34 @@ class One2many(_RelationalMulti):
             lines=len(lines),
         )
 
+    def _assign_current_value(self, recs: BaseModel) -> None:
+        # A command list assigned to a record whose field is under protection
+        # (its compute is running) is the record's value afterwards, whatever
+        # its commands change. Only a command that touches the relation writes
+        # the cache, so a record with nothing cached starts from the value it
+        # reads -- empty while its compute runs -- and holds it: an empty list,
+        # or one of updates only, assigns the field instead of leaving its
+        # compute "failed to assign". The read alone does not cache when the
+        # field depends on more of the context than access
+        # (get_cache_miss_by_compute).
+        protected = recs.env.core.get_protected_ids(self)
+        if not protected:
+            return
+        unassigned = [
+            id_ for id_ in self._iter_cache_missing_ids(recs) if id_ in protected
+        ]
+        if not unassigned:
+            return
+        _debug.logic(
+            "field.one2many.current_value_assigned",
+            model=self.model_name,
+            field=self.name,
+            records=len(recs),
+            unassigned=len(unassigned),
+        )
+        for record in recs.browse(unassigned):
+            self._update_cache(record, record[self.name]._ids)
+
     def _write_nonstored_commands(
         self,
         records: BaseModel,
@@ -272,6 +300,8 @@ class One2many(_RelationalMulti):
             if delta.replaced:
                 self._update_cache(recs, ())
                 self._update_cache(recs[-1], browse_lines(delta.set_ids)._ids)
+            else:
+                self._assign_current_value(recs)
             for ref, vals in delta.created:
                 for record in recs:
                     link(record, comodel.new(vals, ref=ref))

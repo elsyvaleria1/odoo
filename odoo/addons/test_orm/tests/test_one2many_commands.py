@@ -43,3 +43,62 @@ class TestOne2manyCommandsOnTheDatabase(TransactionCase):
             {("test_orm.inverse_m2o_ref", holder.id)},
         )
         self.assertEqual(holder.model_ids, refs)
+
+
+class TestComputedOne2manyCommandList(TransactionCase):
+    """A command list assigned by the compute of a non-stored one2many is the
+    field's value, even when no command changes anything"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = cls.env["res.users"].create({"name": "Worker", "login": "worker"})
+
+    def test_an_empty_command_list_assigns_an_empty_value(self):
+        record = self.env["test_orm.compute.commands"].create({})
+        self.assertFalse(record.linked_user_ids)
+        self.assertEqual(record.read(["linked_user_ids"])[0]["linked_user_ids"], [])
+
+    def test_an_empty_command_list_read_back_in_a_context_dependent_compute(self):
+        record = self.env["test_orm.compute.commands"].create({})
+        self.assertFalse(record.working_user_ids)
+        self.assertFalse(record.last_working_user_id)
+        self.env.invalidate_all()
+        self.assertEqual(record.read(["working_user_ids"])[0]["working_user_ids"], [])
+
+    def test_a_link_list_assigns_the_linked_records(self):
+        record = self.env["test_orm.compute.commands"].create(
+            {"user_ids": [Command.set(self.user.ids)]}
+        )
+        self.assertEqual(record.linked_user_ids, self.user)
+        self.assertEqual(record.working_user_ids, self.user)
+        self.assertEqual(record.last_working_user_id, self.user)
+
+    def test_a_batch_mixing_empty_and_linked_values(self):
+        empty, linked = self.env["test_orm.compute.commands"].create(
+            [{}, {"user_ids": [Command.set(self.user.ids)]}]
+        )
+        self.env.invalidate_all()
+        records = empty + linked
+        self.assertEqual(
+            [r["working_user_ids"] for r in records.read(["working_user_ids"])],
+            [[], self.user.ids],
+        )
+        self.assertEqual(
+            [r["linked_user_ids"] for r in records.read(["linked_user_ids"])],
+            [[], self.user.ids],
+        )
+
+    def test_a_new_record_assigns_an_empty_value(self):
+        record = self.env["test_orm.compute.commands"].new({})
+        self.assertFalse(record.linked_user_ids)
+        self.assertFalse(record.working_user_ids)
+        self.assertFalse(record.watcher_ids)
+
+    def test_a_many2many_gets_the_same_contract(self):
+        empty, linked = self.env["test_orm.compute.commands"].create(
+            [{}, {"user_ids": [Command.set(self.user.ids)]}]
+        )
+        self.env.invalidate_all()
+        self.assertFalse(empty.watcher_ids)
+        self.assertEqual(linked.watcher_ids, self.user)
