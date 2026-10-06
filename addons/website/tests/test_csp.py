@@ -64,6 +64,26 @@ class TestWebsiteScriptPolicy(CspPageAssertions, HttpCase):
             # nor does it hold its boot for every artifact the server compiles
             self.assertIn('"await_precompiled_templates": false', response.text, url)
 
+    def test_a_page_an_editor_opens_starts_its_public_app_in_dev_mode(self):
+        # a test run is OWL's dev mode, which awaits no artifact: the page
+        # compiles in the browser, with a compiler no bundle of it imports
+        page_ready = "document.body.getAttribute('is-ready') === 'true'"
+        preview_ready = (
+            "document.querySelector('.o_iframe_container iframe:not(.o_ignore_in_tour)')"
+            "?.contentDocument?.body?.getAttribute('is-ready') === 'true'"
+        )
+        for url, ready in (
+            ("/?debug=1", page_ready),
+            ("/odoo/action-website.website_preview?debug=1", preview_ready),
+        ):
+            with self.subTest(url=url):
+                self.browser_js(
+                    url,
+                    "console.log('test successful')",
+                    ready=ready,
+                    login="admin",
+                )
+
     def test_a_cached_page_hands_no_visitor_another_visitors_session(self):
         WebsitePage = type(self.env["website.page"])
         self.url_open("/")

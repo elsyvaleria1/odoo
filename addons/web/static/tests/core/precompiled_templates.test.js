@@ -3,6 +3,7 @@
 import { after, describe, expect, getFixture, test } from "@odoo/hoot";
 import { App, Component, TemplateSet, xml } from "@odoo/owl";
 import { patchTranslations, patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { assets } from "@web/core/assets";
 import {
     precompiledTemplatesService,
     precompiledTemplatesUrl,
@@ -407,4 +408,24 @@ test("a page whose server has no precompiler neither asks for an artifact nor wa
         { localization: { code: "en_US", translationsHash: "0123456789abcdef" } },
     );
     expect(templates.bundleListeners.size).toBe(listeners);
+});
+
+test("a page that compiles in the browser has OWL's compiler before the service starts", async () => {
+    const compiler = TemplateSet.compiler;
+    /** @type {string[][]} */
+    const loaded = [];
+    patchWithCleanup(TemplateSet, { compiler: null });
+    patchWithCleanup(assets, {
+        async loadESMBundle(specifiers) {
+            loaded.push(specifiers);
+            TemplateSet.compiler = compiler;
+        },
+    });
+    patchWithCleanup(session, { await_precompiled_templates: false });
+    await precompiledTemplatesService.start(
+        { debug: "1" },
+        { localization: { code: "en_US", translationsHash: "0123456789abcdef" } },
+    );
+    expect(loaded).toEqual([["@odoo/owl/compiler"]]);
+    expect(TemplateSet.compiler).toBe(compiler);
 });
