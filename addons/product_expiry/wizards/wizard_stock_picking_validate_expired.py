@@ -76,7 +76,7 @@ class WizardStockPickingValidateExpired(models.TransientModel):
 
     def process_no_expired(self):
         pickings = self._get_pickings_to_validate()
-        self.picking_ids.move_line_ids._filtered_expired().unlink()
+        self.picking_ids._get_expired_move_lines().unlink()
         remaining = pickings.filtered("move_line_ids")
         emptied = pickings - remaining
         if emptied:

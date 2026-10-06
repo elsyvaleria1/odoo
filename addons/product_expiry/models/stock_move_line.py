@@ -98,6 +98,23 @@ class StockMoveLine(models.Model):
             )
         )
 
+    def _filtered_leaving_warehouse(self) -> Self:
+        """Return the lines that do not just move goods between two internal
+        locations of the same warehouse.
+
+        :rtype: recordset
+        """
+        return self.filtered(
+            lambda ml: (
+                not (
+                    ml.location_id.usage == "internal"
+                    and ml.location_dest_id.usage == "internal"
+                    and ml.location_id.warehouse_id
+                    and ml.location_id.warehouse_id == ml.location_dest_id.warehouse_id
+                )
+            )
+        )
+
     def _prepare_new_lot_vals(self):
         vals = super()._prepare_new_lot_vals()
         if self.expiration_date:
