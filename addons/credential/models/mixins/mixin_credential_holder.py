@@ -124,6 +124,13 @@ class MixinCredentialHolder(models.AbstractModel):
     def _get_held_secret(self, key: str):
         return self._get_held_secrets().get(key) or False
 
+    def _get_held_main_secret(self, prefer: str):
+        """The held credential's one secret, wherever its form stored it:
+        under `prefer` in a JSON payload, else the single value of a simple
+        one -- as `credential.credential._use_secret` reads it."""
+        secrets = self._get_held_secrets()
+        return secrets.get(prefer) or secrets.get("credential_value") or False
+
     def _post_held_oauth2_refresh_grant(
         self, token_url, refresh_key, client_auth, *, purpose, **options
     ):

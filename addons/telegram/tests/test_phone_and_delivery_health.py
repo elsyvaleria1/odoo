@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
-from odoo import Command
+from odoo import SUPERUSER_ID, Command
 from odoo.tests import tagged
 
 from ..tools import errors
+from ..tools.telegram_client import TelegramClient
 from .common import TelegramBotTestCase
 
 _CALL = "odoo.addons.telegram.tools.telegram_client.TelegramClient.call"
@@ -254,3 +255,133 @@ class TestChatSearch(TelegramBotTestCase):
         self.assertNotIn(
             self.test_chat, chats.search([("display_name", "ilike", "no-such-chat")])
         )
+
+
+class TestBotTokenStorage(TelegramBotTestCase):
+    """A bot reads its token whichever way its credential holds it: the
+    form's Secret Value, or the bearer_token field."""
+
+    def test_a_token_kept_as_the_secret_value_is_read(self):
+        credential = self.env["credential.credential"].create(
+            {
+                "name": "Simple Bot Credential",
+                "category_id": self.env.ref(
+                    "credential.credential_category_bearer_token"
+                ).id,
+                "endpoint_id": self.env.ref("telegram.service_telegram").id,
+                "credential_value": "423456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew99",
+            }
+        )
+        bot = self.env["telegram.bot"].create(
+            {"name": "Simple Bot", "credential_id": credential.id}
+        )
+
+        self.assertEqual(
+            bot._get_bot_token(), "423456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew99"
+        )
+        self.assertEqual(bot._telegram_id(), "423456789")
+
+    def test_a_token_kept_as_bearer_token_is_read(self):
+        self.assertEqual(self.test_bot._get_bot_token(), self.TEST_BOT_TOKEN)
+
+    def _bot_without_token(self):
+        credential = self.env["credential.credential"].create(
+            {
+                "name": "Later Bot Credential",
+                "category_id": self.env.ref(
+                    "credential.credential_category_bearer_token"
+                ).id,
+                "endpoint_id": self.env.ref("telegram.service_telegram").id,
+            }
+        )
+        return self.env["telegram.bot"].create(
+            {"name": "Later Bot", "credential_id": credential.id}
+        )
+
+    def test_a_secret_value_saved_later_names_the_bot_s_webhook(self):
+        bot = self._bot_without_token()
+        self.assertFalse(bot.token_hash)
+        token = "523456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew98"
+
+        bot.credential_id.credential_value = token
+
+        self.assertEqual(bot.token_hash, bot._hash_token(token))
+        self.assertEqual(self.env["telegram.bot"].find_by_token(token), bot)
+        self.assertTrue(bot.token_masked.startswith("523456789:"))
+
+    def test_registering_never_hands_telegram_a_url_that_names_no_bot(self):
+        bot = self._bot_without_token()
+        token = "623456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew97"
+        bot.credential_id.credential_value = token
+        # a hash stored while the token could not be read
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE telegram_bot SET token_hash = NULL WHERE id = %s", (bot.id,)
+        )
+        bot.invalidate_recordset(["token_hash"])
+
+        urls = []
+        with (
+            patch.object(
+                TelegramClient,
+                "set_webhook",
+                autospec=True,
+                side_effect=lambda client, url, secret: urls.append(url) or True,
+            ),
+            patch.object(type(bot), "_read_identity", autospec=True),
+        ):
+            bot.action_register_webhook()
+
+        self.assertEqual(
+            urls, [f"{bot.get_base_url()}/telegram/webhook/{bot._hash_token(token)}"]
+        )
+
+    def test_registering_a_bot_without_a_token_is_refused(self):
+        bot = self._bot_without_token()
+
+        with patch.object(TelegramClient, "set_webhook", autospec=True) as set_webhook:
+            with self.assertRaises(ValueError):
+                bot.action_register_webhook()
+
+        self.assertFalse(set_webhook.called)
+
+
+class TestOutboxRunner(TelegramBotTestCase):
+    """A message queued while answering an update no Odoo user sent -- the
+    webhook's public user, an inactive one -- is still delivered."""
+
+    def _run(self, message):
+        job = (
+            self.env["ir.job"]
+            .sudo()
+            .search([("identity_key", "=", f"telegram.message:{message.id}")])
+        )
+        with (
+            patch(_CALL, return_value={"message_id": 51}),
+            patch.object(
+                type(self.env["telegram.message"]),
+                "_consume_send_budget",
+                lambda _self: True,
+            ),
+        ):
+            job.action_run_now()
+        return job
+
+    def test_a_message_queued_as_the_public_user_is_sent(self):
+        public = self.env.ref("base.public_user")
+        bot = self.test_bot.with_user(public)
+
+        message = bot._queue_text(self.unlinked_chat.with_user(public), "Hola")
+        job = self._run(message)
+
+        self.assertEqual(job.user_id.id, SUPERUSER_ID)
+        self.assertEqual(message.sudo().state, "sent")
+
+    def test_a_message_queued_by_a_user_runs_as_that_user(self):
+        message = self.test_bot.with_user(self.test_user)._queue_text(
+            self.test_chat, "Hola"
+        )
+        job = self._run(message)
+
+        self.assertEqual(job.user_id, self.test_user)
+        self.assertEqual(message.sudo().state, "sent")

@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.exceptions import RetryableJobError
 from odoo.libs.json import dumps as json_dumps
 from odoo.models import GC_UNLINK_LIMIT
@@ -449,10 +449,21 @@ class TelegramMessage(models.Model):
                 **vals,
             }
         )
-        message.delayed(
+        message._get_delivery_runner().delayed(
             identity_key=f"telegram.message:{message.id}", eta=eta
         )._deliver()
         return message
+
+    def _get_delivery_runner(self):
+        """This message, as the user its delivery job runs as: whoever queued
+        it, unless they can run no job -- a webhook's public user is inactive,
+        and the job runner refuses a job of an inactive user, so an answer to
+        an update that no Odoo user sent would never go out. That job runs as
+        the system user instead, which `_deliver` acts through only by the
+        bot's privilege, as it does for anyone."""
+        if self.env.user.active:
+            return self
+        return self.with_user(SUPERUSER_ID)
 
     def action_resend(self):
         """Send again a message whose outcome is unknown or that failed: a

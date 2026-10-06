@@ -172,7 +172,7 @@ class TelegramBot(models.Model):
         if not self.credential_id or not keeping(self).credential_id.active:
             return False
         try:
-            return self._get_held_secret("bearer_token")
+            return self._get_held_main_secret("bearer_token")
         except UserError as e:
             _logger.warning(
                 "Could not read the token of bot '%s': %s",
@@ -243,7 +243,13 @@ class TelegramBot(models.Model):
         self.check_access("write")
         for bot in self:
             bot._update_webhook_secret_if_inactive()
-            bot._get_bot_token()  # refuses a bot whose credential is archived
+            # refuses a bot whose credential is archived or holds no token
+            token = bot._get_bot_token()
+            if bot.token_hash != self._hash_token(token):
+                # the URL names the token's hash: one stored before the token
+                # was readable would send Telegram's updates to no bot
+                self.env.add_to_compute(self._fields["token_hash"], bot)
+                bot.flush_recordset(["token_hash"])
             bot._get_telegram_client().set_webhook(
                 f"{bot.get_base_url()}/telegram/webhook/{bot.token_hash}",
                 bot._webhook_secret(),
@@ -355,7 +361,7 @@ class TelegramBot(models.Model):
                 f"air on purpose. Unarchive the credential to send again."
             )
 
-        token = self._get_held_secret("bearer_token")
+        token = self._get_held_main_secret("bearer_token")
         if not token:
             raise ValueError(
                 f"Bot '{self.name}' credential has no bearer_token configured."
