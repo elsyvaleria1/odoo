@@ -164,15 +164,15 @@ msgid "Activity Type Icon"
 msgstr ""
 
 #. module: integration_twilio
-#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_alert_user_id
-#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_alert_user_id
-msgid "Alert"
-msgstr ""
-
-#. module: integration_twilio
 #: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__amount_twilio_balance_alert
 #: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__amount_twilio_balance_alert
 msgid "Alert Below"
+msgstr ""
+
+#. module: integration_twilio
+#: model:ir.model.fields,field_description:integration_twilio.field_integration_twilio_config__twilio_alert_user_id
+#: model:ir.model.fields,field_description:integration_twilio.field_wizard_integration_twilio_config_update__twilio_alert_user_id
+msgid "Alert User"
 msgstr ""
 
 #. module: integration_twilio

@@ -97,3 +97,25 @@ class TestSmsTwilio(MockSmsTwilio, TransactionCase):
             notif = wizard.action_send_test()
         message = notif["params"]["message"]
         self.assertEqual(message, "The SMS has been sent from False")
+
+
+@tagged("post_install", "-at_install", "twilio", "twilio_manage")
+class TestTwilioAccountForm(TransactionCase):
+    def test_the_form_saves_sid_and_token_together(self):
+        company = self.env["res.company"].create({"name": "Fresh Twilio Co"})
+        wizard = (
+            self.env["wizard.integration.twilio.config.update"]
+            .with_company(company)
+            .create(
+                {
+                    "company_id": company.id,
+                    "twilio_account_sid": "AC" + "b" * 32,
+                    "twilio_auth_token": "fresh-token",
+                }
+            )
+        )
+        config = company.integration_twilio_config_id.sudo()
+        self.assertEqual(config.twilio_account_sid, "AC" + "b" * 32)
+        self.assertEqual(config.twilio_auth_token, "fresh-token")
+        wizard.write({"twilio_auth_token": "rotated-token"})
+        self.assertEqual(config.twilio_auth_token, "rotated-token")

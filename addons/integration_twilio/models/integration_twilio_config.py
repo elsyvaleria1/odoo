@@ -111,7 +111,7 @@ class IntegrationTwilioConfig(models.Model):
     )
     twilio_alert_user_id = fields.Many2one(
         comodel_name="res.users",
-        string="Alert",
+        string="Alert User",
         domain="[('share', '=', False)]",
         help="Who is given an activity when the account is suspended or its "
         "balance falls under the alert amount; the administrator when empty.",

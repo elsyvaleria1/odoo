@@ -1,6 +1,6 @@
 import logging
 
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.integration.tools import CommError
@@ -60,6 +60,33 @@ class WizardIntegrationTwilioConfigUpdate(models.TransientModel):
         readonly=False,
     )
     test_number = fields.Char()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # the SID and the token are one credential: written apart, the vault
+        # would hold a username without its password and refuse it
+        accounts = [self._pop_account_vals(vals) for vals in vals_list]
+        wizards = super().create(vals_list)
+        for wizard, account in zip(wizards, accounts, strict=True):
+            if account:
+                wizard.company_id.integration_twilio_config_id.write(account)
+        return wizards
+
+    def write(self, vals):
+        vals = dict(vals)
+        account = self._pop_account_vals(vals)
+        result = super().write(vals)
+        if account:
+            self.company_id.integration_twilio_config_id.write(account)
+        return result
+
+    @api.model
+    def _pop_account_vals(self, vals) -> dict:
+        return {
+            name: vals.pop(name)
+            for name in ("twilio_account_sid", "twilio_auth_token")
+            if name in vals
+        }
 
     def action_check_account(self) -> dict:
         self.company_id.integration_twilio_config_id.action_check_account()
