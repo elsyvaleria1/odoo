@@ -1,5 +1,7 @@
+from collections.abc import Iterable
+
 from odoo import api, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -7,6 +9,10 @@ from odoo.tools import SQL
 from odoo.addons.document.tools import UserFolder
 
 _debug = DebugLog(__name__)
+
+
+def _id_of(value: models.BaseModel | int | bool | None) -> int | bool:
+    return value.id if isinstance(value, models.BaseModel) else value or False
 
 
 class DocumentsDocument(models.Model):
@@ -213,6 +219,39 @@ class DocumentsDocument(models.Model):
             "user_folder_resolved", kind=user_folder.kind, sets=sorted(new_vals)
         )
         vals.update(new_vals)
+
+    @api.model
+    def _raise_if_filed_into_others_drive(self, owner_ids: Iterable[int]) -> None:
+        # a document without a folder sits in its owner's My Drive, which only
+        # they, a Documents manager, or a server flow holding the privilege fill
+        others = {owner_id for owner_id in owner_ids if owner_id} - {self.env.uid}
+        if (
+            not others
+            or self._is_documents_manager()
+            or self._holds_privilege("document.privilege_file_into_drive")
+        ):
+            return
+        _debug.logic("drive_placement_refused", owners=sorted(others))
+        raise AccessError(
+            self.env._(
+                "Only a Documents manager can put a document in another user's My Drive."
+            )
+        )
+
+    def _write_check_drive_placement_before(self, vals: dict) -> None:
+        if "owner_id" not in vals and "folder_id" not in vals:
+            return
+        owner_ids = []
+        for document in self:
+            owner_id = _id_of(vals.get("owner_id", document.owner_id))
+            folder_id = _id_of(vals.get("folder_id", document.folder_id))
+            moved = (owner_id, folder_id) != (
+                document.owner_id.id,
+                document.folder_id.id,
+            )
+            if moved and not folder_id:
+                owner_ids.append(owner_id)
+        self._raise_if_filed_into_others_drive(owner_ids)
 
     @api.model
     def _get_domain_child_of_documents(

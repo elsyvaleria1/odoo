@@ -102,7 +102,14 @@ class HrPayrollEmployeeDeclaration(models.Model):
                 )
 
         _debug.pipeline("declaration_post", lines=lines_to_post)
-        posted_documents = self.env["document.document"].create(create_vals)
+        posted_documents = (
+            self.env["document.document"]
+            .with_privilege(
+                "document.privilege_file_into_drive",
+                reason="payroll_declaration_posted",
+            )
+            .create(create_vals)
+        )
         for line_to_post, posted_document in zip(
             lines_to_post, posted_documents, strict=True
         ):

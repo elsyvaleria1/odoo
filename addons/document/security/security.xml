@@ -51,6 +51,13 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_file_into_drive" model="res.groups">
+        <field name="name">File Documents into a User's My Drive</field>
+        <field
+            name="comment">A document without a folder sits in its owner's My Drive, which only its owner or a Documents manager fills. Code that files a document there on the owner's behalf (a payroll declaration posted to its employee) holds this privilege.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="privilege_thumbnails" model="res.groups">
         <field name="name">Render and Show Document Thumbnails</field>
         <field

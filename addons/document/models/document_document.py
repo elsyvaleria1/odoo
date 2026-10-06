@@ -868,6 +868,7 @@ class DocumentsDocument(models.Model):
         writes_content, has_content = self._write_content_flags(vals)
         self._write_check_lock_before(vals, writes_content)
         previous_owner_access_to_keep = self._write_check_owner_before(vals, is_manager)
+        self._write_check_drive_placement_before(vals)
 
         move = self._write_plan_move_before(vals)
         if move.resolved_vals is not None:
@@ -2862,7 +2863,13 @@ class DocumentsDocument(models.Model):
                     strict=True,
                 )
             )
-        return [prepared_by_position[position] for position in range(len(vals_list))]
+        prepared = [
+            prepared_by_position[position] for position in range(len(vals_list))
+        ]
+        self._raise_if_filed_into_others_drive(
+            vals.get("owner_id") for vals in prepared if not vals.get("folder_id")
+        )
+        return prepared
 
     def _prepare_create_values_for_model(
         self, res_model: str | bool, vals_list: list[dict], pre_vals_list: list[dict]

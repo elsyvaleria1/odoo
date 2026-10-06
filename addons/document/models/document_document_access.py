@@ -931,13 +931,13 @@ class DocumentsDocument(models.Model):
             [*fields_written, *(field.name for field in permissions), *dependents]
         )
 
+    @api.model
+    def _holds_privilege(self, name: str) -> bool:
+        privilege = self.env.registry.access_policy.privilege_ids(self.env, (name,))
+        return bool(privilege & self.env.privileges)
+
     def _may_manage_access(self) -> bool:
-        if self.env.su:
-            return True
-        privilege = self.env.registry.access_policy.privilege_ids(
-            self.env, ("document.privilege_share_documents",)
-        )
-        if privilege & self.env.privileges:
+        if self.env.su or self._holds_privilege("document.privilege_share_documents"):
             return True
         return all(self.mapped("user_can_manage"))
 

@@ -814,6 +814,105 @@ class TestDocumentsLockHandsOff(TransactionCaseDocuments):
 
 
 @tagged("post_install", "-at_install")
+class TestDocumentsDrivePlacement(TransactionCaseDocuments):
+    """Another user's My Drive is filled by them, a manager, or a privileged flow."""
+
+    def _refused(self, change):
+        with self.assertRaises(AccessError):
+            with self.env.cr.savepoint():
+                change()
+
+    def test_creating_into_another_users_drive_is_refused(self):
+        Documents = self.env["document.document"].with_user(self.doc_user)
+        foreign = {"name": "planted.txt", "owner_id": self.internal_user.id}
+        self._refused(lambda: Documents.create(foreign))
+        self._refused(
+            lambda: Documents.with_context(
+                default_owner_id=self.internal_user.id
+            ).create({"name": "planted by default.txt"})
+        )
+        self.assertFalse(
+            self.env["document.document"].search(
+                [("name", "in", ("planted.txt", "planted by default.txt"))]
+            )
+        )
+
+    def test_another_owner_inside_a_folder_is_allowed(self):
+        document = (
+            self.env["document.document"]
+            .with_user(self.doc_user)
+            .create(
+                {
+                    "name": "filed for them.txt",
+                    "owner_id": self.internal_user.id,
+                    "folder_id": self.folder_a.id,
+                }
+            )
+        )
+        self.assertEqual(document.owner_id, self.internal_user)
+
+    def test_giving_away_or_moving_into_another_users_drive_is_refused(self):
+        own_root, theirs_in_folder = self.env["document.document"].create(
+            [
+                {"name": "mine.txt", "owner_id": self.doc_user.id},
+                {
+                    "name": "theirs.txt",
+                    "owner_id": self.internal_user.id,
+                    "folder_id": self.folder_a.id,
+                    "access_ids": [
+                        Command.create(
+                            {"partner_id": self.doc_user.partner_id.id, "role": "edit"}
+                        )
+                    ],
+                },
+            ]
+        )
+        self._refused(
+            lambda: own_root.with_user(self.doc_user).write(
+                {"owner_id": self.internal_user.id}
+            )
+        )
+        self._refused(
+            lambda: theirs_in_folder.with_user(self.doc_user).write(
+                {"folder_id": False}
+            )
+        )
+        self.assertEqual(own_root.owner_id, self.doc_user)
+        self.assertEqual(theirs_in_folder.folder_id, self.folder_a)
+
+        own_root.with_user(self.doc_user).write(
+            {"owner_id": self.internal_user.id, "folder_id": self.folder_a.id}
+        )
+        self.assertEqual(own_root.owner_id, self.internal_user)
+
+    def test_a_document_already_in_their_drive_stays_editable(self):
+        theirs = self.env["document.document"].create(
+            {
+                "name": "theirs at root.txt",
+                "owner_id": self.internal_user.id,
+                "access_ids": [
+                    Command.create(
+                        {"partner_id": self.doc_user.partner_id.id, "role": "edit"}
+                    )
+                ],
+            }
+        )
+        theirs.with_user(self.doc_user).write({"name": "renamed.txt"})
+        theirs.with_user(self.doc_user).write({"folder_id": False})
+        self.assertEqual(theirs.name, "renamed.txt")
+
+    def test_a_manager_or_a_privileged_flow_files_into_their_drive(self):
+        Documents = self.env["document.document"]
+        filed = Documents.with_user(self.document_manager).create(
+            {"name": "by manager.txt", "owner_id": self.internal_user.id}
+        ) | Documents.with_user(self.doc_user).with_privilege(
+            "document.privilege_file_into_drive", reason="test"
+        ).create({"name": "by flow.txt", "owner_id": self.internal_user.id})
+        self.assertEqual(filed.owner_id, self.internal_user)
+        self.assertFalse(filed.folder_id)
+
+
+@tagged("post_install", "-at_install")
 class TestDocumentsAccessInheritance(TransactionCaseDocuments):
     def test_empty_access_ids_opts_out_of_inheritance(self):
         self.folder_a.action_update_access_rights(
