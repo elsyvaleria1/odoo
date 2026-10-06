@@ -31,7 +31,8 @@ const EMPTY_SEARCH_MEMO_LIMIT = 64;
 
 /**
  * @param {Object} params
- * @param {string} params.resModel
+ * @param {string | (() => string)} params.resModel the model, or what reads
+ *  it when the dialog opens, for a field whose model changes with the record
  * @param {Object} params.activeActions
  * @param {Function} params.onSelected
  * @param {Function} [params.onCreateEdit]
@@ -58,7 +59,7 @@ export function useSelectCreate({
                 isToMany !== undefined
                     ? isToMany && (activeActions.link ?? true)
                     : (activeActions.link ?? false),
-            resModel,
+            resModel: typeof resModel === "function" ? resModel() : resModel,
             context,
             domain,
             onSelected,
@@ -83,6 +84,9 @@ export class Many2XAutocomplete extends Component {
         dropdown: t.boolean().optional(true),
         fieldString: t.string(),
         getDomain: t.function(),
+        // reads the model at search time, for a field whose model the record
+        // decides; resModel is what the last render saw
+        getResModel: t.function().optional(),
         id: t.string().optional(),
         isToMany: t.boolean().optional(),
         nameCreateField: t.string().optional("name"),
@@ -95,6 +99,9 @@ export class Many2XAutocomplete extends Component {
         searchMoreLimit: t.number().optional(SEARCH_MORE_LIMIT),
         searchThreshold: t.number().optional(0),
         setInputFloats: t.function().optional(() => () => {}),
+        // resolves once the record's pending changes have landed, so a search
+        // reads the model and domain an onchange is about to set
+        settle: t.function().optional(),
         searchMemoization: t
             .customValidator(t.string(), (v) =>
                 ["none", "exact", "substring"].includes(v),
@@ -127,7 +134,8 @@ export class Many2XAutocomplete extends Component {
             "autocomplete_container",
             this.autocompleteContainerRef,
         );
-        const { activeActions, resModel, isToMany, fieldString } = this.props;
+        const { activeActions, isToMany, fieldString } = this.props;
+        const resModel = () => this.searchResModel;
 
         this.keepLast = new KeepLast({ rejectSuperseded: true });
 
@@ -194,6 +202,11 @@ export class Many2XAutocomplete extends Component {
         };
     }
 
+    /** @returns {string} */
+    get searchResModel() {
+        return this.props.getResModel?.() || this.props.resModel;
+    }
+
     /** @returns {Array<Object>} */
     get sources() {
         return [this.optionsSource, ...this.props.otherSources];
@@ -252,7 +265,7 @@ export class Many2XAutocomplete extends Component {
      * @returns {Promise<Array<Object>>}
      */
     nameSearch({ name, limit, domain, context, specification }) {
-        return webNameSearch(this.orm, this.props.resModel, {
+        return webNameSearch(this.orm, this.searchResModel, {
             name,
             domain,
             limit,
@@ -367,7 +380,7 @@ export class Many2XAutocomplete extends Component {
      * @returns {Promise<Array<Object>>}
      */
     async loadOptionsSource(request) {
-        await this.keepLast.add(Promise.resolve());
+        await this.keepLast.add(Promise.resolve(this.props.settle?.()));
         return this.suggest(request, (promise) => this.keepLast.add(promise));
     }
 
@@ -573,6 +586,7 @@ export class Many2XAutocomplete extends Component {
 
     /** @param {string} request */
     async onSearchMore(request) {
+        await this.props.settle?.();
         const { getDomain, context, fieldString } = this.props;
 
         const domain = getDomain();
@@ -612,7 +626,8 @@ export class Many2XAutocomplete extends Component {
 
 /**
  * @param {Object} params
- * @param {string} params.resModel
+ * @param {string | (() => string)} params.resModel the model, or what reads it
+ *  when the dialog opens
  * @param {Function} params.onRecordSaved
  * @param {Function} params.onRecordDiscarded
  * @param {string} params.fieldString
@@ -647,7 +662,8 @@ export function useOpenMany2XRecord({
             nextRecordsContext,
         },
     ) {
-        const model = forceModel || resModel;
+        const model =
+            forceModel || (typeof resModel === "function" ? resModel() : resModel);
         let viewId;
         if (resId !== false) {
             viewId = await orm.call(model, "get_formview_id", [[resId]], {

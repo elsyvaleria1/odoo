@@ -16,6 +16,7 @@ export class Many2OneReferenceField extends Many2OneField {
 
     setup() {
         this.updateValue = this.update.bind(this);
+        this.readRelation = () => this.relation;
         this.selfExcludingDomain = () => {
             const { record, name, domain } = this.props;
             return Domain.and([
@@ -33,6 +34,7 @@ export class Many2OneReferenceField extends Many2OneField {
         const props = {
             ...super.m2oProps,
             relation,
+            getRelation: this.readRelation,
             value: stableM2OValue(
                 this.props,
                 value && { id: value.resId, display_name: value.displayName },

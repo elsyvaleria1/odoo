@@ -81,6 +81,9 @@ function m2oHolder(fieldProps) {
             },
             update: (value, options = {}) =>
                 created.latest.record.update({ [created.latest.name]: value }, options),
+            // an onchange runs inside the model's mutex: once it is unlocked,
+            // the relation and domain a search reads are the record's own
+            settle: () => created.latest.record.model.mutex.getUnlockedDef(),
         };
         byName.set(key, created);
         holder = created;
@@ -179,6 +182,7 @@ export class Many2One extends Component {
         createAction: t.function().optional(),
         cssClass: t.string().optional(),
         domain: t.function().optional(() => () => []),
+        getRelation: t.function().optional(),
         id: t.string().optional(),
         linkCssClass: t.string().optional(""),
         nameCreateField: t.string().optional("name"),
@@ -191,6 +195,7 @@ export class Many2One extends Component {
         searchMoreLabel: t.string().optional(),
         searchThreshold: t.number().optional(),
         searchMemoization: t.string().optional(),
+        settle: t.function().optional(),
         slots: t.object().optional(),
         specification: t.object().optional(),
         string: t.string().optional(""),
@@ -310,6 +315,7 @@ export class Many2One extends Component {
             createAction: this.props.createAction,
             fieldString: this.props.string,
             getDomain: this.props.domain,
+            getResModel: this.props.getRelation,
             id: this.props.id,
             nameCreateField: this.props.nameCreateField,
             otherSources: this.props.otherSources,
@@ -322,6 +328,7 @@ export class Many2One extends Component {
             searchThreshold: this.props.searchThreshold,
             searchMemoization: this.props.searchMemoization,
             setInputFloats: this.autocompleteCallbacks.setInputFloats,
+            settle: this.props.settle,
             slots: this.props.slots,
             specification: this.props.specification,
             update: this.autocompleteCallbacks.update,

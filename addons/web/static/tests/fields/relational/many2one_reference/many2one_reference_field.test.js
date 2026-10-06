@@ -2,7 +2,7 @@
 
 import { expect, test } from "@odoo/hoot";
 import { queryAllTexts } from "@odoo/hoot-dom";
-import { runAllTimers } from "@odoo/hoot-mock";
+import { animationFrame, Deferred, runAllTimers } from "@odoo/hoot-mock";
 import {
     clickFieldDropdownItem,
     clickSave,
@@ -21,6 +21,7 @@ import { Many2XAutocomplete } from "@web/fields/relational/many2x_autocomplete";
 import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
 
 class Partner extends models.Model {
+    kind = fields.Char();
     model = fields.Char({
         string: "Resource Model",
     });
@@ -306,4 +307,38 @@ test("an attachment referencing an attachment excludes itself, and stays searcha
 
     await contains(".o_field_widget[name=res_id] input").click();
     expect.verifySteps([`[["id","!=",1]]`]);
+});
+
+test("a search waits for the onchange that sets the model it searches", async () => {
+    Partner._onChanges = {
+        kind(record) {
+            record.model = "partner";
+        },
+    };
+    const onchange = new Deferred();
+    onRpc("onchange", () => onchange);
+    onRpc("web_name_search", ({ model }) => {
+        expect.step(`search ${model}`);
+    });
+    await mountView({
+        type: "form",
+        resModel: "partner",
+        resId: 1,
+        arch: `
+            <form>
+                <field name="kind"/>
+                <field name="model" invisible="1"/>
+                <field name="res_id"/>
+            </form>`,
+    });
+
+    await contains("[name='kind'] input").edit("contact");
+    await contains("[name='res_id'] input").edit("g", { confirm: false });
+    await runAllTimers();
+    expect.verifySteps([]);
+
+    onchange.resolve();
+    await animationFrame();
+    await runAllTimers();
+    expect.verifySteps(["search partner"]);
 });
