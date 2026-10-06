@@ -563,6 +563,31 @@ test("the folder tree is fetched without narrowing it to the open folder", async
     expect.verifySteps(["[]", "[]"]);
 });
 
+test("a search reloads the records, never the folder tree", async function () {
+    let searchModel;
+    patchWithCleanup(DocumentsSearchModel.prototype, {
+        setup() {
+            super.setup(...arguments);
+            searchModel = this;
+        },
+    });
+    onRpc("search_panel_select_range", () => {
+        expect.step("folder tree");
+    });
+    onRpc("document.document", "web_search_read", () => {
+        expect.step("records");
+    });
+    await makeDocumentsMockEnv({ serverData: getDocumentsTestServerModelsData() });
+    await mountDocumentsListView();
+    expect.verifySteps(["folder tree", "records"]);
+
+    searchModel.createNewFilters([
+        { description: "named Doc", domain: [["name", "ilike", "Doc"]] },
+    ]);
+    await animationFrame();
+    expect.verifySteps(["records"]);
+});
+
 test("moving a row into a folder of the same access asks for no confirmation", async function () {
     const access = { access_internal: "view", access_via_link: "none" };
     const serverData = getDocumentsTestServerModelsData([

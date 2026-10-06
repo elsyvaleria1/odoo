@@ -815,7 +815,10 @@ class ShareRoute(http.Controller):
         auth="public",
         readonly=True,
     )
-    def documents_thumbnail_textual(self, access_token: str) -> Any:
+    def documents_thumbnail_textual(self, access_token: str, unique: str = "") -> Any:
+        # a `unique` names the content (its checksum, as /documents/thumbnail
+        # takes it): the answer then never changes and the browser keeps it,
+        # so a kanban reload refetches none of its cards
         document_sudo = self._from_access_token(access_token, skip_log=True)
         if not document_sudo:
             raise request.prepare_not_found_error()
@@ -853,13 +856,20 @@ class ShareRoute(http.Controller):
                 ValueError, MissingError, by=request.prepare_not_found_error()
             ):
                 stream = self._documents_content_stream(document_sudo)
-            return stream.prepare_response(as_attachment=False)
-        return request.render(
+            return stream.prepare_response(
+                as_attachment=False, immutable=bool(unique) or None
+            )
+        response = request.render(
             "document.thumbnails_textual",
             {
                 "content": head.decode("utf-8", errors="replace"),
             },
         )
+        if unique:
+            response.cache_control.private = True
+            response.cache_control.max_age = http.STATIC_CACHE_LONG
+            response.cache_control["immutable"] = None
+        return response
 
     @http.route(
         ["/documents/document/<int:document_id>/update_thumbnail"],

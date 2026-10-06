@@ -161,7 +161,9 @@
                         context="{'group_by': 'expiration_state'}" />
                 </group>
                 <searchpanel class="o_documents_search_panel">
-                    <field name="user_folder_id" string="Folders" />
+                    <!-- every folder whatever the search, as the server reads
+                        the tree (counters off): a search refetches nothing -->
+                    <field name="user_folder_id" string="Folders" expand="1" />
                 </searchpanel>
             </search>
         </field>
@@ -296,7 +298,8 @@
                                             t-else=""
                                             scrolling="no"
                                             class="overflow-hidden o_documents_thumbnail_iframe"
-                                            t-attf-src="/documents/thumbnail_textual/#{encodeURIComponent(record.access_token.raw_value)}"
+                                            loading="lazy"
+                                            t-attf-src="/documents/thumbnail_textual/#{encodeURIComponent(record.access_token.raw_value)}?unique=#{record.checksum.raw_value ? record.checksum.raw_value.slice(-8) : ''}"
                                             sandbox="" />
                                     </div>
                                     <t t-elif="hasStoredThumbnail">

@@ -778,6 +778,20 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
             self.assertEqual(res.status_code, status)
             self.assertIn(content, res.text)
 
+    def test_doc_ctrl_thumbnail_textual_is_cached_under_its_content(self):
+        self.authenticate("demo", "demo")
+        url = f"/documents/thumbnail_textual/{self.internal_file_textual.access_token}"
+        unique = self.internal_file_textual.checksum[-8:]
+        named = self.url_open(f"{url}?unique={unique}")
+        self.assertEqual(named.status_code, 200)
+        cache_control = named.headers.get("Cache-Control", "")
+        self.assertIn("immutable", cache_control)
+        self.assertIn("private", cache_control)
+        self.assertNotIn("public", cache_control)
+        bare = self.url_open(url)
+        self.assertEqual(bare.status_code, 200)
+        self.assertNotIn("immutable", bare.headers.get("Cache-Control", ""))
+
     def test_doc_ctrl_thumbnail_textual_size(self):
         document = self.internal_file.with_user(self.user_manager).copy()
         document.mimetype = "text/plain"

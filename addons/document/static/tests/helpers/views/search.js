@@ -11,7 +11,7 @@ export function getEnrichedSearchArch(searchArch = "<search></search>") {
         <filter invisible="1" string="Future Activities" name="activities_upcoming_all"
             domain="[('my_activity_date_deadline', '&gt;', 'today')]"/>
         <searchpanel class="o_documents_search_panel">
-            <field name="user_folder_id" string="Folders"/>
+            <field name="user_folder_id" string="Folders" expand="1"/>
         </searchpanel>
     `;
 
