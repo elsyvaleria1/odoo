@@ -3,7 +3,7 @@ from datetime import timedelta
 from odoo import fields, models
 
 from odoo.addons.telegram.tools import format as tg
-from odoo.addons.telegram.tools.authority import operating
+from odoo.addons.telegram.tools.authority import keeping, operating
 
 _ATTACHMENT_LIMIT = 20 * 1024 * 1024
 _CHAT_TYPES = ("chat", "group")
@@ -71,6 +71,12 @@ class MixinMailThread(models.AbstractModel):
         bots = telegram_bots.browse(telegram_bots._get_notifying_bot_ids()).exists()
         if not bots:
             return
+        # a bot speaks for one company: the record's, when it has one, and one
+        # the recipient belongs to, or their reply lands where the bot does
+        # not act
+        bots = keeping(bots)
+        if company := self[:1]._mail_get_companies().get(self[:1].id):
+            bots = bots.filtered(lambda bot: bot.company_id == company)
         users = operating(self.env["res.users"])
         for recipient, kind in candidates:
             # a channel member is tagged by partner, without its user; the bot
@@ -84,7 +90,8 @@ class MixinMailThread(models.AbstractModel):
             when = self._telegram_preference(user, kind)
             if when == "never":
                 continue
-            chat = self.env["telegram.chat"]._for_user(user, bots)[:1]
+            serving = bots.filtered(lambda bot, user=user: bot._admits_user(user))
+            chat = self.env["telegram.chat"]._for_user(user, serving)[:1]
             if not chat or chat.bot_blocked:
                 continue
             self._telegram_queue(message, user, chat, away_only=when == "away")

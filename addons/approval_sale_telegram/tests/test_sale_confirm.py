@@ -148,7 +148,7 @@ class TestConfirmCallback(SaleConfirmTestBase):
         self.order = self._order()
         self._approve(self.order)
 
-    def _press(self, order_id=None):
+    def _press(self, order_id=None, bot=None):
         callback_query = self.mock_telegram_callback_query(
             callback_data=f"sc:c:{order_id or self.order.id}",
             chat_id=self.test_chat.chat_id,
@@ -162,7 +162,7 @@ class TestConfirmCallback(SaleConfirmTestBase):
             ) as mock_send,
         ):
             self.env["telegram.router"]._dispatch_callback_query(
-                self.test_bot, callback_query
+                bot or self.test_bot, callback_query
             )
         return mock_send.call_args.args[1]
 
@@ -175,6 +175,23 @@ class TestConfirmCallback(SaleConfirmTestBase):
 
         self.assertEqual(self.order.state, "done")
         self.assertIn(f"You confirmed order {self.order.name}", reply)
+
+    def test_a_bot_of_another_company_does_not_confirm_the_order(self):
+        other_bot = self._bot_of_another_company("Other Sale Confirm Bot")
+        self.test_user.company_ids = [Command.link(other_bot.company_id.id)]
+        self.env["telegram.chat"].create(
+            {
+                "chat_id": self.test_chat.chat_id,
+                "chat_type": "private",
+                "bot_id": other_bot.id,
+                "account_id": self.test_account.id,
+            }
+        )
+
+        reply = self._press(bot=other_bot)
+
+        self.assertEqual(self.order.state, "draft")
+        self.assertIn("Could not confirm", reply)
 
     def test_a_user_outside_the_category_cannot_confirm(self):
         self.category.telegram_confirm_user_ids = False

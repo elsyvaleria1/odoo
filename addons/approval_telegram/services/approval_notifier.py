@@ -17,7 +17,9 @@ class TelegramApprovalNotifier(models.AbstractModel):
         if not approver._telegram_notify_enabled():
             return
         request = approver.request_id
-        target = self._target_chat(approver._get_effective_approver())
+        target = self._target_chat(
+            approver._get_effective_approver(), request.company_id
+        )
         if not target:
             return
         bot = target.bot_id
@@ -49,11 +51,14 @@ class TelegramApprovalNotifier(models.AbstractModel):
         return self.env
 
     @api.model
-    def _target_chat(self, user):
+    def _target_chat(self, user, company):
+        """The chat that tells `user` about a record of `company`: one of a
+        bot that speaks for that company, whose buttons and Mini App then
+        act in it."""
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
-            [("notify_approvals", "=", True)]
+            [("notify_approvals", "=", True), ("company_id", "=", company.id)]
         )
         if not bots:
             return self.env["telegram.chat"].browse()
@@ -63,7 +68,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
     def _notify_owner_outcome(self, request):
         if not self._feature_active():
             return
-        target = self._target_chat(request.request_owner_id)
+        target = self._target_chat(request.request_owner_id, request.company_id)
         if not target:
             return
         env = self._recipient_env(target)
@@ -94,7 +99,7 @@ class TelegramApprovalNotifier(models.AbstractModel):
     def _notify_owner_change(self, request, field, note=None):
         if not self._feature_active():
             return
-        target = self._target_chat(request.request_owner_id)
+        target = self._target_chat(request.request_owner_id, request.company_id)
         if not target:
             return
         env = self._recipient_env(target)

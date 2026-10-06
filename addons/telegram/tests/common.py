@@ -126,6 +126,20 @@ class TelegramBotTestCase(TransactionCase):
         )
 
     @classmethod
+    def _bot_of_another_company(cls, name="Other Company Bot"):
+        """A bot that speaks for a company of its own, not the main one."""
+        company = cls.env["res.company"].create({"name": f"{name} Company"})
+        return cls.env["telegram.bot"].create(
+            {
+                "name": name,
+                "company_id": company.id,
+                "credential_id": cls._make_bot_credential(
+                    f"{name} Credential", "423456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew44"
+                ).id,
+            }
+        )
+
+    @classmethod
     def setUpClass(cls):
         super().setUpClass()
 

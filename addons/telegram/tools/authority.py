@@ -17,3 +17,14 @@ def keeping(bots):
     # update's public user, and an administrator with another company active,
     # keep them only elevated. Bot-owned records only, never business data.
     return bots.sudo()
+
+
+def in_bot_company(records, bot):
+    # `records` in the company `bot` speaks for and no other. The update's
+    # public user, or a portal user, of another company is no member of it and
+    # is pinned there only elevated, since company guards admit no privilege:
+    # the caller's own domains then keep that sender to their own data.
+    pinned = records.with_context(allowed_company_ids=[bot.company_id.id])
+    if records.env.su or bot.company_id.id in records.env.user._get_company_ids():
+        return pinned
+    return pinned.sudo()

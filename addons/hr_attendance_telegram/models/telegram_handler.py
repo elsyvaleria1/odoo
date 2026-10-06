@@ -7,6 +7,7 @@ from odoo.exceptions import ValidationError
 from odoo.libs.datetime import timezone
 
 from odoo.addons.telegram.tools import format as tg
+from odoo.addons.telegram.tools.authority import in_bot_company
 from odoo.addons.telegram.tools.dispatch import (
     TelegramCommand,
     log_command_execution,
@@ -37,24 +38,27 @@ class TelegramHandlerAttendance(models.AbstractModel):
         return self._tr(bot, chat)._("an attendance record")
 
     @staticmethod
-    def _own_attendance(partner, model_name):
-        # on behalf of the chat's contact: the privilege reaches that contact's
-        # employee, whichever user the command runs as
-        return (
+    def _own_attendance(bot, partner, model_name):
+        # on behalf of the chat's contact, in the company the bot speaks for:
+        # the privilege reaches that contact's employee there, whichever user
+        # the command runs as
+        return in_bot_company(
             partner.env[model_name]
             .with_acting_partner(partner)
             .with_privilege(
                 "hr_attendance_telegram.privilege_record_own_attendance",
                 reason="an employee records their own attendance from Telegram",
-            )
+            ),
+            bot,
         )
 
-    def _employee(self, partner):
-        """The employee the chat's contact is, or none."""
+    def _employee(self, bot, partner):
+        """The employee the chat's contact is in the bot's company, or none."""
         if not partner:
             return partner.env["hr.employee"]
-        return self._own_attendance(partner, "hr.employee").search(
-            [("partner_id", "=", partner.id)], limit=1
+        return self._own_attendance(bot, partner, "hr.employee").search(
+            [("partner_id", "=", partner.id), ("company_id", "=", bot.company_id.id)],
+            limit=1,
         )
 
     def _has_employee_access(self, bot, chat, partner) -> bool:
@@ -67,7 +71,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
             )
             return False
 
-        if not self._employee(partner):
+        if not self._employee(bot, partner):
             bot.send_message(
                 chat.chat_id,
                 translation_env(bot, chat)._(
@@ -122,9 +126,9 @@ class TelegramHandlerAttendance(models.AbstractModel):
             "\n\n%(count)s active work orders were paused automatically."
         ) % {"count": count}
 
-    def _get_last_attendance(self, partner, internal_user):
-        attendance = self._own_attendance(partner, "hr.attendance")
-        employee = self._employee(partner)
+    def _get_last_attendance(self, bot, partner):
+        attendance = self._own_attendance(bot, partner, "hr.attendance")
+        employee = self._employee(bot, partner)
         if not employee:
             return attendance
         return attendance.search(
@@ -197,7 +201,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
             self._notify_bad_time(bot, chat, bad_time)
             return
 
-        latest_attendance = self._get_last_attendance(partner, internal_user)
+        latest_attendance = self._get_last_attendance(bot, partner)
         if latest_attendance.check_in:
             user_tz = timezone(user_tz_str)
             check_in_local = latest_attendance.check_in.replace(tzinfo=UTC).astimezone(
@@ -233,10 +237,10 @@ class TelegramHandlerAttendance(models.AbstractModel):
             return
 
         try:
-            attendance = self._own_attendance(partner, "hr.attendance")
+            attendance = self._own_attendance(bot, partner, "hr.attendance")
             attendance.create(
                 {
-                    "employee_id": self._employee(partner).id,
+                    "employee_id": self._employee(bot, partner).id,
                     "check_in": check_in_time,
                 }
             )
@@ -277,7 +281,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
         if not self._has_employee_access(bot, chat, partner):
             return
 
-        attendance = self._get_last_attendance(partner, internal_user)
+        attendance = self._get_last_attendance(bot, partner)
         if not attendance.check_in:
             bot.send_message(
                 chat.chat_id,
@@ -296,7 +300,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
         try:
             attendance.write({"check_out": check_out_time})
 
-            employee = self._employee(partner)
+            employee = self._employee(bot, partner)
             stopped_workorders = self._stop_employee_workorders(employee, "check_out")
 
             formatted_time = (
@@ -342,7 +346,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
             self._notify_bad_time(bot, chat, bad_time)
             return
 
-        attendance = self._get_last_attendance(partner, internal_user)
+        attendance = self._get_last_attendance(bot, partner)
         if not attendance.check_in:
             bot.send_message(
                 chat.chat_id,
@@ -361,7 +365,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
         try:
             attendance.write({"lunch_out": lunch_out_time})
 
-            employee = self._employee(partner)
+            employee = self._employee(bot, partner)
             stopped_workorders = self._stop_employee_workorders(employee, "lunch_out")
 
             formatted_time = (
@@ -402,7 +406,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
             self._notify_bad_time(bot, chat, bad_time)
             return
 
-        attendance = self._get_last_attendance(partner, internal_user)
+        attendance = self._get_last_attendance(bot, partner)
         if not attendance.check_in or not attendance.lunch_out:
             bot.send_message(
                 chat.chat_id,
@@ -468,10 +472,16 @@ class TelegramHandlerAttendance(models.AbstractModel):
             )
             return
 
-        attendance = self._own_attendance(partner, "hr.attendance").browse(
+        attendance = self._own_attendance(bot, partner, "hr.attendance").browse(
             open_attendance_id
         )
-        if not attendance.exists() or attendance.check_out:
+        # browsed elevated for a sender outside the bot's company: only the
+        # sender's own employee's attendance is ever closed here
+        if (
+            not attendance.exists()
+            or attendance.check_out
+            or attendance.employee_id != self._employee(bot, partner)
+        ):
             self._flow_end(chat)
             bot.send_message(
                 chat.chat_id,
@@ -491,7 +501,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
         try:
             attendance.write({"check_out": check_out_time})
 
-            employee = self._employee(partner)
+            employee = self._employee(bot, partner)
             self._stop_employee_workorders(employee, "delayed_checkout")
 
             user_tz = timezone(user_tz_str)
@@ -500,7 +510,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
             checkout_date = checkout_dt_local.strftime("%d/%m/%Y")
 
             pending_check_in = datetime.fromisoformat(pending_check_in_str)
-            self._own_attendance(partner, "hr.attendance").create(
+            self._own_attendance(bot, partner, "hr.attendance").create(
                 {
                     "employee_id": employee.id,
                     "check_in": pending_check_in,
@@ -542,7 +552,7 @@ class TelegramHandlerAttendance(models.AbstractModel):
         sections = []
         available_cmds = [cmd.name for cmd in bot.command_ids]
 
-        if partner and "/entrada" in available_cmds and self._employee(partner):
+        if partner and "/entrada" in available_cmds and self._employee(bot, partner):
             tr_env = translation_env(bot, chat)
             attendance_cmds = [
                 tr_env._(

@@ -115,6 +115,30 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
         )
         self.assertIn("resubmitted", self._queued().payload["text"])
 
+    def test_a_bot_of_another_company_does_not_push_the_request(self):
+        other_bot = self._bot_of_another_company("Other Approval Push Bot")
+        other_bot.notify_approvals = True
+        other_chat = self.env["telegram.chat"].create(
+            {
+                "chat_id": self.test_chat.chat_id,
+                "chat_type": "private",
+                "bot_id": other_bot.id,
+                "account_id": self.test_account.id,
+            }
+        )
+        outbound = [
+            ("chat_id", "=", other_chat.id),
+            ("message_type", "=", "outbound"),
+        ]
+
+        self.env["telegram.approval.notifier"]._notify_approver(self.approver)
+
+        self.assertFalse(self.env["telegram.message"].search(outbound))
+        self.test_bot.notify_approvals = True
+        self.env["telegram.approval.notifier"]._notify_approver(self.approver)
+        self.assertEqual(len(self._queued()), 1)
+        self.assertFalse(self.env["telegram.message"].search(outbound))
+
     def test_no_push_when_bot_disabled(self):
         self.test_bot.notify_approvals = False
         self.env["telegram.approval.notifier"]._notify_approver(self.approver)

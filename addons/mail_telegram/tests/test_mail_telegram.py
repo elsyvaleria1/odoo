@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from markupsafe import Markup
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import AccessError
 
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
@@ -88,6 +88,42 @@ class TestDelivery(MailTelegramCase):
         self.test_user._telegram_settings().telegram_notify_inbox = "never"
         self._post_to_user()
         self.assertFalse(self._queued())
+
+    def _other_company_chat(self, member=True):
+        bot = self._bot_of_another_company("Other Mail Bot")
+        bot.notify_mail = True
+        if member:
+            self.test_user.company_ids = [Command.link(bot.company_id.id)]
+        return self.env["telegram.chat"].create(
+            {
+                "chat_id": self.test_chat.chat_id,
+                "chat_type": "private",
+                "bot_id": bot.id,
+                "account_id": self.test_account.id,
+            }
+        )
+
+    def _outbound(self, chat):
+        return self.env["telegram.message"].search(
+            [("chat_id", "=", chat.id), ("message_type", "=", "outbound")]
+        )
+
+    def test_a_record_of_a_company_is_told_through_that_company_s_bot(self):
+        other_chat = self._other_company_chat()
+        self.record.company_id = self.test_bot.company_id
+
+        self._post_to_user()
+
+        self.assertEqual(len(self._queued()), 1)
+        self.assertFalse(self._outbound(other_chat))
+
+    def test_a_bot_of_a_company_the_user_is_not_in_tells_them_nothing(self):
+        other_chat = self._other_company_chat(member=False)
+
+        self._post_to_user()
+
+        self.assertEqual(len(self._queued()), 1)
+        self.assertFalse(self._outbound(other_chat))
 
     def test_a_bot_not_delivering_notifications_sends_nothing(self):
         self.test_bot.notify_mail = False

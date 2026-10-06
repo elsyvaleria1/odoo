@@ -1,4 +1,5 @@
 from . import (
+    credential_credential,
     mixin_telegram_handler,
     res_partner,
     res_users,

@@ -263,7 +263,9 @@ class ApprovalMiniAppController(http.Controller):
             return self._json(
                 {"ok": False, "error": owner_request.env._("Invalid date.")}
             )
-        chat = notifier._target_chat(owner_request.request_owner_id)
+        chat = notifier._target_chat(
+            owner_request.request_owner_id, owner_request.company_id
+        )
         if chat:
             chat.bot_id.send_message(
                 chat.chat_id,

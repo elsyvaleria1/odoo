@@ -400,7 +400,13 @@ class TelegramBot(models.Model):
         """The Odoo user a Mini App caller may act as: the user its Telegram
         account's active binding says it is, of the tier asked for. The
         caller's id comes from initData Telegram signed or a session this
-        database signed; its username never enters into it."""
+        database signed; its username never enters into it.
+
+        A member of the bot's company comes back in that company and no
+        other, and the Mini App call this bot admitted continues as them
+        there, as the router runs an update's sender: what the app reads and
+        writes is the company's the bot speaks for, whichever companies the
+        user has active in Odoo."""
         self.check_singleton()
         if not telegram_user_id:
             return self.env["res.users"]
@@ -410,9 +416,19 @@ class TelegramBot(models.Model):
         if not account:
             return self.env["res.users"]
         user = account._acting_user(tier)
-        if user and not self._admits_user(user):
+        if not user or not self._admits_user(user):
             return self.env["res.users"]
-        return user
+        if self.company_id.id not in user._get_company_ids():
+            return user
+        in_company = {"allowed_company_ids": [self.company_id.id]}
+        admission = getattr(request, "admission", None) if request else None
+        if admission and admission.subject == self:
+            request.update_env(
+                user=user.id, context={**request.env.context, **in_company}
+            )
+        return user.with_env(
+            self.env(user=user.id, su=False, context={**self.env.context, **in_company})
+        )
 
     @api.model
     def _prepare_mini_app_refusal_response(self, refused):

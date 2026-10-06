@@ -23,7 +23,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
         if not approval_notifier._feature_active():
             return
         for user in order._get_telegram_confirm_users():
-            chat = approval_notifier._target_chat(user)
+            chat = approval_notifier._target_chat(user, order.company_id)
             if not chat:
                 continue
             env = approval_notifier._recipient_env(chat)
@@ -35,8 +35,9 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
             )
 
     @api.model
-    def confirm(self, order, user):
-        """Confirm ``order`` as ``user``; returns the error to show, or None."""
+    def confirm(self, order, user, bot):
+        """Confirm ``order`` as ``user``, in the company ``bot`` speaks for
+        and no other; returns the error to show, or None."""
         env = self.env
         if user not in order.sudo()._get_telegram_confirm_users():
             return env._("You are not set up to confirm this order.")
@@ -46,7 +47,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
             }
         try:
             order.with_user(user).with_context(
-                allowed_company_ids=user.company_ids.ids
+                allowed_company_ids=[bot.company_id.id]
             ).action_confirm()
         except (AccessError, UserError) as exc:
             return str(exc)

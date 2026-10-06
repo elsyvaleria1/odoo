@@ -4,6 +4,7 @@ from odoo import fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.telegram.tools import format as tg
+from odoo.addons.telegram.tools.authority import keeping
 
 _logger = logging.getLogger(__name__)
 
@@ -162,9 +163,12 @@ class DigestDigest(models.Model):
         )
 
     def _get_user_telegram_chat(self, user):
-        return self.env["telegram.chat"]._for_user(user, self.telegram_bot_id or None)[
-            :1
-        ]
+        """The chat that brings `user` their digest, which reports their
+        company: one of a bot that speaks for that company."""
+        chats = self.env["telegram.chat"]._for_user(user, self.telegram_bot_id or None)
+        return chats.filtered(
+            lambda chat: keeping(chat.bot_id).company_id == user.company_id
+        )[:1]
 
     def _format_kpi_for_telegram(self, kpi) -> str:
         lines = [tg.bold(kpi["kpi_fullname"])]

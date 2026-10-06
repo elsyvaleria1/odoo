@@ -185,3 +185,32 @@ class TestBotCompany(TelegramBotTestCase):
 
         self.assertFalse(self.other_bot._mini_app_user("770004"))
         self.assertEqual(self.other_bot._mini_app_user("770005"), member)
+
+    def test_a_mini_app_member_acts_in_the_bot_s_company_only(self):
+        member = new_test_user(
+            self.env,
+            login="tg_company_app_main_first",
+            groups="base.group_user",
+            company_id=self.main.id,
+            company_ids=[Command.set((self.main | self.other).ids)],
+        )
+        self._bound_account("770006", member.partner_id, user=member)
+
+        user = self.other_bot._mini_app_user("770006")
+
+        self.assertEqual(user, member)
+        self.assertEqual((user.env.uid, user.env.su), (member.id, False))
+        self.assertEqual(user.env.company, self.other)
+        self.assertEqual(user.env.companies, self.other)
+
+    def test_an_admin_reads_the_credential_name_of_a_bot_of_another_company(self):
+        bot = self._as_admin().browse(self.other_bot.id)
+
+        [values] = bot.web_read({"credential_id": {"fields": {"display_name": {}}}})
+
+        credential = self.other_bot.credential_id
+        self.assertEqual(
+            values["credential_id"]["display_name"], credential.display_name
+        )
+        credential = credential.with_env(bot.env)
+        self.assertFalse(credential.has_access("read"))

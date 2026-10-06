@@ -67,7 +67,7 @@ class TestRuntimeWizardApprovalLink(PaymentApprovalTelegramTestCase):
             }
         )
 
-    def _runtime_from(self, st_line):
+    def _runtime_from(self, st_line, automation=None):
         wizard = (
             self.env["wizard.account.bank.statement.line.start.automation"]
             .with_context(
@@ -76,7 +76,7 @@ class TestRuntimeWizardApprovalLink(PaymentApprovalTelegramTestCase):
             )
             .create(
                 {
-                    "automation_id": self.automation.id,
+                    "automation_id": (automation or self.automation).id,
                     "partner_id": self.test_partner.id,
                     "amount": 3000.0,
                 }
@@ -134,7 +134,9 @@ class TestRuntimeWizardApprovalLink(PaymentApprovalTelegramTestCase):
         first = self._runtime_from(st_line)
         self.assertEqual(approval.automation_runtime_id, first)
 
-        second = self._runtime_from(st_line)
+        second = self._runtime_from(
+            st_line, self.automation.copy({"name": "Second Statement Workflow"})
+        )
 
         self.assertEqual(approval.automation_runtime_id, first)
         self.assertNotEqual(first, second)

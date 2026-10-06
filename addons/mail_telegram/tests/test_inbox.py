@@ -1,5 +1,6 @@
 import time
 
+from odoo import Command
 from odoo.exceptions import AccessError
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
@@ -180,3 +181,25 @@ class TestInboxRoutes(TelegramBotHttpCase):
         response = self.url_open(f"/telegram/inbox/{self.test_bot.id}")
         self.assertEqual(response.status_code, 200)
         self.assertIn(f'data-bot-id="{self.test_bot.id}"', response.text)
+
+    def test_another_company_s_bot_opens_that_company_s_records_only(self):
+        bot = self._bot_of_another_company("Other Inbox Bot")
+        self.test_user.write({"company_ids": [Command.link(bot.company_id.id)]})
+        partners = self.env["res.partner"]
+        ours = partners.create({"name": "Rancho Otro", "company_id": bot.company_id.id})
+        main = partners.create(
+            {"name": "Rancho Main", "company_id": self.env.company.id}
+        )
+        session = bot._mint_mini_app_session(self.test_chat.chat_id)
+
+        def thread(partner):
+            return self._rpc(
+                "thread",
+                bot_id=bot.id,
+                s=session,
+                model="res.partner",
+                res_id=partner.id,
+            )["result"]
+
+        self.assertEqual(thread(ours).get("title"), "Rancho Otro")
+        self.assertEqual(thread(main), {"error": "access"})

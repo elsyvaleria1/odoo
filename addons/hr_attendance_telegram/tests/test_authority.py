@@ -42,7 +42,7 @@ class TestAttendanceAuthority(AttendanceTelegramTestCase):
         cls.contact = cls._create_partner({"name": "Not An Employee"})
         cls._bound_account("566003", cls.contact)
 
-    def _command(self, chat_id, text, update_id):
+    def _command(self, chat_id, text, update_id, bot=None):
         self.patch(self.env.transaction, "default_env", self.env(user=self.public))
         attendances = type(self.env["hr.attendance"])
         create = attendances.create
@@ -58,7 +58,7 @@ class TestAttendanceAuthority(AttendanceTelegramTestCase):
             self.mock_rate_limiter(),
         ):
             self.env["telegram.router"]._handle_update(
-                self.test_bot.with_user(self.public).sudo(),
+                (bot or self.test_bot).with_user(self.public).sudo(),
                 {
                     "update_id": update_id,
                     "message": self.mock_telegram_message(chat_id=chat_id, text=text),
@@ -91,6 +91,26 @@ class TestAttendanceAuthority(AttendanceTelegramTestCase):
 
         self.assertEqual(creators, [(self.public.id, False)])
         self.assertTrue(self._open(self.field_employee))
+
+    def test_an_employee_of_another_company_checks_in_through_its_bot(self):
+        bot = self._bot_of_another_company("Other Attendance Bot")
+        bot.command_ids = self.test_bot.command_ids
+        hand = self._create_partner({"name": "Other Company Hand"})
+        employee = self.env["hr.employee"].create(
+            {
+                "name": "Other Company Hand",
+                "partner_id": hand.id,
+                "company_id": bot.company_id.id,
+            }
+        )
+        self._bound_account("566005", hand)
+
+        _creators, texts = self._command("566005", "/entrada", 9431, bot=bot)
+
+        attendance = self._open(employee)
+        self.assertTrue(attendance, texts)
+        self.assertEqual(attendance.employee_id.company_id, bot.company_id)
+        self.assertEqual(attendance.create_uid, self.public)
 
     def test_a_contact_who_is_no_employee_is_refused_in_the_chat(self):
         creators, texts = self._command("566003", "/entrada", 9421)

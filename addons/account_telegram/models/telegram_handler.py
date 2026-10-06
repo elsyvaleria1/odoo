@@ -11,6 +11,7 @@ from odoo.fields import Domain
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
+from odoo.addons.telegram.tools.authority import in_bot_company
 from odoo.addons.telegram.tools.dispatch import (
     TelegramCommand,
     log_command_execution,
@@ -495,7 +496,7 @@ class TelegramHandlerAccount(models.AbstractModel):
         # the public or a portal user of another company than the bot's: the
         # company guards of the journal items admit no privilege, so only the
         # partner and company filters below keep the statement to their own
-        return in_company.sudo()
+        return in_bot_company(bot, bot)
 
     def _partners_with_statement_lines(self, bot, partner_domain):
         """Partners matching ``partner_domain`` that hold posted receivable

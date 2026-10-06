@@ -4,6 +4,7 @@ from odoo import fields as odoo_fields
 from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.telegram.tests.common import TelegramBotTestCase
 from odoo.addons.telegram.tools import format as tg
 
 
@@ -175,6 +176,26 @@ class TestDigestTelegramChatLookup(TransactionCase):
         )
         result = digest._get_user_telegram_chat(self.env.user)
         self.assertFalse(result)
+
+
+class TestDigestTelegramCompany(TelegramBotTestCase):
+    def test_the_digest_comes_through_a_bot_of_the_user_s_company(self):
+        other_bot = self._bot_of_another_company("Other Digest Bot")
+        self.env["telegram.chat"].create(
+            {
+                "chat_id": self.test_chat.chat_id,
+                "chat_type": "private",
+                "bot_id": other_bot.id,
+                "account_id": self.test_account.id,
+            }
+        )
+        digest = self.env["digest.digest"].create(
+            {"name": "Company Digest", "telegram_enabled": True}
+        )
+
+        self.assertEqual(digest._get_user_telegram_chat(self.test_user), self.test_chat)
+        digest.telegram_bot_id = other_bot
+        self.assertFalse(digest._get_user_telegram_chat(self.test_user))
 
 
 class TestDigestTelegramSendDisabled(TransactionCase):

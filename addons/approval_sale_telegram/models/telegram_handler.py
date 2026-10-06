@@ -39,7 +39,7 @@ class TelegramHandlerSaleConfirm(models.AbstractModel):
         if not order:
             bot.send_message(chat.chat_id, env._("This order no longer exists."))
             return
-        error = env["telegram.sale.confirm.notifier"].confirm(order, internal_user)
+        error = env["telegram.sale.confirm.notifier"].confirm(order, internal_user, bot)
         if error:
             bot.send_message(
                 chat.chat_id,

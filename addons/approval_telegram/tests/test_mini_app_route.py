@@ -1,5 +1,6 @@
 import time
 
+from odoo import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import new_test_user, tagged
 
@@ -236,3 +237,61 @@ class TestApprovalMiniAppDecision(TelegramBotHttpCase):
         response = self._attachment(self.foreign_request)
 
         self.assertEqual(response.status_code, 404)
+
+    def _other_company_request(self):
+        bot = self._bot_of_another_company("Other Approval Bot")
+        (self.test_user | self.co_approver).write(
+            {"company_ids": [Command.link(bot.company_id.id)]}
+        )
+        category = self.env["approval.category"].create(
+            {
+                "name": "Mini App Other Company Category",
+                "company_id": bot.company_id.id,
+                "sequence_code": "TGAPPO",
+                "step_ids": pool_step([(self.test_user.id, False, 10)], minimum=1),
+            }
+        )
+        request = (
+            self.env["approval.request"]
+            .with_company(bot.company_id)
+            .create(
+                {
+                    "category_id": category.id,
+                    "request_owner_id": self.co_approver.id,
+                }
+            )
+        )
+        request.action_confirm()
+        self.env.flush_all()
+        return bot, request, bot._mint_mini_app_session(self.test_chat.chat_id)
+
+    def test_another_company_s_bot_lists_that_company_s_requests_only(self):
+        bot, request, session = self._other_company_request()
+
+        body = self.url_open(
+            f"/telegram/approval/app/{bot.id}/pending",
+            data={"s": session},
+            method="POST",
+        ).json()
+
+        self.assertTrue(body["ok"], body)
+        self.assertEqual([item["id"] for item in body["requests"]], [request.id])
+        self.assertTrue(body["requests"][0]["can_act"])
+
+    def test_another_company_s_bot_decides_in_that_company(self):
+        bot, request, session = self._other_company_request()
+
+        body = self.url_open(
+            f"/telegram/approval/app/{bot.id}/act",
+            data={
+                "s": session,
+                "approver_id": request.approver_ids.id,
+                "action": "approve",
+            },
+            method="POST",
+        ).json()
+
+        self.assertEqual(body, {"ok": True})
+        request.invalidate_recordset()
+        self.assertEqual(request.approver_ids.state, "approved")
+        self.assertEqual(request.approver_ids.decided_by_user_id, self.test_user)
