@@ -2751,14 +2751,18 @@ class DiscussChannel(models.Model):
                 return False
 
     def _get_push_notification_title(self, author, record_name: str) -> str:
+        # a message with no author partner (an e-mail or SMS sender Odoo has
+        # no contact for) is titled by its conversation alone, not "- False"
         self.check_singleton()
+        name = author.name
         match self._channel_type_policy().push_title:
             case "author":
-                return author.name
+                return name or record_name or self.display_name
             case "hashtag":
-                return f"#{record_name} - {author.name}"
+                return f"#{record_name} - {name}" if name else f"#{record_name}"
             case _:
-                return f"{record_name or self.display_name} - {author.name}"
+                title = record_name or self.display_name
+                return f"{title} - {name}" if name else title
 
     @classmethod
     def _channel_type_policies(cls) -> dict[str, ChannelTypePolicy]:

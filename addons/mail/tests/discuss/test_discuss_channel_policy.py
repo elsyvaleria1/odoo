@@ -259,6 +259,18 @@ class TestDiscussChannelPolicyRegressions(MailCommon):
             "display_name caps the list, so the push title inherits the cap",
         )
 
+    def test_a_message_without_author_is_titled_by_its_channel_alone(self):
+        channel = self.Channel.create({"name": "Front desk", "channel_type": "channel"})
+        message = channel.message_post(
+            body="hi",
+            author_id=False,
+            email_from="visitor@example.com",
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+        )
+        payload = channel._notify_by_web_push_prepare_payload(message)
+        self.assertEqual(payload["title"], "#Front desk")
+
     def test_the_member_link_list_is_rendered_once_by_one_helper(self):
         group = self.Channel._create_group([self.partner_employee.id])
         members = group.channel_member_ids
