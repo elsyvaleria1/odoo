@@ -737,25 +737,19 @@ class MixinInboundGate(models.AbstractModel):
                 reason,
             )
 
-    # A caller's own limit collapses per caller and is counted, and so does a
-    # caller's failed authentication: unsigned or forged requests are free to
-    # send and would otherwise each add a row. What the collapse would lose,
-    # one bad credential repeated or many tried, the row keeps as a count of
-    # distinct fingerprints. A gate's standing fault
-    # collapses per gate and is not counted, because counting is an UPDATE of
-    # a row every concurrent request shares.
-    _COALESCED_REFUSALS = {
-        "caller_limited": {"per_caller": True, "counted": True},
-        "authentication_failed": {"per_caller": True, "counted": True},
-        "misconfigured": {"per_caller": False, "counted": False},
-    }
+    # A refusal a caller provokes collapses per caller and is counted, inside
+    # the caller's rate window: a refused request is free to send and would
+    # otherwise add a row each time. A gate's standing condition collapses per
+    # gate in the standing window and is not counted, because counting is an
+    # UPDATE of a row every concurrent request shares.
+    _STANDING_CONDITIONS = frozenset({"misconfigured", "audit_accepted"})
 
     STANDING_WINDOW_PARAM = "credential.inbound_standing_window_seconds"
     STANDING_WINDOW_DEFAULT = 3600
 
     def _get_inbound_coalesce_window(self, code: str) -> int:
         """Return the caller-limit or standing-condition window in seconds."""
-        if code in ("caller_limited", "authentication_failed"):
+        if code not in self._STANDING_CONDITIONS:
             return self.rate_limit_window_seconds or 60
         window = self.env.registry.settings.get_int(
             self.env, self.STANDING_WINDOW_PARAM, self.STANDING_WINDOW_DEFAULT
@@ -783,7 +777,7 @@ class MixinInboundGate(models.AbstractModel):
         remote_addr: str | None,
         mode: str,
     ) -> bool:
-        collapse = self._COALESCED_REFUSALS.get(code, {})
+        per_caller = code not in self._STANDING_CONDITIONS
         httprequest = request.httprequest if request else None
         Exchange = self.env["integration.exchange"]
         fingerprint = (
@@ -800,11 +794,12 @@ class MixinInboundGate(models.AbstractModel):
             user_agent=(headers or {}).get("User-Agent"),
             auth_mode=mode,
             company_id=self._get_inbound_company_id(),
-            window=self._get_inbound_coalesce_window(code) if collapse else 0,
+            window=self._get_inbound_coalesce_window(code),
             method=httprequest.method if httprequest else None,
             path=httprequest.path if httprequest else None,
             fingerprint=fingerprint,
-            **collapse,
+            per_caller=per_caller,
+            counted=per_caller,
         )
 
     def _inbound_max_payload_size(self) -> int:

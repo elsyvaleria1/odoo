@@ -453,3 +453,40 @@ class TestInboundRateLimitScope(TransactionCase):
             "automation.rule carries no company_id, so the endpoint is unscoped "
             "and must hold exactly one bucket whatever company is active",
         )
+
+    def test_a_caller_s_failed_authentications_are_one_counted_row(self):
+        endpoint = self._credentialed_endpoint("gate_two_tokens")
+        for token, address in (
+            ("one", "203.0.113.9"),
+            ("two", "203.0.113.9"),
+            ("one", "203.0.113.10"),
+        ):
+            endpoint._check_inbound_request(
+                {"Authorization": f"Bearer {token}"}, remote_addr=address
+            )
+        rows = self._refusals(endpoint)
+        self.assertEqual(set(rows.mapped("refusal_reason")), {"authentication_failed"})
+        self.assertEqual(
+            sorted((row.source_ip, row.attempt_count) for row in rows),
+            [("203.0.113.10", 1), ("203.0.113.9", 2)],
+        )
+
+    def test_every_refusal_a_caller_provokes_collapses_per_caller(self):
+        outsider = self._credentialed_endpoint(
+            "gate_outsider", ip_whitelist="192.0.2.1"
+        )
+        oversized = self._credentialed_endpoint("gate_oversized", max_payload_size=8)
+
+        for _ in range(3):
+            outsider._check_inbound_request({}, remote_addr="198.51.100.7")
+            oversized._check_inbound_request(
+                {}, body=b"x" * 64, remote_addr="198.51.100.7"
+            )
+
+        for endpoint, reason in (
+            (outsider, "ip_not_allowed"),
+            (oversized, "payload_too_large"),
+        ):
+            rows = self._refusals(endpoint)
+            self.assertEqual(rows.mapped("refusal_reason"), [reason])
+            self.assertEqual(rows.attempt_count, 3)

@@ -1,7 +1,3 @@
-import base64
-
-from odoo.libs.json import dumps_bytes as json_dumps_bytes
-
 from odoo.addons.payment.tests.common import PaymentCommon
 
 
@@ -25,9 +21,12 @@ class RedsysCommon(PaymentCommon):
             "Ds_Card_Brand": "1",  # VISA
             "Ds_Response": "0000",  # Payment accepted
         }
-        cls.encoded_merchant_parameter = base64.b64encode(
-            json_dumps_bytes(cls.merchant_parameters)
-        ).decode()
+        # merchant_parameters as Redsys encoded them: the signature is over this text
+        cls.encoded_merchant_parameter = (
+            "eyJEc19PcmRlciI6ICJUZXN0IFRyYW5zYWN0aW9uIiwgIkRzX0Ftb3VudCI6IDExMTExMC45"
+            "OTk5OTk5OTk5OSwgIkRzX0N1cnJlbmN5IjogOTc4LCAiRHNfQ2FyZF9CcmFuZCI6ICIxIiwg"
+            "IkRzX1Jlc3BvbnNlIjogIjAwMDAifQ=="
+        )
         cls.payment_data = {
             "Ds_MerchantParameters": cls.encoded_merchant_parameter,
             "Ds_Signature": "upzUj96lLgOEUP5lvaj7lz0Se4MXmc5_GoJ32ACqZ3A=",

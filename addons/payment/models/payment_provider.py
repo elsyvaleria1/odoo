@@ -8,6 +8,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tools import (
     consume_session_state,
     issue_session_state,
@@ -994,12 +995,18 @@ class PaymentProvider(models.Model):
 
         # Build the request.
         url = self._prepare_request_url(endpoint, **kwargs)
-        payload = params or data or json
-        headers = self._prepare_request_headers(method, endpoint, payload, **kwargs)
+        # One serialization is both signed and sent: a provider signing the
+        # body signs the bytes on the wire, not a second rendering of the dict.
+        body = json_dumps_bytes(json) if json is not None else data
+        headers = self._prepare_request_headers(
+            method, endpoint, params or body, **kwargs
+        )
+        if json is not None:
+            headers = {"Content-Type": "application/json", **headers}
         auth = self._prepare_request_auth(**kwargs)
 
         # Log the request.
-        self._log_request(method, url, payload, reference=reference)
+        self._log_request(method, url, params or data or json, reference=reference)
 
         # Send the request.
         try:
@@ -1008,8 +1015,7 @@ class PaymentProvider(models.Model):
                 url,
                 purpose=f"payment_{self.code}",
                 params=params,
-                data=data,
-                json=json,
+                data=body,
                 headers=headers,
                 auth=auth,
                 timeout=timeout,
@@ -1062,7 +1068,8 @@ class PaymentProvider(models.Model):
 
         :param str method: The HTTP method of the request.
         :param str endpoint: The endpoint of the API to reach with the request.
-        :param dict payload: The payload of the request.
+        :param dict|bytes|str payload: The query parameters, or the body exactly as
+            it is sent (a JSON body serialized).
         :param dict kwargs: Provider-specific data.
         :return: The request headers.
         :rtype: dict

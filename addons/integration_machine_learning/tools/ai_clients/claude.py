@@ -1,6 +1,7 @@
 import json
 import logging
 
+from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 
 from ..wire_formats import get_anthropic_content, read_anthropic_content
@@ -168,7 +169,7 @@ class ClaudeClient(BaseAIClient):
             model,
             **kwargs,
         )
-        return json.dumps(answer, ensure_ascii=False)
+        return json_dumps(answer)
 
     def _complete(self, messages, model, **kwargs):
         result = self.create_message(messages=messages, model=model, **kwargs)

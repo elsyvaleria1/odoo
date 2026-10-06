@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 
@@ -25,7 +24,7 @@ def parse_json_response(text, env, expect=(dict, list)):
     for candidate in _candidates(stripped):
         try:
             value = json_loads(candidate)
-        except json.JSONDecodeError, ValueError:
+        except ValueError:
             continue
         if isinstance(value, expect):
             return value

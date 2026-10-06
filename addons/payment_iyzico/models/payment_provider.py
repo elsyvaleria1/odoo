@@ -6,7 +6,6 @@ import string
 
 from odoo import fields, models
 from odoo.exceptions import ValidationError
-from odoo.libs.json import dumps as json_dumps
 from odoo.tools.urls import urljoin
 
 from odoo.addons.payment_iyzico import const
@@ -94,19 +93,18 @@ class PaymentProvider(models.Model):
             "x-iyzi-rnd": random_string,
         }
 
-    def _get_iyzico_signature(self, endpoint, payload, random_string):
+    def _get_iyzico_signature(self, endpoint, body, random_string):
         """Calculate the signature for the provided data.
 
         See https://docs.iyzico.com/en/getting-started/preliminaries/authentication/hmacsha256-auth.
 
         :param str endpoint: The endpoint of the API to reach with the request.
-        :param dict payload: The payload of the request.
+        :param bytes body: The request body, exactly as it is sent.
         :param str random_string: The random string to use for the signature.
         :return: The calculated signature.
         :rtype: str
         """
-        payload_string = json_dumps(payload)
-        data_string = f"{random_string}/{endpoint}{payload_string}"
+        data_string = f"{random_string}/{endpoint}{body.decode()}"
         return hmac.new(
             self.iyzico_key_secret.encode(),
             msg=data_string.encode(),

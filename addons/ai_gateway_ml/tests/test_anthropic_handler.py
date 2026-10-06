@@ -123,7 +123,7 @@ class TestAnthropicTranslation(TransactionCase):
         }
         responses, actions, __ = self.handler._parse(response, [], True)
 
-        self.assertEqual(responses, ['{"answer": "42"}'])
+        self.assertEqual(responses, ['{"answer":"42"}'])
         self.assertEqual(actions, [])
 
     def test_tool_result_block_shape(self):

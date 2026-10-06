@@ -1,5 +1,6 @@
-import json
 import logging
+
+from odoo.libs.json import dumps as json_dumps
 
 from odoo.addons.integration.tools.api_client import get_api_client
 from odoo.addons.integration.tools.exceptions import CommError
@@ -170,6 +171,6 @@ class BaseAIClient:
 def with_schema_instruction(system, response_schema):
     instruction = (
         "Answer with one JSON object and nothing else. It follows this JSON "
-        f"schema:\n{json.dumps(response_schema, ensure_ascii=False)}"
+        f"schema:\n{json_dumps(response_schema)}"
     )
     return f"{system}\n\n{instruction}" if system else instruction
