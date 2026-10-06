@@ -38,6 +38,23 @@ atexit.register(_close_hosts)
 _ENVS: dict[tuple[str, ...], typing.Any] = {}
 
 
+def _restricting_group_ids(views: typing.Any) -> frozenset[int]:
+    restricted = (
+        views.sudo()
+        .with_context(active_test=False)
+        .search([("type", "!=", "qweb"), ("group_ids", "!=", False)])
+    )
+    return frozenset(restricted.group_ids.ids)
+
+
+# hand-written SQL a hosted class reaches through base whatever it tests (the
+# view cache key, on every form it opens), answered from the records the host
+# holds: (model, method, answer)
+_MEMORY_ANSWERS = (
+    ("ir.ui.view", "_get_restricting_group_ids", _restricting_group_ids),
+)
+
+
 def _host_environment(modules: tuple[str, ...]) -> typing.Any:
     env = _ENVS.get(modules)
     if env is None:
@@ -48,6 +65,9 @@ def _host_environment(modules: tuple[str, ...]) -> typing.Any:
         env = context.__enter__()
         for module in modules:
             load_module_data(env, module, skip=InMemoryCase.skip_data_files)
+        for model, method, answer in _MEMORY_ANSWERS:
+            if model in env.registry:
+                setattr(env.registry[model], method, answer)
         env.flush_all()
         env.invalidate_all()
         _HOSTS[modules] = context
