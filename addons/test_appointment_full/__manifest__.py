@@ -11,8 +11,8 @@
     "depends": [
         "appointment_crm",
         "appointment_hr",
-        "google_calendar",
-        "microsoft_calendar",
+        "calendar_google",
+        "calendar_microsoft",
         "website_appointment",
     ],
 }

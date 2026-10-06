@@ -27369,7 +27369,7 @@ msgstr ""
 "Stoklanabilir ürün üzerinde tekrar eden sipariş oluşturulmasına izin verin"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr ""
 "Randevular Uygulaması’ndan Outlook Takviminizi senkronize etmeye izin verir."
@@ -28742,7 +28742,7 @@ msgid "Appointment"
 msgstr "Randevu"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Randevu Google Takvimi"
 
@@ -28757,7 +28757,7 @@ msgid "Appointment Lead Generation"
 msgstr "Randevu Potansiyel Müşteri Oluşturma"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "Randevu Microsoft Takvimi"
 
@@ -36856,7 +36856,7 @@ msgstr ""
 "ödeme adımı ekleyin."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -40012,7 +40012,7 @@ msgid "Global"
 msgstr "Global"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "Gelen / giden posta sunucuları için Gmail desteği"
 
@@ -40034,12 +40034,12 @@ msgid "Google Address Autocomplete"
 msgstr "Google Adres Otomatik Tamamlama"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Google Takvim"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -46255,7 +46255,7 @@ msgid "Micronesia"
 msgstr "Mikronezya"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50757,12 +50757,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Outlook Takvim"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "Gelen / giden posta sunucuları için Outlook desteği"
 

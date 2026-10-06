@@ -26,8 +26,8 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         help="If you have setup a catch-all email domain redirected to the Odoo server, enter the domain name here.",
     )
-    module_google_gmail = fields.Boolean(string="Support Gmail Authentication")
-    module_microsoft_outlook = fields.Boolean(string="Support Outlook Authentication")
+    module_mail_google = fields.Boolean(string="Support Gmail Authentication")
+    module_mail_microsoft = fields.Boolean(string="Support Outlook Authentication")
     restrict_template_rendering = fields.Boolean(
         config_parameter="mail.restrict.template.rendering",
         help="Users will still be able to render templates.\n"

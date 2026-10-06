@@ -26683,7 +26683,7 @@ msgstr ""
 "Saqlanadigan mahsulotlarda takroriy buyurtmalar yaratishga ruxsat berish"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 #, fuzzy
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "Outlook taqvimingizni Uchrashuv ilovasidan sinxronlashga ruxsat berish"
@@ -28309,7 +28309,7 @@ msgid "Appointment"
 msgstr "Uchrashuv"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 #, fuzzy
 msgid "Appointment Google Calendar"
 msgstr "Uchrashuv uchun Google taqvimi"
@@ -28327,7 +28327,7 @@ msgid "Appointment Lead Generation"
 msgstr "Uchrashuv orqali mijoz jalb qilish"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 #, fuzzy
 msgid "Appointment Microsoft Calendar"
 msgstr "Uchrashuv uchun Microsoft taqvimi"
@@ -37479,7 +37479,7 @@ msgstr ""
 "uchun to‘lov bosqichini yoqing."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 #, fuzzy
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
@@ -41055,7 +41055,7 @@ msgid "Global"
 msgstr "Global"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 #, fuzzy
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "Kiruvchi/chiquvchi pochta serverlari uchun Gmail qo‘llab-quvvatlanadi"
@@ -41081,13 +41081,13 @@ msgid "Google Address Autocomplete"
 msgstr "Google manzilni avtomatik to‘ldirish"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 #, fuzzy
 msgid "Google Calendar"
 msgstr "Google Taqvim"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 #, fuzzy
 msgid "Google Gmail"
 msgstr "Google Gmail"
@@ -48071,7 +48071,7 @@ msgid "Micronesia"
 msgstr "Mikroneziya"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 #, fuzzy
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
@@ -51845,13 +51845,13 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 #, fuzzy
 msgid "Outlook Calendar"
 msgstr "Outlook taqvimi"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 #, fuzzy
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "Kiruvchi/chiquvchi pochta serverlari uchun Outlook qo‘llab-quvvatlashi"

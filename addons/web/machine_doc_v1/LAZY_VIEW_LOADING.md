@@ -66,7 +66,7 @@ page load). A single unrelated eager file (`odoo_sfu.js`, WebRTC, rarely used) i
    `patch(BaseController.prototype, {...})`. Both dereference the base binding
    during module evaluation, forcing eager evaluation.
 
-   Verified: making `attendee_calendar` lazy, then installing `google_calendar`,
+   Verified: making `attendee_calendar` lazy, then installing `calendar_google`,
    crashes boot with `Cannot read properties of undefined (reading 'prototype')`.
    The pipeline shims the now-child-exclusive base to `odoo.loader.modules.get()`,
    `undefined` until the lazy bundle loads.

@@ -26359,7 +26359,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "允許為可儲存產品創建循環訂單"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "允許從預約應用程式同步至你的 Outlook 日曆"
 
@@ -27711,7 +27711,7 @@ msgid "Appointment"
 msgstr "預約"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "預約Google日曆"
 
@@ -27726,7 +27726,7 @@ msgid "Appointment Lead Generation"
 msgstr "預約潛在客戶建立"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "預約 Microsoft 日曆"
 
@@ -35744,7 +35744,7 @@ msgid ""
 msgstr "使用網站的電子商務功能，為您的預訂設置付款步驟。"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -38853,7 +38853,7 @@ msgid "Global"
 msgstr "一般"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "支援 Gmail 收件/發件郵件服務器"
 
@@ -38875,12 +38875,12 @@ msgid "Google Address Autocomplete"
 msgstr "Google 地址自動完成"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Google日曆"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -45017,7 +45017,7 @@ msgid "Micronesia"
 msgstr "密克羅尼西亞"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -49293,12 +49293,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Outlook 行事曆"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "支援 Outlook 收件/外寄郵件伺服器"
 

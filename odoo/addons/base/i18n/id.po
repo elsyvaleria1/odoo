@@ -26933,7 +26933,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "Izinkan membuat order rutin pada produk storable"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "Izinkan untuk sinkronisasi Kalendar Outlook Anda dari App Appointment"
 
@@ -28300,7 +28300,7 @@ msgid "Appointment"
 msgstr "Appointment"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Appointment Google Calendar"
 
@@ -28315,7 +28315,7 @@ msgid "Appointment Lead Generation"
 msgstr "Pembuatan Lead Appointment"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "Kalender Appointment Microsoft"
 
@@ -36393,7 +36393,7 @@ msgstr ""
 "dari website."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -39542,7 +39542,7 @@ msgid "Global"
 msgstr "Global"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "Bantuan gmail untuk server email masuk / keluar"
 
@@ -39564,12 +39564,12 @@ msgid "Google Address Autocomplete"
 msgstr "Autocomplete Alamat Google"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -45774,7 +45774,7 @@ msgid "Micronesia"
 msgstr "Micronesia"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50268,12 +50268,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Kalender Outlook"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "Bantuan outlook untuk server email masuk / keluar"
 

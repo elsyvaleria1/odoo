@@ -27101,7 +27101,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "在庫可能品で定期オーダを作成することを許可する"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "予約アプリからOutlookカレンダの同期を許可"
 
@@ -28462,7 +28462,7 @@ msgid "Appointment"
 msgstr "予約"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Googleカレンダ予約"
 
@@ -28477,7 +28477,7 @@ msgid "Appointment Lead Generation"
 msgstr "予約リード生成"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "予約Microsoftカレンダ"
 
@@ -36556,7 +36556,7 @@ msgstr ""
 "ウェブサイトのeコマース機能を使って、予約に支払いステップを追加できます。"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -39690,7 +39690,7 @@ msgid "Global"
 msgstr "グローバル"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "受信/送信メールサーバのGmailサポート"
 
@@ -39712,12 +39712,12 @@ msgid "Google Address Autocomplete"
 msgstr "Google 住所自動入力"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Googleカレンダ"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -45898,7 +45898,7 @@ msgid "Micronesia"
 msgstr "ミクロネシア"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50220,12 +50220,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Outlook カレンダー"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "受信/送信メールサーバのOutlookサポート"
 

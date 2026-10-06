@@ -78,7 +78,7 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
             self.env.user.id,
         )
         calendar_module = self.env["ir.module.module"].search(
-            [("name", "=", f"{self.external_calendar_provider}_calendar")]
+            [("name", "=", f"calendar_{self.external_calendar_provider}")]
         )
         if not calendar_module:
             raise UserError(

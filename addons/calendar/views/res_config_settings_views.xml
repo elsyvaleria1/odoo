@@ -18,10 +18,10 @@
                             string="Outlook Calendar"
                             help="Synchronize your calendar with Outlook"
                             documentation="/applications/productivity/calendar/outlook.html">
-                            <field name="module_microsoft_calendar" />
+                            <field name="module_calendar_microsoft" />
                             <div
                                 class="content-group"
-                                invisible="not module_microsoft_calendar"
+                                invisible="not module_calendar_microsoft"
                                 id="msg_module_microsoft_calendar">
                                 <div class="text-warning mt16"><strong>Save</strong> this page and come back here to set up the feature.</div>
                             </div>
@@ -31,10 +31,10 @@
                             string="Google Calendar"
                             help="Synchronize your calendar with Google Calendar"
                             documentation="/applications/productivity/calendar/google.html">
-                            <field name="module_google_calendar" />
+                            <field name="module_calendar_google" />
                             <div
                                 class="content-group"
-                                invisible="not module_google_calendar"
+                                invisible="not module_calendar_google"
                                 id="msg_module_google_calendar">
                                 <div class="text-warning mt16"><strong>Save</strong> this page and come back here to set up the feature.</div>
                             </div>

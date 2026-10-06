@@ -27493,7 +27493,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "Umożliwienie tworzenia cyklicznych zamówień na produkty magazynowane"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr ""
 "Pozwól na synchronizację Twojego kalendarza Outlook z aplikacją Spotkania"
@@ -28871,7 +28871,7 @@ msgid "Appointment"
 msgstr "Spotkanie"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Spotkanie kalendarz Google"
 
@@ -28886,7 +28886,7 @@ msgid "Appointment Lead Generation"
 msgstr "Generowanie leadów do spotkań"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "Spotkanie kalendarz Microsoft"
 
@@ -36986,7 +36986,7 @@ msgstr ""
 "na stronie."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -40137,7 +40137,7 @@ msgid "Global"
 msgstr "Globalne"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "Obsługa Gmaila dla serwerów poczty przychodzącej/wychodzącej"
 
@@ -40159,12 +40159,12 @@ msgid "Google Address Autocomplete"
 msgstr "Autouzupełnianie adresu Google"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Kalendarz Google"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -46383,7 +46383,7 @@ msgid "Micronesia"
 msgstr "Mikronezja"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50902,12 +50902,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Kalendarz Outlook"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "Obsługa programu Outlook dla serwerów poczty przychodzącej/wychodzącej"
 

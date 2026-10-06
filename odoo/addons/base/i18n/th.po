@@ -25989,7 +25989,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "อนุญาตให้สร้างคำสั่งซื้อที่เกิดซ้ำสำหรับผลิตภัณฑ์ที่จัดเก็บได้"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "อนุญาตให้ซิงค์ปฏิทิน Outlook ของคุณจากแอปการนัดหมาย"
 
@@ -27343,7 +27343,7 @@ msgid "Appointment"
 msgstr "การนัดหมาย"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "การนัดหมายใน Google Calendar"
 
@@ -27358,7 +27358,7 @@ msgid "Appointment Lead Generation"
 msgstr "การสร้างลูกค้าเป้าหมายในการนัดหมาย"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "การนัดหมายในปฏิทินของ Microsoft"
 
@@ -35390,7 +35390,7 @@ msgid ""
 msgstr "เปิดใช้งานขั้นตอนการชำระเงินสำหรับการจองของคุณโดยใช้ฟีเจอร์อีคอมเมิร์ซของเว็บไซต์"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -38501,7 +38501,7 @@ msgid "Global"
 msgstr "โกลบอล"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "รองรับ Gmail สำหรับเซิร์ฟเวอร์อีเมลขาเข้า / ขาออก"
 
@@ -38523,12 +38523,12 @@ msgid "Google Address Autocomplete"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "ปฏิทิน Google"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -44662,7 +44662,7 @@ msgid "Micronesia"
 msgstr "ไมโครนีเซีย"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -48901,12 +48901,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "ปฏิทิน Outlook"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "รองรับ Outlook สำหรับเซิร์ฟเวอร์เมลขาเข้า / ขาออก"
 

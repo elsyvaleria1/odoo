@@ -9,11 +9,11 @@ import { standardWidgetProps } from "@web/views/widgets";
 const providerData = {
     google: {
         restart_sync_method: "restart_google_synchronization",
-        sync_route: "/google_calendar/sync_data",
+        sync_route: "/calendar_google/sync_data",
     },
     microsoft: {
         restart_sync_method: "restart_microsoft_synchronization",
-        sync_route: "/microsoft_calendar/sync_data",
+        sync_route: "/calendar_microsoft/sync_data",
     },
 };
 
@@ -44,7 +44,7 @@ export class CalendarConnectProvider extends Component {
             "action_calendar_prepare_external_provider_sync",
             [this.props.record.resId],
         );
-        // See google/microsoft_calendar for the origin of this shortened version
+        // See google/calendar_microsoft for the origin of this shortened version
         const provider =
             providerData[this.props.record.data.external_calendar_provider];
         if (!provider) {

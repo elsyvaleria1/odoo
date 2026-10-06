@@ -27435,7 +27435,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "Mahdollistaa toistuvan tilauksen luomisen varastoitavalle tuotteelle"
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "Salli Outlook-kalenterin synkronointi Ajanvaraus-sovelluksesta"
 
@@ -28812,7 +28812,7 @@ msgid "Appointment"
 msgstr "Ajanvaraus"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Google-kalenteri, tapaaminen"
 
@@ -28827,7 +28827,7 @@ msgid "Appointment Lead Generation"
 msgstr "Liidien luominen ajanvarauksesta"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "Microsoft-kalenteri, tapaaminen"
 
@@ -36922,7 +36922,7 @@ msgstr ""
 "kaupankäynnin ominaisuuksia."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -40081,7 +40081,7 @@ msgid "Global"
 msgstr "Yleinen"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "Gmail-tuki saapuvan tai lähtevän postin palvelimille"
 
@@ -40103,12 +40103,12 @@ msgid "Google Address Autocomplete"
 msgstr "Google osoitteen automaattinen täydennys"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "Google Gmail"
 
@@ -46317,7 +46317,7 @@ msgid "Micronesia"
 msgstr "Mikronesia"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50809,12 +50809,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "Outlook-kalenteri"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "Outlook-tuki saapuvan/lähtevän postin palvelimille"
 

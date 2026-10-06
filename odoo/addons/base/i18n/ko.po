@@ -26917,7 +26917,7 @@ msgid "Allow to create recurring order on storable product"
 msgstr "저장 가능 품목에 대해 반복 주문을 생성하는 것을 허용합니다."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
 msgid "Allow to sync your Outlook Calendar from the Appointment App"
 msgstr "Outlook 일정과 일정 예약 앱의 동기화를 사용 설정합니다."
 
@@ -28274,7 +28274,7 @@ msgid "Appointment"
 msgstr "일정"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_google_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointment Google Calendar"
 msgstr "Google 캘린더 일정"
 
@@ -28289,7 +28289,7 @@ msgid "Appointment Lead Generation"
 msgstr "영업제안 약속 생성"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
 msgid "Appointment Microsoft Calendar"
 msgstr "일정 예약 Microsoft 캘린더"
 
@@ -36346,7 +36346,7 @@ msgstr ""
 "웹사이트의 이커머스 기능을 사용하여 예약에 대한 결제 단계를 활성화합니다."
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_google_calendar
+#: model:ir.module.module,description:base.module_appointment_calendar_google
 msgid ""
 "Enable choosing a Google Calendar videoconference link to give to your "
 "clients for an appointment."
@@ -39475,7 +39475,7 @@ msgid "Global"
 msgstr "전체"
 
 #. module: base
-#: model:ir.module.module,description:base.module_google_gmail
+#: model:ir.module.module,description:base.module_mail_google
 msgid "Gmail support for incoming / outgoing mail servers"
 msgstr "수발신 이메일 서버에 Gmail 지원"
 
@@ -39497,12 +39497,12 @@ msgid "Google Address Autocomplete"
 msgstr "구글 주소 자동 완성"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_google
 msgid "Google Calendar"
 msgstr "구글 캘린더"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_gmail
+#: model:ir.module.module,shortdesc:base.module_mail_google
 msgid "Google Gmail"
 msgstr "구글 지메일"
 
@@ -45672,7 +45672,7 @@ msgid "Micronesia"
 msgstr "미크로네시아"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_outlook
+#: model:ir.module.module,shortdesc:base.module_mail_microsoft
 msgid "Microsoft Outlook"
 msgstr "Microsoft Outlook"
 
@@ -50077,12 +50077,12 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_calendar
+#: model:ir.module.module,shortdesc:base.module_calendar_microsoft
 msgid "Outlook Calendar"
 msgstr "아웃룩 달력"
 
 #. module: base
-#: model:ir.module.module,description:base.module_microsoft_outlook
+#: model:ir.module.module,description:base.module_mail_microsoft
 msgid "Outlook support for incoming / outgoing mail servers"
 msgstr "수발신 메일 서버에 Outlook 지원"
 

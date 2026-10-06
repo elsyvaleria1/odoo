@@ -30,8 +30,8 @@ class TestProviderIsolation(TransactionCase):
             }
         )
         cls.server.invalidate_recordset()
-        from odoo.addons.google_gmail.models.mixin_google_gmail import GMAIL
-        from odoo.addons.microsoft_outlook.models.mixin_microsoft_outlook import (
+        from odoo.addons.mail_google.models.mixin_google_gmail import GMAIL
+        from odoo.addons.mail_microsoft.models.mixin_microsoft_outlook import (
             OUTLOOK,
         )
 
@@ -71,8 +71,8 @@ class TestProviderIsolation(TransactionCase):
         self.assertNotIn("access_type", outlook)
 
     def test_each_provider_signs_its_state_in_its_own_scope(self):
-        from odoo.addons.google_gmail.models.mixin_google_gmail import GMAIL
-        from odoo.addons.microsoft_outlook.models.mixin_microsoft_outlook import (
+        from odoo.addons.mail_google.models.mixin_google_gmail import GMAIL
+        from odoo.addons.mail_microsoft.models.mixin_microsoft_outlook import (
             OUTLOOK,
         )
 
@@ -113,7 +113,7 @@ class TestProviderStateIsolation(HttpCase):
         )
         state = parse_qs(urlsplit(action["url"]).query)["state"][0]
         query = urlencode({"code": "CODE", "state": state})
-        with mute_logger("odoo.addons.microsoft_outlook.controllers.main"):
+        with mute_logger("odoo.addons.mail_microsoft.controllers.main"):
             response = self.url_open(
                 f"/microsoft_outlook/confirm?{query}", allow_redirects=False
             )

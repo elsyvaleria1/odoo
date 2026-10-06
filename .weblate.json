@@ -352,9 +352,9 @@
                 "new_base": "addons/appointment_crm/i18n/appointment_crm.pot"
             },
             {
-                "name": "appointment_google_calendar",
-                "filemask": "addons/appointment_google_calendar/i18n/*.po",
-                "new_base": "addons/appointment_google_calendar/i18n/appointment_google_calendar.pot"
+                "name": "appointment_calendar_google",
+                "filemask": "addons/appointment_calendar_google/i18n/*.po",
+                "new_base": "addons/appointment_calendar_google/i18n/appointment_calendar_google.pot"
             },
             {
                 "name": "appointment_google_reserve",
@@ -372,9 +372,9 @@
                 "new_base": "addons/appointment_hr_recruitment/i18n/appointment_hr_recruitment.pot"
             },
             {
-                "name": "appointment_microsoft_calendar",
-                "filemask": "addons/appointment_microsoft_calendar/i18n/*.po",
-                "new_base": "addons/appointment_microsoft_calendar/i18n/appointment_microsoft_calendar.pot"
+                "name": "appointment_calendar_microsoft",
+                "filemask": "addons/appointment_calendar_microsoft/i18n/*.po",
+                "new_base": "addons/appointment_calendar_microsoft/i18n/appointment_calendar_microsoft.pot"
             },
             {
                 "name": "appointment_sms",
@@ -822,14 +822,14 @@
                 "new_base": "addons/google_address_autocomplete/i18n/google_address_autocomplete.pot"
             },
             {
-                "name": "google_calendar",
-                "filemask": "addons/google_calendar/i18n/*.po",
-                "new_base": "addons/google_calendar/i18n/google_calendar.pot"
+                "name": "calendar_google",
+                "filemask": "addons/calendar_google/i18n/*.po",
+                "new_base": "addons/calendar_google/i18n/calendar_google.pot"
             },
             {
-                "name": "google_gmail",
-                "filemask": "addons/google_gmail/i18n/*.po",
-                "new_base": "addons/google_gmail/i18n/google_gmail.pot"
+                "name": "mail_google",
+                "filemask": "addons/mail_google/i18n/*.po",
+                "new_base": "addons/mail_google/i18n/mail_google.pot"
             },
             {
                 "name": "google_recaptcha",
@@ -1462,14 +1462,14 @@
                 "new_base": "addons/microsoft_account/i18n/microsoft_account.pot"
             },
             {
-                "name": "microsoft_calendar",
-                "filemask": "addons/microsoft_calendar/i18n/*.po",
-                "new_base": "addons/microsoft_calendar/i18n/microsoft_calendar.pot"
+                "name": "calendar_microsoft",
+                "filemask": "addons/calendar_microsoft/i18n/*.po",
+                "new_base": "addons/calendar_microsoft/i18n/calendar_microsoft.pot"
             },
             {
-                "name": "microsoft_outlook",
-                "filemask": "addons/microsoft_outlook/i18n/*.po",
-                "new_base": "addons/microsoft_outlook/i18n/microsoft_outlook.pot"
+                "name": "mail_microsoft",
+                "filemask": "addons/mail_microsoft/i18n/*.po",
+                "new_base": "addons/mail_microsoft/i18n/mail_microsoft.pot"
             },
             {
                 "name": "mrp",

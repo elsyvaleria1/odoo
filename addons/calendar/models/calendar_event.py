@@ -812,7 +812,7 @@ class CalendarEvent(models.Model):
                 )
 
     def _get_organizer_validation_conditions(self, vals_list):
-        """Method for check in the microsoft_calendar module that needs to be
+        """Method for check in the calendar_microsoft module that needs to be
         overridden in appointment.
         """
         return [True] * len(vals_list)

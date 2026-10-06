@@ -6,14 +6,14 @@ from freezegun import freeze_time
 from odoo.tests import tagged, users
 
 from odoo.addons.calendar.tests.booking.common import AppointmentCommon
-from odoo.addons.google_calendar.models.res_users import ResUsers as GoogleUser
-from odoo.addons.google_calendar.tests.test_sync_common import TestSyncGoogle
-from odoo.addons.mail.tests.common import mail_new_test_user
-from odoo.addons.microsoft_calendar.models.res_users import ResUsers as MsftUser
-from odoo.addons.microsoft_calendar.tests.common import TestCommon as MsftTestCommon
-from odoo.addons.microsoft_calendar.utils.microsoft_calendar import (
+from odoo.addons.calendar_google.models.res_users import ResUsers as GoogleUser
+from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle
+from odoo.addons.calendar_microsoft.models.res_users import ResUsers as MsftUser
+from odoo.addons.calendar_microsoft.tests.common import TestCommon as MsftTestCommon
+from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
+from odoo.addons.mail.tests.common import mail_new_test_user
 
 
 class TestAppointmentNotificationCommon(AppointmentCommon):
