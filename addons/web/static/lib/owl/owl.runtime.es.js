@@ -6591,9 +6591,11 @@ var StateStamp = class extends ObjectReturner {
     this.#state = state;
   }
   // the state of `view`, or of the view it inherits from (a read through
-  // `Object.create(props)`)
+  // `Object.create(props)`); a reactive or observed proxy of a view reads as
+  // the view it wraps, since a private field is not visible through a proxy
   static of(view) {
     while (view !== null && typeof view === "object") {
+      view = toRaw(viewBases.get(view) ?? view);
       if (#state in view) {
         return view.#state;
       }
