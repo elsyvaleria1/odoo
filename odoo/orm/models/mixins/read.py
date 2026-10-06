@@ -11,7 +11,6 @@ from odoo.libs.iteration import PENDING, SENTINEL
 from odoo.tools import ormcache
 
 from ... import decorators as api
-from ..._recordset import is_search_overridden
 from ..._typing import ValuesType
 from ...fields._field_description import description_key
 from ...primitives import LOG_ACCESS_COLUMNS
@@ -24,7 +23,7 @@ if typing.TYPE_CHECKING:
 
     from odoo.tools import Query
 
-    from ..._typing import BaseModel, IdType, ModelLike
+    from ..._typing import IdType, ModelLike
     from ...fields.base import Field
 
 _logger = logging.getLogger("odoo.models")
@@ -428,7 +427,12 @@ class ReadMixin(_ModelStubs):
             self._ids,
         )
         rules_applied = any(field.column_type for field in fields_to_fetch)
-        if rules_applied:
+        if rules_applied and self._known_readable():
+            # read again what a search of the same transaction found: the
+            # rules it passed are not judged a second time
+            rules_applied = False
+            query = self._as_query(ordered=False)
+        elif rules_applied:
             query = self._search([("id", "in", self.ids)], active_test=False)
         else:
             try:
@@ -476,9 +480,7 @@ class ReadMixin(_ModelStubs):
             to_fetch=len(fields_to_fetch),
         )
         fetched = self._fetch_query(query, fields_to_fetch)
-        if rules_applied and not is_search_overridden(
-            typing.cast("type[BaseModel]", type(self))
-        ):
+        if rules_applied:
             fetched._note_readable()
 
         if self.env.transaction.observers:

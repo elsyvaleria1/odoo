@@ -12,6 +12,7 @@ from odoo.tools import ormcache
 from odoo.tools.translate import LazyTranslate
 
 from ... import decorators as api
+from ..._recordset import is_search_overridden
 from ...domain import Domain, DomainCondition, OptimizationLevel
 from ...domain.constants import ACCESS_OPERATIONS
 from ...fields.base import call_hook
@@ -758,13 +759,31 @@ class AccessMixin(_ModelStubs):
         return Domain.TRUE
 
     def _note_readable(self) -> None:
-        # the records a user's search or fetch returned passed the read rules
+        # the records a user's search or fetch returned passed the read rules,
+        # and the search itself the model-level check; a model whose _search
+        # is its own may narrow it differently, and is noted nothing
         env = self.env
-        if env.su or not self._ids:
+        if (
+            env.su
+            or not self._ids
+            or is_search_overridden(typing.cast("type[BaseModel]", type(self)))
+        ):
             return
         verdicts = env.transaction.access_memo.read_verdicts(env, self._name)
+        verdicts[0] = True
         for id_ in self._ids:
             verdicts[id_] = True
+
+    def _known_readable(self) -> bool:
+        # every record passed the read rules in this transaction, and nothing
+        # those rules read was written since (the memo drops the verdicts then)
+        env = self.env
+        if env.su or not self._ids:
+            return False
+        verdicts = env.transaction.access_memo.cached_verdicts(env, self._name)
+        if not verdicts or not verdicts.get(0):
+            return False
+        return all(verdicts.get(id_) for id_ in self._ids)
 
     def _check_company_domain(self, companies: typing.Any) -> Domain:
         if not companies:

@@ -182,6 +182,12 @@ class Base(models.AbstractModel):
 
         for index, record_ids in ids_by_index.items():
             result[index] = self.browse(record_ids)
+        if ids_by_index:
+            # each id came out of a search under the read rules: the records'
+            # read then judges them no second time
+            self.browse(
+                [record_id for ids in ids_by_index.values() for record_id in ids]
+            )._note_readable()
         return result
 
     _OPENED_GROUPS_SQL_CHUNK = 50
