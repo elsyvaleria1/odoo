@@ -1,5 +1,10 @@
 /** @odoo-module native */
-import { specialFolderDropRefusal, toFolderValueId } from "@document/views/utils";
+import {
+    DocumentsViewEvent,
+    specialFolderDropRefusal,
+    toFolderValueId,
+    UserFolder,
+} from "@document/views/utils";
 import { markup } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -24,11 +29,14 @@ export function dropRejectionReason({
     getFolderAndParents,
 }) {
     // "All" (id false) holds nothing of its own
-    if (!targetFolder?.id || ["RECENT", "SHARED"].includes(targetFolder.id)) {
+    if (
+        !targetFolder?.id ||
+        [UserFolder.RECENT, UserFolder.SHARED].includes(targetFolder.id)
+    ) {
         return specialFolderDropRefusal();
     }
     if (
-        targetFolder.id === "TRASH" &&
+        targetFolder.id === UserFolder.TRASH &&
         draggedRecords.trashableRecordIds.length < draggedRecords.all.length
     ) {
         return _t(
@@ -39,7 +47,7 @@ export function dropRejectionReason({
     const permission =
         targetFolder.target_user_permission || targetFolder.user_permission;
     const canWrite =
-        targetFolder.id === "COMPANY"
+        targetFolder.id === UserFolder.COMPANY
             ? permission === "edit" || userIsDocumentManager
             : typeof targetFolder.id !== "number" || permission === "edit";
     if (!canWrite) {
@@ -189,7 +197,7 @@ export const useDraggableDocuments = makeDraggableHook({
                 addClass(valueEl, "o_drag_over_selector");
                 if (!ctx.isInvalidTarget) {
                     model.viewContext.documentsView.bus.trigger(
-                        "documents-expand-folder",
+                        DocumentsViewEvent.EXPAND_FOLDER,
                         {
                             folderId: targetFolder.id,
                         },
@@ -310,7 +318,7 @@ export const useDraggableDocuments = makeDraggableHook({
             return;
         }
 
-        if (targetFolder.id === "TRASH") {
+        if (targetFolder.id === UserFolder.TRASH) {
             const { trashableRecordIds } = ctx.draggedRecords;
             const trashed =
                 trashableRecordIds.length &&
@@ -329,7 +337,7 @@ export const useDraggableDocuments = makeDraggableHook({
             return;
         }
 
-        if (targetFolder.id === "COMPANY") {
+        if (targetFolder.id === UserFolder.COMPANY) {
             if (await model.documentService.moveToCompanyRoot(ctx.draggedRecords)) {
                 await model.viewContext.searchModel._reloadSearchModel(true);
             }

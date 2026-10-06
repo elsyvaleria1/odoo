@@ -1226,16 +1226,24 @@ test("the cog menu's star follows the folder, and a cancelled trash reloads noth
     serverData["document.document"][0].user_folder_id = "MY";
     serverData["document.document"][0].owner_id = serverState.userId;
     onRpc("/documents/touch/*", () => ({}));
-    onRpc("document.document", "action_toggle_user_favorite", ({ args }) => {
+    onRpc("document.document", "action_toggle_user_favorite", function ({ args }) {
         expect.step(`toggle favorite ${args[0]}`);
+        for (const record of this.env["document.document"].browse(args[0])) {
+            this.env["document.document"].write([record.id], {
+                is_user_favorite: !record.is_user_favorite,
+            });
+        }
         return true;
     });
     onRpc("document.document", "web_search_read", () => {
         expect.step("reload");
     });
+    onRpc("document.document", "search_panel_select_range", () => {
+        expect.step("folder tree");
+    });
     await makeDocumentsMockEnv({ serverData });
     await mountDocumentsKanbanView();
-    expect.verifySteps(["reload"]);
+    expect.verifySteps(["folder tree", "reload"]);
     await contains(".o_kanban_record:contains('Folder 1')").click();
     await waitFor(".o_last_breadcrumb_item:contains('Folder 1')");
     expect.verifySteps(["reload"]);
@@ -1245,7 +1253,16 @@ test("the cog menu's star follows the folder, and a cancelled trash reloads noth
     ).click();
     await contains(".o-dropdown-item:contains('Add Star')").click();
     await animationFrame();
-    expect.verifySteps(["toggle favorite 1", "reload"]);
+    expect.verifySteps(["toggle favorite 1", "folder tree"], {
+        message: "the open folder's star is the tree's: its records are not read again",
+    });
+    await contains(
+        ".o_cp_action_menus .o_cog_menu_toggler, .o_cp_action_menus button",
+    ).click();
+    expect(".o-dropdown-item:contains('Remove Star')").toHaveCount(1);
+    await contains(
+        ".o_cp_action_menus .o_cog_menu_toggler, .o_cp_action_menus button",
+    ).click();
 
     await contains(
         ".o_cp_action_menus .o_cog_menu_toggler, .o_cp_action_menus button",

@@ -1,5 +1,6 @@
 /** @odoo-module native */
 import { useDocumentContext } from "@document/views/document_context";
+import { DocumentsViewEvent } from "@document/views/utils";
 import { Component, proxy, t, useProps } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
@@ -95,10 +96,13 @@ export class DocumentsDropZone extends Component {
 
         this._clearDropOver();
         if (this.canDrop) {
-            this.documentContext.documentsView.bus.trigger("documents-upload-files", {
-                files: ev.dataTransfer.files,
-                accessToken: this.documentService.currentFolderAccessToken,
-            });
+            this.documentContext.documentsView.bus.trigger(
+                DocumentsViewEvent.UPLOAD_FILES,
+                {
+                    files: ev.dataTransfer.files,
+                    accessToken: this.documentService.currentFolderAccessToken,
+                },
+            );
         }
     }
 }

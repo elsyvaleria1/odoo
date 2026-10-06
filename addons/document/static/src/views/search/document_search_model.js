@@ -2,7 +2,9 @@
 import {
     FOLDER_STORAGE_KEY,
     isSpecialFolderId,
+    SEARCH_PANEL_UPDATED,
     toFolderValueId,
+    UserFolder,
 } from "@document/views/utils";
 import { useSetupAction } from "@web/core/action_hook";
 import { browser } from "@web/core/browser/browser";
@@ -208,7 +210,7 @@ export class DocumentsSearchModel extends SearchModel {
         );
         end();
         if (!skipUpdate) {
-            this.trigger("update-search-panel");
+            this.trigger(SEARCH_PANEL_UPDATED);
         }
     }
 
@@ -220,16 +222,20 @@ export class DocumentsSearchModel extends SearchModel {
         if (excludedCategoryId === userFolderCategory.id) {
             return super._getCategoryDomain(excludedCategoryId);
         }
-        if (["COMPANY", "MY", "RECENT"].includes(userFolderCategory.activeValueId)) {
+        if (
+            [UserFolder.COMPANY, UserFolder.MY, UserFolder.RECENT].includes(
+                userFolderCategory.activeValueId,
+            )
+        ) {
             return [["user_folder_id", "=", userFolderCategory.activeValueId]];
         }
-        if (userFolderCategory.activeValueId === "TRASH") {
+        if (userFolderCategory.activeValueId === UserFolder.TRASH) {
             return [["active", "=", false]];
         }
-        if (userFolderCategory.activeValueId === "SHARED") {
+        if (userFolderCategory.activeValueId === UserFolder.SHARED) {
             return Domain.and([
                 [["shortcut_document_id", "=", false]],
-                [["user_folder_id", "=", "SHARED"]],
+                [["user_folder_id", "=", UserFolder.SHARED]],
             ]).toList();
         }
         if (!userFolderCategory.activeValueId) {
@@ -257,13 +263,13 @@ export class DocumentsSearchModel extends SearchModel {
      */
     get orderBy() {
         const activeFolderId = this.folderCategory?.activeValueId;
-        if (activeFolderId === "TRASH") {
+        if (activeFolderId === UserFolder.TRASH) {
             return [
                 { name: "create_date", asc: false },
                 { name: "is_folder", asc: true },
             ];
         }
-        if (activeFolderId === "RECENT") {
+        if (activeFolderId === UserFolder.RECENT) {
             return [
                 { name: "is_folder", asc: false },
                 { name: "last_access_date_group", asc: false },
@@ -279,7 +285,10 @@ export class DocumentsSearchModel extends SearchModel {
 
     get groupBy() {
         const groupBy = super.groupBy;
-        if (!groupBy?.length && this.folderCategory?.activeValueId === "RECENT") {
+        if (
+            !groupBy?.length &&
+            this.folderCategory?.activeValueId === UserFolder.RECENT
+        ) {
             return ["last_access_date_group"];
         }
         return groupBy;
@@ -361,7 +370,7 @@ export class DocumentsSearchModel extends SearchModel {
                     newSection.id || (valueIds.find((id) => id !== false) ?? false);
             } else {
                 category.activeValueId = this.documentService.userIsInternal
-                    ? "COMPANY"
+                    ? UserFolder.COMPANY
                     : valueIds[0];
             }
             browser.localStorage.setItem(FOLDER_STORAGE_KEY, category.activeValueId);

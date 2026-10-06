@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { PASTE_SHARE_LINKS } from "@document/views/utils";
 import { openDocumentsPicker } from "@document/views/view_dialogs/select_add_document_create_dialog";
 import { Component, useProps } from "@odoo/owl";
 import { registry } from "@web/core/registry";
@@ -27,7 +28,7 @@ export class MailComposerDocumentSelector extends Component {
             onAddAttachments: (attachments) =>
                 this.operations.linkRecords(attachments.map(({ id }) => id)),
             onPasteLinks: (links) =>
-                this.model.bus.trigger("PASTE_SHARE_LINKS", { links }),
+                this.model.bus.trigger(PASTE_SHARE_LINKS, { links }),
         });
     };
 }

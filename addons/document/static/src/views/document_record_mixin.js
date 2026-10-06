@@ -1,6 +1,11 @@
 /** @odoo-module native */
 import { documentPreview } from "@document/attachments/document_file";
-import { openDocumentUrl, toFolderValueId } from "@document/views/utils";
+import {
+    DocumentsViewEvent,
+    openDocumentUrl,
+    toFolderValueId,
+    UserFolder,
+} from "@document/views/utils";
 import { _t } from "@web/core/translation";
 
 export const DocumentsRecordMixin = (component) =>
@@ -42,7 +47,7 @@ export const DocumentsRecordMixin = (component) =>
             ) {
                 this.model.root.removeRecords(movedRecordsIds);
                 this.model.viewContext.documentsView.bus.trigger(
-                    "documents-close-preview",
+                    DocumentsViewEvent.CLOSE_PREVIEW,
                 );
             }
             if (this.isDetailsPanelRecord && this.data.type === "folder") {
@@ -61,12 +66,15 @@ export const DocumentsRecordMixin = (component) =>
             if (!input.files.length) {
                 return;
             }
-            this.model.viewContext.documentsView.bus.trigger("documents-upload-files", {
-                files: input.files,
-                accessToken: this.data.access_token,
-                // not read by the server: the progress bars match their record by it
-                context: { document_id: this.data.id },
-            });
+            this.model.viewContext.documentsView.bus.trigger(
+                DocumentsViewEvent.UPLOAD_FILES,
+                {
+                    files: input.files,
+                    accessToken: this.data.access_token,
+                    // not read by the server: the progress bars match their record by it
+                    context: { document_id: this.data.id },
+                },
+            );
             input.value = "";
         }
 
@@ -132,16 +140,19 @@ export const DocumentsRecordMixin = (component) =>
                 selection.length > 1 && selection.includes(this)
                     ? selection.filter((rec) => rec.isViewable())
                     : [this];
-            this.model.viewContext.documentsView.bus.trigger("documents-open-preview", {
-                documents,
-                mainDocument: this,
-                isPdfSplit: false,
-            });
+            this.model.viewContext.documentsView.bus.trigger(
+                DocumentsViewEvent.OPEN_PREVIEW,
+                {
+                    documents,
+                    mainDocument: this,
+                    isPdfSplit: false,
+                },
+            );
         }
 
         async openFolder() {
             const target = this.isShortcut() ? this.shortcutTarget : this;
-            const folderId = target.data.active ? target.data.id : "TRASH";
+            const folderId = target.data.active ? target.data.id : UserFolder.TRASH;
             await this._goToFolder(folderId);
         }
 
@@ -149,7 +160,7 @@ export const DocumentsRecordMixin = (component) =>
             const target = this.shortcutTarget;
             let folderId;
             if (!target.data.active) {
-                folderId = "TRASH";
+                folderId = UserFolder.TRASH;
             } else if (target.data.type === "folder") {
                 folderId = this.data.shortcut_document_id?.id || target.data.id;
             } else {
@@ -176,7 +187,7 @@ export const DocumentsRecordMixin = (component) =>
             searchModel.toggleCategoryValue(searchModel.folderCategory.id, folderId);
             this.model.originalSelection = [this.shortcutTarget.resId];
             this.model.viewContext.documentsView.bus.trigger(
-                "documents-expand-folder",
+                DocumentsViewEvent.EXPAND_FOLDER,
                 {
                     folderId,
                 },

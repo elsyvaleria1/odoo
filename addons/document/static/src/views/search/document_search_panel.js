@@ -1,6 +1,13 @@
 /** @odoo-module native */
 import { useDocumentContext } from "@document/views/document_context";
-import { specialFolderDropRefusal, toFolderValueId } from "@document/views/utils";
+import {
+    DocumentsViewEvent,
+    SEARCH_PANEL_UPDATED,
+    specialFolderDropRefusal,
+    toFolderValueId,
+    UserFolder,
+    WRITABLE_ROOTS,
+} from "@document/views/utils";
 import { onWillStart, proxy } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 import { useNestedSortable } from "@web/core/utils/dnd";
@@ -9,8 +16,6 @@ import { useViewModel } from "@web/model/model";
 import { useSearchModel } from "@web/search/search_model";
 import { SearchPanel } from "@web/search/search_panel/search_panel";
 import { utils as uiUtils } from "@web/ui/viewport";
-
-const DND_ALLOWED_SPECIAL_DESTINATIONS = ["COMPANY", "MY"];
 
 export class DocumentsSearchPanel extends SearchPanel {
     static get template() {
@@ -54,7 +59,7 @@ export class DocumentsSearchPanel extends SearchPanel {
             } else {
                 const selectedFolderId = await this.searchModel.getSelectedFolderId();
                 if (selectedFolderId) {
-                    this.state.expanded[this.sections[0].id]["COMPANY"] = true;
+                    this.state.expanded[this.sections[0].id][UserFolder.COMPANY] = true;
                     this._expandFolder({ folderId: selectedFolderId });
                 }
             }
@@ -62,13 +67,13 @@ export class DocumentsSearchPanel extends SearchPanel {
 
         useBus(
             this.documentContext.documentsView.bus,
-            "documents-expand-folder",
+            DocumentsViewEvent.EXPAND_FOLDER,
             (ev) => {
                 this._expandFolder(ev.detail);
             },
         );
 
-        useBus(this.searchModel, "update-search-panel", async () => {
+        useBus(this.searchModel, SEARCH_PANEL_UPDATED, async () => {
             this.updateActiveValues();
             this.state.searchModelUpdates++;
         });
@@ -127,7 +132,7 @@ export class DocumentsSearchPanel extends SearchPanel {
         // the company root takes folders from managers only; a folder under
         // it is judged by its own permission, server side
         if (
-            parentFolderId === "COMPANY" &&
+            parentFolderId === UserFolder.COMPANY &&
             !this.documentService.userIsDocumentManager
         ) {
             this.notification.add(
@@ -138,7 +143,10 @@ export class DocumentsSearchPanel extends SearchPanel {
         }
         const parentFolder = this.searchModel.getFolderById(parentFolderId);
         const draggingFolder = this.searchModel.getFolderById(draggingFolderId);
-        if (parentFolder.rootId === "MY" && draggingFolder.rootId !== "MY") {
+        if (
+            parentFolder.rootId === UserFolder.MY &&
+            draggingFolder.rootId !== UserFolder.MY
+        ) {
             await this.orm.call(
                 "document.document",
                 "action_create_shortcut",
@@ -190,8 +198,11 @@ export class DocumentsSearchPanel extends SearchPanel {
             ) {
                 // the target left the tree: trashed, where there is a trash to
                 // show, else out of this panel's scope
-                if (this.searchModel.getFolderById("TRASH")) {
-                    return this.searchModel.toggleCategoryValue(category.id, "TRASH");
+                if (this.searchModel.getFolderById(UserFolder.TRASH)) {
+                    return this.searchModel.toggleCategoryValue(
+                        category.id,
+                        UserFolder.TRASH,
+                    );
                 }
                 return this.notification.add(
                     _t("The folder this shortcut points to is not available here."),
@@ -224,7 +235,7 @@ export class DocumentsSearchPanel extends SearchPanel {
             return;
         }
         if (
-            folders[0].id === "COMPANY" ||
+            folders[0].id === UserFolder.COMPANY ||
             this.state.expanded[sectionId][folders[0].rootId]
         ) {
             for (const folder of folders) {
@@ -238,10 +249,7 @@ export class DocumentsSearchPanel extends SearchPanel {
      * @returns {boolean} whether the destination was refused (and said so)
      */
     _notifyWrongDropDestination(folderId) {
-        if (
-            typeof folderId !== "number" &&
-            !DND_ALLOWED_SPECIAL_DESTINATIONS.includes(folderId)
-        ) {
+        if (typeof folderId !== "number" && !WRITABLE_ROOTS.includes(folderId)) {
             this.notification.add(specialFolderDropRefusal(), {
                 title: _t("Invalid operation"),
                 type: "warning",

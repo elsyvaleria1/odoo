@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { DocumentsViewEvent } from "@document/views/utils";
 import { _t } from "@web/core/translation";
 
 /**
@@ -21,6 +22,7 @@ export function isDownloadAllowed(data) {
 /**
  * @typedef {Object} DocumentActionContext
  * @property {import("@document/core/document_service").DocumentService} documentService
+ * @property {Object} model the documents view's model
  * @property {() => Promise<void>} reload reloads what the action changed
  * @property {import("@odoo/owl").EventBus} bus the documents view's bus
  * @property {Object} [record] the row's record, on a list row only
@@ -122,10 +124,7 @@ export const documentActions = {
         // a star is the user's own, not a change to the document: reading it is enough
         isVisible: (documentService, data) =>
             isRealDocument(data) && data.active !== false,
-        run: async ({ documentService, reload }, data) => {
-            await documentService.toggleFavorite([data.id]);
-            await reload();
-        },
+        run: ({ model }, data) => model.toggleFavorite([data.id]),
     },
     trash: {
         icon: "fa-regular fa-trash-can",
@@ -147,7 +146,7 @@ export const documentActions = {
         isVisible: (documentService, data) =>
             documentService.userIsDocumentUser && documentService.isEditable(data),
         run: ({ bus }, data) =>
-            bus.trigger("documents-open-automations", {
+            bus.trigger(DocumentsViewEvent.OPEN_AUTOMATIONS, {
                 folderId: data.id,
                 folderDisplayName: data.display_name,
             }),

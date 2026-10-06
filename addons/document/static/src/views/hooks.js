@@ -9,6 +9,7 @@ import {
     provideDocumentContext,
     useDocumentContext,
 } from "@document/views/document_context";
+import { DocumentsViewEvent, UserFolder, WRITABLE_ROOTS } from "@document/views/utils";
 import { EventBus, onMounted, onWillDestroy, onWillUnmount, toRaw } from "@odoo/owl";
 import { useSetupAction } from "@web/core/action_hook";
 import { makeLogger } from "@web/core/debug/debug_logger";
@@ -165,7 +166,7 @@ export function useDocumentView(component, helpers) {
         }),
     });
 
-    useBus(bus, "documents-open-automations", (ev) => {
+    useBus(bus, DocumentsViewEvent.OPEN_AUTOMATIONS, (ev) => {
         _openAutomations(ev.detail);
     });
 
@@ -195,7 +196,7 @@ export function useDocumentView(component, helpers) {
         onClickDocumentsAddUrl: () =>
             openCreateForm("document.action_url_form", {
                 default_type: "url",
-                ...(env.searchModel.getSelectedFolderId() === "COMPANY"
+                ...(env.searchModel.getSelectedFolderId() === UserFolder.COMPANY
                     ? { default_owner_id: false }
                     : {}),
             }),
@@ -203,21 +204,26 @@ export function useDocumentView(component, helpers) {
             const currentFolder = env.searchModel.getSelectedFolderId();
             // All, Recent, Shared and Trash cannot hold a folder: it goes to My Drive
             const parentFolder =
-                currentFolder && !["RECENT", "SHARED", "TRASH"].includes(currentFolder)
+                currentFolder &&
+                ![UserFolder.RECENT, UserFolder.SHARED, UserFolder.TRASH].includes(
+                    currentFolder,
+                )
                     ? currentFolder
-                    : "MY";
+                    : UserFolder.MY;
             action.doAction("document.action_folder_form", {
                 additionalContext: {
                     default_type: "folder",
                     default_user_folder_id: parentFolder.toString(),
-                    ...(parentFolder === "COMPANY"
+                    ...(parentFolder === UserFolder.COMPANY
                         ? { default_access_internal: "edit" }
                         : {}),
                 },
                 fullscreen: env.isSmall,
                 onClose: async () => {
                     await env.searchModel._reloadSearchModel(true);
-                    bus.trigger("documents-expand-folder", { folderId: parentFolder });
+                    bus.trigger(DocumentsViewEvent.EXPAND_FOLDER, {
+                        folderId: parentFolder,
+                    });
                 },
             });
         },
@@ -366,10 +372,10 @@ function useDocumentsViewFilePreviewer(
         });
     };
 
-    useBus(bus, "documents-open-preview", (ev) => {
+    useBus(bus, DocumentsViewEvent.OPEN_PREVIEW, (ev) => {
         component.onOpenDocumentsPreview(ev.detail);
     });
-    useBus(bus, "documents-close-preview", closePreview);
+    useBus(bus, DocumentsViewEvent.CLOSE_PREVIEW, closePreview);
     // the previewed document is the service's, the preview the view's: a view
     // left with its preview open (Back, a menu) takes that preview with it
     onWillDestroy(() => {
@@ -436,10 +442,12 @@ function useDocumentsViewFileUpload(component, env) {
     const uploadFiles = async ({ files, accessToken, context }) => {
         const selectedFolderId = env.searchModel.getSelectedFolderId();
         // All and Recent hold no files of their own: an upload there lands in My Drive
-        const selectedUserFolderId = [false, "RECENT"].includes(selectedFolderId)
-            ? "MY"
+        const selectedUserFolderId = [false, UserFolder.RECENT].includes(
+            selectedFolderId,
+        )
+            ? UserFolder.MY
             : selectedFolderId;
-        const uploadContext = ["COMPANY", "MY"].includes(selectedUserFolderId)
+        const uploadContext = WRITABLE_ROOTS.includes(selectedUserFolderId)
             ? { ...context, default_user_folder_id: selectedUserFolderId }
             : context;
         await documentService.uploadDocument(files, accessToken, uploadContext, {
@@ -447,7 +455,7 @@ function useDocumentsViewFileUpload(component, env) {
         });
     };
 
-    useBus(bus, "documents-upload-files", (ev) => {
+    useBus(bus, DocumentsViewEvent.UPLOAD_FILES, (ev) => {
         component.uploadFiles({
             ...ev.detail,
             context: {

@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { UserFolder } from "@document/views/utils";
 import { XLSX_MIME_TYPES } from "@document_spreadsheet/helpers";
 import { SpreadsheetCloneCSVXlsxDialog } from "@document_spreadsheet/spreadsheet_clone_xlsx_dialog/spreadsheet_clone_xlsx_dialog";
 import { TemplateDialog } from "@document_spreadsheet/spreadsheet_template/spreadsheet_template_dialog";
@@ -101,7 +102,7 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
     async onClickCreateSpreadsheet(ev) {
         const folderId = this.searchModel.getSelectedFolderId() || undefined;
         const context = this.props.context;
-        if (folderId === "COMPANY") {
+        if (folderId === UserFolder.COMPANY) {
             context.default_owner_id = false;
         }
         this.dialogService.add(TemplateDialog, {
@@ -159,7 +160,7 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
     },
 
     getTopBarActionMenuItems() {
-        const isInTrash = this.searchModel.getSelectedFolderId() === "TRASH";
+        const isInTrash = this.searchModel.getSelectedFolderId() === UserFolder.TRASH;
         const menuItems = super.getTopBarActionMenuItems();
         const selectionCount = this.model.targetRecords.length;
         const singleSelection = selectionCount === 1 && this.targetRecords[0];

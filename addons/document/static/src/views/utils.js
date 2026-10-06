@@ -6,14 +6,37 @@ import { htmlJoin } from "@web/core/utils/dom/html";
 
 const SAFE_URL_SCHEME = /^(https?|ftp):\/\//i;
 
-/** The folder panel's roots that are no record: `user_folder_id`'s special values. */
-const SPECIAL_FOLDER_IDS = Object.freeze([
-    "COMPANY",
-    "MY",
-    "RECENT",
-    "SHARED",
-    "TRASH",
-]);
+/** The folder panel's roots that are no record: `user_folder_id`'s special values (UserFolder on the server). */
+export const UserFolder = Object.freeze({
+    COMPANY: "COMPANY",
+    MY: "MY",
+    RECENT: "RECENT",
+    SHARED: "SHARED",
+    TRASH: "TRASH",
+});
+
+/** The roots a document can be created in or moved to. */
+export const WRITABLE_ROOTS = Object.freeze([UserFolder.COMPANY, UserFolder.MY]);
+
+const SPECIAL_FOLDER_IDS = Object.freeze(Object.values(UserFolder));
+
+/**
+ * What a documents view's own bus carries, within that view; the service's
+ * bus speaks to every view (DocumentsBusEvent).
+ */
+export const DocumentsViewEvent = Object.freeze({
+    OPEN_PREVIEW: "documents-open-preview",
+    CLOSE_PREVIEW: "documents-close-preview",
+    UPLOAD_FILES: "documents-upload-files",
+    OPEN_AUTOMATIONS: "documents-open-automations",
+    EXPAND_FOLDER: "documents-expand-folder",
+});
+
+/** Triggered on the documents search model once the folder tree is refetched. */
+export const SEARCH_PANEL_UPDATED = "documents-search-panel-updated";
+
+/** Triggered on a mail composer's model with the `{ links }` picked from Documents. */
+export const PASTE_SHARE_LINKS = "documents-paste-share-links";
 
 /** Where the Documents app remembers the folder it reopens on. */
 export const FOLDER_STORAGE_KEY = "searchpanel_documents_document";

@@ -1,4 +1,5 @@
 import { DocumentsKanbanModel } from "@document/views/kanban/document_kanban_model";
+import { DocumentsViewEvent } from "@document/views/utils";
 import { describe, expect, test } from "@odoo/hoot";
 import { animationFrame, Deferred } from "@odoo/hoot-mock";
 import { defineModels, onRpc, patchWithCleanup } from "@web/../tests/web_test_helpers";
@@ -105,7 +106,7 @@ test("a load overtaken by a newer one leaves the newer one's state alone", async
     });
     let closedPreviews = 0;
     model.viewContext.documentsView.bus.addEventListener(
-        "documents-close-preview",
+        DocumentsViewEvent.CLOSE_PREVIEW,
         () => closedPreviews++,
     );
 

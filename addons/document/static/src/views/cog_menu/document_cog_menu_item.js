@@ -102,6 +102,7 @@ export function makeDocumentsCogMenuItem(actionId, groupNumber) {
             return action.run(
                 {
                     documentService: this.documentService,
+                    model: this.viewScope.model,
                     reload: () => this.reload(),
                     bus: this.documentContext.documentsView.bus,
                 },

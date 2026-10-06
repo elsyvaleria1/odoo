@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { UserFolder } from "@document/views/utils";
 import { DESTINATION_MAX_LENGTH, truncate } from "@document/views/widget/utils";
 import { Component, useProps } from "@odoo/owl";
 import { registry } from "@web/core/registry";
@@ -34,7 +35,7 @@ export class DocumentsOperationNewFolder extends Component {
             context: {
                 default_type: "folder",
                 default_user_folder_id: currentFolder.toString(),
-                ...(currentFolder === "COMPANY"
+                ...(currentFolder === UserFolder.COMPANY
                     ? { default_access_internal: "edit" }
                     : {}),
                 form_view_ref: "document.document_view_form_new_folder",

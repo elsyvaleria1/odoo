@@ -1,6 +1,7 @@
 /** @odoo-module native */
 import { DocumentsBusEvent } from "@document/core/document_service";
 import { useDraggableDocuments } from "@document/views/helper/document_draggable";
+import { UserFolder } from "@document/views/utils";
 import { onMounted, onWillUpdateProps, proxy } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -130,7 +131,7 @@ export const DocumentsRendererMixin = (component) =>
                     targetSelector: this.constructor.dropTargetSelector,
                     elements: this.constructor.recordSelector,
                     preventDrag: () =>
-                        this.searchModel.getSelectedFolderId() === "TRASH" ||
+                        this.searchModel.getSelectedFolderId() === UserFolder.TRASH ||
                         this.refusesDomainDrag(),
                     onTargetPointerEnter: ({ addClass, target, isInvalid }) => {
                         addClass(target, isInvalid ? invalid : hover);
@@ -159,7 +160,10 @@ export const DocumentsRendererMixin = (component) =>
             });
             useCommand(
                 _t("Toggle favorite"),
-                () => this.model.toggleFavorite(this.selection),
+                () =>
+                    this.model.toggleFavorite(
+                        this.selection.map((record) => record.resId),
+                    ),
                 {
                     category: "smart_action",
                     hotkey: "alt+t",

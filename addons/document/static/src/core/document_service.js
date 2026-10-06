@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { DocumentsManageVersions } from "@document/components/document_manage_versions_panel/document_manage_versions_panel";
 import { AccessRightsUpdateConfirmationDialog } from "@document/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog";
-import { FOLDER_STORAGE_KEY, openDocumentUrl } from "@document/views/utils";
+import { FOLDER_STORAGE_KEY, openDocumentUrl, UserFolder } from "@document/views/utils";
 import { EventBus, markup, observe, proxy, toRaw } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { parseSearchQuery, router } from "@web/core/browser/router";
@@ -203,8 +203,9 @@ export class DocumentService {
         const userPermission = folder.target_user_permission || folder.user_permission;
         return (
             (typeof folder.id === "number" && userPermission === "edit") ||
-            (this.userIsInternal && ["MY", "RECENT", false].includes(folder.id)) ||
-            (this.userIsDocumentManager && folder.id === "COMPANY")
+            (this.userIsInternal &&
+                [UserFolder.MY, UserFolder.RECENT, false].includes(folder.id)) ||
+            (this.userIsDocumentManager && folder.id === UserFolder.COMPANY)
         );
     }
 
@@ -256,7 +257,8 @@ export class DocumentService {
             document &&
             typeof document.id === "number" &&
             document.user_permission === "edit" &&
-            (document.user_folder_id !== "COMPANY" || this.userIsDocumentManager)
+            (document.user_folder_id !== UserFolder.COMPANY ||
+                this.userIsDocumentManager)
         );
     }
 
@@ -574,7 +576,7 @@ export class DocumentService {
                 this.orm.write(
                     "document.document",
                     records.movableRecordIds,
-                    { user_folder_id: "COMPANY" },
+                    { user_folder_id: UserFolder.COMPANY },
                     { context },
                 ),
             _t("Company"),

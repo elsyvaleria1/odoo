@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { UserFolder } from "@document/views/utils";
 import { proxy } from "@odoo/owl";
 import { FileUploadProgressBar } from "@web/components/file_upload";
 import { _t } from "@web/core/translation";
@@ -56,7 +57,9 @@ export class DocumentsKanbanRecord extends KanbanRecord {
         context.encodeURIComponent = encodeURIComponent;
 
         if (
-            [false, "TRASH", "RECENT"].includes(this.searchModel.getSelectedFolderId())
+            [false, UserFolder.TRASH, UserFolder.RECENT].includes(
+                this.searchModel.getSelectedFolderId(),
+            )
         ) {
             context.inFolder =
                 this.props.record.data.folder_id?.display_name ||
@@ -97,7 +100,7 @@ export class DocumentsKanbanRecord extends KanbanRecord {
             this.rootRef.el.focus();
             this.props.toggleSelection(this.props.record, ev.shiftKey);
         } else if (
-            this.searchModel.getSelectedFolderId() === "TRASH" ||
+            this.searchModel.getSelectedFolderId() === UserFolder.TRASH ||
             this.props.record.data.type !== "folder"
         ) {
             this.props.getSelection().forEach((r) => r.toggleSelection(false));

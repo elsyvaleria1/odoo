@@ -39,6 +39,7 @@ export class DocumentsListActionWidget extends Component {
         return action.run(
             {
                 documentService: this.documentService,
+                model: this.model,
                 // a row's change is its own, unless the row is a folder,
                 // which the search panel lists too
                 reload: () =>

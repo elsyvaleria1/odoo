@@ -6,7 +6,7 @@ import {
     preSuperSetup,
     useDocumentView,
 } from "@document/views/hooks";
-import { getCommonEmbeddedActions } from "@document/views/utils";
+import { getCommonEmbeddedActions, UserFolder } from "@document/views/utils";
 import { onWillDestroy, proxy } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
@@ -265,7 +265,8 @@ export const DocumentsControllerMixin = (component) =>
             const selectionCount = this.targetRecords.length;
             const userIsInternal = this.documentService.userIsInternal;
             const singleSelection = selectionCount === 1 && this.targetRecords[0];
-            const isInTrash = this.searchModel.getSelectedFolderId() === "TRASH";
+            const isInTrash =
+                this.searchModel.getSelectedFolderId() === UserFolder.TRASH;
             const editMode = this.targetRecords.every(
                 (r) => r.data.user_permission === "edit",
             );

@@ -1,6 +1,6 @@
 /** @odoo-module native */
 import { DocumentsSearchPanel } from "@document/views/search/document_search_panel";
-import { toFolderValueId } from "@document/views/utils";
+import { toFolderValueId, UserFolder } from "@document/views/utils";
 import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
 import { isActivationKey } from "@web/core/browser/hotkeys";
 import { elementRef } from "@web/core/utils/element_ref";
@@ -8,7 +8,7 @@ import { useService } from "@web/core/utils/hooks";
 import { fuzzyTest } from "@web/core/utils/search";
 
 export class DocumentsSearchPanelUserFolderId extends Component {
-    static excludedValues = ["RECENT", "TRASH"];
+    static excludedValues = [UserFolder.RECENT, UserFolder.TRASH];
     static template = "document.SearchPanelUserFolderId";
     static subTemplates = {
         category: "document.SearchPanel.Category",
@@ -45,7 +45,9 @@ export class DocumentsSearchPanelUserFolderId extends Component {
             );
             const values = result.values
                 .filter((v) => !this.constructor.excludedValues.includes(v.id))
-                .sort((a, b) => (a.id === "MY" ? -1 : b.id === "MY" ? 1 : 0));
+                .sort((a, b) =>
+                    a.id === UserFolder.MY ? -1 : b.id === UserFolder.MY ? 1 : 0,
+                );
             this._treeValues = values;
             this._createCategoryTree({ values, initialValue: activeValueId });
         });
@@ -61,7 +63,7 @@ export class DocumentsSearchPanelUserFolderId extends Component {
 
     async toggleCategory(category, value) {
         // shared folders are listed under it, but nothing is moved into it
-        if (value.id === "SHARED") {
+        if (value.id === UserFolder.SHARED) {
             return this.toggleFold(category, value);
         }
         const newActiveValueId = value.id;

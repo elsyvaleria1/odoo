@@ -2,6 +2,7 @@
 import { DocumentsDetailsMany2ManyTagsField } from "@document/views/fields/document_details_many2many_tags/document_details_many2many_tags_field";
 import { DocumentsDetailsMany2OneField } from "@document/views/fields/document_details_many2one/document_details_many2one_field";
 import { DocumentsTypeIcon } from "@document/views/fields/document_type_icon/document_type_icon";
+import { UserFolder } from "@document/views/utils";
 import { Component, proxy, status, t, useProps } from "@odoo/owl";
 import { ModelSelector } from "@web/components/model_selector";
 import { _t } from "@web/core/translation";
@@ -92,7 +93,7 @@ export class DocumentsDetailsPanel extends Component {
             Boolean(this.record.data?.is_locked_by_other) ||
             this.record.data?.user_permission !== "edit" ||
             (!this.documentService.userIsDocumentManager &&
-                this.record.data?.user_folder_id === "COMPANY")
+                this.record.data?.user_folder_id === UserFolder.COMPANY)
         );
     }
 

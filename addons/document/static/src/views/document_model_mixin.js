@@ -3,8 +3,10 @@ import { DocumentsBusEvent } from "@document/core/document_service";
 import { isDownloadAllowed } from "@document/views/document_actions";
 import { useDocumentContext } from "@document/views/document_context";
 import {
+    DocumentsViewEvent,
     getCommonEmbeddedActions,
     notifyEmbeddedActionWarning,
+    UserFolder,
 } from "@document/views/utils";
 import { browser } from "@web/core/browser/browser";
 import { makeLogger } from "@web/core/debug/debug_logger";
@@ -95,7 +97,9 @@ export const DocumentsModelMixin = (component) =>
             }
             const root = this.root;
             // the preview shows records of the root just replaced
-            this.viewContext.documentsView.bus.trigger("documents-close-preview");
+            this.viewContext.documentsView.bus.trigger(
+                DocumentsViewEvent.CLOSE_PREVIEW,
+            );
             this._reapplySelection();
             this._computeFileSize();
             log.logic("loaded", () => ({
@@ -260,7 +264,7 @@ export const DocumentsModelMixin = (component) =>
             return (
                 this.documentService.userIsInternal &&
                 singleSelection &&
-                currentFolder?.id !== "TRASH" &&
+                currentFolder?.id !== UserFolder.TRASH &&
                 singleSelection.data.type === "binary" &&
                 singleSelection.data.attachment_id &&
                 !singleSelection.data.is_locked_by_other &&
@@ -336,19 +340,32 @@ export const DocumentsModelMixin = (component) =>
 
         /**
          * Stars or unstars each document for the current user, then refreshes
-         * what shows a star: those records, and the folder tree for a folder.
+         * what shows a star: this view's records among them, and the folder
+         * tree when it lists one of them (the open folder, starred from the cog,
+         * is only there).
          *
-         * @param {Object[]} records
+         * @param {number[]} documentIds
          */
-        async toggleFavorite(records) {
-            if (!records.length) {
+        async toggleFavorite(documentIds) {
+            if (!documentIds.length) {
                 return;
             }
-            await this.documentService.toggleFavorite(records.map((r) => r.resId));
+            await this.documentService.toggleFavorite(documentIds);
+            const { searchModel } = this.viewContext;
+            const records = this.root.records.filter((record) =>
+                documentIds.includes(record.resId),
+            );
+            const inFolderTree = documentIds.some((id) =>
+                searchModel.getFolderById(id),
+            );
+            log.logic("toggleFavorite", () => ({
+                documentIds,
+                records: records.length,
+                inFolderTree,
+            }));
             await Promise.all([
                 ...records.map((record) => record.load()),
-                records.some((record) => record.data.type === "folder") &&
-                    this.viewContext.searchModel._reloadSearchPanel(),
+                inFolderTree && searchModel._reloadSearchPanel(),
             ]);
         }
 
@@ -480,7 +497,7 @@ export const DocumentsModelMixin = (component) =>
                 const { previewedDocument } = this.documentService.rightPanelReactive;
                 if (previewedDocument?.record.resId === documentId) {
                     this.viewContext.documentsView.bus.trigger(
-                        "documents-close-preview",
+                        DocumentsViewEvent.CLOSE_PREVIEW,
                     );
                 }
                 // a group's size is an aggregate only the server recomputes
@@ -513,12 +530,15 @@ export const DocumentsModelMixin = (component) =>
                 return;
             }
 
-            this.viewContext.documentsView.bus.trigger("documents-open-preview", {
-                documents: documents,
-                mainDocument: this.targetRecords[0],
-                isPdfSplit: true,
-                embeddedActions: getCommonEmbeddedActions(documents),
-            });
+            this.viewContext.documentsView.bus.trigger(
+                DocumentsViewEvent.OPEN_PREVIEW,
+                {
+                    documents: documents,
+                    mainDocument: this.targetRecords[0],
+                    isPdfSplit: true,
+                    embeddedActions: getCommonEmbeddedActions(documents),
+                },
+            );
         }
 
         async onRename() {

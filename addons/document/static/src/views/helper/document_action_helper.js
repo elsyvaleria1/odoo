@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { UserFolder } from "@document/views/utils";
 import { Component, markup, t, useProps } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 import { useSearchModel } from "@web/search/search_model";
@@ -27,13 +28,13 @@ export class DocumentsActionHelper extends Component {
         }
         const helpMessage = (() => {
             switch (this.selectedFolderId) {
-                case "TRASH":
+                case UserFolder.TRASH:
                     return _t("Documents moved to trash will show up here");
-                case "RECENT":
+                case UserFolder.RECENT:
                     return _t("Recently accessed Documents will show up here");
-                case "SHARED":
+                case UserFolder.SHARED:
                     return _t("Documents shared with you will appear here");
-                case "MY":
+                case UserFolder.MY:
                     return _t("Your personal space");
                 default:
                     return _t("Select a folder to upload a document");

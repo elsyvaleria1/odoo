@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { SEARCH_PANEL_UPDATED } from "@document/views/utils";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
 import { useBus } from "@web/core/utils/hooks";
@@ -40,10 +41,14 @@ export class DocumentsCogMenu extends CogMenu {
         // its items are the open folder's: the base reloads them on new props
         // only, and opening another folder brings none
         const render = useRender();
-        useBus(useSearchModel(), "update", async () => {
-            await this._refreshRegistryItems("update");
-            render();
-        });
+        const searchModel = useSearchModel();
+        // and the open folder's own state (its star) is the folder tree's
+        for (const event of ["update", SEARCH_PANEL_UPDATED]) {
+            useBus(searchModel, event, async () => {
+                await this._refreshRegistryItems(event);
+                render();
+            });
+        }
     }
 
     async _registryItems() {

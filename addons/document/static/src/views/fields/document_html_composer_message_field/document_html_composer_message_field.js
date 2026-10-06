@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { PASTE_SHARE_LINKS } from "@document/views/utils";
 import {
     HtmlComposerMessageField,
     htmlComposerMessageField,
@@ -13,7 +14,7 @@ export class DocumentsHtmlComposerMessageField extends HtmlComposerMessageField 
         super.setup();
         this.model = useViewModel();
         if (this.model.bus) {
-            useBus(this.model.bus, "PASTE_SHARE_LINKS", (ev) => {
+            useBus(this.model.bus, PASTE_SHARE_LINKS, (ev) => {
                 this.editor.shared.dom.insert(this.formatLinks(ev.detail.links));
                 this.editor.editable.focus();
                 this.editor.shared.history.addStep();

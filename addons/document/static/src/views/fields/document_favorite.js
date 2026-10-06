@@ -8,7 +8,7 @@ import {
 export class DocumentFavoriteField extends BooleanFavoriteField {
     async update() {
         if (!this.props.readonly) {
-            await this.props.record.model.toggleFavorite([this.props.record]);
+            await this.props.record.model.toggleFavorite([this.props.record.resId]);
         }
     }
 }
