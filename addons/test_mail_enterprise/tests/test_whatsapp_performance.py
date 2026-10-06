@@ -147,7 +147,7 @@ class TestWAPerformance(
         wa_template = self.wa_template.with_user(self.env.user)
 
         # +2: posting reads the company's mail.config
-        with self.mockWhatsappGateway(), self.assertQueryCount(employee=33):
+        with self.mockWhatsappGateway(), self.assertQueryCount(employee=30):
             composer = (
                 self.env["wizard.whatsapp.message.send"]
                 .with_context(

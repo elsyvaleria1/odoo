@@ -53,7 +53,7 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
             self.subTest("QueryCount"),
             self.mockSMSGateway(),
             # +2 mail.config, +3 the company's integration_twilio_config looked up and created on first send
-            self.assertQueryCount(employee=37),
+            self.assertQueryCount(employee=34),
         ):  # tme: 31
             messages = record._message_sms(
                 body="Performance Test",
