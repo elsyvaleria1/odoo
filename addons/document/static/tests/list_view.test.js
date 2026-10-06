@@ -1,9 +1,4 @@
-import {
-    documentActions,
-    isDownloadAllowed,
-    isLockedByOther,
-    isTrashable,
-} from "@document/views/document_actions";
+import { documentActions, isDownloadAllowed } from "@document/views/document_actions";
 import { DocumentsListModel } from "@document/views/list/document_list_model";
 import { DocumentsSearchModel } from "@document/views/search/document_search_model";
 import { describe, expect, test } from "@odoo/hoot";
@@ -23,6 +18,7 @@ import { user } from "@web/core/user";
 import { Deferred } from "@web/core/utils/concurrency";
 
 import {
+    documentsMockUser,
     DocumentsModels,
     getDocumentsTestServerModelsData,
     makeDocumentRecordData,
@@ -417,71 +413,27 @@ test("isDownloadAllowed mirrors the server's download gate", () => {
     }
 });
 
-test("isLockedByOther mirrors the server's _locked_by_other", () => {
-    const other = { lock_uid: { id: user.userId + 1 } };
-    expect(isLockedByOther({ lock_uid: false }, false)).toBe(false);
-    expect(isLockedByOther({ lock_uid: { id: user.userId } }, false)).toBe(false);
-    expect(isLockedByOther(other, false)).toBe(true);
-    expect(isLockedByOther(other, true)).toBe(false, {
-        message: "a Documents manager is stopped by no lock",
-    });
-});
-
-test("isTrashable mirrors what action_archive accepts", () => {
-    const params = (permissions = {}, isManager = false) => ({
-        userIsDocumentManager: isManager,
-        folderPermission: (id) => permissions[id],
-    });
-    const unowned = {
-        active: true,
-        user_permission: "edit",
-        owner_id: { id: user.userId + 1 },
-        folder_id: { id: 7 },
-        lock_uid: false,
-    };
-    expect(isTrashable(unowned, params({ 7: "edit" }))).toBe(true);
-    expect(isTrashable(unowned, params({ 7: "view" }))).toBe(false, {
-        message: "_raise_if_unauthorized_archive: unowned, in a folder not editable",
-    });
-    expect(
-        isTrashable(
-            { ...unowned, owner_id: { id: user.userId } },
-            params({ 7: "view" }),
-        ),
-    ).toBe(true, {
-        message: "the owner's own document goes whatever its folder",
-    });
-    expect(isTrashable(unowned, params({}))).toBe(true, {
-        message: "a folder the panel does not hold is the server's to judge",
-    });
-    expect(isTrashable({ ...unowned, folder_id: false }, params({}))).toBe(true);
-    expect(
-        isTrashable({ ...unowned, user_permission: "view" }, params({ 7: "edit" })),
-    ).toBe(false);
-    expect(isTrashable({ ...unowned, active: false }, params({ 7: "edit" }))).toBe(
-        false,
-    );
-    const locked = { ...unowned, lock_uid: { id: user.userId + 1 } };
-    expect(isTrashable(locked, params({ 7: "edit" }))).toBe(false);
-    expect(isTrashable(locked, params({ 7: "edit" }, true))).toBe(true);
-});
-
-test("Move to Trash with the whole domain selected leaves out only other users' locks", () => {
+test("the select-all trash leaves out what another user's lock keeps, by the server's field", async () => {
     const model = Object.create(DocumentsListModel.prototype);
-    model.documentService = { userIsDocumentManager: false };
-    expect(model._notLockedByOtherDomain).toEqual([
-        "|",
-        ["lock_uid", "=", false],
-        ["lock_uid", "=", user.userId],
-    ]);
-    model.documentService = { userIsDocumentManager: true };
-    expect(model._notLockedByOtherDomain).toEqual([]);
+    model.root = { isDomainSelected: true, selection: [] };
+    model.documentService = {
+        rightPanelReactive: { previewedDocument: null },
+        moveToTrash: async (ids) => {
+            expect.step(`trash ${ids}`);
+            return false;
+        },
+    };
+    model.getResIds = async (domain) => {
+        expect.step(JSON.stringify(domain));
+        return [4];
+    };
+    await model.onArchive();
+    expect.verifySteps(['[["is_locked_by_other","=",false]]', "trash 4"]);
 });
 
-test("a star needs the document read, not edited; the trash needs no one else's lock", () => {
+test("a star needs the document read, not edited; the trash is the server's answer", () => {
     const service = {
         userIsInternal: true,
-        userIsDocumentManager: false,
         isEditable: (data) => data.user_permission === "edit",
     };
     const viewer = { id: 4, user_permission: "view", active: true };
@@ -492,19 +444,23 @@ test("a star needs the document read, not edited; the trash needs no one else's 
         message: "a panel root is no document to star",
     });
     const editable = { id: 5, user_permission: "edit", active: true };
-    expect(documentActions.trash.isVisible(service, editable)).toBe(true);
     expect(
-        documentActions.trash.isVisible(service, {
-            ...editable,
-            lock_uid: { id: user.userId + 1 },
-        }),
-    ).toBe(false);
-    expect(
-        documentActions.trash.isVisible(service, {
-            ...editable,
-            lock_uid: { id: user.userId },
-        }),
+        documentActions.trash.isVisible(service, { ...editable, user_can_trash: true }),
     ).toBe(true);
+    expect(
+        documentActions.trash.isVisible(service, {
+            ...editable,
+            user_can_trash: false,
+        }),
+    ).toBe(false, {
+        message: "user_can_trash says no: a lock, a folder, a used folder...",
+    });
+    expect(
+        documentActions.rename.isVisible(service, {
+            ...editable,
+            is_locked_by_other: true,
+        }),
+    ).toBe(false, { message: "another user's lock keeps the name too" });
 });
 
 test("a blocked document a viewer cannot download is not offered for duplication", async function () {
@@ -670,7 +626,9 @@ test("a lock never narrows what the user who took it may do", async function () 
     expect.verifySteps([["action_archive", [2]]]);
 });
 
-test("a Documents manager's menu sees through another user's lock", async function () {
+test("a lock the server says does not stop this user leaves the trash offered", async function () {
+    // a Documents manager: lock_uid is someone else's, is_locked_by_other false
+    patchWithCleanup(documentsMockUser, { isManager: true });
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Theirs", {
             folder_id: 1,
@@ -679,13 +637,11 @@ test("a Documents manager's menu sees through another user's lock", async functi
         }),
     ]);
     await makeDocumentsMockEnv({ serverData });
-    patchWithCleanup(getService("document.document"), { userIsDocumentManager: true });
     await mountDocumentsListView();
     await contains(".o_data_row:contains('Theirs') .o_list_record_selector").click();
     await contains(".o_cp_action_menus button").click();
-    expect(".o-dropdown-item:contains('Move to Trash')").toHaveCount(1, {
-        message: "_locked_by_other answers nothing for a manager",
-    });
+    expect(".o-dropdown-item:contains('Move to Trash')").toHaveCount(1);
+    expect(".o-dropdown-item:contains('Rename')").toHaveCount(1);
 });
 
 test("closing a row's preview leaves the details on that row's document", async function () {
@@ -730,28 +686,6 @@ test("Enter on a folder row opens the folder, as a click on its icon does", asyn
     expect(".o_data_row_selected").toHaveCount(0, {
         message: "opened, not selected",
     });
-});
-
-test("the row's Trash keeps away from what action_archive refuses", () => {
-    const service = {
-        userIsInternal: true,
-        userIsDocumentManager: false,
-        isEditable: (data) => data.user_permission === "edit",
-    };
-    const unowned = {
-        id: 5,
-        active: true,
-        user_permission: "edit",
-        owner_id: { id: user.userId + 1 },
-        folder_id: { id: 7 },
-    };
-    const lookup = (permission) => ({ folderPermission: () => permission });
-    expect(documentActions.trash.isVisible(service, unowned, lookup("view"))).toBe(
-        false,
-    );
-    expect(documentActions.trash.isVisible(service, unowned, lookup("edit"))).toBe(
-        true,
-    );
 });
 
 test("the cog is there at a root too, with its global entries; a folder adds its own", async function () {

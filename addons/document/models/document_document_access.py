@@ -105,6 +105,7 @@ class DocumentsDocument(models.Model):
 
     @api.depends(
         "active",
+        "lock_uid",
         "user_permission",
         "folder_id.user_permission",
         "owner_id",
@@ -112,11 +113,13 @@ class DocumentsDocument(models.Model):
     )
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_user_can_move(self) -> None:
-        active_documents = self.filtered("active")
-        (self - active_documents).user_can_move = False
         if self.env.su:
-            active_documents.user_can_move = True
+            for document in self:
+                document.user_can_move = document.active
             return
+        # a move is a change: another user's lock keeps the document in place
+        active_documents = self.filtered("active") - self._locked_by_other()
+        (self - active_documents).user_can_move = False
         if self.env.user.has_group("document.group_documents_system"):
             # what the system reach gives them, which stops at another
             # person's drive: the rest the move itself would refuse
@@ -140,6 +143,65 @@ class DocumentsDocument(models.Model):
                     )
                     and (is_manager or document.user_folder_id != UserFolder.COMPANY)
                 )
+
+    @api.depends("lock_uid")
+    @api.depends_context("uid")
+    def _compute_is_locked_by_other(self) -> None:
+        locked = self._locked_by_other()
+        locked.is_locked_by_other = True
+        (self - locked).is_locked_by_other = False
+
+    @api.model
+    def _search_is_locked_by_other(self, operator: str, value: typing.Any) -> Domain:
+        if operator != "in":
+            return NotImplemented
+        if self.env.su or self._is_documents_manager():
+            locked = Domain.FALSE
+        else:
+            locked = Domain("lock_uid", "!=", False) & Domain(
+                "lock_uid", "!=", self.env.uid
+            )
+        if set(value) == {True}:
+            return locked
+        if set(value) == {False}:
+            return ~locked
+        return NotImplemented
+
+    @api.depends(
+        "active",
+        "type",
+        "lock_uid",
+        "owner_id",
+        "user_permission",
+        "folder_id.user_permission",
+    )
+    @api.depends_context("uid", "allowed_company_ids")
+    def _compute_user_can_trash(self) -> None:
+        """What action_archive accepts, answered per document beforehand."""
+        if self.env.su:
+            self.user_can_trash = True
+            return
+        candidates = self.browse()
+        if not self.env.user.share:
+            candidates = (
+                self.filtered(
+                    lambda d: (
+                        d.active
+                        and d.user_permission == "edit"
+                        # _raise_if_unauthorized_archive: unowned, the folder decides
+                        and (
+                            d.owner_id == self.env.user
+                            or not d.folder_id
+                            or d.folder_id.user_permission == "edit"
+                        )
+                    )
+                )
+                - self._locked_by_other()
+            )
+        # _raise_if_used_folder: a folder another application files into stays
+        candidates -= candidates._folders_used_by_companies()
+        candidates.user_can_trash = True
+        (self - candidates).user_can_trash = False
 
     def _check_access_label_change(self) -> None:
         if self.env.su or not self:
@@ -508,6 +570,8 @@ class DocumentsDocument(models.Model):
     ) -> list | None:
         if len(self.ids) == 0:
             return None
+        # sharing is a change of the document: written elevated, past write
+        self._raise_if_locked_by_other("access_update")
         self._check_access_update_allowed(
             (
                 access_internal,

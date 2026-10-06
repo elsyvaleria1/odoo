@@ -34,6 +34,7 @@ import { Deferred } from "@web/core/utils/concurrency";
 import { WebClient } from "@web/webclient/webclient";
 
 import {
+    documentsMockUser,
     DocumentsModels,
     getDocumentsTestServerModelsData,
     makeDocumentRecordData,
@@ -658,16 +659,42 @@ test("Lock action availability and check", async function () {
 
     await contains(".o_cp_action_menus button").click();
     await contains(".o-dropdown--menu .o-dropdown-item:contains('Unlock')").click();
-    expect(".modal-body").toHaveText(
-        "This document is locked by OdooBot.\nAre you sure you want to unlock it?",
-    );
-    await contains(".modal .modal-footer .btn-primary").click();
+    expect(".modal").toHaveCount(0, {
+        message: "one's own lock is lifted without asking",
+    });
     await waitForNone(".o_kanban_record i.fa-lock");
 
     await contains(folder).click({ ctrlKey: true });
     await contains(".o_cp_action_menus button").click();
     await waitForNone(".o-dropdown--menu .o-dropdown-item:contains('Lock')");
 });
+
+for (const isManager of [false, true]) {
+    test(`another user's lock: no Lock nor Unlock, unless a manager, who is warned (manager: ${isManager})`, async function () {
+        patchWithCleanup(documentsMockUser, { isManager });
+        const serverData = getDocumentsTestServerModelsData([
+            makeDocumentRecordData(2, "Theirs", {
+                folder_id: 1,
+                user_permission: "edit",
+                lock_uid: serverState.odoobotId,
+            }),
+        ]);
+        await makeDocumentsMockEnv({ serverData });
+        await mountDocumentsKanbanView();
+        await contains(".o_kanban_record:contains('Theirs')").click();
+        await contains(".o_cp_action_menus button").click();
+        if (!isManager) {
+            expect(".o-dropdown--menu .o-dropdown-item:contains('Lock')").toHaveCount(
+                0,
+            );
+            return;
+        }
+        await contains(".o-dropdown--menu .o-dropdown-item:contains('Unlock')").click();
+        expect(".modal-body").toHaveText(
+            "This document is locked by OdooBot.\nAre you sure you want to unlock it?",
+        );
+    });
+}
 
 test("only show common available actions", async function () {
     await makeDocumentsMockEnv({ serverData: embeddedActionsServerData });

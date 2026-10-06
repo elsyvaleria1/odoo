@@ -26,7 +26,9 @@ const log = makeLogger("document.hooks");
 /** Read by the views' own logic (details panel, action menus, drag and drop), whatever the arch shows. */
 export const DOCUMENTS_VIEW_REQUIRED_FIELDS = [
     "lock_uid",
+    "is_locked_by_other",
     "user_can_move",
+    "user_can_trash",
     "shortcut_document_id",
     "res_name",
     "res_model_name",

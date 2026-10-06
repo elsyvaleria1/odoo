@@ -32,6 +32,17 @@ from odoo.addons.mail.tools import link_preview
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
+# what a user who does not hold the lock may still write on a locked document:
+# what their own work leaves on it, not the document itself
+LOCK_FREE_FIELDS = frozenset(
+    {
+        "favorite_user_ids",
+        "is_user_favorite",
+        "thumbnail",
+        "thumbnail_status",
+    }
+)
+
 SHARE_USER_LOCKED_FIELDS = (
     "access_internal",
     "access_via_link",
@@ -256,6 +267,9 @@ class DocumentsDocument(models.Model):
     lock_uid = fields.Many2one(
         comodel_name="res.users",
         string="Locked by",
+        # a copy is its copier's new document: someone else's lock on it
+        # would keep them out of what they just made
+        copy=False,
         tracking=True,
     )
 
@@ -330,6 +344,17 @@ class DocumentsDocument(models.Model):
     user_can_move = fields.Boolean(
         string="Can move it",
         compute="_compute_user_can_move",
+    )
+    # what the current user may do, said by the server: a client deriving it
+    # from lock_uid, user_permission and the folders got it wrong
+    is_locked_by_other = fields.Boolean(
+        string="Locked by someone else",
+        compute="_compute_is_locked_by_other",
+        search="_search_is_locked_by_other",
+    )
+    user_can_trash = fields.Boolean(
+        string="Can trash it",
+        compute="_compute_user_can_trash",
     )
     user_can_manage = fields.Boolean(
         string="Can share it",
@@ -777,6 +802,22 @@ class DocumentsDocument(models.Model):
             return self.browse()
         return self.filtered(lambda d: d.lock_uid and d.lock_uid != self.env.user)
 
+    def _raise_if_locked_by_other(self, reason: str) -> None:
+        """Hands off: a lock stops everyone but its taker and a manager, whole.
+
+        :param reason: what was refused, for the debug log
+        """
+        if locked_by_other := self._locked_by_other():
+            _debug.logic("lock_refused", reason=reason, documents=locked_by_other)
+            raise UserError(
+                self.env._(
+                    "“%(name)s” is locked by %(user)s: only they or a Documents "
+                    "manager can change it.",
+                    name=locked_by_other[0].name,
+                    user=locked_by_other[0].lock_uid.name,
+                )
+            )
+
     @api.model
     def _check_parent_folders(self, folder_ids: list) -> None:
         folders = self.browse({folder_id for folder_id in folder_ids if folder_id})
@@ -1067,17 +1108,15 @@ class DocumentsDocument(models.Model):
         ):
             _debug.logic("write_refused", reason="lock_for_another", documents=self)
             raise AccessError(self.env._("You can only lock a document for yourself."))
-        replaces_content = writes_content or "attachment_id" in vals
-        if replaces_content and (locked_by_other := self._locked_by_other()):
-            _debug.logic("write_refused", reason="locked_by_other")
-            raise UserError(
-                self.env._(
-                    "“%(name)s” is locked by %(user)s and its content cannot "
-                    "be replaced by another user.",
-                    name=locked_by_other[0].name,
-                    user=locked_by_other[0].lock_uid.name,
-                )
-            )
+        # hands off: under someone else's lock nothing of the document changes
+        # (its content, name, place, tags, sharing, the lock itself), only the
+        # bookkeeping other users' work leaves on it
+        if any(
+            field_name not in LOCK_FREE_FIELDS
+            and not field_name.startswith(("message_", "activity_"))
+            for field_name in vals
+        ):
+            self._raise_if_locked_by_other("content" if writes_content else "write")
 
     def _write_check_owner_before(self, vals: dict, is_manager: bool) -> dict:
         """Refuse an owner change on documents this user does not own.
@@ -2276,18 +2315,7 @@ class DocumentsDocument(models.Model):
         if not self:
             return None
 
-        if locked_by_other := self._locked_by_other():
-            _debug.logic(
-                "archive_refused", reason="locked_by_other", documents=locked_by_other
-            )
-            raise UserError(
-                self.env._(
-                    "“%(name)s” is locked by %(user)s and cannot be sent to "
-                    "the trash by another user.",
-                    name=locked_by_other[0].name,
-                    user=locked_by_other[0].lock_uid.name,
-                )
-            )
+        self._raise_if_locked_by_other("archive")
 
         to_archive_sudo = self._with_descendants_sudo()
         active_documents = to_archive_sudo.filtered(self._active_name).sudo(False)
@@ -2882,23 +2910,29 @@ class DocumentsDocument(models.Model):
             span.set(removed=removed, more=removed == limit)
         return removed, removed == limit
 
+    def _folders_used_by_companies(self) -> DocumentsDocument:
+        """The folders among these that another application files into.
+
+        One count for the whole batch, the usual answer being none; only when
+        some is used are the folders asked one by one.
+        """
+        folders = self.filtered(lambda d: d.type == "folder")
+        companies = self.env["res.company"].sudo()
+        if not folders or not companies.search_count(
+            companies._get_domain_used_folder_ids(folders.ids), limit=1
+        ):
+            return self.browse()
+        return folders.filtered(
+            lambda folder: companies.search_count(
+                companies._get_domain_used_folder_ids(folder.ids), limit=1
+            )
+        )
+
     def _raise_if_used_folder(self) -> None:
-        if folder_ids := self.filtered(lambda d: d.type == "folder").ids:
-            company_used_folders_domain = self.env[
-                "res.company"
-            ]._get_domain_used_folder_ids(folder_ids)
-            if (
-                self.env["res.company"]
-                .sudo()
-                .search_count(company_used_folders_domain, limit=1)
-            ):
-                _debug.logic(
-                    "unlink_refused",
-                    reason="folder_used_by_company",
-                    folders=folder_ids,
-                )
-                raise ValidationError(
-                    self.env._(
-                        "Impossible to delete folders used by other applications."
-                    )
-                )
+        if used := self._folders_used_by_companies():
+            _debug.logic(
+                "unlink_refused", reason="folder_used_by_company", folders=used.ids
+            )
+            raise ValidationError(
+                self.env._("Impossible to delete folders used by other applications.")
+            )

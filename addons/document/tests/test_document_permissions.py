@@ -712,6 +712,108 @@ class TestDocumentsLock(TransactionCaseDocuments):
 
 
 @tagged("post_install", "-at_install")
+class TestDocumentsLockHandsOff(TransactionCaseDocuments):
+    """A lock stops everyone but its taker and a Documents manager, whole."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.other = cls.env["res.users"].create(
+            {
+                "login": "lock_other",
+                "name": "Lock Other",
+                "group_ids": [
+                    Command.link(cls.env.ref("document.group_documents_user").id)
+                ],
+            }
+        )
+        cls.doc = cls.document_gif
+        cls.doc.action_update_access_rights(
+            partners={cls.other.partner_id.id: ("edit", False)}
+        )
+        cls.doc.with_user(cls.doc_user).toggle_lock()
+
+    def _refused(self, user, change):
+        with self.assertRaises(UserError):
+            with self.env.cr.savepoint():
+                change(self.doc.with_user(user))
+
+    def test_another_user_changes_nothing_of_a_locked_document(self):
+        tag = self.env["document.tag"].create({"name": "lock tag"})
+        changes = {
+            "rename": lambda d: d.write({"name": "renamed.gif"}),
+            "move": lambda d: d.write({"folder_id": self.folder_b.id}),
+            "tags": lambda d: d.write({"tag_ids": [Command.link(tag.id)]}),
+            "partner": lambda d: d.write({"partner_id": self.other.partner_id.id}),
+            "share": lambda d: d.write({"access_via_link": "view"}),
+            # the sharing dialog's path writes elevated, past write
+            "share dialog": lambda d: d.action_update_access_rights(
+                access_via_link="view"
+            ),
+            "content": lambda d: d.write({"datas": TEXT}),
+            "trash": lambda d: d.action_archive(),
+            "unlock": lambda d: d.toggle_lock(),
+        }
+        for name, change in changes.items():
+            with self.subTest(change=name):
+                self._refused(self.other, change)
+        self.assertEqual(self.doc.lock_uid, self.doc_user)
+
+    def test_another_user_may_still_copy_and_star_it(self):
+        copy = self.doc.with_user(self.other).copy()
+        self.assertTrue(copy.exists())
+        self.assertFalse(copy.lock_uid, "the copy is a new document, unlocked")
+        self.doc.with_user(self.other).action_toggle_user_favorite()
+        self.assertTrue(self.doc.with_user(self.other).is_user_favorite)
+
+    def test_its_taker_and_a_manager_change_it(self):
+        self.doc.with_user(self.doc_user).write({"name": "taker.gif"})
+        self.doc.with_user(self.document_manager).write({"name": "manager.gif"})
+        self.doc.with_user(self.document_manager).toggle_lock()
+        self.assertFalse(self.doc.lock_uid, "a manager may lift another's lock")
+
+    def test_the_capabilities_say_so_before_trying(self):
+        as_other = self.doc.with_user(self.other)
+        as_taker = self.doc.with_user(self.doc_user)
+        as_manager = self.doc.with_user(self.document_manager)
+        self.assertTrue(as_other.is_locked_by_other)
+        self.assertFalse(as_taker.is_locked_by_other)
+        self.assertFalse(as_manager.is_locked_by_other)
+        self.assertFalse(as_other.user_can_trash)
+        self.assertTrue(as_taker.user_can_trash)
+        self.assertFalse(as_other.user_can_move)
+        Doc = self.env["document.document"]
+        self.assertIn(
+            self.doc,
+            Doc.with_user(self.other).search([("is_locked_by_other", "=", True)]),
+        )
+        self.assertNotIn(
+            self.doc,
+            Doc.with_user(self.doc_user).search([("is_locked_by_other", "=", True)]),
+        )
+
+    def test_user_can_trash_answers_as_action_archive_does(self):
+        # unowned, editable itself, in a folder the user may only view
+        folder = self.env["document.document"].create(
+            {"name": "view folder", "type": "folder", "access_internal": "view"}
+        )
+        unowned = self.env["document.document"].create(
+            {
+                "name": "unowned.txt",
+                "type": "binary",
+                "datas": TEXT,
+                "folder_id": folder.id,
+                "access_internal": "edit",
+            }
+        )
+        as_other = unowned.with_user(self.other)
+        self.assertEqual(as_other.user_permission, "edit")
+        self.assertFalse(as_other.user_can_trash)
+        with self.assertRaises(UserError):
+            as_other.action_archive()
+
+
+@tagged("post_install", "-at_install")
 class TestDocumentsAccessInheritance(TransactionCaseDocuments):
     def test_empty_access_ids_opts_out_of_inheritance(self):
         self.folder_a.action_update_access_rights(

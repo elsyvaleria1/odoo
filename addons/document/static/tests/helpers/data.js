@@ -49,6 +49,15 @@ export class DocumentsDocument extends models.Model {
     is_multipage = fields.Boolean();
 
     user_can_move = fields.Boolean({ default: true });
+    // the server's answers for the current user, recomputed on every write
+    is_locked_by_other = fields.Boolean({ compute: "_compute_capabilities" });
+    user_can_trash = fields.Boolean({ compute: "_compute_capabilities" });
+
+    _compute_capabilities() {
+        for (const record of this) {
+            Object.assign(record, documentCapabilities(record));
+        }
+    }
     is_editable_attachment = fields.Boolean();
     mimetype = fields.Char();
     partner_id = fields.Many2one({
@@ -218,10 +227,12 @@ export class DocumentsDocument extends models.Model {
                 "display_name",
                 "user_folder_id",
                 "is_download_blocked",
+                "is_locked_by_other",
                 "is_user_favorite",
                 "mail_alias_domain_count",
                 "owner_id",
                 "shortcut_document_id",
+                "user_can_trash",
                 "user_permission",
                 "alias_domain_id",
                 "alias_email",
@@ -307,7 +318,9 @@ export class DocumentsDocument extends models.Model {
 
     toggle_lock(id) {
         const record = this.browse(id)[0];
-        record.lock_uid = record.lock_uid ? false : serverState.odoobotId;
+        // as the server: a lock is taken for oneself
+        record.lock_uid = record.lock_uid ? false : serverState.userId;
+        this._compute_capabilities();
     }
 
     get_documents_actions() {
@@ -486,6 +499,31 @@ export class MailAliasDomain extends models.Model {
  * @param {object?} data
  * @return {{}}
  */
+/** Who the mock server answers for: patch `isManager` for a Documents manager. */
+export const documentsMockUser = { isManager: false };
+
+/**
+ * What the server computes for the current user: a lock held by anyone else
+ * stops them, unless a manager, and the trash wants an editor.
+ *
+ * @param {Object} data
+ * @returns {{is_locked_by_other: boolean, user_can_trash: boolean}}
+ */
+export function documentCapabilities(data) {
+    const lockedBy = data.lock_uid?.id ?? data.lock_uid;
+    const isLockedByOther =
+        !documentsMockUser.isManager &&
+        Boolean(lockedBy) &&
+        lockedBy !== serverState.userId;
+    return {
+        is_locked_by_other: isLockedByOther,
+        user_can_trash:
+            data.active !== false &&
+            data.user_permission === "edit" &&
+            !isLockedByOther,
+    };
+}
+
 export function makeDocumentRecordData(id, name, data = {}) {
     const strippedName = name.replace(/\s/g, "");
     const defaultValues = {

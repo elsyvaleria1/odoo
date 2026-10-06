@@ -25,18 +25,7 @@ class DocumentsDocument(models.Model):
             raise UserError(self.env._("You cannot delete this attachment."))
         # an old version is history, not the content `write` guards: without
         # this, someone else could erase a locked document's history
-        if self._locked_by_other():
-            _debug.logic(
-                "version_delete_refused", reason="locked_by_other", document=self
-            )
-            raise UserError(
-                self.env._(
-                    "“%(name)s” is locked by %(user)s and its versions cannot be "
-                    "deleted by another user.",
-                    name=self.name,
-                    user=self.lock_uid.name,
-                )
-            )
+        self._raise_if_locked_by_other("version_delete")
 
         deleted_name = attachment.name
         _debug.lifecycle(

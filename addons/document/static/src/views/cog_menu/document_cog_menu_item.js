@@ -113,13 +113,8 @@ export function makeDocumentsCogMenuItem(actionId, groupNumber) {
         Component: DocumentsCogMenuActionItem,
         groupNumber,
         isDisplayed: (env) =>
-            DocumentsCogMenuItem.isVisible(
-                env,
-                ({ folder, documentService, searchModel }) =>
-                    action.isVisible(documentService, folder, {
-                        folderPermission: (folderId) =>
-                            searchModel.getFolderById(folderId)?.user_permission,
-                    }),
+            DocumentsCogMenuItem.isVisible(env, ({ folder, documentService }) =>
+                action.isVisible(documentService, folder),
             ),
     };
 }

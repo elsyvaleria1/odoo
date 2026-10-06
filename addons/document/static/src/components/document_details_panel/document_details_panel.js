@@ -1,5 +1,4 @@
 /** @odoo-module native */
-import { isLockedByOther } from "@document/views/document_actions";
 import { DocumentsDetailsMany2ManyTagsField } from "@document/views/fields/document_details_many2many_tags/document_details_many2many_tags_field";
 import { DocumentsDetailsMany2OneField } from "@document/views/fields/document_details_many2one/document_details_many2one_field";
 import { DocumentsTypeIcon } from "@document/views/fields/document_type_icon/document_type_icon";
@@ -90,10 +89,7 @@ export class DocumentsDetailsPanel extends Component {
     get userPermissionViewOnly() {
         // a lock stops the others, not its taker nor a Documents manager
         return (
-            isLockedByOther(
-                this.record.data,
-                this.documentService.userIsDocumentManager,
-            ) ||
+            Boolean(this.record.data?.is_locked_by_other) ||
             this.record.data?.user_permission !== "edit" ||
             (!this.documentService.userIsDocumentManager &&
                 this.record.data?.user_folder_id === "COMPANY")

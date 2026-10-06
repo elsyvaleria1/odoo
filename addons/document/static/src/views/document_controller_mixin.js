@@ -288,7 +288,7 @@ export const DocumentsControllerMixin = (component) =>
                     isAvailable: () =>
                         editMode &&
                         singleSelection &&
-                        !this.model.isLockedByOther(singleSelection.data) &&
+                        !singleSelection.data.is_locked_by_other &&
                         !isInTrash,
                     sequence: 20,
                     description: _t("Rename…"),
@@ -347,10 +347,12 @@ export const DocumentsControllerMixin = (component) =>
                     groupNumber: COG_GROUP.RECORD,
                 },
                 lock: {
+                    // the lock of another is theirs (or a manager's) to lift
                     isAvailable: () =>
                         userIsInternal &&
                         singleSelection &&
                         singleSelection.data.type !== "folder" &&
+                        !singleSelection.data.is_locked_by_other &&
                         !isInTrash &&
                         editMode,
                     sequence: 45,
@@ -370,8 +372,7 @@ export const DocumentsControllerMixin = (component) =>
                         editMode &&
                         this.targetRecords.every(
                             (record) =>
-                                record.isPdf() &&
-                                !this.model.isLockedByOther(record.data),
+                                record.isPdf() && !record.data.is_locked_by_other,
                         ) &&
                         !isInTrash,
                     sequence: 10,

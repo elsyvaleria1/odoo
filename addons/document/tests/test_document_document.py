@@ -1489,7 +1489,8 @@ class TestCaseDocuments(TransactionCaseDocuments):
         self.document_txt.access_internal = "view"
 
         self.document_txt.with_user(self.document_manager).toggle_lock()
-        with self.assertRaises(AccessError):
+        # refused by the lock before the access check: a UserError either way
+        with self.assertRaises(UserError):
             self.document_txt.with_user(self.doc_user).toggle_lock()
         self.assertEqual(
             self.document_txt.lock_uid.id,
@@ -1497,9 +1498,14 @@ class TestCaseDocuments(TransactionCaseDocuments):
             "viewer should not have unlocked",
         )
 
+        # an editor may not lift a manager's lock either: unlocked, the
+        # document would be theirs to change
         self.document_txt.access_internal = "edit"
-        self.document_txt.with_user(self.doc_user).toggle_lock()
-        self.assertFalse(self.document_txt.lock_uid, "editor should have unlocked")
+        with self.assertRaises(UserError):
+            self.document_txt.with_user(self.doc_user).toggle_lock()
+        self.assertEqual(self.document_txt.lock_uid, self.document_manager)
+        self.document_txt.with_user(self.document_manager).toggle_lock()
+        self.assertFalse(self.document_txt.lock_uid, "its taker unlocks it")
 
     def test_lock_blocks_every_way_of_changing_the_content(self):
         self.document_txt.write({"owner_id": self.document_manager.id})

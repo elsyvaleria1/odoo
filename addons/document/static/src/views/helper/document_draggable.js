@@ -346,25 +346,18 @@ export const useDraggableDocuments = makeDraggableHook({
         }
     },
 
-    /**
-     * Movable as the server answers it (`user_can_move`: the owner, or an
-     * editor where the folder allows, the company root kept to managers),
-     * and not under someone else's lock. Trashable as `action_archive`
-     * answers it (`isTrashable`).
-     */
+    /** Movable and trashable as the server answers them: user_can_move, user_can_trash. */
     _setDraggedRecords(ctx, model) {
         const ids = (predicate) =>
             model.root.selection.filter(predicate).map((record) => record.data.id);
-        const movableRecordIds = ids(
-            ({ data }) => data.user_can_move && !model.isLockedByOther(data),
-        );
+        const movableRecordIds = ids(({ data }) => data.user_can_move);
         const nonMovableRecordIds = ids(
             ({ data }) => !movableRecordIds.includes(data.id),
         );
         ctx.draggedRecords = {
             movableRecordIds,
             nonMovableRecordIds,
-            trashableRecordIds: ids(({ data }) => model.isTrashable(data)),
+            trashableRecordIds: ids(({ data }) => data.user_can_trash),
             all: [...movableRecordIds, ...nonMovableRecordIds],
         };
     },

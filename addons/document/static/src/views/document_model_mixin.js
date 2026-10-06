@@ -1,10 +1,6 @@
 /** @odoo-module native */
 import { DocumentsBusEvent } from "@document/core/document_service";
-import {
-    isDownloadAllowed,
-    isLockedByOther,
-    isTrashable,
-} from "@document/views/document_actions";
+import { isDownloadAllowed } from "@document/views/document_actions";
 import { useDocumentContext } from "@document/views/document_context";
 import {
     getCommonEmbeddedActions,
@@ -267,33 +263,18 @@ export const DocumentsModelMixin = (component) =>
                 currentFolder?.id !== "TRASH" &&
                 singleSelection.data.type === "binary" &&
                 singleSelection.data.attachment_id &&
-                !this.isLockedByOther(singleSelection.data) &&
+                !singleSelection.data.is_locked_by_other &&
                 isDownloadAllowed(singleSelection.data)
             );
         }
 
-        /** @param {Object} data */
-        isLockedByOther(data) {
-            return isLockedByOther(data, this.documentService.userIsDocumentManager);
-        }
-
-        /** @param {Object} data */
-        isTrashable(data) {
-            const { searchModel } = this.viewContext;
-            return isTrashable(data, {
-                userIsDocumentManager: this.documentService.userIsDocumentManager,
-                folderPermission: (folderId) =>
-                    searchModel.getFolderById(folderId)?.user_permission,
-            });
-        }
-
-        /** What onArchive trashes: the trashable ones, all of them editable. */
+        /** What onArchive trashes: those the server says may go, all of them editable. */
         get canArchiveRecords() {
             const documents = this.targetRecords.map((r) => r.data);
             return (
                 this.documentService.userIsInternal &&
                 documents.every((d) => d.user_permission === "edit") &&
-                documents.some((d) => this.isTrashable(d))
+                documents.some((d) => d.user_can_trash)
             );
         }
 
@@ -319,8 +300,8 @@ export const DocumentsModelMixin = (component) =>
             return (
                 this.documentService.hasFolderEditorAccess &&
                 this.targetRecords.every(
+                    // a copy is a new document: a lock on the original does not bind it
                     (r) =>
-                        !this.isLockedByOther(r.data) &&
                         r.data.active &&
                         // the copy would be its copier's to download
                         (r.data.type !== "binary" || isDownloadAllowed(r.data)),
@@ -478,21 +459,10 @@ export const DocumentsModelMixin = (component) =>
             await this._notifyChange();
         }
 
-        /** @returns {Array} what a lock leaves this user to trash, as a domain */
-        get _notLockedByOtherDomain() {
-            if (this.documentService.userIsDocumentManager) {
-                return [];
-            }
-            return Domain.or([
-                [["lock_uid", "=", false]],
-                [["lock_uid", "=", user.userId]],
-            ]).toList();
-        }
-
         async onArchive() {
-            const records = this.targetRecords.filter((r) => this.isTrashable(r.data));
+            const records = this.targetRecords.filter((r) => r.data.user_can_trash);
             const recordIds = this.isDomainSelected
-                ? await this.getResIds(this._notLockedByOtherDomain)
+                ? await this.getResIds([["is_locked_by_other", "=", false]])
                 : records.map((rec) => rec.data.id);
             if (await this.documentService.moveToTrash(recordIds)) {
                 await this._notifyChange();

@@ -117,10 +117,12 @@ class DocumentsDocument(models.Model):
             "display_name",
             "user_folder_id",
             "is_download_blocked",
+            "is_locked_by_other",
             "is_user_favorite",
             "mail_alias_domain_count",
             "owner_id",
             "shortcut_document_id",
+            "user_can_trash",
             "user_permission",
         ]
         if not self.env.user.share:
