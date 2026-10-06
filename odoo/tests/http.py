@@ -631,6 +631,10 @@ class HttpCase(TransactionCase):
         step_delay: int | None = None,
         **kwargs: Any,
     ) -> None:
+        if not url_path or not isinstance(url_path, str):
+            # a link a fixture failed to build reads as False: the browser then
+            # opens a page that only lacks what the first step waits for
+            raise ValueError(f"start_tour({tour_name!r}) needs a url, got {url_path!r}")
         options = {
             "stepDelay": step_delay or 0,
             "keepWatchBrowser": kwargs.get("watch", False),
