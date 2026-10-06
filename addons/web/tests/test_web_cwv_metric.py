@@ -68,13 +68,13 @@ class TestWebCwvMetric(TransactionCase):
     def test_rate_limiter_key_map_stays_bounded(self):
         from odoo.addons.web.controllers import observability as obs
 
-        obs._rate_state.clear()
-        self.addCleanup(obs._rate_state.clear)
-        for i in range(obs._RATE_LIMIT_MAX_KEYS + 500):
-            obs._is_rate_limited(f"flood:{i}")
+        obs._limiter.clear()
+        self.addCleanup(obs._limiter.clear)
+        for i in range(obs._limiter.max_keys + 500):
+            obs._limiter.is_limited(f"flood:{i}")
         self.assertLessEqual(
-            len(obs._rate_state),
-            obs._RATE_LIMIT_MAX_KEYS,
+            len(obs._limiter._state),
+            obs._limiter.max_keys,
             "the key map must stay bounded under a distinct-key flood",
         )
 
@@ -116,11 +116,11 @@ class TestWebCwvBeacon(HttpCase):
         from odoo.addons.web.controllers import observability
 
         Metric = self.env["web.cwv.metric"].sudo()
-        observability._rate_state.clear()
-        self.addCleanup(observability._rate_state.clear)
+        observability._limiter.clear()
+        self.addCleanup(observability._limiter.clear)
         before = Metric.search_count([])
 
-        with patch.object(observability, "_RATE_LIMIT_MAX", 3):
+        with patch.object(observability._limiter, "limit", 3):
             statuses = [
                 self._beacon(
                     {"url": "/odoo", "pageview_id": f"rate-{i}", "lcp": 1000.0}
@@ -140,11 +140,11 @@ class TestWebCwvBeacon(HttpCase):
     def test_cwv_and_js_error_have_separate_budgets(self):
         from odoo.addons.web.controllers import observability as obs
 
-        obs._rate_state.clear()
-        self.addCleanup(obs._rate_state.clear)
+        obs._limiter.clear()
+        self.addCleanup(obs._limiter.clear)
 
         with (
-            patch.object(obs, "_RATE_LIMIT_MAX", 2),
+            patch.object(obs._limiter, "limit", 2),
             mute_logger("odoo.addons.web.controllers.observability"),
         ):
             cwv = [

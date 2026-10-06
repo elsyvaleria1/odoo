@@ -1,8 +1,8 @@
 import logging
 import uuid
-from typing import Any
+from typing import Any, TypedDict
 
-from odoo import fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.redact import mask_text
 from odoo.tools import SQL, frozendict
@@ -18,14 +18,34 @@ SOURCES = [
     ("job", "Background Job"),
 ]
 
+# What the error dialog follows, pushed to the users an incident affected.
+JOURNEY_NOTIFICATION = "error_incident/journey"
+JOURNEY_STEPS = ("recorded", "acknowledged", "resolved")
+_JOURNEY_STEP_OF_STATE = {"acknowledged": "acknowledged", "resolved": "resolved"}
+
+
+class JourneyDetails(TypedDict):
+    count: int
+    regressed: bool
+
+
+class Journey(TypedDict, total=False):
+    incident: int
+    steps: list[str]
+    step: str
+    outcome: str | None
+    details: JourneyDetails
+    occurrence: str
+
 
 class ErrorIncident(models.Model):
     _name = "error.incident"
     _description = "Error Incident"
     _inherit = ["mixin.mail.thread"]
     _order = "date_last_seen desc, id desc"
-    # An error belongs to the server, not to a company.
-    _access_anchors = frozendict({"company": ""})
+    # An error belongs to the server, not to a company; the users it affected
+    # are whose it is.
+    _access_anchors = frozendict({"company": "", "owner": "user_ids"})
 
     name = fields.Char(
         string="Title",
@@ -118,6 +138,20 @@ class ErrorIncident(models.Model):
         "An incident with this fingerprint already exists.",
     )
 
+    def write(self, vals: dict[str, Any]) -> bool:
+        if "incident_state" not in vals:
+            return super().write(vals)
+        before = {incident.id: incident.incident_state for incident in self}
+        result = super().write(vals)
+        moved = self.filtered(
+            lambda incident: incident.incident_state != before[incident.id]
+        )
+        moved._notify_journey()
+        moved.filtered(
+            lambda incident: incident.incident_state == "resolved"
+        )._notify_fixed()
+        return result
+
     def action_acknowledge(self) -> None:
         self.incident_state = "acknowledged"
 
@@ -129,6 +163,63 @@ class ErrorIncident(models.Model):
 
     def action_set_aside(self) -> None:
         self.incident_state = "set_aside"
+
+    def _journey(self) -> Journey:
+        """Where the incident stands, in the dialog's terms: the steps it walks,
+        the one reached, and what cut it short, if anything."""
+        self.check_singleton()
+        state = self.incident_state
+        return {
+            "incident": self.id,
+            "steps": list(JOURNEY_STEPS),
+            "step": _JOURNEY_STEP_OF_STATE.get(state, "recorded"),
+            "outcome": "set_aside" if state == "set_aside" else None,
+            "details": {
+                "count": self.count_occurrence,
+                "regressed": state == "regressed",
+            },
+        }
+
+    def _notify_journey(
+        self,
+        users: models.BaseModel | None = None,
+        occurrence_ref: str | None = None,
+    ) -> None:
+        """Push each incident's journey to the internal users it affected, or to
+        ``users``; naming the occurrence lets the dialog that shows it, opened
+        before the occurrence was written, recognise its own."""
+        for incident in self:
+            recipients = incident.user_ids if users is None else users
+            recipients = recipients.filtered(lambda user: not user.share)
+            if not recipients:
+                continue
+            journey = incident._journey()
+            if occurrence_ref:
+                journey["occurrence"] = occurrence_ref
+            recipients._bus_send(JOURNEY_NOTIFICATION, journey)
+            _debug.logic(
+                "incident.journey_sent",
+                incident=incident.id,
+                step=journey["step"],
+                users=len(recipients),
+            )
+
+    def _notify_fixed(self) -> None:
+        """Tell every internal user an incident affected that it is fixed, in
+        their own language, wherever they are in the web client."""
+        for incident in self:
+            for user in incident.user_ids.filtered(lambda user: not user.share):
+                in_their_language = incident.with_context(lang=user.lang).env
+                user._bus_send(
+                    "simple_notification",
+                    {
+                        "type": "success",
+                        "title": in_their_language._("An error you ran into was fixed"),
+                        "message": incident.name,
+                        "sticky": True,
+                    },
+                )
+            _debug.logic("incident.fixed_sent", incident=incident.id)
 
     def _capture(self, payload: dict[str, Any]) -> int:
         """Record one occurrence; return its incident's id.
@@ -222,14 +313,18 @@ class ErrorIncident(models.Model):
                     payload["user_id"],
                 )
             )
+        hit_by = self.env["res.users"].browse(payload.get("user_id")).exists()
         self.env["error.occurrence"].create(
-            self._prepare_occurrence_vals(incident_id, payload)
+            self._prepare_occurrence_vals(incident_id, payload, hit_by)
         )
         self.invalidate_model()
+        incident = self.browse(incident_id)
         if regressed:
-            self.browse(incident_id).message_post(
+            incident.message_post(
                 body=self.env._("It occurred again after it was resolved."),
             )
+            incident._notify_journey(users=incident.user_ids - hit_by)
+        incident._notify_journey(users=hit_by, occurrence_ref=payload["occurrence_ref"])
         _debug.logic(
             "incident.occurrence",
             incident=incident_id,
@@ -250,9 +345,8 @@ class ErrorIncident(models.Model):
         return (row[0], row[1]) if row else (None, None)
 
     def _prepare_occurrence_vals(
-        self, incident_id: int, payload: dict[str, Any]
+        self, incident_id: int, payload: dict[str, Any], user: models.BaseModel
     ) -> dict[str, Any]:
-        user = self.env["res.users"].browse(payload.get("user_id")).exists()
         return {
             "incident_id": incident_id,
             "occurrence_ref": payload["occurrence_ref"],
@@ -271,11 +365,13 @@ class ErrorIncident(models.Model):
         """`_capture`, for the error path: it never raises.
 
         It runs while something else has already gone wrong; a failure to
-        record must not hide, replace or worsen the one being recorded.
+        record must not hide, replace or worsen the one being recorded. The
+        system records it, whoever's code failed.
         """
         try:
             with self.env.cr.savepoint():
-                return self.sudo()._capture(payload)
+                system = api.Environment(self.env.cr, SUPERUSER_ID, {})
+                return system["error.incident"]._capture(payload)
         except Exception:
             _logger.exception(
                 "Could not record an occurrence of %s", payload.get("fingerprint")

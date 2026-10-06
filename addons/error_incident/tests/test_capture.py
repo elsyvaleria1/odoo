@@ -100,7 +100,7 @@ class TestCapture(TransactionCase):
         incident = self._capture()
         for _ in range(4):
             self._capture()
-        self.env["ir.config_parameter"].sudo().set_param(KEPT_PER_INCIDENT_PARAM, "3")
+        self.env["ir.config_parameter"].set_param(KEPT_PER_INCIDENT_PARAM, "3")
         oldest = incident.occurrence_ids.sorted("id")[0]
         self.env["error.occurrence"]._gc_occurrences()
         self.assertEqual(len(incident.occurrence_ids), 3)

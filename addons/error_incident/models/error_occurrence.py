@@ -3,9 +3,9 @@ from datetime import timedelta
 
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL
+from odoo.tools import SQL, frozendict
 
-from .error_incident import SOURCES
+from .error_incident import SOURCES, ErrorIncident
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -20,6 +20,8 @@ class ErrorOccurrence(models.Model):
     _order = "date_occurred desc, id desc"
     _rec_name = "occurrence_ref"
     _log_access = False
+    # Whose an occurrence is: the user who hit it.
+    _access_anchors = frozendict({"owner": "user_id"})
 
     incident_id = fields.Many2one(
         comodel_name="error.incident",
@@ -81,6 +83,22 @@ class ErrorOccurrence(models.Model):
         "UNIQUE(occurrence_ref)",
         "An occurrence with this reference already exists.",
     )
+
+    def _own_incident(self, occurrence_ref: object) -> ErrorIncident:
+        """The incident of the caller's own occurrence ``occurrence_ref``;
+        empty while it is not written yet, or when it is someone else's."""
+        if not isinstance(occurrence_ref, str) or not occurrence_ref:
+            return self.env["error.incident"]
+        own = self.with_privilege(
+            "error_incident.privilege_follow_own_errors",
+            reason="the error dialog follows its own error",
+        ).search_fetch(
+            [("occurrence_ref", "=", occurrence_ref), ("user_id", "=", self.env.uid)],
+            ["incident_id"],
+            limit=1,
+        )
+        _debug.logic("occurrence.own_lookup", found=bool(own))
+        return own.incident_id
 
     def _gc_occurrences(self) -> None:
         """Keep each incident's newest occurrences, and none past retention."""

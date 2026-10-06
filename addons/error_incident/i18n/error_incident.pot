@@ -6,14 +6,32 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 19:18+0000\n"
-"PO-Revision-Date: 2026-10-06 19:18+0000\n"
+"POT-Creation-Date: 2026-10-06 19:40+0000\n"
+"PO-Revision-Date: 2026-10-06 19:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "A developer decided not to fix it for now."
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "A developer is on it"
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "A developer is working on this error"
+msgstr ""
 
 #. module: error_incident
 #: model_terms:ir.actions.act_window,help:error_incident.action_error_incident_rule
@@ -46,6 +64,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:error_incident.field_error_incident__user_ids
 #: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
 msgid "Affected Users"
+msgstr ""
+
+#. module: error_incident
+#. odoo-python
+#: code:addons/error_incident/models/error_incident.py:0
+msgid "An error you ran into was fixed"
 msgstr ""
 
 #. module: error_incident
@@ -170,6 +194,12 @@ msgid "First Seen"
 msgstr ""
 
 #. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "Fixed"
+msgstr ""
+
+#. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_incident__message_follower_ids
 msgid "Followers"
 msgstr ""
@@ -206,6 +236,15 @@ msgid "Has Message"
 msgstr ""
 
 #. module: error_incident
+#: model:res.groups,comment:error_incident.privilege_follow_own_errors
+msgid ""
+"Held by the error dialog's route: it reads the occurrence the error named, "
+"and its incident, only where the occurrence is the user's own. The "
+"engineering trail -- tracebacks of other users, notes, rules -- stays with "
+"the administrators."
+msgstr ""
+
+#. module: error_incident
 #: model:ir.model.fields,help:error_incident.field_error_incident__count_regression
 msgid "How many times it occurred again after being resolved."
 msgstr ""
@@ -231,6 +270,12 @@ msgid "If checked, some messages have a delivery error."
 msgstr ""
 
 #. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "If it still happens, it is recorded again and reopened."
+msgstr ""
+
+#. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_occurrence__incident_id
 msgid "Incident"
 msgstr ""
@@ -244,6 +289,18 @@ msgstr ""
 #. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_incident__message_is_follower
 msgid "Is Follower"
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "It has happened %s times."
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "It is back in the developers' queue."
 msgstr ""
 
 #. module: error_incident
@@ -382,8 +439,25 @@ msgid "Open"
 msgstr ""
 
 #. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/error_dialog.xml:0
+msgid "Open the incident"
+msgstr ""
+
+#. module: error_incident
 #: model_terms:ir.ui.view,arch_db:error_incident.view_error_incident_form
 msgid "Origin"
+msgstr ""
+
+#. module: error_incident
+#: model:res.groups,name:error_incident.privilege_follow_own_errors
+msgid "Privilege: a user follows the errors they ran into"
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "Recorded"
 msgstr ""
 
 #. module: error_incident
@@ -471,6 +545,12 @@ msgid "Set Aside By"
 msgstr ""
 
 #. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "Set aside"
+msgstr ""
+
+#. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_incident__source
 #: model:ir.model.fields,field_description:error_incident.field_error_incident_rule__source
 #: model:ir.model.fields,field_description:error_incident.field_error_occurrence__source
@@ -491,6 +571,32 @@ msgstr ""
 #. module: error_incident
 #: model:ir.model.fields,help:error_incident.field_error_occurrence__location
 msgid "The route, scheduled action or job that failed."
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid ""
+"There is nothing for you to report: the developers have it, with your user "
+"and the time."
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "This error came back after a fix"
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "This error is fixed"
+msgstr ""
+
+#. module: error_incident
+#. odoo-javascript
+#: code:addons/error_incident/static/src/incident_words.js:0
+msgid "This error was recorded"
 msgstr ""
 
 #. module: error_incident

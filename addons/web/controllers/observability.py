@@ -1,12 +1,10 @@
-import heapq
 import logging
 import math
-import threading
-import time
 
 from odoo import modules
 from odoo.http import Controller, Response, request, route
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.fixed_window import FixedWindowLimiter
 from odoo.libs.json import loads as json_loads
 from odoo.libs.sql import INT4_MAX
 from odoo.tools import config
@@ -14,47 +12,7 @@ from odoo.tools import config
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-_RATE_LIMIT_WINDOW_S = 60
-_RATE_LIMIT_MAX = 120
-_RATE_LIMIT_MAX_KEYS = 10_000
-_rate_lock = threading.Lock()
-_rate_state: dict[str, list[float]] = {}
-
-
-def _is_rate_limited(key: str) -> bool:
-    now = time.monotonic()
-    with _rate_lock:
-        if len(_rate_state) > _RATE_LIMIT_MAX_KEYS:
-            cutoff = now - _RATE_LIMIT_WINDOW_S
-            before = len(_rate_state)
-            for stale in [k for k, v in _rate_state.items() if v[0] < cutoff]:
-                del _rate_state[stale]
-            _debug.perf.count(
-                "rate_sweep_stale_evicted",
-                keys_before=before,
-                keys_after=len(_rate_state),
-            )
-            if len(_rate_state) > _RATE_LIMIT_MAX_KEYS:
-                low_water = _RATE_LIMIT_MAX_KEYS * 9 // 10
-                evict_n = len(_rate_state) - low_water
-                _debug.logic(
-                    "rate_sweep_evict_oldest", keys=len(_rate_state), evict=evict_n
-                )
-                for k in heapq.nsmallest(
-                    evict_n, _rate_state, key=lambda k: _rate_state[k][0]
-                ):
-                    del _rate_state[k]
-        state = _rate_state.get(key)
-        if state is None or now - state[0] >= _RATE_LIMIT_WINDOW_S:
-            if state is not None:
-                _debug.logic("rate_window_expired", key=key, hits=state[1])
-            _rate_state[key] = [now, 1]
-            return False
-        if state[1] >= _RATE_LIMIT_MAX:
-            _debug.logic("rate_limited", key=key, hits=state[1])
-            return True
-        state[1] += 1
-        return False
+_limiter = FixedWindowLimiter(window=60, limit=120)
 
 
 def _get_client_rate_key(prefix: str) -> str:
@@ -108,7 +66,7 @@ def _read_beacon_payload(prefix: str) -> dict | Response:
     _debug.lifecycle(
         "beacon_received", prefix=prefix, bytes=len(request.httprequest.data or b"")
     )
-    if _is_rate_limited(_get_client_rate_key(prefix)):
+    if _limiter.is_limited(_get_client_rate_key(prefix)):
         _debug.logic(
             "beacon_rejected", prefix=prefix, reason="rate_limited", status=429
         )

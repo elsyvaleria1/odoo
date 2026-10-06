@@ -174,6 +174,7 @@
   "@stock_barcode/components/main:default.prototype :: _getBarcodeModel :: stock_barcode_mrp | stock_barcode_picking_batch": "_getBarcodeModel: each acts only when this.resModel is its own value (\"mrp.production\", \"stock.picking.batch\") and otherwise defers to super",
   "@stock_barcode/components/main:default.prototype :: setup :: stock_barcode_barcodelookup | stock_barcode_mrp": "setup: each calls super.setup() first and only sets fields of its own",
   "@stock_barcode/kanban/stock_barcode_kanban_controller:StockBarcodeKanbanController.prototype :: createRecord :: stock_barcode_mrp | stock_barcode_picking_batch": "createRecord: each acts only when this.props.resModel is its own value (\"mrp.production\", \"stock.picking.batch\") and otherwise defers to super",
+  "@web/components/errors:ErrorDialog.prototype :: setup :: document | error_incident": "setup: each calls super.setup() first and only sets fields of its own",
   "@web/views/list:ListRenderer.prototype :: setup :: knowledge | spreadsheet_edition": "each sets its own fields after super",
   "@web/views/list:ListRenderer.prototype :: setup :: knowledge | web_studio": "each sets its own fields after super",
   "@web/views/list:ListRenderer.prototype :: setup :: spreadsheet_edition | web_studio": "each sets its own fields after super"
@@ -1234,7 +1235,6 @@
   "@timesheet_grid/views/timesheet_grid/timesheet_grid_model:TimesheetGridModel.prototype :: _getPreviousWeekTimesheetDomain :: helpdesk_timesheet | industry_fsm",
   "@timesheet_grid/views/timesheet_grid/timesheet_grid_model:TimesheetGridModel.prototype :: _getPreviousWeekTimesheetDomain :: helpdesk_timesheet | timesheet_grid_holidays",
   "@timesheet_grid/views/timesheet_grid/timesheet_grid_model:TimesheetGridModel.prototype :: _getPreviousWeekTimesheetDomain :: industry_fsm | timesheet_grid_holidays",
-  "@web/components/errors:ErrorDialog.prototype :: setup :: document | web_error_solve",
   "@web/components/file_viewer:FileViewer.prototype :: setup :: mail_mobile | sign",
   "@web/core/browser/router:router :: stateToUrl :: document | knowledge",
   "@web/core/browser/router:router :: stateToUrl :: document | project",

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t
+        t-name="error_incident.ErrorDialog"
+        t-inherit="web.ErrorDialog"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//div[@role='alert']/p" position="after">
+            <t t-call="error_incident.JourneyPanel" />
+        </xpath>
+        <!-- After Close, in the footer: the dialog keeps the focus order it had. -->
+        <xpath expr="//t[@t-set-slot='footer']/button" position="after">
+            <button
+                t-if="this.incidentAction and this.incidentJourney.following"
+                class="btn btn-secondary o_error_incident_open"
+                t-on-click="() => this.openIncident()"
+            >Open the incident</button>
+        </xpath>
+    </t>
+
+    <t t-name="error_incident.JourneyPanel">
+        <div
+            t-if="this.incidentJourney.following"
+            class="o_error_incident mb-3"
+            role="status"
+            aria-live="polite"
+        >
+            <div class="o_error_incident_head">
+                <span t-att-class="this.incidentJourney.markClass" aria-hidden="true" />
+                <span t-out="this.incidentJourney.headline" />
+            </div>
+
+            <ol class="o_error_incident_steps">
+                <li
+                    t-foreach="this.incidentJourney.steps"
+                    t-as="step"
+                    t-key="step.id"
+                    class="o_error_incident_step"
+                    t-att-class="step.className"
+                    t-att-aria-current="step.current ? 'step' : false"
+                >
+                    <span class="o_error_incident_mark" aria-hidden="true" />
+                    <span class="o_error_incident_label" t-out="step.label" />
+                </li>
+            </ol>
+
+            <p
+                t-if="this.incidentJourney.note"
+                class="o_error_incident_msg mb-0"
+                t-out="this.incidentJourney.note"
+            />
+            <p
+                t-if="this.incidentJourney.count"
+                class="o_error_incident_msg mb-0"
+                t-out="this.incidentJourney.count"
+            />
+        </div>
+    </t>
+
+</templates>

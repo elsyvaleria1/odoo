@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_follow_own_errors" model="res.groups">
+        <field name="name">Privilege: a user follows the errors they ran into</field>
+        <field
+            name="comment">Held by the error dialog's route: it reads the occurrence the error named, and its incident, only where the occurrence is the user's own. The engineering trail -- tracebacks of other users, notes, rules -- stays with the administrators.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

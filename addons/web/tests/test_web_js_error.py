@@ -17,11 +17,11 @@ class TestWebJsErrorBeacon(HttpCase):
     def test_js_error_beacon_is_rate_limited(self):
         from odoo.addons.web.controllers import observability
 
-        observability._rate_state.clear()
-        self.addCleanup(observability._rate_state.clear)
+        observability._limiter.clear()
+        self.addCleanup(observability._limiter.clear)
 
         with (
-            patch.object(observability, "_RATE_LIMIT_MAX", 3),
+            patch.object(observability._limiter, "limit", 3),
             mute_logger("odoo.addons.web.controllers.observability"),
         ):
             statuses = [
@@ -144,12 +144,12 @@ class TestWebJsErrorBeacon(HttpCase):
     def test_js_error_rate_limited_beacon_persists_nothing(self):
         from odoo.addons.web.controllers import observability
 
-        observability._rate_state.clear()
-        self.addCleanup(observability._rate_state.clear)
+        observability._limiter.clear()
+        self.addCleanup(observability._limiter.clear)
 
         Model = self.env["web.js.error"]
         before = Model.search_count([])
-        with patch.object(observability, "_RATE_LIMIT_MAX", 2):
+        with patch.object(observability._limiter, "limit", 2):
             statuses = [
                 self._beacon({"message": f"rl probe {i}"}).status_code for i in range(4)
             ]

@@ -1,0 +1,132 @@
+// The incident's journey inside the error dialog.
+//
+// Odoo paints this dialog in its dark theme and in its light one, so no colour
+// is hardcoded here: every value comes from the Bootstrap variables the theme
+// already resolved. A grey that "looks right" on dark is invisible on light,
+// and this dialog shows up on both.
+
+.o_error_incident {
+    border-left: 2px solid rgba($body-color, 0.15);
+    padding-left: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.o_error_incident_head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.o_error_incident_dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    flex: none;
+    border-radius: 50%;
+    background: rgba($body-color, 0.4);
+
+    &.o_error_incident_dot_stopped {
+        background: $warning;
+    }
+
+    &.o_error_incident_dot_done {
+        background: $success;
+    }
+}
+
+.o_error_incident_steps {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 0.15rem;
+}
+
+.o_error_incident_step {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.15rem 0;
+    position: relative;
+
+    // The line joining a step to the next one. Drawn downward from the mark;
+    // the last step does not get one.
+    &:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        left: 0.34rem;
+        top: 1.1rem;
+        bottom: -0.15rem;
+        width: 1px;
+        background: rgba($body-color, 0.2);
+    }
+}
+
+.o_error_incident_mark {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid rgba($body-color, 0.3);
+    background: transparent;
+    z-index: 1;
+}
+
+.o_error_incident_label {
+    opacity: 0.55;
+}
+
+// Reached: filled mark and text at full opacity.
+.o_error_incident_done {
+    .o_error_incident_mark {
+        border-color: $success;
+        background: $success;
+    }
+
+    .o_error_incident_label {
+        opacity: 0.9;
+    }
+}
+
+// Running: the only step that pulses, so a glance says "we are here" without
+// having to read.
+.o_error_incident_active {
+    .o_error_incident_mark {
+        border-color: $primary;
+        background: $primary;
+        // A slow token, so it stops wherever the reader asked for less motion.
+        animation: o_error_incident_pulse calc(#{$o-duration-slow} * 5) ease-in-out infinite;
+    }
+
+    .o_error_incident_label {
+        opacity: 1;
+        font-weight: 600;
+    }
+}
+
+// Stopped: the journey halted here and will not continue.
+.o_error_incident_stopped {
+    .o_error_incident_mark {
+        border-color: $warning;
+        background: $warning;
+    }
+
+    .o_error_incident_label {
+        opacity: 0.9;
+    }
+}
+
+.o_error_incident_msg {
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+@keyframes o_error_incident_pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba($primary, 0.55);
+    }
+
+    50% {
+        box-shadow: 0 0 0 0.32rem rgba($primary, 0);
+    }
+}
