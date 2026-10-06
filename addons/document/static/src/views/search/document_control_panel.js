@@ -3,7 +3,7 @@ import { DocumentsBreadcrumbs } from "@document/components/document_breadcrumbs"
 import { DocumentsAction } from "@document/views/action/document_action";
 import { DocumentsCogMenu } from "@document/views/cog_menu/document_cog_menu";
 import { showsSelectionActions } from "@document/views/document_controller_mixin";
-import { onPatched, proxy } from "@odoo/owl";
+import { proxy } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { useService } from "@web/core/utils/hooks";
 import { useViewConfig } from "@web/core/view_config_hooks";
@@ -27,27 +27,9 @@ export class DocumentsControlPanel extends ControlPanel {
         this.config = useViewConfig();
         this.searchModel = useSearchModel();
         this.model = useViewModel();
-        this.ui = useService("ui");
         this.documentService = useService("document.document");
 
         this.rightPanelState = proxy(this.documentService.rightPanelReactive);
-
-        onPatched(() => {
-            // this view's panel: a picker dialog's view has its own
-            const searchPanelContainer = this.root.el
-                ?.closest(".o_view_controller")
-                ?.querySelector(".o_content > .o_search_panel");
-            const hide = Boolean(this.ui.isSmall && this.model.root.selection.length);
-            log.logic("searchPanelToggle", () => ({
-                found: Boolean(searchPanelContainer),
-                isSmall: this.ui.isSmall,
-                selection: this.model.root.selection.length,
-                hide,
-            }));
-            if (searchPanelContainer) {
-                searchPanelContainer.classList.toggle("d-none", hide);
-            }
-        });
     }
 
     get currentFolderId() {

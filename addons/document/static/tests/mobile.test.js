@@ -5,7 +5,7 @@ import {
 } from "@document/../tests/helpers/pdf_manager";
 import { DocumentsKanbanModel } from "@document/views/kanban/document_kanban_model";
 import { describe, expect, test } from "@odoo/hoot";
-import { queryAllTexts } from "@odoo/hoot-dom";
+import { isVisible, queryAllTexts } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import {
     contains,
@@ -115,8 +115,7 @@ async function mountKanbanCapturingModel(serverData) {
     return { getModel: () => model };
 }
 
-const folderMenuHidden = () =>
-    Boolean(document.querySelector(".o_content > .o_search_panel.d-none"));
+const folderMenuHidden = () => !isVisible(".o_content > .o_search_panel");
 
 test("the folder menu steps aside while documents are selected", async () => {
     const { getModel } = await mountKanbanCapturingModel(

@@ -95,6 +95,17 @@ export const DocumentsControllerMixin = (component) =>
             });
         }
 
+        /** On a small screen the selection bar takes the folder menu's room. */
+        get hidesFolderMenu() {
+            const hides = Boolean(this.ui.isSmall && this.model.root.selection.length);
+            log.logic("hidesFolderMenu", () => ({
+                isSmall: this.ui.isSmall,
+                selection: this.model.root.selection.length,
+                hides,
+            }));
+            return hides;
+        }
+
         get hasSelectedRecords() {
             return this.targetRecords.length > 0;
         }

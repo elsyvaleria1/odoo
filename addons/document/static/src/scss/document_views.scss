@@ -1,5 +1,9 @@
 ////// ========== Search Panel ==============
 ////// ======================================
+.o_documents_folder_menu_aside > .o_search_panel {
+    display: none;
+}
+
 .o_search_panel > .o_search_panel_section {
     .o_drag_over_selector {
         &.o_search_panel_filter_value,
