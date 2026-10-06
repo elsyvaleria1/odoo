@@ -1,3 +1,5 @@
+from odoo.exceptions import AccessError
+
 from .test_project_base import TestProjectCommon
 
 
@@ -24,6 +26,21 @@ class TestProjectConfig(TestProjectCommon):
             menu_ids.issubset(menu_loaded),
             "The menu project and menu projects config should be loaded",
         )
+
+    def test_project_stage_actions_need_stages_group(self) -> None:
+        # Their views group by phase_id, a field only the stages group reads:
+        # loading one without that group would fail on the first read_group.
+        actions = self.env.ref("project.open_view_project_all_group_stage") | (
+            self.env.ref("project.open_view_project_all_config_group_stage")
+        )
+        self.Settings.create({"group_project_stages": False}).execute()
+        for action in actions.with_user(self.user_projectmanager):
+            with self.subTest(action=action.id), self.assertRaises(AccessError):
+                action._check_access_to_load()
+        self.Settings.create({"group_project_stages": True}).execute()
+        for action in actions.with_user(self.user_projectmanager):
+            with self.subTest(action=action.id):
+                action._check_access_to_load()
 
     def test_copy_project_manager_embedded_config_as_default(self) -> None:
         project = self.env["project.project"].create(
