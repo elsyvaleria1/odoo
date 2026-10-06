@@ -5,6 +5,7 @@
 /** @typedef {Temporal.ZonedDateTime} DateTime */
 /** @typedef {Temporal.PlainDate} DateValue */
 
+import { untrack } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 export const modelRegistry = registry.category("discuss.model");
 
@@ -105,6 +106,19 @@ export function isOne(Model, fieldName) {
 export function isMany(Model, fieldName) {
     return Model._.fields.get(fieldName) === MANY_SYM;
 }
+/**
+ * The record of `localId`, as every reader of the store's map holds it, read
+ * without subscribing. Not `toRaw(map).get()`: the raw map holds what OWL
+ * stores, which need not be the proxy a read through the map hands out.
+ *
+ * @param {{ recordByLocalId: Map<string, Record> }} store
+ * @param {string} localId
+ * @returns {Record | undefined}
+ */
+export function peekRecord(store, localId) {
+    return untrack(() => store.recordByLocalId.get(localId));
+}
+
 /**
  * @param {unknown} record
  * @returns {record is Record}

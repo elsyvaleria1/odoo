@@ -2,7 +2,7 @@
 /** @odoo-module native */
 import { markRaw, proxy, toRaw } from "@odoo/owl";
 
-import { isOne as isOneField, isRecord } from "./misc.js";
+import { isOne as isOneField, isRecord, peekRecord } from "./misc.js";
 
 /** @import { Record } from "./record" */
 /** @import { StoreModels } from "./record" */
@@ -46,22 +46,22 @@ function isOne(reclist) {
  * @template {Record} [R=Record]
  * @param {RecordList<R>} recordList
  * @param {RecordList<R>} recordListFullProxy
- * @returns {Map<string, R>}
+ * @returns {(localId: string) => R | undefined}
  */
 function recordByLocalIdFor(recordList, recordListFullProxy) {
-    const recordByLocalId = /** @type {Map<string, R>} */ (
-        /** @type {unknown} */ (recordListFullProxy._store.recordByLocalId)
-    );
+    const store = recordListFullProxy._store;
     const subscribes =
         recordListFullProxy !== recordList._proxyInternal &&
         recordListFullProxy !== recordList;
-    return subscribes ? recordByLocalId : toRaw(recordByLocalId);
+    return subscribes
+        ? (localId) => /** @type {R | undefined} */ (store.recordByLocalId.get(localId))
+        : (localId) => /** @type {R | undefined} */ (peekRecord(store, localId));
 }
 
 /**
  * @template {Record} [R=Record]
  * @param {RecordList<R>} receiver
- * @returns {{list: RecordList<R>, proxy: RecordList<R>, byLocalId: Map<string, R>, data: string[]}}
+ * @returns {{list: RecordList<R>, proxy: RecordList<R>, byLocalId: (localId: string) => R | undefined, data: string[]}}
  */
 function cursorOf(receiver) {
     const list = toRaw(receiver)._raw;
@@ -310,7 +310,7 @@ class RecordListInternal {
      */
     release(recordList, localId) {
         const recordProxy = /** @type {R | undefined} */ (
-            toRaw(recordList._store.recordByLocalId).get(localId)
+            peekRecord(recordList._store, localId)
         );
         if (!recordProxy) {
             return undefined;
@@ -326,7 +326,7 @@ class RecordListInternal {
      * @param {string} localId
      */
     withdraw(recordList, localId) {
-        const recordProxy = toRaw(recordList._store.recordByLocalId).get(localId);
+        const recordProxy = peekRecord(recordList._store, localId);
         if (recordProxy) {
             this.insert(recordList, recordProxy, undefined, { mode: "DELETE" });
         }
@@ -432,7 +432,7 @@ class RecordListInternal {
                 if (newLocalIdSet.has(localId)) {
                     continue;
                 }
-                const oldRecordProxy = toRaw(store.recordByLocalId).get(localId);
+                const oldRecordProxy = peekRecord(store, localId);
                 if (!oldRecordProxy) {
                     continue;
                 }
@@ -731,7 +731,7 @@ export class RecordList extends Array {
     concat(...collections) {
         const { data, byLocalId } = cursorOf(this);
         return data
-            .map((localId) => byLocalId.get(localId))
+            .map((localId) => byLocalId(localId))
             .concat(...collections.map((c) => [...c]));
     }
     /**
@@ -850,7 +850,7 @@ export class RecordList extends Array {
     *[Symbol.iterator]() {
         const { data, byLocalId } = cursorOf(this);
         for (const localId of data) {
-            yield byLocalId.get(localId);
+            yield byLocalId(localId);
         }
     }
     /** @yields {R} */
@@ -868,13 +868,13 @@ export class RecordList extends Array {
     *entries() {
         const { data, byLocalId } = cursorOf(this);
         for (let index = 0; index < data.length; index++) {
-            yield [index, byLocalId.get(data[index])];
+            yield [index, byLocalId(data[index])];
         }
     }
     /** @param {number} index */
     at(index) {
         const { data, byLocalId } = cursorOf(this);
-        return byLocalId.get(data.at(index));
+        return byLocalId(data.at(index));
     }
     /**
      * @template U
@@ -883,7 +883,7 @@ export class RecordList extends Array {
      */
     map(fn) {
         const { data, byLocalId } = cursorOf(this);
-        return data.map((localId, index) => fn(byLocalId.get(localId), index, this));
+        return data.map((localId, index) => fn(byLocalId(localId), index, this));
     }
     /**
      * @template U
@@ -913,7 +913,7 @@ export class RecordList extends Array {
         const { data, byLocalId } = cursorOf(this);
         const result = [];
         for (let index = 0; index < data.length; index++) {
-            const recordProxy = byLocalId.get(data[index]);
+            const recordProxy = byLocalId(data[index]);
             if (fn(recordProxy, index, this)) {
                 result.push(recordProxy);
             }
@@ -938,7 +938,7 @@ export class RecordList extends Array {
     find(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = 0; index < data.length; index++) {
-            const recordProxy = byLocalId.get(data[index]);
+            const recordProxy = byLocalId(data[index]);
             if (fn(recordProxy, index, this)) {
                 return recordProxy;
             }
@@ -963,7 +963,7 @@ export class RecordList extends Array {
     findLast(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = data.length - 1; index >= 0; index--) {
-            const recordProxy = byLocalId.get(data[index]);
+            const recordProxy = byLocalId(data[index]);
             if (fn(recordProxy, index, this)) {
                 return recordProxy;
             }
@@ -977,7 +977,7 @@ export class RecordList extends Array {
     findLastIndex(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = data.length - 1; index >= 0; index--) {
-            if (fn(byLocalId.get(data[index]), index, this)) {
+            if (fn(byLocalId(data[index]), index, this)) {
                 return index;
             }
         }
@@ -987,7 +987,7 @@ export class RecordList extends Array {
     findIndex(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = 0; index < data.length; index++) {
-            if (fn(byLocalId.get(data[index]), index, this)) {
+            if (fn(byLocalId(data[index]), index, this)) {
                 return index;
             }
         }
@@ -1012,7 +1012,7 @@ export class RecordList extends Array {
     every(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = 0; index < data.length; index++) {
-            if (!fn(byLocalId.get(data[index]), index, this)) {
+            if (!fn(byLocalId(data[index]), index, this)) {
                 return false;
             }
         }
@@ -1022,7 +1022,7 @@ export class RecordList extends Array {
     forEach(fn) {
         const { data, byLocalId } = cursorOf(this);
         for (let index = 0; index < data.length; index++) {
-            fn(byLocalId.get(data[index]), index, this);
+            fn(byLocalId(data[index]), index, this);
         }
     }
     /**
@@ -1061,11 +1061,11 @@ export class RecordList extends Array {
                     "Reduce of empty record list with no initial value",
                 );
             }
-            acc = byLocalId.get(data[0]);
+            acc = byLocalId(data[0]);
             start = 1;
         }
         for (let index = start; index < data.length; index++) {
-            acc = fn(acc, byLocalId.get(data[index]), index, this);
+            acc = fn(acc, byLocalId(data[index]), index, this);
         }
         return acc;
     }
@@ -1105,11 +1105,11 @@ export class RecordList extends Array {
                     "Reduce of empty record list with no initial value",
                 );
             }
-            acc = byLocalId.get(data[start]);
+            acc = byLocalId(data[start]);
             start--;
         }
         for (let index = start; index >= 0; index--) {
-            acc = fn(acc, byLocalId.get(data[index]), index, this);
+            acc = fn(acc, byLocalId(data[index]), index, this);
         }
         return acc;
     }
@@ -1120,7 +1120,7 @@ export class RecordList extends Array {
      */
     slice(start, end) {
         const { data, byLocalId } = cursorOf(this);
-        return data.slice(start, end).map((localId) => byLocalId.get(localId));
+        return data.slice(start, end).map((localId) => byLocalId(localId));
     }
     /** @param {R} recordProxy */
     includes(recordProxy) {
@@ -1129,7 +1129,7 @@ export class RecordList extends Array {
     /** @param {string} [separator] */
     join(separator) {
         const { data, byLocalId } = cursorOf(this);
-        return data.map((localId) => byLocalId.get(localId)).join(separator);
+        return data.map((localId) => byLocalId(localId)).join(separator);
     }
     toString() {
         return this.join();

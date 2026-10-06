@@ -1,7 +1,7 @@
 // @ts-check
 import { defineMailModels, start as start2 } from "@mail/../tests/mail_test_helpers";
 import { makeStore, Record, Store } from "@mail/core/common/record";
-import { fields } from "@mail/model/misc";
+import { fields, peekRecord } from "@mail/model/misc";
 import { afterEach, beforeEach, describe, expect, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-mock";
 import { Component, proxy, t, toRaw, useProps, xml } from "@odoo/owl";
@@ -126,22 +126,20 @@ test("component reading related fields through a list read method re-renders", a
     });
 });
 
-test("off the reactive path both maps resolve to the very same record", async () => {
+test("off the reactive path the store and a list hand out the very same record", async () => {
     defineModels((list) => list.map((t) => t.label).join(","));
-    {
-        const store = await start();
-        const john = store.Contact.insert("John");
-        const t1 = store.Task.insert({ name: "t1", label: "a" });
-        john.tasks.add(t1);
-        const reactiveMap = toRaw(john)._raw.tasks._store.recordByLocalId;
-        const rawMap = toRaw(reactiveMap);
-        expect(rawMap).not.toBe(reactiveMap, {
-            message: "the maps are distinct objects",
-        });
-        const localId = toRaw(t1)._raw.localId;
-        expect(rawMap.get(localId)).toBe(reactiveMap.get(localId), {
-            message: "same record instance through either map",
-        });
-        expect(rawMap.get(localId)).toBe(toRaw(t1)._raw._proxy);
-    }
+    const store = await start();
+    const john = store.Contact.insert("John");
+    const t1 = store.Task.insert({ name: "t1", label: "a" });
+    john.tasks.add(t1);
+    const localId = toRaw(t1)._raw.localId;
+    expect(store.recordByLocalId.get(localId)).toBe(t1);
+    expect(peekRecord(store, localId)).toBe(t1, {
+        message: "a read without subscribing is the record its readers hold",
+    });
+    const rawTasks = toRaw(john)._raw.tasks;
+    expect(rawTasks.at(0)).toBe(t1, {
+        message: "a list read off the reactive path hands out the same record",
+    });
+    expect([...rawTasks][0]).toBe(t1);
 });

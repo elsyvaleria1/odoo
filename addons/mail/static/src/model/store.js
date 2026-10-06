@@ -3,7 +3,13 @@
 import { observe, toRaw } from "@odoo/owl";
 import { makeLogger } from "@web/core/debug/debug_logger";
 
-import { IS_DELETED_SYM, isRelation, modelRegistry, STORE_SYM } from "./misc.js";
+import {
+    IS_DELETED_SYM,
+    isRelation,
+    modelRegistry,
+    peekRecord,
+    STORE_SYM,
+} from "./misc.js";
 import { Record } from "./record.js";
 
 /** @import { RecordList } from "./record_list" */
@@ -222,7 +228,7 @@ export class Store extends Record {
             }
             RD_QUEUE.delete(record);
             for (const [usingRecord, names] of record._.uses.data.entries()) {
-                const aliveProxy = toRaw(this.recordByLocalId).get(usingRecord.localId);
+                const aliveProxy = peekRecord(this, usingRecord.localId);
                 const alive =
                     (aliveProxy && toRaw(aliveProxy)._raw === usingRecord) ||
                     deletingRecordsByLocalId.get(usingRecord.localId) === usingRecord;
@@ -246,7 +252,7 @@ export class Store extends Record {
                     /** @type {unknown} */ (record)
                 )[fieldName];
                 for (const localId of reclist.data) {
-                    const targetProxy = toRaw(this.recordByLocalId).get(localId);
+                    const targetProxy = peekRecord(this, localId);
                     const target = targetProxy
                         ? toRaw(targetProxy)._raw
                         : deletingRecordsByLocalId.get(localId);
