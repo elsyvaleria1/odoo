@@ -79,6 +79,11 @@ class IntegrationMlPolicy(models.Model):
                     "reach %(vendor)s.",
                     company=company.name,
                     purpose=purpose,
-                    vendor=provider.name if provider else self.env._("this vendor"),
+                    vendor=provider.with_privilege(
+                        "integration_machine_learning.privilege_route_ml",
+                        reason="a refusal names the vendor it keeps the data from",
+                    ).name
+                    if provider
+                    else self.env._("this vendor"),
                 )
             )

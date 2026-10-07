@@ -52,11 +52,7 @@ class AgentRunnerController(http.Controller):
     def claim(self) -> http.Response:
         """At most one run for this runner, with the lease token that names it."""
         runner, _body = self._runner_and_body()
-        found = runner.env["agent.run"]._claim(runner)
-        if not found:
-            return _answer({"run": None})
-        run, token = found
-        return _answer({"run": run._lease_answer(token)})
+        return _answer({"run": runner.env["agent.run"]._lease(runner)})
 
     @http.route(
         "/agent_runner/v1/heartbeat",

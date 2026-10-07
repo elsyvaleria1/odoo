@@ -340,6 +340,11 @@ msgid "Diagnosing"
 msgstr "Diagnosticando"
 
 #. module: error_incident_autofix
+#: model:integration.ml.purpose,name:error_incident_autofix.purpose_error_incident_autofix
+msgid "Diagnosing and fixing error incidents"
+msgstr "Diagnóstico y corrección de incidentes de error"
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__diagnose_timeout
 msgid "Diagnosis Timeout (s)"
 msgstr "Tiempo límite del diagnóstico (s)"
@@ -581,12 +586,6 @@ msgstr "Modo"
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__name
 msgid "Name"
 msgstr "Nombre"
-
-#. module: error_incident_autofix
-#. odoo-python
-#: code:addons/error_incident_autofix/models/agent_run.py:0
-msgid "No Anthropic credential: the runner's own model login is used."
-msgstr "No hay credencial de Anthropic: se usa la sesión del modelo del propio runner."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__unchanged

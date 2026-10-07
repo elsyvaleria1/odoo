@@ -22,6 +22,10 @@ RUN_PERMISSIONS = {
 class AgentRun(models.Model):
     _inherit = "agent.run"
 
+    kind = fields.Selection(
+        selection_add=[("github.change", "Change a Repository")],
+        ondelete={"github.change": "cascade"},
+    )
     github_repository = fields.Char(
         string="Repository",
         help="owner/name: the run is handed a token for this repository alone.",

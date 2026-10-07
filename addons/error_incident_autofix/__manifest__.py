@@ -15,6 +15,7 @@
         "security/res_groups.xml",
         "security/ir.access.csv",
         "security/ir_access.xml",
+        "data/integration_ml_purpose_data.xml",
         "data/error_incident_autofix_prompt_data.xml",
         "data/error_incident_autofix_repository_data.xml",
         "data/error_incident_autofix_policy_data.xml",

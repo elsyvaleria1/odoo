@@ -146,6 +146,20 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         run._fail(token, "agent crashed", retryable=False)
         self.assertEqual(incident.fix_state, "failed")
 
+    def test_a_data_policy_that_keeps_incidents_from_the_model_fails_the_run(self):
+        self.env["integration.ml.policy"].create(
+            {
+                "purpose_id": self.env.ref(
+                    "error_incident_autofix.purpose_error_incident_autofix"
+                ).id,
+                "provider_ids": [],
+            }
+        )
+        incident = self._occur(2)
+        self.assertEqual(self._runs(incident).ml_purpose, "error_incident.autofix")
+        self.assertIsNone(self.env["agent.run"]._lease(self.runner))
+        self.assertEqual(incident.fix_state, "failed")
+
     def test_the_daily_cap_holds(self):
         self.policy.daily_run_cap = 1
         first = self._occur(2, fingerprint="cap-a")

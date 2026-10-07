@@ -13,6 +13,7 @@ _debug = DebugLog(__name__)
 
 DIAGNOSE = "error_incident.diagnose"
 FIX = "error_incident.fix"
+ML_PURPOSE = "error_incident.autofix"
 # fix states an incident rests in; a dispatch starts from one of them
 IDLE_FIX_STATES = (
     "none",
@@ -250,6 +251,7 @@ class ErrorIncident(models.Model):
                 "company_id": policy.company_id.id,
                 "res_model": self._name,
                 "res_id": self.id,
+                "ml_purpose": ML_PURPOSE,
                 "github_repository": repository.github_repository,
                 "payload": {
                     **payload,

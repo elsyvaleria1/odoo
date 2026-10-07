@@ -26,6 +26,11 @@ msgid "Branch"
 msgstr "Rama"
 
 #. module: agent_runner_github
+#: model:ir.model.fields.selection,name:agent_runner_github.selection__agent_run__kind__github_change
+msgid "Change a Repository"
+msgstr "Modificar un repositorio"
+
+#. module: agent_runner_github
 #: model:ir.model.fields,field_description:agent_runner_github.field_agent_run__display_name
 #: model:ir.model.fields,field_description:agent_runner_github.field_integration_github_pull__display_name
 msgid "Display Name"
@@ -46,6 +51,11 @@ msgstr "Pull request de GitHub"
 #: model:ir.model.fields,field_description:agent_runner_github.field_integration_github_pull__id
 msgid "ID"
 msgstr "ID"
+
+#. module: agent_runner_github
+#: model:ir.model.fields,field_description:agent_runner_github.field_agent_run__kind
+msgid "Kind"
+msgstr "Tipo"
 
 #. module: agent_runner_github
 #. odoo-python
@@ -79,6 +89,13 @@ msgstr "La rama que subió la ejecución, tal como la informó al terminar."
 #: model:ir.model.fields,help:agent_runner_github.field_integration_github_pull__agent_run_id
 msgid "The run that pushed this branch."
 msgstr "La ejecución que subió esta rama."
+
+#. module: agent_runner_github
+#: model:ir.model.fields,help:agent_runner_github.field_agent_run__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr "Lo que se pide al runner; los módulos que reparten trabajo añaden los suyos."
 
 #. module: agent_runner_github
 #: model:ir.model.fields,help:agent_runner_github.field_agent_run__github_repository

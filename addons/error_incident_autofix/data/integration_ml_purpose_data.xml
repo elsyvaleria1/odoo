@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="purpose_error_incident_autofix" model="integration.ml.purpose">
+        <field name="key">error_incident.autofix</field>
+        <field name="name">Diagnosing and fixing error incidents</field>
+    </record>
+
+</odoo>

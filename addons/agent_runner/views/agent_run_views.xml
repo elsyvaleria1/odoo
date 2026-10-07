@@ -90,6 +90,7 @@
                             <field name="capability_id" readonly="1" />
                             <field name="priority" />
                             <field name="max_attempts" />
+                            <field name="ml_purpose" invisible="not ml_purpose" />
                             <field name="res_model" invisible="not res_model" />
                             <field name="res_id" invisible="not res_model" />
                             <field

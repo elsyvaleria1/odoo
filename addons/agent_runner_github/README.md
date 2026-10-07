@@ -20,4 +20,22 @@ request whose head is that branch, in that repository, is the run's -- whichever
 the runner reports first, the other links it. The pull request then calls `_run_attached(run)`,
 the hook the owning module overrides.
 
+## A change
+
+`github.change` is the kind for "change this repository": the runner (`change.py` in
+`tooling/agent_runner`) clones `base_branch`, runs the agent with the edit tools on `branch`,
+commits what it changed when the agent's verdict is `changed`, pushes and opens the pull
+request. The module that queues one sets `github_repository`, `ml_purpose`, and a payload:
+
+| Key | |
+|---|---|
+| `repository`, `base_branch`, `branch` | `owner/name` and two plain branch names |
+| `model`, `prompt`, `timeout` | the agent's model, its instructions (ending with the verdict contract), seconds |
+| `sections` | `[[title, data], ...]`: what the agent works from, handed fenced off as data |
+| `trailers` | `{key: value}` lines the commit ends with, before `Agent-Run` |
+| `commit_author`, `push` | `{name, email}`; whether to push and open the pull request |
+
+The result carries `verdict`, `note`, `test`, `diff`, `branch`, `pushed`, and, once committed,
+`subject`, `commit` and `pull_request` (its URL).
+
 Setting up the App and its webhook: `integration_github`.

@@ -237,6 +237,11 @@ msgid "Data"
 msgstr "Datos"
 
 #. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__ml_purpose
+msgid "Data Purpose"
+msgstr "Propósito de los datos"
+
+#. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__date_event
 msgid "Date"
 msgstr "Fecha"
@@ -549,6 +554,12 @@ msgstr "Debe enviar"
 #: model:ir.model.fields,field_description:agent_runner.field_agent_runner__name
 msgid "Name"
 msgstr "Nombre"
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "No Anthropic credential: the runner's own model login is used."
+msgstr "No hay credencial de Anthropic: se usa la sesión del modelo del propio runner."
 
 #. module: agent_runner
 #: model_terms:ir.actions.act_window,help:agent_runner.action_agent_run
@@ -888,6 +899,14 @@ msgstr "Lo que un runner nombra para reclamar trabajo de este tipo."
 #: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_scheme
 msgid "What the caller proves itself with."
 msgstr "Con qué se identifica quien llama."
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__ml_purpose
+msgid ""
+"What the run's agent sends its model, as the company's machine-learning data"
+" policy names it: the model key is handed only when that policy lets this "
+"purpose reach the vendor. Empty: the run calls no model."
+msgstr "Lo que el agente de la ejecución envía a su modelo, con el nombre que le da la política de datos de aprendizaje automático de la empresa: la clave del modelo solo se entrega cuando esa política deja que este propósito llegue al proveedor. Vacío: la ejecución no llama a ningún modelo."
 
 #. module: agent_runner
 #: model:ir.model.fields,help:agent_runner.field_agent_run__result

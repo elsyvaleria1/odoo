@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 22:15+0000\n"
-"PO-Revision-Date: 2026-10-06 22:15+0000\n"
+"POT-Creation-Date: 2026-10-07 15:39+0000\n"
+"PO-Revision-Date: 2026-10-07 15:39+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -234,6 +234,11 @@ msgstr ""
 #. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run_event__data
 msgid "Data"
+msgstr ""
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__ml_purpose
+msgid "Data Purpose"
 msgstr ""
 
 #. module: agent_runner
@@ -548,6 +553,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run__name
 #: model:ir.model.fields,field_description:agent_runner.field_agent_runner__name
 msgid "Name"
+msgstr ""
+
+#. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "No Anthropic credential: the runner's own model login is used."
 msgstr ""
 
 #. module: agent_runner
@@ -887,6 +898,14 @@ msgstr ""
 #. module: agent_runner
 #: model:ir.model.fields,help:agent_runner.field_agent_runner__contract_scheme
 msgid "What the caller proves itself with."
+msgstr ""
+
+#. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__ml_purpose
+msgid ""
+"What the run's agent sends its model, as the company's machine-learning data"
+" policy names it: the model key is handed only when that policy lets this "
+"purpose reach the vendor. Empty: the run calls no model."
 msgstr ""
 
 #. module: agent_runner

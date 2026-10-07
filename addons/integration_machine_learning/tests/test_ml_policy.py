@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 from freezegun import freeze_time
 
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import new_test_user, tagged
 
 from odoo.addons.integration.tools.exceptions import CommError
@@ -217,3 +218,11 @@ class TestMlPolicy(_SelectionCase):
                     "chat", MlRequest(prompt="q"), company_id=self.company_id
                 )
         client.complete.assert_not_called()
+
+    def test_a_refusal_names_the_vendor_to_a_user_who_cannot_read_it(self):
+        self._allow(SECRET, self.beta)
+        employee = new_test_user(self.env, "policy.employee", groups="base.group_user")
+        with self.assertRaisesRegex(UserError, f"reach {self.alpha.name}"):
+            self.Policy.with_user(employee)._check_allowed(
+                self.env.company, SECRET, self.alpha.with_user(employee)
+            )

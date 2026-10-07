@@ -91,6 +91,13 @@ class AgentRun(models.Model):
         readonly=True,
         help="What the runner is handed.",
     )
+    ml_purpose = fields.Char(
+        string="Data Purpose",
+        readonly=True,
+        help="What the run's agent sends its model, as the company's machine-learning "
+        "data policy names it: the model key is handed only when that policy lets "
+        "this purpose reach the vendor. Empty: the run calls no model.",
+    )
     result = fields.Json(
         readonly=True,
         help="What the runner handed back.",
@@ -282,6 +289,24 @@ class AgentRun(models.Model):
         )
         return run, token
 
+    @api.model
+    def _lease(self, runner: models.BaseModel) -> dict[str, Any] | None:
+        """What `_claim` leases ``runner``, with the credentials it acts with.
+
+        A run whose credentials are refused -- its data policy no longer lets
+        its purpose reach the model -- fails for good rather than going back to
+        the queue to be refused again, and the next run is tried.
+        """
+        while found := self._claim(runner):
+            run, token = found
+            try:
+                with self.env.cr.savepoint():
+                    return run._lease_answer(token)
+            except UserError as refusal:
+                run._log_event("error", str(refusal))
+                run._end_attempt(str(refusal), requeue=False)
+        return None
+
     def _holds(self, token: object) -> bool:
         self.check_singleton()
         return (
@@ -304,8 +329,33 @@ class AgentRun(models.Model):
 
     def _prepare_credentials(self) -> dict[str, Any]:
         """What the runner needs to act for this run alone -- a repository token,
-        a model key. Handed with the lease, never kept on the runner."""
-        return {}
+        a model key. Handed with the lease, never kept on the runner. Raises
+        `UserError` when the run may not have them."""
+        if not self.ml_purpose:
+            return {}
+        provider = self.env.ref("integration_machine_learning.ai_provider_anthropic")
+        self.env["integration.ml.policy"]._check_allowed(
+            self.company_id, self.ml_purpose, provider
+        )
+        connection = self.env["integration.connection"]._resolve(
+            provider.endpoint_id, company=self.company_id
+        )
+        key = (
+            connection.credential_id._use_secret(
+                f"agent_runner:{self.kind}", prefer="api_key"
+            )
+            if connection.credential_id
+            else None
+        )
+        if not key:
+            self._log_event(
+                "warning",
+                self.env._(
+                    "No Anthropic credential: the runner's own model login is used."
+                ),
+            )
+            return {}
+        return {"anthropic": {"api_key": key.reveal()}}
 
     def _heartbeat(self, token: object) -> dict[str, Any]:
         if not self._holds(token):

@@ -300,13 +300,17 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     try:
-        from . import deploy, incident
+        from . import change, deploy, incident
     except ImportError:  # run as a script
+        import change
         import deploy
         import incident
     # a sandbox runner runs agents and never deploys; a deploy runner, on the
     # production host, deploys and never runs an agent
-    roles = {"sandbox": incident.EXECUTORS, "deploy": deploy.EXECUTORS}
+    roles = {
+        "sandbox": change.EXECUTORS | incident.EXECUTORS,
+        "deploy": deploy.EXECUTORS,
+    }
     runner = Runner(
         Client(args.url, token),
         {**EXECUTORS, **roles[args.role]},

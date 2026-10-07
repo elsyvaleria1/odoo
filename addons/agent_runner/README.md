@@ -57,6 +57,12 @@ All `POST` with a JSON body under `/agent_runner/v1/`, `Authorization: Bearer <t
   at least 30), renewed by each heartbeat.
 - **Credentials per run.** `credentials` in the lease answer is what the run needs and only
   it -- `agent.run._prepare_credentials()`, which the modules that hand out work extend.
+- **The model key follows the data policy.** A run whose agent calls a model names what it
+  sends it in `ml_purpose` (`ai.project.code`, `error_incident.autofix`). It is handed the
+  company's Anthropic key (`credentials["anthropic"]`) only while the company's
+  machine-learning data policy lets that purpose reach Anthropic; a run the policy refuses
+  fails for good at the claim, and the runner is handed the next one. Without a key, the run
+  is told so and the runner uses its own model login.
 
 ## Spend
 
