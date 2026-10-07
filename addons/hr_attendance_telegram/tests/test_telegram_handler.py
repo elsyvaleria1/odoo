@@ -14,6 +14,23 @@ class TestEmployeeValidation(AttendanceTelegramTestCase):
         super().setUp()
         self.handler = self.env["telegram.handler.attendance"]
 
+    def test_the_menu_offers_attendance_to_employees_only(self):
+        entrada = self.env["telegram.command"]._for_name("/entrada")
+        self.test_bot.command_ids = [Command.link(entrada.id)]
+        self.assertIn("entrada", [e["command"] for e in self.test_chat.command_menu])
+
+        hand = self._create_partner({"name": "No Employee Hand"})
+        account = self._bound_account("566011", hand)
+        chat = self.env["telegram.chat"].create(
+            {
+                "chat_id": "566011",
+                "chat_type": "private",
+                "bot_id": self.test_bot.id,
+                "account_id": account.id,
+            }
+        )
+        self.assertNotIn("entrada", [e["command"] for e in chat._get_command_menu()])
+
     def test_unlinked_chat_denied_attendance_commands(self):
         mock_response = self.mock_telegram_response(
             success=True, result={"message_id": 1}

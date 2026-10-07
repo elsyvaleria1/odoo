@@ -102,6 +102,12 @@ msgstr "Sólo quien entrega envía aquí remisiones firmadas."
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Send a delivery slip the customer signed"
+msgstr "Enviar una remisión firmada por el cliente"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
 msgid "Send it as a photo, please."
 msgstr "Envíala como foto, por favor."
 

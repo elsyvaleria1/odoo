@@ -5,6 +5,7 @@ from odoo import fields
 from odoo.exceptions import ValidationError
 
 from .test_mail_telegram import MailTelegramCase
+from odoo.addons.telegram.tests.common import NOT_A_MENU as _NOT_A_MENU
 from odoo.addons.telegram.tools import errors
 
 _CALL = "odoo.addons.telegram.tools.telegram_client.TelegramClient.call"
@@ -35,7 +36,7 @@ class DestinationCase(MailTelegramCase):
 
     def _outbound(self, chat):
         return self.env["telegram.message"].search(
-            [("chat_id", "=", chat.id), ("message_type", "=", "outbound")]
+            [("chat_id", "=", chat.id), ("message_type", "=", "outbound"), _NOT_A_MENU]
         )
 
     def _alerts(self):
@@ -81,7 +82,11 @@ class TestOneDestination(DestinationCase):
 
         self.assertFalse(
             self.env["telegram.message"].search(
-                [("mail_message_id", "!=", False), ("message_type", "=", "outbound")]
+                [
+                    ("mail_message_id", "!=", False),
+                    ("message_type", "=", "outbound"),
+                    _NOT_A_MENU,
+                ]
             )
         )
 

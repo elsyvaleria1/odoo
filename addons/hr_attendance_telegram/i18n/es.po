@@ -96,6 +96,12 @@ msgid "Cannot have a \"Lunch In\" time without a \"Lunch Out\" time."
 msgstr "No puede haber una hora de \"Regreso de comida\" sin una de \"Salida a comer\"."
 
 #. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Come back from lunch"
+msgstr "Regresar de comer"
+
+#. module: hr_attendance_telegram
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__display_name
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_chat__display_name
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_handler_attendance__display_name
@@ -147,8 +153,26 @@ msgstr "Solo los empleados pueden usar comandos de asistencia."
 #. module: hr_attendance_telegram
 #. odoo-python
 #: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Record your arrival"
+msgstr "Registrar tu entrada"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Record your departure"
+msgstr "Registrar tu salida"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 msgid "Something went wrong. Please try again with /entrada"
 msgstr "Ocurrió un error. Por favor, intenta de nuevo con /entrada"
+
+#. module: hr_attendance_telegram
+#. odoo-python
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
+msgid "Start your lunch break"
+msgstr "Salir a comer"
 
 #. module: hr_attendance_telegram
 #: model:ir.model,name:hr_attendance_telegram.model_telegram_handler_attendance

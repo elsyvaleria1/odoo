@@ -42,8 +42,9 @@ class TelegramRouter(models.AbstractModel):
        carries (the flow-busy buttons are the router's own). It is always
        answered, so the client's spinner stops.
     3. A command goes to the handler declaring it, if the bot enables it, the
-       sender's tier allows it, the handler agrees, and no other flow is open
-       when it starts one.
+       sender's tier and Odoo grants allow it, the handler agrees, and no
+       other flow is open when it starts one. The same checks make /ayuda and
+       the command menu each person sees (`_available_commands`).
     4. Any other message goes to the handler owning the chat's flow; else to
        a handler claiming it (a reply to something it sent); else to the idle
        intake for its kind -- the one the bot names, or the lowest priority
@@ -755,6 +756,51 @@ class TelegramRouter(models.AbstractModel):
             return bool(partner)
         return bool(internal_user)
 
+    @staticmethod
+    def _grants_allow(spec, internal_user) -> bool:
+        """Whether `internal_user` holds what `spec` declares: any of its
+        groups, and its access as themself."""
+        if spec.groups and not any(internal_user.has_group(g) for g in spec.groups):
+            return False
+        if spec.access:
+            model, operation = spec.access
+            return (
+                internal_user.env[model].with_user(internal_user).has_access(operation)
+            )
+        return True
+
+    @api.model
+    def _command_permitted(
+        self, bot, chat, handler, command, spec, partner, internal_user
+    ) -> bool:
+        """Whether this person may run `command` here: its tier, its grants
+        and its handler's own word."""
+        if not self._tier_allows(spec.tier, partner, internal_user):
+            return False
+        if spec.tier == "internal" and not self._grants_allow(spec, internal_user):
+            return False
+        return bool(
+            handler._command_allowed(bot, chat, command, partner, internal_user)
+        )
+
+    @api.model
+    def _available_commands(self, bot, chat, partner, internal_user) -> list:
+        """`[(command, spec)]` this person may run on `bot`, in the order the
+        handlers declare them, the general commands every bot answers last."""
+        available = []
+        handlers = sorted(
+            self._handlers(bot), key=lambda h: h._name == "telegram.handler.base"
+        )
+        for handler in handlers:
+            for command, spec in handler._telegram_commands().items():
+                if self._is_command_enabled(
+                    bot, handler, command, spec
+                ) and self._command_permitted(
+                    bot, chat, handler, command, spec, partner, internal_user
+                ):
+                    available.append((command, spec))
+        return available
+
     @api.model
     def _dispatch_command(
         self, bot, chat, command, args, partner, internal_user
@@ -781,7 +827,12 @@ class TelegramRouter(models.AbstractModel):
                 ) % {"command": tg.code(command)}
             bot.send_message(chat.chat_id, msg)
             return
-        if not handler._command_allowed(bot, chat, command, partner, internal_user):
+        if not self._command_permitted(
+            bot, chat, handler, command, spec, partner, internal_user
+        ):
+            handler._explain_command_refusal(bot, chat, command, partner, internal_user)
+            # the menu still offered it: it was sent before the person lost it
+            chat._sync_command_menu()
             return
         if spec.starts_flow:
             owner = self._flow_owner(chat)
@@ -806,6 +857,9 @@ class TelegramRouter(models.AbstractModel):
             self._recover_from_handler_failure(bot, chat, command, e)
             return
         chat._reset_failed_state()
+        # what a person may run changes in Odoo, not here: whichever command
+        # they send next brings the menu Telegram shows them up to date
+        chat._sync_command_menu()
 
     @api.model
     def _run_command_handler(

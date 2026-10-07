@@ -4,6 +4,7 @@ from markupsafe import Markup, escape
 
 from odoo import models
 
+from ..tools import format as tg
 from ..tools.dispatch import translation_env
 
 # What a message carries as files, and the name each gets without its own.
@@ -25,7 +26,9 @@ class MixinTelegramHandler(models.AbstractModel):
     classes a process happened to import. A handler declares -- it never
     decides the order it is asked in:
 
-      - its commands (`_telegram_commands`), with the tier they need;
+      - its commands (`_telegram_commands`), with who may run them: the
+        tier, the Odoo groups and access, then `_command_allowed`, which
+        only answers -- `_explain_command_refusal` tells the person;
       - the callback-data prefixes of its buttons: two handlers claiming one
         prefix fail the registry load;
       - what its multi-step flows are called (`_telegram_flow_label`): a
@@ -167,7 +170,36 @@ class MixinTelegramHandler(models.AbstractModel):
         return False
 
     def _command_allowed(self, bot, chat, command, partner, internal_user) -> bool:
+        """Whether this person may run `command` beyond its declared tier and
+        grants. A question only: /ayuda and the command menu ask it too, so
+        it sends nothing -- `_explain_command_refusal` does, when it is run."""
         return True
+
+    def _explain_command_refusal(
+        self, bot, chat, command, partner, internal_user
+    ) -> None:
+        """Tell the person who sent `command` why they may not run it: their
+        grants or `_command_allowed` said no."""
+        bot.send_message(
+            chat.chat_id,
+            self._tr(bot, chat)._(
+                "You don't have permission to use the command %(command)s."
+            )
+            % {"command": tg.code(command)},
+        )
+
+    def _offers_command(self, bot, chat, command, partner, internal_user) -> bool:
+        """Whether this handler's `command` runs on `bot` for this person: what
+        a help section names, so that /ayuda names what the person may run."""
+        spec = self._telegram_commands().get(command)
+        router = self._router()
+        return bool(
+            spec
+            and router._is_command_enabled(bot, self, command, spec)
+            and router._command_permitted(
+                bot, chat, self, command, spec, partner, internal_user
+            )
+        )
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
         return []

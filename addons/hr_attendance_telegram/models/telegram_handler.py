@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfoNotFoundError
 from odoo import models
 from odoo.exceptions import ValidationError
 from odoo.libs.datetime import timezone
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools.authority import in_bot_company
@@ -15,6 +16,7 @@ from odoo.addons.telegram.tools.dispatch import (
 )
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 DEFAULT_TZ = "America/Mexico_City"
 
@@ -27,12 +29,38 @@ class TelegramHandlerAttendance(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/entrada": TelegramCommand(
-                "_handle_check_in_command", "partner", starts_flow=True
+                "_handle_check_in_command",
+                "partner",
+                starts_flow=True,
+                description=_lt("Record your arrival"),
             ),
-            "/salida": TelegramCommand("_handle_check_out_command", "partner"),
-            "/comida": TelegramCommand("_handle_lunch_out_command", "partner"),
-            "/regresocomida": TelegramCommand("_handle_lunch_in_command", "partner"),
+            "/salida": TelegramCommand(
+                "_handle_check_out_command",
+                "partner",
+                description=_lt("Record your departure"),
+            ),
+            "/comida": TelegramCommand(
+                "_handle_lunch_out_command",
+                "partner",
+                description=_lt("Start your lunch break"),
+            ),
+            "/regresocomida": TelegramCommand(
+                "_handle_lunch_in_command",
+                "partner",
+                description=_lt("Come back from lunch"),
+            ),
         }
+
+    def _command_allowed(self, bot, chat, command, partner, internal_user) -> bool:
+        return bool(self._employee(bot, partner))
+
+    def _explain_command_refusal(
+        self, bot, chat, command, partner, internal_user
+    ) -> None:
+        bot.send_message(
+            chat.chat_id,
+            translation_env(bot, chat)._("Only employees can use attendance commands."),
+        )
 
     def _telegram_flow_label(self, bot, chat):
         return self._tr(bot, chat)._("an attendance record")
@@ -549,27 +577,28 @@ class TelegramHandlerAttendance(models.AbstractModel):
             )
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        sections = []
-        available_cmds = [cmd.name for cmd in bot.command_ids]
-
-        if partner and "/entrada" in available_cmds and self._employee(bot, partner):
-            tr_env = translation_env(bot, chat)
-            attendance_cmds = [
-                tr_env._(
-                    "/entrada [HH:MM] - Record your arrival. The time is optional."
-                ),
-                tr_env._(
-                    "/salida [HH:MM] - Record your departure. The time is optional."
-                ),
-                tr_env._(
-                    "/comida [HH:MM] - Record the start of your lunch. The time is "
-                    "optional."
-                ),
-                tr_env._(
-                    "/regresocomida [HH:MM] - Record your return from lunch. The time "
-                    "is optional."
-                ),
-            ]
-            sections.append((tr_env._("Attendance Commands"), attendance_cmds))
-
-        return sections
+        tr_env = translation_env(bot, chat)
+        lines = {
+            "/entrada": tr_env._(
+                "/entrada [HH:MM] - Record your arrival. The time is optional."
+            ),
+            "/salida": tr_env._(
+                "/salida [HH:MM] - Record your departure. The time is optional."
+            ),
+            "/comida": tr_env._(
+                "/comida [HH:MM] - Record the start of your lunch. The time is "
+                "optional."
+            ),
+            "/regresocomida": tr_env._(
+                "/regresocomida [HH:MM] - Record your return from lunch. The time "
+                "is optional."
+            ),
+        }
+        attendance_cmds = [
+            line
+            for command, line in lines.items()
+            if self._offers_command(bot, chat, command, partner, internal_user)
+        ]
+        if not attendance_cmds:
+            return []
+        return [(tr_env._("Attendance Commands"), attendance_cmds)]

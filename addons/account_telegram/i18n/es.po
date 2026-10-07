@@ -133,6 +133,12 @@ msgstr ""
 "Por favor espera un momento."
 
 #. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Get your account statement"
+msgstr "Obtener tu estado de cuenta"
+
+#. module: account_telegram
 #: model:ir.model.fields,field_description:account_telegram.field_telegram_financial_report_log__id
 #: model:ir.model.fields,field_description:account_telegram.field_telegram_handler_account__id
 msgid "ID"
@@ -165,6 +171,12 @@ msgstr "Última actualización el"
 #: code:addons/account_telegram/models/telegram_handler.py:0
 msgid "Last month"
 msgstr "Último mes"
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Look up a customer's account statement"
+msgstr "Consultar el estado de cuenta de un cliente"
 
 #. module: account_telegram
 #: model:ir.model.fields.selection,name:account_telegram.selection__telegram_financial_report_log__requester_role__manager
@@ -414,6 +426,12 @@ msgid ""
 "administrator."
 msgstr ""
 "No tienes permisos para generar este reporte. Contacta al administrador."
+
+#. module: account_telegram
+#. odoo-python
+#: code:addons/account_telegram/models/telegram_handler.py:0
+msgid "Your account statement for a period"
+msgstr "Tu estado de cuenta de un periodo"
 
 #. module: account_telegram
 #. odoo-python

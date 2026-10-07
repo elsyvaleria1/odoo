@@ -549,6 +549,12 @@ msgid ""
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Open your Odoo notifications and chats"
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields.selection,name:mail_telegram.selection__res_users__telegram_notify_state__verify_phone
 msgid "Phone number needed"
 msgstr ""
@@ -896,6 +902,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_inbox.py:0
 msgid "Write a message…"
+msgstr ""
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Write to a colleague or a conversation"
 msgstr ""
 
 #. module: mail_telegram

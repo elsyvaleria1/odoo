@@ -690,6 +690,18 @@ msgid "Receipt"
 msgstr "Comprobante"
 
 #. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Record a payment for approval"
+msgstr "Registrar un pago para aprobación"
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Record a payment in kind for approval"
+msgstr "Registrar un pago en especie para aprobación"
+
+#. module: approval_account_telegram
 #: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
 msgid "Refused"
 msgstr "Rechazada"

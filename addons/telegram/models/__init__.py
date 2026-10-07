@@ -1,6 +1,7 @@
 from . import (
     credential_credential,
     mixin_telegram_handler,
+    res_groups,
     res_partner,
     res_users,
     telegram_account,

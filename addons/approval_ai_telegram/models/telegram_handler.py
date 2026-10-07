@@ -63,7 +63,11 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/solicitar": TelegramCommand(
-                "_handle_solicitar_command", "internal", starts_flow=True
+                "_handle_solicitar_command",
+                "internal",
+                starts_flow=True,
+                access=("approval.request", "create"),
+                description=_lt("Ask for an approval in your own words"),
             ),
         }
 
@@ -77,12 +81,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return frozenset({"voice"})
 
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
+        # a voice note starts a /solicitar: only for whoever may send one
         return bool(
             kind == "voice"
             and bot._voice_payload(message)
-            and internal_user
             and not chat._flow_is_open()
-            and bot.has_solicitar_command
+            and self._offers_command(bot, chat, "/solicitar", partner, internal_user)
         )
 
     @log_command_execution
@@ -110,7 +114,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         )
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        if not internal_user or not bot.has_solicitar_command:
+        if not self._offers_command(bot, chat, "/solicitar", partner, internal_user):
             return []
         tr_env = translation_env(bot, chat)
         commands = [

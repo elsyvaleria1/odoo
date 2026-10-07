@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
@@ -19,6 +20,7 @@ from odoo.addons.telegram.tools.dispatch import (
 )
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 DEFAULT_TZ = "America/Mexico_City"
 
@@ -52,13 +54,20 @@ class TelegramHandlerAccount(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             CMD_OWN_STATEMENT: TelegramCommand(
-                "_handle_estadoctapropio_command", "partner"
+                "_handle_estadoctapropio_command",
+                "partner",
+                description=_lt("Get your account statement"),
             ),
             CMD_PERIOD_STATEMENT: TelegramCommand(
-                "_handle_estadocuentaperiodo_command", "partner"
+                "_handle_estadocuentaperiodo_command",
+                "partner",
+                description=_lt("Your account statement for a period"),
             ),
             CMD_CUSTOMER_STATEMENT: TelegramCommand(
-                "_handle_edocliente_command", "partner", starts_flow=True
+                "_handle_edocliente_command",
+                "partner",
+                starts_flow=True,
+                description=_lt("Look up a customer's account statement"),
             ),
         }
 
@@ -75,12 +84,17 @@ class TelegramHandlerAccount(models.AbstractModel):
         return self._tr(bot, chat)._("an account statement request")
 
     def _command_allowed(self, bot, chat, command, partner, internal_user) -> bool:
-        if command in _MANAGER_COMMANDS and (
-            not partner or not self._reads_any_customer(chat)
-        ):
-            bot.send_message(chat.chat_id, self._any_customer_refusal(bot, chat))
-            return False
+        if command in _MANAGER_COMMANDS:
+            return bool(partner and chat and self._reads_any_customer(chat))
         return True
+
+    def _explain_command_refusal(
+        self, bot, chat, command, partner, internal_user
+    ) -> None:
+        if command in _MANAGER_COMMANDS:
+            bot.send_message(chat.chat_id, self._any_customer_refusal(bot, chat))
+            return
+        super()._explain_command_refusal(bot, chat, command, partner, internal_user)
 
     @log_command_execution
     def _handle_estadoctapropio_command(
@@ -917,35 +931,25 @@ class TelegramHandlerAccount(models.AbstractModel):
             _logger.exception("Failed to create financial report log")
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        sections = []
-        available_cmds = [cmd.name for cmd in bot.command_ids]
-
-        if partner:
-            tr_env = translation_env(bot, chat)
-            estadocuenta_cmds = []
-
-            if CMD_OWN_STATEMENT in available_cmds:
-                estadocuenta_cmds.append(
-                    tr_env._(
-                        "/estadoctapropio - Get your account statement for this year."
-                    )
-                )
-
-            if CMD_PERIOD_STATEMENT in available_cmds:
-                estadocuenta_cmds.append(
-                    tr_env._("/estadocuentaperiodo - Choose a specific period.")
-                )
-
-            if (
-                CMD_CUSTOMER_STATEMENT in available_cmds
-                and chat
-                and self._reads_any_customer(chat)
-            ):
-                estadocuenta_cmds.append(
-                    tr_env._("/edocliente - Look up a customer's account statement.")
-                )
-
-            if estadocuenta_cmds:
-                sections.append((tr_env._("Financial Commands"), estadocuenta_cmds))
-
-        return sections
+        tr_env = translation_env(bot, chat)
+        offered = {
+            command
+            for command in self._telegram_commands()
+            if self._offers_command(bot, chat, command, partner, internal_user)
+        }
+        estadocuenta_cmds = []
+        if CMD_OWN_STATEMENT in offered:
+            estadocuenta_cmds.append(
+                tr_env._("/estadoctapropio - Get your account statement for this year.")
+            )
+        if CMD_PERIOD_STATEMENT in offered:
+            estadocuenta_cmds.append(
+                tr_env._("/estadocuentaperiodo - Choose a specific period.")
+            )
+        if CMD_CUSTOMER_STATEMENT in offered:
+            estadocuenta_cmds.append(
+                tr_env._("/edocliente - Look up a customer's account statement.")
+            )
+        if not estadocuenta_cmds:
+            return []
+        return [(tr_env._("Financial Commands"), estadocuenta_cmds)]

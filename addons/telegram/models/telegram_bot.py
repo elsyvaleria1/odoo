@@ -133,7 +133,15 @@ class TelegramBot(models.Model):
             for bot in keeping(self):
                 if bot.credential_id.company_id != bot.company_id:
                     bot.credential_id.company_id = bot.company_id
+        if vals.keys() & self._command_menu_fields():
+            operating(self).chat_ids._sync_command_menu()
         return result
+
+    @api.model
+    def _command_menu_fields(self) -> set:
+        """The bot's fields that change what its people may run: a feature
+        reading one to enable itself adds it."""
+        return {"command_ids", "company_id"}
 
     @api.constrains("credential_id")
     def _check_credential_is_for_telegram(self) -> None:
@@ -256,6 +264,7 @@ class TelegramBot(models.Model):
             )
             bot.legacy_secretless_webhook = False
             bot._read_identity()
+            bot._publish_default_command_menu()
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -288,6 +297,27 @@ class TelegramBot(models.Model):
                 ),
             }
         )
+
+    def _publish_default_command_menu(self) -> None:
+        """Tell Telegram the menu of a private chat whose person is not
+        connected yet; a connected person's chat gets their own."""
+        self.check_singleton()
+        chat = self.env["telegram.chat"]
+        lang = self.lang or "en_US"
+        menu = [
+            {
+                "command": command.removeprefix("/"),
+                "description": spec.description.translate(lang),
+            }
+            for command, spec in self.env["telegram.router"]._available_commands(
+                self, chat, self.env["res.partner"], self.env["res.users"]
+            )
+            if spec.description
+        ]
+        try:
+            self._get_telegram_client().call("setMyCommands", {"commands": menu})
+        except errors.TelegramApiError as error:
+            _logger.warning("setMyCommands failed for bot %s: %s", self.id, error)
 
     def _is_chat_administrator(self, chat, tg_user_id) -> bool:
         """Whether Telegram says the user administers the group."""

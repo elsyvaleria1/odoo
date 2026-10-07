@@ -469,8 +469,8 @@ class TestLedgerFlowGuard(PartnerLedgerTelegramTestCase):
     def test_ecmanager_is_registered_as_flow_starting(self):
         commands = self.handler._telegram_commands()
         self.assertTrue(commands["/edocliente"].starts_flow)
-        for command in ("/estadoctapropio", "/estadocuentaperiodo"):
-            self.assertFalse(commands[command].starts_flow)
+        # /estadoctapropio is an extension's to turn into a flow (voice requests)
+        self.assertFalse(commands["/estadocuentaperiodo"].starts_flow)
 
     def test_fin_custom_refused_while_another_flow_runs(self):
         self.test_chat._flow_start("telegram.handler.base", "other_module_intake")

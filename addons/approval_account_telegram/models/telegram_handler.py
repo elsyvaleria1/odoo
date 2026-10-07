@@ -8,6 +8,7 @@ from odoo import fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs.datetime import timezone
 from odoo.libs.json import dumps as json_dumps
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
@@ -18,6 +19,7 @@ from odoo.addons.telegram.tools.dispatch import (
 )
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 DEFAULT_TZ = "America/Mexico_City"
 
@@ -64,10 +66,18 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/pago": TelegramCommand(
-                "_handle_payment_command", "internal", starts_flow=True
+                "_handle_payment_command",
+                "internal",
+                starts_flow=True,
+                access=("approval.request", "create"),
+                description=_lt("Record a payment for approval"),
             ),
             "/especie": TelegramCommand(
-                "_handle_especie_command", "internal", starts_flow=True
+                "_handle_especie_command",
+                "internal",
+                starts_flow=True,
+                access=("approval.request", "create"),
+                description=_lt("Record a payment in kind for approval"),
             ),
         }
 
@@ -170,9 +180,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
         sections = []
-        available_cmds = [cmd.name for cmd in bot.command_ids]
-
-        if internal_user and "/pago" in available_cmds:
+        if self._offers_command(bot, chat, "/pago", partner, internal_user):
             tr_env = translation_env(bot, chat)
             existing = tr_env._("Name (or part of the name) of an existing customer.")
             pago_cmds = [
@@ -230,7 +238,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ]
             sections.append((tr_env._("Payment Commands"), pago_cmds))
 
-        if internal_user and "/especie" in available_cmds:
+        if self._offers_command(bot, chat, "/especie", partner, internal_user):
             tr_env = translation_env(bot, chat)
             existing = tr_env._("Name (or part of the name) of an existing customer.")
             especie_cmds = [

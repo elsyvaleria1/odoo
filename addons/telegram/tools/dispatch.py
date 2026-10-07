@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import wraps
 
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
+from odoo.tools.translate import LazyGettext
 
 _logger = logging.getLogger(__name__)
 
@@ -14,16 +15,31 @@ TIERS = ("unlinked", "partner", "internal")
 class TelegramCommand:
     """A command a handler answers: the method, who may use it, whether it
     opens a multi-step flow (refused while another flow is open), and whether
-    every bot answers it without the command being linked to the bot."""
+    every bot running the handler answers it without the command being linked
+    to the bot.
+
+    Who may use it is declared, so that running it, /ayuda and the command
+    menu Telegram shows each person ask the same question: the tier, then for
+    an internal user any of `groups` (xml ids) and the `access` (model,
+    operation) the user has in Odoo, then the handler's `_command_allowed`.
+    `description` is the menu's line for it; a command without one is not in
+    the menu, and still runs."""
 
     method: str
     tier: str = "internal"
     starts_flow: bool = False
     builtin: bool = False
+    groups: tuple[str, ...] = ()
+    access: tuple[str, str] | None = None
+    description: LazyGettext | None = None
 
     def __post_init__(self) -> None:
         if self.tier not in TIERS:
             raise ValueError(f"unknown tier {self.tier!r}")
+        if isinstance(self.groups, str):
+            raise TypeError("groups is a tuple of xml ids")
+        if (self.groups or self.access) and self.tier != "internal":
+            raise ValueError("groups and access are an internal user's, tier internal")
 
 
 def translation_env(bot, chat=None):

@@ -186,6 +186,12 @@ msgstr "Entregarlos"
 #. module: account_collection_telegram
 #. odoo-python
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Hand your collections in"
+msgstr "Entregar tus cobros"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "Hand-in slip, sent from Telegram."
 msgstr "Comprobante de entrega, enviado desde Telegram."
 
@@ -298,12 +304,24 @@ msgstr "¿Registrar este cobro?"
 #. module: account_collection_telegram
 #. odoo-python
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Record what a customer paid you"
+msgstr "Registrar lo que te pagó un cliente"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid ""
 "Remittance %(name)s sent to the treasury for validation. Your collections "
 "stay in your custody until it is validated."
 msgstr ""
 "Rendición %(name)s enviada a tesorería para validación. Tus cobros siguen "
 "bajo tu custodia hasta que se valide."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "See the collections you still hold"
+msgstr "Ver los cobros que aún tienes"
 
 #. module: account_collection_telegram
 #. odoo-python

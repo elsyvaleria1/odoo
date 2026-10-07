@@ -6,6 +6,7 @@ from markupsafe import Markup
 from odoo import Command, fields
 from odoo.exceptions import AccessError
 
+from odoo.addons.telegram.tests.common import NOT_A_MENU as _NOT_A_MENU
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
 
@@ -53,7 +54,11 @@ class MailTelegramCase(TelegramBotTestCase):
 
     def _queued(self):
         return self.env["telegram.message"].search(
-            [("chat_id", "=", self.test_chat.id), ("message_type", "=", "outbound")]
+            [
+                ("chat_id", "=", self.test_chat.id),
+                ("message_type", "=", "outbound"),
+                _NOT_A_MENU,
+            ]
         )
 
     def _post_to_user(self, **kwargs):
@@ -121,7 +126,7 @@ class TestDelivery(MailTelegramCase):
 
     def _outbound(self, chat):
         return self.env["telegram.message"].search(
-            [("chat_id", "=", chat.id), ("message_type", "=", "outbound")]
+            [("chat_id", "=", chat.id), ("message_type", "=", "outbound"), _NOT_A_MENU]
         )
 
     def test_a_record_of_a_company_is_told_through_that_company_s_bot(self):

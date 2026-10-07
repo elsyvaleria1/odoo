@@ -32,6 +32,12 @@ class ResUsers(models.Model):
             "telegram_connect_bot_ids",
         ]
 
+    def write(self, vals):
+        result = super().write(vals)
+        if vals.keys() & {"group_ids", "company_ids", "active"}:
+            self._sync_telegram_command_menus()
+        return result
+
     @api.depends_context("uid")
     def _compute_telegram_connect_bot_ids(self) -> None:
         bots = operating(self.env["telegram.bot"]).search(
@@ -71,3 +77,13 @@ class ResUsers(models.Model):
         operating(self.env["telegram.binding"]).search(
             [("state", "=", "active"), ("partner_id", "=", self.partner_id.id)]
         )._revoke("user")
+
+    def _sync_telegram_command_menus(self) -> None:
+        """Bring the command menu of these users' private chats up to date with
+        what their groups and companies let them run now."""
+        operating(self.env["telegram.chat"]).search(
+            [
+                ("chat_type", "=", "private"),
+                ("account_id.partner_id", "in", self.partner_id.ids),
+            ]
+        )._sync_command_menu()

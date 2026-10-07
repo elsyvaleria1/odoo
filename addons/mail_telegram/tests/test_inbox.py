@@ -5,6 +5,7 @@ from odoo.exceptions import AccessError
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 
+from odoo.addons.telegram.tests.common import NOT_A_MENU as _NOT_A_MENU
 from odoo.addons.telegram.tests.common import TelegramBotHttpCase, TelegramBotTestCase
 from odoo.addons.telegram.tests.test_web_app_init_data import signed_init_data
 
@@ -120,7 +121,11 @@ class TestInbox(InboxCase):
         with self.mock_api_gateway_post(), self.mock_rate_limiter():
             self.env["telegram.router"]._dispatch_message(self.test_bot, update)
         return self.env["telegram.message"].search(
-            [("chat_id", "=", self.test_chat.id), ("message_type", "=", "outbound")]
+            [
+                ("chat_id", "=", self.test_chat.id),
+                ("message_type", "=", "outbound"),
+                _NOT_A_MENU,
+            ]
         )
 
     def test_bandeja_opens_the_inbox_and_keeps_it_as_the_menu_button(self):

@@ -1,6 +1,6 @@
 {
     "name": "Telegram Bot Infrastructure",
-    "version": "19.0.3.8.0",
+    "version": "19.0.3.9.0",
     "oldest_upgradable_version": "19.0.3.6.0",
     "category": "Hidden",
     "summary": "Receive Telegram updates and route configured bot commands",

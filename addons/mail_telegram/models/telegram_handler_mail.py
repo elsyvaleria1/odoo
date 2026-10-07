@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from odoo import fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
@@ -14,6 +15,7 @@ from odoo.addons.telegram.tools.dispatch import (
 )
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 _DRAFT_KEY = "mail_draft"
 _REPLY_KEY = "mail_reply"
@@ -55,29 +57,34 @@ class TelegramHandlerMail(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/bandeja": TelegramCommand(
-                "_handle_inbox_command", "internal", builtin=True
+                "_handle_inbox_command",
+                "internal",
+                builtin=True,
+                description=_lt("Open your Odoo notifications and chats"),
             ),
             "/escribir": TelegramCommand(
-                "_handle_write_command", "internal", builtin=True
+                "_handle_write_command",
+                "internal",
+                builtin=True,
+                description=_lt("Write to a colleague or a conversation"),
             ),
         }
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        if not bot.notify_mail or not internal_user:
-            return []
         tr = translation_env(bot, chat)
-        return [
-            (
-                tr._("Odoo Notifications"),
-                [
-                    tr._("/bandeja - Open your Odoo notifications and chats here."),
-                    tr._(
-                        "/escribir - Write to a colleague or a conversation of "
-                        "Odoo, as in a chat."
-                    ),
-                ],
+        lines = []
+        if self._offers_command(bot, chat, "/bandeja", partner, internal_user):
+            lines.append(
+                tr._("/bandeja - Open your Odoo notifications and chats here.")
             )
-        ]
+        if self._offers_command(bot, chat, "/escribir", partner, internal_user):
+            lines.append(
+                tr._(
+                    "/escribir - Write to a colleague or a conversation of "
+                    "Odoo, as in a chat."
+                )
+            )
+        return [(tr._("Odoo Notifications"), lines)] if lines else []
 
     # -- the inbox Mini App ---------------------------------------------------
 

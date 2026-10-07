@@ -6,6 +6,7 @@ from . import test_outbox
 from . import test_router
 from . import test_chat_session_management
 from . import test_command_dispatch
+from . import test_command_permissions
 from . import test_concurrency_is_retried
 from . import test_download_token_leak
 from . import test_failure_recovery

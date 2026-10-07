@@ -144,6 +144,11 @@ msgstr ""
 "Un secreto de webhook es de 1 a 256 caracteres de A-Z, a-z, 0-9, _ y -."
 
 #. module: telegram
+#: model:ir.model,name:telegram.model_res_groups
+msgid "Access Groups"
+msgstr "Grupos de acceso"
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_bot__credential_id
 msgid ""
 "API Transport credential for Telegram Bot API. The credential must contain "
@@ -371,6 +376,12 @@ msgid "Can Reply"
 msgstr "Puede responder"
 
 #. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Cancel what you have in progress"
+msgstr "Cancelar lo que tienes en curso"
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_message__caption
 msgid "Caption"
 msgstr "Pie de foto"
@@ -422,6 +433,11 @@ msgstr "Cerrar"
 #: model:ir.model.fields,field_description:telegram.field_telegram_message__command
 msgid "Command"
 msgstr "Comando"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__command_menu
+msgid "Command Menu"
+msgstr "Menú de comandos"
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_message__command
@@ -1386,6 +1402,12 @@ msgid "Revoked by an administrator"
 msgstr "Revocado por un administrador"
 
 #. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "See who you are in Odoo"
+msgstr "Ver quién eres en Odoo"
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_bot__token_hash
 msgid ""
 "SHA256 of the bot token, used to resolve the webhook URL to this bot. "
@@ -1443,6 +1465,12 @@ msgid ""
 msgstr ""
 "Se llena cuando lo generó la sesión del propio usuario: el vínculo nombra "
 "entonces a ese usuario."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_handler_base.py:0
+msgid "Show what I can do for you"
+msgstr "Ver lo que puedo hacer por ti"
 
 #. module: telegram
 #. odoo-python
@@ -1685,6 +1713,17 @@ msgstr ""
 #: model:ir.model.fields,help:telegram.field_telegram_message__api_method
 msgid "The Bot API method a queued message is sent with."
 msgstr "El método de la API de bots con que se envía un mensaje en cola."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__command_menu
+msgid ""
+"The command menu last sent to Telegram for this private chat: what its "
+"person may run here, in the chat's language. It is sent again only when that"
+" changes."
+msgstr ""
+"El menú de comandos que se envió por última vez a Telegram para este chat "
+"privado: lo que su persona puede ejecutar aquí, en el idioma del chat. Se "
+"vuelve a enviar solo cuando eso cambia."
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_res_bank__telegram_account_ids
@@ -2123,6 +2162,7 @@ msgstr "También puedes escribir %(command)s para cancelarlo."
 
 #. module: telegram
 #. odoo-python
+#: code:addons/telegram/models/mixin_telegram_handler.py:0
 #: code:addons/telegram/models/telegram_router.py:0
 #, python-format
 msgid "You don't have permission to use the command %(command)s."

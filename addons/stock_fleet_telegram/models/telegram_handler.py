@@ -5,12 +5,14 @@ from datetime import timedelta
 from odoo import fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs.documents.document import Document
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.dispatch import TelegramCommand, log_command_execution
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 DELIVER = "ent:"
 LIST_LIMIT = 8
@@ -25,9 +27,22 @@ class TelegramHandlerStockFleet(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/entrega": TelegramCommand(
-                "_handle_delivery_command", "internal", starts_flow=True
+                "_handle_delivery_command",
+                "internal",
+                starts_flow=True,
+                access=("stock.picking", "write"),
+                description=_lt("Send a delivery slip the customer signed"),
             ),
         }
+
+    def _explain_command_refusal(
+        self, bot, chat, command, partner, internal_user
+    ) -> None:
+        self._send(
+            bot,
+            chat,
+            self._tr(bot, chat)._("Only whoever delivers sends signed slips here."),
+        )
 
     def _telegram_callback_prefixes(self):
         return (DELIVER,)
@@ -36,7 +51,7 @@ class TelegramHandlerStockFleet(models.AbstractModel):
         return self._tr(bot, chat)._("a signed delivery slip")
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        if not internal_user or "/entrega" not in bot.command_ids.mapped("name"):
+        if not self._offers_command(bot, chat, "/entrega", partner, internal_user):
             return []
         tr = self._tr(bot, chat)
         return [
@@ -85,11 +100,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
         self, bot, chat, args, partner=False, internal_user=False
     ) -> None:
         tr = self._tr(bot, chat)
-        if not self.env["stock.picking"].with_user(internal_user).has_access("write"):
-            self._send(
-                bot, chat, tr._("Only whoever delivers sends signed slips here.")
-            )
-            return
         if not self._pending_deliveries(internal_user):
             self._send(bot, chat, tr._("No delivery of yours is waiting for its slip."))
             return

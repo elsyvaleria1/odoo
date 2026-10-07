@@ -143,6 +143,13 @@ class TelegramChat(models.Model):
         "of its answers it: a reply waiting for its visibility, a draft waiting "
         "for its thread."
     )
+    command_menu = fields.Json(
+        readonly=True,
+        copy=False,
+        help="The command menu last sent to Telegram for this private chat: "
+        "what its person may run here, in the chat's language. It is sent "
+        "again only when that changes.",
+    )
 
     _chat_id_bot_id_uniq = models.Constraint(
         "UNIQUE NULLS NOT DISTINCT (chat_id, bot_id, business_connection_id)",
@@ -405,6 +412,62 @@ class TelegramChat(models.Model):
         context = dict(self.context_data or {})
         context[key] = value
         self._with_flow_privilege().write({"context_data": context})
+
+    # -- command menu ---------------------------------------------------------
+
+    def _sync_command_menu(self) -> None:
+        """Send Telegram the command menu of each private chat whose person may
+        now run other commands than its menu shows."""
+        for chat in operating(self):
+            if chat.chat_type != "private" or not chat.account_id or chat.bot_blocked:
+                continue
+            menu = chat._get_command_menu()
+            if menu == (chat.command_menu or []):
+                continue
+            chat.command_menu = menu
+            chat.env["telegram.message"]._queue(
+                chat.bot_id,
+                chat,
+                "setMyCommands",
+                {
+                    "commands": menu,
+                    "scope": {"type": "chat", "chat_id": int(chat.chat_id)},
+                },
+            )
+
+    def _get_command_menu(self) -> list:
+        """`[{"command", "description"}]` this private chat's person may run, as
+        the router would let them, in the chat's language."""
+        self.check_singleton()
+        account = self.account_id
+        partner = account._acting_partner()
+        user = account._acting_user("internal")
+        chat = self
+        if user:
+            if not self.bot_id._admits_user(user):
+                # the router refuses every update of theirs on this bot
+                return []
+            sender_env = self.env(
+                user=user,
+                context={
+                    **self.env.context,
+                    "allowed_company_ids": [self.bot_id.company_id.id],
+                },
+            )
+            chat = operating(self.with_env(sender_env))
+        bot = chat.bot_id
+        lang = bot.get_lang(chat) or "en_US"
+        available = chat.env["telegram.router"]._available_commands(
+            bot, chat, partner.with_env(chat.env), user.with_env(chat.env)
+        )
+        return [
+            {
+                "command": command.removeprefix("/"),
+                "description": spec.description.translate(lang),
+            }
+            for command, spec in available
+            if spec.description
+        ]
 
     # -- flows ----------------------------------------------------------------
 

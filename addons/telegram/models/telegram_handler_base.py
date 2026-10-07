@@ -1,12 +1,14 @@
 import logging
 
 from odoo import models
+from odoo.tools.translate import LazyTranslate
 
 from ..tools import format as tg
 from ..tools.authority import operating
 from ..tools.dispatch import TelegramCommand, log_command_execution, translation_env
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
 
 
 class TelegramHandlerBase(models.AbstractModel):
@@ -19,20 +21,33 @@ class TelegramHandlerBase(models.AbstractModel):
     _description = "Telegram: General Commands"
 
     def _telegram_commands(self) -> dict:
+        # /start is Telegram's own button and /desconectar is one tap from
+        # undoing the connection: neither is in the menu, /ayuda names both
         return {
             "/start": TelegramCommand(
                 "_handle_start_command", "unlinked", builtin=True
             ),
-            "/ayuda": TelegramCommand("_handle_help_command", "unlinked", builtin=True),
+            "/ayuda": TelegramCommand(
+                "_handle_help_command",
+                "unlinked",
+                builtin=True,
+                description=_lt("Show what I can do for you"),
+            ),
             "/quiensoy": TelegramCommand(
-                "_handle_whoami_command", "partner", builtin=True
+                "_handle_whoami_command",
+                "partner",
+                builtin=True,
+                description=_lt("See who you are in Odoo"),
             ),
             "/desconectar": TelegramCommand(
                 "_handle_disconnect_command", "partner", builtin=True
             ),
             # unlinked: the least a command opening a flow asks (/subirfactura)
             "/cancelar": TelegramCommand(
-                "_handle_cancel_command", "unlinked", builtin=True
+                "_handle_cancel_command",
+                "unlinked",
+                builtin=True,
+                description=_lt("Cancel what you have in progress"),
             ),
         }
 

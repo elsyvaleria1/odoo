@@ -152,3 +152,16 @@ class TestConversationFromTelegram(MailTelegramCase):
 
         self.assertIn("Unknown command", self._sent(post))
         self.assertNotIn(f"mt:dm:{self.author.id}", self._sent(post))
+
+    def test_the_menu_offers_it_only_where_notifications_are_delivered(self):
+        self.test_chat._sync_command_menu()
+        commands = [e["command"] for e in self.test_chat.command_menu]
+        self.assertIn("escribir", commands)
+        # what the person works with comes first, what every bot answers last
+        self.assertLess(commands.index("escribir"), commands.index("ayuda"))
+
+        self.test_bot.notify_mail = False
+
+        self.assertNotIn(
+            "escribir", [e["command"] for e in self.test_chat.command_menu]
+        )

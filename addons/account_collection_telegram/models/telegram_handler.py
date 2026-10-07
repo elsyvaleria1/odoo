@@ -4,12 +4,15 @@ from datetime import datetime, timedelta
 
 from odoo import Command, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.dispatch import TelegramCommand, log_command_execution
 
 _logger = logging.getLogger(__name__)
+_lt = LazyTranslate(__name__)
+_COLLECTOR = ("account.collection.remittance", "create")
 
 COLLECT = "cob:"
 REMIT = "rem:"
@@ -50,13 +53,31 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
     def _telegram_commands(self) -> dict:
         return {
             "/cobro": TelegramCommand(
-                "_handle_collect_command", "internal", starts_flow=True
+                "_handle_collect_command",
+                "internal",
+                starts_flow=True,
+                access=_COLLECTOR,
+                description=_lt("Record what a customer paid you"),
             ),
-            "/custodia": TelegramCommand("_handle_custody_command", "internal"),
+            "/custodia": TelegramCommand(
+                "_handle_custody_command",
+                "internal",
+                access=_COLLECTOR,
+                description=_lt("See the collections you still hold"),
+            ),
             "/rendir": TelegramCommand(
-                "_handle_remit_command", "internal", starts_flow=True
+                "_handle_remit_command",
+                "internal",
+                starts_flow=True,
+                access=_COLLECTOR,
+                description=_lt("Hand your collections in"),
             ),
         }
+
+    def _explain_command_refusal(
+        self, bot, chat, command, partner, internal_user
+    ) -> None:
+        self._refuse_non_collector(bot, chat, internal_user)
 
     def _telegram_callback_prefixes(self):
         return (COLLECT, REMIT)
@@ -68,22 +89,26 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
         return tr._("a collection")
 
     def _get_help_sections(self, bot, partner, internal_user, chat=None):
-        linked = set(bot.command_ids.mapped("name"))
-        if not internal_user or not linked & {"/cobro", "/custodia", "/rendir"}:
+        offered = {
+            command
+            for command in self._telegram_commands()
+            if self._offers_command(bot, chat, command, partner, internal_user)
+        }
+        if not offered:
             return []
         tr = self._tr(bot, chat)
         lines = []
-        if "/cobro" in linked:
+        if "/cobro" in offered:
             lines.append(
                 tr._("%(command)s - Record what a customer paid you.")
                 % {"command": tg.bold("/cobro")}
             )
-        if "/custodia" in linked:
+        if "/custodia" in offered:
             lines.append(
                 tr._("%(command)s - See the collections you still hold.")
                 % {"command": tg.bold("/custodia")}
             )
-        if "/rendir" in linked:
+        if "/rendir" in offered:
             lines.append(
                 tr._("%(command)s - Hand your collections in to a till or the bank.")
                 % {"command": tg.bold("/rendir")}

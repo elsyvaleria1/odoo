@@ -27,6 +27,10 @@ class TelegramBot(models.Model):
         return super().unlink()
 
     @api.model
+    def _command_menu_fields(self) -> set:
+        return super()._command_menu_fields() | {"notify_mail"}
+
+    @api.model
     @tools.ormcache(cache="mail")
     def _get_notifying_bot_ids(self) -> tuple[int, ...]:
         # one answer for every caller, so read past the company guard that

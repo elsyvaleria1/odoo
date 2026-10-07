@@ -117,6 +117,12 @@ msgstr "Comandos de Solicitudes de Aprobación"
 #. module: approval_ai_telegram
 #. odoo-python
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Ask for an approval in your own words"
+msgstr "Pedir una aprobación con tus palabras"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
 msgid "Bank"
 msgstr "Banco"
 

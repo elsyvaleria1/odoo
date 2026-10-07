@@ -5,6 +5,8 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import SQL, frozendict
 
+from ..tools.authority import operating
+
 _METHODS = [
     ("session", "Proven from an Odoo session"),
     ("invitation", "Proven with an invitation"),
@@ -105,6 +107,7 @@ class TelegramBinding(models.Model):
     def create(self, vals_list):
         bindings = super().create(vals_list)
         bindings._journal("proven")
+        operating(bindings.account_id.chat_ids)._sync_command_menu()
         return bindings
 
     def write(self, vals):
@@ -132,6 +135,10 @@ class TelegramBinding(models.Model):
             }
         )
         active._journal("revoked", reason=reason)
+        if reason != "superseded":
+            # a superseded binding's account is bound again at once, and the
+            # new binding sends the menu its person has now
+            operating(active.account_id.chat_ids)._sync_command_menu()
 
     def _journal(self, event, *, reason=None) -> None:
         self.env["telegram.binding.event"]._append(

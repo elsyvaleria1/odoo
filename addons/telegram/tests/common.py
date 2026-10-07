@@ -51,6 +51,11 @@ def rpc_exposed_methods(records, module_prefix, allowed=frozenset()):
     return exposed
 
 
+# a private chat's command menu goes out through the outbox too: a test about
+# what a person was sent leaves it out
+NOT_A_MENU = ("api_method", "!=", "setMyCommands")
+
+
 class TelegramBotTestCase(TransactionCase):
     TEST_BOT_TOKEN = "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
 
