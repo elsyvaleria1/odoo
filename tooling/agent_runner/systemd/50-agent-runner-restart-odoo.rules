@@ -1,0 +1,14 @@
+// The deploy runner, as the odoo user, may restart odoo.service and nothing
+// else: a hotfix restarts the server it was applied to without sudo, so the
+// runner keeps NoNewPrivileges.
+polkit.addRule(function (action, subject) {
+    if (
+        action.id === "org.freedesktop.systemd1.manage-units" &&
+        action.lookup("unit") === "odoo.service" &&
+        action.lookup("verb") === "restart" &&
+        subject.user === "odoo"
+    ) {
+        return polkit.Result.YES;
+    }
+    return polkit.Result.NOT_HANDLED;
+});

@@ -18,7 +18,7 @@ GitHub service, holding `app_id`, `private_key` (the PEM GitHub generated) and
   minutes before GitHub expires it (an hour);
 - mints, for whoever asks through `tools.mint_installation_token(env, credential, repositories,
   permissions)`, a token limited to the named repositories and permissions -- what
-  `error_incident_github` hands an agent run for its repository alone. The minting call is not
+  `agent_runner_github` hands an agent run for its repository alone. The minting call is not
   logged: its answer is the token.
 
 ## Webhooks

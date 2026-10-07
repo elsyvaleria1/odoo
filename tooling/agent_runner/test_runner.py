@@ -124,13 +124,25 @@ def test_a_completion_refused_for_a_lost_lease_is_given_up():
 
 def test_serve_stops_when_asked():
     client = FakeClient([_lease()])
-    stop = threading.Event()
     runner = agent.Runner(client, poll_seconds=0.01, backoff=lambda attempt: 0)
-    thread = threading.Thread(target=runner.serve, args=(stop,))
+    thread = threading.Thread(target=runner.serve)
     thread.start()
-    stop.set()
+    runner.shutdown()
     thread.join(timeout=5)
     assert not thread.is_alive()
+
+
+def test_a_shutdown_hands_the_run_in_hand_back_for_another_runner():
+    client = FakeClient([_lease(seconds=30, lease_seconds=300)])
+    runner = agent.Runner(client, poll_seconds=0.01, backoff=lambda attempt: 0)
+    thread = threading.Thread(target=runner.serve)
+    thread.start()
+    while not any(call[0] == "events" for call in client.calls):
+        thread.join(timeout=0.01)
+    runner.shutdown()
+    thread.join(timeout=5)
+    assert not thread.is_alive(), "the run was stopped, not waited out"
+    assert _finished(client) == [("fail", 1, "the runner was stopped: stopped", True)]
 
 
 def test_the_token_is_read_from_the_environment_only(monkeypatch):

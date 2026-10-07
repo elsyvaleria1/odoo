@@ -57,7 +57,9 @@ hold in the payload.
 
 - The incident reaches the agent fenced off as data, with a fence drawn fresh for each run.
 - The agent's environment holds only the run's Anthropic key, handed with the lease from the
-  company's `claude` service credential. Without one, the runner's own model login is used.
+  company's `claude` service credential, and only while the company's machine-learning data
+  policy lets `error_incident.autofix` reach Anthropic; a run the policy refuses fails at the
+  claim. Without a credential, the runner's own model login is used.
 - The runner commits the fix itself, with the incident and run as trailers, and with git
   hooks and fsmonitor disabled.
 - A run whose agent touched `.git/` is failed before anything is committed.

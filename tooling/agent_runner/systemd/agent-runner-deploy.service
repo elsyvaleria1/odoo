@@ -1,0 +1,61 @@
+# A deploy runner, on the production host: applies approved hotfixes to the
+# running checkouts and reports which awaited fixes they contain. It never
+# runs an agent. What it runs -- the checkouts, the upgrade, restart and health
+# commands -- is this host's configuration in deploy.env; a lease names a
+# checkout and a commit, nothing to execute.
+#
+#   install -D -m 0644 agent-runner-deploy.service /etc/systemd/system/
+#   install -D -m 0600 deploy.env.example /etc/agent-runner/deploy.env     # then edit
+#   install -D -m 0644 50-agent-runner-restart-odoo.rules /etc/polkit-1/rules.d/
+#   systemctl edit agent-runner-deploy.service   # User= and ReadWritePaths= below
+#   systemctl enable --now agent-runner-deploy.service
+[Unit]
+Description=Agent runner (deploy): applies approved fixes to this host's Odoo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=exec
+EnvironmentFile=/etc/agent-runner/deploy.env
+ExecStart=/usr/bin/python3 /opt/agent-runner/runner.py --url ${ODOO_URL} --role deploy
+Restart=on-failure
+RestartSec=10
+# a hotfix waits for the server to come back healthy before it answers
+TimeoutStopSec=300
+
+# The user that owns the Odoo checkouts and runs `odoo-bin -u`; it restarts
+# the server through the polkit rule shipped beside this file, not sudo.
+User=odoo
+Group=odoo
+UMask=0027
+RemoveIPC=yes
+
+# Everything read-only but what a hotfix writes: override ReadWritePaths= with
+# this host's checkouts, as AGENT_RUNNER_DEPLOY_CHECKOUTS names them, and the
+# data_dir of odoo.conf, which the upgrade writes the filestore to.
+ProtectSystem=strict
+ReadWritePaths=/opt/odoo /var/lib/odoo
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectProc=invisible
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

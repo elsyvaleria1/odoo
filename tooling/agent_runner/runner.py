@@ -2,7 +2,7 @@
 """The reference runner for `agent_runner`: claims runs from Odoo, keeps each
 lease alive while it works, reports events and finishes the run.
 
-    AGENT_RUNNER_TOKEN=<token> python3 runner.py --url https://odoo.example --name runner-1
+    AGENT_RUNNER_TOKEN=<token> python3 runner.py --url https://odoo.example
 
 The token comes from the environment, never from the command line, where any
 user of the machine reads it in the process list. The runner keeps no
@@ -187,6 +187,15 @@ class Runner:
         self.executors = EXECUTORS if executors is None else executors
         self.poll_seconds = poll_seconds
         self.backoff = backoff
+        self.stopping = threading.Event()
+        self._reporter: Reporter | None = None
+
+    def shutdown(self) -> None:
+        """Stop serving, and stop the run in hand: it goes back to Odoo as
+        retryable, for another runner, rather than waiting out its lease."""
+        self.stopping.set()
+        if self._reporter is not None:
+            self._reporter.stop.set()
 
     def run_once(self) -> bool:
         """Claim and finish one run; ``False`` when there was none."""
@@ -197,6 +206,9 @@ class Runner:
             "run %s (%s), attempt %s", lease["id"], lease["kind"], lease["attempt"]
         )
         reporter = Reporter(self.client, lease)
+        self._reporter = reporter
+        if self.stopping.is_set():
+            reporter.stop.set()
         beating = threading.Thread(
             target=self._keep_alive, args=(lease, reporter), daemon=True
         )
@@ -204,6 +216,7 @@ class Runner:
         try:
             outcome, failure = self._execute(lease, reporter)
         finally:
+            self._reporter = None
             reporter.stop.set()
             beating.join()
         if reporter.lost:
@@ -219,6 +232,8 @@ class Runner:
             )
         else:
             message, retryable = failure
+            if self.stopping.is_set():
+                message, retryable = f"the runner was stopped: {message}", True
             self._finish(
                 lambda: self.client.fail(
                     lease["id"], lease["lease_token"], message, retryable=retryable
@@ -266,7 +281,8 @@ class Runner:
                 time.sleep(self.backoff(attempt))
         _logger.error("the run could not be finished; Odoo will hand it out again")
 
-    def serve(self, stop: threading.Event) -> None:
+    def serve(self) -> None:
+        stop = self.stopping
         failures = 0
         while not stop.is_set():
             try:
@@ -322,10 +338,9 @@ def main(argv: list[str] | None = None) -> int:
         except TransportError as error:
             _logger.error("Odoo unreachable: %s", error)
             return 2
-    stop = threading.Event()
-    signal.signal(signal.SIGTERM, lambda *_: stop.set())
-    signal.signal(signal.SIGINT, lambda *_: stop.set())
-    runner.serve(stop)
+    signal.signal(signal.SIGTERM, lambda *_: runner.shutdown())
+    signal.signal(signal.SIGINT, lambda *_: runner.shutdown())
+    runner.serve()
     return 0
 
 
