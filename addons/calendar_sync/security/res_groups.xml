@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_engine" model="res.groups">
+        <field
+            name="name">Privilege: the synchronization engine keeps the links of what it synchronizes</field>
+        <field
+            name="comment">Held by an adapter while it synchronizes, whoever it runs as: it reads the accounts and keeps the links of events and recurrences to their copies in each account's calendar. It grants nothing on the events themselves.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

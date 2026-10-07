@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_state" model="ir.access.class">
+        <field name="name">calendar_sync.state</field>
+        <field
+            name="description">Where a user's calendar synchronizations stand: their accounts with each provider and the links of events and recurrences to the providers' copies. Administrators read them; only the engine writes them.</field>
+    </record>
+
+    <record id="access_state_system" model="ir.access">
+        <field name="name">calendar_sync.state: administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_state" />
+    </record>
+
+</odoo>

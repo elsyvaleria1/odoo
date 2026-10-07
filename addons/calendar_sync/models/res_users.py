@@ -13,6 +13,7 @@ class ResUsers(models.Model):
         comodel_name="calendar.sync.account",
         inverse_name="user_id",
         string="Calendar Synchronizations",
+        classification="calendar_sync.state",
         groups="base.group_system",
     )
 
