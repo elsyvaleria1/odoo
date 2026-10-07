@@ -11,7 +11,7 @@ from requests import HTTPError
 from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.db import BaseCursor
-from odoo.fields import Domain
+from odoo.fields import NEGATIVE_CONDITION_OPERATORS, Domain
 from odoo.modules.registry import Registry
 from odoo.tools import email_normalize
 
@@ -64,7 +64,9 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
     google_id = fields.Char(
         string="Google Calendar Id",
-        index="btree_not_null",
+        compute="_compute_google_id",
+        inverse="_inverse_google_id",
+        search="_search_google_id",
         copy=False,
     )
     need_sync = fields.Boolean(
@@ -72,6 +74,91 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         copy=False,
     )
     active = fields.Boolean(default=True)
+
+    def _google_link_field(self) -> str:
+        return "event_id" if self._name == "calendar.event" else "recurrence_id"
+
+    def _google_links(self):
+        """The Google links of these records, elevated: one per record, in the
+        calendar of whoever gave it its Google id."""
+        fk = self._google_link_field()
+        return (
+            self.env["calendar.sync.link"]
+            ._engine()
+            .search_fetch(
+                [(fk, "in", self.ids), ("account_id.provider", "=", "google")],
+                [fk, "account_id", "remote_id"],
+            )
+        )
+
+    @api.depends("calendar_sync_link_ids.remote_id")
+    def _compute_google_id(self) -> None:
+        fk = self._google_link_field()
+        remote_ids = {link[fk].id: link.remote_id for link in self._google_links()}
+        for record in self:
+            record.google_id = remote_ids.get(record.id, False)
+
+    def _inverse_google_id(self) -> None:
+        fk = self._google_link_field()
+        links = self._google_links().grouped(fk)
+        for record in self:
+            link = links.get(record)
+            if not record.google_id:
+                if link:
+                    link.unlink()
+            elif link:
+                link.remote_id = record.google_id
+            else:
+                self._google_link(
+                    self.env["calendar.sync.account"]._for(self.env.user, "google"),
+                    {record.id: record.google_id},
+                )
+
+    def _google_link(self, account, google_ids) -> None:
+        """Link records to their Google id in `account`'s calendar, given as
+        {record id: Google id}."""
+        fk = self._google_link_field()
+        self.env["calendar.sync.link"]._engine().create(
+            [
+                {"account_id": account.id, fk: record_id, "remote_id": google_id}
+                for record_id, google_id in google_ids.items()
+            ]
+        )
+
+    def _google_link_instances(self) -> None:
+        """Link the records Google identifies through another record's id."""
+
+    def _search_google_id(self, operator, value):
+        fk = self._google_link_field()
+        Link = self.env["calendar.sync.link"]._engine()
+        google = Domain("account_id.provider", "=", "google")
+        if operator == "=":
+            operator, value = "in", [value]
+        if operator in NEGATIVE_CONDITION_OPERATORS:
+            return NotImplemented
+        if operator != "in":
+            return Domain(
+                "id",
+                "in",
+                Link._search(google & Domain("remote_id", operator, value)).subselect(
+                    fk
+                ),
+            )
+        values = [v for v in value if v]
+        domain = Domain.FALSE
+        if values:
+            domain |= Domain(
+                "id",
+                "in",
+                Link._search(google & Domain("remote_id", "in", values)).subselect(fk),
+            )
+        if len(values) < len(value):
+            domain |= Domain(
+                "id",
+                "not in",
+                Link._search(google & Domain(fk, "!=", False)).subselect(fk),
+            )
+        return domain
 
     def write(self, vals):
         google_service = GoogleCalendarService(self.env)
@@ -84,6 +171,8 @@ class MixinGoogleCalendarSync(models.AbstractModel):
             vals["need_sync"] = True
 
         result = super().write(vals)
+        if "recurrence_id" in vals:
+            self._google_link_instances()
         if self.env.user._calendar_sync_status("google") != "sync_paused":
             for record in self:
                 if record.need_sync and record.google_id:
@@ -113,6 +202,7 @@ class MixinGoogleCalendarSync(models.AbstractModel):
             ):
                 vals.update({"need_sync": False})
         records = super().create(vals_list)
+        records._google_link_instances()
         self._handle_allday_recurrences_edge_case(records, vals_list)
 
         google_service = GoogleCalendarService(self.env)

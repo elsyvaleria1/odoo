@@ -21,12 +21,6 @@ class CalendarEvent(models.Model):
 
     MEET_ROUTE = "meet.google.com"
 
-    google_id = fields.Char(
-        string="Google Calendar Event Id",
-        compute="_compute_google_id",
-        store=True,
-        readonly=False,
-    )
     guests_readonly = fields.Boolean(
         string="Guests Event Modification Permission",
         default=False,
@@ -36,18 +30,22 @@ class CalendarEvent(models.Model):
         ondelete={"google_meet": "set discuss"},
     )
 
-    @api.depends("recurrence_id.google_id")
-    def _compute_google_id(self) -> None:
-        # google ids of recurring events are built from the recurrence id and the
-        # original starting time in the recurrence.
-        # The `start` field does not appear in the dependencies on purpose!
-        # Event if the event is moved, the google_id remains the same.
-        for event in self:
-            google_recurrence_id = event.recurrence_id._get_event_google_id(event)
-            if not event.google_id and google_recurrence_id:
-                event.google_id = google_recurrence_id
-            elif not event.google_id:
-                event.google_id = False
+    def _google_link_instances(self) -> None:
+        """Give the events of a series Google knows the ids Google built for its
+        instances, from the series id and the start: once, so that an event moved
+        later keeps its id."""
+        series = self.recurrence_id.filtered("google_id")
+        if not series:
+            return
+        links = series._google_links().grouped("recurrence_id")
+        unlinked = self.filtered(
+            lambda event: event.recurrence_id in series and not event.google_id
+        )
+        for recurrence, events in unlinked.grouped("recurrence_id").items():
+            self._google_link(
+                links[recurrence].account_id,
+                {event.id: recurrence._get_event_google_id(event) for event in events},
+            )
 
     @api.depends("videocall_location")
     def _compute_videocall_source(self) -> None:

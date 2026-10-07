@@ -1,6 +1,6 @@
 {
     "name": "Google Calendar Synchronization",
-    "version": "19.0.2.3.0",
+    "version": "19.0.2.4.0",
     "oldest_upgradable_version": "19.0.2.1.1",
     "category": "Productivity",
     "summary": "Synchronize calendar events with authorized Google accounts",

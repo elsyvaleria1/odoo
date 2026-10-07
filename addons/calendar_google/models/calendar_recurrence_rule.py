@@ -59,6 +59,10 @@ class CalendarRecurrence(models.Model):
         self.calendar_event_ids.need_sync = False
         return detached_events
 
+    def _inverse_google_id(self) -> None:
+        super()._inverse_google_id()
+        self.filtered("google_id").calendar_event_ids._google_link_instances()
+
     def _get_event_google_id(self, event):
         """Return the Google id of recurring event.
         Google ids of recurrence instances are formatted as: {recurrence google_id}_{UTC starting time in compacted ISO8601}
