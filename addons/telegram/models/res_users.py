@@ -34,7 +34,7 @@ class ResUsers(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        if vals.keys() & {"group_ids", "company_ids", "active"}:
+        if vals.keys() & {"group_ids", "company_ids", "active", "lang"}:
             self._sync_telegram_command_menus()
         return result
 

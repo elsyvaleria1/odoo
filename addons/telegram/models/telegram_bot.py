@@ -141,7 +141,7 @@ class TelegramBot(models.Model):
     def _command_menu_fields(self) -> set:
         """The bot's fields that change what its people may run: a feature
         reading one to enable itself adds it."""
-        return {"command_ids", "company_id"}
+        return {"command_ids", "company_id", "lang", "answer_in_bot_lang"}
 
     @api.constrains("credential_id")
     def _check_credential_is_for_telegram(self) -> None:
@@ -667,12 +667,17 @@ class TelegramBot(models.Model):
 
     def get_lang(self, chat=None) -> str:
         """Language to answer ``chat`` in: the bot's when it always answers in
-        its own, else the linked contact's, else the bot's, else the current
-        environment's."""
+        its own; else the one the person's Telegram app uses, if Odoo has it
+        active -- someone may run Odoo in one language and Telegram in
+        another --; else the linked contact's; else the bot's; else the
+        current environment's."""
         self.check_singleton()
         if self.answer_in_bot_lang and self.lang:
             return self.lang
-        return (chat and chat.partner_id.lang) or self.lang or self.env.lang
+        app_lang = (
+            chat and chat.chat_type == "private" and operating(chat).account_id._lang()
+        )
+        return app_lang or (chat and chat.partner_id.lang) or self.lang or self.env.lang
 
     @api.private
     def get_file(self, file_id: str) -> dict[str, Any] | bool:

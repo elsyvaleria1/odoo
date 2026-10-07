@@ -135,6 +135,9 @@ class TelegramAccount(models.Model):
         changed = {key: value for key, value in vals.items() if account[key] != value}
         if changed:
             account.write(changed)
+            if "language_code" in changed:
+                # the bot speaks the language their app uses: so does its menu
+                account.chat_ids._sync_command_menu()
         return account.with_env(self.env)
 
     def _acting_user(self, tier="internal"):
@@ -201,12 +204,15 @@ class TelegramAccount(models.Model):
     def _lang(self):
         """The active language closest to the one their Telegram app uses."""
         code = (self.language_code or "").replace("-", "_")
-        langs = self.env["res.lang"].search([("active", "=", True)])
-        exact = langs.filtered(lambda lang: lang.code.lower() == code.lower())
+        if not code:
+            return False
+        # cached: the bot asks it of every message it answers
+        active = [lang for lang, _name in self.env["res.lang"].get_installed()]
+        exact = [lang for lang in active if lang.lower() == code.lower()]
         if exact:
-            return exact[0].code
-        prefix = langs.filtered(lambda lang: lang.code.split("_")[0] == code[:2])
-        return prefix[:1].code or False
+            return exact[0]
+        prefix = [lang for lang in active if lang.split("_")[0] == code[:2]]
+        return prefix[0] if prefix else False
 
     def _acting_partner(self):
         """The contact this person speaks for, bound or not a user."""
