@@ -1634,17 +1634,14 @@ class TestWebPushNotification(SMSCommon):
                     body_size_limit,
                 ),
             ]
-            + [  # \u00d8 check that it can be cut anywhere by offsetting the string by 1 byte each time
+            + [  # Ø is two bytes on the wire: a one-byte offset moves the cut onto each of them
                 (
                     f"2-bytes UTF-8 characters (near limit + {offset}-byte offset)",
-                    ("+" * offset) + ("Ø" * (body_size_limit // 6)),
-                    offset
-                    + (
-                        (body_size_limit - offset) // 6
-                    ),  # length truncated to nearest full character (\u00f8)
-                    offset * 1 + ((body_size_limit - offset) // 6) * 6,
+                    ("+" * offset) + ("Ø" * (body_size_limit // 2)),
+                    offset + (body_size_limit - offset) // 2,
+                    offset + ((body_size_limit - offset) // 2) * 2,
                 )
-                for offset in range(8)
+                for offset in range(4)
             ]
         )
 
@@ -1715,20 +1712,20 @@ class TestWebPushNotification(SMSCommon):
         # about multi-byte boundaries. The padding buys that, and nothing else.
         pad = "X" * 40
         body = pad + "BØDY"
-        body_json = json_dumps(body)[1:-1]
+        body_json_size = len(json_dumps(body)[1:-1].encode())
         for size_limit, expected_body in (
             [
-                (base_payload_size + len(body_json), pad + "BØDY"),
-                (base_payload_size + len(body_json) - 1, pad + "BØD"),
-                (base_payload_size + len(body_json) - 2, pad + "BØ"),
+                (base_payload_size + body_json_size, pad + "BØDY"),
+                (base_payload_size + body_json_size - 1, pad + "BØD"),
+                (base_payload_size + body_json_size - 2, pad + "BØ"),
             ]
-            + [  # truncating anywhere in \u00d8 (Ø) should truncate to the nearest full character (B)
-                (base_payload_size + len(body_json) - n, pad + "B") for n in range(3, 9)
+            + [  # a cut inside Ø's two bytes backs off to the whole character before it (B)
+                (base_payload_size + body_json_size - n, pad + "B") for n in range(3, 5)
             ]
             + [
-                (base_payload_size + len(body_json) - 9, pad),
+                (base_payload_size + body_json_size - 5, pad),
                 (
-                    base_payload_size + len(body_json) - 10,
+                    base_payload_size + body_json_size - 6,
                     pad[:-1],
                 ),  # the body keeps giving once the multi-byte tail is gone
             ]
@@ -1753,11 +1750,6 @@ class TestWebPushNotification(SMSCommon):
                     payload_before_encrypt.decode(),
                     payload_at_push,
                     "Payload should not change between encryption and push call.",
-                )
-                self.assertEqual(
-                    len(payload_before_encrypt),
-                    len(payload_at_push),
-                    "Encoded body should be same size as decoded.",
                 )
                 self.assertEqual(
                     len(encrypted_payload),
