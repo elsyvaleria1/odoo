@@ -157,8 +157,9 @@ class TestConversationFromTelegram(MailTelegramCase):
         self.test_chat._sync_command_menu()
         commands = [e["command"] for e in self.test_chat.command_menu]
         self.assertIn("escribir", commands)
-        # what the person works with comes first, what every bot answers last
-        self.assertLess(commands.index("escribir"), commands.index("ayuda"))
+        # alphabetical, then the way out and the help
+        self.assertEqual(commands[-2:], ["cancelar", "ayuda"])
+        self.assertEqual(commands[:-2], sorted(commands[:-2]))
 
         self.test_bot.notify_mail = False
 

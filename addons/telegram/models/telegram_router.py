@@ -22,6 +22,9 @@ TOPIC_EVENTS = (
 MEMBERSHIP_EVENTS = ("new_chat_members", "left_chat_member", "group_chat_created")
 
 BUSY_CALLBACK_PREFIX = "tg_busy:"
+# what a menu ends with, whatever else a person may run: the way out of what
+# they started, then the help
+_MENU_LAST = ("/cancelar", "/ayuda")
 HANDLER_PREFIX = "telegram.handler."
 
 
@@ -786,12 +789,9 @@ class TelegramRouter(models.AbstractModel):
     @api.model
     def _available_commands(self, bot, chat, partner, internal_user) -> list:
         """`[(command, spec)]` this person may run on `bot`, in the order the
-        handlers declare them, the general commands every bot answers last."""
+        menu shows them: alphabetical, then /cancelar and /ayuda."""
         available = []
-        handlers = sorted(
-            self._handlers(bot), key=lambda h: h._name == "telegram.handler.base"
-        )
-        for handler in handlers:
+        for handler in self._handlers(bot):
             for command, spec in handler._telegram_commands().items():
                 if self._is_command_enabled(
                     bot, handler, command, spec
@@ -799,7 +799,14 @@ class TelegramRouter(models.AbstractModel):
                     bot, chat, handler, command, spec, partner, internal_user
                 ):
                     available.append((command, spec))
-        return available
+        return sorted(
+            available,
+            key=lambda item: (
+                (_MENU_LAST.index(item[0]) + 1, "")
+                if item[0] in _MENU_LAST
+                else (0, item[0])
+            ),
+        )
 
     @api.model
     def _dispatch_command(

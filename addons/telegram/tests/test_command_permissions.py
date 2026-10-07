@@ -124,7 +124,7 @@ class TestCommandMenu(TelegramBotTestCase):
         menu = self._menus()
         self.assertEqual(len(menu), 1)
         # /start is Telegram's own button, /desconectar is never one tap away
-        self.assertEqual(self._commands(menu), ["ayuda", "quiensoy", "cancelar"])
+        self.assertEqual(self._commands(menu), ["quiensoy", "cancelar", "ayuda"])
         self.assertEqual(menu.payload["scope"], {"type": "chat", "chat_id": 12345})
         self.assertEqual(self.test_chat.command_menu, menu.payload["commands"])
 
@@ -177,7 +177,7 @@ class TestCommandMenu(TelegramBotTestCase):
     def test_disconnecting_leaves_what_anyone_may_run(self):
         self.test_chat._sync_command_menu()
         self.test_binding._revoke("user")
-        self.assertEqual(self._commands(self._menus()[-1]), ["ayuda", "cancelar"])
+        self.assertEqual(self._commands(self._menus()[-1]), ["cancelar", "ayuda"])
 
     def test_a_command_brings_the_menu_up_to_date(self):
         with self.mock_api_gateway_post():
@@ -216,6 +216,6 @@ class TestCommandMenu(TelegramBotTestCase):
         payload = post.call_args.kwargs["json"]
         self.assertTrue(post.call_args.args[0].endswith("/setMyCommands"))
         self.assertEqual(
-            [entry["command"] for entry in payload["commands"]], ["ayuda", "cancelar"]
+            [entry["command"] for entry in payload["commands"]], ["cancelar", "ayuda"]
         )
         self.assertNotIn("scope", payload)

@@ -38,7 +38,7 @@ class TestBotLanguage(TelegramBotTestCase):
 
     def test_switching_the_app_s_language_resends_the_menu_in_it(self):
         self.test_chat._sync_command_menu()
-        self.assertEqual(self.test_chat.command_menu[-1]["command"], "cancelar")
+        self.assertEqual(self.test_chat.command_menu[-1]["command"], "ayuda")
 
         self.env["telegram.account"]._from_telegram(
             {"id": 12345, "first_name": "Test", "language_code": "es"}
