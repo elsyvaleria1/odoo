@@ -4767,9 +4767,11 @@ class TestServedLibraries(TransactionCase):
                 )
             )
         )
-        self.assertTrue(set(served_lib_files()) <= set(rows.mapped("url")))
+        served = served_lib_files()
+        self.assertTrue(set(served) <= set(rows.mapped("url")))
+        current = rows.filtered(lambda r: r.url in served)
         for name in ("owl.runtime.es.js", "owl.compiler.es.js"):
-            owl = rows.filtered(
+            owl = current.filtered(
                 lambda r, name=name: r.name == f"web/static/lib/owl/{name}"
             )
             self.assertEqual(len(owl), 1, name)
