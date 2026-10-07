@@ -1,6 +1,6 @@
 {
     "name": "Asset Maintenance Plans",
-    "version": "19.0.1.20.0",
+    "version": "19.0.1.21.0",
     "oldest_upgradable_version": "19.0.1.18.2",
     "category": "Supply Chain/Maintenance",
     "summary": "Schedule serialized-asset maintenance from intervals and meter readings",

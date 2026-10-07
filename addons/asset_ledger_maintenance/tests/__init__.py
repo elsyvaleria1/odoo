@@ -6,3 +6,4 @@ from . import test_access
 from . import test_odometer_trigger
 from . import test_maintenance_state
 from . import test_menus
+from . import test_resource_kind_actions

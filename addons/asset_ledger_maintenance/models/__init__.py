@@ -5,6 +5,7 @@ from . import product_category
 from . import product_product
 from . import product_template
 from . import stock_location
+from . import mixin_resource_kind
 from . import resource_resource
 from . import product_trace
 from . import stock_warehouse
