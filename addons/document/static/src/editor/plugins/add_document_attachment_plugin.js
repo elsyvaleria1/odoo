@@ -3,7 +3,10 @@ import { openDocumentsPicker } from "@document/views/view_dialogs/select_add_doc
 import { renderStaticFileBox } from "@html_editor/main/media/media_dialog/document_selector";
 import { Plugin } from "@html_editor/plugin";
 import { MAIN_PLUGINS } from "@html_editor/plugin_sets";
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { _t } from "@web/core/translation";
+
+const log = makeLogger("document.editor");
 
 export class AddDocumentsAttachmentPlugin extends Plugin {
     static id = "add_documents_attachment";
@@ -24,24 +27,34 @@ export class AddDocumentsAttachmentPlugin extends Plugin {
     };
 
     openSelectAddDocumentCreateDialog() {
-        const { resModel, resId: rawResId } = this.config.getRecordInfo?.() || {};
-        // a view's content is served to website visitors: they get links to
-        // the documents, shared by link, never copies outside their access
-        const isPublic = resModel === "ir.ui.view";
-        const resId = parseInt(rawResId) || false;
         const dialog = {
             add: (...args) => this.dependencies.dialog.addDialog(...args),
         };
-        openDocumentsPicker(dialog, {
-            // an unsaved record has nothing to attach the copies to yet
+        openDocumentsPicker(dialog, this.documentsPickerProps());
+    }
+
+    /**
+     * What the picker offers here. Content its editor serves to visitors (the
+     * website builder's, `publicAttachments`) links to the documents, shared
+     * by link: a copy attached to the record is no file a visitor may read.
+     * Elsewhere a copy is attached to the record, once it is saved.
+     *
+     * @returns {Object} the picker's props
+     */
+    documentsPickerProps() {
+        const { resModel, resId: rawResId } = this.config.getRecordInfo?.() || {};
+        const linksArePublic = Boolean(this.config.publicAttachments);
+        const resId = parseInt(rawResId) || false;
+        log.logic("documentsPickerProps", () => ({ resModel, resId, linksArePublic }));
+        return {
             onAddAttachments:
-                resId && !isPublic
+                resId && !linksArePublic
                     ? (attachments) => this.insertFiles(attachments)
                     : undefined,
             attachTo: { resModel, resId },
-            linksArePublic: isPublic,
+            linksArePublic,
             onPasteLinks: (links) => this.insertLinks(links),
-        });
+        };
     }
 
     /** @param {Object[]} attachments */

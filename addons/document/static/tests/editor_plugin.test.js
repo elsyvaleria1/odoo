@@ -41,6 +41,46 @@ test("a file box inserted from Documents carries its attachment id", async () =>
 });
 
 /**
+ * @param {Object} config what the editor's host gives it
+ * @returns {Promise<Object>} the props the plugin opens the picker with
+ */
+async function pickerPropsUnder(config) {
+    const { editor } = await setupEditor("<p>[]</p>", {
+        config: { Plugins: MAIN_PLUGINS, ...config },
+    });
+    return editor.plugins
+        .find((p) => p instanceof AddDocumentsAttachmentPlugin)
+        .documentsPickerProps();
+}
+
+test("in the website builder, a record's content gets links shared by link, never a copy", async () => {
+    const props = await pickerPropsUnder({
+        publicAttachments: true,
+        getRecordInfo: () => ({ resModel: "blog.post", resId: "7" }),
+    });
+    expect(props.linksArePublic).toBe(true, {
+        message: "a copy attached to a published post is no file a visitor may read",
+    });
+    expect(props.onAddAttachments).toBe(undefined);
+});
+
+test("in a backend form, a saved record gets private copies and plain links", async () => {
+    const props = await pickerPropsUnder({
+        getRecordInfo: () => ({ resModel: "res.partner", resId: "7" }),
+    });
+    expect(props.linksArePublic).toBe(false);
+    expect(typeof props.onAddAttachments).toBe("function");
+    expect(props.attachTo).toEqual({ resModel: "res.partner", resId: 7 });
+});
+
+test("an unsaved record has nothing to attach copies to yet", async () => {
+    const props = await pickerPropsUnder({
+        getRecordInfo: () => ({ resModel: "res.partner", resId: false }),
+    });
+    expect(props.onAddAttachments).toBe(undefined);
+});
+
+/**
  * Opens the picker on three files: one shared by link, one the user may share,
  * one they may not, and pastes all three.
  *

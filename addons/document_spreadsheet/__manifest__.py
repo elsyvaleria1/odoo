@@ -40,7 +40,6 @@
             "document_spreadsheet/static/src/spreadsheet_action_loader.js",
             "document_spreadsheet/static/src/mail/**/*",
             "document_spreadsheet/static/src/views/**/*",
-            "document_spreadsheet/static/src/editor/**/*",
         ],
         "web.assets_tests": [
             "document_spreadsheet/static/tests/tours/*",
