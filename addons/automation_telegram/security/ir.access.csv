@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_automation_telegram_wait_system,automation.telegram.wait.system,model_automation_telegram_wait,base.group_system,permission,crud,
+access_automation_telegram_wait_user,automation.telegram.wait.user,model_automation_telegram_wait,base.group_user,permission,r,
+privilege_answer_question_wait,Workflow Question on Telegram: a message records the answer to the question asked in its chat,model_automation_telegram_wait,privilege_answer_question,permission,ru,"[('state', '=', 'waiting')]"
+privilege_answer_question_runtime,Automation Runtime: a message checks that the run of the question it answers still waits,automation.model_automation_runtime,privilege_answer_question,permission,r,
+privilege_answer_question_runtime_line,Automation Runtime Line: a message checks the step that asked the question it answers,automation.model_automation_runtime_line,privilege_answer_question,permission,r,
+privilege_answer_question_runtime_edge,Automation Runtime Edge: a message checks that the edge waiting for its answer is still open,automation.model_automation_runtime_edge,privilege_answer_question,permission,r,

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_answer_question" model="res.groups">
+        <field
+            name="name">Privilege: a message on Telegram answers the workflow question asked in its chat</field>
+        <field
+            name="comment">A message in a private Telegram chat is handled as its sender, who may hold no right on automations: finding the question a workflow step asked in that chat, checking that its run still waits for it, and recording the answer on it are the bot's records, never the sender's own right. The dispatcher, not the sender, hands the answer to the run.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

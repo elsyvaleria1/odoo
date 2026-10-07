@@ -1,0 +1,397 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* automation_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-07 17:39+0000\n"
+"PO-Revision-Date: 2026-10-07 17:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: automation_telegram
+#: model:res.groups,comment:automation_telegram.privilege_answer_question
+msgid ""
+"A message in a private Telegram chat is handled as its sender, who may hold "
+"no right on automations: finding the question a workflow step asked in that "
+"chat, checking that its run still waits for it, and recording the answer on "
+"it are the bot's records, never the sender's own right. The dispatcher, not "
+"the sender, hands the answer to the run."
+msgstr ""
+"Un mensaje en un chat privado de Telegram se procesa como su remitente, que "
+"puede no tener ningún derecho sobre las automatizaciones: encontrar la "
+"pregunta que un paso de flujo hizo en ese chat, comprobar que su ejecución "
+"todavía la espera y registrar en ella la respuesta son registros del bot, "
+"nunca un derecho propio del remitente. Es el despachador, no el remitente, "
+"quien entrega la respuesta a la ejecución."
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_telegram_wait.py:0
+msgid ""
+"A question on Telegram is answered by %(known)s; %(given)s is not one of "
+"them."
+msgstr ""
+"Una pregunta en Telegram se responde con %(known)s; %(given)s no es ninguno "
+"de ellos."
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__accepted_kinds
+msgid "Accepted Kinds"
+msgstr "Tipos aceptados"
+
+#. module: automation_telegram
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_form
+msgid "Answer"
+msgstr "Respuesta"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__reply_msg_uid
+msgid "Answer Message ID"
+msgstr "ID del mensaje de respuesta"
+
+#. module: automation_telegram
+#: model:ir.model.fields.selection,name:automation_telegram.selection__automation_telegram_wait__state__received
+msgid "Answered"
+msgstr "Respondida"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_telegram_wait.py:0
+msgid "Answered on Telegram (%s)"
+msgstr "Respondida en Telegram (%s)"
+
+#. module: automation_telegram
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_list
+msgid "Asked"
+msgstr "Preguntada"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+msgid "Asked on Telegram; waiting for %s"
+msgstr "Preguntado en Telegram; esperando %s"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__line_id
+msgid "Asking Step"
+msgstr "Paso que pregunta"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__attempts
+msgid "Attempts"
+msgstr "Intentos"
+
+#. module: automation_telegram
+#: model:ir.model,name:automation_telegram.model_automation_runtime_line
+msgid "Automation Runtime Action Line"
+msgstr "Línea de acción de ejecución de automatización"
+
+#. module: automation_telegram
+#: model:ir.actions.server,name:automation_telegram.ir_cron_deliver_answers_ir_actions_server
+msgid "Automation: deliver answers given on Telegram"
+msgstr "Automatización: entregar las respuestas dadas en Telegram"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__bot_id
+msgid "Bot"
+msgstr "Bot"
+
+#. module: automation_telegram
+#: model:ir.model.fields.selection,name:automation_telegram.selection__automation_telegram_wait__state__cancelled
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__chat_id
+msgid "Chat"
+msgstr "Chat"
+
+#. module: automation_telegram
+#: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__accepted_kinds
+msgid ""
+"Comma-separated kinds of message that answer: text, photo, document, voice, "
+"contact, location."
+msgstr ""
+"Tipos de mensaje que responden, separados por comas: text, photo, document, "
+"voice, contact, location."
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__date_delivered
+msgid "Date Delivered"
+msgstr "Fecha de entrega"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__date_received
+msgid "Date Received"
+msgstr "Fecha de recepción"
+
+#. module: automation_telegram
+#: model:ir.model.fields.selection,name:automation_telegram.selection__automation_telegram_wait__state__delivered
+msgid "Delivered"
+msgstr "Entregada"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_runtime_line__display_name
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__display_name
+#: model:ir.model.fields,field_description:automation_telegram.field_telegram_handler_automation__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__error_message
+msgid "Error Message"
+msgstr "Mensaje de error"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__event_code
+msgid "Event"
+msgstr "Evento"
+
+#. module: automation_telegram
+#: model:ir.model.fields.selection,name:automation_telegram.selection__automation_telegram_wait__state__error
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_search
+msgid "Failed"
+msgstr "Fallida"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__attachment_ids
+msgid "Files"
+msgstr "Archivos"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_runtime_line__id
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__id
+#: model:ir.model.fields,field_description:automation_telegram.field_telegram_handler_automation__id
+msgid "ID"
+msgstr "ID"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+msgid "Only a step while it runs can ask on Telegram."
+msgstr "Solo un paso mientras se ejecuta puede preguntar en Telegram."
+
+#. module: automation_telegram
+#: model:res.groups,name:automation_telegram.privilege_answer_question
+msgid ""
+"Privilege: a message on Telegram answers the workflow question asked in its "
+"chat"
+msgstr ""
+"Privilegio: un mensaje en Telegram responde la pregunta del flujo hecha en "
+"su chat"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__prompt_message_id
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_form
+msgid "Question"
+msgstr "Pregunta"
+
+#. module: automation_telegram
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_form
+msgid "Question on Telegram"
+msgstr "Pregunta en Telegram"
+
+#. module: automation_telegram
+#: model:ir.actions.act_window,name:automation_telegram.automation_telegram_wait_action
+#: model:ir.ui.menu,name:automation_telegram.automation_telegram_wait_menu
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_list
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_search
+msgid "Questions on Telegram"
+msgstr "Preguntas en Telegram"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__reply_kind
+msgid "Reply Kind"
+msgstr "Tipo de respuesta"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__reply_payload
+msgid "Reply Payload"
+msgstr "Contenido de la respuesta"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__reply_text
+msgid "Reply Text"
+msgstr "Texto de la respuesta"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__state
+msgid "State"
+msgstr "Estado"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+msgid ""
+"Step %(step)s asks in %(chat)s, which is not a private chat: in a group "
+"anyone could answer."
+msgstr ""
+"El paso %(step)s pregunta en %(chat)s, que no es un chat privado: en un "
+"grupo cualquiera podría responder."
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+msgid ""
+"Step %(step)s asks on Telegram for event %(event)s, but no edge leaving it "
+"waits for that event: the answer would lead nowhere. Add an On Event edge "
+"named %(event)s."
+msgstr ""
+"El paso %(step)s pregunta en Telegram por el evento %(event)s, pero ninguna "
+"arista que sale de él espera ese evento: la respuesta no llevaría a ningún "
+"lado. Agrega una arista «Con evento» llamada %(event)s."
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+msgid ""
+"Step %(step)s waits for %(given)s; an answer on Telegram is one of "
+"%(known)s."
+msgstr ""
+"El paso %(step)s espera %(given)s; una respuesta en Telegram es uno de "
+"%(known)s."
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_telegram_wait.py:0
+msgid "Telegram did not hand over the file %s."
+msgstr "Telegram no entregó el archivo %s."
+
+#. module: automation_telegram
+#: model:ir.model,name:automation_telegram.model_telegram_handler_automation
+msgid "Telegram: Workflow Questions"
+msgstr "Telegram: preguntas de flujos"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_telegram_wait.py:0
+msgid ""
+"The answer to step %(step)s on Telegram could not be fetched: %(error)s"
+msgstr ""
+"No se pudo obtener la respuesta en Telegram al paso %(step)s: %(error)s"
+
+#. module: automation_telegram
+#: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__event_code
+msgid ""
+"The event the answer delivers to the asking step: its On Event edge runs, "
+"its Without Event edge for the same event does not."
+msgstr ""
+"El evento que la respuesta entrega al paso que pregunta: su arista «Con "
+"evento» avanza, y su arista «Sin evento» para el mismo evento no."
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "To answer this, please send %(expected)s."
+msgstr "Para responder esto, por favor envía %(expected)s."
+
+#. module: automation_telegram
+#: model:ir.model.fields.selection,name:automation_telegram.selection__automation_telegram_wait__state__waiting
+#: model_terms:ir.ui.view,arch_db:automation_telegram.automation_telegram_wait_view_search
+msgid "Waiting"
+msgstr "Esperando"
+
+#. module: automation_telegram
+#: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__state
+msgid ""
+"Waiting: no answer yet.\n"
+"Answered: the answer arrived; the dispatcher has yet to hand it on.\n"
+"Delivered: the asking step received its event.\n"
+"Cancelled: the run ended before an answer came.\n"
+"Failed: the answer's files could not be fetched from Telegram."
+msgstr ""
+"Esperando: aún sin respuesta.\n"
+"Respondida: llegó la respuesta; falta que el despachador la entregue.\n"
+"Entregada: el paso que pregunta recibió su evento.\n"
+"Cancelada: la ejecución terminó antes de que llegara una respuesta.\n"
+"Fallida: no se pudieron obtener de Telegram los archivos de la respuesta."
+
+#. module: automation_telegram
+#: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__reply_payload
+msgid ""
+"What of the answer the dispatcher still needs: its files' Telegram ids, a "
+"contact or a location."
+msgstr ""
+"Lo que el despachador aún necesita de la respuesta: los IDs de Telegram de "
+"sus archivos, un contacto o una ubicación."
+
+#. module: automation_telegram
+#: model:ir.model,name:automation_telegram.model_automation_telegram_wait
+msgid "Workflow Question on Telegram"
+msgstr "Pregunta de flujo en Telegram"
+
+#. module: automation_telegram
+#: model:ir.model.fields,field_description:automation_telegram.field_automation_telegram_wait__runtime_id
+msgid "Workflow Runtime"
+msgstr "Ejecución de flujo"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a contact"
+msgstr "un contacto"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a file"
+msgstr "un archivo"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a location"
+msgstr "una ubicación"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a photo"
+msgstr "una foto"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a text message"
+msgstr "un mensaje de texto"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/telegram_handler_automation.py:0
+msgid "a voice note"
+msgstr "una nota de voz"
+
+#. module: automation_telegram
+#. odoo-python
+#: code:addons/automation_telegram/models/automation_runtime_line.py:0
+#: code:addons/automation_telegram/models/automation_telegram_wait.py:0
+msgid "nothing"
+msgstr "nada"
