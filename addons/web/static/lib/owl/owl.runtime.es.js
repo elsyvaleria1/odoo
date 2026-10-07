@@ -43,9 +43,10 @@ var DEBUG_CHANNELS = [
   "template",
   "event"
 ];
-var debug = Object.seal(
-  Object.fromEntries(DEBUG_CHANNELS.map((channel) => [channel, false]))
-);
+var debug = /* @__PURE__ */ makeDebugFlags();
+function makeDebugFlags() {
+  return Object.seal(Object.fromEntries(DEBUG_CHANNELS.map((channel) => [channel, false])));
+}
 var consoleSink = (channel, message, details) => {
   console.debug(`[owl:${channel}] ${message}`, ...details);
 };
@@ -1031,14 +1032,17 @@ function reactiveValue(value, shallow) {
 var skipped = /* @__PURE__ */ new WeakSet();
 var rawPrototypes = /* @__PURE__ */ new WeakSet();
 var hasRawPrototypes = false;
-var builtinPrototypes = /* @__PURE__ */ new Set([
-  Object.prototype,
-  Array.prototype,
-  Map.prototype,
-  Set.prototype,
-  WeakMap.prototype,
-  Function.prototype
-]);
+var builtinPrototypes = /* @__PURE__ */ builtinPrototypeSet();
+function builtinPrototypeSet() {
+  return /* @__PURE__ */ new Set([
+    Object.prototype,
+    Array.prototype,
+    Map.prototype,
+    Set.prototype,
+    WeakMap.prototype,
+    Function.prototype
+  ]);
+}
 function markRaw(value) {
   const raw = toRaw(value);
   if (builtinPrototypes.has(raw)) {
@@ -1447,53 +1451,57 @@ function readArrayItems(array) {
   }
   return items;
 }
-var replacedMethods = /* @__PURE__ */ new Map();
-for (const name of ["copyWithin", "fill", "reverse", "sort"]) {
-  const method = Array.prototype[name];
-  replacedMethods.set(method, function(...args) {
-    return batch(() => method.apply(this, args));
-  });
-}
-for (const name of ["pop", "push", "shift", "splice", "unshift"]) {
-  const method = Array.prototype[name];
-  replacedMethods.set(method, function(...args) {
-    return batch(() => untrack(() => method.apply(this, args)));
-  });
-}
 var viewReaders = /* @__PURE__ */ new Set();
-for (const name of ["includes", "indexOf", "lastIndexOf"]) {
-  const method = Array.prototype[name];
-  const search = function(...args) {
+var replacedMethods = /* @__PURE__ */ replaceMethods();
+function replaceMethods() {
+  const replaced = /* @__PURE__ */ new Map();
+  for (const name of ["copyWithin", "fill", "reverse", "sort"]) {
+    const method = Array.prototype[name];
+    replaced.set(method, function(...args) {
+      return batch(() => method.apply(this, args));
+    });
+  }
+  for (const name of ["pop", "push", "shift", "splice", "unshift"]) {
+    const method = Array.prototype[name];
+    replaced.set(method, function(...args) {
+      return batch(() => untrack(() => method.apply(this, args)));
+    });
+  }
+  for (const name of ["includes", "indexOf", "lastIndexOf"]) {
+    const method = Array.prototype[name];
+    const search = function(...args) {
+      const raw = toRaw(this);
+      const plain = isPlainArray(raw);
+      if (plain) {
+        onReadTargetKey(raw, ITEMS);
+      }
+      const result = method.apply(plain ? raw : this, args);
+      const item = args[0];
+      if (result !== -1 && result !== false) {
+        return result;
+      }
+      if (plain && (typeof item !== "object" || item === null || toRaw(item) === item)) {
+        return result;
+      }
+      args[0] = toRaw(item);
+      return method.apply(raw, args);
+    };
+    replaced.set(method, search);
+    viewReaders.add(search);
+  }
+  const hasOwnPropertyReader = function(key) {
     const raw = toRaw(this);
-    const plain = isPlainArray(raw);
-    if (plain) {
-      onReadTargetKey(raw, ITEMS);
-    }
-    const result = method.apply(plain ? raw : this, args);
-    const item = args[0];
-    if (result !== -1 && result !== false) {
-      return result;
-    }
-    if (plain && (typeof item !== "object" || item === null || toRaw(item) === item)) {
-      return result;
-    }
-    args[0] = toRaw(item);
-    return method.apply(raw, args);
+    onReadTargetKey(
+      collectionMethods(raw) ? propertyHost(raw) : raw,
+      typeof key === "symbol" ? key : String(key),
+      presenceAtoms
+    );
+    return objectHasOwnProperty.call(raw, key);
   };
-  replacedMethods.set(method, search);
-  viewReaders.add(search);
+  replaced.set(objectHasOwnProperty, hasOwnPropertyReader);
+  viewReaders.add(hasOwnPropertyReader);
+  return replaced;
 }
-var hasOwnPropertyReader = function(key) {
-  const raw = toRaw(this);
-  onReadTargetKey(
-    collectionMethods(raw) ? propertyHost(raw) : raw,
-    typeof key === "symbol" ? key : String(key),
-    presenceAtoms
-  );
-  return objectHasOwnProperty.call(raw, key);
-};
-replacedMethods.set(objectHasOwnProperty, hasOwnPropertyReader);
-viewReaders.add(hasOwnPropertyReader);
 var propertyHosts = /* @__PURE__ */ new WeakMap();
 function propertyHost(target) {
   let host = propertyHosts.get(target);
@@ -1655,9 +1663,18 @@ var setOperations = [
   "isSupersetOf",
   "symmetricDifference",
   "union"
-].filter((name) => name in Set.prototype);
-var mapMethods = /* @__PURE__ */ new Set([...setLikeMethods, ...weakMapMethods]);
-var setMethods = /* @__PURE__ */ new Set([...setLikeMethods, "add", ...setOperations]);
+];
+var mapMethods = /* @__PURE__ */ unionOf(setLikeMethods, weakMapMethods);
+var setMethods = /* @__PURE__ */ unionOf(setLikeMethods, ["add"], setOperations);
+function unionOf(...lists) {
+  const union2 = /* @__PURE__ */ new Set();
+  for (const list2 of lists) {
+    for (const item of list2) {
+      union2.add(item);
+    }
+  }
+  return union2;
+}
 function collectionMethods(target) {
   return target instanceof Map ? mapMethods : target instanceof Set ? setMethods : target instanceof WeakMap ? weakMapMethods : null;
 }
@@ -1739,15 +1756,17 @@ function signalMap(initialValue = /* @__PURE__ */ new Map(), options = {}) {
 function signalSet(initialValue = /* @__PURE__ */ new Set(), options = {}) {
   return buildSignal(initialValue, shallowProxy, options.equals);
 }
-function signal(value, options = {}) {
+function plainSignal(value, options = {}) {
   return buildSignal(value, identity, options.equals);
 }
-signal.trigger = triggerSignal;
-signal.ref = signalRef;
-signal.Array = signalArray;
-signal.Map = signalMap;
-signal.Object = signalObject;
-signal.Set = signalSet;
+var signal = /* @__PURE__ */ Object.assign(plainSignal, {
+  trigger: triggerSignal,
+  ref: signalRef,
+  Array: signalArray,
+  Map: signalMap,
+  Object: signalObject,
+  Set: signalSet
+});
 
 // ../owl-core/src/computed.ts
 function readonlySetter() {
@@ -2127,8 +2146,7 @@ function asyncComputed(fetcher, options = {}) {
       return Promise.resolve();
     }
     if (!pending) {
-      let resolve;
-      pending = { promise: new Promise((res) => resolve = res), resolve };
+      pending = Promise.withResolvers();
       if (!inFlight) {
         Promise.resolve().then(() => {
           if (!inFlight) {
@@ -3284,96 +3302,48 @@ function status(entity) {
   }
 }
 
-// ../owl-runtime/src/rendering/error_handling.ts
-var fibersInError = /* @__PURE__ */ new WeakMap();
-var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
-var handledBy = null;
-function invokeErrorHandlers(node, error, finalize) {
-  while (node) {
-    const handlers = nodeErrorHandlers.get(node);
-    if (handlers) {
-      for (let i = handlers.length - 1; i >= 0; i--) {
-        try {
-          handlers[i](error, finalize);
-          handledBy ||= node;
-          return { handled: true, error };
-        } catch (e) {
-          error = e;
-        }
+// ../owl-runtime/src/event_handling.ts
+var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
+  setCurrentEvent(ev);
+  if (modifiers) {
+    if (modifiers & EventModifier.PREVENT_ANY) {
+      ev.preventDefault();
+    }
+    if (modifiers & EventModifier.STOP_ANY) {
+      ev.stopPropagation();
+    }
+    if (modifiers & EventModifier.SELF && ev.target !== currentTarget) {
+      if (debug.event) {
+        debugLog("event", `${ev.type}: skipped by .self`);
       }
+      return;
     }
-    node = node.parent;
-  }
-  return { handled: false, error };
-}
-function forwardErrorToParent(boundary) {
-  return (error, finalize) => {
-    if (boundary.app.destroyed) {
-      throw error;
+    if (modifiers & EventModifier.PREVENT) {
+      ev.preventDefault();
     }
-    const result = invokeErrorHandlers(boundary, error, finalize);
-    if (!result.handled) {
-      throw result.error;
+    if (modifiers & EventModifier.STOP) {
+      ev.stopPropagation();
     }
-  };
-}
-function handleError(params) {
-  const { error } = params;
-  const node = "node" in params ? params.node : params.fiber.node;
-  const fiber = "fiber" in params ? params.fiber : node.fiber;
-  const app = node.app;
-  if (app.destroyed) {
-    throw error;
   }
-  if (fiber) {
-    let current = fiber;
-    do {
-      if (current.node.fiber === null) {
-        current.node.fiber = current;
-      }
-      fibersInError.set(current, error);
-      current = current.parent;
-    } while (current);
-    const root = fiber.root;
-    fibersInError.set(root, error);
-    (root.failed ||= /* @__PURE__ */ new Set()).add(fiber);
-  }
-  const finalize = () => {
-    try {
-      app.destroy();
-    } catch {
-    }
-  };
-  handledBy = null;
-  const result = invokeErrorHandlers(node, error, finalize);
-  if (debug.error) {
-    debugLog(
-      "error",
-      result.handled && !app.destroyed ? `${node.componentName}: error handled by ${handledBy === node ? "its own" : `${handledBy.componentName}'s`} onError` : `${node.componentName}: error not handled, the app is destroyed`,
-      error
-    );
-  }
-  if (!result.handled) {
-    finalize();
-    app._handleError(result.error);
-  }
-  if (fiber && fiber.root.counter !== 0) {
-    fiber.root.node.app.scheduler.requestFrame();
-  }
-}
-function handleHookRejection(node, fiber, error) {
-  if (node.fiber !== fiber) {
-    if (debug.error) {
+  if (handler !== null) {
+    let node = context ? context.__owl__ : null;
+    const live = node ? node.status === STATUS.MOUNTED : true;
+    if (debug.event) {
       debugLog(
-        "error",
-        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} dropped, ${node.status === STATUS.DESTROYED ? "destroyed" : "superseded"}`,
-        error
+        "event",
+        `${ev.type} on ${currentTarget?.nodeName ?? "?"}: ${live ? "handled" : "dropped, component not mounted"} by ${node ? node.componentName : "a handler"}`,
+        ev
       );
     }
-    return;
+    if (live) {
+      if (model !== void 0) {
+        handler(context, ev, model);
+      } else {
+        handler(context, ev);
+      }
+    }
   }
-  handleError({ node, error });
-}
+};
 
 // ../owl-runtime/src/blockdom/config.ts
 var config2 = {
@@ -3382,43 +3352,34 @@ var config2 = {
   // given to the block when it is built), the context the latest render gave it,
   // the event, the element listening and, for a handler with one, the extra
   // argument the latest render gave it
-  mainEventHandler: (fn, mods, ctx, ev, currentTarget, arg) => {
-    if (fn) {
-      if (arg === void 0) {
-        fn(ctx, ev);
-      } else {
-        fn(ctx, ev, arg);
-      }
-    }
-  }
+  mainEventHandler
 };
 
 // ../owl-runtime/src/blockdom/dom.ts
-var nodeCloneNode;
-var nodeInsertBefore;
-var nodeAppendChild;
-var nodeRemoveChild;
-var characterDataRemove;
-var nodeSetTextContent;
-var characterDataSetData;
-var nodeGetFirstChild;
-var nodeGetNextSibling;
-if (typeof Node !== "undefined") {
-  const nodeProto = Node.prototype;
-  const getDescriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
-  nodeCloneNode = nodeProto.cloneNode;
-  nodeInsertBefore = nodeProto.insertBefore;
-  nodeAppendChild = nodeProto.appendChild;
-  nodeRemoveChild = nodeProto.removeChild;
-  characterDataRemove = CharacterData.prototype.remove;
-  nodeSetTextContent = getDescriptor(nodeProto, "textContent").set;
-  characterDataSetData = getDescriptor(CharacterData.prototype, "data").set;
-  nodeGetFirstChild = getDescriptor(nodeProto, "firstChild").get;
-  nodeGetNextSibling = getDescriptor(nodeProto, "nextSibling").get;
+function fromDom(read) {
+  return typeof Node === "undefined" ? void 0 : read();
 }
+var descriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
+var nodeCloneNode = /* @__PURE__ */ fromDom(() => Node.prototype.cloneNode);
+var nodeInsertBefore = /* @__PURE__ */ fromDom(() => Node.prototype.insertBefore);
+var nodeAppendChild = /* @__PURE__ */ fromDom(() => Node.prototype.appendChild);
+var nodeRemoveChild = /* @__PURE__ */ fromDom(() => Node.prototype.removeChild);
+var characterDataRemove = /* @__PURE__ */ fromDom(() => CharacterData.prototype.remove);
+var nodeSetTextContent = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "textContent").set
+);
+var characterDataSetData = /* @__PURE__ */ fromDom(
+  () => descriptor(CharacterData.prototype, "data").set
+);
+var nodeGetFirstChild = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "firstChild").get
+);
+var nodeGetNextSibling = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "nextSibling").get
+);
 
 // ../owl-runtime/src/blockdom/toggler.ts
-var txt = globalThis.document?.createTextNode("");
+var txt = /* @__PURE__ */ globalThis.document?.createTextNode("");
 var VToggler = class {
   // not `key`: a toggler in a keyed list gets its list key written there
   kind;
@@ -3476,18 +3437,11 @@ function toggler(kind, child) {
 }
 
 // ../owl-runtime/src/blockdom/attributes.ts
-var elemSetAttribute;
-var removeAttribute;
-var tokenListAdd;
-var tokenListRemove;
-if (typeof Element !== "undefined") {
-  ({ setAttribute: elemSetAttribute, removeAttribute } = Element.prototype);
-  const tokenList = DOMTokenList.prototype;
-  tokenListAdd = tokenList.add;
-  tokenListRemove = tokenList.remove;
-}
+var elemSetAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.setAttribute);
+var removeAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.removeAttribute);
+var tokenListAdd = /* @__PURE__ */ fromDom(() => DOMTokenList.prototype.add);
+var tokenListRemove = /* @__PURE__ */ fromDom(() => DOMTokenList.prototype.remove);
 var isArray = Array.isArray;
-var { split, trim } = String.prototype;
 var wordRegexp = /\s+/;
 function setAttribute(key, value) {
   switch (value) {
@@ -3508,7 +3462,7 @@ function createAttrUpdater(attr) {
     setAttribute.call(this, attr, value);
   };
 }
-var NO_ATTRS = Object.freeze({});
+var NO_ATTRS = /* @__PURE__ */ Object.freeze({});
 function toAttrs(attrs) {
   if (!attrs) {
     return NO_ATTRS;
@@ -3523,7 +3477,7 @@ function toAttrs(attrs) {
   }
   return attrs;
 }
-function makeAttrsUpdaters(updateClassFn, updateStyleFn) {
+function makeAttrsUpdater(updateClassFn, updateStyleFn) {
   function updateAttr(el, name, val, oldVal) {
     if (name === "class") {
       updateClassFn.call(el, val, oldVal);
@@ -3548,12 +3502,15 @@ function makeAttrsUpdaters(updateClassFn, updateStyleFn) {
       }
     }
   }
-  function attrsSetter2(attrs) {
-    attrsUpdater2.call(this, attrs, NO_ATTRS);
-  }
-  return { attrsSetter: attrsSetter2, attrsUpdater: attrsUpdater2 };
+  return attrsUpdater2;
 }
-var { attrsSetter, attrsUpdater } = makeAttrsUpdaters(updateClass, updateStyle);
+function makeAttrsSetter(attrsUpdater2) {
+  return function attrsSetter2(attrs) {
+    attrsUpdater2.call(this, attrs, NO_ATTRS);
+  };
+}
+var attrsUpdater = /* @__PURE__ */ makeAttrsUpdater(updateClass, updateStyle);
+var attrsSetter = /* @__PURE__ */ makeAttrsSetter(attrsUpdater);
 function toClassObj(expr) {
   const result = {};
   addClasses(result, expr);
@@ -3588,9 +3545,9 @@ function addClasses(result, expr) {
   }
 }
 function addWords(result, str, value) {
-  str = trim.call(str);
+  str = str.trim();
   if (str) {
-    const words = split.call(str, wordRegexp);
+    const words = str.split(wordRegexp);
     for (let i = 0, l = words.length; i < l; i++) {
       result[words[i]] = value;
     }
@@ -3649,7 +3606,7 @@ function toStyleObj(expr) {
           }
           i++;
         }
-        const part = trim.call(str.slice(start, i));
+        const part = str.slice(start, i).trim();
         i++;
         if (!part) {
           continue;
@@ -3658,8 +3615,8 @@ function toStyleObj(expr) {
         if (colonIdx === -1) {
           continue;
         }
-        const prop = trim.call(part.slice(0, colonIdx));
-        const value = trim.call(part.slice(colonIdx + 1));
+        const prop = part.slice(0, colonIdx).trim();
+        const value = part.slice(colonIdx + 1).trim();
         if (prop && value && value !== "undefined") {
           result[prop] = value;
         }
@@ -4515,12 +4472,12 @@ function updateCtx(ctx, tree) {
       }
       case "attributes": {
         const { sharedClass, sharedStyle } = info;
-        const shared = (sharedClass || sharedStyle) && makeAttrsUpdaters(sharedClass || updateClass, sharedStyle || updateStyle);
+        const shared = (sharedClass || sharedStyle) && makeAttrsUpdater(sharedClass || updateClass, sharedStyle || updateStyle);
         ctx.locations.push({
           idx: info.idx,
           refIdx: info.refIdx,
-          setData: shared ? shared.attrsSetter : attrsSetter,
-          updateData: shared ? shared.attrsUpdater : attrsUpdater
+          setData: shared ? makeAttrsSetter(shared) : attrsSetter,
+          updateData: shared || attrsUpdater
         });
         break;
       }
@@ -5282,6 +5239,97 @@ function remove(vnode, withBeforeRemove = false) {
   vnode.remove();
 }
 
+// ../owl-runtime/src/rendering/error_handling.ts
+var fibersInError = /* @__PURE__ */ new WeakMap();
+var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
+var handledBy = null;
+function invokeErrorHandlers(node, error, finalize) {
+  while (node) {
+    const handlers = nodeErrorHandlers.get(node);
+    if (handlers) {
+      for (let i = handlers.length - 1; i >= 0; i--) {
+        try {
+          handlers[i](error, finalize);
+          handledBy ||= node;
+          return { handled: true, error };
+        } catch (e) {
+          error = e;
+        }
+      }
+    }
+    node = node.parent;
+  }
+  return { handled: false, error };
+}
+function forwardErrorToParent(boundary) {
+  return (error, finalize) => {
+    if (boundary.app.destroyed) {
+      throw error;
+    }
+    const result = invokeErrorHandlers(boundary, error, finalize);
+    if (!result.handled) {
+      throw result.error;
+    }
+  };
+}
+function handleError(params) {
+  const { error } = params;
+  const node = "node" in params ? params.node : params.fiber.node;
+  const fiber = "fiber" in params ? params.fiber : node.fiber;
+  const app = node.app;
+  if (app.destroyed) {
+    throw error;
+  }
+  if (fiber) {
+    let current = fiber;
+    do {
+      if (current.node.fiber === null) {
+        current.node.fiber = current;
+      }
+      fibersInError.set(current, error);
+      current = current.parent;
+    } while (current);
+    const root = fiber.root;
+    fibersInError.set(root, error);
+    (root.failed ||= /* @__PURE__ */ new Set()).add(fiber);
+  }
+  const finalize = () => {
+    try {
+      app.destroy();
+    } catch {
+    }
+  };
+  handledBy = null;
+  const result = invokeErrorHandlers(node, error, finalize);
+  if (debug.error) {
+    debugLog(
+      "error",
+      result.handled && !app.destroyed ? `${node.componentName}: error handled by ${handledBy === node ? "its own" : `${handledBy.componentName}'s`} onError` : `${node.componentName}: error not handled, the app is destroyed`,
+      error
+    );
+  }
+  if (!result.handled) {
+    finalize();
+    app._handleError(result.error);
+  }
+  if (fiber && fiber.root.counter !== 0) {
+    fiber.root.node.app.scheduler.requestFrame();
+  }
+}
+function handleHookRejection(node, fiber, error) {
+  if (node.fiber !== fiber) {
+    if (debug.error) {
+      debugLog(
+        "error",
+        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} dropped, ${node.status === STATUS.DESTROYED ? "destroyed" : "superseded"}`,
+        error
+      );
+    }
+    return;
+  }
+  handleError({ node, error });
+}
+
 // ../owl-runtime/src/rendering/memo.ts
 var collected = null;
 function memoPrevious(node, site) {
@@ -5370,13 +5418,11 @@ function memoResume(outer) {
 }
 
 // ../owl-runtime/src/rendering/scheduler.ts
-var requestAnimationFrame;
-if (typeof window !== "undefined") {
-  requestAnimationFrame = window.requestAnimationFrame.bind(window);
+function captureAnimationFrame() {
+  return typeof window === "undefined" ? void 0 : window.requestAnimationFrame.bind(window);
 }
+var requestAnimationFrame = /* @__PURE__ */ captureAnimationFrame();
 var Scheduler = class _Scheduler {
-  // capture the value of requestAnimationFrame as soon as possible, to avoid
-  // interactions with other code, such as test frameworks that override them
   static requestAnimationFrame = requestAnimationFrame;
   // the schedulers that may hold a task: a node's ancestor may belong to
   // another app, whose render then delays it
@@ -5921,7 +5967,7 @@ var MountFiber = class extends RootFiber2 {
 };
 
 // ../owl-runtime/src/component_node.ts
-var NO_HOOKS = Object.freeze([]);
+var NO_HOOKS = /* @__PURE__ */ Object.freeze([]);
 var ComponentNode = class extends Scope {
   fiber = null;
   component;
@@ -6421,7 +6467,7 @@ function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent, owner)
   return slotBDom || text("");
 }
 var MARK = "";
-var MARK2 = MARK + MARK;
+var MARK2 = "";
 function escapeKey(value) {
   const name = String(value);
   return name.includes(MARK) ? name.replaceAll(MARK, MARK2) : name;
@@ -6945,12 +6991,18 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "33bb67f1";
+var buildHash = "5900e2f4";
+var build = /* @__PURE__ */ buildName(version, buildHash);
+function buildName(version2, hash) {
+  return `${version2}+${hash}`;
+}
+
+// ../owl-runtime/src/bundled_compiler.ts
+var bundledCompiler = null;
 
 // ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
 var COMPILER_KEY = /* @__PURE__ */ Symbol.for("@odoo/owl/compiler");
-var BUILD = `${version}+${buildHash}`;
 var ownCompiler;
 function registeredBuilds() {
   return Object.keys(globalThis[COMPILER_KEY] || {});
@@ -6958,31 +7010,38 @@ function registeredBuilds() {
 function checkBuild(compiler) {
   if (compiler.version === void 0 || compiler.hash === void 0) {
     throw new OwlError(
-      `The template compiler does not name its build, as the compiler module of an owl older than this runtime (${BUILD}) does: load the owl.compiler.es.js built with this runtime`
+      `The template compiler does not name its build, as the compiler module of an owl older than this runtime (${build}) does: load the owl.compiler.es.js built with this runtime`
     );
   }
-  const build = `${compiler.version}+${compiler.hash}`;
-  if (build !== BUILD) {
+  const build2 = `${compiler.version}+${compiler.hash}`;
+  if (build2 !== build) {
     throw new OwlError(
-      `The template compiler is build ${build}, but the runtime is ${BUILD}: load the owl.compiler.es.js built with this runtime`
+      `The template compiler is build ${build2}, but the runtime is ${build}: load the owl.compiler.es.js built with this runtime`
     );
   }
 }
 var TemplateSet = class _TemplateSet {
   /**
-   * The compiler: the one the full build sets, else the compiler module of
-   * this runtime's build once it is registered. Setting a compiler checks
-   * that it is of this build; null leaves the runtime without one, undefined
-   * takes the registered one again.
+   * The compiler: the full build's own, else the compiler module of this
+   * runtime's build once it is registered. Setting a compiler checks that it
+   * is of this build; null leaves the runtime without one, undefined takes
+   * the build's own or the registered one again.
    */
   static get compiler() {
     if (ownCompiler === void 0) {
-      const registered = globalThis[COMPILER_KEY]?.[BUILD];
+      if (bundledCompiler) {
+        if (debug.template) {
+          debugLog("template", `bundled compiler ${build} installed`);
+        }
+        ownCompiler = bundledCompiler;
+        return ownCompiler;
+      }
+      const registered = globalThis[COMPILER_KEY]?.[build];
       if (!registered) {
         return null;
       }
       if (debug.template) {
-        debugLog("template", `compiler module ${BUILD} installed`);
+        debugLog("template", `compiler module ${build} installed`);
       }
       ownCompiler = registered;
     }
@@ -7120,7 +7179,7 @@ function missingCompiler() {
     return ` (TemplateSet.compiler was set to null)`;
   }
   const builds = registeredBuilds();
-  return builds.length ? ` (the runtime is ${BUILD}; the compiler modules loaded are ${builds.join(", ")})` : "";
+  return builds.length ? ` (the runtime is ${build}; the compiler modules loaded are ${builds.join(", ")})` : "";
 }
 function asOwnError(error, compiler) {
   const ForeignError = compiler.OwlError;
@@ -7132,13 +7191,30 @@ function asOwnError(error, compiler) {
   return ownError;
 }
 var globalTemplates = /* @__PURE__ */ Object.create(null);
-function xml(...args) {
-  const name = `__template__${xml.nextId++}`;
-  const value = String.raw(...args);
-  globalTemplates[name] = value;
-  return name;
+var xml = /* @__PURE__ */ Object.assign(
+  function(...args) {
+    const name = `__template__${xml.nextId++}`;
+    const value = String.raw(...args);
+    globalTemplates[name] = value;
+    return name;
+  },
+  { nextId: 1 }
+);
+function ownTemplate(C, name) {
+  return {
+    xml(...args) {
+      const templateName = `__owl__${name}`;
+      globalTemplates[templateName] = String.raw(...args);
+      Object.defineProperty(C, "template", {
+        value: templateName,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      return templateName;
+    }
+  };
 }
-xml.nextId = 1;
 function areTemplatesEqual(t1, t2) {
   if (t1 === t2) {
     return true;
@@ -7154,8 +7230,13 @@ function areTemplatesEqual(t1, t2) {
 // ../owl-runtime/src/app.ts
 var hasBeenLogged = false;
 var apps = /* @__PURE__ */ new Set();
-if (typeof window !== "undefined") {
-  window.__OWL_DEVTOOLS__ ||= { apps, Fiber: Fiber2, RootFiber: RootFiber2, toRaw, proxy };
+function exposeToDevtools() {
+  if (typeof window !== "undefined" && !window.__OWL_DEVTOOLS__) {
+    window.__OWL_DEVTOOLS__ = { apps, Fiber: Fiber2, RootFiber: RootFiber2, toRaw, proxy };
+    if (debug.lifecycle) {
+      debugLog("lifecycle", "window.__OWL_DEVTOOLS__ set");
+    }
+  }
 }
 var App = class _App extends TemplateSet {
   static validateTarget = validateTarget;
@@ -7169,6 +7250,9 @@ var App = class _App extends TemplateSet {
   constructor(config3 = {}) {
     super(config3.test ? { ...config3, dev: true } : config3);
     this.name = config3.name || "";
+    if (!apps.size) {
+      exposeToDevtools();
+    }
     apps.add(this);
     this.pluginManager = new PluginManager(this, { config: config3.config });
     if (config3.plugins) {
@@ -7189,12 +7273,7 @@ var App = class _App extends TemplateSet {
       debugLog("lifecycle", `create root ${Root.name}${this.name ? ` in app ${this.name}` : ""}`);
     }
     const props2 = config3.props || {};
-    let resolve;
-    let reject;
-    const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
+    const { promise, resolve, reject } = Promise.withResolvers();
     let node;
     let error = null;
     const subConfig = config3;
@@ -7204,20 +7283,11 @@ var App = class _App extends TemplateSet {
         node.pluginManager = subConfig.pluginManager;
       }
       if (subConfig.onError) {
-        const handlers = nodeErrorHandlers.get(node);
-        if (handlers) {
-          handlers.unshift(subConfig.onError);
-        } else {
-          nodeErrorHandlers.set(node, [subConfig.onError]);
-        }
+        nodeErrorHandlers.getOrInsertComputed(node, () => []).unshift(subConfig.onError);
       }
       if (subConfig.host) {
         subRootHosts.set(node, subConfig.host);
-        let subRoots = hostedSubRoots.get(subConfig.host);
-        if (!subRoots) {
-          hostedSubRoots.set(subConfig.host, subRoots = /* @__PURE__ */ new Set());
-        }
-        subRoots.add(node);
+        hostedSubRoots.getOrInsertComputed(subConfig.host, () => /* @__PURE__ */ new Set()).add(node);
       }
     } catch (e) {
       error = e;
@@ -7245,12 +7315,7 @@ var App = class _App extends TemplateSet {
           finalize();
           reject(error2);
         };
-        let handlers = nodeErrorHandlers.get(node);
-        if (!handlers) {
-          handlers = [];
-          nodeErrorHandlers.set(node, handlers);
-        }
-        handlers.unshift(rejectMount);
+        nodeErrorHandlers.getOrInsertComputed(node, () => []).unshift(rejectMount);
       }
       const ready = new Promise((res) => {
         resolvePrepared = res;
@@ -7368,49 +7433,6 @@ async function mount2(C, target, config3 = {}) {
   }
 }
 
-// ../owl-runtime/src/event_handling.ts
-var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
-  setCurrentEvent(ev);
-  if (modifiers) {
-    if (modifiers & EventModifier.PREVENT_ANY) {
-      ev.preventDefault();
-    }
-    if (modifiers & EventModifier.STOP_ANY) {
-      ev.stopPropagation();
-    }
-    if (modifiers & EventModifier.SELF && ev.target !== currentTarget) {
-      if (debug.event) {
-        debugLog("event", `${ev.type}: skipped by .self`);
-      }
-      return;
-    }
-    if (modifiers & EventModifier.PREVENT) {
-      ev.preventDefault();
-    }
-    if (modifiers & EventModifier.STOP) {
-      ev.stopPropagation();
-    }
-  }
-  if (handler !== null) {
-    let node = context ? context.__owl__ : null;
-    const live = node ? node.status === STATUS.MOUNTED : true;
-    if (debug.event) {
-      debugLog(
-        "event",
-        `${ev.type} on ${currentTarget?.nodeName ?? "?"}: ${live ? "handled" : "dropped, component not mounted"} by ${node ? node.componentName : "a handler"}`,
-        ev
-      );
-    }
-    if (live) {
-      if (model !== void 0) {
-        handler(context, ev, model);
-      } else {
-        handler(context, ev);
-      }
-    }
-  }
-};
-
 // ../owl-runtime/src/lifecycle_hooks.ts
 function onWillUpdateProps(fn) {
   const scope = getComponentScope();
@@ -7437,12 +7459,7 @@ function onWillUnmount(fn) {
 }
 function onError(callback) {
   const scope = getComponentScope();
-  let handlers = nodeErrorHandlers.get(scope);
-  if (!handlers) {
-    handlers = [];
-    nodeErrorHandlers.set(scope, handlers);
-  }
-  handlers.push(callback.bind(scope.component));
+  nodeErrorHandlers.getOrInsertComputed(scope, () => []).push(callback.bind(scope.component));
 }
 
 // ../owl-runtime/src/prop.ts
@@ -7473,10 +7490,7 @@ function staticProp(key, type) {
 function componentType() {
   return constructorType(Component);
 }
-var types3 = {
-  ...types,
-  component: componentType
-};
+var types3 = /* @__PURE__ */ Object.assign({}, types, { component: componentType });
 
 // ../owl-runtime/src/props.ts
 var defaultsVersions = /* @__PURE__ */ new WeakMap();
@@ -7537,12 +7551,7 @@ function makeProps(type) {
 }
 var schemaKeyLists = /* @__PURE__ */ new WeakMap();
 function schemaKeys(type) {
-  let keys = schemaKeyLists.get(type);
-  if (!keys) {
-    keys = Object.keys(type);
-    schemaKeyLists.set(type, keys);
-  }
-  return keys;
+  return schemaKeyLists.getOrInsertComputed(type, Object.keys);
 }
 var TypedProps = class {
   node;
@@ -7641,12 +7650,16 @@ function getKeys(node) {
   }
   return keys;
 }
-var AtomTable = function() {
-};
-AtomTable.prototype = /* @__PURE__ */ Object.create(null);
-var PropsTable = function() {
-};
-PropsTable.prototype = Object.freeze(/* @__PURE__ */ Object.create(null));
+var AtomTable = /* @__PURE__ */ tableClass(/* @__PURE__ */ Object.create(null));
+var PropsTable = /* @__PURE__ */ tableClass(
+  /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null))
+);
+function tableClass(prototype) {
+  const Table = function() {
+  };
+  Table.prototype = prototype;
+  return Table;
+}
 var PropsView = class {
   node;
   atoms = new AtomTable();
@@ -7727,12 +7740,15 @@ var viewHandler = {
   defineProperty: () => false,
   deleteProperty: () => false
 };
-var useProps = Object.assign(makeProps, { static: staticProp });
+var useProps = /* @__PURE__ */ Object.assign(makeProps, {
+  static: staticProp
+});
 var props = useProps;
 
 // ../owl-runtime/src/error_boundary.ts
-var ErrorBoundary = class extends Component {
-  static template = xml`
+var ErrorBoundary = class _ErrorBoundary extends Component {
+  static get template() {
+    return ownTemplate(_ErrorBoundary, "ErrorBoundary").xml`
     <t t-if="this.props.error()">
       <t t-call-slot="fallback"/>
     </t>
@@ -7740,6 +7756,7 @@ var ErrorBoundary = class extends Component {
       <t t-call-slot="default"/>
     </t>
   `;
+  }
   props = props({ error: types3.signal().optional(() => signal(null)) });
   setup() {
     onError(
@@ -7757,11 +7774,15 @@ var ErrorBoundary = class extends Component {
 var useApp2 = useApp;
 
 // ../owl-runtime/src/portal.ts
-var PortalContent = class extends Component {
-  static template = xml`<t t-call-slot="default"/>`;
+var PortalContent = class _PortalContent extends Component {
+  static get template() {
+    return ownTemplate(_PortalContent, "PortalContent").xml`<t t-call-slot="default"/>`;
+  }
 };
-var Portal = class extends Component {
-  static template = xml``;
+var Portal = class _Portal extends Component {
+  static get template() {
+    return ownTemplate(_Portal, "Portal").xml``;
+  }
   props = props({
     slots: types3.object(["default"]),
     target: types3.or([
@@ -7858,8 +7879,10 @@ function resolveTarget(target) {
 }
 
 // ../owl-runtime/src/suspense.ts
-var SuspenseHost = class extends Component {
-  static template = xml`<t t-call-slot="default"/>`;
+var SuspenseHost = class _SuspenseHost extends Component {
+  static get template() {
+    return ownTemplate(_SuspenseHost, "SuspenseHost").xml`<t t-call-slot="default"/>`;
+  }
   setup() {
     this.__owl__.props.content.node = this.__owl__;
   }
@@ -7896,12 +7919,14 @@ var SuspenseContent = class {
     return this.content()?.firstNode() ?? this.anchor;
   }
 };
-var Suspense = class extends Component {
-  static template = xml`
+var Suspense = class _Suspense extends Component {
+  static get template() {
+    return ownTemplate(_Suspense, "Suspense").xml`
     <t t-if="!this.prepared()">
       <t t-call-slot="fallback"/>
     </t>
   `;
+  }
   props = props({ slots: types3.object({ default: types3.any(), fallback: types3.any().optional() }) });
   prepared = signal(false);
   mounted = signal(false);
@@ -7961,7 +7986,6 @@ function providePlugins(pluginConstructors, config3) {
 }
 
 // ../owl-runtime/src/index.ts
-config2.mainEventHandler = mainEventHandler;
 var blockDom = {
   config: config2,
   // bdom entry points
@@ -7977,9 +8001,9 @@ var blockDom = {
   html
 };
 var __info__ = {
-  version: App.version,
-  date: "2026-10-07T00:12:08.386Z",
-  hash: "33bb67f1",
+  version,
+  date: "2026-10-07T01:29:49.392Z",
+  hash: "5900e2f4",
   url: "https://github.com/odoo/owl"
 };
 export {

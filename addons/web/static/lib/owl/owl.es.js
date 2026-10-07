@@ -43,9 +43,10 @@ var DEBUG_CHANNELS = [
   "template",
   "event"
 ];
-var debug = Object.seal(
-  Object.fromEntries(DEBUG_CHANNELS.map((channel) => [channel, false]))
-);
+var debug = /* @__PURE__ */ makeDebugFlags();
+function makeDebugFlags() {
+  return Object.seal(Object.fromEntries(DEBUG_CHANNELS.map((channel) => [channel, false])));
+}
 var consoleSink = (channel, message, details) => {
   console.debug(`[owl:${channel}] ${message}`, ...details);
 };
@@ -1031,14 +1032,17 @@ function reactiveValue(value, shallow) {
 var skipped = /* @__PURE__ */ new WeakSet();
 var rawPrototypes = /* @__PURE__ */ new WeakSet();
 var hasRawPrototypes = false;
-var builtinPrototypes = /* @__PURE__ */ new Set([
-  Object.prototype,
-  Array.prototype,
-  Map.prototype,
-  Set.prototype,
-  WeakMap.prototype,
-  Function.prototype
-]);
+var builtinPrototypes = /* @__PURE__ */ builtinPrototypeSet();
+function builtinPrototypeSet() {
+  return /* @__PURE__ */ new Set([
+    Object.prototype,
+    Array.prototype,
+    Map.prototype,
+    Set.prototype,
+    WeakMap.prototype,
+    Function.prototype
+  ]);
+}
 function markRaw(value) {
   const raw = toRaw(value);
   if (builtinPrototypes.has(raw)) {
@@ -1447,53 +1451,57 @@ function readArrayItems(array) {
   }
   return items;
 }
-var replacedMethods = /* @__PURE__ */ new Map();
-for (const name of ["copyWithin", "fill", "reverse", "sort"]) {
-  const method = Array.prototype[name];
-  replacedMethods.set(method, function(...args) {
-    return batch(() => method.apply(this, args));
-  });
-}
-for (const name of ["pop", "push", "shift", "splice", "unshift"]) {
-  const method = Array.prototype[name];
-  replacedMethods.set(method, function(...args) {
-    return batch(() => untrack(() => method.apply(this, args)));
-  });
-}
 var viewReaders = /* @__PURE__ */ new Set();
-for (const name of ["includes", "indexOf", "lastIndexOf"]) {
-  const method = Array.prototype[name];
-  const search = function(...args) {
+var replacedMethods = /* @__PURE__ */ replaceMethods();
+function replaceMethods() {
+  const replaced = /* @__PURE__ */ new Map();
+  for (const name of ["copyWithin", "fill", "reverse", "sort"]) {
+    const method = Array.prototype[name];
+    replaced.set(method, function(...args) {
+      return batch(() => method.apply(this, args));
+    });
+  }
+  for (const name of ["pop", "push", "shift", "splice", "unshift"]) {
+    const method = Array.prototype[name];
+    replaced.set(method, function(...args) {
+      return batch(() => untrack(() => method.apply(this, args)));
+    });
+  }
+  for (const name of ["includes", "indexOf", "lastIndexOf"]) {
+    const method = Array.prototype[name];
+    const search = function(...args) {
+      const raw = toRaw(this);
+      const plain = isPlainArray(raw);
+      if (plain) {
+        onReadTargetKey(raw, ITEMS);
+      }
+      const result = method.apply(plain ? raw : this, args);
+      const item = args[0];
+      if (result !== -1 && result !== false) {
+        return result;
+      }
+      if (plain && (typeof item !== "object" || item === null || toRaw(item) === item)) {
+        return result;
+      }
+      args[0] = toRaw(item);
+      return method.apply(raw, args);
+    };
+    replaced.set(method, search);
+    viewReaders.add(search);
+  }
+  const hasOwnPropertyReader = function(key) {
     const raw = toRaw(this);
-    const plain = isPlainArray(raw);
-    if (plain) {
-      onReadTargetKey(raw, ITEMS);
-    }
-    const result = method.apply(plain ? raw : this, args);
-    const item = args[0];
-    if (result !== -1 && result !== false) {
-      return result;
-    }
-    if (plain && (typeof item !== "object" || item === null || toRaw(item) === item)) {
-      return result;
-    }
-    args[0] = toRaw(item);
-    return method.apply(raw, args);
+    onReadTargetKey(
+      collectionMethods(raw) ? propertyHost(raw) : raw,
+      typeof key === "symbol" ? key : String(key),
+      presenceAtoms
+    );
+    return objectHasOwnProperty.call(raw, key);
   };
-  replacedMethods.set(method, search);
-  viewReaders.add(search);
+  replaced.set(objectHasOwnProperty, hasOwnPropertyReader);
+  viewReaders.add(hasOwnPropertyReader);
+  return replaced;
 }
-var hasOwnPropertyReader = function(key) {
-  const raw = toRaw(this);
-  onReadTargetKey(
-    collectionMethods(raw) ? propertyHost(raw) : raw,
-    typeof key === "symbol" ? key : String(key),
-    presenceAtoms
-  );
-  return objectHasOwnProperty.call(raw, key);
-};
-replacedMethods.set(objectHasOwnProperty, hasOwnPropertyReader);
-viewReaders.add(hasOwnPropertyReader);
 var propertyHosts = /* @__PURE__ */ new WeakMap();
 function propertyHost(target) {
   let host = propertyHosts.get(target);
@@ -1655,9 +1663,18 @@ var setOperations = [
   "isSupersetOf",
   "symmetricDifference",
   "union"
-].filter((name) => name in Set.prototype);
-var mapMethods = /* @__PURE__ */ new Set([...setLikeMethods, ...weakMapMethods]);
-var setMethods = /* @__PURE__ */ new Set([...setLikeMethods, "add", ...setOperations]);
+];
+var mapMethods = /* @__PURE__ */ unionOf(setLikeMethods, weakMapMethods);
+var setMethods = /* @__PURE__ */ unionOf(setLikeMethods, ["add"], setOperations);
+function unionOf(...lists) {
+  const union2 = /* @__PURE__ */ new Set();
+  for (const list2 of lists) {
+    for (const item of list2) {
+      union2.add(item);
+    }
+  }
+  return union2;
+}
 function collectionMethods(target) {
   return target instanceof Map ? mapMethods : target instanceof Set ? setMethods : target instanceof WeakMap ? weakMapMethods : null;
 }
@@ -1739,15 +1756,17 @@ function signalMap(initialValue = /* @__PURE__ */ new Map(), options = {}) {
 function signalSet(initialValue = /* @__PURE__ */ new Set(), options = {}) {
   return buildSignal(initialValue, shallowProxy, options.equals);
 }
-function signal(value, options = {}) {
+function plainSignal(value, options = {}) {
   return buildSignal(value, identity, options.equals);
 }
-signal.trigger = triggerSignal;
-signal.ref = signalRef;
-signal.Array = signalArray;
-signal.Map = signalMap;
-signal.Object = signalObject;
-signal.Set = signalSet;
+var signal = /* @__PURE__ */ Object.assign(plainSignal, {
+  trigger: triggerSignal,
+  ref: signalRef,
+  Array: signalArray,
+  Map: signalMap,
+  Object: signalObject,
+  Set: signalSet
+});
 
 // ../owl-core/src/computed.ts
 function readonlySetter() {
@@ -2127,8 +2146,7 @@ function asyncComputed(fetcher, options = {}) {
       return Promise.resolve();
     }
     if (!pending) {
-      let resolve;
-      pending = { promise: new Promise((res) => resolve = res), resolve };
+      pending = Promise.withResolvers();
       if (!inFlight) {
         Promise.resolve().then(() => {
           if (!inFlight) {
@@ -3284,96 +3302,48 @@ function status(entity) {
   }
 }
 
-// ../owl-runtime/src/rendering/error_handling.ts
-var fibersInError = /* @__PURE__ */ new WeakMap();
-var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
-var handledBy = null;
-function invokeErrorHandlers(node, error, finalize) {
-  while (node) {
-    const handlers = nodeErrorHandlers.get(node);
-    if (handlers) {
-      for (let i = handlers.length - 1; i >= 0; i--) {
-        try {
-          handlers[i](error, finalize);
-          handledBy ||= node;
-          return { handled: true, error };
-        } catch (e) {
-          error = e;
-        }
+// ../owl-runtime/src/event_handling.ts
+var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
+  setCurrentEvent(ev);
+  if (modifiers) {
+    if (modifiers & EventModifier.PREVENT_ANY) {
+      ev.preventDefault();
+    }
+    if (modifiers & EventModifier.STOP_ANY) {
+      ev.stopPropagation();
+    }
+    if (modifiers & EventModifier.SELF && ev.target !== currentTarget) {
+      if (debug.event) {
+        debugLog("event", `${ev.type}: skipped by .self`);
       }
+      return;
     }
-    node = node.parent;
-  }
-  return { handled: false, error };
-}
-function forwardErrorToParent(boundary) {
-  return (error, finalize) => {
-    if (boundary.app.destroyed) {
-      throw error;
+    if (modifiers & EventModifier.PREVENT) {
+      ev.preventDefault();
     }
-    const result = invokeErrorHandlers(boundary, error, finalize);
-    if (!result.handled) {
-      throw result.error;
+    if (modifiers & EventModifier.STOP) {
+      ev.stopPropagation();
     }
-  };
-}
-function handleError(params) {
-  const { error } = params;
-  const node = "node" in params ? params.node : params.fiber.node;
-  const fiber = "fiber" in params ? params.fiber : node.fiber;
-  const app = node.app;
-  if (app.destroyed) {
-    throw error;
   }
-  if (fiber) {
-    let current = fiber;
-    do {
-      if (current.node.fiber === null) {
-        current.node.fiber = current;
-      }
-      fibersInError.set(current, error);
-      current = current.parent;
-    } while (current);
-    const root = fiber.root;
-    fibersInError.set(root, error);
-    (root.failed ||= /* @__PURE__ */ new Set()).add(fiber);
-  }
-  const finalize = () => {
-    try {
-      app.destroy();
-    } catch {
-    }
-  };
-  handledBy = null;
-  const result = invokeErrorHandlers(node, error, finalize);
-  if (debug.error) {
-    debugLog(
-      "error",
-      result.handled && !app.destroyed ? `${node.componentName}: error handled by ${handledBy === node ? "its own" : `${handledBy.componentName}'s`} onError` : `${node.componentName}: error not handled, the app is destroyed`,
-      error
-    );
-  }
-  if (!result.handled) {
-    finalize();
-    app._handleError(result.error);
-  }
-  if (fiber && fiber.root.counter !== 0) {
-    fiber.root.node.app.scheduler.requestFrame();
-  }
-}
-function handleHookRejection(node, fiber, error) {
-  if (node.fiber !== fiber) {
-    if (debug.error) {
+  if (handler !== null) {
+    let node = context ? context.__owl__ : null;
+    const live = node ? node.status === STATUS.MOUNTED : true;
+    if (debug.event) {
       debugLog(
-        "error",
-        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} dropped, ${node.status === STATUS.DESTROYED ? "destroyed" : "superseded"}`,
-        error
+        "event",
+        `${ev.type} on ${currentTarget?.nodeName ?? "?"}: ${live ? "handled" : "dropped, component not mounted"} by ${node ? node.componentName : "a handler"}`,
+        ev
       );
     }
-    return;
+    if (live) {
+      if (model !== void 0) {
+        handler(context, ev, model);
+      } else {
+        handler(context, ev);
+      }
+    }
   }
-  handleError({ node, error });
-}
+};
 
 // ../owl-runtime/src/blockdom/config.ts
 var config2 = {
@@ -3382,43 +3352,34 @@ var config2 = {
   // given to the block when it is built), the context the latest render gave it,
   // the event, the element listening and, for a handler with one, the extra
   // argument the latest render gave it
-  mainEventHandler: (fn, mods, ctx, ev, currentTarget, arg) => {
-    if (fn) {
-      if (arg === void 0) {
-        fn(ctx, ev);
-      } else {
-        fn(ctx, ev, arg);
-      }
-    }
-  }
+  mainEventHandler
 };
 
 // ../owl-runtime/src/blockdom/dom.ts
-var nodeCloneNode;
-var nodeInsertBefore;
-var nodeAppendChild;
-var nodeRemoveChild;
-var characterDataRemove;
-var nodeSetTextContent;
-var characterDataSetData;
-var nodeGetFirstChild;
-var nodeGetNextSibling;
-if (typeof Node !== "undefined") {
-  const nodeProto = Node.prototype;
-  const getDescriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
-  nodeCloneNode = nodeProto.cloneNode;
-  nodeInsertBefore = nodeProto.insertBefore;
-  nodeAppendChild = nodeProto.appendChild;
-  nodeRemoveChild = nodeProto.removeChild;
-  characterDataRemove = CharacterData.prototype.remove;
-  nodeSetTextContent = getDescriptor(nodeProto, "textContent").set;
-  characterDataSetData = getDescriptor(CharacterData.prototype, "data").set;
-  nodeGetFirstChild = getDescriptor(nodeProto, "firstChild").get;
-  nodeGetNextSibling = getDescriptor(nodeProto, "nextSibling").get;
+function fromDom(read) {
+  return typeof Node === "undefined" ? void 0 : read();
 }
+var descriptor = (o, p) => Object.getOwnPropertyDescriptor(o, p);
+var nodeCloneNode = /* @__PURE__ */ fromDom(() => Node.prototype.cloneNode);
+var nodeInsertBefore = /* @__PURE__ */ fromDom(() => Node.prototype.insertBefore);
+var nodeAppendChild = /* @__PURE__ */ fromDom(() => Node.prototype.appendChild);
+var nodeRemoveChild = /* @__PURE__ */ fromDom(() => Node.prototype.removeChild);
+var characterDataRemove = /* @__PURE__ */ fromDom(() => CharacterData.prototype.remove);
+var nodeSetTextContent = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "textContent").set
+);
+var characterDataSetData = /* @__PURE__ */ fromDom(
+  () => descriptor(CharacterData.prototype, "data").set
+);
+var nodeGetFirstChild = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "firstChild").get
+);
+var nodeGetNextSibling = /* @__PURE__ */ fromDom(
+  () => descriptor(Node.prototype, "nextSibling").get
+);
 
 // ../owl-runtime/src/blockdom/toggler.ts
-var txt = globalThis.document?.createTextNode("");
+var txt = /* @__PURE__ */ globalThis.document?.createTextNode("");
 var VToggler = class {
   // not `key`: a toggler in a keyed list gets its list key written there
   kind;
@@ -3476,18 +3437,11 @@ function toggler(kind, child) {
 }
 
 // ../owl-runtime/src/blockdom/attributes.ts
-var elemSetAttribute;
-var removeAttribute;
-var tokenListAdd;
-var tokenListRemove;
-if (typeof Element !== "undefined") {
-  ({ setAttribute: elemSetAttribute, removeAttribute } = Element.prototype);
-  const tokenList = DOMTokenList.prototype;
-  tokenListAdd = tokenList.add;
-  tokenListRemove = tokenList.remove;
-}
+var elemSetAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.setAttribute);
+var removeAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.removeAttribute);
+var tokenListAdd = /* @__PURE__ */ fromDom(() => DOMTokenList.prototype.add);
+var tokenListRemove = /* @__PURE__ */ fromDom(() => DOMTokenList.prototype.remove);
 var isArray = Array.isArray;
-var { split, trim } = String.prototype;
 var wordRegexp = /\s+/;
 function setAttribute(key, value) {
   switch (value) {
@@ -3508,7 +3462,7 @@ function createAttrUpdater(attr) {
     setAttribute.call(this, attr, value);
   };
 }
-var NO_ATTRS = Object.freeze({});
+var NO_ATTRS = /* @__PURE__ */ Object.freeze({});
 function toAttrs(attrs) {
   if (!attrs) {
     return NO_ATTRS;
@@ -3523,7 +3477,7 @@ function toAttrs(attrs) {
   }
   return attrs;
 }
-function makeAttrsUpdaters(updateClassFn, updateStyleFn) {
+function makeAttrsUpdater(updateClassFn, updateStyleFn) {
   function updateAttr(el, name, val, oldVal) {
     if (name === "class") {
       updateClassFn.call(el, val, oldVal);
@@ -3548,12 +3502,15 @@ function makeAttrsUpdaters(updateClassFn, updateStyleFn) {
       }
     }
   }
-  function attrsSetter2(attrs) {
-    attrsUpdater2.call(this, attrs, NO_ATTRS);
-  }
-  return { attrsSetter: attrsSetter2, attrsUpdater: attrsUpdater2 };
+  return attrsUpdater2;
 }
-var { attrsSetter, attrsUpdater } = makeAttrsUpdaters(updateClass, updateStyle);
+function makeAttrsSetter(attrsUpdater2) {
+  return function attrsSetter2(attrs) {
+    attrsUpdater2.call(this, attrs, NO_ATTRS);
+  };
+}
+var attrsUpdater = /* @__PURE__ */ makeAttrsUpdater(updateClass, updateStyle);
+var attrsSetter = /* @__PURE__ */ makeAttrsSetter(attrsUpdater);
 function toClassObj(expr) {
   const result = {};
   addClasses(result, expr);
@@ -3588,9 +3545,9 @@ function addClasses(result, expr) {
   }
 }
 function addWords(result, str, value) {
-  str = trim.call(str);
+  str = str.trim();
   if (str) {
-    const words = split.call(str, wordRegexp);
+    const words = str.split(wordRegexp);
     for (let i = 0, l = words.length; i < l; i++) {
       result[words[i]] = value;
     }
@@ -3649,7 +3606,7 @@ function toStyleObj(expr) {
           }
           i++;
         }
-        const part = trim.call(str.slice(start, i));
+        const part = str.slice(start, i).trim();
         i++;
         if (!part) {
           continue;
@@ -3658,8 +3615,8 @@ function toStyleObj(expr) {
         if (colonIdx === -1) {
           continue;
         }
-        const prop = trim.call(part.slice(0, colonIdx));
-        const value = trim.call(part.slice(colonIdx + 1));
+        const prop = part.slice(0, colonIdx).trim();
+        const value = part.slice(colonIdx + 1).trim();
         if (prop && value && value !== "undefined") {
           result[prop] = value;
         }
@@ -4515,12 +4472,12 @@ function updateCtx(ctx, tree) {
       }
       case "attributes": {
         const { sharedClass, sharedStyle } = info;
-        const shared = (sharedClass || sharedStyle) && makeAttrsUpdaters(sharedClass || updateClass, sharedStyle || updateStyle);
+        const shared = (sharedClass || sharedStyle) && makeAttrsUpdater(sharedClass || updateClass, sharedStyle || updateStyle);
         ctx.locations.push({
           idx: info.idx,
           refIdx: info.refIdx,
-          setData: shared ? shared.attrsSetter : attrsSetter,
-          updateData: shared ? shared.attrsUpdater : attrsUpdater
+          setData: shared ? makeAttrsSetter(shared) : attrsSetter,
+          updateData: shared || attrsUpdater
         });
         break;
       }
@@ -5282,6 +5239,97 @@ function remove(vnode, withBeforeRemove = false) {
   vnode.remove();
 }
 
+// ../owl-runtime/src/rendering/error_handling.ts
+var fibersInError = /* @__PURE__ */ new WeakMap();
+var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
+var handledBy = null;
+function invokeErrorHandlers(node, error, finalize) {
+  while (node) {
+    const handlers = nodeErrorHandlers.get(node);
+    if (handlers) {
+      for (let i = handlers.length - 1; i >= 0; i--) {
+        try {
+          handlers[i](error, finalize);
+          handledBy ||= node;
+          return { handled: true, error };
+        } catch (e) {
+          error = e;
+        }
+      }
+    }
+    node = node.parent;
+  }
+  return { handled: false, error };
+}
+function forwardErrorToParent(boundary) {
+  return (error, finalize) => {
+    if (boundary.app.destroyed) {
+      throw error;
+    }
+    const result = invokeErrorHandlers(boundary, error, finalize);
+    if (!result.handled) {
+      throw result.error;
+    }
+  };
+}
+function handleError(params) {
+  const { error } = params;
+  const node = "node" in params ? params.node : params.fiber.node;
+  const fiber = "fiber" in params ? params.fiber : node.fiber;
+  const app = node.app;
+  if (app.destroyed) {
+    throw error;
+  }
+  if (fiber) {
+    let current = fiber;
+    do {
+      if (current.node.fiber === null) {
+        current.node.fiber = current;
+      }
+      fibersInError.set(current, error);
+      current = current.parent;
+    } while (current);
+    const root = fiber.root;
+    fibersInError.set(root, error);
+    (root.failed ||= /* @__PURE__ */ new Set()).add(fiber);
+  }
+  const finalize = () => {
+    try {
+      app.destroy();
+    } catch {
+    }
+  };
+  handledBy = null;
+  const result = invokeErrorHandlers(node, error, finalize);
+  if (debug.error) {
+    debugLog(
+      "error",
+      result.handled && !app.destroyed ? `${node.componentName}: error handled by ${handledBy === node ? "its own" : `${handledBy.componentName}'s`} onError` : `${node.componentName}: error not handled, the app is destroyed`,
+      error
+    );
+  }
+  if (!result.handled) {
+    finalize();
+    app._handleError(result.error);
+  }
+  if (fiber && fiber.root.counter !== 0) {
+    fiber.root.node.app.scheduler.requestFrame();
+  }
+}
+function handleHookRejection(node, fiber, error) {
+  if (node.fiber !== fiber) {
+    if (debug.error) {
+      debugLog(
+        "error",
+        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} dropped, ${node.status === STATUS.DESTROYED ? "destroyed" : "superseded"}`,
+        error
+      );
+    }
+    return;
+  }
+  handleError({ node, error });
+}
+
 // ../owl-runtime/src/rendering/memo.ts
 var collected = null;
 function memoPrevious(node, site) {
@@ -5370,13 +5418,11 @@ function memoResume(outer) {
 }
 
 // ../owl-runtime/src/rendering/scheduler.ts
-var requestAnimationFrame;
-if (typeof window !== "undefined") {
-  requestAnimationFrame = window.requestAnimationFrame.bind(window);
+function captureAnimationFrame() {
+  return typeof window === "undefined" ? void 0 : window.requestAnimationFrame.bind(window);
 }
+var requestAnimationFrame = /* @__PURE__ */ captureAnimationFrame();
 var Scheduler = class _Scheduler {
-  // capture the value of requestAnimationFrame as soon as possible, to avoid
-  // interactions with other code, such as test frameworks that override them
   static requestAnimationFrame = requestAnimationFrame;
   // the schedulers that may hold a task: a node's ancestor may belong to
   // another app, whose render then delays it
@@ -5921,7 +5967,7 @@ var MountFiber = class extends RootFiber2 {
 };
 
 // ../owl-runtime/src/component_node.ts
-var NO_HOOKS = Object.freeze([]);
+var NO_HOOKS = /* @__PURE__ */ Object.freeze([]);
 var ComponentNode = class extends Scope {
   fiber = null;
   component;
@@ -6421,7 +6467,7 @@ function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent, owner)
   return slotBDom || text("");
 }
 var MARK = "";
-var MARK2 = MARK + MARK;
+var MARK2 = "";
 function escapeKey(value) {
   const name = String(value);
   return name.includes(MARK) ? name.replaceAll(MARK, MARK2) : name;
@@ -6945,1070 +6991,47 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "33bb67f1";
-
-// ../owl-runtime/src/template_set.ts
-var bdom = { text, createBlock, list, multi, html, toggler };
-var COMPILER_KEY = /* @__PURE__ */ Symbol.for("@odoo/owl/compiler");
-var BUILD = `${version}+${buildHash}`;
-var ownCompiler;
-function registeredBuilds() {
-  return Object.keys(globalThis[COMPILER_KEY] || {});
+var buildHash = "5900e2f4";
+var build = /* @__PURE__ */ buildName(version, buildHash);
+function buildName(version2, hash) {
+  return `${version2}+${hash}`;
 }
-function checkBuild(compiler) {
-  if (compiler.version === void 0 || compiler.hash === void 0) {
-    throw new OwlError(
-      `The template compiler does not name its build, as the compiler module of an owl older than this runtime (${BUILD}) does: load the owl.compiler.es.js built with this runtime`
-    );
-  }
-  const build = `${compiler.version}+${compiler.hash}`;
-  if (build !== BUILD) {
-    throw new OwlError(
-      `The template compiler is build ${build}, but the runtime is ${BUILD}: load the owl.compiler.es.js built with this runtime`
-    );
-  }
-}
-var TemplateSet = class _TemplateSet {
-  /**
-   * The compiler: the one the full build sets, else the compiler module of
-   * this runtime's build once it is registered. Setting a compiler checks
-   * that it is of this build; null leaves the runtime without one, undefined
-   * takes the registered one again.
-   */
-  static get compiler() {
-    if (ownCompiler === void 0) {
-      const registered = globalThis[COMPILER_KEY]?.[BUILD];
-      if (!registered) {
-        return null;
-      }
-      if (debug.template) {
-        debugLog("template", `compiler module ${BUILD} installed`);
-      }
-      ownCompiler = registered;
-    }
-    return ownCompiler;
-  }
-  static set compiler(compiler) {
-    if (compiler) {
-      checkBuild(compiler);
-    }
-    ownCompiler = compiler;
-  }
-  static registerTemplate(name, fn) {
-    globalTemplates[name] = fn;
-  }
-  dev;
-  rawTemplates = Object.create(globalTemplates);
-  templates = /* @__PURE__ */ Object.create(null);
-  getRawTemplate;
-  translateFn;
-  translatableAttributes;
-  customDirectives;
-  runtimeUtils;
-  hasGlobalValues;
-  constructor(config3 = {}) {
-    this.dev = config3.dev || false;
-    this.translateFn = config3.translateFn;
-    this.translatableAttributes = config3.translatableAttributes;
-    if (config3.templates) {
-      if (config3.templates instanceof Document || typeof config3.templates === "string") {
-        this.addTemplates(config3.templates);
-      } else {
-        for (const name in config3.templates) {
-          this.addTemplate(name, config3.templates[name]);
-        }
-      }
-    }
-    this.getRawTemplate = config3.getTemplate;
-    this.customDirectives = config3.customDirectives || {};
-    this.runtimeUtils = { ...helpers, __globals__: config3.globalValues || {} };
-    this.hasGlobalValues = Boolean(config3.globalValues && Object.keys(config3.globalValues).length);
-  }
-  addTemplate(name, template) {
-    if (name in this.rawTemplates) {
-      if (!this.dev) {
-        return;
-      }
-      const rawTemplate = this.rawTemplates[name];
-      if (areTemplatesEqual(rawTemplate, template)) {
-        return;
-      }
-      throw new OwlError(`Template ${name} already defined with different content`);
-    }
-    this.rawTemplates[name] = template;
-  }
-  addTemplates(xml2) {
-    if (!xml2) {
-      return;
-    }
-    xml2 = xml2 instanceof Document ? xml2 : this._parseXML(xml2);
-    for (const template of xml2.querySelectorAll("[t-name]")) {
-      const name = template.getAttribute("t-name");
-      this.addTemplate(name, template);
-    }
-  }
-  getTemplate(name) {
-    const cacheKey = name;
-    if (!(cacheKey in this.templates)) {
-      const rawTemplate = this.getRawTemplate?.(name) || this.rawTemplates[name];
-      if (rawTemplate === void 0) {
-        let extraInfo = "";
-        const scope = getScope();
-        if (scope instanceof ComponentNode) {
-          extraInfo = ` (for component "${scope.componentName}")`;
-        }
-        throw new OwlError(`Missing template: "${name}"${extraInfo}`);
-      }
-      const isFn = typeof rawTemplate === "function" && !(rawTemplate instanceof Element);
-      const start = debug.template ? debugNow() : -1;
-      const templateFn = isFn ? rawTemplate : this._compileTemplate(name, rawTemplate);
-      if (debug.template) {
-        debugLog(
-          "template",
-          isFn ? `${name}: precompiled` : `${name}: compiled${start < 0 ? "" : ` in ${(debugNow() - start).toFixed(2)} ms`}, ${String(templateFn).length} chars`
-        );
-      }
-      const templates = this.templates;
-      this.templates[cacheKey] = function(context, parent) {
-        return templates[cacheKey].call(this, context, parent);
-      };
-      try {
-        this.templates[cacheKey] = templateFn(this, bdom, this.runtimeUtils);
-      } catch (e) {
-        delete this.templates[cacheKey];
-        throw e;
-      }
-    }
-    return this.templates[cacheKey];
-  }
-  _compileTemplate(name, template) {
-    const compiler = _TemplateSet.compiler;
-    if (!compiler) {
-      throw new OwlError(
-        `Unable to compile a template: load the compiler module (@odoo/owl/compiler) of this runtime's build or use the full build${missingCompiler()}`
-      );
-    }
-    try {
-      return compiler.compile(template, {
-        name,
-        dev: this.dev,
-        translateFn: this.translateFn,
-        translatableAttributes: this.translatableAttributes,
-        customDirectives: this.customDirectives,
-        hasGlobalValues: this.hasGlobalValues
-      });
-    } catch (error) {
-      throw asOwnError(error, compiler);
-    }
-  }
-  _parseXML(xml2) {
-    const compiler = _TemplateSet.compiler;
-    if (!compiler) {
-      throw new OwlError(
-        `Unable to parse XML templates: load the compiler module (@odoo/owl/compiler) of this runtime's build, use the full build, or pass a Document instance${missingCompiler()}`
-      );
-    }
-    try {
-      return compiler.parseXML(xml2);
-    } catch (error) {
-      throw asOwnError(error, compiler);
-    }
-  }
-};
-function missingCompiler() {
-  if (ownCompiler === null) {
-    return ` (TemplateSet.compiler was set to null)`;
-  }
-  const builds = registeredBuilds();
-  return builds.length ? ` (the runtime is ${BUILD}; the compiler modules loaded are ${builds.join(", ")})` : "";
-}
-function asOwnError(error, compiler) {
-  const ForeignError = compiler.OwlError;
-  if (!ForeignError || ForeignError === OwlError || !(error instanceof ForeignError)) {
-    return error;
-  }
-  const ownError = new OwlError(error.message);
-  ownError.cause = error;
-  return ownError;
-}
-var globalTemplates = /* @__PURE__ */ Object.create(null);
-function xml(...args) {
-  const name = `__template__${xml.nextId++}`;
-  const value = String.raw(...args);
-  globalTemplates[name] = value;
-  return name;
-}
-xml.nextId = 1;
-function areTemplatesEqual(t1, t2) {
-  if (t1 === t2) {
-    return true;
-  }
-  if (typeof t1 === "function" !== (typeof t2 === "function")) {
-    return false;
-  }
-  const s1 = t1 instanceof Element ? t1.outerHTML : String(t1);
-  const s2 = t2 instanceof Element ? t2.outerHTML : String(t2);
-  return s1 === s2;
-}
-
-// ../owl-runtime/src/app.ts
-var hasBeenLogged = false;
-var apps = /* @__PURE__ */ new Set();
-if (typeof window !== "undefined") {
-  window.__OWL_DEVTOOLS__ ||= { apps, Fiber: Fiber2, RootFiber: RootFiber2, toRaw, proxy };
-}
-var App = class _App extends TemplateSet {
-  static validateTarget = validateTarget;
-  static apps = apps;
-  static version = version;
-  name;
-  scheduler = new Scheduler();
-  roots = /* @__PURE__ */ new Set();
-  pluginManager;
-  destroyed = false;
-  constructor(config3 = {}) {
-    super(config3.test ? { ...config3, dev: true } : config3);
-    this.name = config3.name || "";
-    apps.add(this);
-    this.pluginManager = new PluginManager(this, { config: config3.config });
-    if (config3.plugins) {
-      startPlugins(this.pluginManager, config3.plugins);
-    } else {
-      this.pluginManager.status = STATUS.MOUNTED;
-    }
-    if (this.dev && !config3.test && !hasBeenLogged) {
-      console.info(`Owl is running in 'dev' mode.`);
-      hasBeenLogged = true;
-    }
-  }
-  createRoot(Root, config3 = {}) {
-    if (this.destroyed) {
-      throw new OwlError("Cannot create a root in a destroyed app");
-    }
-    if (debug.lifecycle) {
-      debugLog("lifecycle", `create root ${Root.name}${this.name ? ` in app ${this.name}` : ""}`);
-    }
-    const props2 = config3.props || {};
-    let resolve;
-    let reject;
-    const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    let node;
-    let error = null;
-    const subConfig = config3;
-    try {
-      node = new ComponentNode(Root, props2, this, null, null);
-      if (subConfig.pluginManager) {
-        node.pluginManager = subConfig.pluginManager;
-      }
-      if (subConfig.onError) {
-        const handlers = nodeErrorHandlers.get(node);
-        if (handlers) {
-          handlers.unshift(subConfig.onError);
-        } else {
-          nodeErrorHandlers.set(node, [subConfig.onError]);
-        }
-      }
-      if (subConfig.host) {
-        subRootHosts.set(node, subConfig.host);
-        let subRoots = hostedSubRoots.get(subConfig.host);
-        if (!subRoots) {
-          hostedSubRoots.set(subConfig.host, subRoots = /* @__PURE__ */ new Set());
-        }
-        subRoots.add(node);
-      }
-    } catch (e) {
-      error = e;
-      reject(e);
-    }
-    let fiber = null;
-    let preparedPromise = null;
-    let resolvePrepared = null;
-    let destroyed = false;
-    let mounted = false;
-    const prepare = () => {
-      if (preparedPromise) {
-        return preparedPromise;
-      }
-      if (destroyed) {
-        return preparedPromise = Promise.resolve();
-      }
-      if (error) {
-        return Promise.reject(error);
-      }
-      fiber = new MountFiber(node, null);
-      let rejectMount = null;
-      if (!subConfig.onError) {
-        rejectMount = (error2, finalize) => {
-          finalize();
-          reject(error2);
-        };
-        let handlers = nodeErrorHandlers.get(node);
-        if (!handlers) {
-          handlers = [];
-          nodeErrorHandlers.set(node, handlers);
-        }
-        handlers.unshift(rejectMount);
-      }
-      const ready = new Promise((res) => {
-        resolvePrepared = res;
-        fiber.onPrepared = () => res();
-      });
-      preparedPromise = ready;
-      node.addHook("mounted", () => {
-        resolve(node.component);
-        if (rejectMount) {
-          const handlers = nodeErrorHandlers.get(node);
-          handlers.splice(handlers.indexOf(rejectMount), 1);
-        }
-      });
-      this.scheduler.addFiber(fiber);
-      if (this.pluginManager.status < STATUS.MOUNTED) {
-        node.willStart.unshift(() => this.pluginManager.ready);
-      }
-      try {
-        node.start(fiber);
-      } catch (e) {
-        reject(e);
-      }
-      return preparedPromise;
-    };
-    const mount3 = (target, options) => {
-      if (destroyed) {
-        return promise;
-      }
-      if (error) {
-        return promise;
-      }
-      if (mounted) {
-        throw new OwlError("This root is already mounted: create another root to mount again");
-      }
-      _App.validateTarget(target);
-      prepare();
-      mounted = true;
-      fiber.commit(target, options);
-      return promise;
-    };
-    const root = {
-      get prepared() {
-        return fiber ? fiber.counter === 0 : false;
-      },
-      get destroyed() {
-        return destroyed;
-      },
-      promise,
-      prepare,
-      mount: mount3,
-      destroy: () => {
-        if (destroyed) {
-          return;
-        }
-        destroyed = true;
-        this.roots.delete(root);
-        if (subConfig.host && node) {
-          hostedSubRoots.get(subConfig.host)?.delete(node);
-        }
-        node?.destroy();
-        resolvePrepared?.();
-      }
-    };
-    this.roots.add(root);
-    return root;
-  }
-  destroy() {
-    if (debug.lifecycle) {
-      debugLog(
-        "lifecycle",
-        `destroy app${this.name ? ` ${this.name}` : ""}, ${this.roots.size} root(s)`
-      );
-    }
-    let failure = null;
-    for (let root of this.roots) {
-      try {
-        root.destroy();
-      } catch (error) {
-        failure ||= { error };
-      }
-    }
-    this.pluginManager.destroy();
-    this.scheduler.tasks.clear();
-    Scheduler.active.delete(this.scheduler);
-    this.scheduler.delayedRenders = [];
-    apps.delete(this);
-    this.destroyed = true;
-    if (failure) {
-      throw failure.error;
-    }
-  }
-  _handleError(error) {
-    throw error;
-  }
-};
-async function mount2(C, target, config3 = {}) {
-  const app = new App(config3);
-  try {
-    if (app.pluginManager.status < STATUS.MOUNTED) {
-      await app.pluginManager.ready;
-      if (app.destroyed) {
-        throw makeAbortError();
-      }
-    }
-    const root = app.createRoot(C, config3);
-    return await root.mount(target, config3);
-  } catch (error) {
-    if (!app.destroyed) {
-      try {
-        app.destroy();
-      } catch {
-      }
-    }
-    throw error;
-  }
-}
-
-// ../owl-runtime/src/event_handling.ts
-var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
-  setCurrentEvent(ev);
-  if (modifiers) {
-    if (modifiers & EventModifier.PREVENT_ANY) {
-      ev.preventDefault();
-    }
-    if (modifiers & EventModifier.STOP_ANY) {
-      ev.stopPropagation();
-    }
-    if (modifiers & EventModifier.SELF && ev.target !== currentTarget) {
-      if (debug.event) {
-        debugLog("event", `${ev.type}: skipped by .self`);
-      }
-      return;
-    }
-    if (modifiers & EventModifier.PREVENT) {
-      ev.preventDefault();
-    }
-    if (modifiers & EventModifier.STOP) {
-      ev.stopPropagation();
-    }
-  }
-  if (handler !== null) {
-    let node = context ? context.__owl__ : null;
-    const live = node ? node.status === STATUS.MOUNTED : true;
-    if (debug.event) {
-      debugLog(
-        "event",
-        `${ev.type} on ${currentTarget?.nodeName ?? "?"}: ${live ? "handled" : "dropped, component not mounted"} by ${node ? node.componentName : "a handler"}`,
-        ev
-      );
-    }
-    if (live) {
-      if (model !== void 0) {
-        handler(context, ev, model);
-      } else {
-        handler(context, ev);
-      }
-    }
-  }
-};
-
-// ../owl-runtime/src/lifecycle_hooks.ts
-function onWillUpdateProps(fn) {
-  const scope = getComponentScope();
-  function swapped(s, nextProps) {
-    return fn.call(this, nextProps, s);
-  }
-  scope.addHook("willUpdateProps", scope.decorate(swapped, "onWillUpdateProps"));
-}
-function onMounted(fn) {
-  const scope = getComponentScope();
-  scope.addHook("mounted", scope.decorate(fn, "onMounted"));
-}
-function onWillPatch(fn) {
-  const scope = getComponentScope();
-  scope.addHook("willPatch", scope.decorate(fn, "onWillPatch"), true);
-}
-function onPatched(fn) {
-  const scope = getComponentScope();
-  scope.addHook("patched", scope.decorate(fn, "onPatched"));
-}
-function onWillUnmount(fn) {
-  const scope = getComponentScope();
-  scope.addHook("willUnmount", scope.decorate(fn, "onWillUnmount"), true);
-}
-function onError(callback) {
-  const scope = getComponentScope();
-  let handlers = nodeErrorHandlers.get(scope);
-  if (!handlers) {
-    handlers = [];
-    nodeErrorHandlers.set(scope, handlers);
-  }
-  handlers.push(callback.bind(scope.component));
-}
-
-// ../owl-runtime/src/prop.ts
-function staticProp(key, type) {
-  const node = getComponentScope();
-  const defaultFactory = getDefault(type);
-  const propValue = node.props[key];
-  const usesDefault = propValue === void 0 && !!defaultFactory;
-  const value = usesDefault ? defaultFactory() : propValue === void 0 ? node.defaultProps?.[key] : propValue;
-  if (node.app.dev) {
-    if (type !== void 0) {
-      const message = usesDefault ? `Invalid default value for prop '${key}' in '${node.componentName}'` : `Invalid prop '${key}' in '${node.componentName}'`;
-      assertType(usesDefault ? value : propValue, type, message);
-    }
-    node.addHook("willUpdateProps", (nextProps) => {
-      const current = node.props[key] === void 0 ? node.defaultProps?.[key] : node.props[key];
-      if (nextProps[key] !== current) {
-        throw new OwlError(
-          `Prop '${key}' changed in component '${node.componentName}'. Props declared with \`props.static()\` are static and should not change. If the prop is a signal, pass the same signal reference (its inner value may change).`
-        );
-      }
-    });
-  }
-  return value;
-}
-
-// ../owl-runtime/src/types.ts
-function componentType() {
-  return constructorType(Component);
-}
-var types3 = {
-  ...types,
-  component: componentType
-};
-
-// ../owl-runtime/src/props.ts
-var defaultsVersions = /* @__PURE__ */ new WeakMap();
-function makeProps(type) {
-  const node = getComponentScope();
-  if (!type) {
-    const view = new PropsView(node);
-    node.addHook("propsUpdated", view);
-    return markRaw(new Proxy(view, viewHandler));
-  }
-  const { app, componentName } = node;
-  let defaults = null;
-  if (!Array.isArray(type)) {
-    for (const key in type) {
-      const factory = getDefault(type[key]);
-      if (factory) {
-        (defaults ||= {})[key] = factory();
-      }
-    }
-  }
-  if (defaults) {
-    node.defaultProps = Object.assign(node.defaultProps || {}, defaults);
-    defaultsVersions.set(node, (defaultsVersions.get(node) || 0) + 1);
-  }
-  const keys = Array.isArray(type) ? type : schemaKeys(type);
-  const state = new TypedProps(node, defaults);
-  const result = new PropsTable();
-  for (const key of keys) {
-    Reflect.defineProperty(result, key, {
-      enumerable: true,
-      configurable: true,
-      get: propGetters[key] ||= makePropGetter(key)
-    });
-  }
-  new StateStamp(result, state);
-  node.addHook("propsUpdated", state);
-  if (app.dev) {
-    if (defaults) {
-      const defaultedShape = {};
-      for (const key in type) {
-        if (key in defaults) {
-          defaultedShape[key] = type[key];
-        }
-      }
-      assertType(
-        defaults,
-        types3.object(defaultedShape),
-        `Invalid component default props (${componentName})`
-      );
-    }
-    const validation = types3.object(type);
-    assertType(node.props, validation, `Invalid component props (${componentName})`);
-    node.addHook("willUpdateProps", (np) => {
-      assertType(np, validation, `Invalid component props (${componentName})`);
-    });
-  }
-  return markRaw(Object.preventExtensions(result));
-}
-var schemaKeyLists = /* @__PURE__ */ new WeakMap();
-function schemaKeys(type) {
-  let keys = schemaKeyLists.get(type);
-  if (!keys) {
-    keys = Object.keys(type);
-    schemaKeyLists.set(type, keys);
-  }
-  return keys;
-}
-var TypedProps = class {
-  node;
-  defaults;
-  atoms = new AtomTable();
-  constructor(node, defaults) {
-    this.node = node;
-    this.defaults = defaults;
-  }
-  // a missing prop resolves to this view's default, else to the default another
-  // view of the component declared
-  resolve(key) {
-    const value = this.node.props[key];
-    if (value === void 0) {
-      const defaults = this.defaults;
-      if (defaults && key in defaults) {
-        return defaults[key];
-      }
-      const declared = this.node.defaultProps;
-      if (declared && key in declared) {
-        return declared[key];
-      }
-    }
-    return value;
-  }
-  read(key) {
-    let atom = this.atoms[key];
-    if (atom === void 0) {
-      if (!isObserving()) {
-        return this.resolve(key);
-      }
-      atom = this.atoms[key] = createAtom(this.resolve(key), "prop");
-    }
-    onReadAtom(atom);
-    return atom.value;
-  }
-  update() {
-    writeAtoms(this.atoms, this);
-  }
-};
-function writeAtoms(atoms, view) {
-  for (const key in atoms) {
-    const atom = atoms[key];
-    const value = view.resolve(key);
-    if (!Object.is(atom.value, value)) {
-      atom.value = value;
-      onWriteAtom(atom, true);
-    }
-  }
-}
-var ObjectReturner = class {
-  constructor(target) {
-    return target;
-  }
-};
-var StateStamp = class extends ObjectReturner {
-  #state;
-  constructor(target, state) {
-    super(target);
-    this.#state = state;
-  }
-  // the state of `view`, or of the view it inherits from (a read through
-  // `Object.create(props)`)
-  static of(view) {
-    while (view !== null && typeof view === "object") {
-      if (#state in view) {
-        return view.#state;
-      }
-      view = Object.getPrototypeOf(view);
-    }
-    return void 0;
-  }
-};
-var propGetters = /* @__PURE__ */ Object.create(null);
-function makePropGetter(key) {
-  return function() {
-    const state = StateStamp.of(this);
-    if (state === void 0) {
-      throw new OwlError(`Cannot read prop "${key}" through an object that is not a props view`);
-    }
-    return state.read(key);
-  };
-}
-function getKeys(node) {
-  const props2 = node.props;
-  const keys = [];
-  for (const k in props2) {
-    if (k.charCodeAt(0) !== 1) {
-      keys.push(k);
-    }
-  }
-  for (const k in node.defaultProps) {
-    if (!(k in props2)) {
-      keys.push(k);
-    }
-  }
-  return keys;
-}
-var AtomTable = function() {
-};
-AtomTable.prototype = /* @__PURE__ */ Object.create(null);
-var PropsTable = function() {
-};
-PropsTable.prototype = Object.freeze(/* @__PURE__ */ Object.create(null));
-var PropsView = class {
-  node;
-  atoms = new AtomTable();
-  keys = null;
-  keyLookup = null;
-  keysDefaults = 0;
-  keySet = null;
-  keysVersion = 0;
-  constructor(node) {
-    this.node = node;
-  }
-  resolve(key) {
-    const node = this.node;
-    const value = node.props[key];
-    if (value === void 0) {
-      const declared = node.defaultProps;
-      if (declared && key in declared) {
-        return declared[key];
-      }
-    }
-    return value;
-  }
-  read(key) {
-    let atom = this.atoms[key];
-    if (atom === void 0) {
-      if (!isObserving()) {
-        return this.resolve(key);
-      }
-      atom = this.atoms[key] = createAtom(this.resolve(key), "prop");
-    }
-    onReadAtom(atom);
-    return atom.value;
-  }
-  // the key set as a reader sees it: subscribes to its changes
-  currentKeys() {
-    (this.keySet ||= signal(this.keysVersion))();
-    return this.refreshKeys();
-  }
-  refreshKeys() {
-    const defaultsVersion = defaultsVersions.get(this.node) || 0;
-    if (!this.keys || this.keysDefaults !== defaultsVersion) {
-      this.keys = getKeys(this.node);
-      this.keyLookup = null;
-      this.keysDefaults = defaultsVersion;
-    }
-    return this.keys;
-  }
-  hasKey(key) {
-    const keys = this.currentKeys();
-    return (this.keyLookup ||= new Set(keys)).has(key);
-  }
-  update() {
-    writeAtoms(this.atoms, this);
-    if (!this.keySet) {
-      return;
-    }
-    const previousKeys = this.refreshKeys();
-    const nextKeys = getKeys(this.node);
-    if (nextKeys.length !== previousKeys.length || nextKeys.some((key, i) => key !== previousKeys[i])) {
-      this.keys = nextKeys;
-      this.keyLookup = null;
-      this.keySet.set(++this.keysVersion);
-    }
-  }
-};
-var viewHandler = {
-  get: (view, key) => typeof key === "string" ? view.read(key) : void 0,
-  has: (view, key) => typeof key === "string" && view.hasKey(key),
-  ownKeys: (view) => view.currentKeys(),
-  getOwnPropertyDescriptor(view, key) {
-    if (typeof key === "string" && view.hasKey(key)) {
-      return { value: view.read(key), enumerable: true, configurable: true, writable: false };
-    }
-    return void 0;
-  },
-  getPrototypeOf: () => null,
-  set: () => false,
-  defineProperty: () => false,
-  deleteProperty: () => false
-};
-var useProps = Object.assign(makeProps, { static: staticProp });
-var props = useProps;
-
-// ../owl-runtime/src/error_boundary.ts
-var ErrorBoundary = class extends Component {
-  static template = xml`
-    <t t-if="this.props.error()">
-      <t t-call-slot="fallback"/>
-    </t>
-    <t t-else="">
-      <t t-call-slot="default"/>
-    </t>
-  `;
-  props = props({ error: types3.signal().optional(() => signal(null)) });
-  setup() {
-    onError(
-      (e) => untrack(() => {
-        if (this.props.error()) {
-          throw e;
-        }
-        this.props.error.set(e);
-      })
-    );
-  }
-};
-
-// ../owl-runtime/src/hooks.ts
-var useApp2 = useApp;
-
-// ../owl-runtime/src/portal.ts
-var PortalContent = class extends Component {
-  static template = xml`<t t-call-slot="default"/>`;
-};
-var Portal = class extends Component {
-  static template = xml``;
-  props = props({
-    slots: types3.object(["default"]),
-    target: types3.or([
-      types3.string(),
-      types3.signal(types3.instanceOf(HTMLElement)),
-      types3.instanceOf(HTMLElement),
-      types3.literal(null)
-    ]).optional()
-  });
-  setup() {
-    const portalNode = this.__owl__;
-    const app = portalNode.app;
-    const portalProps = this.props;
-    let root = null;
-    let mountedTarget = null;
-    let committed = false;
-    const tearDown = () => {
-      if (root) {
-        root.destroy();
-        root = null;
-        mountedTarget = null;
-      }
-    };
-    const mountInto = (target, position) => {
-      tearDown();
-      root = app.createRoot(PortalContent, {
-        props: {
-          get slots() {
-            return portalProps.slots;
-          }
-        },
-        // Forward the plugin chain from this Portal (createRoot defaults
-        // sub-roots to the app-level plugin manager) so `providePlugins`
-        // contributions from ancestors are visible inside the portaled content.
-        pluginManager: portalNode.pluginManager,
-        // Route errors from the portaled subtree back through Portal's parent
-        // chain so consumer `onError` handlers still catch them. Without this,
-        // sub-root errors would propagate to app._handleError and tear down
-        // the whole app.
-        onError: forwardErrorToParent(portalNode),
-        // Let the scheduler see through the sub-root boundary, so renders of
-        // the portaled content yield to in-flight ancestor renders (e.g. a
-        // t-if about to remove this Portal).
-        host: portalNode
-      });
-      mountedTarget = target;
-      committed = false;
-      if (portalNode.status === STATUS.MOUNTED) {
-        commit(position);
-      } else {
-        root.prepare();
-      }
-    };
-    const commit = (position) => {
-      committed = true;
-      root.mount(mountedTarget, { position, allowDetached: true });
-    };
-    useEffect(() => {
-      const target = resolveTarget(this.props.target);
-      if (!target) {
-        return;
-      }
-      mountInto(target);
-      return tearDown;
-    });
-    onMounted(() => {
-      if (root && mountedTarget && !mountedTarget.isConnected && typeof this.props.target === "string") {
-        tearDown();
-      }
-      if (root && !committed) {
-        commit();
-      }
-      if (!root && typeof this.props.target === "string") {
-        const target = resolveTarget(this.props.target);
-        if (target) {
-          mountInto(target, "first-child");
-        }
-      }
-    });
-    onWillDestroy(tearDown);
-  }
-};
-function resolveTarget(target) {
-  if (typeof target === "function") {
-    target = target();
-  }
-  if (typeof target === "string") {
-    return document.querySelector(target);
-  }
-  if (target instanceof HTMLElement) {
-    return target;
-  }
-  return null;
-}
-
-// ../owl-runtime/src/suspense.ts
-var SuspenseHost = class extends Component {
-  static template = xml`<t t-call-slot="default"/>`;
-  setup() {
-    this.__owl__.props.content.node = this.__owl__;
-  }
-};
-var SuspenseContent = class {
-  node = null;
-  anchor = null;
-  parent = null;
-  mount(parent, afterNode) {
-    this.parent = parent;
-    this.anchor = document.createTextNode("");
-    parent.insertBefore(this.anchor, afterNode);
-  }
-  content() {
-    const node = this.node;
-    return node !== null && node.status === STATUS.MOUNTED ? node.bdom : null;
-  }
-  moveBeforeDOMNode(node) {
-    this.content()?.moveBeforeDOMNode(node);
-    this.parent.insertBefore(this.anchor, node);
-  }
-  moveBeforeVNode(other, afterNode) {
-    this.moveBeforeDOMNode(other ? other.firstNode() : afterNode);
-  }
-  patch() {
-  }
-  beforeRemove() {
-  }
-  // the content is removed by its root's destroy, from Suspense's onWillDestroy
-  remove() {
-    this.anchor.remove();
-  }
-  firstNode() {
-    return this.content()?.firstNode() ?? this.anchor;
-  }
-};
-var Suspense = class extends Component {
-  static template = xml`
-    <t t-if="!this.prepared()">
-      <t t-call-slot="fallback"/>
-    </t>
-  `;
-  props = props({ slots: types3.object({ default: types3.any(), fallback: types3.any().optional() }) });
-  prepared = signal(false);
-  mounted = signal(false);
-  subRootMounted = false;
-  setup() {
-    const suspenseNode = this.__owl__;
-    const content = new SuspenseContent();
-    const render2 = suspenseNode.renderFn;
-    suspenseNode.renderFn = () => multi([render2(), content]);
-    const suspenseProps = this.props;
-    const root = suspenseNode.app.createRoot(SuspenseHost, {
-      props: {
-        get slots() {
-          return suspenseProps.slots;
-        },
-        content
-      },
-      // Thread the plugin manager so `providePlugins` contributions from
-      // ancestors are visible inside the default slot. (createRoot defaults
-      // sub-roots to the app-level plugin manager; override here.) Destroy
-      // cascade is handled explicitly below via `onWillDestroy`.
-      pluginManager: suspenseNode.pluginManager,
-      // Route errors from the sub-root back into Suspense's parent chain so
-      // consumer `onError` handlers still catch descendant failures.
-      onError: forwardErrorToParent(suspenseNode),
-      // Let the scheduler see through the sub-root boundary, so renders of
-      // the default slot yield to in-flight ancestor renders (e.g. a t-if
-      // about to remove this Suspense).
-      host: suspenseNode
-    });
-    root.prepare().then(() => this.prepared.set(true));
-    if (root.prepared) {
-      this.prepared.set(true);
-    }
-    onMounted(() => this.mounted.set(true));
-    useEffect(() => {
-      if (this.subRootMounted || !this.prepared() || !this.mounted()) {
-        return;
-      }
-      this.subRootMounted = true;
-      root.mount(content.parent, { afterNode: content.anchor });
-    });
-    onWillDestroy(() => root.destroy());
-  }
-};
-
-// ../owl-runtime/src/plugin_hooks.ts
-function providePlugins(pluginConstructors, config3) {
-  const node = getComponentScope();
-  const manager = new PluginManager(node.app, { parent: node.pluginManager, config: config3 });
-  node.pluginManager = manager;
-  onWillDestroy(() => manager.destroy());
-  startPlugins(manager, pluginConstructors);
-  if (manager.status < STATUS.MOUNTED) {
-    onWillStart(() => manager.ready);
-  }
-}
-
-// ../owl-runtime/src/index.ts
-config2.mainEventHandler = mainEventHandler;
-var blockDom = {
-  config: config2,
-  // bdom entry points
-  mount,
-  patch,
-  remove,
-  // bdom block types
-  list,
-  multi,
-  text,
-  toggler,
-  createBlock,
-  html
-};
-var __info__ = {
-  version: App.version,
-  date: "2026-10-07T00:12:08.386Z",
-  hash: "33bb67f1",
-  url: "https://github.com/odoo/owl"
-};
 
 // ../owl-compiler/src/inline_expressions.ts
-var RESERVED_WORDS = new Set(
-  "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent".split(",")
+var RESERVED_WORDS = /* @__PURE__ */ wordSet(
+  "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent"
 );
-var STATEMENT_KEYWORDS = new Set(
-  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield".split(",")
+function wordSet(words) {
+  return new Set(words.split(","));
+}
+var STATEMENT_KEYWORDS = /* @__PURE__ */ wordSet(
+  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield"
 );
-var WORD_REPLACEMENT = Object.assign(/* @__PURE__ */ Object.create(null), {
-  and: "&&",
-  or: "||",
-  gt: ">",
-  gte: ">=",
-  lt: "<",
-  lte: "<="
-});
-var STATIC_TOKEN_MAP = Object.assign(/* @__PURE__ */ Object.create(null), {
-  "{": "LEFT_BRACE",
-  "}": "RIGHT_BRACE",
-  "[": "LEFT_BRACKET",
-  "]": "RIGHT_BRACKET",
-  ":": "COLON",
-  ",": "COMMA",
-  "(": "LEFT_PAREN",
-  ")": "RIGHT_PAREN"
-});
-var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
+var WORD_REPLACEMENT = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ Object.create(null),
+  {
+    and: "&&",
+    or: "||",
+    gt: ">",
+    gte: ">=",
+    lt: "<",
+    lte: "<="
+  }
+);
+var STATIC_TOKEN_MAP = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ Object.create(null),
+  {
+    "{": "LEFT_BRACE",
+    "}": "RIGHT_BRACE",
+    "[": "LEFT_BRACKET",
+    "]": "RIGHT_BRACKET",
+    ":": "COLON",
+    ",": "COMMA",
+    "(": "LEFT_PAREN",
+    ")": "RIGHT_PAREN"
+  }
+);
+var OPERATORS = /* @__PURE__ */ "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
   ","
 );
 var tokenizeString = function(expr) {
@@ -8079,15 +7102,18 @@ function replaceInterpolations(template, replacer) {
   return result;
 }
 var REGEXP_PREFIX_RE = /[(,=:[!&|?{};+\-*%<>~^]/;
-var REGEXP_PREFIX_WORDS = /* @__PURE__ */ new Set([
-  "return",
-  "void",
-  "typeof",
-  "delete",
-  "in",
-  "new",
-  ...Object.keys(WORD_REPLACEMENT)
-]);
+var REGEXP_PREFIX_WORDS = /* @__PURE__ */ regexpPrefixWords();
+function regexpPrefixWords() {
+  return /* @__PURE__ */ new Set([
+    "return",
+    "void",
+    "typeof",
+    "delete",
+    "in",
+    "new",
+    ...Object.keys(WORD_REPLACEMENT)
+  ]);
+}
 function startsRegExp(str, previous) {
   if (previous < 0) {
     return true;
@@ -8247,7 +7273,7 @@ var TOKENIZERS = [
   tokenizeSymbol,
   tokenizeStatic
 ];
-var PROPERTY_TOKENIZERS = [tokenizeProperty, ...TOKENIZERS];
+var PROPERTY_TOKENIZERS = /* @__PURE__ */ [tokenizeProperty].concat(TOKENIZERS);
 function tokenize(expr) {
   const result = [];
   let token = true;
@@ -9049,11 +8075,14 @@ function parseTForEach(node, ctx) {
   }
   return wrapping(ast, body);
 }
-var UNVISITABLE = {
-  [ASTType.TCall]: "t-call",
-  [ASTType.TCallSlot]: "t-slot",
-  [ASTType.TCallBlock]: "t-call-block"
-};
+var UNVISITABLE = /* @__PURE__ */ unvisitableTypes();
+function unvisitableTypes() {
+  return {
+    [ASTType.TCall]: "t-call",
+    [ASTType.TCallSlot]: "t-slot",
+    [ASTType.TCallBlock]: "t-call-block"
+  };
+}
 function findNode(value, test) {
   if (!value || typeof value !== "object") {
     return null;
@@ -9473,9 +8502,9 @@ var CONTEXT_WRITE = /ctx\['[^']*'\]\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=
 var MAX_LAZY_LOOP_KEYS = 3;
 var KEY_MARK = "\\u0002";
 var whitespaceRE = /[ \t\n\r\f]+/g;
-var xmlDoc;
-if (typeof document !== "undefined") {
-  xmlDoc = document.implementation.createDocument(null, null, null);
+var xmlDoc = /* @__PURE__ */ makeXmlDocument();
+function makeXmlDocument() {
+  return typeof document === "undefined" ? void 0 : document.implementation.createDocument(null, null, null);
 }
 var LITERAL_RE = /^(?:'[^'\\]*'|"[^"\\]*"|`(?:[^`\\]|\\.)*`|-?\d[\d.e+-]*|true|false|null|undefined|\{.*\})$/s;
 function isProp(tag, key) {
@@ -10783,8 +9812,1020 @@ ${code}
   }
 }
 
-// src/index.ts
-TemplateSet.compiler = { compile, parseXML, version, hash: buildHash };
+// src/bundled_compiler.ts
+var bundledCompiler = {
+  compile,
+  parseXML,
+  version,
+  hash: buildHash
+};
+
+// ../owl-runtime/src/template_set.ts
+var bdom = { text, createBlock, list, multi, html, toggler };
+var COMPILER_KEY = /* @__PURE__ */ Symbol.for("@odoo/owl/compiler");
+var ownCompiler;
+function registeredBuilds() {
+  return Object.keys(globalThis[COMPILER_KEY] || {});
+}
+function checkBuild(compiler) {
+  if (compiler.version === void 0 || compiler.hash === void 0) {
+    throw new OwlError(
+      `The template compiler does not name its build, as the compiler module of an owl older than this runtime (${build}) does: load the owl.compiler.es.js built with this runtime`
+    );
+  }
+  const build2 = `${compiler.version}+${compiler.hash}`;
+  if (build2 !== build) {
+    throw new OwlError(
+      `The template compiler is build ${build2}, but the runtime is ${build}: load the owl.compiler.es.js built with this runtime`
+    );
+  }
+}
+var TemplateSet = class _TemplateSet {
+  /**
+   * The compiler: the full build's own, else the compiler module of this
+   * runtime's build once it is registered. Setting a compiler checks that it
+   * is of this build; null leaves the runtime without one, undefined takes
+   * the build's own or the registered one again.
+   */
+  static get compiler() {
+    if (ownCompiler === void 0) {
+      if (bundledCompiler) {
+        if (debug.template) {
+          debugLog("template", `bundled compiler ${build} installed`);
+        }
+        ownCompiler = bundledCompiler;
+        return ownCompiler;
+      }
+      const registered = globalThis[COMPILER_KEY]?.[build];
+      if (!registered) {
+        return null;
+      }
+      if (debug.template) {
+        debugLog("template", `compiler module ${build} installed`);
+      }
+      ownCompiler = registered;
+    }
+    return ownCompiler;
+  }
+  static set compiler(compiler) {
+    if (compiler) {
+      checkBuild(compiler);
+    }
+    ownCompiler = compiler;
+  }
+  static registerTemplate(name, fn) {
+    globalTemplates[name] = fn;
+  }
+  dev;
+  rawTemplates = Object.create(globalTemplates);
+  templates = /* @__PURE__ */ Object.create(null);
+  getRawTemplate;
+  translateFn;
+  translatableAttributes;
+  customDirectives;
+  runtimeUtils;
+  hasGlobalValues;
+  constructor(config3 = {}) {
+    this.dev = config3.dev || false;
+    this.translateFn = config3.translateFn;
+    this.translatableAttributes = config3.translatableAttributes;
+    if (config3.templates) {
+      if (config3.templates instanceof Document || typeof config3.templates === "string") {
+        this.addTemplates(config3.templates);
+      } else {
+        for (const name in config3.templates) {
+          this.addTemplate(name, config3.templates[name]);
+        }
+      }
+    }
+    this.getRawTemplate = config3.getTemplate;
+    this.customDirectives = config3.customDirectives || {};
+    this.runtimeUtils = { ...helpers, __globals__: config3.globalValues || {} };
+    this.hasGlobalValues = Boolean(config3.globalValues && Object.keys(config3.globalValues).length);
+  }
+  addTemplate(name, template) {
+    if (name in this.rawTemplates) {
+      if (!this.dev) {
+        return;
+      }
+      const rawTemplate = this.rawTemplates[name];
+      if (areTemplatesEqual(rawTemplate, template)) {
+        return;
+      }
+      throw new OwlError(`Template ${name} already defined with different content`);
+    }
+    this.rawTemplates[name] = template;
+  }
+  addTemplates(xml2) {
+    if (!xml2) {
+      return;
+    }
+    xml2 = xml2 instanceof Document ? xml2 : this._parseXML(xml2);
+    for (const template of xml2.querySelectorAll("[t-name]")) {
+      const name = template.getAttribute("t-name");
+      this.addTemplate(name, template);
+    }
+  }
+  getTemplate(name) {
+    const cacheKey = name;
+    if (!(cacheKey in this.templates)) {
+      const rawTemplate = this.getRawTemplate?.(name) || this.rawTemplates[name];
+      if (rawTemplate === void 0) {
+        let extraInfo = "";
+        const scope = getScope();
+        if (scope instanceof ComponentNode) {
+          extraInfo = ` (for component "${scope.componentName}")`;
+        }
+        throw new OwlError(`Missing template: "${name}"${extraInfo}`);
+      }
+      const isFn = typeof rawTemplate === "function" && !(rawTemplate instanceof Element);
+      const start = debug.template ? debugNow() : -1;
+      const templateFn = isFn ? rawTemplate : this._compileTemplate(name, rawTemplate);
+      if (debug.template) {
+        debugLog(
+          "template",
+          isFn ? `${name}: precompiled` : `${name}: compiled${start < 0 ? "" : ` in ${(debugNow() - start).toFixed(2)} ms`}, ${String(templateFn).length} chars`
+        );
+      }
+      const templates = this.templates;
+      this.templates[cacheKey] = function(context, parent) {
+        return templates[cacheKey].call(this, context, parent);
+      };
+      try {
+        this.templates[cacheKey] = templateFn(this, bdom, this.runtimeUtils);
+      } catch (e) {
+        delete this.templates[cacheKey];
+        throw e;
+      }
+    }
+    return this.templates[cacheKey];
+  }
+  _compileTemplate(name, template) {
+    const compiler = _TemplateSet.compiler;
+    if (!compiler) {
+      throw new OwlError(
+        `Unable to compile a template: load the compiler module (@odoo/owl/compiler) of this runtime's build or use the full build${missingCompiler()}`
+      );
+    }
+    try {
+      return compiler.compile(template, {
+        name,
+        dev: this.dev,
+        translateFn: this.translateFn,
+        translatableAttributes: this.translatableAttributes,
+        customDirectives: this.customDirectives,
+        hasGlobalValues: this.hasGlobalValues
+      });
+    } catch (error) {
+      throw asOwnError(error, compiler);
+    }
+  }
+  _parseXML(xml2) {
+    const compiler = _TemplateSet.compiler;
+    if (!compiler) {
+      throw new OwlError(
+        `Unable to parse XML templates: load the compiler module (@odoo/owl/compiler) of this runtime's build, use the full build, or pass a Document instance${missingCompiler()}`
+      );
+    }
+    try {
+      return compiler.parseXML(xml2);
+    } catch (error) {
+      throw asOwnError(error, compiler);
+    }
+  }
+};
+function missingCompiler() {
+  if (ownCompiler === null) {
+    return ` (TemplateSet.compiler was set to null)`;
+  }
+  const builds = registeredBuilds();
+  return builds.length ? ` (the runtime is ${build}; the compiler modules loaded are ${builds.join(", ")})` : "";
+}
+function asOwnError(error, compiler) {
+  const ForeignError = compiler.OwlError;
+  if (!ForeignError || ForeignError === OwlError || !(error instanceof ForeignError)) {
+    return error;
+  }
+  const ownError = new OwlError(error.message);
+  ownError.cause = error;
+  return ownError;
+}
+var globalTemplates = /* @__PURE__ */ Object.create(null);
+var xml = /* @__PURE__ */ Object.assign(
+  function(...args) {
+    const name = `__template__${xml.nextId++}`;
+    const value = String.raw(...args);
+    globalTemplates[name] = value;
+    return name;
+  },
+  { nextId: 1 }
+);
+function ownTemplate(C, name) {
+  return {
+    xml(...args) {
+      const templateName = `__owl__${name}`;
+      globalTemplates[templateName] = String.raw(...args);
+      Object.defineProperty(C, "template", {
+        value: templateName,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      return templateName;
+    }
+  };
+}
+function areTemplatesEqual(t1, t2) {
+  if (t1 === t2) {
+    return true;
+  }
+  if (typeof t1 === "function" !== (typeof t2 === "function")) {
+    return false;
+  }
+  const s1 = t1 instanceof Element ? t1.outerHTML : String(t1);
+  const s2 = t2 instanceof Element ? t2.outerHTML : String(t2);
+  return s1 === s2;
+}
+
+// ../owl-runtime/src/app.ts
+var hasBeenLogged = false;
+var apps = /* @__PURE__ */ new Set();
+function exposeToDevtools() {
+  if (typeof window !== "undefined" && !window.__OWL_DEVTOOLS__) {
+    window.__OWL_DEVTOOLS__ = { apps, Fiber: Fiber2, RootFiber: RootFiber2, toRaw, proxy };
+    if (debug.lifecycle) {
+      debugLog("lifecycle", "window.__OWL_DEVTOOLS__ set");
+    }
+  }
+}
+var App = class _App extends TemplateSet {
+  static validateTarget = validateTarget;
+  static apps = apps;
+  static version = version;
+  name;
+  scheduler = new Scheduler();
+  roots = /* @__PURE__ */ new Set();
+  pluginManager;
+  destroyed = false;
+  constructor(config3 = {}) {
+    super(config3.test ? { ...config3, dev: true } : config3);
+    this.name = config3.name || "";
+    if (!apps.size) {
+      exposeToDevtools();
+    }
+    apps.add(this);
+    this.pluginManager = new PluginManager(this, { config: config3.config });
+    if (config3.plugins) {
+      startPlugins(this.pluginManager, config3.plugins);
+    } else {
+      this.pluginManager.status = STATUS.MOUNTED;
+    }
+    if (this.dev && !config3.test && !hasBeenLogged) {
+      console.info(`Owl is running in 'dev' mode.`);
+      hasBeenLogged = true;
+    }
+  }
+  createRoot(Root, config3 = {}) {
+    if (this.destroyed) {
+      throw new OwlError("Cannot create a root in a destroyed app");
+    }
+    if (debug.lifecycle) {
+      debugLog("lifecycle", `create root ${Root.name}${this.name ? ` in app ${this.name}` : ""}`);
+    }
+    const props2 = config3.props || {};
+    const { promise, resolve, reject } = Promise.withResolvers();
+    let node;
+    let error = null;
+    const subConfig = config3;
+    try {
+      node = new ComponentNode(Root, props2, this, null, null);
+      if (subConfig.pluginManager) {
+        node.pluginManager = subConfig.pluginManager;
+      }
+      if (subConfig.onError) {
+        nodeErrorHandlers.getOrInsertComputed(node, () => []).unshift(subConfig.onError);
+      }
+      if (subConfig.host) {
+        subRootHosts.set(node, subConfig.host);
+        hostedSubRoots.getOrInsertComputed(subConfig.host, () => /* @__PURE__ */ new Set()).add(node);
+      }
+    } catch (e) {
+      error = e;
+      reject(e);
+    }
+    let fiber = null;
+    let preparedPromise = null;
+    let resolvePrepared = null;
+    let destroyed = false;
+    let mounted = false;
+    const prepare = () => {
+      if (preparedPromise) {
+        return preparedPromise;
+      }
+      if (destroyed) {
+        return preparedPromise = Promise.resolve();
+      }
+      if (error) {
+        return Promise.reject(error);
+      }
+      fiber = new MountFiber(node, null);
+      let rejectMount = null;
+      if (!subConfig.onError) {
+        rejectMount = (error2, finalize) => {
+          finalize();
+          reject(error2);
+        };
+        nodeErrorHandlers.getOrInsertComputed(node, () => []).unshift(rejectMount);
+      }
+      const ready = new Promise((res) => {
+        resolvePrepared = res;
+        fiber.onPrepared = () => res();
+      });
+      preparedPromise = ready;
+      node.addHook("mounted", () => {
+        resolve(node.component);
+        if (rejectMount) {
+          const handlers = nodeErrorHandlers.get(node);
+          handlers.splice(handlers.indexOf(rejectMount), 1);
+        }
+      });
+      this.scheduler.addFiber(fiber);
+      if (this.pluginManager.status < STATUS.MOUNTED) {
+        node.willStart.unshift(() => this.pluginManager.ready);
+      }
+      try {
+        node.start(fiber);
+      } catch (e) {
+        reject(e);
+      }
+      return preparedPromise;
+    };
+    const mount3 = (target, options) => {
+      if (destroyed) {
+        return promise;
+      }
+      if (error) {
+        return promise;
+      }
+      if (mounted) {
+        throw new OwlError("This root is already mounted: create another root to mount again");
+      }
+      _App.validateTarget(target);
+      prepare();
+      mounted = true;
+      fiber.commit(target, options);
+      return promise;
+    };
+    const root = {
+      get prepared() {
+        return fiber ? fiber.counter === 0 : false;
+      },
+      get destroyed() {
+        return destroyed;
+      },
+      promise,
+      prepare,
+      mount: mount3,
+      destroy: () => {
+        if (destroyed) {
+          return;
+        }
+        destroyed = true;
+        this.roots.delete(root);
+        if (subConfig.host && node) {
+          hostedSubRoots.get(subConfig.host)?.delete(node);
+        }
+        node?.destroy();
+        resolvePrepared?.();
+      }
+    };
+    this.roots.add(root);
+    return root;
+  }
+  destroy() {
+    if (debug.lifecycle) {
+      debugLog(
+        "lifecycle",
+        `destroy app${this.name ? ` ${this.name}` : ""}, ${this.roots.size} root(s)`
+      );
+    }
+    let failure = null;
+    for (let root of this.roots) {
+      try {
+        root.destroy();
+      } catch (error) {
+        failure ||= { error };
+      }
+    }
+    this.pluginManager.destroy();
+    this.scheduler.tasks.clear();
+    Scheduler.active.delete(this.scheduler);
+    this.scheduler.delayedRenders = [];
+    apps.delete(this);
+    this.destroyed = true;
+    if (failure) {
+      throw failure.error;
+    }
+  }
+  _handleError(error) {
+    throw error;
+  }
+};
+async function mount2(C, target, config3 = {}) {
+  const app = new App(config3);
+  try {
+    if (app.pluginManager.status < STATUS.MOUNTED) {
+      await app.pluginManager.ready;
+      if (app.destroyed) {
+        throw makeAbortError();
+      }
+    }
+    const root = app.createRoot(C, config3);
+    return await root.mount(target, config3);
+  } catch (error) {
+    if (!app.destroyed) {
+      try {
+        app.destroy();
+      } catch {
+      }
+    }
+    throw error;
+  }
+}
+
+// ../owl-runtime/src/lifecycle_hooks.ts
+function onWillUpdateProps(fn) {
+  const scope = getComponentScope();
+  function swapped(s, nextProps) {
+    return fn.call(this, nextProps, s);
+  }
+  scope.addHook("willUpdateProps", scope.decorate(swapped, "onWillUpdateProps"));
+}
+function onMounted(fn) {
+  const scope = getComponentScope();
+  scope.addHook("mounted", scope.decorate(fn, "onMounted"));
+}
+function onWillPatch(fn) {
+  const scope = getComponentScope();
+  scope.addHook("willPatch", scope.decorate(fn, "onWillPatch"), true);
+}
+function onPatched(fn) {
+  const scope = getComponentScope();
+  scope.addHook("patched", scope.decorate(fn, "onPatched"));
+}
+function onWillUnmount(fn) {
+  const scope = getComponentScope();
+  scope.addHook("willUnmount", scope.decorate(fn, "onWillUnmount"), true);
+}
+function onError(callback) {
+  const scope = getComponentScope();
+  nodeErrorHandlers.getOrInsertComputed(scope, () => []).push(callback.bind(scope.component));
+}
+
+// ../owl-runtime/src/prop.ts
+function staticProp(key, type) {
+  const node = getComponentScope();
+  const defaultFactory = getDefault(type);
+  const propValue = node.props[key];
+  const usesDefault = propValue === void 0 && !!defaultFactory;
+  const value = usesDefault ? defaultFactory() : propValue === void 0 ? node.defaultProps?.[key] : propValue;
+  if (node.app.dev) {
+    if (type !== void 0) {
+      const message = usesDefault ? `Invalid default value for prop '${key}' in '${node.componentName}'` : `Invalid prop '${key}' in '${node.componentName}'`;
+      assertType(usesDefault ? value : propValue, type, message);
+    }
+    node.addHook("willUpdateProps", (nextProps) => {
+      const current = node.props[key] === void 0 ? node.defaultProps?.[key] : node.props[key];
+      if (nextProps[key] !== current) {
+        throw new OwlError(
+          `Prop '${key}' changed in component '${node.componentName}'. Props declared with \`props.static()\` are static and should not change. If the prop is a signal, pass the same signal reference (its inner value may change).`
+        );
+      }
+    });
+  }
+  return value;
+}
+
+// ../owl-runtime/src/types.ts
+function componentType() {
+  return constructorType(Component);
+}
+var types3 = /* @__PURE__ */ Object.assign({}, types, { component: componentType });
+
+// ../owl-runtime/src/props.ts
+var defaultsVersions = /* @__PURE__ */ new WeakMap();
+function makeProps(type) {
+  const node = getComponentScope();
+  if (!type) {
+    const view = new PropsView(node);
+    node.addHook("propsUpdated", view);
+    return markRaw(new Proxy(view, viewHandler));
+  }
+  const { app, componentName } = node;
+  let defaults = null;
+  if (!Array.isArray(type)) {
+    for (const key in type) {
+      const factory = getDefault(type[key]);
+      if (factory) {
+        (defaults ||= {})[key] = factory();
+      }
+    }
+  }
+  if (defaults) {
+    node.defaultProps = Object.assign(node.defaultProps || {}, defaults);
+    defaultsVersions.set(node, (defaultsVersions.get(node) || 0) + 1);
+  }
+  const keys = Array.isArray(type) ? type : schemaKeys(type);
+  const state = new TypedProps(node, defaults);
+  const result = new PropsTable();
+  for (const key of keys) {
+    Reflect.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: propGetters[key] ||= makePropGetter(key)
+    });
+  }
+  new StateStamp(result, state);
+  node.addHook("propsUpdated", state);
+  if (app.dev) {
+    if (defaults) {
+      const defaultedShape = {};
+      for (const key in type) {
+        if (key in defaults) {
+          defaultedShape[key] = type[key];
+        }
+      }
+      assertType(
+        defaults,
+        types3.object(defaultedShape),
+        `Invalid component default props (${componentName})`
+      );
+    }
+    const validation = types3.object(type);
+    assertType(node.props, validation, `Invalid component props (${componentName})`);
+    node.addHook("willUpdateProps", (np) => {
+      assertType(np, validation, `Invalid component props (${componentName})`);
+    });
+  }
+  return markRaw(Object.preventExtensions(result));
+}
+var schemaKeyLists = /* @__PURE__ */ new WeakMap();
+function schemaKeys(type) {
+  return schemaKeyLists.getOrInsertComputed(type, Object.keys);
+}
+var TypedProps = class {
+  node;
+  defaults;
+  atoms = new AtomTable();
+  constructor(node, defaults) {
+    this.node = node;
+    this.defaults = defaults;
+  }
+  // a missing prop resolves to this view's default, else to the default another
+  // view of the component declared
+  resolve(key) {
+    const value = this.node.props[key];
+    if (value === void 0) {
+      const defaults = this.defaults;
+      if (defaults && key in defaults) {
+        return defaults[key];
+      }
+      const declared = this.node.defaultProps;
+      if (declared && key in declared) {
+        return declared[key];
+      }
+    }
+    return value;
+  }
+  read(key) {
+    let atom = this.atoms[key];
+    if (atom === void 0) {
+      if (!isObserving()) {
+        return this.resolve(key);
+      }
+      atom = this.atoms[key] = createAtom(this.resolve(key), "prop");
+    }
+    onReadAtom(atom);
+    return atom.value;
+  }
+  update() {
+    writeAtoms(this.atoms, this);
+  }
+};
+function writeAtoms(atoms, view) {
+  for (const key in atoms) {
+    const atom = atoms[key];
+    const value = view.resolve(key);
+    if (!Object.is(atom.value, value)) {
+      atom.value = value;
+      onWriteAtom(atom, true);
+    }
+  }
+}
+var ObjectReturner = class {
+  constructor(target) {
+    return target;
+  }
+};
+var StateStamp = class extends ObjectReturner {
+  #state;
+  constructor(target, state) {
+    super(target);
+    this.#state = state;
+  }
+  // the state of `view`, or of the view it inherits from (a read through
+  // `Object.create(props)`)
+  static of(view) {
+    while (view !== null && typeof view === "object") {
+      if (#state in view) {
+        return view.#state;
+      }
+      view = Object.getPrototypeOf(view);
+    }
+    return void 0;
+  }
+};
+var propGetters = /* @__PURE__ */ Object.create(null);
+function makePropGetter(key) {
+  return function() {
+    const state = StateStamp.of(this);
+    if (state === void 0) {
+      throw new OwlError(`Cannot read prop "${key}" through an object that is not a props view`);
+    }
+    return state.read(key);
+  };
+}
+function getKeys(node) {
+  const props2 = node.props;
+  const keys = [];
+  for (const k in props2) {
+    if (k.charCodeAt(0) !== 1) {
+      keys.push(k);
+    }
+  }
+  for (const k in node.defaultProps) {
+    if (!(k in props2)) {
+      keys.push(k);
+    }
+  }
+  return keys;
+}
+var AtomTable = /* @__PURE__ */ tableClass(/* @__PURE__ */ Object.create(null));
+var PropsTable = /* @__PURE__ */ tableClass(
+  /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null))
+);
+function tableClass(prototype) {
+  const Table = function() {
+  };
+  Table.prototype = prototype;
+  return Table;
+}
+var PropsView = class {
+  node;
+  atoms = new AtomTable();
+  keys = null;
+  keyLookup = null;
+  keysDefaults = 0;
+  keySet = null;
+  keysVersion = 0;
+  constructor(node) {
+    this.node = node;
+  }
+  resolve(key) {
+    const node = this.node;
+    const value = node.props[key];
+    if (value === void 0) {
+      const declared = node.defaultProps;
+      if (declared && key in declared) {
+        return declared[key];
+      }
+    }
+    return value;
+  }
+  read(key) {
+    let atom = this.atoms[key];
+    if (atom === void 0) {
+      if (!isObserving()) {
+        return this.resolve(key);
+      }
+      atom = this.atoms[key] = createAtom(this.resolve(key), "prop");
+    }
+    onReadAtom(atom);
+    return atom.value;
+  }
+  // the key set as a reader sees it: subscribes to its changes
+  currentKeys() {
+    (this.keySet ||= signal(this.keysVersion))();
+    return this.refreshKeys();
+  }
+  refreshKeys() {
+    const defaultsVersion = defaultsVersions.get(this.node) || 0;
+    if (!this.keys || this.keysDefaults !== defaultsVersion) {
+      this.keys = getKeys(this.node);
+      this.keyLookup = null;
+      this.keysDefaults = defaultsVersion;
+    }
+    return this.keys;
+  }
+  hasKey(key) {
+    const keys = this.currentKeys();
+    return (this.keyLookup ||= new Set(keys)).has(key);
+  }
+  update() {
+    writeAtoms(this.atoms, this);
+    if (!this.keySet) {
+      return;
+    }
+    const previousKeys = this.refreshKeys();
+    const nextKeys = getKeys(this.node);
+    if (nextKeys.length !== previousKeys.length || nextKeys.some((key, i) => key !== previousKeys[i])) {
+      this.keys = nextKeys;
+      this.keyLookup = null;
+      this.keySet.set(++this.keysVersion);
+    }
+  }
+};
+var viewHandler = {
+  get: (view, key) => typeof key === "string" ? view.read(key) : void 0,
+  has: (view, key) => typeof key === "string" && view.hasKey(key),
+  ownKeys: (view) => view.currentKeys(),
+  getOwnPropertyDescriptor(view, key) {
+    if (typeof key === "string" && view.hasKey(key)) {
+      return { value: view.read(key), enumerable: true, configurable: true, writable: false };
+    }
+    return void 0;
+  },
+  getPrototypeOf: () => null,
+  set: () => false,
+  defineProperty: () => false,
+  deleteProperty: () => false
+};
+var useProps = /* @__PURE__ */ Object.assign(makeProps, {
+  static: staticProp
+});
+var props = useProps;
+
+// ../owl-runtime/src/error_boundary.ts
+var ErrorBoundary = class _ErrorBoundary extends Component {
+  static get template() {
+    return ownTemplate(_ErrorBoundary, "ErrorBoundary").xml`
+    <t t-if="this.props.error()">
+      <t t-call-slot="fallback"/>
+    </t>
+    <t t-else="">
+      <t t-call-slot="default"/>
+    </t>
+  `;
+  }
+  props = props({ error: types3.signal().optional(() => signal(null)) });
+  setup() {
+    onError(
+      (e) => untrack(() => {
+        if (this.props.error()) {
+          throw e;
+        }
+        this.props.error.set(e);
+      })
+    );
+  }
+};
+
+// ../owl-runtime/src/hooks.ts
+var useApp2 = useApp;
+
+// ../owl-runtime/src/portal.ts
+var PortalContent = class _PortalContent extends Component {
+  static get template() {
+    return ownTemplate(_PortalContent, "PortalContent").xml`<t t-call-slot="default"/>`;
+  }
+};
+var Portal = class _Portal extends Component {
+  static get template() {
+    return ownTemplate(_Portal, "Portal").xml``;
+  }
+  props = props({
+    slots: types3.object(["default"]),
+    target: types3.or([
+      types3.string(),
+      types3.signal(types3.instanceOf(HTMLElement)),
+      types3.instanceOf(HTMLElement),
+      types3.literal(null)
+    ]).optional()
+  });
+  setup() {
+    const portalNode = this.__owl__;
+    const app = portalNode.app;
+    const portalProps = this.props;
+    let root = null;
+    let mountedTarget = null;
+    let committed = false;
+    const tearDown = () => {
+      if (root) {
+        root.destroy();
+        root = null;
+        mountedTarget = null;
+      }
+    };
+    const mountInto = (target, position) => {
+      tearDown();
+      root = app.createRoot(PortalContent, {
+        props: {
+          get slots() {
+            return portalProps.slots;
+          }
+        },
+        // Forward the plugin chain from this Portal (createRoot defaults
+        // sub-roots to the app-level plugin manager) so `providePlugins`
+        // contributions from ancestors are visible inside the portaled content.
+        pluginManager: portalNode.pluginManager,
+        // Route errors from the portaled subtree back through Portal's parent
+        // chain so consumer `onError` handlers still catch them. Without this,
+        // sub-root errors would propagate to app._handleError and tear down
+        // the whole app.
+        onError: forwardErrorToParent(portalNode),
+        // Let the scheduler see through the sub-root boundary, so renders of
+        // the portaled content yield to in-flight ancestor renders (e.g. a
+        // t-if about to remove this Portal).
+        host: portalNode
+      });
+      mountedTarget = target;
+      committed = false;
+      if (portalNode.status === STATUS.MOUNTED) {
+        commit(position);
+      } else {
+        root.prepare();
+      }
+    };
+    const commit = (position) => {
+      committed = true;
+      root.mount(mountedTarget, { position, allowDetached: true });
+    };
+    useEffect(() => {
+      const target = resolveTarget(this.props.target);
+      if (!target) {
+        return;
+      }
+      mountInto(target);
+      return tearDown;
+    });
+    onMounted(() => {
+      if (root && mountedTarget && !mountedTarget.isConnected && typeof this.props.target === "string") {
+        tearDown();
+      }
+      if (root && !committed) {
+        commit();
+      }
+      if (!root && typeof this.props.target === "string") {
+        const target = resolveTarget(this.props.target);
+        if (target) {
+          mountInto(target, "first-child");
+        }
+      }
+    });
+    onWillDestroy(tearDown);
+  }
+};
+function resolveTarget(target) {
+  if (typeof target === "function") {
+    target = target();
+  }
+  if (typeof target === "string") {
+    return document.querySelector(target);
+  }
+  if (target instanceof HTMLElement) {
+    return target;
+  }
+  return null;
+}
+
+// ../owl-runtime/src/suspense.ts
+var SuspenseHost = class _SuspenseHost extends Component {
+  static get template() {
+    return ownTemplate(_SuspenseHost, "SuspenseHost").xml`<t t-call-slot="default"/>`;
+  }
+  setup() {
+    this.__owl__.props.content.node = this.__owl__;
+  }
+};
+var SuspenseContent = class {
+  node = null;
+  anchor = null;
+  parent = null;
+  mount(parent, afterNode) {
+    this.parent = parent;
+    this.anchor = document.createTextNode("");
+    parent.insertBefore(this.anchor, afterNode);
+  }
+  content() {
+    const node = this.node;
+    return node !== null && node.status === STATUS.MOUNTED ? node.bdom : null;
+  }
+  moveBeforeDOMNode(node) {
+    this.content()?.moveBeforeDOMNode(node);
+    this.parent.insertBefore(this.anchor, node);
+  }
+  moveBeforeVNode(other, afterNode) {
+    this.moveBeforeDOMNode(other ? other.firstNode() : afterNode);
+  }
+  patch() {
+  }
+  beforeRemove() {
+  }
+  // the content is removed by its root's destroy, from Suspense's onWillDestroy
+  remove() {
+    this.anchor.remove();
+  }
+  firstNode() {
+    return this.content()?.firstNode() ?? this.anchor;
+  }
+};
+var Suspense = class _Suspense extends Component {
+  static get template() {
+    return ownTemplate(_Suspense, "Suspense").xml`
+    <t t-if="!this.prepared()">
+      <t t-call-slot="fallback"/>
+    </t>
+  `;
+  }
+  props = props({ slots: types3.object({ default: types3.any(), fallback: types3.any().optional() }) });
+  prepared = signal(false);
+  mounted = signal(false);
+  subRootMounted = false;
+  setup() {
+    const suspenseNode = this.__owl__;
+    const content = new SuspenseContent();
+    const render2 = suspenseNode.renderFn;
+    suspenseNode.renderFn = () => multi([render2(), content]);
+    const suspenseProps = this.props;
+    const root = suspenseNode.app.createRoot(SuspenseHost, {
+      props: {
+        get slots() {
+          return suspenseProps.slots;
+        },
+        content
+      },
+      // Thread the plugin manager so `providePlugins` contributions from
+      // ancestors are visible inside the default slot. (createRoot defaults
+      // sub-roots to the app-level plugin manager; override here.) Destroy
+      // cascade is handled explicitly below via `onWillDestroy`.
+      pluginManager: suspenseNode.pluginManager,
+      // Route errors from the sub-root back into Suspense's parent chain so
+      // consumer `onError` handlers still catch descendant failures.
+      onError: forwardErrorToParent(suspenseNode),
+      // Let the scheduler see through the sub-root boundary, so renders of
+      // the default slot yield to in-flight ancestor renders (e.g. a t-if
+      // about to remove this Suspense).
+      host: suspenseNode
+    });
+    root.prepare().then(() => this.prepared.set(true));
+    if (root.prepared) {
+      this.prepared.set(true);
+    }
+    onMounted(() => this.mounted.set(true));
+    useEffect(() => {
+      if (this.subRootMounted || !this.prepared() || !this.mounted()) {
+        return;
+      }
+      this.subRootMounted = true;
+      root.mount(content.parent, { afterNode: content.anchor });
+    });
+    onWillDestroy(() => root.destroy());
+  }
+};
+
+// ../owl-runtime/src/plugin_hooks.ts
+function providePlugins(pluginConstructors, config3) {
+  const node = getComponentScope();
+  const manager = new PluginManager(node.app, { parent: node.pluginManager, config: config3 });
+  node.pluginManager = manager;
+  onWillDestroy(() => manager.destroy());
+  startPlugins(manager, pluginConstructors);
+  if (manager.status < STATUS.MOUNTED) {
+    onWillStart(() => manager.ready);
+  }
+}
+
+// ../owl-runtime/src/index.ts
+var blockDom = {
+  config: config2,
+  // bdom entry points
+  mount,
+  patch,
+  remove,
+  // bdom block types
+  list,
+  multi,
+  text,
+  toggler,
+  createBlock,
+  html
+};
+var __info__ = {
+  version,
+  date: "2026-10-07T01:29:49.392Z",
+  hash: "5900e2f4",
+  url: "https://github.com/odoo/owl"
+};
 export {
   App,
   Component,

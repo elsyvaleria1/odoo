@@ -32,31 +32,40 @@ function eventModifierMask(key) {
 }
 
 // ../owl-compiler/src/inline_expressions.ts
-var RESERVED_WORDS = new Set(
-  "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent".split(",")
+var RESERVED_WORDS = /* @__PURE__ */ wordSet(
+  "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent"
 );
-var STATEMENT_KEYWORDS = new Set(
-  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield".split(",")
+function wordSet(words) {
+  return new Set(words.split(","));
+}
+var STATEMENT_KEYWORDS = /* @__PURE__ */ wordSet(
+  "break,case,catch,class,const,continue,default,do,else,enum,export,extends,finally,for,if,import,super,switch,throw,try,var,while,with,yield"
 );
-var WORD_REPLACEMENT = Object.assign(/* @__PURE__ */ Object.create(null), {
-  and: "&&",
-  or: "||",
-  gt: ">",
-  gte: ">=",
-  lt: "<",
-  lte: "<="
-});
-var STATIC_TOKEN_MAP = Object.assign(/* @__PURE__ */ Object.create(null), {
-  "{": "LEFT_BRACE",
-  "}": "RIGHT_BRACE",
-  "[": "LEFT_BRACKET",
-  "]": "RIGHT_BRACKET",
-  ":": "COLON",
-  ",": "COMMA",
-  "(": "LEFT_PAREN",
-  ")": "RIGHT_PAREN"
-});
-var OPERATORS = "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
+var WORD_REPLACEMENT = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ Object.create(null),
+  {
+    and: "&&",
+    or: "||",
+    gt: ">",
+    gte: ">=",
+    lt: "<",
+    lte: "<="
+  }
+);
+var STATIC_TOKEN_MAP = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ Object.create(null),
+  {
+    "{": "LEFT_BRACE",
+    "}": "RIGHT_BRACE",
+    "[": "LEFT_BRACKET",
+    "]": "RIGHT_BRACKET",
+    ":": "COLON",
+    ",": "COMMA",
+    "(": "LEFT_PAREN",
+    ")": "RIGHT_PAREN"
+  }
+);
+var OPERATORS = /* @__PURE__ */ "...,.,===,==,++,+,!==,!=,!,||,&&,>=,>,<=,<,??=,??,?.,?,--,-,*,/,%,typeof ,delete ,=>,=,;,in ,new ,|,&,^,~".split(
   ","
 );
 var tokenizeString = function(expr) {
@@ -127,15 +136,18 @@ function replaceInterpolations(template, replacer) {
   return result;
 }
 var REGEXP_PREFIX_RE = /[(,=:[!&|?{};+\-*%<>~^]/;
-var REGEXP_PREFIX_WORDS = /* @__PURE__ */ new Set([
-  "return",
-  "void",
-  "typeof",
-  "delete",
-  "in",
-  "new",
-  ...Object.keys(WORD_REPLACEMENT)
-]);
+var REGEXP_PREFIX_WORDS = /* @__PURE__ */ regexpPrefixWords();
+function regexpPrefixWords() {
+  return /* @__PURE__ */ new Set([
+    "return",
+    "void",
+    "typeof",
+    "delete",
+    "in",
+    "new",
+    ...Object.keys(WORD_REPLACEMENT)
+  ]);
+}
 function startsRegExp(str, previous) {
   if (previous < 0) {
     return true;
@@ -295,7 +307,7 @@ var TOKENIZERS = [
   tokenizeSymbol,
   tokenizeStatic
 ];
-var PROPERTY_TOKENIZERS = [tokenizeProperty, ...TOKENIZERS];
+var PROPERTY_TOKENIZERS = /* @__PURE__ */ [tokenizeProperty].concat(TOKENIZERS);
 function tokenize(expr) {
   const result = [];
   let token = true;
@@ -1097,11 +1109,14 @@ function parseTForEach(node, ctx) {
   }
   return wrapping(ast, body);
 }
-var UNVISITABLE = {
-  [ASTType.TCall]: "t-call",
-  [ASTType.TCallSlot]: "t-slot",
-  [ASTType.TCallBlock]: "t-call-block"
-};
+var UNVISITABLE = /* @__PURE__ */ unvisitableTypes();
+function unvisitableTypes() {
+  return {
+    [ASTType.TCall]: "t-call",
+    [ASTType.TCallSlot]: "t-slot",
+    [ASTType.TCallBlock]: "t-call-block"
+  };
+}
 function findNode(value, test) {
   if (!value || typeof value !== "object") {
     return null;
@@ -1521,9 +1536,9 @@ var CONTEXT_WRITE = /ctx\['[^']*'\]\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=
 var MAX_LAZY_LOOP_KEYS = 3;
 var KEY_MARK = "\\u0002";
 var whitespaceRE = /[ \t\n\r\f]+/g;
-var xmlDoc;
-if (typeof document !== "undefined") {
-  xmlDoc = document.implementation.createDocument(null, null, null);
+var xmlDoc = /* @__PURE__ */ makeXmlDocument();
+function makeXmlDocument() {
+  return typeof document === "undefined" ? void 0 : document.implementation.createDocument(null, null, null);
 }
 var LITERAL_RE = /^(?:'[^'\\]*'|"[^"\\]*"|`(?:[^`\\]|\\.)*`|-?\d[\d.e+-]*|true|false|null|undefined|\{.*\})$/s;
 function isProp(tag, key) {
@@ -2835,7 +2850,7 @@ ${code}
 var version = "3.0.0-alpha.49";
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "33bb67f1";
+var buildHash = "5900e2f4";
 
 // src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
