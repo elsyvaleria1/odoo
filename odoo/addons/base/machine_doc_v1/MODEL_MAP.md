@@ -1449,12 +1449,9 @@ many2one of a `_parent_store` model, the one2many onto its grant table, the role
 ladder (lowest first), the owner holding the top role, the boolean where
 inherited grants stop, and the (field, value) a node matches to hold children.
 `access_scope_path` (stored, recursive) lists the node's ancestors up to the
-nearest boundary and the node itself, with a GIN index on it as an integer
-array. `access_role` is the role the current user holds: its search compiles,
-at query time, a grant on the node itself, the scope chain overlapping granted
-containers, or the owner, so nothing about grants is read when the domain is
-built, and the tree and grants the transaction wrote are flushed when the SQL is
-made; the compute runs the same SQL on the ids. `_access_graph_sources()` lists
+nearest boundary and the node itself. `access_role` is the role the current
+user holds: its search and its compute read the reach table (below), so nothing
+about grants is read when the domain is built. `_access_graph_sources()` lists
 every grant and owner that reaches a record. An adopter composes its own terms
 with `_access_graph_domain(role, groups=, exclude_groups=, partner=, owner=)`,
 the records reached at the role or above, and `_access_graph_reach(role,

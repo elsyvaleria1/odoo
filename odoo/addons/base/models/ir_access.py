@@ -127,6 +127,10 @@ class AccessInfo(typing.NamedTuple):
     class_id: int = 0
 
 
+# the companies of a guard that binds everyone, whatever groups they hold
+EVERYONE = object()
+
+
 def covers(row: AccessInfo, operation: str) -> bool:
     # a CRUD operation by its letter, a declared verb by its name
     letter = OPERATION_LETTER.get(operation)
@@ -1397,21 +1401,38 @@ class IrAccess(models.Model):
     ) -> tuple[list[Domain], list[Domain]]:
         # the domains of the permissions the principal's groups hold and of the
         # guards that bind it, for one model and operation
+        domain_of = self._row_domains()
+
+        def domains(bound: list[tuple[AccessInfo, Any]]) -> list[Domain]:
+            return [
+                domain_of(model_name, row)
+                if companies is EVERYONE
+                else self._scoped(
+                    model_name, row, domain_of(model_name, row), companies
+                )
+                for row, companies in bound
+            ]
+
+        permissions, guards = self._bound_access_infos(model_name, operation)
+        return domains(permissions), domains(guards)
+
+    def _bound_access_infos(
+        self, model_name: str, operation: str
+    ) -> tuple[list[tuple[AccessInfo, Any]], list[tuple[AccessInfo, Any]]]:
+        # the rows themselves, each with the companies its group is held in
+        # (None for all of them), or EVERYONE for a guard binding everyone
         self._check_operation(model_name, operation)
         scopes = self.env.user._get_group_scopes()
-        permissions: list[Domain] = []
-        guards: list[Domain] = []
-        domain_of = self._row_domains()
+        permissions: list[tuple[AccessInfo, Any]] = []
+        guards: list[tuple[AccessInfo, Any]] = []
         for row in self._get_all_access().get(model_name, ()):
             if not covers(row, operation):
                 continue
-            binds = row.kind == "guard" and row.guard_scope == "everyone"
-            if not binds and row.group_id not in scopes:
-                continue
-            domain = domain_of(model_name, row)
-            if not binds:
-                domain = self._scoped(model_name, row, domain, scopes[row.group_id])
-            (permissions if row.kind == "permission" else guards).append(domain)
+            if row.kind == "guard" and row.guard_scope == "everyone":
+                guards.append((row, EVERYONE))
+            elif row.group_id in scopes:
+                bound = permissions if row.kind == "permission" else guards
+                bound.append((row, scopes[row.group_id]))
         return permissions, guards
 
     def _conditional_reach(

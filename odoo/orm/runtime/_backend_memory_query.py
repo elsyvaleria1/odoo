@@ -185,6 +185,7 @@ def _is_whole_table(query: Query) -> bool:
         query._where_clauses
         or query._joins
         or query._once
+        or query._once_sets
         or len(query._tables) > 1
         or query.groupby
         or query.having

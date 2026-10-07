@@ -6,7 +6,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL, normalize_identifier
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
 
     from odoo.api import Environment
 
@@ -48,20 +48,39 @@ def _once_reference(table: str, index: int) -> SQL:
     return SQL("(SELECT v FROM %s)", identifier)
 
 
-def _with_once(table: str, expressions: list[SQL]) -> SQL:
-    if not expressions:
+def _once_set_reference(table: str, index: int) -> SQL:
+    identifier = SQL.identifier(_generate_table_alias(table, f"$set{index}"))
+    return SQL("(SELECT * FROM %s)", identifier)
+
+
+def _with_once(
+    table: str, expressions: list[SQL], sets: Sequence[SQL] = ()
+) -> SQL:
+    if not expressions and not sets:
         return SQL.EMPTY
     # MATERIALIZED: one evaluation whatever the number of references; left
     # to itself PostgreSQL inlines an expression referenced once
     return SQL(
         "WITH %s ",
         SQL(", ").join(
-            SQL(
-                "%s AS MATERIALIZED (SELECT %s AS v)",
-                SQL.identifier(_generate_table_alias(table, f"$once{index}")),
-                expression,
-            )
-            for index, expression in enumerate(expressions)
+            [
+                *(
+                    SQL(
+                        "%s AS MATERIALIZED (SELECT %s AS v)",
+                        SQL.identifier(_generate_table_alias(table, f"$once{index}")),
+                        expression,
+                    )
+                    for index, expression in enumerate(expressions)
+                ),
+                *(
+                    SQL(
+                        "%s AS MATERIALIZED (%s)",
+                        SQL.identifier(_generate_table_alias(table, f"$set{index}")),
+                        expression,
+                    )
+                    for index, expression in enumerate(sets)
+                ),
+            ]
         ),
     )
 
@@ -112,6 +131,7 @@ class Query:
         "_limit",
         "_offset",
         "_once",
+        "_once_sets",
         "_order",
         "_tables",
         "_where_clauses",
@@ -127,6 +147,7 @@ class Query:
         self._joins: dict[str, tuple[SQL, SQL, SQL]] = {}
 
         self._once: list[SQL] = []
+        self._once_sets: list[SQL] = []
 
         self._where_clauses: list[SQL] = []
 
@@ -213,12 +234,43 @@ class Query:
             self._invalidate_ids()
         return _once_reference(self.table, index)
 
+    def once_set(self, expression: SQL) -> SQL:
+        """A subquery standing for the set ``expression`` selects, stated once
+        where several queries share one statement.
+
+        A query rendered alone has the subquery back inline wherever it is
+        referenced: the planner sees the set's own estimate and may probe it
+        per row or hash it, as the rest of the plan wants. A statement
+        composed of several queries through `SharedOnce` -- a search per
+        opened group -- states it once at its head, MATERIALIZED, and every
+        part reads it: one evaluation of an access reach for all the groups,
+        not one per group.
+        """
+        try:
+            index = self._once_sets.index(expression)
+        except ValueError:
+            index = len(self._once_sets)
+            self._once_sets.append(expression)
+            self._invalidate_ids()
+        return _once_set_reference(self.table, index)
+
     def _inline_once(self, sql: SQL) -> SQL:
+        return self._inline_sets(
+            _splice_once(
+                sql,
+                {
+                    _once_reference(self.table, index).code: expression
+                    for index, expression in enumerate(self._once)
+                },
+            )
+        )
+
+    def _inline_sets(self, sql: SQL) -> SQL:
         return _splice_once(
             sql,
             {
-                _once_reference(self.table, index).code: expression
-                for index, expression in enumerate(self._once)
+                _once_set_reference(self.table, index).code: SQL("(%s)", expression)
+                for index, expression in enumerate(self._once_sets)
             },
         )
 
@@ -383,7 +435,9 @@ class Query:
         return SQL(
             "%s%s",
             self._with_sql(),
-            self._select_sql(args, self._from_sql(), self._where_sql()),
+            self._inline_sets(
+                self._select_sql(args, self._from_sql(), self._where_sql())
+            ),
         )
 
     def _select_sql(
@@ -463,6 +517,7 @@ class Query:
         if (
             self._joins
             or self._once
+            or self._once_sets
             or self._where_clauses
             or self.limit is not None
             or self.offset
@@ -536,9 +591,15 @@ class Query:
             subquery=bool(self.groupby or self.having or limit is not None),
         )
         if self.groupby or self.having or limit is not None:
-            parts = [SQL("%sSELECT FROM %s", self._with_sql(), self._from_sql())]
+            parts = [
+                SQL(
+                    "%sSELECT FROM %s",
+                    self._with_sql(),
+                    self._inline_sets(self._from_sql()),
+                )
+            ]
             if self._where_clauses:
-                parts.append(SQL(" WHERE %s", self._where_sql()))
+                parts.append(SQL(" WHERE %s", self._inline_sets(self._where_sql())))
             if self.groupby:
                 parts.append(SQL(" GROUP BY %s", self.groupby))
             if self.having:
@@ -548,9 +609,13 @@ class Query:
             return self._env.execute_query(
                 SQL("SELECT COUNT(*) FROM (%s) t", SQL("").join(parts))
             )[0][0]
-        sql = SQL("%sSELECT COUNT(*) FROM %s", self._with_sql(), self._from_sql())
+        sql = SQL(
+            "%sSELECT COUNT(*) FROM %s",
+            self._with_sql(),
+            self._inline_sets(self._from_sql()),
+        )
         if self._where_clauses:
-            sql = SQL("%s WHERE %s", sql, self._where_sql())
+            sql = SQL("%s WHERE %s", sql, self._inline_sets(self._where_sql()))
         return self._env.execute_query(sql)[0][0]
 
     def __iter__(self) -> Iterator[int]:
@@ -576,11 +641,12 @@ class SharedOnce:
     parts share it.
     """
 
-    __slots__ = ("_expressions", "_table")
+    __slots__ = ("_expressions", "_sets", "_table")
 
     def __init__(self, table: str) -> None:
         self._table = table
         self._expressions: list[SQL] = []
+        self._sets: list[SQL] = []
 
     def select(self, query: Query, *args: str | SQL) -> SQL:
         """`query.select(*args)`, reading its once-expressions from this scope."""
@@ -597,6 +663,15 @@ class SharedOnce:
             references[_once_reference(self._table, index).code] = _once_reference(
                 self._table, shared
             )
+        for index, expression in enumerate(query._once_sets):
+            try:
+                shared = self._sets.index(expression)
+            except ValueError:
+                shared = len(self._sets)
+                self._sets.append(expression)
+            references[_once_set_reference(self._table, index).code] = (
+                _once_set_reference(self._table, shared)
+            )
         return _splice_once(
             query._select_sql(args, query._from_sql(), query._where_sql()),
             references,
@@ -605,6 +680,9 @@ class SharedOnce:
     def statement(self, body: SQL) -> SQL:
         """``body``, composed of this scope's selects, as the statement to run."""
         _debug.perf.count(
-            "query.shared_once", table=self._table, expressions=len(self._expressions)
+            "query.shared_once",
+            table=self._table,
+            expressions=len(self._expressions),
+            sets=len(self._sets),
         )
-        return SQL("%s%s", _with_once(self._table, self._expressions), body)
+        return SQL("%s%s", _with_once(self._table, self._expressions, self._sets), body)

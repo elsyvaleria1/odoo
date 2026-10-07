@@ -263,6 +263,78 @@ class QueryTestCase(BaseCase):
         with self.assertRaises(ValueError):
             other.set_result_ids([3])
 
+    def test_a_set_is_inline_in_a_statement_of_its_own(self):
+        # rendered alone, the set is back where it is used, whatever the
+        # rendering: the planner sees its estimate and chooses how to read it
+        query = Query(None, "foo")
+        reach = SQL("SELECT resource_id FROM reach WHERE key = ANY(%s)", [5, 9])
+        first = query.once_set(reach)
+        self.assertEqual(first.code, '(SELECT * FROM "foo__$set0")')
+        self.assertEqual(
+            query.once_set(
+                SQL("SELECT resource_id FROM reach WHERE key = ANY(%s)", [5, 9])
+            ),
+            first,
+            "a set asked for twice is one set",
+        )
+        granted = query.once(SQL("ARRAY(SELECT n FROM g WHERE r = %s)", "a"))
+        query.add_where(
+            SQL(
+                "foo.id IN %s AND foo.up = ANY(%s::int4[]) AND foo.x = %s",
+                first,
+                granted,
+                3,
+            )
+        )
+        inline = "foo.id IN (SELECT resource_id FROM reach WHERE key = ANY(%s))"
+        self.assertEqual(
+            query.statement().code,
+            'WITH "foo__$once0" AS MATERIALIZED (SELECT ARRAY(SELECT n FROM g '
+            'WHERE r = %s) AS v) SELECT "foo"."id" FROM "foo" WHERE '
+            f'{inline} AND foo.up = ANY((SELECT v FROM "foo__$once0")::int4[]) '
+            "AND foo.x = %s",
+            "a scalar opens the statement, the set stays where it is used",
+        )
+        self.assertEqual(query.statement().params, ("a", [5, 9], 3))
+        self.assertIn(inline, query.select().code)
+        self.assertIn(inline, query.subselect().code)
+        self.assertNotIn("$set", query.where_clause.code)
+
+    def test_a_set_is_part_of_the_query_s_state(self):
+        query = Query(None, "foo")
+        query.set_result_ids([1, 2], ordered=False)
+        query.once_set(SQL("SELECT 1"))
+        self.assertIsNone(query._ids, "a query that reads a set is not its ids")
+        other = query.copy()
+        other.once_set(SQL("SELECT 2"))
+        self.assertEqual(len(query._once_sets), 1, "a copy shares none of it")
+        with self.assertRaises(ValueError):
+            other.set_result_ids([3])
+
+    def test_shared_once_states_a_set_one_time(self):
+        # the parts of one statement read one evaluation of the set
+        reach = SQL("SELECT resource_id FROM reach WHERE key = ANY(%s)", [5])
+        parts = []
+        for value in (1, 2):
+            query = Query(None, "foo")
+            query.add_where(
+                SQL("foo.id IN %s AND foo.x = %s", query.once_set(reach), value)
+            )
+            parts.append(query)
+        shared = SharedOnce("foo")
+        statement = shared.statement(
+            SQL(" UNION ALL ").join(shared.select(part) for part in parts)
+        )
+        self.assertEqual(
+            statement.code,
+            'WITH "foo__$set0" AS MATERIALIZED (SELECT resource_id FROM reach '
+            'WHERE key = ANY(%s)) SELECT "foo"."id" FROM "foo" WHERE foo.id IN '
+            '(SELECT * FROM "foo__$set0") AND foo.x = %s UNION ALL SELECT '
+            '"foo"."id" FROM "foo" WHERE foo.id IN (SELECT * FROM "foo__$set0") '
+            "AND foo.x = %s",
+        )
+        self.assertEqual(statement.params, ([5], 1, 2))
+
     def test_shared_once_states_the_parts_expressions_one_time(self):
         granted = SQL("ARRAY(SELECT n FROM g WHERE r = %s)", "a")
         owned = SQL("ARRAY(SELECT id FROM foo AS node WHERE owner_id = %s)", 7)

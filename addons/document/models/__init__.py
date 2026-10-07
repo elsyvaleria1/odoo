@@ -11,6 +11,7 @@ from . import document_type
 from . import document_document_type
 
 from . import document_document_access
+from . import document_document_reach
 from . import document_document_access_members
 from . import document_document_user_folder
 from . import document_document_search_panel

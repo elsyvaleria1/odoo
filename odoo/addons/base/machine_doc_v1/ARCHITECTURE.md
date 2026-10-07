@@ -70,7 +70,7 @@ access control, and ORM extensions that those controllers depend on.
 odoo/addons/base/
 ├── __manifest__.py              # Module metadata + asset/data file declarations
 ├── __init__.py                  # Imports models, report, wizard + post_init hook
-├── models/                      # 135 Python model files (core ORM infrastructure)
+├── models/                      # 136 Python model files (core ORM infrastructure)
 │   ├── assetsbundle/            #   Asset compilation package (bundle, JS/CSS/XML pipelines, store)
 │   ├── decimal_precision.py         #   Configurable decimal precision
 │   ├── ir_access.py                 #   ir.access: permissions and guards with domains, the decision of every model
@@ -149,6 +149,7 @@ odoo/addons/base/
 │   ├── ir_ui_view_name_manager.py   #   View XML structure validator
 │   ├── kpi_provider.py              #   KPI aggregation hook (abstract)
 │   ├── mixin_access_graph.py        #   Grants inherited live down a tree; grant rows (abstract)
+│   ├── mixin_access_graph_reach.py  #   The reach table: every way a principal reaches a node, kept by triggers
 │   ├── mixin_avatar.py              #   SVG avatar generation from initials
 │   ├── mixin_band.py                #   Numeric band / range mixin
 │   ├── mixin_bearer_token.py        #   Bearer token kept as its hash and sealed value
@@ -317,7 +318,7 @@ Derived by `factcheck.sh`, which re-measures every row against the tree.
 
 | Category | Count |
 |----------|-------|
-| Python (models) | 135 |
+| Python (models) | 136 |
 | Python (wizards) | 22 |
 | Python (tests) | 176 |
 | XML (views) | 44 |

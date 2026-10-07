@@ -324,17 +324,27 @@ class DocumentsDocument(models.Model):
             # an archived one: the grants reach nothing more
             editable = reachable = everything
         else:
+            # the system reach as shipped is a way of reaching like the others,
+            # in the one reach query; anything else binding the user is read
+            # beside it
+            folded = (
+                not system.is_false()
+                and not system.is_true()
+                and not self.env.user.share
+                and self._folds_system_reach()
+            )
             editable = self._reach(
-                "edit", ignore_link, exclude_ownership=exclude_ownership
+                "edit", ignore_link, exclude_ownership=exclude_ownership, system=folded
             )
             if self.env.user.share:
                 # what an external user may only view, whatever reaches them
                 editable &= ~self._kept_from_share_editors()
             reachable = self._reach(
-                "view", ignore_link, exclude_ownership=exclude_ownership
+                "view", ignore_link, exclude_ownership=exclude_ownership, system=folded
             )
-            editable |= everything
-            reachable |= everything
+            if not folded:
+                editable |= everything
+                reachable |= everything
         edit_label = self._access_label_reach("edit")
         if searched_roles == {"edit"}:
             return editable & edit_label
@@ -365,17 +375,6 @@ class DocumentsDocument(models.Model):
             "type",
         ]
 
-    def _permission_company_domain(self) -> Domain:
-        # a document of a company in use, of none, or of one the user is not
-        # in: the company switcher, which the access graph holds for what it
-        # reaches, and a document found through its folder's link needs too
-        every_company_ids = self.env.user.with_context(
-            active_test=False
-        ).company_ids.ids
-        return Domain("company_id", "in", self.env.companies.ids) | Domain(
-            "company_id", "not in", every_company_ids
-        )
-
     @api.model
     def _internal_audience_group(self) -> int:
         return self.env.ref("base.group_user").id
@@ -389,62 +388,25 @@ class DocumentsDocument(models.Model):
             role, exclude_groups=exclude, owner=not exclude_ownership
         )
 
-    def _direct_reach(self, role: str, *, exclude_ownership: bool = False) -> Domain:
-        # a document's own reach, a shortcut its target's; the owner of a
-        # shortcut edits it while they may read what it points at
-        own = Domain("shortcut_document_id", "=", False) & self._graph_reach(
-            role, exclude_ownership=exclude_ownership
-        )
-        target = self._graph_reach(role, exclude_ownership=exclude_ownership)
-        shortcut = Domain("shortcut_document_id", "!=", False) & Domain(
-            "shortcut_document_id", "any", target
-        )
-        if not exclude_ownership:
-            readable_target = self._graph_reach("view")
-            shortcut |= Domain("shortcut_document_id", "!=", False) & (
-                Domain("owner_id", "=", self.env.uid)
-                & (
-                    Domain("shortcut_document_owner_id", "=", self.env.uid)
-                    | Domain("shortcut_document_id", "any", readable_target)
-                )
-            )
-        domain = own | shortcut
-        if role == "edit" and self._user_is_documents_manager():
-            # managers edit wherever the employees' audience reaches, and a
-            # shortcut where it reaches the target
-            audience = self._access_graph_domain(
-                "view",
-                groups=[self._internal_audience_group()],
-                partner=False,
-                owner=False,
-            )
-            domain |= (Domain("shortcut_document_id", "=", False) & audience) | (
-                Domain("shortcut_document_id", "!=", False)
-                & Domain("shortcut_document_id", "any", audience)
-            )
-        return domain
-
     def _reach(
-        self, role: str, ignore_link: bool, *, exclude_ownership: bool = False
+        self,
+        role: str,
+        ignore_link: bool,
+        *,
+        exclude_ownership: bool = False,
+        system: bool = False,
     ) -> Domain:
-        # the documents reached at the role or above
-        domain = self._direct_reach(role, exclude_ownership=exclude_ownership)
-        if exclude_ownership or ignore_link:
-            return domain
-        direct_view = self._direct_reach("view")
-        if role == "edit":
-            # an edit link raises whoever reaches the document to edit
-            domain |= direct_view & Domain("access_via_link", "=", "edit")
-        # a document shared by link and not hidden is found at the link's role
-        # by whoever reaches its folder
-        link_roles = ("view", "edit") if role == "view" else ("edit",)
-        domain |= (
-            self._permission_company_domain()
-            & Domain("access_via_link", "in", link_roles)
-            & Domain("is_access_via_link_hidden", "=", False)
-            & Domain("folder_id", "any", direct_view)
+        # the documents reached at the role or above: a document's own reach, a
+        # shortcut its target's (its owner edits it while they read the
+        # target), managers' edit through the employees' audience, an edit
+        # link raising whoever reaches the document, and a link-shared
+        # document found through its folder (document_document_reach)
+        return self._permission_reach(
+            role,
+            links=not (exclude_ownership or ignore_link),
+            exclude_ownership=exclude_ownership,
+            system=system,
         )
-        return domain
 
     @api.depends(
         "access_ids.role",

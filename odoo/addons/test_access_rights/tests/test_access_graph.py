@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -6,8 +7,12 @@ from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.fields import Command, Domain
 from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tools import SQL
+
+from odoo.addons.base.models.mixin_access_graph_reach import REACH_COLUMNS
 
 ROLES = ("view", "edit", "manage")
+REACH_TABLE = '"test_access_right_graph_node_access_reach"'
 
 
 def oracle_role(nodes, grants, user, groups, scoped, node_id, now, in_use):
@@ -32,6 +37,11 @@ def oracle_role(nodes, grants, user, groups, scoped, node_id, now, in_use):
         or record_company in in_use
         or record_company not in user.company_ids.ids
     )
+    # a grant or an owner on a node that holds no children reaches that node
+    # only: what is above the record counts where it is a container
+    scope = [
+        node for node in scope if node == node_id or nodes[node].get("container", True)
+    ]
     rank = 0
     for grant in grants:
         if grant["node"] not in scope:
@@ -123,6 +133,7 @@ class TestAccessGraph(TransactionCase):
             created |= node
             nodes[node.id] = {
                 "parent": parent,
+                "container": is_container,
                 "boundary": values["is_boundary"],
                 "owner": values["owner_id"],
                 "company": values["company_id"],
@@ -178,7 +189,56 @@ class TestAccessGraph(TransactionCase):
 
     def assert_agrees(self, seed, companies=None):
         # companies: the companies in use, else all of each user's
-        created, nodes, grants, now = self.build(seed)
+        self.assert_state_agrees(*self.build(seed), seed=seed, companies=companies)
+
+    def stored_state(self, created):
+        # what the oracle reads, from the records as they now stand
+        created = created.exists()
+        nodes = {
+            node.id: {
+                "parent": node.parent_id.id or None,
+                "container": node.is_container,
+                "boundary": node.is_boundary,
+                "owner": node.owner_id.id,
+                "company": node.company_id.id,
+            }
+            for node in created
+        }
+        grants = [
+            {
+                "node": grant.node_id.id,
+                "partner": grant.partner_id.id,
+                "group": grant.group_id.id,
+                "company": grant.company_id.id,
+                "role": grant.role,
+                "date_to": grant.date_to,
+            }
+            for grant in self.Grant.search([("node_id", "in", created.ids)])
+        ]
+        return created, nodes, grants, fields.Datetime.now()
+
+    def assert_table_is_derived(self):
+        # the rows the triggers kept equal the rows derived from scratch
+        cr = self.env.cr
+        self.Node._access_graph_flush()
+        table = self.Node._access_reach_table()
+        columns = SQL(", ").join(SQL.identifier(column) for column in REACH_COLUMNS)
+        cr.execute(SQL("SELECT %s FROM %s", columns, SQL.identifier(table)))
+        kept = Counter(cr.fetchall())
+        cr.execute("SAVEPOINT rebuilt")
+        cr.execute(SQL("DELETE FROM %s", SQL.identifier(table)))
+        cr.execute(self.Node._access_reach_rows(SQL("TRUE")))
+        cr.execute(SQL("SELECT %s FROM %s", columns, SQL.identifier(table)))
+        rebuilt = Counter(cr.fetchall())
+        cr.execute("ROLLBACK TO SAVEPOINT rebuilt")
+        self.assertEqual(
+            kept - rebuilt, Counter(), "rows kept that derive from nothing"
+        )
+        self.assertEqual(rebuilt - kept, Counter(), "rows derived that were not kept")
+
+    def assert_state_agrees(
+        self, created, nodes, grants, now, seed, companies=None, every_band=True
+    ):
         mismatches = []
         exercised = set()
         for user in self.users:
@@ -244,7 +304,66 @@ class TestAccessGraph(TransactionCase):
                         )
                     )
         self.assertFalse(mismatches, f"seed {seed}: {mismatches[:20]}")
-        self.assertEqual(exercised, {0, 1, 2, 3}, "the matrix must reach every band")
+        if every_band:
+            self.assertEqual(
+                exercised, {0, 1, 2, 3}, "the matrix must reach every band"
+            )
+
+    def test_the_table_stays_derived_through_any_writes(self):
+        # moves, boundaries, containers, owners, companies, grants written and
+        # removed, nodes deleted: after each batch the kept rows are the
+        # derived ones, and the reach still agrees with the formula
+        for seed in (11, 12):
+            rng = random.Random(seed)
+            created, *_ = self.build(seed, size=40, grants=60)
+            for _batch in range(6):
+                for _write in range(8):
+                    nodes = created.exists()
+                    node = rng.choice(nodes)
+                    change = rng.randrange(8)
+                    if change == 0:
+                        below = self.Node.search([("id", "child_of", node.id)])
+                        outside = (nodes - below).filtered("is_container")
+                        node.parent_id = rng.choice([False, *outside.ids])
+                    elif change == 1:
+                        node.is_boundary = not node.is_boundary
+                    elif change == 2:
+                        node.is_container = not node.is_container
+                    elif change == 3:
+                        node.owner_id = rng.choice([False, *self.users.ids])
+                    elif change == 4:
+                        node.company_id = rng.choice(
+                            [False, self.company_a.id, self.company_b.id]
+                        )
+                    elif change == 5 and node.grant_ids:
+                        grant = rng.choice(node.grant_ids)
+                        grant.write(
+                            {
+                                "role": rng.choice(ROLES),
+                                "node_id": rng.choice(nodes.ids),
+                            }
+                        )
+                    elif change == 6 and node.grant_ids:
+                        rng.choice(node.grant_ids).unlink()
+                    elif change == 7 and not self.Node.search_count(
+                        [("parent_id", "=", node.id)]
+                    ):
+                        node.unlink()
+                self.assert_table_is_derived()
+            with self.subTest(seed=seed):
+                self.assert_state_agrees(
+                    *self.stored_state(created), seed=seed, every_band=False
+                )
+
+    def test_a_rolled_back_write_leaves_the_rows_it_found(self):
+        created, *_ = self.build(13, size=20, grants=30)
+        self.assert_table_is_derived()
+        with self.assertRaises(ValueError), self.env.cr.savepoint():
+            created[0].parent_id = self.Node.create({"name": "elsewhere"})
+            created.grant_ids.unlink()
+            self.Node._access_graph_flush()
+            raise ValueError
+        self.assert_table_is_derived()
 
     def test_the_sql_and_the_compute_agree_with_the_formula(self):
         for seed in (1, 2, 3):
@@ -315,7 +434,7 @@ class TestAccessGraph(TransactionCase):
         # "view or above" asks the graph once, not once per role
         def reaches(domain):
             query = self.Node.with_user(self.alice).sudo()._search(domain)
-            return query.select().code.count("AS grant_row")
+            return query.select().code.count(REACH_TABLE)
 
         once = reaches(self.Node.with_user(self.alice)._access_graph_domain("view"))
         self.assertTrue(once)
@@ -378,11 +497,9 @@ class TestAccessGraph(TransactionCase):
         grants = reached(self.bob, self.Grant._name, role="edit", at="node_id.")
         self.assertEqual(grants.node_id & nodes, leaf)
 
-    def test_a_search_computes_each_set_of_granted_containers_once(self):
+    def test_each_alias_reads_the_reach_table_once(self):
         # a rule that walks to the graph through two aliases -- the node and
-        # its parent -- asks for the same granted containers at both; the
-        # statement names each set once and both conditions read it, while
-        # each alias probes the grants on itself
+        # its parent -- looks each up in the reach table, once
         root = self.Node.create({"name": "R"})
         mid = self.Node.create({"name": "m", "parent_id": root.id})
         leaf = self.Node.create({"name": "l", "parent_id": mid.id, "is_boundary": True})
@@ -401,50 +518,34 @@ class TestAccessGraph(TransactionCase):
         Node = self.Node.with_user(self.alice)
         reach = Node._access_graph_reach("view")
         walked = reach | Domain("parent_id", "any", reach)
-        containers = "AS held JOIN"
-        probes = '"id" IN (SELECT grant_row.'
 
-        alone = Node.sudo()._search(reach)
-        sets = alone.statement().code.count(containers)
-        self.assertGreaterEqual(sets, 1, "a container set at least")
-        own = alone.statement().code.count(probes)
-        self.assertGreaterEqual(own, 1, "a probe of the node's own grants at least")
-
-        query = Node.sudo()._search(walked)
+        alone = Node.sudo()._search(reach).statement().code
+        self.assertEqual(alone.count(REACH_TABLE), 1)
         self.assertEqual(
-            query.statement().code.count(containers),
-            sets,
-            "the second alias asks for no container set the first did not",
+            Node.sudo()._search(walked).statement().code.count(REACH_TABLE), 2
         )
-        self.assertEqual(query.statement().code.count(probes), 2 * own)
-        # inside another statement the query reads each set where it is used
-        self.assertEqual(query.subselect().code.count(containers), 2 * sets)
-        self.assertEqual(query.where_clause.code.count(containers), 2 * sets)
-
         # mid by its group grant, other by the partner's; leaf is a boundary
         # the group's grant stops at, and is reached here through its parent
         self.assertEqual(Node.sudo().search(reach) & nodes, mid | other)
         self.assertEqual(Node.sudo().search(walked) & nodes, mid | leaf | other)
         self.assertEqual(
-            self.Node.search([("parent_id", "any", query)]) & nodes,
+            self.Node.search([("parent_id", "any", Node.sudo()._search(walked))])
+            & nodes,
             leaf | other,
             "a subquery of another search",
         )
 
-        # read without a query to hold them, the condition states them inline
-        inline = Node._access_graph_condition("view")(self.Node._table)
-        self.assertEqual(inline.code.count(containers), sets)
-
-    def test_a_node_s_own_grants_are_a_semi_join(self):
-        # a partner's grants run to thousands of nodes: the node's own grants
-        # are a semi-join on the grant table, which PostgreSQL hashes once and
-        # probes per row in parallel workers too -- not an array of node ids,
-        # which = ANY() scans per row and IN (SELECT unnest()) keeps serial
+    def test_the_reach_is_one_principal_lookup(self):
+        # every way of reaching is a row: the condition looks the user's
+        # principals up in one indexed column, and parses no scope per row
         Node = self.Node.with_user(self.alice)
         statement = Node.sudo()._search(Node._access_graph_reach("view")).statement()
-        self.assertIn('"id" IN (SELECT grant_row.', statement.code)
-        self.assertNotIn('"id" = ANY(', statement.code)
-        self.assertNotIn("unnest(", statement.code)
+        self.assertIn(
+            f'"id" IN (SELECT resource_id FROM {REACH_TABLE} WHERE key = ANY(',
+            statement.code,
+        )
+        self.assertNotIn("string_to_array(", statement.code)
+        self.assertNotIn("grant_row", statement.code)
 
     def test_opened_groups_read_each_set_of_granted_nodes_once(self):
         # web_read_group searches every opened group with the same domain,
@@ -472,8 +573,7 @@ class TestAccessGraph(TransactionCase):
             allowed_company_ids=companies
         )
         reach = Node._access_graph_reach("view") & Domain("id", "in", nodes.ids)
-        containers = "AS held JOIN"
-        sets = Node.sudo()._search(reach).statement().code.count(containers)
+        sets = Node.sudo()._search(reach).statement().code.count(REACH_TABLE)
         self.assertTrue(sets)
 
         statements = []
@@ -493,7 +593,7 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(len(result["groups"]), 3)
         [opened] = [code for code in statements if "__gidx" in code]
         self.assertEqual(
-            opened.count(containers), sets, "one set per expression, not per group"
+            opened.count(REACH_TABLE), sets, "one lookup per expression, not per group"
         )
         # a relational group without a value is not opened by auto_unfold
         opened_groups = [group for group in result["groups"] if group["company_id"]]

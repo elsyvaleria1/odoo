@@ -1,5 +1,12 @@
+import random
+from collections import Counter
+
 from odoo import Command, fields
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests.common import TransactionCase, tagged
+from odoo.tools import SQL
+
+from odoo.addons.base.models.mixin_access_graph_reach import REACH_COLUMNS
 
 MEMBERSHIPS = {
     "absent": None,
@@ -553,4 +560,139 @@ class TestPermissionAlgebraDifferential(TransactionCase):
             owned.id,
             as_user.sudo().search([("user_permission", "=", "view")]).ids,
             "an owner must not show up under the Viewer filter",
+        )
+
+    def _assert_reach_table_is_derived(self):
+        # the rows the triggers kept equal the rows derived from scratch
+        Document = self.env["document.document"]
+        cr = self.env.cr
+        Document._access_graph_flush()
+        table = SQL.identifier(Document._access_reach_table())
+        columns = SQL(", ").join(SQL.identifier(column) for column in REACH_COLUMNS)
+        cr.execute(SQL("SELECT %s FROM %s", columns, table))
+        kept = Counter(cr.fetchall())
+        cr.execute("SAVEPOINT rebuilt")
+        cr.execute(SQL("DELETE FROM %s", table))
+        cr.execute(Document._access_reach_rows(SQL("TRUE")))
+        cr.execute(SQL("SELECT %s FROM %s", columns, table))
+        rebuilt = Counter(cr.fetchall())
+        cr.execute("ROLLBACK TO SAVEPOINT rebuilt")
+        self.assertEqual(
+            kept - rebuilt, Counter(), "rows kept that derive from nothing"
+        )
+        self.assertEqual(rebuilt - kept, Counter(), "rows derived that were not kept")
+
+    def test_the_reach_table_stays_derived_through_any_writes(self):
+        # moves, links, hidden links, owners, companies, grants, boundaries and
+        # shortcut targets: after each batch the kept rows are the derived
+        # ones, and the formula still holds for every subject
+        rng = random.Random(7)
+        Document = self.env["document.document"].sudo()
+        folders = self.matrix.filtered(lambda document: document.type == "folder")
+        owners = [False, *self.member_subjects.filtered(lambda u: not u.share).ids]
+        companies = [False, self.company_main.id, self.company_other.id]
+        principals = [
+            ("partner_id", user.partner_id.id) for user in self.member_subjects
+        ]
+        principals.append(("group_id", self.group_team.id))
+        for _batch in range(5):
+            for _write in range(12):
+                document = rng.choice(self.matrix.exists())
+                change = rng.randrange(8)
+                try:
+                    with self.env.cr.savepoint():
+                        if change == 0:
+                            below = Document.search([("id", "child_of", document.id)])
+                            document.folder_id = rng.choice(
+                                [False, *(folders - below).ids]
+                            )
+                        elif change == 1:
+                            document.access_via_link = rng.choice(
+                                ["none", "view", "edit"]
+                            )
+                        elif change == 2:
+                            document.is_access_via_link_hidden = (
+                                not document.is_access_via_link_hidden
+                            )
+                        elif change == 3:
+                            document.owner_id = rng.choice(owners)
+                        elif change == 4:
+                            document.company_id = rng.choice(companies)
+                        elif change == 5:
+                            kind, principal = rng.choice(principals)
+                            if principal not in document.access_ids.mapped(kind).ids:
+                                self.env["document.access"].sudo().create(
+                                    {
+                                        "document_id": document.id,
+                                        kind: principal,
+                                        "role": rng.choice(["view", "edit"]),
+                                    }
+                                )
+                        elif change == 6 and document.access_ids:
+                            rng.choice(document.access_ids).unlink()
+                        elif change == 7:
+                            shortcuts = self.matrix.filtered("shortcut_document_id")
+                            targets = self.matrix.filtered(
+                                lambda d: (
+                                    not d.shortcut_document_id and d.type != "folder"
+                                )
+                            )
+                            rng.choice(shortcuts).shortcut_document_id = rng.choice(
+                                targets
+                            )
+                        self.env.flush_all()
+                except UserError, ValidationError, AccessError:
+                    continue
+                if rng.random() < 0.3:
+                    folder = rng.choice(folders.exists())
+                    folder.is_access_restricted = not folder.is_access_restricted
+            self._assert_reach_table_is_derived()
+        self.matrix.invalidate_recordset()
+        for subject in self.subjects:
+            with self.subTest(subject=subject.login):
+                self._assert_formula_holds(subject)
+
+    def test_a_raw_sql_write_is_derived_too(self):
+        # the rows are kept by the database: a statement the ORM never saw
+        # re-derives what it touched before it returns
+        folder = self.matrix.filtered(
+            lambda document: document.type == "folder" and document.folder_id
+        )[:1]
+        child = self.matrix.filtered(lambda document: document.folder_id == folder)[:1]
+        self.env.flush_all()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE document_document SET access_via_link = 'edit',"
+                " is_access_via_link_hidden = false WHERE id = %s",
+                child.id,
+            )
+        )
+        self.env.cr.execute(
+            SQL(
+                "DELETE FROM document_access WHERE document_id = %s",
+                folder.id,
+            )
+        )
+        self.env.invalidate_all()
+        self._assert_reach_table_is_derived()
+        for subject in self.subjects:
+            with self.subTest(subject=subject.login):
+                self._assert_formula_holds(subject)
+
+    def test_a_changed_system_row_is_read_live(self):
+        # the system reach folds into the reach query only as shipped: a row
+        # an administrator rewrote is read live, whatever it now says
+        Document = self.env["document.document"].with_user(self.user_system)
+        self.assertTrue(Document._folds_system_reach())
+        shipped = self.env.ref("document.access_document_system_reach")
+        shipped.write({"reach": "all", "predicate_id": False})
+        self.assertFalse(Document._folds_system_reach())
+        Document.invalidate_model(["user_permission"])
+        edited = Document.sudo().search(
+            [("id", "in", self.matrix.ids), ("user_permission", "=", "edit")]
+        )
+        self.assertEqual(
+            set(edited.ids),
+            set(self.matrix.ids),
+            "the row as rewritten reaches every document, drives included",
         )

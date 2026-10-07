@@ -327,7 +327,7 @@ class _QueryMixin(_ModelStubs):
             return domain._to_sql(model, alias, query)
         scratch = model._as_query(ordered=False)
         mask = domain._to_sql(model, alias, scratch)
-        if not (scratch._joins or scratch._once):
+        if not (scratch._joins or scratch._once or scratch._once_sets):
             return mask
         # the joins the mask hung on a query nobody runs would be missing
         # from the caller's FROM clause: the mask stands whole as a subquery

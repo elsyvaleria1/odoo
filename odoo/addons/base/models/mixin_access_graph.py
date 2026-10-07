@@ -35,7 +35,10 @@ class AccessGraph:
     container: tuple[str, typing.Any] | None = None
 
 
-SCOPE_CHAIN = "string_to_array(rtrim({}, '/'), '/')::int4[]"
+def scope_chain(column: SQL) -> SQL:
+    # a node's access_scope_path as the int4[] of the nodes whose grants
+    # reach it
+    return SQL("string_to_array(rtrim(%s, '/'), '/')::int4[]", column)
 
 
 def _graph_depends(model: models.BaseModel) -> list[str]:
@@ -116,10 +119,6 @@ class MixinAccessGraph(models.AbstractModel):
         search="_search_access_role",
         compute_sudo=True,
         help="The role the current user holds on the record.",
-    )
-
-    _access_scope_chain_idx = models.Index(
-        "USING gin ((" + SCOPE_CHAIN.format("access_scope_path") + "))"
     )
 
     @api.model_create_multi
@@ -329,10 +328,7 @@ class MixinAccessGraph(models.AbstractModel):
                 grant_table=SQL.identifier(grant_model._table),
                 group=group_id,
                 resource=SQL.identifier(names.resource),
-                chain=SQL(
-                    SCOPE_CHAIN.format("%s"),
-                    SQL.identifier("node", "access_scope_path"),
-                ),
+                chain=scope_chain(SQL.identifier("node", "access_scope_path")),
                 ids=ids,
             )
         )
@@ -381,12 +377,12 @@ class MixinAccessGraph(models.AbstractModel):
             ]
         )
         self.flush_model(
-            [
-                "access_scope_path",
-                graph.parent,
-                *(name for name in (graph.owner, graph.boundary) if name),
-                *((graph.container[0],) if graph.container else ()),
-            ]
+            sorted(
+                {
+                    *self._access_reach_tracked_columns(),
+                    *((graph.boundary,) if graph.boundary else ()),
+                }
+            )
         )
 
     def _access_graph_condition(
@@ -398,182 +394,22 @@ class MixinAccessGraph(models.AbstractModel):
         partner: bool = True,
         owner: bool = True,
     ) -> typing.Callable[..., SQL]:
-        # an SQL condition on a row of the model, as three branches: a grant
-        # on the node itself, the node's scope chain overlapping granted
-        # containers (GIN), or its owner.
-        # A grant on the node itself is a semi-join on the grant table, by
-        # principal: PostgreSQL hashes the principal's grants once and probes
-        # it per row, in parallel workers too. Not an array of granted node
-        # ids: a partner's grants run to thousands, and = ANY() over an array
-        # computed at run time compares every row with each of them.
-        # Containers are few; given the query the condition goes into, each
-        # set of granted containers is computed once there, as a rule that
-        # walks to the graph through several aliases asks for it at each
-        graph = self._access_graph
-        grant_model = self.env[self._fields[graph.grants].comodel_name]
-        names = type(grant_model)._access_grant_names
-        held = graph.roles[graph.roles.index(role) :]
-        user = self.env.user
-        excluded = set(exclude_groups)
-        if groups is None:
-            scopes = {
-                gid: companies
-                for gid, companies in user._get_group_scopes().items()
-                if gid not in excluded
-            }
-        else:
-            scopes = dict.fromkeys(set(groups) - excluded)
-        anchor = self._access_company_anchor()
-        # a group counts in the companies in use it is held in (those its
-        # membership is limited to, else all), as an access row does: it
-        # reaches a node of those companies or of none, and its grant limited
-        # to a company counts while that company is one of them
-        in_use = set(self.env.companies.ids)
-        # a partner's grant and an owner reach a node of a company in use, of
-        # none, or of one the user is not in (shared from outside): not one of
-        # the user's companies they deselected
-        member_of = user.with_context(active_test=False).company_ids.ids
-        by_companies: dict[tuple[int, ...], list[int]] = {}
-        for gid, companies in sorted(scopes.items()):
-            counted = in_use if companies is None else in_use & set(companies)
-            if counted:
-                by_companies.setdefault(tuple(sorted(counted)), []).append(gid)
-        with_owner = bool(graph.owner) and owner
-        _debug.pipeline(
-            "access_graph.condition",
-            model=self._name,
-            role=role,
-            bands=len(by_companies),
-            anchored=bool(anchor),
-            owner=with_owner,
+        # an SQL condition on a row of the model: its id among the nodes the
+        # reach table says the user reaches (mixin_access_graph_reach)
+        subquery = self._access_reach_subquery(
+            role,
+            groups=groups,
+            exclude_groups=exclude_groups,
             partner=partner,
+            owner=owner,
         )
-        table = SQL.identifier(self._table)
-        grant_table = SQL.identifier(grant_model._table)
-        resource = SQL.identifier(names.resource)
-        role_column = SQL.identifier(names.role)
-
-        def is_container(alias: str) -> SQL:
-            if not graph.container:
-                return SQL("TRUE")
-            cfield, cvalue = graph.container
-            return SQL("%s = %s", SQL.identifier(alias, cfield), cvalue)
-
-        container = is_container("node")
-
-        def held_grants(principal: SQL) -> SQL:
-            return SQL(
-                """SELECT grant_row.%(resource)s
-                     FROM %(grant_table)s AS grant_row
-                    WHERE %(principal)s
-                      AND grant_row.%(role)s = ANY(%(held)s)
-                      AND (grant_row.date_to IS NULL OR grant_row.date_to > now() AT TIME ZONE 'UTC')""",
-                resource=resource,
-                grant_table=grant_table,
-                principal=principal,
-                role=role_column,
-                held=list(held),
-            )
-
-        def granted_containers(principal: SQL) -> SQL:
-            return SQL(
-                "SELECT node.id FROM (%s) AS held JOIN %s AS node ON node.id = held.%s"
-                " WHERE %s",
-                held_grants(principal),
-                table,
-                resource,
-                container,
-            )
-
-        def owned_containers() -> SQL:
-            return SQL(
-                "SELECT node.id FROM %s AS node WHERE node.%s = %s AND %s",
-                table,
-                SQL.identifier(graph.owner),
-                user.id,
-                container,
-            )
-
-        def reached(
-            alias: str, principal: SQL, with_owner: bool, query: Query | None
-        ) -> SQL:
-            chain = SQL(
-                SCOPE_CHAIN.format("%s"), SQL.identifier(alias, "access_scope_path")
-            )
-            containers = granted_containers(principal)
-            if with_owner:
-                containers = SQL("%s UNION ALL %s", containers, owned_containers())
-            containers = SQL("ARRAY(%s)", containers)
-            if query is not None:
-                containers = query.once(containers)
-            # a grant on a container reaches it through its own scope chain
-            return SQL(
-                "((NOT (%s) AND %s IN (%s)) OR %s && %s::int4[])",
-                is_container(alias),
-                SQL.identifier(alias, "id"),
-                held_grants(principal),
-                chain,
-                containers,
-            )
-
-        partner_id = user.partner_id.id if partner else None
-
-        def held_by(gids: list[int], companies: tuple[int, ...]) -> SQL:
-            return SQL(
-                """(grant_row.group_id = ANY(%s)
-                    AND (grant_row.company_id IS NULL
-                         OR grant_row.company_id = ANY(%s)))""",
-                gids,
-                list(companies),
-            )
 
         def condition(alias: str, query: Query | None = None) -> SQL:
-            # a node carries no company to check without an anchor: every
-            # group is read in the one reach, beside the partner's grants
-            _debug.logic(
-                "access_graph.reach",
-                model=self._name,
-                alias=alias,
-                shared=query is not None,
-            )
-            principal = SQL("grant_row.partner_id = %s", partner_id)
-            if not anchor:
-                principal = SQL(" OR ").join(
-                    [
-                        principal,
-                        *(held_by(gids, key) for key, gids in by_companies.items()),
-                    ]
-                )
-            personal = [reached(alias, SQL("(%s)", principal), with_owner, query)]
-            if with_owner:
-                personal.append(
-                    SQL("%s = %s", SQL.identifier(alias, graph.owner), user.id)
-                )
-            branches = personal
-            if anchor:
-                node_company = SQL.identifier(alias, anchor)
-                branches = [
-                    SQL(
-                        "((%s) AND (%s IS NULL OR %s = ANY(%s) OR NOT %s = ANY(%s)))",
-                        SQL(" OR ").join(personal),
-                        node_company,
-                        node_company,
-                        sorted(in_use),
-                        node_company,
-                        member_of,
-                    )
-                ]
-            for companies, gids in by_companies.items() if anchor else ():
-                branches.append(
-                    SQL(
-                        "(%s AND (%s = ANY(%s) OR %s IS NULL))",
-                        reached(alias, held_by(gids, companies), False, query),
-                        SQL.identifier(alias, anchor),
-                        list(companies),
-                        SQL.identifier(alias, anchor),
-                    )
-                )
-            return SQL("(%s)", SQL(" OR ").join(branches))
+            # the reach is a set the query states once where its statement is
+            # shared, as the parts of the opened groups share it
+            _debug.logic("access_graph.reach", model=self._name, alias=alias)
+            reach = SQL("(%s)", subquery) if query is None else query.once_set(subquery)
+            return SQL("%s IN %s", SQL.identifier(alias, "id"), reach)
 
         return condition
 
@@ -616,7 +452,7 @@ class MixinAccessGraph(models.AbstractModel):
                     WHERE (grant_row.date_to IS NULL
                            OR grant_row.date_to > now() AT TIME ZONE 'UTC')
                    %(owner)s""",
-                chain=SQL(SCOPE_CHAIN.format("access_scope_path")),
+                chain=scope_chain(SQL.identifier("access_scope_path")),
                 table=SQL.identifier(self._table),
                 id=self.id,
                 resource=SQL.identifier(names.resource),
