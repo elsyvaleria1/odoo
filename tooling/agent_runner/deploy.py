@@ -1,24 +1,37 @@
 """The executors of a deploy runner: on the production host, never an agent.
 
 `error_incident.revision` answers which of the awaited fix commits the running
-checkouts contain; `error_incident.hotfix` applies one approved fix commit, upgrades
-the modules it touches, restarts and checks the server, and reverts when the
-server does not come back healthy.
+checkouts contain. `error_incident.hotfix` applies one approved fix to a
+running checkout: the fix's own commits -- what its branch adds to the base it
+was cut from, never the base's unreleased commits -- cherry-picked onto the
+running revision as one commit, then the modules they touch upgraded, the
+server restarted and checked. When the server does not come back healthy, the
+code is reverted, the modules upgraded and the server restarted again; the
+database is not restored, so a fix whose upgrade migrated data is undone in
+code only.
 
 What runs on the host is the host's own configuration, never a lease's: a run
 names a checkout and a commit, and the commands are these, read from the
 environment:
 
-    AGENT_RUNNER_DEPLOY_CHECKOUTS  JSON {"odoo": "/opt/odoo/odoo", ...}
-    AGENT_RUNNER_DEPLOY_UPGRADE    command, `{modules}` = comma-separated names
-    AGENT_RUNNER_DEPLOY_RESTART    command
-    AGENT_RUNNER_DEPLOY_HEALTH     command; exit 0 = healthy
-    AGENT_RUNNER_DEPLOY_HEALTH_WAIT  seconds to wait for health (default 120)
+    AGENT_RUNNER_DEPLOY_CHECKOUTS     JSON {"odoo": "/opt/odoo/odoo", ...}
+    AGENT_RUNNER_DEPLOY_UPGRADE       command, `{modules}` = comma-separated names
+    AGENT_RUNNER_DEPLOY_RESTART       command
+    AGENT_RUNNER_DEPLOY_STOP          command; with START, the server is stopped
+    AGENT_RUNNER_DEPLOY_START         for the upgrade instead of restarted after it
+    AGENT_RUNNER_DEPLOY_HEALTH        command; exit 0 = healthy
+    AGENT_RUNNER_DEPLOY_HEALTH_WAIT   seconds to wait for health (default 120)
+    AGENT_RUNNER_DEPLOY_UPGRADE_TIMEOUT  seconds an upgrade may take (default 3600)
+    AGENT_RUNNER_DEPLOY_REMOTE_URL    fetch URL template, `{repository}` = owner/name
+
+A revision that passed its health check is recorded in the checkout as
+`refs/agent-runner/healthy`: an attempt that finds the fix already applied
+but not confirmed healthy -- a runner killed between the two -- activates it
+again instead of reporting it deployed.
 """
 
 from __future__ import annotations
 
-import base64
 import json
 import os
 import re
@@ -29,14 +42,17 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from .gitops import GITHUB, git, is_ancestor
     from .runner import Outcome, Permanent, Reporter
 except ImportError:  # run as a script beside runner.py
+    from gitops import GITHUB, git, is_ancestor
     from runner import Outcome, Permanent, Reporter
 
-GITHUB = "https://github.com/"
 _SHA = re.compile(r"\A[0-9a-f]{7,40}\Z")
-_REF = re.compile(r"\A[A-Za-z0-9._/-]{1,250}\Z")
-_SAFE_GIT = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false")
+_REF = re.compile(r"\A(?!-)[A-Za-z0-9._/-]{1,250}\Z")
+HEALTHY = "refs/agent-runner/healthy"
+COMMAND_TIMEOUT = 300
+HEALTH_CALL_TIMEOUT = 30
 
 
 def _checkouts() -> dict[str, Path]:
@@ -51,35 +67,16 @@ def _checkout(name: object) -> Path:
     return checkouts[name]
 
 
-def _git(cwd: Path, *args: str, token: str | None = None, check: bool = True) -> str:
-    auth: tuple[str, ...] = ()
-    if token:
-        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
-        auth = ("-c", f"http.{GITHUB}.extraheader=AUTHORIZATION: basic {basic}")
-    completed = subprocess.run(
-        ["git", *_SAFE_GIT, *auth, *args],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
-        check=False,
-    )
-    if check and completed.returncode:
-        raise RuntimeError(f"git {args[0]} failed: {completed.stderr.strip()[-500:]}")
-    return completed.stdout
+def _git(cwd: Path, *args: str, **kwargs: Any) -> str:
+    # production's checkouts are the host's own, configured by it: its
+    # credentials and settings apply
+    return git(cwd, *args, trusted=True, **kwargs)
 
 
 def _contains(checkout: Path, commit: str) -> bool:
-    if not _SHA.match(commit):
-        return False
-    # unknown to the checkout answers no, like a commit HEAD does not hold
-    probe = subprocess.run(
-        ["git", *_SAFE_GIT, "merge-base", "--is-ancestor", commit, "HEAD"],
-        cwd=checkout,
-        capture_output=True,
-        check=False,
+    return bool(_SHA.match(commit)) and is_ancestor(
+        checkout, commit, "HEAD", trusted=True
     )
-    return probe.returncode == 0
 
 
 def revision(lease: dict[str, Any], reporter: Reporter) -> Outcome:
@@ -105,17 +102,36 @@ def revision(lease: dict[str, Any], reporter: Reporter) -> Outcome:
     return Outcome(result={"revisions": revisions, "contained": contained})
 
 
-def _command(variable: str, **values: str) -> list[str] | None:
+def _host_env() -> dict[str, str]:
+    return {
+        key: value for key, value in os.environ.items() if key != "AGENT_RUNNER_TOKEN"
+    }
+
+
+def _command(variable: str, modules: str = "") -> list[str] | None:
     template = os.environ.get(variable)
     if not template:
         return None
-    return [part.format(**values) for part in shlex.split(template)]
+    # only `{modules}` is substituted: a command's other braces are its own
+    return [part.replace("{modules}", modules) for part in shlex.split(template)]
 
 
-def _run(command: list[str] | None, what: str) -> None:
+def _run(
+    command: list[str] | None, what: str, timeout: float = COMMAND_TIMEOUT
+) -> None:
     if command is None:
         return
-    completed = subprocess.run(command, capture_output=True, text=True, check=False)
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            env=_host_env(),
+            check=False,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(f"{what} timed out after {timeout:.0f}s") from error
     if completed.returncode:
         raise RuntimeError(
             f"{what} failed: {(completed.stderr or completed.stdout).strip()[-500:]}"
@@ -130,8 +146,22 @@ def _healthy() -> bool:
         os.environ.get("AGENT_RUNNER_DEPLOY_HEALTH_WAIT", "120")
     )
     while True:
-        if subprocess.run(command, capture_output=True, check=False).returncode == 0:
-            return True
+        # a call that hangs is cut at the wait's end, never runs past it
+        left = deadline - time.monotonic()
+        try:
+            if (
+                subprocess.run(
+                    command,
+                    capture_output=True,
+                    env=_host_env(),
+                    check=False,
+                    timeout=max(min(HEALTH_CALL_TIMEOUT, left), 1),
+                ).returncode
+                == 0
+            ):
+                return True
+        except subprocess.TimeoutExpired:
+            pass
         if time.monotonic() > deadline:
             return False
         time.sleep(2)
@@ -141,7 +171,9 @@ def _modules(checkout: Path, before: str, after: str) -> list[str]:
     """The modules whose files the change touches: a file's nearest directory
     that holds a __manifest__.py."""
     modules = set()
-    for path in _git(checkout, "diff", "--name-only", before, after).splitlines():
+    for path in _git(checkout, "diff", "--name-only", "-z", before, after).split("\0"):
+        if not path:
+            continue
         for parent in (checkout / path).parents:
             if parent == checkout or checkout not in parent.parents:
                 break
@@ -151,72 +183,182 @@ def _modules(checkout: Path, before: str, after: str) -> list[str]:
     return sorted(modules)
 
 
-def _activate(checkout: Path, before: str, after: str) -> list[str]:
-    modules = _modules(checkout, before, after)
-    if modules:
-        _run(
-            _command("AGENT_RUNNER_DEPLOY_UPGRADE", modules=",".join(modules)),
-            "the upgrade",
-        )
+def _activate(modules: list[str]) -> None:
+    """Upgrade ``modules`` and run the code that is now checked out."""
+    upgrade = (
+        _command("AGENT_RUNNER_DEPLOY_UPGRADE", ",".join(modules)) if modules else None
+    )
+    upgrade_timeout = float(
+        os.environ.get("AGENT_RUNNER_DEPLOY_UPGRADE_TIMEOUT", "3600")
+    )
+    stop = _command("AGENT_RUNNER_DEPLOY_STOP")
+    start = _command("AGENT_RUNNER_DEPLOY_START")
+    if stop and start:
+        _run(stop, "the stop")
+        try:
+            _run(upgrade, "the upgrade", upgrade_timeout)
+        finally:
+            _run(start, "the start")
+        return
+    _run(upgrade, "the upgrade", upgrade_timeout)
     _run(_command("AGENT_RUNNER_DEPLOY_RESTART"), "the restart")
-    return modules
 
 
-def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
-    payload = lease["payload"]
-    checkout = _checkout(payload.get("checkout"))
-    commit, branch = payload.get("commit"), payload.get("branch")
-    if not (isinstance(commit, str) and _SHA.match(commit)):
-        raise Permanent("a hotfix names its commit by sha")
-    if not (isinstance(branch, str) and _REF.match(branch)):
-        raise Permanent("a hotfix names a plain branch")
-    if _git(checkout, "status", "--porcelain", "--untracked-files=no").strip():
-        raise Permanent("the production checkout has local changes; nothing is applied")
-    token = lease.get("credentials", {}).get("github", {}).get("token")
+def _fetch(
+    checkout: Path, payload: dict[str, Any], branch: str, into: str, token: str | None
+) -> str:
     url = f"{GITHUB}{payload['repository']}.git"
-    remote = os.environ.get("AGENT_RUNNER_DEPLOY_REMOTE_URL", url).format(
-        repository=payload["repository"]
+    remote = os.environ.get("AGENT_RUNNER_DEPLOY_REMOTE_URL", url).replace(
+        "{repository}", payload["repository"]
     )
     _git(
         checkout,
         "fetch",
         "--quiet",
         remote,
-        f"+refs/heads/{branch}:refs/remotes/hotfix/{branch}",
+        f"+refs/heads/{branch}:{into}",
         token=token if remote.startswith(GITHUB) else None,
     )
-    before = _git(checkout, "rev-parse", "HEAD").strip()
+    return into
+
+
+def _hotfix_of(checkout: Path, commit: str) -> str | None:
+    """The commit by which an earlier hotfix applied ``commit`` -- it names it
+    in a `Hotfix-Of` trailer -- when the running revision holds one."""
+    found = _git(
+        checkout,
+        "log",
+        "--format=%H",
+        "-n1",
+        "--fixed-strings",
+        f"--grep=Hotfix-Of: {commit}",
+        "HEAD",
+    )
+    return found.strip() or None
+
+
+def _confirmed_healthy(checkout: Path) -> str | None:
+    healthy = _git(checkout, "rev-parse", "--verify", "--quiet", HEALTHY, check=False)
+    return healthy.strip() or None
+
+
+def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
+    payload = lease["payload"]
+    checkout = _checkout(payload.get("checkout"))
+    commit = payload.get("commit")
+    branch, base_branch = payload.get("branch"), payload.get("base_branch")
+    if not (isinstance(commit, str) and _SHA.match(commit)):
+        raise Permanent("a hotfix names its commit by sha")
+    for name in (branch, base_branch):
+        if not (isinstance(name, str) and _REF.match(name) and ".." not in name):
+            raise Permanent("a hotfix names its branch and its base as plain branches")
+    if _git(checkout, "status", "--porcelain", "--untracked-files=no").strip():
+        raise Permanent("the production checkout has local changes; nothing is applied")
+    token = lease.get("credentials", {}).get("github", {}).get("token")
+    fix_ref = _fetch(checkout, payload, branch, f"refs/remotes/hotfix/{branch}", token)
+    base_ref = _fetch(
+        checkout, payload, base_branch, f"refs/remotes/hotfix-base/{base_branch}", token
+    )
+    if not is_ancestor(checkout, commit, fix_ref, trusted=True):
+        raise Permanent(f"{commit[:12]} is not on {branch}")
+    base = _git(checkout, "merge-base", commit, base_ref).strip()
+    head = _git(checkout, "rev-parse", "HEAD").strip()
+    modules = _modules(checkout, base, commit)
+
     if _contains(checkout, commit):
-        return Outcome(
-            result={"revision": before, "contained": [commit], "modules": []}
+        # production's own deploy brought it: activating it is that deploy's
+        return Outcome(result={"revision": head, "contained": [commit], "modules": []})
+    if applied := _hotfix_of(checkout, commit):
+        if _confirmed_healthy(checkout) == head:
+            return Outcome(
+                result={"revision": head, "contained": [commit], "modules": []}
+            )
+        # applied, but never confirmed running: an earlier attempt died
+        # between the two; it can be reverted while it is still the tip
+        reporter.event(
+            f"{commit[:12]} is applied but not confirmed running; activating",
+            "progress",
         )
+        before = (
+            _git(checkout, "rev-parse", f"{applied}^").strip()
+            if applied == head
+            else head
+        )
+        return _activate_or_revert(checkout, before, head, modules, commit, reporter)
+
+    try:
+        _git(checkout, "cherry-pick", "--no-commit", f"{base}..{commit}")
+    except RuntimeError as error:
+        _git(checkout, "cherry-pick", "--abort", check=False)
+        _git(checkout, "reset", "--quiet", "--hard", head)
+        raise Permanent(
+            f"the fix does not apply to production's revision {head[:12]}: {error}"
+        ) from error
     _git(
         checkout,
         "-c",
         "user.name=Autofix Hotfix",
         "-c",
         "user.email=autofix@localhost",
-        "merge",
-        "--no-ff",
-        "--no-edit",
+        "commit",
+        "--quiet",
+        "--no-verify",
         "-m",
-        f"Hotfix {commit[:12]} from {branch}\n\nAgent-Run: {lease['id']}",
-        commit,
+        f"Hotfix {commit[:12]} from {branch}\n\nHotfix-Of: {commit}\nAgent-Run: {lease['id']}",
     )
     after = _git(checkout, "rev-parse", "HEAD").strip()
     reporter.event(f"applied {commit[:12]} on {checkout.name}", "progress")
+    return _activate_or_revert(checkout, head, after, modules, commit, reporter)
+
+
+def _activate_or_revert(
+    checkout: Path,
+    before: str,
+    after: str,
+    modules: list[str],
+    commit: str,
+    reporter: Reporter,
+) -> Outcome:
     try:
-        modules = _activate(checkout, before, after)
+        _activate(modules)
         if not _healthy():
             raise RuntimeError("the server did not come back healthy")
     except Exception as error:
-        _git(checkout, "reset", "--quiet", "--hard", before)
-        reporter.event(f"reverted to {before[:12]}: {error}", "error")
-        _activate(checkout, after, before)
-        raise Permanent(f"reverted: {error}") from error
+        _revert(checkout, before, after, modules, error, reporter)
+    _git(checkout, "update-ref", HEALTHY, after)
     return Outcome(
         result={"revision": after, "contained": [commit], "modules": modules}
     )
+
+
+def _revert(
+    checkout: Path,
+    before: str,
+    after: str,
+    modules: list[str],
+    error: Exception,
+    reporter: Reporter,
+) -> None:
+    """Put the code back as it was, upgrade and restart again; always a
+    permanent failure -- another attempt would apply the same fix again."""
+    if before == after:
+        raise Permanent(f"the applied fix does not run healthy: {error}") from error
+    try:
+        _git(checkout, "reset", "--quiet", "--hard", before)
+        reporter.event(f"reverted to {before[:12]}: {error}", "error")
+        _activate(modules)
+        healthy = _healthy()
+    except Exception as revert_error:
+        raise Permanent(
+            f"reverted the code after {error}, but the revert failed: {revert_error}; "
+            "production needs a person"
+        ) from revert_error
+    if not healthy:
+        raise Permanent(
+            f"reverted after {error}, but the server is still not healthy; "
+            "production needs a person"
+        ) from error
+    raise Permanent(f"reverted: {error}") from error
 
 
 EXECUTORS = {"error_incident.revision": revision, "error_incident.hotfix": hotfix}

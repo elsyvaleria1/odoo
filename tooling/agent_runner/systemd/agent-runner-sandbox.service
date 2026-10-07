@@ -16,6 +16,9 @@ EnvironmentFile=/etc/agent-runner/sandbox.env
 ExecStart=/usr/bin/python3 /opt/agent-runner/runner.py --url ${ODOO_URL} --role sandbox
 Restart=on-failure
 RestartSec=10
+# SIGTERM to the runner alone: it stops its agent within a second and hands
+# the run back to Odoo for another runner
+KillMode=mixed
 TimeoutStopSec=60
 
 # A user of its own, created for the service; its state -- the runner's own

@@ -13,9 +13,10 @@ but the run's own model key. What Odoo sends as data reaches the agent between
 fence lines drawn fresh for every run, never as instructions.
 
 The agent can write files, `.git/` included: a hook or a config entry there
-would run as the runner on its next git command. Git therefore runs with hooks
-and fsmonitor disabled, and a run whose agent touched `.git/` is failed for
-good before anything is committed.
+would run as the runner on its next git command. Git therefore runs without
+hooks and fsmonitor and reads no configuration but the clone's own
+(`gitops`), and a run whose agent touched `.git/` is failed for good before
+anything is committed.
 
 The agent ends with a fenced JSON verdict: ``{"verdict": "changed" |
 "declined", "subject", "body", "note", "test"}``.
@@ -27,7 +28,7 @@ The agent ends with a fenced JSON verdict: ``{"verdict": "changed" |
 
 from __future__ import annotations
 
-import base64
+import contextlib
 import hashlib
 import json
 import os
@@ -37,48 +38,23 @@ import subprocess
 import tempfile
 import time
 import urllib.request
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
 try:
-    from .runner import Outcome, Permanent, Reporter
+    from .gitops import GITHUB, git
+    from .runner import Outcome, Permanent, Reporter, Stopped
 except ImportError:  # run as a script beside runner.py
-    from runner import Outcome, Permanent, Reporter
+    from gitops import GITHUB, git
+    from runner import Outcome, Permanent, Reporter, Stopped
 
-GITHUB = "https://github.com/"
 READ_TOOLS = "Read,Grep,Glob"
 EDIT_TOOLS = "Read,Grep,Glob,Edit,MultiEdit,Write"
 MAX_DIFF = 200_000
 _JSON_BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
-_SAFE_GIT = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false")
 _REF = re.compile(r"\A(?!-)[A-Za-z0-9._/-]{1,250}\Z")
 _TRAILER_KEY = re.compile(r"\A[A-Za-z][A-Za-z0-9-]{0,40}\Z")
-
-
-def _git(
-    cwd: Path | None, *args: str, token: str | None = None, check: bool = True
-) -> str:
-    auth: tuple[str, ...] = ()
-    if token:
-        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
-        auth = ("-c", f"http.{GITHUB}.extraheader=AUTHORIZATION: basic {basic}")
-    completed = subprocess.run(
-        ["git", *_SAFE_GIT, *auth, *args],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        env={
-            "PATH": os.environ["PATH"],
-            "GIT_TERMINAL_PROMPT": "0",
-            "HOME": str(cwd or "/"),
-        },
-        check=False,
-    )
-    if check and completed.returncode:
-        # never the command line: it can carry the token
-        raise RuntimeError(f"git {args[0]} failed: {completed.stderr.strip()[-500:]}")
-    return completed.stdout
 
 
 def _git_fingerprint(checkout: Path) -> str:
@@ -112,7 +88,7 @@ def _clone(lease: dict[str, Any], into: Path, token: str | None) -> Path:
     payload = lease["payload"]
     url = _remote(payload)
     checkout = into / "repo"
-    _git(
+    git(
         None,
         "clone",
         "--quiet",
@@ -190,14 +166,19 @@ def _agent(
         text=True,
     )
     deadline = time.monotonic() + float(payload.get("timeout", 1800))
-    while process.poll() is None:
-        if reporter.stop.wait(1) or time.monotonic() > deadline:
-            process.kill()
-            process.wait()
-            raise Permanent(
-                "stopped" if reporter.stop.is_set() else "the agent timed out"
-            )
-    stdout, stderr = process.communicate()
+    while True:
+        # communicate drains both pipes while it waits: a chatty agent never
+        # blocks on a full one
+        try:
+            stdout, stderr = process.communicate(timeout=1)
+            break
+        except subprocess.TimeoutExpired:
+            if reporter.stop.is_set() or time.monotonic() > deadline:
+                process.kill()
+                process.communicate()
+                if reporter.stop.is_set():
+                    raise Stopped("stopped") from None
+                raise Permanent("the agent timed out") from None
     if process.returncode:
         raise RuntimeError(
             f"the agent exited {process.returncode}: {stderr.strip()[-500:]}"
@@ -214,9 +195,21 @@ def _agent(
         "output_tokens": int(usage.get("output_tokens", 0)),
         "cost": float(answer.get("total_cost_usd", 0)),
     }
-    if answer.get("is_error"):
-        raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
-    return _verdict(answer.get("result", "")), spend
+    with spent(spend):
+        if answer.get("is_error"):
+            raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
+        return _verdict(answer.get("result", "")), spend
+
+
+@contextlib.contextmanager
+def spent(usage: dict[str, float]) -> Iterator[None]:
+    """A failure from here on carries what the attempt spent, for Odoo to
+    count it against the company's budget like a completion's."""
+    try:
+        yield
+    except Exception as error:
+        error.usage = usage
+        raise
 
 
 def _trailers(lease: dict[str, Any], trailers: dict[str, Any]) -> str:
@@ -277,61 +270,137 @@ def apply(
     branch = _ref(payload, "branch")
     footer = _trailers(lease, trailers)
     token = lease.get("credentials", {}).get("github", {}).get("token")
+    url = _remote(payload)
+    if payload.get("push") and url.startswith(GITHUB) and not token:
+        raise Permanent(
+            "no repository token to push with: is the GitHub App installed?"
+        )
     with tempfile.TemporaryDirectory(prefix="agent-change-") as scratch:
         checkout = _clone(lease, Path(scratch), token)
-        _git(checkout, "checkout", "--quiet", "-b", branch)
+        if payload.get("push") and (
+            pushed := _pushed_already(checkout, url, branch, token)
+        ):
+            # an earlier attempt pushed it and then lost its answer: this one
+            # reports that push rather than running the agent again
+            reporter.event(f"{branch} was pushed by an earlier attempt", "progress")
+            return Outcome(
+                result={
+                    "verdict": done,
+                    "branch": branch,
+                    "pushed": True,
+                    "commit": pushed,
+                    "note": "pushed by an earlier attempt",
+                }
+            )
+        git(checkout, "checkout", "--quiet", "-b", branch)
         before = _git_fingerprint(checkout)
         reporter.event(f"working on {branch}", "progress")
         verdict, usage = _agent(
             lease, reporter, checkout, _prompt(payload, sections), EDIT_TOOLS
         )
-        if _git_fingerprint(checkout) != before:
-            raise Permanent("the agent changed the repository's .git directory")
-        _git(checkout, "add", "--all")
-        diff = _git(checkout, "diff", "--cached")
-        result: dict[str, Any] = {
-            "verdict": verdict.get("verdict"),
-            "note": verdict.get("note"),
-            "test": verdict.get("test"),
-            "diff": diff[:MAX_DIFF],
-            "branch": branch,
-            "pushed": False,
-        }
-        if verdict.get("verdict") != done or not diff.strip():
-            return Outcome(result=result, usage=usage)
-        author = payload.get("commit_author") or {}
-        message = _commit_message(verdict, footer, subject)
-        _git(
-            checkout,
-            "-c",
-            f"user.name={author.get('name', 'Agent Runner')}",
-            "-c",
-            f"user.email={author.get('email', 'agent-runner@localhost')}",
-            "commit",
-            "--quiet",
-            "--no-verify",
-            "-m",
-            message,
-        )
-        result["subject"] = message.split("\n", 1)[0]
-        result["commit"] = _git(checkout, "rev-parse", "HEAD").strip()
-        if payload.get("push"):
-            url = _remote(payload)
-            _git(
+        with spent(usage):
+            return _commit_and_push(
+                lease,
+                reporter,
                 checkout,
-                "push",
-                "--quiet",
-                url,
-                f"HEAD:refs/heads/{branch}",
-                token=token if url.startswith(GITHUB) else None,
+                before,
+                verdict,
+                usage,
+                done,
+                footer,
+                subject,
+                token,
             )
-            result["pushed"] = True
-            reporter.event(f"pushed {branch}", "progress")
-            if url.startswith(GITHUB) and token:
-                result["pull_request"] = _open_pull_request(
-                    payload, verdict, token, message
-                )
+
+
+def _commit_and_push(
+    lease: dict[str, Any],
+    reporter: Reporter,
+    checkout: Path,
+    fingerprint: str,
+    verdict: dict[str, Any],
+    usage: dict[str, float],
+    done: str,
+    footer: str,
+    subject: str,
+    token: str | None,
+) -> Outcome:
+    payload = lease["payload"]
+    branch = payload["branch"]
+    if reporter.stop.is_set():
+        raise Stopped("stopped before committing")
+    if _git_fingerprint(checkout) != fingerprint:
+        raise Permanent("the agent changed the repository's .git directory")
+    git(checkout, "add", "--all")
+    diff = git(checkout, "diff", "--cached")
+    result: dict[str, Any] = {
+        "verdict": verdict.get("verdict"),
+        "note": verdict.get("note"),
+        "test": verdict.get("test"),
+        "diff": diff[:MAX_DIFF],
+        "branch": branch,
+        "pushed": False,
+    }
+    if verdict.get("verdict") != done or not diff.strip():
+        return Outcome(result=result, usage=usage)
+    author = payload.get("commit_author") or {}
+    message = _commit_message(verdict, footer, subject)
+    git(
+        checkout,
+        "-c",
+        f"user.name={author.get('name', 'Agent Runner')}",
+        "-c",
+        f"user.email={author.get('email', 'agent-runner@localhost')}",
+        "commit",
+        "--quiet",
+        "--no-verify",
+        "-m",
+        message,
+    )
+    result["subject"] = message.split("\n", 1)[0]
+    result["commit"] = git(checkout, "rev-parse", "HEAD").strip()
+    if not payload.get("push"):
+        return Outcome(result=result, usage=usage)
+    if reporter.stop.is_set():
+        raise Stopped("stopped before pushing")
+    url = _remote(payload)
+    git(
+        checkout,
+        "push",
+        "--quiet",
+        url,
+        f"HEAD:refs/heads/{branch}",
+        token=token if url.startswith(GITHUB) else None,
+    )
+    result["pushed"] = True
+    reporter.event(f"pushed {branch}", "progress")
+    if url.startswith(GITHUB) and token:
+        try:
+            result["pull_request"] = _open_pull_request(
+                payload, verdict, token, message
+            )
+        except Exception as error:
+            # the branch is pushed: Odoo follows its pull request by webhook,
+            # and a person can open it; the run is not failed for this
+            result["pull_request"] = None
+            result["pull_request_error"] = f"{type(error).__name__}: {error}"[:500]
+            reporter.event(f"the pull request was not opened: {error}", "warning")
     return Outcome(result=result, usage=usage)
+
+
+def _pushed_already(
+    checkout: Path, url: str, branch: str, token: str | None
+) -> str | None:
+    """The commit ``branch`` already holds on the remote, or ``None``."""
+    listed = git(
+        checkout,
+        "ls-remote",
+        "--heads",
+        url,
+        f"refs/heads/{branch}",
+        token=token if url.startswith(GITHUB) else None,
+    )
+    return listed.split()[0] if listed.strip() else None
 
 
 def change(lease: dict[str, Any], reporter: Reporter) -> Outcome:

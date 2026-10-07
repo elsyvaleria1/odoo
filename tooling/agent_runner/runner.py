@@ -20,7 +20,9 @@ fake agent, for exercising the protocol end to end.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import dataclasses
+import http.client
 import json
 import logging
 import os
@@ -47,7 +49,12 @@ class LeaseLost(Exception):
 
 
 class Permanent(Exception):
-    pass
+    """A failure another attempt cannot fix."""
+
+
+class Stopped(Permanent):
+    """The run was stopped: cancelled in Odoo, its lease lost, or this runner
+    shutting down -- the one case where another runner should try again."""
 
 
 class TransportError(Exception):
@@ -80,13 +87,23 @@ class Client:
         )
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:  # noqa: S310 - __init__ admits http(s) only
-                return json.loads(response.read() or b"{}")
+                answer = json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as error:
             if error.code == 409:
                 raise LeaseLost(verb) from error
             raise TransportError(f"{verb}: HTTP {error.code}") from error
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+        # a proxy's HTML page, a cut connection: not an answer of Odoo's
+        except (
+            urllib.error.URLError,
+            http.client.HTTPException,
+            TimeoutError,
+            ConnectionError,
+            ValueError,
+        ) as error:
             raise TransportError(f"{verb}: {error}") from error
+        if not isinstance(answer, dict):
+            raise TransportError(f"{verb}: the answer is not an object")
+        return answer
 
     def claim(self) -> dict[str, Any] | None:
         return self._post("claim", {})["run"]
@@ -106,7 +123,13 @@ class Client:
         )
 
     def fail(
-        self, run: int, lease_token: str, error: str, *, retryable: bool
+        self,
+        run: int,
+        lease_token: str,
+        error: str,
+        *,
+        retryable: bool,
+        usage: dict | None = None,
     ) -> dict[str, Any]:
         return self._post(
             "fail",
@@ -115,6 +138,7 @@ class Client:
                 "lease_token": lease_token,
                 "error": error,
                 "retryable": retryable,
+                "usage": usage or {},
             },
         )
 
@@ -155,7 +179,7 @@ def probe(lease: dict[str, Any], reporter: Reporter) -> Outcome:
     steps = max(int(seconds), 1)
     for step in range(steps):
         if reporter.stop.wait(seconds / steps):
-            raise Permanent("stopped")
+            raise Stopped("stopped")
         reporter.event(f"step {step + 1} of {steps}", "progress")
     if payload.get("fail"):
         if payload.get("permanent"):
@@ -231,29 +255,47 @@ class Runner:
                 )
             )
         else:
-            message, retryable = failure
-            if self.stopping.is_set():
-                message, retryable = f"the runner was stopped: {message}", True
+            message, retryable, usage = failure
             self._finish(
                 lambda: self.client.fail(
-                    lease["id"], lease["lease_token"], message, retryable=retryable
+                    lease["id"],
+                    lease["lease_token"],
+                    message,
+                    retryable=retryable,
+                    usage=usage,
                 )
             )
         return True
 
     def _execute(
         self, lease: dict[str, Any], reporter: Reporter
-    ) -> tuple[Outcome | None, tuple[str, bool] | None]:
+    ) -> tuple[Outcome | None, tuple[str, bool, dict | None] | None]:
+        """The outcome, or why it failed, whether another attempt could
+        succeed, and what the attempt spent before it failed."""
         executor = self.executors.get(lease["kind"])
         if executor is None:
-            return None, (f"this runner cannot run {lease['kind']!r}", False)
+            return None, (f"this runner cannot run {lease['kind']!r}", False, None)
         try:
             return executor(lease, reporter), None
+        except Stopped as error:
+            usage = getattr(error, "usage", None)
+            if self.stopping.is_set():
+                # the runner is going away, not the run: another runner takes it
+                return None, (f"the runner was stopped: {error}", True, usage)
+            return None, (str(error) or "stopped", False, usage)
         except Permanent as error:
-            return None, (str(error) or type(error).__name__, False)
+            return None, (
+                str(error) or type(error).__name__,
+                False,
+                getattr(error, "usage", None),
+            )
         except Exception as error:
             _logger.exception("run %s failed", lease["id"])
-            return None, (f"{type(error).__name__}: {error}", True)
+            return None, (
+                f"{type(error).__name__}: {error}",
+                True,
+                getattr(error, "usage", None),
+            )
 
     def _keep_alive(self, lease: dict[str, Any], reporter: Reporter) -> None:
         interval = max(lease["lease_seconds"] / 3, 1)
@@ -267,6 +309,10 @@ class Runner:
                 reporter.stop.set()
             except TransportError as error:
                 _logger.warning("heartbeat not delivered: %s", error)
+            except Exception:
+                # a heartbeat that dies leaves the lease to expire under a run
+                # still at work: log, and beat again
+                _logger.exception("heartbeat failed")
 
     def _finish(self, send: Callable[[], dict[str, Any]]) -> None:
         for attempt in range(FINISH_ATTEMPTS):
@@ -297,6 +343,22 @@ class Runner:
                 stop.wait(self.poll_seconds)
 
 
+def _undumpable() -> None:
+    """Keep this process's memory and /proc entries -- its environment holds
+    the runner's token -- from processes of the same user: the agent runs as
+    that user, and could read /proc/<runner>/environ. A child starts dumpable
+    again, so this binds the runner alone."""
+    if not sys.platform.startswith("linux"):
+        return
+    pr_set_dumpable = 4
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        if libc.prctl(pr_set_dumpable, 0, 0, 0, 0) != 0:
+            _logger.warning("could not make the runner undumpable")
+    except OSError:
+        _logger.warning("could not make the runner undumpable")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     parser.add_argument("--url", required=True, help="the Odoo server")
@@ -312,6 +374,7 @@ def main(argv: list[str] | None = None) -> int:
     token = os.environ.get("AGENT_RUNNER_TOKEN")
     if not token:
         parser.error("AGENT_RUNNER_TOKEN is not set")
+    _undumpable()
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )

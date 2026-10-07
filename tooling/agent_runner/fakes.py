@@ -21,6 +21,9 @@ FAKE_CLAUDE = textwrap.dedent(
         path = Path(os.getcwd(), name)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
+    if behaviour.get("noise"):
+        sys.stderr.write("x" * behaviour["noise"])
+        sys.stderr.flush()
     if behaviour.get("exit"):
         sys.exit(behaviour["exit"])
     verdict = behaviour.get("verdict")

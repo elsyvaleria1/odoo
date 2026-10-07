@@ -70,6 +70,8 @@ def host(tmp_path, monkeypatch):
     )
 
     class Host:
+        root = tmp_path
+
         def __init__(self):
             self.fix, self.production, self.dev, self.origin = (
                 fix,
@@ -101,6 +103,7 @@ def _hotfix_lease(host, **payload):
             "checkout": "odoo",
             "repository": "Agro-Marin/odoo",
             "branch": "19.0-marin-fix-x-i3-a1",
+            "base_branch": "19.0-marin",
             "commit": host.fix,
             **payload,
         },
@@ -171,3 +174,124 @@ def test_the_revision_names_which_awaited_fixes_production_runs(host):
     _git(host.dev, "push", "-q", str(host.origin), "19.0-marin")
     _git(host.production, "pull", "-q", "--ff-only")
     assert deploy.revision(lease, StubReporter()).result["contained"] == [host.fix]
+
+
+def _push_base(host, path, content, message):
+    _git(host.dev, "checkout", "-q", "19.0-marin")
+    sha = _commit(host.dev, path, content, message)
+    _git(host.dev, "push", "-q", str(host.origin), "19.0-marin")
+    return sha
+
+
+def _new_fix(host, branch, path, content):
+    _git(host.dev, "checkout", "-q", "-B", branch, "19.0-marin")
+    sha = _commit(host.dev, path, content, f"fix {branch}")
+    _git(host.dev, "push", "-q", "-f", str(host.origin), branch)
+    return sha
+
+
+def test_a_hotfix_brings_the_fix_alone_not_the_bases_unreleased_commits(host):
+    _push_base(host, "addons/other_mod/__manifest__.py", "{}\n", "other module")
+    _push_base(host, "addons/other_mod/m.py", "UNRELEASED\n", "unreleased")
+    fix = _new_fix(
+        host, "19.0-marin-fix-y-i4-a1", "addons/stock_x/models.py", "fixed\n"
+    )
+    outcome = deploy.hotfix(
+        _hotfix_lease(host, branch="19.0-marin-fix-y-i4-a1", commit=fix), StubReporter()
+    )
+    assert outcome.result["modules"] == ["stock_x"]
+    assert host.file() == "fixed\n"
+    assert not (host.production / "addons/other_mod/m.py").exists()
+    assert host.calls() == ["upgrade stock_x", "restart"]
+
+
+def test_a_fix_that_conflicts_with_production_is_refused_cleanly(host):
+    (host.production / "addons/stock_x/models.py").write_text("hand-made\n")
+    _git(
+        host.production,
+        "-c",
+        "user.name=p",
+        "-c",
+        "user.email=p@x",
+        "commit",
+        "-qam",
+        "prod",
+    )
+    before = host.head()
+    with pytest.raises(agent.Permanent, match="does not apply"):
+        deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert host.head() == before
+    assert _git(host.production, "status", "--porcelain") == ""
+    assert host.file() == "hand-made\n"
+    assert host.calls() == []
+
+
+def test_a_commit_not_on_the_named_branch_is_refused(host):
+    other = _new_fix(host, "19.0-marin-other", "addons/stock_x/models.py", "other\n")
+    with pytest.raises(agent.Permanent, match="is not on"):
+        deploy.hotfix(_hotfix_lease(host, commit=other), StubReporter())
+    assert host.calls() == []
+
+
+def test_an_applied_fix_never_confirmed_running_is_activated_again(host):
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    _git(host.production, "update-ref", "-d", deploy.HEALTHY)
+    outcome = deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert outcome.result["contained"] == [host.fix]
+    assert host.calls() == ["upgrade stock_x", "restart", "upgrade stock_x", "restart"]
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert len(host.calls()) == 4, "confirmed running: nothing to do"
+
+
+def test_a_revert_that_fails_says_production_needs_a_person(host, monkeypatch):
+    host.sicken()
+    calls = []
+
+    def activate(modules):
+        calls.append(modules)
+        if len(calls) == 2:
+            raise RuntimeError("the upgrade crashed")
+
+    monkeypatch.setattr(deploy, "_activate", activate)
+    with pytest.raises(agent.Permanent, match="production needs a person"):
+        deploy.hotfix(_hotfix_lease(host), StubReporter())
+
+
+def test_a_host_command_keeps_its_own_braces(host, monkeypatch):
+    monkeypatch.setenv(
+        "AGENT_RUNNER_DEPLOY_HEALTH", "sh -c 'test %{http_code} = %{http_code}'"
+    )
+    outcome = deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert outcome.result["contained"] == [host.fix]
+
+
+def test_a_module_is_found_whatever_its_files_are_named(host):
+    fix = _new_fix(host, "19.0-marin-fix-z-i5-a1", "addons/stock_x/données.py", "x\n")
+    outcome = deploy.hotfix(
+        _hotfix_lease(host, branch="19.0-marin-fix-z-i5-a1", commit=fix), StubReporter()
+    )
+    assert outcome.result["modules"] == ["stock_x"]
+
+
+def test_a_stop_and_start_take_the_server_down_for_the_upgrade(host, monkeypatch):
+    script = host.root / "record"
+    monkeypatch.setenv("AGENT_RUNNER_DEPLOY_STOP", f"{script} stop")
+    monkeypatch.setenv("AGENT_RUNNER_DEPLOY_START", f"{script} start")
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert host.calls() == ["stop", "upgrade stock_x", "start"]
+
+
+def test_host_commands_never_see_the_runners_token(host, monkeypatch):
+    monkeypatch.setenv("AGENT_RUNNER_TOKEN", "runner-secret")
+    seen = host.root / "env.txt"
+    monkeypatch.setenv("AGENT_RUNNER_DEPLOY_RESTART", f"sh -c 'env > {seen}'")
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert "runner-secret" not in seen.read_text()
+
+
+def test_a_hanging_health_check_is_bounded(host, monkeypatch):
+    monkeypatch.setattr(deploy, "HEALTH_CALL_TIMEOUT", 0.5)
+    monkeypatch.setenv("AGENT_RUNNER_DEPLOY_HEALTH", "sleep 30")
+    monkeypatch.setenv("AGENT_RUNNER_DEPLOY_HEALTH_WAIT", "1")
+    with pytest.raises(agent.Permanent, match="reverted"):
+        deploy.hotfix(_hotfix_lease(host), StubReporter())

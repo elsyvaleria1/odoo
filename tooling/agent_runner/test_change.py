@@ -1,6 +1,9 @@
+import time
+from unittest import mock
+
 import pytest
 
-from . import change
+from . import change, gitops
 from . import runner as agent
 from .fakes import StubReporter, make_world
 
@@ -115,3 +118,102 @@ def test_a_trailer_cannot_add_lines_to_the_commit(world):
 def test_malformed_sections_are_refused(world):
     with pytest.raises(agent.Permanent, match="sections"):
         change.change(_lease(sections=[["only a title"]]), StubReporter())
+
+
+def test_a_git_configuration_the_agent_leaves_configures_nothing(world, tmp_path):
+    marker = tmp_path / "OWNED"
+    config = f'[filter "x"]\n\tclean = sh -c "touch {marker}; cat"\n'
+    world.behave(
+        edit={
+            ".gitconfig": config,
+            ".config/git/config": config,
+            ".gitattributes": "* filter=x\n",
+            "x.py": "fixed\n",
+        },
+        verdict={"verdict": "changed"},
+    )
+    change.change(_lease(push=False), StubReporter())
+    assert not marker.exists()
+
+
+def test_a_chatty_agent_does_not_block_on_its_pipes(world):
+    world.behave(noise=300_000, verdict={"verdict": "declined"})
+    started = time.monotonic()
+    change.change(_lease(timeout=20), StubReporter())
+    assert time.monotonic() - started < 10
+
+
+def _on_github(monkeypatch):
+    # the local origin stands for GitHub: a pull request is then opened
+    monkeypatch.setattr(change, "GITHUB", "file://")
+    return {"github": {"token": "ghs_run"}, "anthropic": {"api_key": "sk-run"}}
+
+
+def test_a_pull_request_that_cannot_be_opened_does_not_fail_a_pushed_change(
+    world, monkeypatch
+):
+    credentials = _on_github(monkeypatch)
+    monkeypatch.setattr(
+        change, "_open_pull_request", mock.Mock(side_effect=OSError("422"))
+    )
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    lease = _lease()
+    lease["credentials"] = credentials
+    outcome = change.change(lease, StubReporter())
+    assert outcome.result["pushed"] is True
+    assert outcome.result["pull_request"] is None
+    assert "422" in outcome.result["pull_request_error"]
+
+
+def test_a_branch_an_earlier_attempt_pushed_is_reported_without_the_agent(world):
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    first = change.change(_lease(), StubReporter())
+    calls = len(world.calls())
+    again = change.change(_lease(), StubReporter())
+    assert len(world.calls()) == calls, "the agent did not run again"
+    assert (again.result["pushed"], again.result["commit"]) == (
+        True,
+        first.result["commit"],
+    )
+
+
+def test_a_push_to_github_without_a_token_is_refused_before_the_agent(
+    world, monkeypatch
+):
+    monkeypatch.setattr(change, "GITHUB", "file://")
+    world.behave(verdict={"verdict": "changed"})
+    with pytest.raises(agent.Permanent, match="no repository token"):
+        change.change(_lease(), StubReporter())
+    assert not (world.fake / "calls.json").exists()
+
+
+def test_a_run_stopped_while_its_agent_worked_commits_nothing(world):
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    reporter = StubReporter()
+    reporter.stop.set()
+    with pytest.raises(agent.Stopped) as stopped:
+        change.change(_lease(), reporter)
+    assert world.branches() == ["19.0-marin"]
+    assert stopped.value.usage["cost"] == pytest.approx(0.25)
+
+
+def test_a_failure_after_the_agent_ran_carries_its_spend(world):
+    world.behave(
+        edit={".git/hooks/pre-commit": "#!/bin/sh\n", "x.py": "f\n"},
+        verdict={"verdict": "changed"},
+    )
+    with pytest.raises(agent.Permanent) as failed:
+        change.change(_lease(), StubReporter())
+    assert failed.value.usage == {
+        "input_tokens": 105,
+        "output_tokens": 20,
+        "cost": 0.25,
+    }
+
+
+def test_the_token_reaches_git_in_its_environment_never_its_command_line():
+    env = gitops.git_env("ghs_secret", trusted=False)
+    assert env["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"
+    assert env["GIT_CONFIG_VALUE_0"].startswith("AUTHORIZATION: basic ")
+    assert (env["GIT_CONFIG_GLOBAL"], env["GIT_CONFIG_NOSYSTEM"]) == ("/dev/null", "1")
+    assert not any("ghs_secret" in arg or "basic" in arg for arg in gitops._SAFE)

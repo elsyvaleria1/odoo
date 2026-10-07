@@ -212,6 +212,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
                 "checkout": "odoo",
                 "repository": REPOSITORY,
                 "branch": pull.head_ref,
+                "base_branch": "19.0-marin",
                 "commit": HEAD,
             },
         )

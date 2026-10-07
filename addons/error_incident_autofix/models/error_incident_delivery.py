@@ -159,6 +159,7 @@ class ErrorIncident(models.Model):
                         "checkout": repository.checkout,
                         "repository": pull.repository,
                         "branch": pull.head_ref,
+                        "base_branch": pull.base_ref or repository.base_branch,
                         "commit": pull.head_sha,
                     },
                 }
