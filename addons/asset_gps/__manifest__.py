@@ -1,6 +1,6 @@
 {
     "name": "Asset GPS Tracking",
-    "version": "19.0.1.15.0",
+    "version": "19.0.1.16.0",
     "oldest_upgradable_version": "19.0.1.12.0",
     "category": "Supply Chain/IoT",
     "summary": "Link assets to GPS devices and expose tracking readings and history",

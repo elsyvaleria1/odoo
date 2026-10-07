@@ -5,6 +5,7 @@ from . import (
     test_device_device,
     test_report,
     test_product_trace,
+    test_resource_kind_actions,
     test_views,
 )
 
