@@ -143,3 +143,12 @@ class TestConversationFromTelegram(MailTelegramCase):
         post = self._send("/ayuda")
 
         self.assertIn("/escribir", self._sent(post))
+
+    def test_a_bot_delivering_no_notifications_says_it_does_not_know_it(self):
+        # it used to read the command and answer nothing at all
+        self.test_bot.notify_mail = False
+
+        post = self._send("/escribir Colle")
+
+        self.assertIn("Unknown command", self._sent(post))
+        self.assertNotIn(f"mt:dm:{self.author.id}", self._sent(post))

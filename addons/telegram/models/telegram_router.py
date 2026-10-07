@@ -739,8 +739,13 @@ class TelegramRouter(models.AbstractModel):
     # -- commands -------------------------------------------------------------
 
     @api.model
-    def _is_command_enabled(self, bot, command, spec) -> bool:
-        return bool(spec.builtin or command in bot.command_ids.mapped("name"))
+    def _is_command_enabled(self, bot, handler, command, spec) -> bool:
+        """Whether `bot` answers `command`: linked to it, or builtin to a
+        handler the bot runs -- a builtin of a feature the bot does not run
+        is as unknown there as any other command."""
+        if command in bot.command_ids.mapped("name"):
+            return True
+        return bool(spec.builtin and handler._feature_enabled(bot))
 
     @staticmethod
     def _tier_allows(tier, partner, internal_user) -> bool:
@@ -756,7 +761,7 @@ class TelegramRouter(models.AbstractModel):
     ) -> None:
         tr_env = translation_env(bot, chat)
         handler, spec = self._command_owner(bot, command)
-        if not spec or not self._is_command_enabled(bot, command, spec):
+        if not spec or not self._is_command_enabled(bot, handler, command, spec):
             bot.send_message(
                 chat.chat_id,
                 tr_env._("Unknown command: %(command)s. Type /ayuda to see the list.")

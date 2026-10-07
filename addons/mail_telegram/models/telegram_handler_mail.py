@@ -87,8 +87,6 @@ class TelegramHandlerMail(models.AbstractModel):
     ) -> None:
         """The inbox, as a button now and as the chat's menu button from now
         on."""
-        if not bot.notify_mail:
-            return
         refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
         if refusal:
             self._explain_mail_refusal(bot, chat, internal_user, refusal)
@@ -499,8 +497,6 @@ class TelegramHandlerMail(models.AbstractModel):
     ) -> None:
         """Choose where what is written here goes, as in a chat: a recent
         conversation, or a colleague -- `/escribir ana` looks one up at once."""
-        if not bot.notify_mail:
-            return
         refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
         if refusal:
             self._explain_mail_refusal(bot, chat, internal_user, refusal)
