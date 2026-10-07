@@ -1,6 +1,3 @@
-from datetime import datetime
-
-from odoo.tests import TransactionCase, tagged
 from odoo.tests.common import BaseCase
 
 from odoo.addons.calendar_google.utils.calendar_google import GoogleEvent
@@ -54,23 +51,3 @@ class TestGoogleEvent(BaseCase):
                 GoogleEvent([event])
         with self.assertRaises(TypeError):
             GoogleEvent([{"id": []}])
-
-
-@tagged("post_install", "-at_install")
-class TestGoogleEventOdooRecord(TransactionCase):
-    def test_the_odoo_event_is_found_with_the_given_env(self):
-        """`get_odoo_event` resolved ids with `self.env`, which a `GoogleEvent`
-        answers through its payload lookup with None. It worked only when a
-        prior `exists(env)` had already cached the id."""
-        event = self.env["calendar.event"].create(
-            {
-                "name": "Linked",
-                "start": datetime(2026, 10, 1, 9),
-                "stop": datetime(2026, 10, 1, 10),
-                "google_id": "linked-google-id",
-            }
-        )
-
-        google_event = GoogleEvent([{"id": "linked-google-id"}])
-
-        self.assertEqual(google_event.get_odoo_event(self.env), event)

@@ -6,7 +6,6 @@ from dateutil.relativedelta import relativedelta
 from odoo.tests import tagged
 from odoo.tests.common import users, warmup
 
-from odoo.addons.calendar_google.models.res_users import ResUsers
 from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle, patch_api
 from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
@@ -1146,8 +1145,8 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
     @patch_api
-    @patch.object(ResUsers, "_sync_request")
-    def test_event_sync_after_pause_period(self, mock_sync_request):
+    @patch.object(GoogleCalendarService, "get_events")
+    def test_event_sync_after_pause_period(self, mock_get_events):
         """Ensure that an event created during the paused synchronization period gets synchronized after resuming it."""
         # Pause the synchronization and creates the local event.
         self.organizer_user._calendar_sync_account("google").stopped = False
@@ -1168,12 +1167,10 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             )
         )
 
-        # Define mock return values for the '_sync_request' method.
-        mock_sync_request.return_value = {
-            "events": GoogleEvent([]),
-            "default_reminders": (),
-            "full_sync": False,
-        }
+        # Google has nothing new since the last synchronization
+        mock_get_events.return_value = (GoogleEvent([]), "next-token", ())
+        for user in (self.organizer_user, self.attendee_user):
+            user._calendar_sync_account("google").sync_token = "a-token"
 
         # With the synchronization paused, manually call the synchronization to simulate the page refresh.
         self.organizer_user.sudo()._sync_google_calendar(self.google_service)
@@ -1288,9 +1285,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
     @patch_api
-    @patch.object(ResUsers, "_sync_request")
+    @patch.object(GoogleCalendarService, "get_events")
     def test_skip_google_sync_for_non_synchronized_users_new_events(
-        self, mock_sync_request
+        self, mock_get_events
     ):
         """
         Skip the synchro of new events by attendees when the organizer is not synchronized with Google.
@@ -1320,12 +1317,10 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             )
             self.assertGoogleEventNotInserted()
 
-            # Define mock return values for the '_sync_request' method.
-            mock_sync_request.return_value = {
-                "events": GoogleEvent([]),
-                "default_reminders": (),
-                "full_sync": False,
-            }
+            # Google has nothing new since the last synchronization
+            mock_get_events.return_value = (GoogleEvent([]), "next-token", ())
+            for user in (self.organizer_user, self.attendee_user):
+                user._calendar_sync_account("google").sync_token = "a-token"
 
             # Synchronize the attendee, and ensure that the event was not inserted after it.
             self.attendee_user.with_user(

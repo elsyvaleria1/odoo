@@ -1,10 +1,8 @@
 import logging
 from contextlib import contextmanager
-from datetime import UTC
 from functools import wraps
 from typing import Self
 
-from dateutil.parser import parse
 from markupsafe import Markup
 from requests import HTTPError
 
@@ -247,11 +245,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
             return True
         return super().unlink()
 
-    def _from_google_ids(self, google_ids) -> Self:
-        if not google_ids:
-            return self.browse()
-        return self.search([("google_id", "in", google_ids)])
-
     def _sync_odoo2google(self, google_service: GoogleCalendarService) -> None:
         if not self:
             return
@@ -279,86 +272,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
                 record.with_user(record._get_event_user())._google_patch(
                     google_service, record.google_id, record._google_values()
                 )
-
-    def _cancel(self) -> None:
-        self.with_context(dont_notify=True, google_calendar_syncing=True).write(
-            {"google_id": False}
-        )
-        self.unlink()
-
-    @api.model
-    def _sync_google2odoo(
-        self, google_events: GoogleEvent, write_dates=None, default_reminders=()
-    ):
-        """Synchronize Google recurrences in Odoo. Creates new recurrences, updates
-        existing ones.
-
-        :param google_events: Google recurrences to synchronize in Odoo
-        :param write_dates: A dictionary mapping Odoo record IDs to their write dates.
-        :param default_reminders:
-        :return: synchronized odoo recurrences
-        """
-        write_dates = dict(write_dates or {})
-        existing = google_events.exists(self.env)
-        new = google_events - existing - google_events.cancelled()
-
-        odoo_values = [
-            dict(self._odoo_values(e, default_reminders), need_sync=False) for e in new
-        ]
-        new_odoo = self.with_context(
-            dont_notify=True,
-            google_calendar_syncing=True,
-            skip_contact_description=True,
-        )._create_from_google(new, odoo_values)
-        cancelled = existing.cancelled()
-        cancelled_odoo = self.browse(cancelled.odoo_ids(self.env))
-
-        # Check if it is a recurring event that has been rescheduled.
-        # We have to check if an event already exists in Odoo.
-        # Explanation:
-        # A recurrent event with `google_id` is equal to ID_RANGE_TIMESTAMP can be rescheduled.
-        # The new `google_id` will be equal to ID_TIMESTAMP.
-        # We have to delete the event created under the old `google_id`.
-        rescheduled_events = new.filter(
-            lambda gevent: not gevent.is_recurrence_follower()
-        )
-        if rescheduled_events:
-            google_ids_to_remove = [
-                event.full_recurring_event_id() for event in rescheduled_events
-            ]
-            cancelled_odoo += self.env["calendar.event"].search(
-                [("google_id", "in", google_ids_to_remove)]
-            )
-
-        cancelled_odoo.exists()._cancel()
-        synced_records = new_odoo + cancelled_odoo
-        pending = existing - cancelled
-        pending_odoo = self.browse(pending.odoo_ids(self.env)).exists()
-        for gevent in pending:
-            odoo_record = self.browse(gevent.odoo_id(self.env))
-            if odoo_record not in pending_odoo:
-                # The record must have been deleted in the mean time; nothing left to sync
-                continue
-            # Last updated wins.
-            # This could be dangerous if google server time and odoo server time are different
-            updated = parse(gevent.updated)
-            # Use the record's write_date to apply Google updates only if they are newer than Odoo's write_date.
-            odoo_record_write_date = write_dates.get(
-                odoo_record.id, odoo_record.write_date
-            )
-            # Migration from 13.4 does not fill write_date. Therefore, we force the update from Google.
-            if not odoo_record_write_date or updated >= odoo_record_write_date.replace(
-                tzinfo=UTC
-            ):
-                vals = dict(
-                    self._odoo_values(gevent, default_reminders), need_sync=False
-                )
-                odoo_record.with_context(
-                    dont_notify=True, google_calendar_syncing=True
-                )._write_from_google(gevent, vals)
-                synced_records |= odoo_record
-
-        return synced_records
 
     def _google_error_handling(self, http_error) -> None:
         # We only handle the most problematic errors of sync events.

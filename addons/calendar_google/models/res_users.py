@@ -1,15 +1,8 @@
 import logging
 
 from odoo import models
-from odoo.exceptions import LockError
 
-from odoo.addons.calendar_google.models.mixin_google_calendar_sync import (
-    google_calendar_connection,
-)
-from odoo.addons.calendar_google.utils.calendar_google import (
-    GoogleCalendarService,
-    InvalidSyncToken,
-)
+from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 
 _logger = logging.getLogger(__name__)
 
@@ -29,42 +22,24 @@ class ResUsers(models.Model):
 
     def _sync_google_calendar(self, calendar_service: GoogleCalendarService) -> bool:
         self.check_singleton()
-        results = self._sync_request(calendar_service)
-        if not results or (
-            not results.get("events") and not self._has_pending_odoo_records()
-        ):
+        account = self._calendar_sync_account("google")._as_engine()
+        read = account._read()
+        if read is None:
             return False
-        events, default_reminders, full_sync = results.values()
-        # Google -> Odoo
-        send_updates = not full_sync
-        events.clear_type_ambiguity(self.env)
-        recurrences = events.filter(lambda e: e.is_recurrence())
-
-        # We apply Google updates only if their write date is later than the write date in Odoo.
-        # It's possible that multiple updates affect the same record, maybe not directly.
-        # To handle this, we preserve the write dates in Odoo before applying any updates,
-        # and use these dates instead of the current live dates.
-        odoo_events = self.env["calendar.event"].browse(
-            (events - recurrences).odoo_ids(self.env)
-        )
-        odoo_recurrences = self.env["calendar.recurrence"].browse(
-            recurrences.odoo_ids(self.env)
-        )
-        recurrences_write_dates = {r.id: r.write_date for r in odoo_recurrences}
-        events_write_dates = {e.id: e.write_date for e in odoo_events}
-        synced_recurrences = self.env["calendar.recurrence"]._sync_google2odoo(
-            recurrences, recurrences_write_dates
-        )
-        synced_events = self.env["calendar.event"]._sync_google2odoo(
-            events - recurrences,
-            events_write_dates,
-            default_reminders=default_reminders,
-        )
+        changes, applied = read
+        if not changes.events and not self._has_pending_odoo_records():
+            return False
+        Event, Recurrence = self.env["calendar.event"], self.env["calendar.recurrence"]
+        synced_events = Event.union(
+            *(record for record in applied if record._name == Event._name)
+        ).exists()
+        synced_recurrences = Recurrence.union(
+            *(record for record in applied if record._name == Recurrence._name)
+        ).exists()
 
         # Odoo -> Google
-        recurrences = self.env["calendar.recurrence"]._get_records_to_sync(
-            full_sync=full_sync
-        )
+        send_updates = not changes.full
+        recurrences = Recurrence._get_records_to_sync(full_sync=changes.full)
         recurrences -= synced_recurrences
         recurrences.with_context(send_updates=send_updates)._sync_odoo2google(
             calendar_service
@@ -73,48 +48,12 @@ class ResUsers(models.Model):
         synced_events |= (
             synced_recurrences.calendar_event_ids - synced_recurrences._get_outliers()
         )
-        events = self.env["calendar.event"]._get_records_to_sync(full_sync=full_sync)
+        events = Event._get_records_to_sync(full_sync=changes.full)
         (events - synced_events).with_context(
             send_updates=send_updates
         )._sync_odoo2google(calendar_service)
 
-        return bool(results) and (
-            bool(events | synced_events) or bool(recurrences | synced_recurrences)
-        )
-
-    def _sync_request(self, calendar_service) -> dict | None:
-        if self._calendar_sync_status("google") != "sync_active":
-            return None
-        self.check_singleton()
-        account = self._calendar_sync_account("google")
-        # don't attempt to sync when another sync is already in progress, as we wouldn't be
-        # able to commit the transaction anyway (row is locked)
-        try:
-            account.lock_for_update(allow_referencing=True)
-        except LockError:
-            _logger.info("skipping calendar sync, locked account of %s", self.login)
-            return None
-
-        full_sync = not account.sync_token
-        with google_calendar_connection(self) as connection:
-            try:
-                events, next_sync_token, default_reminders = (
-                    calendar_service.get_events(
-                        account.sync_token, connection=connection
-                    )
-                )
-            except InvalidSyncToken:
-                events, next_sync_token, default_reminders = (
-                    calendar_service.get_events(connection=connection)
-                )
-                full_sync = True
-        if next_sync_token:
-            account.sync_token = next_sync_token
-        return {
-            "events": events,
-            "default_reminders": default_reminders,
-            "full_sync": full_sync,
-        }
+        return bool(events | synced_events) or bool(recurrences | synced_recurrences)
 
     def _calendar_sync_run(self, code: str) -> bool:
         if code != "google":

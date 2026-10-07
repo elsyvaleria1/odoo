@@ -2,7 +2,8 @@ from odoo import fields, models
 
 
 class CalendarRecurrence(models.Model):
-    _inherit = "calendar.recurrence"
+    _name = "calendar.recurrence"
+    _inherit = ["calendar.recurrence", "mixin.calendar.sync"]
 
     calendar_sync_link_ids = fields.One2many(
         comodel_name="calendar.sync.link",

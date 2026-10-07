@@ -100,21 +100,36 @@ class ResUsers(models.Model):
     def _calendar_sync_run_for_cron(self, user, code: str) -> None:
         _logger.info("Calendar Synchro - Starting synchronization for %s", user)
         try:
-            user.with_user(user).sudo()._calendar_sync_run(code)
+            user._calendar_sync_as_owner()._calendar_sync_run(code)
             self.env["ir.cron"]._commit_progress(1)
         except Exception:
             _logger.exception("[%s] Calendar Synchro - Exception!", user)
             self.env.cr.rollback()
+
+    def _calendar_sync_as_owner(self):
+        """This user, as the engine runs their synchronization: their own
+        records, elevated to reach their connection and accounts."""
+        self.check_singleton()
+        return self.with_user(self).sudo()
 
     # -- what an adapter answers ---------------------------------------------
 
     def _calendar_sync_run(self, code: str) -> bool:
         """Synchronize this user's calendar with `code`; whether the calendar
         view must reload."""
-        raise NotImplementedError(code)
+        if code not in self.env["calendar.sync.account"]._engine_providers():
+            raise NotImplementedError(code)
+        return self._calendar_sync_account(code)._as_engine()._calendar_sync()
 
     def _calendar_sync_restart(self, code: str) -> None:
         """Mark what this user's restarted synchronization sends again."""
+        if code not in self.env["calendar.sync.account"]._engine_providers():
+            return
+        account = self._calendar_sync_account(code)._as_engine()
+        self.env["calendar.sync.link"]._engine().search(
+            [("account_id", "=", account.id), ("remote_id", "!=", False)]
+        ).pending = True
+        account._queue_push()
 
     # -- the calendar view ---------------------------------------------------
 

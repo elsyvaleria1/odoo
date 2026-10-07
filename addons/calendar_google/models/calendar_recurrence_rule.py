@@ -86,10 +86,6 @@ class CalendarRecurrence(models.Model):
         values["need_sync"] = False
         return super()._write_events(values, dtstart=dtstart)
 
-    def _cancel(self) -> None:
-        self.calendar_event_ids._cancel()
-        super()._cancel()
-
     def _get_fields_google_synced(self):
         return {"rrule"}
 
@@ -111,7 +107,9 @@ class CalendarRecurrence(models.Model):
         super()._write_from_google(gevent, vals)
 
         base_event_time_fields = ["start", "stop", "allday"]
-        new_event_values = self.env["calendar.event"]._odoo_values(gevent)
+        new_event_values = self.env["calendar.event"]._odoo_values(
+            gevent, event=self.base_event_id
+        )
         new_parsed_rrule = self._rrule_parse(
             self.rrule, self.dtstart, tz=self._get_timezone()
         )

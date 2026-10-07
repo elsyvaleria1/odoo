@@ -1,7 +1,10 @@
 from odoo import api, fields, models
 
 from odoo.addons.calendar_google.utils.calendar_google import CALENDAR_SCOPE
-from odoo.addons.calendar_sync.provider import CalendarSyncProvider
+from odoo.addons.calendar_sync.provider import (
+    CalendarSyncCapabilities,
+    CalendarSyncProvider,
+)
 
 GOOGLE = CalendarSyncProvider(
     code="google",
@@ -10,6 +13,12 @@ GOOGLE = CalendarSyncProvider(
     service="integration_google.service_google",
     scope=CALENDAR_SCOPE,
     paused_param="google_calendar_sync_paused",
+    adapter="calendar.sync.adapter.google",
+    # Google's changes are read by the engine; Odoo's still go out through
+    # mixin.google.calendar.sync
+    sends=False,
+    capabilities=CalendarSyncCapabilities(shared_ids=True, client_insert_id=True),
+    range_param="calendar_google.sync.range_days",
 )
 
 

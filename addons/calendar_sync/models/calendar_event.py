@@ -2,7 +2,8 @@ from odoo import fields, models
 
 
 class CalendarEvent(models.Model):
-    _inherit = "calendar.event"
+    _name = "calendar.event"
+    _inherit = ["calendar.event", "mixin.calendar.sync"]
 
     calendar_sync_link_ids = fields.One2many(
         comodel_name="calendar.sync.link",

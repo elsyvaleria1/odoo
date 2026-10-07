@@ -6,3 +6,4 @@ from . import res_users
 from . import calendar_attendee
 from . import calendar_alarm_manager
 from . import calendar_sync_account
+from . import calendar_sync_adapter

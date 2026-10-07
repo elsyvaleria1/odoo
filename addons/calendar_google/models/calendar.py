@@ -127,9 +127,10 @@ class CalendarEvent(models.Model):
         recurrence_update_setting = vals.get("recurrence_update")
         if recurrence_update_setting in ("all", "subsequent") and len(self) == 1:
             vals = dict(vals, need_sync=False)
-        if not self.env.context.get("google_calendar_syncing") and any(
-            self.env.user != event.user_id for event in self
-        ):
+        syncing = self.env.context.get("google_calendar_syncing") or (
+            self.env.context.get("calendar_sync_applying") == "google"
+        )
+        if not syncing and any(self.env.user != event.user_id for event in self):
             self._check_modify_event_permission(vals)
         res = super().write(vals)
         if (
@@ -189,7 +190,7 @@ class CalendarEvent(models.Model):
         )
 
     @api.model
-    def _odoo_values(self, google_event, default_reminders=()):
+    def _odoo_values(self, google_event, default_reminders=(), event=None):
         if google_event.is_cancelled():
             return {"active": False}
 
@@ -201,7 +202,9 @@ class CalendarEvent(models.Model):
                 google_event.reminders.get("useDefault") and default_reminders
             ) or ()
         alarm_commands = self._odoo_reminders_commands(reminder_command)
-        attendee_commands, partner_commands = self._odoo_attendee_commands(google_event)
+        attendee_commands, partner_commands = self._odoo_attendee_commands(
+            google_event, event or self.browse()
+        )
         related_event = self.search([("google_id", "=", google_event.id)], limit=1)
         name = (
             google_event.summary
@@ -262,7 +265,7 @@ class CalendarEvent(models.Model):
         return values
 
     @api.model
-    def _odoo_attendee_commands(self, google_event) -> tuple:
+    def _odoo_attendee_commands(self, google_event, event) -> tuple:
         attendee_commands = []
         partner_commands = []
         google_attendees = google_event.attendees or []
@@ -279,10 +282,7 @@ class CalendarEvent(models.Model):
                 }
             ]
         emails = [a.get("email") for a in google_attendees]
-        existing_attendees = self.env["calendar.attendee"]
-        if google_event.exists(self.env):
-            event = google_event.get_odoo_event(self.env)
-            existing_attendees = event.attendee_ids
+        existing_attendees = event.attendee_ids
         attendees_by_emails = {
             tools.email_normalize(a.email): a for a in existing_attendees
         }
@@ -519,21 +519,6 @@ class CalendarEvent(models.Model):
         if not self.active:
             values["status"] = "cancelled"
         return self._update_google_owner_values(values)
-
-    def _cancel(self) -> None:
-        # only owner can delete => others refuse the event
-        user = self.env.user
-        my_cancelled_records = self.filtered(lambda e: e.user_id == user)
-        for event in self:
-            # remove the tracking data to avoid calling _track_template in the pre-commit phase
-            self.env.cr.precommit.data.pop(
-                f"mail.tracking.create.{event._name}.{event.id}", None
-            )
-        super(CalendarEvent, my_cancelled_records)._cancel()
-        attendees = (self - my_cancelled_records).attendee_ids.filtered(
-            lambda a: a.partner_id == user.partner_id
-        )
-        attendees.state = "declined"
 
     def _get_event_user(self):
         self.check_singleton()

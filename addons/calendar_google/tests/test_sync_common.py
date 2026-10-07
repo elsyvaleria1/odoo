@@ -36,6 +36,24 @@ class TestSyncGoogle(HttpCase):
         self.organizer_user = mail_new_test_user(self.env, login="organizer_user")
         self.attendee_user = mail_new_test_user(self.env, login="attendee_user")
 
+    def apply_google(self, model_name, gevents, user=None, default_reminders=()):
+        """What a synchronization reads of `gevents`, applied as `user` (the
+        current user) receives them; the records of `model_name` it changed,
+        or all of them without one."""
+        user = (user or self.env.user)._calendar_sync_as_owner()
+        account = user._calendar_sync_account("google")._as_engine()
+        changes = self.env["calendar.sync.adapter.google"]._changes(
+            gevents, default_reminders
+        )
+        records = account._pull(changes)
+        if not model_name:
+            return records
+        return (
+            self.env[model_name]
+            .union(*(r for r in records if r._name == model_name))
+            .with_env(self.env)
+        )
+
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
         """
