@@ -36,6 +36,7 @@ from . import test_ir_actions_server_ssrf
 from . import test_ir_asset
 from . import test_ir_asset_audit
 from . import test_bearer_token
+from . import test_attachment_owner_reach
 from . import test_ir_attachment
 from . import test_ir_attachment_reading
 from . import test_ir_attachment_storage

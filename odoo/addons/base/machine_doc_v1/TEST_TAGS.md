@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (4736 methods, 949 classes, 176 files)
+# All base tests (4736 methods, 950 classes, 177 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -102,7 +102,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 
 ## Test File Reference
 
-### Tagged Files (107 files, 570 classes)
+### Tagged Files (108 files, 571 classes)
 
 | File | Tags | Classes | Tests | Base Class |
 |------|------|---------|-------|------------|
@@ -110,6 +110,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_access_review.py` | `post_install`, `-at_install` | 1 | 8 | TransactionCase |
 | `test_access_verdicts.py` | `post_install`, `-at_install` | 2 | 14 | TransactionCase |
 | `test_acting_partner.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
+| `test_attachment_owner_reach.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_auth_user_client.py` | `post_install`, `-at_install` | 7 | 41 | DeviceCase, TransactionCase, BaseCase |
 | `test_base_language_wizards_audit.py` | `post_install`, `-at_install` | 1 | 7 | TransactionCase |
 | `test_base_module_wizards.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
@@ -150,7 +151,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_actions_webhook.py` | `post_install`, `-at_install` | 4 | 21 | WebhookCase, TransactionCase |
 | `test_ir_asset.py` | `-at_install`, `post_install` | 2 | 3 | TransactionCase |
 | `test_ir_asset_audit.py` | `post_install`, `-at_install` | 20 | 69 | TransactionCase |
-| `test_ir_attachment.py` | `post_install`, `-at_install`, `at_install`, `-post_install` | 12 | 189 | TransactionCaseWithUserDemo, TransactionCaseWithUserPortal, TransactionCase |
+| `test_ir_attachment.py` | `post_install`, `-at_install`, `at_install`, `-post_install` | 12 | 187 | TransactionCaseWithUserDemo, TransactionCaseWithUserPortal, TransactionCase |
 | `test_ir_attachment_reading.py` | `post_install`, `-at_install` | 1 | 16 | TransactionCase |
 | `test_ir_autovacuum_audit.py` | `post_install`, `-at_install` | 3 | 9 | TransactionCase |
 | `test_ir_binary.py` | `post_install`, `-at_install` | 6 | 13 | TransactionCase, TransactionCaseWithUserDemo |
@@ -292,12 +293,12 @@ These run in **both** at_install and post_install phases by default.
 
 | Metric | Value |
 |--------|-------|
-| Total test files | 176 |
-| Total test classes | 949 |
+| Total test files | 177 |
+| Total test classes | 950 |
 | Total test methods | 4736 |
-| Files with @tagged | 107 (61%) |
+| Files with @tagged | 108 (61%) |
 | Files without @tagged | 69 (39%) |
-| Classes using post_install | 343 |
+| Classes using post_install | 344 |
 | Unique tags | 29 |
 | Largest test file | test_db_cursor.py (125 classes, 403 tests) |
 

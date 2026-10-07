@@ -97,35 +97,33 @@ class TestMailMessageSearchChunking(MailCommon):
             rebuilt.extend(got.ids)
         self.assertEqual(rebuilt, accessible)
 
-    def test_small_page_scan_is_bounded_and_thread_size_independent(self):
+    def test_a_small_page_is_one_bounded_statement_whatever_the_thread_size(self):
         small = self._create_messages([True] * 40)
         big = self._create_messages([True] * 400)
 
-        def scan_queries(ids):
+        def searches(ids):
             captured = []
             real_execute = type(self.env.cr).execute
 
             def spy(cr, query, params=None):
-                if "mail_message_res_partner_rel" in str(query):
-                    captured.append(str(query))
+                code = getattr(query, "code", None) or str(query)
+                if code.lstrip().upper().startswith("SELECT") and (
+                    'FROM "mail_message"' in code
+                ):
+                    captured.append(code)
                 return real_execute(cr, query, params)
 
             self.env.flush_all()
             with patch.object(type(self.env.cr), "execute", spy):
-                self._search_emp([("id", "in", ids)], limit=10, order="id desc")
-            return captured
+                found = self._search_emp([("id", "in", ids)], limit=10, order="id desc")
+            self.assertEqual(len(found), 10)
+            return [code for code in captured if "LIMIT" in code.upper()]
 
-        small_scans = scan_queries(small.ids)
-        big_scans = scan_queries(big.ids)
-        self.assertEqual(len(small_scans), 1, "small thread: one candidate scan")
-        self.assertEqual(
-            len(big_scans),
-            1,
-            "large thread: still one candidate scan (no whole-thread fetch)",
-        )
-        self.assertIn(
-            "LIMIT", big_scans[0].upper(), "the candidate scan must be SQL-bounded"
-        )
+        for messages in (small, big):
+            bounded = searches(messages.ids)
+            self.assertEqual(
+                len(bounded), 1, "a page is one statement, whatever the thread size"
+            )
 
     def test_message_fetch_search_term_escapes_like_metachars(self):
         Msg = self.env["mail.message"].sudo()

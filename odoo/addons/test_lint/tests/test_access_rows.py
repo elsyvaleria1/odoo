@@ -35,8 +35,9 @@ _SEARCH_ACCESS_NAMES = frozenset(
         "_filtered_access",
         "has_access",
         "check_access",
-        "get_accessible_query",
         "get_inaccessible_owners",
+        "owner_reach",
+        "search_by_owner",
     }
 )
 

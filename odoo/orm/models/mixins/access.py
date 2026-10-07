@@ -344,6 +344,26 @@ class AccessMixin(_ModelStubs):
     def has_access(self, operation: str) -> bool:
         return self.env.su or not self._check_access(operation)
 
+    @api.model
+    def _record_access_domain(self, operation: str) -> Domain:
+        # the records the principal may perform the operation on, as a domain
+        # read in sudo, archived records included: the access rows' record
+        # domain, or for a model deciding its own access in Python, what its
+        # own search finds -- which only answers for reading
+        env = self.env
+        if type(self)._check_access is AccessMixin._check_access:
+            policy = env.registry.access_policy
+            if not policy.model_allowed(env, self._name, operation):
+                return Domain.FALSE
+            return policy.record_domain(env, self._name, operation)
+        if operation != "read":
+            raise ValueError(
+                f"{self._name} decides {operation!r} access in Python: no domain "
+                f"states it"
+            )
+        query = self.sudo(False).with_context(active_test=False)._search([])
+        return Domain("id", "in", query)
+
     def _filtered_access(self, operation: str) -> Self:
         if self and not self.env.su and (result := self._check_access(operation)):
             return self - result[0]

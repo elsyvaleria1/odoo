@@ -1,6 +1,5 @@
 __all__ = [
     "get_accessible_ids",
-    "get_accessible_query",
     "get_inaccessible_owners",
     "prepare_document_access_error",
     "stable_order",
@@ -56,19 +55,6 @@ def _seek_operator(order: str | None) -> str | None:
     if not terms or terms[0].field != "id" or terms[0].property or terms[0].func:
         return None
     return "<" if terms[0].desc else ">"
-
-
-def prepare_column_fetcher(
-    model: models.BaseModel, fnames: Sequence[str]
-) -> Callable[[Query], list[tuple]]:
-    def fetch(query: Query) -> list[tuple]:
-        return model.env.execute_query(
-            query.select(
-                *[model._field_to_sql(model._table, fname) for fname in fnames]
-            )
-        )
-
-    return fetch
 
 
 def get_accessible_ids(
@@ -147,22 +133,6 @@ def get_accessible_ids(
         seek=bool(seek),
     )
     return ordered[offset:target]
-
-
-def get_accessible_query(
-    model: models.BaseModel,
-    domain: DomainType,
-    offset: int,
-    limit: int | None,
-    order: str | None,
-    base_search: Callable[..., Query],
-    **scan: Any,
-) -> Query:
-    query = Query(model.env, model._table, model._table_sql)
-    query.set_result_ids(
-        get_accessible_ids(model, domain, offset, limit, order, base_search, **scan)
-    )
-    return query
 
 
 def get_inaccessible_owners(

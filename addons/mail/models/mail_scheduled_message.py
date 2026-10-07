@@ -20,6 +20,7 @@ from odoo.libs.json import loads as json_loads
 from odoo.service.transaction import PG_CONCURRENCY_ERRORS_TO_RETRY
 from odoo.tools.access_scan import prepare_document_access_error
 from odoo.tools.misc import clean_context
+from odoo.tools.owner_reach import CONCRETE
 
 from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
 
@@ -40,8 +41,6 @@ class MailScheduledMessage(models.Model):
     _access_owner_field = "res_id"
 
     _mail_partner_fields = ()
-
-    _SEARCH_ACCESS_CHUNK_MIN = 30
 
     subject = fields.Char()
     body = fields.Html(
@@ -154,6 +153,14 @@ class MailScheduledMessage(models.Model):
 
     def _forbidden_documents(self) -> Self:
         return self.browse(self._access_forbidden_ids(self._access_owners(), "create"))
+
+    @api.model
+    def _access_owner_reach(self, Owner: models.BaseModel) -> typing.Any:
+        # a scheduled message is reached through a document the user may post
+        # on, as _access_unreachable_owners decides it
+        if type(Owner)._check_access is models.BaseModel._check_access:
+            return Owner._mail_access_domain("create")
+        return CONCRETE
 
     def _access_unreachable_owners(
         self, by_model: dict[str, set[int]], operation: str

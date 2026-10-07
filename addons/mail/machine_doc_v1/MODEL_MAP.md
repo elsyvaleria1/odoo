@@ -295,7 +295,8 @@ Methods: `create`, `write`, `unlink`, `_get_with_access`, `mark_all_as_read`,
 > `mail_message_access.py` (`_check_access`, `_search`, `_get_forbidden_access` + its
 > `_discard_*` rounds) and `mail_message_store.py` (`_to_store`), plus
 > `discuss/mail_message.py` for the Discuss extensions. The access rule is written twice by
-> design — forward in `_search.allowed()` and backward in `_get_forbidden_access` — and
+> design — forward as SQL in `_get_search_reach_domain` (the owning record's access through
+> `odoo.tools.owner_reach`) and backward in `_get_forbidden_access` — and
 > `test_mail_message_access_parity` pins the two spellings against each other. Change one side
 > and that test is the one that tells you about the other.
 

@@ -22,7 +22,7 @@ from odoo.exceptions import (
     UserError,
     ValidationError,
 )
-from odoo.fields import COLLECTION_TYPES, Domain
+from odoo.fields import Domain
 from odoo.http import Stream, request, root
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.documents import (
@@ -47,18 +47,17 @@ from odoo.libs.hashing import (
     content_hash,
     prepare_content_hasher,
 )
-from odoo.models import PREFETCH_MAX
 from odoo.tools import (
     SQL,
     OrderedSet,
     config,
     file_open,
     image,
-    ormcache,
     str2bool,
 )
-from odoo.tools.access_scan import get_accessible_ids, get_inaccessible_owners
+from odoo.tools.access_scan import get_inaccessible_owners
 from odoo.tools.misc import limited_field_access_token
+from odoo.tools.owner_reach import owner_reach, pinned_values, search_by_owner
 
 from odoo.addons.base.models.ir_attachment_reading import (
     PERSISTED as PERSISTED_READINGS,
@@ -71,7 +70,7 @@ from odoo.addons.base.models.ir_attachment_storage import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Generator, Iterator, Sequence
+    from collections.abc import Callable, Collection, Generator, Iterator
 
     from odoo.tools.query import Query
 
@@ -104,31 +103,6 @@ def _get_filestore_root(filestore: str) -> str:
 @functools.cache
 def _get_filestore_dir_path(filestore: str, name: str) -> Path:
     return Path(filestore, name)
-
-
-def _scope_res_model(codomain: Domain, cond: Domain) -> Domain:
-    return codomain & cond if cond.field_expr == "res_model" else cond
-
-
-def _get_condition_values(
-    model: Any, field_name: str, domain: Domain
-) -> Collection[Any] | None:
-    domain = domain.optimize(model)
-    field_only = domain.map_conditions(
-        lambda cond: (
-            cond
-            if cond.field_expr == field_name and cond.operator in ("in", "=")
-            else Domain.TRUE
-        )
-    ).optimize(model)
-    condition = next(iter(field_only.iter_conditions()), None)
-    if condition is None:
-        return None
-    if condition.operator == "=":
-        return [condition.value]
-    if isinstance(condition.value, COLLECTION_TYPES):
-        return condition.value
-    return None
 
 
 class IrAttachment(models.Model):
@@ -245,10 +219,6 @@ class IrAttachment(models.Model):
 
     _res_field_idx = models.Index("(res_model, res_field, res_id)")
     _checksum_idx = models.Index("(checksum) WHERE checksum IS NOT NULL")
-
-    _SEARCH_MODEL_DOMAIN_LIMIT = 5
-
-    _SEARCH_MODEL_DISCOVERY_LIMIT = 256
 
     _URL_AUDIT_WINDOW = 20
 
@@ -618,7 +588,7 @@ class IrAttachment(models.Model):
             )
 
         sec_domain = Domain("public", "=", True)
-        res_ids = _get_condition_values(self, "res_id", domain)
+        res_ids = pinned_values(self, "res_id", domain)
         if not res_ids or False in res_ids:
             unlinked = Domain("res_id", "=", False) | Domain("res_model", "=", False)
             if self.env.is_system():
@@ -626,67 +596,87 @@ class IrAttachment(models.Model):
             else:
                 sec_domain |= unlinked & Domain("create_uid", "=", self.env.uid)
 
-        res_model_names = _get_condition_values(self, "res_model", domain)
-        if 0 < len(res_model_names or ()) <= self._SEARCH_MODEL_DOMAIN_LIMIT:
-            _debug.logic(
-                "search_by_model",
-                uid=self.env.uid,
-                models=len(res_model_names),
-                res_ids=len(res_ids or ()),
-            )
-            sec_domain |= self._get_domain_security_by_model(
-                domain, res_model_names, hide_field_rows
-            )
-            return super()._search(
-                domain & sec_domain,
-                offset,
-                limit,
-                order,
-                active_test=active_test,
-            )
-
-        if _get_condition_values(self, "id", domain) is None:
-            domain &= self._get_domain_security_prefilter(sec_domain)
-        else:
-            _debug.logic("security_prefilter_skipped", reason="id_pinned")
-        domain = domain.optimize_full(self)
-        ordered = bool(order)
-        _debug.logic(
-            "search_by_seek",
-            uid=self.env.uid,
-            models=len(res_model_names or ()),
-            offset=offset,
-            limit=limit,
-            ordered=ordered,
+        # an attachment on a record is read where its record is, and its field
+        # where the user reads that field there: the record-level check
+        # (_check_access), as one condition the database evaluates
+        asked_fields = pinned_values(self, "res_field", domain)
+        within = (
+            None
+            if hide_field_rows or self.env.is_system()
+            else functools.partial(self._attached_field_reach, asked=asked_fields)
         )
-        scanner = self.sudo().with_context(active_test=False)
-        security_fields = [scanner._fields[name] for name in SECURITY_FIELDS]
-        scanned = scanner.browse()
+        itself = self._attached_reach_itself()
 
-        def fetch(query: Query) -> list[tuple[int]]:
-            # the pass before is filtered by now; only the last one stays cached
-            nonlocal scanned
-            scanned.invalidate_recordset(SECURITY_FIELDS)
-            scanned = scanner._fetch_query(query, security_fields)
-            return [(id_,) for id_ in scanned._ids]
+        def reached(only: Collection[str] | None, bounded: bool) -> Domain:
+            return sec_domain | owner_reach(
+                self,
+                "res_model",
+                "res_id",
+                self._attached_record_reach,
+                bounded=bounded,
+                only=only,
+                within=within,
+                itself=itself,
+            )
 
-        def allowed(rows: Sequence[Sequence[int]]) -> tuple[int, ...]:
-            return self.browse(row[0] for row in rows)._filtered_access("read")._ids
-
-        result = get_accessible_ids(
+        _debug.logic(
+            "search_by_owner_reach", uid=self.env.uid, res_field_hidden=hide_field_rows
+        )
+        return search_by_owner(
             self,
             domain,
             offset,
             limit,
             order,
-            scanner._search,
-            fetch=fetch,
-            allowed=allowed,
-            chunk_min=PREFETCH_MAX,
-            chunk_max=PREFETCH_MAX,
-            keyset=True,
+            super()._search,
+            reached,
+            "res_model",
+            active_test=active_test,
         )
-        return self.browse(result)._as_query(ordered)
+
+    @api.model
+    def _attached_reach_itself(self) -> Domain:
+        # what reaches an attachment whatever it is on: public, or unlinked
+        # and the user's own (any unlinked one for a system user)
+        unlinked = Domain("res_id", "=", False) | Domain("res_model", "=", False)
+        if not self.env.is_system():
+            unlinked &= Domain("create_uid", "=", self.env.uid)
+        return Domain("public", "=", True) | unlinked
+
+    @api.model
+    def _attached_record_reach(self, Owner: models.BaseModel) -> Domain:
+        # the records whose attachments the user reads; a user reads their own
+        # user's attachments whatever else the user model lets them read
+        reach = Owner._record_access_domain("read")
+        if Owner._name == "res.users":
+            reach |= Domain("id", "=", self.env.uid)
+        return reach
+
+    @api.model
+    def _attached_field_reach(
+        self, Owner: models.BaseModel, asked: Collection[Any] | None = None
+    ) -> Domain:
+        # the attachments of a record's fields the user reads there: a field
+        # they may read everywhere, or one they read on that record only; of
+        # the fields the search asks (`asked`), where it names some
+        readable: list[str | bool] = [False]
+        per_record = Domain.FALSE
+        fields = Owner._fields.values()
+        if asked is not None:
+            fields = [Owner._fields[name] for name in asked if name in Owner._fields]
+        for field in fields:
+            if not Owner._has_field_access(field, "read"):
+                continue
+            field_domain = (
+                Owner._field_access_domain(field, "read") if field.attachment else None
+            )
+            if field_domain is None:
+                readable.append(field.name)
+                continue
+            per_record |= Domain("res_field", "=", field.name) & Domain(
+                "res_id", "in", Owner._search(field_domain, bypass_access=True)
+            )
+        return Domain("res_field", "in", readable) | per_record
 
     @api.model
     def _get_storage_backend_for_key(self, fname: str) -> AttachmentStorage:
@@ -1674,129 +1664,6 @@ class IrAttachment(models.Model):
     @api.model
     def _coerce_model_name(self, res_model: Any) -> str | None:
         return res_model if isinstance(res_model, str) and res_model else None
-
-    @api.model
-    def _get_domain_security_prefilter(self, sec_domain: Domain) -> Domain:
-        model_names, capped = self._get_model_names_attached()
-        if capped:
-            _debug.logic("security_prefilter", models=len(model_names), capped=True)
-            return sec_domain | Domain("res_model", "!=", False)
-        unreadable = [
-            name
-            for name in model_names
-            if (comodel := self.env.get(name)) is not None
-            and not comodel.has_access("read")
-        ]
-        _debug.logic(
-            "security_prefilter",
-            models=len(model_names),
-            unreadable=len(unreadable),
-            capped=False,
-        )
-        if not unreadable:
-            return sec_domain | Domain("res_model", "!=", False)
-        return sec_domain | Domain("res_model", "not in", unreadable)
-
-    @api.model
-    @ormcache()
-    def _get_model_names_attached(self) -> tuple[list[str], bool]:
-        limit = self._SEARCH_MODEL_DISCOVERY_LIMIT + 1
-        self.flush_model(["res_model"])
-        # a loose index scan over ir_attachment_res_field_idx: one probe per
-        # distinct model instead of a scan of the whole table
-        names = [
-            res_model
-            for (res_model,) in self.env.execute_query(
-                SQL(
-                    """
-                    WITH RECURSIVE attached AS (
-                        (SELECT res_model FROM ir_attachment
-                          WHERE res_model > '' ORDER BY res_model LIMIT 1)
-                        UNION ALL
-                        SELECT (SELECT a.res_model FROM ir_attachment a
-                                 WHERE a.res_model > attached.res_model
-                                 ORDER BY a.res_model LIMIT 1)
-                          FROM attached WHERE attached.res_model IS NOT NULL
-                    )
-                    SELECT res_model FROM attached
-                     WHERE res_model IS NOT NULL
-                     LIMIT %s
-                    """,
-                    limit,
-                )
-            )
-        ]
-        _debug.perf.count(
-            "model_names_attached", models=len(names), capped=len(names) >= limit
-        )
-        return names, len(names) >= limit
-
-    @api.model
-    def _get_domain_security_by_model(
-        self,
-        domain: Domain,
-        res_model_names: Collection[Any],
-        hide_field_rows: bool,
-    ) -> Domain:
-        env = self.with_context(active_test=False).env
-        models_domain = Domain.FALSE
-        for res_model_name in res_model_names:
-            if (comodel := env.get(res_model_name)) is None:
-                continue
-            codomain = Domain("res_model", "=", comodel._name)
-            comodel_res_ids = _get_condition_values(
-                self,
-                "res_id",
-                domain.map_conditions(functools.partial(_scope_res_model, codomain)),
-            )
-            try:
-                query = comodel._search(
-                    Domain("id", "in", comodel_res_ids)
-                    if comodel_res_ids
-                    else Domain.TRUE
-                )
-            except AccessError:
-                _debug.logic(
-                    "security_model_skipped", model=comodel._name, reason="access"
-                )
-                continue
-            if query.is_empty():
-                _debug.logic(
-                    "security_model_skipped", model=comodel._name, reason="empty"
-                )
-                continue
-            codomain &= (
-                Domain("res_id", "in", query)
-                if query.where_clause
-                else Domain("res_id", "!=", False)
-            )
-            if not hide_field_rows and not self.env.is_system():
-                accessible_fields: list[str | bool] = [False]
-                per_record = Domain.FALSE
-                for field in comodel._fields.values():
-                    if not comodel._has_field_access(field, "read"):
-                        continue
-                    field_domain = (
-                        comodel._field_access_domain(field, "read")
-                        if field.attachment
-                        else None
-                    )
-                    if field_domain is None:
-                        accessible_fields.append(field.name)
-                        continue
-                    per_record |= Domain("res_field", "=", field.name) & Domain(
-                        "res_id",
-                        "in",
-                        comodel._search(field_domain, bypass_access=True),
-                    )
-                codomain &= Domain("res_field", "in", accessible_fields) | per_record
-                _debug.logic(
-                    "security_model_fields",
-                    model=comodel._name,
-                    readable_fields=len(accessible_fields) - 1,
-                )
-            models_domain |= codomain
-        return models_domain
 
     def _post_add_create(self, **kwargs: Any) -> None:
         pass

@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import typing
 from collections import defaultdict
+from collections.abc import Collection
 
 from odoo import api, models
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.libs.func import classproperty
 from odoo.tools.access_scan import (
-    get_accessible_query,
     get_inaccessible_owners,
-    prepare_column_fetcher,
     prepare_document_access_error,
     stable_order,
 )
+from odoo.tools.owner_reach import CONCRETE, owner_reach, search_by_owner
 
 if typing.TYPE_CHECKING:
     from odoo.api import DomainType
@@ -25,8 +25,6 @@ class MixinOwnerAccess(models.AbstractModel):
     _description = "Access Following an Owner Record"
 
     _access_owner_field: str = ""
-    _SEARCH_ACCESS_CHUNK_MIN = 80
-    _SEARCH_ACCESS_CHUNK_MAX = 8192
 
     @classproperty
     def _search_visibility_fields(self) -> tuple[str, ...]:
@@ -132,24 +130,74 @@ class MixinOwnerAccess(models.AbstractModel):
             )
         if self._access_owner_delegates():
             return super()._search(domain, offset, limit, order, **kwargs)
+        # what the record-level check admits (_access_forbidden_ids): a row
+        # with no owner, or one on an owner the user reaches, as one condition
+        # the database evaluates
+        field = self._fields[self._access_owner_field]
+        if field.type != "many2one_reference":
+            comodel = self.env[field.comodel_name]
+            reach = self._access_owner_reach(comodel)
+            if reach is CONCRETE:
+                owners = self._access_owner_decide(
+                    comodel.with_context(active_test=False).search([])
+                ).ids
+            else:
+                owners = (
+                    comodel.sudo()
+                    .with_context(active_test=False)
+                    ._search(reach, bypass_access=True)
+                )
+            reached = Domain(field.name, "=", False) | Domain(field.name, "in", owners)
+            return super()._search(
+                Domain(domain) & reached, offset, limit, order, **kwargs
+            )
+        unowned = Domain(field.name, "=", False) | Domain(field.model_field, "=", False)
 
-        def allowed(rows: list[tuple]) -> set[int]:
-            owners = self._access_owner_rows(rows)
-            forbidden = set(self._access_forbidden_ids(owners, "read"))
-            return {row[0] for row in rows if row[0] not in forbidden}
+        def reached_on(only: Collection[str] | None, bounded: bool) -> Domain:
+            return unowned | owner_reach(
+                self,
+                field.model_field,
+                field.name,
+                self._access_owner_reach,
+                bounded=bounded,
+                only=only,
+                decide=self._access_owner_decide,
+            )
 
-        return get_accessible_query(
+        return search_by_owner(
             self,
-            domain,
+            Domain(domain),
             offset,
             limit,
             order,
             super()._search,
-            fetch=prepare_column_fetcher(self, ("id", *self._access_owner_columns())),
-            allowed=allowed,
-            chunk_min=self._SEARCH_ACCESS_CHUNK_MIN,
-            chunk_max=self._SEARCH_ACCESS_CHUNK_MAX,
+            reached_on,
+            field.model_field,
             **kwargs,
+        )
+
+    @api.model
+    def _access_owner_reach(self, Owner: models.BaseModel) -> typing.Any:
+        # the owners a row is read through, as a domain on the owner read in
+        # sudo, or CONCRETE where none states it (_access_owner_decide decides
+        # them): what _access_unreachable_owners decides record by record
+        operation = self._access_owner_operation("read")
+        try:
+            reach = Owner._record_access_domain(operation)
+        except ValueError:
+            return CONCRETE
+        if Owner._name == "res.users":
+            reach |= Domain("id", "=", self.env.uid)
+        return reach
+
+    @api.model
+    def _access_owner_decide(self, owners: models.BaseModel) -> models.BaseModel:
+        # of these owners, those a row is read through
+        unreachable = self._access_unreachable_owners(
+            {owners._name: set(owners._ids)}, "read"
+        )
+        return owners.filtered(
+            lambda owner: (owners._name, owner.id) not in unreachable
         )
 
     @api.constrains(lambda self: self._access_owner_columns())

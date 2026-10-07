@@ -67,7 +67,7 @@ class TestNotificationTabPerformance(HttpCase, MailCommon):
             "filter_ids": ["notification_unread"],
             "limit": 30,
         }
-        with self.assertQueryCount(31):
+        with self.assertQueryCount(35):
             self.call_jsonrpc(
                 "/mail/data", {"fetch_params": [[load_more, params, "tab"]]}
             )

@@ -8,7 +8,6 @@ import shutil
 import time
 import uuid
 from compression import zstd
-from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,6 +22,7 @@ from odoo.libs.hashing import ALGO_TAG
 from odoo.models import PREFETCH_MAX
 from odoo.tests.common import TransactionCase, skip_if_dev_mode, tagged
 from odoo.tools import OrderedSet, config, human_size, mute_logger
+from odoo.tools import owner_reach as owner_reach_module
 from odoo.tools.image import image_to_base64
 
 from odoo.addons.base.models import ir_attachment as ir_attachment_module
@@ -729,7 +729,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual(attachment.res_id, other.id)
 
     def test_condition_values_read_only_a_conjunctive_positive_term(self):
-        get = ir_attachment_module._get_condition_values
+        get = ir_attachment_module.pinned_values
         model = self.Attachment
         self.assertEqual(list(get(model, "res_id", Domain("res_id", "=", 7))), [7])
         self.assertEqual(
@@ -830,11 +830,6 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
             "res.users",
             "res.bank",
         ]
-        self.assertGreater(
-            len(wide),
-            self.Attachment._SEARCH_MODEL_DOMAIN_LIMIT,
-            "precondition: the wide domain must take the batched access path",
-        )
         one_model = Att.search([("res_model", "=", "res.partner")])
         many_models = Att.search([("res_model", "in", wide)])
         allowed = bool(Att.browse(att.id)._filtered_access("read"))
@@ -847,7 +842,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual(
             att.id in many_models.ids,
             allowed,
-            "batched access path disagrees with _check_access",
+            "the many-model search disagrees with _check_access",
         )
 
     def test_res_field_must_name_an_attachment_backed_field(self):
@@ -2411,12 +2406,12 @@ class TestPermissions(TransactionCaseWithUserDemo):
             FROM "ir_attachment"
             WHERE ("ir_attachment"."res_field" IN (%s) AND "ir_attachment"."res_id" IN (%s) AND "ir_attachment"."res_model" IN (%s) AND (
                 "ir_attachment"."public" IS TRUE
-                OR (
-                    ("ir_attachment"."res_field" IN (%s) OR "ir_attachment"."res_field" IS NULL)
-                    AND "ir_attachment"."res_id" IN (
-                        SELECT "res_partner"."id"
+                OR ((
+                    "ir_attachment"."res_model" = %s
+                    AND EXISTS (
+                        SELECT 1
                         FROM "res_partner"
-                        WHERE "res_partner"."id" IN (%s) AND (
+                        WHERE (
                             (
                                 ("res_partner"."company_id" IN (%s) OR "res_partner"."company_id" IS NULL)
                                 OR "res_partner"."partner_share" IS NOT TRUE
@@ -2426,9 +2421,10 @@ class TestPermissions(TransactionCaseWithUserDemo):
                                 OR ("res_partner"."type" NOT IN (%s) OR "res_partner"."type" IS NULL)
                             )
                         )
+                        AND "res_partner"."id" = "ir_attachment"."res_id"
                     )
-                    AND "ir_attachment"."res_model" IN (%s)
-                )
+                    AND ("ir_attachment"."res_field" IN (%s, %s) OR "ir_attachment"."res_field" IS NULL)
+                ))
             ))
             ORDER BY "ir_attachment"."id" DESC
             """
@@ -2573,7 +2569,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
             }
 
         truth = run()
-        with patch("odoo.addons.base.models.ir_attachment.PREFETCH_MAX", 3):
+        with patch("odoo.tools.owner_reach.CHUNK", 3):
             batched = run()
 
         for label, ids in batched.items():
@@ -2590,8 +2586,9 @@ class TestPermissions(TransactionCaseWithUserDemo):
             )
 
     def test_an_id_led_scan_seeks_and_any_other_order_pages_by_offset(self):
-        created = self.Attachments.create([{"name": f"seek{i:02d}"} for i in range(8)])
-        domain = [("id", "in", created.ids)]
+        self.Attachments.create([{"name": f"seek{i:02d}"} for i in range(8)])
+        # by name, not by ids: a search by ids is one statement, not a scan
+        domain = [("name", "=like", "seek%")]
         passes = []
         search = IrAttachment._search
 
@@ -2610,7 +2607,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
             with self.subTest(order=order):
                 passes.clear()
                 with (
-                    patch.object(ir_attachment_module, "PREFETCH_MAX", 3),
+                    patch.object(owner_reach_module, "CHUNK", 3),
                     patch.object(IrAttachment, "_search", spy),
                 ):
                     self.Attachments.search(domain, order=order, limit=7)
@@ -2718,16 +2715,14 @@ class TestPermissions(TransactionCaseWithUserDemo):
     def _search_ids(self, domain):
         return self.Attachments.search(domain).ids
 
-    def _unprefiltered(self, func):
-        with patch.object(
-            IrAttachment,
-            "_get_domain_security_prefilter",
-            lambda self, sec_domain: sec_domain | Domain("res_model", "!=", False),
-        ):
-            return func()
+    def _checked_ids(self, domain):
+        # the oracle: every row the domain holds, kept where the record-level
+        # check lets the user read it
+        rows = self.Attachments.sudo().search(domain)
+        return rows.with_env(self.Attachments.env)._filtered_access("read").ids
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
-    def test_scan_prefilter_agrees_with_the_unprefiltered_scan(self):
+    def test_search_agrees_with_the_record_check(self):
         view = self.env["ir.ui.view"].sudo().search([], limit=1)
         self.Attachments.sudo().create(
             [
@@ -2746,17 +2741,15 @@ class TestPermissions(TransactionCaseWithUserDemo):
 
         for domain in ([], [("name", "like", "scan-")], [("public", "=", False)]):
             with self.subTest(domain=domain):
+                expected = self._checked_ids(domain)
+                self.assertEqual(self._search_ids(domain), expected)
+                self.assertEqual(self.Attachments.search_count(domain), len(expected))
                 self.assertEqual(
-                    self.Attachments.search(domain).ids,
-                    self._unprefiltered(partial(self._search_ids, domain)),
-                )
-                self.assertEqual(
-                    self.Attachments.search_count(domain),
-                    self._unprefiltered(partial(self.Attachments.search_count, domain)),
+                    self.Attachments.search(domain, limit=5).ids, expected[:5]
                 )
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
-    def test_scan_prefilter_keeps_public_rows_of_an_unreadable_model(self):
+    def test_public_rows_of_an_unreadable_model_stay_found(self):
         view = self.env["ir.ui.view"].sudo().search([], limit=1)
         public, private = self.Attachments.sudo().create(
             [
@@ -2784,7 +2777,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
         self.assertEqual(public.raw, b"visible")
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
-    def test_scan_prefilter_keeps_rows_with_no_res_model(self):
+    def test_rows_with_no_res_model_stay_found(self):
         mine = self.Attachments.create({"name": "mine-unlinked.txt", "raw": b"mine"})
         self.env.flush_all()
         self.env.cr.execute(
@@ -2803,34 +2796,12 @@ class TestPermissions(TransactionCaseWithUserDemo):
         )
         self.env.flush_all()
         self._revoke_model_read("ir.ui.view")
-        self.assertIn(
-            "ir.ui.view",
-            self.Attachments._get_model_names_attached()[0],
-            "this test needs the unreadable model to be discovered",
-        )
 
-        found = self.Attachments.search([("name", "like", "-unlinked.txt")])
-        self.assertEqual(found, mine)
-        self.assertEqual(
-            found.ids,
-            self._unprefiltered(
-                lambda: self.Attachments.search([("name", "like", "-unlinked.txt")]).ids
-            ),
-        )
+        domain = [("name", "like", "-unlinked.txt")]
+        self.assertEqual(self.Attachments.search(domain), mine)
+        self.assertEqual(self._search_ids(domain), self._checked_ids(domain))
 
-    def test_scan_prefilter_declines_past_the_discovery_cap(self):
-        sec_domain = Domain("public", "=", True)
-        with patch.object(
-            IrAttachment,
-            "_get_model_names_attached",
-            lambda self: (["res.partner"], True),
-        ):
-            self.assertEqual(
-                self.Attachments._get_domain_security_prefilter(sec_domain),
-                sec_domain | Domain("res_model", "!=", False),
-            )
-
-    def test_model_discovery_lists_every_distinct_named_model(self):
+    def test_owner_discovery_lists_every_distinct_named_model(self):
         self.Attachments.sudo().create(
             [
                 {"name": "on-partner-1", "res_model": "res.partner", "res_id": 1},
@@ -2843,33 +2814,23 @@ class TestPermissions(TransactionCaseWithUserDemo):
         self.env.cr.execute(
             "UPDATE ir_attachment SET res_model = '' WHERE name = 'unlinked'"
         )
-        self.env.registry.clear_cache()
         self.env.cr.execute(
             "SELECT DISTINCT res_model FROM ir_attachment WHERE res_model <> ''"
         )
         expected = {name for (name,) in self.env.cr.fetchall()}
 
-        names, capped = self.Attachments._get_model_names_attached()
+        names = owner_reach_module.owner_models(self.env, "ir_attachment", "res_model")
 
-        self.assertFalse(capped)
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(set(names), expected)
         self.assertTrue({"res.partner", "ir.ui.view"} <= set(names))
 
-    def test_model_discovery_reports_the_cap(self):
-        self.env.registry.clear_cache()
-        with patch.object(IrAttachment, "_SEARCH_MODEL_DISCOVERY_LIMIT", 0):
-            names, capped = self.Attachments._get_model_names_attached()
-        self.env.registry.clear_cache()
-        self.assertTrue(capped)
-        self.assertEqual(len(names), 1)
-
-    def test_search_by_id_skips_model_discovery(self):
+    def test_search_by_id_skips_owner_discovery(self):
         attachment = self.Attachments.create({"name": "by-id.txt", "raw": b"x"})
         with patch.object(
-            IrAttachment,
-            "_get_model_names_attached",
-            side_effect=AssertionError("model discovery ran for an id search"),
+            owner_reach_module,
+            "owner_models",
+            side_effect=AssertionError("owner discovery ran for an id search"),
         ):
             self.assertEqual(
                 self.Attachments.search([("id", "in", attachment.ids)]), attachment

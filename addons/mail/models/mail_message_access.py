@@ -8,10 +8,8 @@ from odoo.exceptions import AccessError, MissingError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, Query
-from odoo.tools.access_scan import (
-    get_accessible_query,
-    prepare_document_access_error,
-)
+from odoo.tools.access_scan import prepare_document_access_error
+from odoo.tools.owner_reach import owner_reach, search_by_owner
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -30,9 +28,6 @@ class MailMessage(models.Model):
         "subtype_id",
     )
 
-    _SEARCH_ACCESS_CHUNK_MIN = 30
-    _SEARCH_ACCESS_CHUNK_MAX = 8192
-
     @api.model
     def _search(
         self,
@@ -49,110 +44,53 @@ class MailMessage(models.Model):
                 domain, offset, limit, order, bypass_access=True, **kwargs
             )
 
+        domain = Domain(domain)
         if not self.env.user._is_internal():
-            domain = self._get_search_domain_non_internal() & Domain(domain)
-
-        self.flush_model(
-            [
-                "model",
-                "res_id",
-                "author_id",
-                "create_uid",
-                "message_type",
-                "partner_ids",
-            ]
-        )
-        self.env["mail.notification"].flush_model(["mail_message_id", "res_partner_id"])
-
-        pid = self.env.user.partner_id.id
+            domain &= self._get_search_domain_non_internal()
         _debug.logic(
             "search_by",
-            by="access_scan",
+            by="owner_reach",
             internal=self.env.user._is_internal(),
             limit=limit,
         )
-
-        return get_accessible_query(
+        return search_by_owner(
             self,
             domain,
             offset,
             limit,
             order,
             super()._search,
-            fetch=lambda query: self._get_search_access_rows(query, pid),
-            allowed=lambda rows: self._get_search_allowed_ids(rows, pid),
-            chunk_min=self._SEARCH_ACCESS_CHUNK_MIN,
-            chunk_max=self._SEARCH_ACCESS_CHUNK_MAX,
-            tiebreak="id desc",
+            lambda only, bounded: self._get_search_reach_domain(
+                bounded=bounded, only=only
+            ),
+            "model",
             **kwargs,
         )
 
-    def _get_search_access_rows(self, query: Query, pid: int) -> list[tuple]:
-        rel_alias = query.get_table_alias(self._table, "partner_ids")
-        query.add_join(
-            "LEFT JOIN",
-            rel_alias,
-            "mail_message_res_partner_rel",
-            SQL(
-                "%s = %s AND %s = %s",
-                SQL.identifier(self._table, "id"),
-                SQL.identifier(rel_alias, "mail_message_id"),
-                SQL.identifier(rel_alias, "res_partner_id"),
-                pid,
-            ),
+    @api.model
+    def _get_search_reach_domain(
+        self, *, bounded: bool = False, only: Collection[str] | None = None
+    ) -> Domain:
+        # what the record-level read check admits (_get_forbidden_access), as
+        # one domain: a message addressed or notified to the user, theirs, or
+        # on a document whose messages they read
+        pid = self.env.user.partner_id.id
+        direct = Domain("partner_ids", "in", [pid]) | Domain(
+            "notification_ids.res_partner_id", "=", pid
         )
-        notif_alias = query.get_table_alias(self._table, "notification_ids")
-        query.add_join(
-            "LEFT JOIN",
-            notif_alias,
-            "mail_notification",
-            SQL(
-                "%s = %s AND %s = %s",
-                SQL.identifier(self._table, "id"),
-                SQL.identifier(notif_alias, "mail_message_id"),
-                SQL.identifier(notif_alias, "res_partner_id"),
-                pid,
-            ),
+        if (author_pid := self._get_author_partner_id_for_access()) is not None:
+            direct |= Domain("author_id", "=", author_pid)
+        if (creator_uid := self._get_creator_uid_for_access()) is not None:
+            direct |= Domain("create_uid", "=", creator_uid)
+        on_documents = Domain("message_type", "!=", "user_notification") & owner_reach(
+            self,
+            "model",
+            "res_id",
+            lambda Document: Document._mail_message_read_reach(),
+            bounded=bounded,
+            only=only,
         )
-        return self.env.execute_query(
-            query.select(
-                SQL.identifier(self._table, "id"),
-                SQL.identifier(self._table, "model"),
-                SQL.identifier(self._table, "res_id"),
-                SQL.identifier(self._table, "author_id"),
-                SQL.identifier(self._table, "message_type"),
-                SQL.identifier(self._table, "create_uid"),
-                SQL(
-                    "COALESCE(%s, %s)",
-                    SQL.identifier(rel_alias, "res_partner_id"),
-                    SQL.identifier(notif_alias, "res_partner_id"),
-                ),
-            )
-        )
-
-    def _get_search_allowed_ids(self, rows: list[tuple], pid: int) -> set[int]:
-        direct_allowed = set()
-        model_ids = defaultdict(lambda: defaultdict(set))
-        creator_uid = self._get_creator_uid_for_access()
-        author_pid = self._get_author_partner_id_for_access()
-        for (
-            id_,
-            model,
-            res_id,
-            author_id,
-            message_type,
-            create_uid,
-            partner_id,
-        ) in rows:
-            if (
-                pid == partner_id
-                or (author_pid is not None and author_id == author_pid)
-                or (creator_uid is not None and create_uid == creator_uid)
-            ):
-                direct_allowed.add(id_)
-            elif model and res_id and message_type != "user_notification":
-                model_ids[model][res_id].add(id_)
-        return direct_allowed | self._get_ids_on_readable_documents(model_ids)
+        return direct | on_documents
 
     def _get_search_domain_non_internal(self) -> Domain:
         return Domain("message_type", "!=", "comment") | self._get_search_domain_share()

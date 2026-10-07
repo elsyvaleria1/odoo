@@ -84,5 +84,5 @@ class TestHomeTileInbox(TransactionCase):
         request = [{"id": "inbox_1", "type": "inbox"}]
         self.env["home.tile"].with_user(self.user).get_tiles(request)
         self.env.invalidate_all()
-        with self.assertQueryCount(10):
+        with self.assertQueryCount(11):
             self.env["home.tile"].with_user(self.user).get_tiles(request)

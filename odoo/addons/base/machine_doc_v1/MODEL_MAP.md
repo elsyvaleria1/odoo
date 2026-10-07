@@ -1431,10 +1431,12 @@ reach through the ORM first; `ir.model.unlink` does so before it drops tables.
 A record whose access rights are its owner's. The host names the owning field
 in `_access_owner_field` — a many2one or a many2one_reference — and reads,
 searches, writes and unlinks are then decided by what the user may do with the
-owner record: `read` on the owner for a read, `write` for everything else
-(`odoo.tools.access_scan`). `_search` narrows by chunks so a search over many
-rows does not resolve every owner, `_check_access` adds the forbidden ids to
-whatever the ACLs and rules already refused, and a constraint refuses a row
+owner record: `read` on the owner for a read, `write` for everything else.
+`_search` states that as SQL: a many2one onto a model whose access is its rows
+reads it through the `access` operator, any other owner through
+`odoo.tools.owner_reach` -- per owning model, the owner under that model's own
+access domain (`_record_access_domain`). `_check_access` adds the forbidden ids
+to whatever the ACLs and rules already refused, and a constraint refuses a row
 whose owner does not exist. `_of(records)` is the rows owned by those records
 and `_owner()` the owner of one row. Hosts outside base: `speech.speaker`,
 `media.segment`, `mixin.speech.finding`.

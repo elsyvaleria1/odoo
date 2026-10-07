@@ -252,6 +252,15 @@ class Base(models.AbstractModel):
             reached.append(own & policy.record_domain(self.env, self._name, operation))
         return Domain.OR(reached)
 
+    @api.model
+    def _mail_message_read_reach(self) -> Domain:
+        # the records whose messages and followers the user reads, as a domain
+        # read in sudo: the message access domain, or, for a model deciding
+        # its own access in Python, what its own search finds for the user
+        if type(self)._check_access is models.BaseModel._check_access:
+            return self._mail_access_domain("read")
+        return self._record_access_domain("read")
+
     def _mail_group_by_operation_for_mail_message_operation(
         self, message_operation: str
     ) -> dict[str, models.Model]:

@@ -1,12 +1,11 @@
 import typing
+from collections.abc import Collection
 
 from odoo import api, models
 from odoo.exceptions import AccessError
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools.access_scan import (
-    get_accessible_query,
-    prepare_column_fetcher,
-)
+from odoo.tools.owner_reach import owner_reach, search_by_owner
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -24,9 +23,6 @@ class MailFollowers(models.Model):
         "res_id",
         "partner_id",
     )
-
-    _SEARCH_ACCESS_CHUNK_MIN = 30
-    _SEARCH_ACCESS_CHUNK_MAX = 8192
 
     @api.model
     def _search(
@@ -47,20 +43,30 @@ class MailFollowers(models.Model):
             _debug.logic("search_refused", uid=self.env.uid, reason="not_internal")
             return self.browse()._as_query()
 
-        self.flush_model(["res_model", "res_id", "partner_id"])
-        return get_accessible_query(
+        # what the record-level read check admits (_get_readable_follower_ids):
+        # the user's own subscription, or one on a document whose messages
+        # they read
+        own = Domain("partner_id", "=", self.env.user.partner_id.id)
+
+        def reached(only: Collection[str] | None, bounded: bool) -> Domain:
+            return own | owner_reach(
+                self,
+                "res_model",
+                "res_id",
+                lambda Document: Document._mail_message_read_reach(),
+                bounded=bounded,
+                only=only,
+            )
+
+        return search_by_owner(
             self,
-            domain,
+            Domain(domain),
             offset,
             limit,
             order,
             super()._search,
-            fetch=prepare_column_fetcher(
-                self, ("id", "res_model", "res_id", "partner_id")
-            ),
-            allowed=self._get_readable_follower_ids,
-            chunk_min=self._SEARCH_ACCESS_CHUNK_MIN,
-            chunk_max=self._SEARCH_ACCESS_CHUNK_MAX,
+            reached,
+            "res_model",
             **kwargs,
         )
 

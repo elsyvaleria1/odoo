@@ -40,7 +40,7 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #   2: hasCannedResponses
     #       - fetch res_groups_users_rel
     #       - search mail_canned_response
-    _query_count_init_store = 23
+    _query_count_init_store = 24
     # Queries for _query_count_init_messaging (in order):
     #   1: select auth_user_client (session binding, security.is_session_valid)
     #   4: SAVEPOINT / RELEASE around each of the two fetch params
@@ -78,7 +78,7 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #       - search discuss_channel_res_groups_rel (group_ids)
     #       - _compute_message_unread_counter (the self members' counters)
     #       - fetch res_groups (group_public_id full_name)
-    _query_count_init_messaging = 38
+    _query_count_init_messaging = 41
     # Queries for _query_count_messaging_menu_channels (in order):
     #   1: select auth_user_client (session binding, security.is_session_valid)
     #   6: SAVEPOINT / RELEASE around each of the three tab loads
