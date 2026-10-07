@@ -4,7 +4,12 @@
     const tg = window.Telegram.WebApp;
     const botId = Number(document.body.dataset.botId);
     const $ = (id) => document.getElementById(id);
-    const state = { tab: "notifications", data: null, thread: null, labels: {} };
+    const state = {
+        tab: "notifications",
+        data: null,
+        thread: null,
+        labels: JSON.parse(document.body.dataset.labels || "{}"),
+    };
 
     async function call(path, params = {}) {
         const response = await fetch(`/telegram/inbox/${path}`, {
@@ -132,7 +137,7 @@
 
     async function loadOverview() {
         state.data = await call("overview");
-        state.labels = state.data.labels;
+        state.labels = { ...state.labels, ...state.data.labels };
         $("composer-text").placeholder = state.labels.reply;
         $("send").textContent = state.labels.send;
         $("note").textContent = state.labels.note;

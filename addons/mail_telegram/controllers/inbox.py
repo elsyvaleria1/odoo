@@ -1,8 +1,10 @@
+from html import escape
 from pathlib import Path
 
 from odoo import http
 from odoo.exceptions import AccessError, MissingError
 from odoo.http import request
+from odoo.libs.json import dumps as json_dumps
 from odoo.tools.misc import file_path
 
 from odoo.addons.telegram.tools.authority import operating
@@ -28,8 +30,10 @@ class TelegramInboxController(http.Controller):
     def inbox_page(self, bot_id, **_kwargs):
         if not operating(request.env["telegram.bot"]).browse(bot_id).exists():
             raise request.prepare_not_found_error()
+        # the page says what went wrong even when its first call fails
+        labels = request.env["telegram.inbox"]._labels()
         return request.prepare_response(
-            self._page(bot_id, self._asset_version(), request.csp_nonce),
+            self._page(bot_id, self._asset_version(), request.csp_nonce, labels),
             headers=[
                 ("Content-Type", "text/html; charset=utf-8"),
                 ("Cache-Control", "no-store, must-revalidate"),
@@ -87,7 +91,8 @@ class TelegramInboxController(http.Controller):
         return str(max(stamps)) if stamps else "0"
 
     @staticmethod
-    def _page(bot_id, version, nonce):
+    def _page(bot_id, version, nonce, labels):
+        labels = escape(json_dumps(labels), quote=True)
         return f"""<!DOCTYPE html>
 <html>
 <head>
@@ -97,7 +102,7 @@ class TelegramInboxController(http.Controller):
     <script nonce="{nonce}" src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="/mail_telegram/static/src/mini_app/inbox.css?v={version}">
 </head>
-<body data-bot-id="{bot_id}">
+<body data-bot-id="{bot_id}" data-labels="{labels}">
     <div id="app">
         <section data-view="list">
             <nav class="tabs">

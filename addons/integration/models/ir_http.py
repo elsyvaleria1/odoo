@@ -4,6 +4,7 @@ from werkzeug.exceptions import NotFound
 
 from odoo import models
 from odoo.http import request
+from odoo.tools.misc import get_lang
 
 from ..tools.admission import Refused
 
@@ -47,6 +48,11 @@ class IrHttp(models.AbstractModel):
         request.admission = None
         request.receiver_refusal = None
         cls._auth_method_public()
+        # the request's language is the caller's Accept-Language until
+        # `_pre_dispatch` settles it, and the gate reads translated fields
+        # before that: a language this database lacks (a Telegram WebView's
+        # es-ES where only es_MX is installed) must not refuse the caller
+        request.update_context(lang=get_lang(request.env).code)
         if receiver_refusal:
             model_name, _, method = receiver_refusal.partition(":")
             request.receiver_refusal = getattr(request.env[model_name], method)

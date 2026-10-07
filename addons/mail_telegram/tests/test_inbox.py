@@ -173,6 +173,40 @@ class TestInboxRoutes(InboxRouteCase):
         self.assertNotIn("error", body, body)
         self.assertIn("notifications", body["result"])
 
+    def test_a_webview_in_a_language_odoo_lacks_still_gets_its_inbox(self):
+        # Telegram's WebView sends its own language, es-ES, where the database
+        # may have only es_MX: that is no reason to refuse the caller
+        self.assertFalse(
+            self.env["res.lang"].with_context(active_test=True).search(
+                [("code", "=", "es_ES")]
+            )
+        )
+        self.env.flush_all()
+        response = self.url_open(
+            "/telegram/inbox/overview",
+            data=json_dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "params": {
+                        "bot_id": self.test_bot.id,
+                        "init_data": self._signed(int(self.test_chat.chat_id)),
+                    },
+                }
+            ),
+            headers={"Content-Type": "application/json", "Accept-Language": "es-ES"},
+        )
+        body = response.json()
+        self.assertNotIn("error", body, body)
+        self.assertIn("notifications", body["result"])
+
+    def test_the_page_carries_its_words_before_any_call(self):
+        response = self.url_open(f"/telegram/inbox/{self.test_bot.id}")
+        self.assertIn("data-labels=", response.text)
+        self.assertIn(
+            "Connect this Telegram account to your Odoo user first.", response.text
+        )
+
     def test_a_stranger_gets_nothing(self):
         body = self._rpc(
             "overview", bot_id=self.test_bot.id, init_data=self._signed(424242)
