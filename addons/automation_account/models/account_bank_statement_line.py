@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 
 class AccountBankStatementLine(models.Model):
@@ -39,3 +40,12 @@ class AccountBankStatementLine(models.Model):
             latest = runs.sorted("id")[-1:]
             line.automation_runtime_id = latest
             line.automation_runtime_state = latest.state
+
+    def _get_domain_settled_elsewhere(self) -> Domain:
+        # a transaction a live workflow was started from is settled by that
+        # workflow's own steps
+        return super()._get_domain_settled_elsewhere() | Domain(
+            "automation_runtime_ids",
+            "any",
+            [("state", "in", ("draft", "in_progress", "waiting_resume"))],
+        )

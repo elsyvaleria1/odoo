@@ -14,3 +14,4 @@ from . import test_reconcile_open_invoices
 from . import test_intercompany_collection
 from . import test_typed_steps
 from . import test_source_step
+from . import test_settled_by_workflow
