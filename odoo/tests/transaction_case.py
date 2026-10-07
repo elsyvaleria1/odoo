@@ -1831,6 +1831,7 @@ _routing_controllers_fingerprints: dict[int, int] = {}
 
 
 def _iter_controller_classes(cls: type = Controller) -> Iterator[type]:
+    subclass: type
     for subclass in cls.__subclasses__():
         yield subclass
         yield from _iter_controller_classes(subclass)

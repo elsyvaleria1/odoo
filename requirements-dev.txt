@@ -1,5 +1,5 @@
-ruff @ https://github.com/Agro-Marin/ruff/releases/download/0.16.7-marin.2/ruff-0.16.7%2Bmarin.2-py3-none-manylinux_2_39_x86_64.whl#sha256=d8812de546ee58049d039eb8ce42c9b9324568c7e4edc441db91c61afc075486
-mypy==2.3.1
+ruff @ https://github.com/Agro-Marin/ruff/releases/download/0.16.10-marin.1/ruff-0.16.10%2Bmarin.1-py3-none-manylinux_2_39_x86_64.whl#sha256=3dab3e5570913dd7429f0297bf24584702525da588c1fa914317e5fce2c247ba
+mypy==2.4.0
 types-python-dateutil==2.9.0.20260807
 maturin>=1.15,<2
 uv==0.12.23

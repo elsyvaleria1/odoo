@@ -59,6 +59,7 @@ def _is_from_installed_addon(cls: type, modules: Collection[str]) -> bool:
 
 def _get_leaf_classes(cls: type, modules: Collection[str]) -> list[type]:
     result = []
+    subcls: type
     for subcls in cls.__subclasses__():
         if _is_from_installed_addon(subcls, modules):
             result.extend(_get_leaf_classes(subcls, modules))
