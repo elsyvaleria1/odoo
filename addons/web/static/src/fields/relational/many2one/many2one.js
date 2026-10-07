@@ -287,7 +287,7 @@ export class Many2One extends Component {
                     await this.update(records[0] ? extractData(records[0]) : false);
                 },
                 onRecordDiscarded: () => {},
-                resModel: this.props.relation,
+                resModel: () => this.props.relation,
             }),
         };
     }

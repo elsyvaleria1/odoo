@@ -342,3 +342,38 @@ test("a search waits for the onchange that sets the model it searches", async ()
     await runAllTimers();
     expect.verifySteps(["search partner"]);
 });
+
+test("typing while an onchange switches the model keeps the text and lists the new model's records", async () => {
+    Partner._records[1].model = "partner";
+    Partner._onChanges = {
+        kind(record) {
+            record.model = "partner.type";
+            record.res_id = false;
+        },
+    };
+    const onchange = new Deferred();
+    onRpc("onchange", () => onchange);
+    await mountView({
+        type: "form",
+        resModel: "partner",
+        resId: 2,
+        arch: `
+            <form>
+                <field name="kind"/>
+                <field name="model" invisible="1"/>
+                <field name="res_id"/>
+            </form>`,
+    });
+
+    await contains("[name='kind'] input").edit("contact");
+    await contains("[name='res_id'] input").edit("g", { confirm: false });
+    await runAllTimers();
+    onchange.resolve();
+    await animationFrame();
+    await runAllTimers();
+
+    expect("[name='res_id'] input").toHaveValue("g");
+    expect("[name='res_id'] .o-autocomplete--dropdown-item:contains(gold)").toHaveCount(
+        1,
+    );
+});

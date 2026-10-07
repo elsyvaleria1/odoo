@@ -310,7 +310,7 @@ export class Many2XAutocomplete extends Component {
             return null;
         }
         const memo = this.emptySearchMemo;
-        const signature = JSON.stringify([domain, context]);
+        const signature = JSON.stringify([this.searchResModel, domain, context]);
         if (memo.signature !== signature) {
             memo.signature = signature;
             memo.names.clear();
