@@ -652,22 +652,26 @@ class TestCreateEvents(TestCommon):
                 "Event should not be synchronized while sync is paused.",
             )
 
-        # Update local event information.
-        event.write({"name": "New event name"})
-        self.call_post_commit_hooks()
+        # Update local event information, after that synchronization: the clock
+        # moves forward from the run it froze
+        with self.mock_datetime_and_now(
+            ten_minutes_after_creation + timedelta(minutes=10)
+        ):
+            event.write({"name": "New event name"})
+            self.call_post_commit_hooks()
 
-        # Prepare mock for new synchronization.
-        event_id = "123"
-        event_iCalUId = "456"
-        mock_insert.return_value = (event_id, event_iCalUId)
-        mock_get_events.return_value = ([], None)
+            # Prepare mock for new synchronization.
+            event_id = "123"
+            event_iCalUId = "456"
+            mock_insert.return_value = (event_id, event_iCalUId)
+            mock_get_events.return_value = ([], None)
 
-        # Synchronize local event with Outlook after updating it locally.
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
-        self.call_post_commit_hooks()
-        event.invalidate_recordset()
+            # Synchronize local event with Outlook after updating it locally.
+            self.organizer_user.with_user(
+                self.organizer_user
+            ).sudo()._sync_microsoft_calendar()
+            self.call_post_commit_hooks()
+            event.invalidate_recordset()
 
         # Assert that the event got synchronized with Microsoft (through mock).
         self.assertEqual(event.microsoft_id, "123")

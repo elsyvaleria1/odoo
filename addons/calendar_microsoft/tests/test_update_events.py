@@ -106,6 +106,44 @@ class TestUpdateEvents(TestCommon):
         self.assertEqual(self.simple_event.name, "my new simple event")
 
     @patch.object(MicrosoftCalendarService, "patch")
+    @patch.object(MicrosoftCalendarService, "get_events")
+    def test_an_edit_whose_push_was_lost_is_sent_by_a_later_run(
+        self, mock_get_events, mock_patch
+    ):
+        """A run stamps its date at its end: stamped at its start, the run kept
+        only what was written in the five minutes before it, and an edit whose
+        immediate push was lost stayed pending for good."""
+        mock_get_events.return_value = (MicrosoftEvent([]), "next-token")
+        mock_patch.return_value = True
+        account = self.organizer_user._calendar_sync_account("microsoft")
+        account.write(
+            {"sync_token": "a-token", "last_sync_date": datetime(2021, 9, 22, 9, 0)}
+        )
+        with self.mock_datetime_and_now("2021-09-22 10:00:00"):
+            self.simple_event.with_user(self.organizer_user).write(
+                {"name": "edited while Outlook was down"}
+            )
+        # the push the write queued never reached Outlook
+        self.env.cr.postcommit._funcs.clear()
+        self.assertTrue(self.simple_event.need_sync_m)
+
+        with self.mock_datetime_and_now("2021-09-22 11:00:00"):
+            self.organizer_user.with_user(
+                self.organizer_user
+            ).sudo()._sync_microsoft_calendar()
+            self.call_post_commit_hooks()
+
+        mock_patch.assert_called_once_with(
+            self.simple_event.microsoft_id,
+            ANY,
+            connection=mock_get_connection(self.organizer_user),
+            timeout=ANY,
+        )
+        self.assertEqual(
+            mock_patch.call_args.args[1]["subject"], "edited while Outlook was down"
+        )
+
+    @patch.object(MicrosoftCalendarService, "patch")
     def test_update_simple_event_from_odoo_attendee_calendar(self, mock_patch):
         """
         Update an Odoo event from the attendee calendar.

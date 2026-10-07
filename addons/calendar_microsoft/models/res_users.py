@@ -24,7 +24,8 @@ class ResUsers(models.Model):
         except LockError:
             _logger.info("skipping calendar sync, locked account of %s", self.login)
             return False
-        account.last_sync_date = datetime.now()
+        # stamped at the end only: the push below keeps what was written after
+        # the previous stamp, so a stamp here would drop every earlier edit
         if self._calendar_sync_status("microsoft") != "sync_active":
             return False
 

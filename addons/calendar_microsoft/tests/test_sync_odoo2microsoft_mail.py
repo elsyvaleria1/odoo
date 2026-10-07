@@ -33,8 +33,10 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
     @patch.object(
         CalendarSyncUsers,
         "_calendar_sync_connection",
-        lambda user, code=None: (
-            user.login.startswith("user") and f"connection of {user.login}"
+        lambda user, code: (
+            code == "microsoft"
+            and user.login.startswith("user")
+            and f"connection of {user.login}"
         ),
     )
     def test_event_creation_for_user(self):
