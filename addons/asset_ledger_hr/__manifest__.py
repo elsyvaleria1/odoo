@@ -1,6 +1,6 @@
 {
     "name": "Asset Operator Assignments",
-    "version": "19.0.1.10.0",
+    "version": "19.0.1.11.0",
     "oldest_upgradable_version": "19.0.1.9.0",
     "category": "Human Resources/Fleet",
     "summary": "Track employee custody and operator changes for serialized assets",
