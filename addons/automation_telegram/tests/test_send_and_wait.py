@@ -2,9 +2,16 @@ import base64
 from datetime import timedelta
 from unittest.mock import patch
 
+import psycopg
+
+from odoo import fields
 from odoo.exceptions import UserError
 
 from odoo.addons.automation.tests.test_workflow_dag import link
+from odoo.addons.automation_telegram.models.automation_telegram_wait import (
+    MAX_ATTEMPTS,
+    _lost_to_concurrency,
+)
 from odoo.addons.telegram.models.telegram_bot import TelegramBot
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
@@ -246,22 +253,94 @@ class TestSendAndWait(TelegramBotTestCase):
         self.assertEqual(self._line(runtime, self.save).state, "done")
         self.assertEqual(runtime.state, "done")
 
+    def _retry_delays(self, before):
+        """The minutes from `before` of the delivery job's triggers since."""
+        cron = self.env.ref("automation_telegram.ir_cron_deliver_answers")
+        triggers = self.env["ir.cron.trigger"].search(
+            [("cron_id", "=", cron.id), ("call_at", ">", before)], order="call_at"
+        )
+        return [round((t.call_at - before).total_seconds() / 60) for t in triggers]
+
     def test_a_file_telegram_withholds_is_retried_then_reported(self):
         runtime = self._run()
         self._send(**self._photo())
         wait = self._wait(runtime)
 
         with patch.object(TelegramBot, "get_file", return_value=False):
-            for _attempt in range(3):
+            for _attempt in range(MAX_ATTEMPTS):
                 self.env["automation.telegram.wait"]._cron_deliver_answers()
 
         self.assertEqual(wait.state, "error")
-        self.assertEqual(wait.attempts, 3)
+        self.assertEqual(wait.attempts, MAX_ATTEMPTS)
         self.assertFalse(wait.attachment_ids)
         self.assertEqual(self._line(runtime, self.save).state, "waiting")
         self.assertIn(
-            "could not be fetched", runtime.message_ids[:1].body or ""
+            "could not be delivered", runtime.message_ids[:1].body or ""
         )
+
+    def test_a_failed_delivery_backs_off(self):
+        runtime = self._run()
+        self._send(**self._photo())
+        before = fields.Datetime.now()
+
+        with patch.object(TelegramBot, "get_file", return_value=False):
+            for _attempt in range(3):
+                self.env["automation.telegram.wait"]._cron_deliver_answers()
+
+        self.assertEqual(self._wait(runtime).attempts, 3)
+        self.assertEqual(self._retry_delays(before), [1, 2, 4])
+
+    def test_a_transaction_left_aborted_is_retried_in_a_minute(self):
+        first, second = self._run(), self._run()
+        self._send(message_id=50, **self._photo())
+        self._wait(first).prompt_message_id.msg_uid = "60"
+        self._send(message_id=61, **self._photo(reply_to_message={"message_id": 60}))
+        self.assertEqual(
+            (self._wait(first) | self._wait(second)).mapped("state"),
+            ["received", "received"],
+        )
+        cr = self.env.cr
+
+        def poisoned(bot, file_id):
+            # what a step does when it catches a serialization failure and
+            # carries on: the transaction is left aborted
+            try:
+                cr.execute("SELECT 1 / 0")
+            except psycopg.errors.DivisionByZero:
+                pass
+            return {"content": JPEG, "file_path": "photos/file_7.jpg"}
+
+        before = fields.Datetime.now()
+        with patch.object(TelegramBot, "get_file", poisoned):
+            delivered = self.env["automation.telegram.wait"]._cron_deliver_answers()
+
+        self.assertEqual(delivered, 0)
+        waits = (self._wait(first) | self._wait(second)).sorted("id")
+        self.assertEqual(waits.mapped("state"), ["received", "received"])
+        self.assertEqual(
+            waits.mapped("attempts"), [1, 0], "the job stops at the lost one"
+        )
+        self.assertIn("aborted", waits[0].error_message)
+        self.assertEqual(self._retry_delays(before), [1])
+
+        self._deliver()
+
+        self.assertEqual(waits.mapped("state"), ["delivered", "delivered"])
+        self.assertEqual((first | second).mapped("state"), ["done", "done"])
+
+    def test_a_lost_transaction_is_seen_through_the_error_that_follows(self):
+        try:
+            try:
+                raise psycopg.errors.SerializationFailure("concurrent update")
+            except psycopg.errors.SerializationFailure:
+                raise ValueError("what the step said instead") from None
+        except ValueError as masked:
+            # `from None` hides the cause from tracebacks, not from __context__
+            self.assertTrue(_lost_to_concurrency(masked))
+        self.assertTrue(
+            _lost_to_concurrency(psycopg.errors.InFailedSqlTransaction("aborted"))
+        )
+        self.assertFalse(_lost_to_concurrency(ValueError("no file")))
 
     def test_asking_needs_an_edge_for_the_event(self):
         self.ask.code = (

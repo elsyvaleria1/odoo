@@ -54,10 +54,13 @@ How an answer travels
 4. **The dispatcher** (*Automation: deliver answers given on Telegram*,
    triggered at once, hourly as a fallback) downloads the files onto the run,
    writes the answer as the asking step's output and delivers the event. So the
-   steps that follow run as the dispatcher, never as whoever answered. A file
-   Telegram withholds is asked for again on the next passes and, after three,
-   the question is marked failed and the run says why. A question whose run has
-   ended is let go.
+   steps that follow run as the dispatcher, never as whoever answered. A failed
+   delivery is tried again after 1, 2, 4 and 8 minutes and, after five tries,
+   the question is marked failed and the run says why. A delivery whose
+   transaction lost to a concurrent one (a serialization failure, or a
+   transaction a step left aborted after catching one) is retried a minute
+   later, and the job stops there, since its snapshot is stale. A question
+   whose run has ended is let go.
 
 Questions are listed under *Settings > Technical > Automation > Questions on
 Telegram*.

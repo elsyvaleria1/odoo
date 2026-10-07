@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 17:39+0000\n"
-"PO-Revision-Date: 2026-10-07 17:39+0000\n"
+"POT-Creation-Date: 2026-10-07 18:16+0000\n"
+"PO-Revision-Date: 2026-10-07 18:16+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -274,7 +274,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/automation_telegram/models/automation_telegram_wait.py:0
 msgid ""
-"The answer to step %(step)s on Telegram could not be fetched: %(error)s"
+"The answer to step %(step)s on Telegram could not be delivered: %(error)s"
 msgstr ""
 
 #. module: automation_telegram
@@ -303,7 +303,7 @@ msgid ""
 "Answered: the answer arrived; the dispatcher has yet to hand it on.\n"
 "Delivered: the asking step received its event.\n"
 "Cancelled: the run ended before an answer came.\n"
-"Failed: the answer's files could not be fetched from Telegram."
+"Failed: the answer could not be delivered, however often it was tried."
 msgstr ""
 
 #. module: automation_telegram

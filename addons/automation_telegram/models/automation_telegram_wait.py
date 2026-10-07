@@ -1,8 +1,12 @@
 import base64
 import logging
 import mimetypes
+from datetime import timedelta
+
+import psycopg
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 
 from odoo.addons.automation.models.workflow_edge import EVENT_CONDITIONS
@@ -22,10 +26,28 @@ _DEFAULT_NAMES = {
     "voice": "voice.ogg",
     "audio": "audio",
 }
-# A file Telegram would not hand over is asked for again on the next pass; past
-# this many passes the answer is given up and the run says why.
-MAX_ATTEMPTS = 3
+# A failed delivery is tried again past these delays, in minutes, the last one
+# repeating; past MAX_ATTEMPTS the answer is given up and the run says why. A
+# transaction lost to a concurrent one is tried again after the first delay.
+RETRY_MINUTES = (1, 2, 4, 8)
+MAX_ATTEMPTS = 5
 OPEN_RUN_STATES = ("in_progress", "waiting_resume")
+
+
+def _lost_to_concurrency(error) -> bool:
+    """Whether `error`, or one it was raised while handling, is a transaction
+    lost to a concurrent one, or a statement refused because an earlier one of
+    the transaction failed. Neither says anything of the answer itself: a step
+    may catch the first and leave only the second to be seen."""
+    seen = set()
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        if isinstance(
+            error, (*PG_RETRY_EXCEPTIONS, psycopg.errors.InFailedSqlTransaction)
+        ):
+            return True
+        error = error.__cause__ or error.__context__
+    return False
 
 
 class AutomationTelegramWait(models.Model):
@@ -101,7 +123,8 @@ class AutomationTelegramWait(models.Model):
         "Answered: the answer arrived; the dispatcher has yet to hand it on.\n"
         "Delivered: the asking step received its event.\n"
         "Cancelled: the run ended before an answer came.\n"
-        "Failed: the answer's files could not be fetched from Telegram.",
+        "Failed: the answer could not be delivered, however often it was "
+        "tried.",
     )
     reply_kind = fields.Char(readonly=True)
     reply_text = fields.Text(readonly=True)
@@ -157,7 +180,12 @@ class AutomationTelegramWait(models.Model):
                 delivered += 1
             except Exception as error:
                 _logger.exception("Telegram answer %s could not be delivered", wait.id)
-                wait._record_failure(error)
+                concurrent = _lost_to_concurrency(error)
+                wait._record_failure(error, concurrent=concurrent)
+                if concurrent:
+                    # this transaction's snapshot predates the one it lost to:
+                    # the next answers go to a fresh run of the job
+                    break
         return delivered
 
     def _get_accepted_kinds(self) -> list[str]:
@@ -294,7 +322,7 @@ class AutomationTelegramWait(models.Model):
         )
         line._receive_event(self.event_code)
 
-    def _record_failure(self, error) -> None:
+    def _record_failure(self, error, concurrent=False) -> None:
         self.check_singleton()
         attempts = self.attempts + 1
         failed = attempts >= MAX_ATTEMPTS
@@ -305,11 +333,18 @@ class AutomationTelegramWait(models.Model):
                 "state": "error" if failed else "received",
             }
         )
-        if failed:
+        if not failed:
+            minutes = RETRY_MINUTES[
+                0 if concurrent else min(attempts, len(RETRY_MINUTES)) - 1
+            ]
+            self.env.ref("automation_telegram.ir_cron_deliver_answers")._trigger(
+                fields.Datetime.now() + timedelta(minutes=minutes)
+            )
+        else:
             self.runtime_id.message_post(
                 body=self.env._(
                     "The answer to step %(step)s on Telegram could not be "
-                    "fetched: %(error)s",
+                    "delivered: %(error)s",
                     step=self.line_id.name,
                     error=str(error),
                 ),

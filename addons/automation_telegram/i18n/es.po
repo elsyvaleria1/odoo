@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 17:39+0000\n"
-"PO-Revision-Date: 2026-10-07 17:39+0000\n"
+"POT-Creation-Date: 2026-10-07 18:16+0000\n"
+"PO-Revision-Date: 2026-10-07 18:16+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -294,9 +294,9 @@ msgstr "Telegram: preguntas de flujos"
 #. odoo-python
 #: code:addons/automation_telegram/models/automation_telegram_wait.py:0
 msgid ""
-"The answer to step %(step)s on Telegram could not be fetched: %(error)s"
+"The answer to step %(step)s on Telegram could not be delivered: %(error)s"
 msgstr ""
-"No se pudo obtener la respuesta en Telegram al paso %(step)s: %(error)s"
+"No se pudo entregar la respuesta en Telegram al paso %(step)s: %(error)s"
 
 #. module: automation_telegram
 #: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__event_code
@@ -326,13 +326,13 @@ msgid ""
 "Answered: the answer arrived; the dispatcher has yet to hand it on.\n"
 "Delivered: the asking step received its event.\n"
 "Cancelled: the run ended before an answer came.\n"
-"Failed: the answer's files could not be fetched from Telegram."
+"Failed: the answer could not be delivered, however often it was tried."
 msgstr ""
 "Esperando: aún sin respuesta.\n"
 "Respondida: llegó la respuesta; falta que el despachador la entregue.\n"
 "Entregada: el paso que pregunta recibió su evento.\n"
 "Cancelada: la ejecución terminó antes de que llegara una respuesta.\n"
-"Fallida: no se pudieron obtener de Telegram los archivos de la respuesta."
+"Fallida: la respuesta no se pudo entregar, por más que se intentó."
 
 #. module: automation_telegram
 #: model:ir.model.fields,help:automation_telegram.field_automation_telegram_wait__reply_payload
