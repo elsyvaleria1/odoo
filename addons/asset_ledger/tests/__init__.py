@@ -10,3 +10,4 @@ from . import test_units
 from . import test_resource_asset_link
 from . import test_resource_asset_tag
 from . import test_menus
+from . import test_resource_kind_forms
