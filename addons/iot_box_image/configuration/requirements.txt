@@ -39,7 +39,7 @@ websocket-client==1.9.0
 #
 # See ../README.md for the apt-vs-pip rule and for the two blockers that stop
 # this image running the fork today.
-weasyprint==69.0
+weasyprint==70.0
 
 # Windows Virtual IoT only: printer_driver_W.py / printer_interface_W.py
 pywin32==312 ; sys_platform == "win32"
