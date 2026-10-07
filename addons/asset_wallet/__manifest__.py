@@ -1,6 +1,6 @@
 {
     "name": "Asset Fuel and Toll Wallets",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "oldest_upgradable_version": "19.0.1.2.0",
     "category": "Accounting/Accounting",
     "summary": "Track fuel and toll wallet cards against assets",
