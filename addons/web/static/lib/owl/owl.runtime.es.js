@@ -1058,7 +1058,7 @@ function markRaw(value) {
   return value;
 }
 function isClassPrototype(value) {
-  return objectHasOwnProperty.call(value, "constructor") && typeof value.constructor === "function" && value.constructor.prototype === value;
+  return Object.hasOwn(value, "constructor") && typeof value.constructor === "function" && value.constructor.prototype === value;
 }
 function isMarkedRaw(target) {
   if (skipped.has(target)) {
@@ -1094,7 +1094,7 @@ function declaresMember(target, member, className) {
     return true;
   }
   for (let proto = Object.getPrototypeOf(target); proto; proto = Object.getPrototypeOf(proto)) {
-    const ctor = objectHasOwnProperty.call(proto, "constructor") ? proto.constructor : void 0;
+    const ctor = Object.hasOwn(proto, "constructor") ? proto.constructor : void 0;
     if (typeof ctor === "function" && (className !== void 0 ? ctor.name === className : Function.prototype.toString.call(ctor).match(PRIVATE_NAMES)?.includes(member))) {
       return true;
     }
@@ -1363,7 +1363,7 @@ var BasicHandler = class {
     }
   }
   deleteProperty(target, key) {
-    const hadKey = objectHasOwnProperty.call(target, key);
+    const hadKey = Object.hasOwn(target, key);
     const ret = Reflect.deleteProperty(target, key);
     if (hadKey && ret) {
       batch(() => {
@@ -1410,7 +1410,7 @@ function write(target, key, stored, receiver, own, atoms) {
     }
     return true;
   }
-  const created = own === void 0 && objectHasOwnProperty.call(target, key);
+  const created = own === void 0 && Object.hasOwn(target, key);
   const changed = !Object.is(before, Reflect.get(target, key, receiver));
   if (created) {
     onWriteKeyPresence(atoms, key);
@@ -1496,7 +1496,7 @@ function replaceMethods() {
       typeof key === "symbol" ? key : String(key),
       presenceAtoms
     );
-    return objectHasOwnProperty.call(raw, key);
+    return Object.hasOwn(raw, key);
   };
   replaced.set(objectHasOwnProperty, hasOwnPropertyReader);
   viewReaders.add(hasOwnPropertyReader);
@@ -3168,7 +3168,7 @@ function shallowEqual(a, b) {
     return false;
   }
   for (const key of keysA) {
-    if (!Object.prototype.hasOwnProperty.call(b, key) || !Object.is(a[key], b[key])) {
+    if (!Object.hasOwn(b, key) || !Object.is(a[key], b[key])) {
       return false;
     }
   }
@@ -3389,7 +3389,9 @@ var nodeGetNextSibling = /* @__PURE__ */ fromDom(
 // ../owl-runtime/src/blockdom/toggler.ts
 var txt = /* @__PURE__ */ globalThis.document?.createTextNode("");
 var VToggler = class {
-  // not `key`: a toggler in a keyed list gets its list key written there
+  // not `key`: a toggler in a keyed list gets its list key written there.
+  // Children of one kind patch each other: a string, or the function a
+  // t-set body renders with
   kind;
   child;
   constructor(kind, child) {
@@ -6653,7 +6655,7 @@ function safeOutput(value, node, key = "", site = "", depth = 0, k1, k2, k3) {
     safeKey = `string_safe`;
     block = html(value);
   } else if (value instanceof LazyValue) {
-    safeKey = `lazy_value`;
+    safeKey = value.fn;
     let siteKey = key + site;
     if (depth) {
       siteKey += MARK + ":" + keyOf(k1);
@@ -6957,6 +6959,25 @@ function withoutZero(ctx) {
   callCtx[zero] = null;
   return callCtx;
 }
+function slotContext(ctx) {
+  const result = {};
+  for (const key in ctx) {
+    result[key] = ctx[key];
+  }
+  if (ctx[zero] !== void 0) {
+    result[zero] = ctx[zero];
+    result[zeroCtx] = ctx[zeroCtx];
+  }
+  return result;
+}
+function callContext(ctx) {
+  const result = {};
+  for (const key in ctx) {
+    result[key] = ctx[key];
+  }
+  result[zero] = null;
+  return result;
+}
 function callTemplate(subTemplate, owner, app, ctx, parent, key) {
   const template = app.getTemplate(subTemplate);
   const callKey = key + MARK + "t" + escapeKey(subTemplate);
@@ -6975,6 +6996,8 @@ var helpers = {
   zero,
   zeroCtx,
   withoutZero,
+  slotContext,
+  callContext,
   callSlot,
   withKey,
   keyOf,
@@ -6999,7 +7022,7 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "4029ed6c";
+var buildHash = "a11f5097";
 var build = /* @__PURE__ */ buildName(version, buildHash);
 function buildName(version2, hash) {
   return `${version2}+${hash}`;
@@ -8010,8 +8033,8 @@ var blockDom = {
 };
 var __info__ = {
   version,
-  date: "2026-10-07T03:09:24.474Z",
-  hash: "4029ed6c",
+  date: "2026-10-07T16:54:40.778Z",
+  hash: "a11f5097",
   url: "https://github.com/odoo/owl"
 };
 export {

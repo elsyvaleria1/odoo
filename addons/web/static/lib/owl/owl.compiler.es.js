@@ -1532,7 +1532,23 @@ function normalizeXML(el) {
 // ../owl-compiler/src/code_generator.ts
 var SCOPE_MARK = "scope";
 var SCOPE_MARKER_RE = /\u0001scope\d+\u0001/g;
+var CAPTURE_MARK = "capture";
+var CAPTURE_MARKER_RE = /\u0001capture\d+\u0001/g;
+var CAPTURE_LINE = "line";
 var CONTEXT_WRITE = /ctx\['[^']*'\]\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])|ctx\['[^']*'\]\s*(?:\+\+|--)|(?:\+\+|--)\s*ctx\[|delete\s+ctx\[|[[,{:]\s*ctx\['[^']*'\]\s*[,\]}][^;=\n]*?=(?![=>])/;
+function readsOf(code) {
+  const names = /* @__PURE__ */ new Set();
+  for (const line of code) {
+    if (line.includes("callTemplate(")) {
+      return null;
+    }
+    for (const match of line.matchAll(CONTEXT_READ)) {
+      names.add(match[1]);
+    }
+  }
+  return names;
+}
+var CONTEXT_READ = /ctx\['([^']*)'\]/g;
 var MAX_LAZY_LOOP_KEYS = 3;
 var KEY_MARK = "\\u0002";
 var whitespaceRE = /[ \t\n\r\f]+/g;
@@ -1593,10 +1609,11 @@ var BlockDescription = class {
     this.target.addLine(`let ${id} = ${str};`);
     return this.data.push(id) - 1;
   }
-  // a handler's data is the context; its code is static, given with the block
-  insertHandler(fn) {
+  // a handler's data is the context (`ctx`, or its capture marker); its code
+  // is static, given with the block
+  insertHandler(fn, ctx) {
     this.handlers.push(fn);
-    return this.data.push("ctx") - 1;
+    return this.data.push(ctx) - 1;
   }
   insert(dom) {
     if (this.currentDom) {
@@ -1659,6 +1676,9 @@ var CodeTarget = class {
   // `skey<level>` that tells object keys apart
   stringKeyLevels = /* @__PURE__ */ new Set();
   tSetVars = /* @__PURE__ */ new Map();
+  // the t-sets and the contexts kept for later, numbered in code order
+  seq = 0;
+  writes = [];
   // the loop levels whose item is memoized: a memo hit skips the item's body
   memoLevels = [];
   code = [];
@@ -1720,6 +1740,9 @@ var translationRE = /^(\s*)([\s\S]+?)(\s*)$/;
 var CodeGenerator = class {
   blocks = [];
   scopeSites = [];
+  captureSites = [];
+  // the code of each handler, in the order the template uses them
+  handlerUses = [];
   isDebug = false;
   targets = [];
   target = new CodeTarget("template");
@@ -1775,6 +1798,7 @@ var CodeGenerator = class {
       translationCtx: "",
       tKeyExpr: null
     });
+    this.resolveCaptures();
     this.resolveScopes();
     let mainCode = [`  let { text, createBlock, list, multi, html, toggler } = bdom;`];
     if (this.helpers.size) {
@@ -1855,6 +1879,103 @@ ${code}`;
     const marker = `${SCOPE_MARK}${this.scopeSites.length}`;
     this.scopeSites.push({ marker, target: this.target, from, itemVar, varName, names });
     return marker;
+  }
+  /**
+   * A context kept for later (`live`), or a copy of it (`copy`, made with
+   * the helper `helper`): see resolveCaptures.
+   */
+  captureMarker(live, copy, helper, reads) {
+    const marker = `${CAPTURE_MARK}${this.captureSites.length}`;
+    const target = this.target;
+    this.captureSites.push({
+      marker,
+      target,
+      seq: ++target.seq,
+      loops: [...target.loops],
+      live,
+      copy,
+      helper,
+      reads
+    });
+    return marker;
+  }
+  // the context here, kept for later by code reading `reads`: a slot, a t-set
+  // body...
+  capturedContext(reads) {
+    return this.captureMarker("ctx", "slotContext(ctx)", "slotContext", reads);
+  }
+  // the context a handler keeps: its block's data is read where the block is
+  // made, after the element's content and the t-sets in it ran, so a copy
+  // is made here, on a line of its own
+  handlerContext(handlerIds) {
+    const copy = this.generateId("hctx");
+    const code = handlerIds.map((id) => this.staticDefs.find((d) => d.id === id)?.expr ?? "");
+    const marker = this.captureMarker("ctx", copy, "slotContext", readsOf(code));
+    this.addLine(`${marker}${CAPTURE_LINE}const ${copy} = slotContext(ctx);`);
+    return marker;
+  }
+  // where a compilation starts: see readsSince
+  mark() {
+    return [this.targets.length, this.handlerUses.length];
+  }
+  // the variables read by the functions and the handlers compiled since `mark`
+  readsSince([targets, uses]) {
+    return readsOf([
+      ...this.targets.slice(targets).flatMap((t) => t.code),
+      ...this.handlerUses.slice(uses)
+    ]);
+  }
+  /**
+   * A slot's context, a called template's and the one a t-call body runs in
+   * are read later than where they are given: when the child renders its
+   * slots on its own (its state changed, its onWillStart settled), when the
+   * called template's slots do. Kept as they are, they would show what a
+   * t-set wrote into them after that point. A t-set writes the context of a
+   * loop level: the function's (0), or a loop item's. It reaches a kept
+   * context when that level's context is in its chain, the same loop item
+   * for a loop level, and it runs after the context was kept: later in the
+   * code, or in a later item of a loop holding both. Such a context is
+   * copied; any other is kept as it is, which costs nothing. A called
+   * template's context is the caller's, which the called template's own
+   * t-sets never write (a t-set at its top level makes a scope first): the
+   * caller copies it when its own t-sets may still write it.
+   */
+  resolveCaptures() {
+    const sites = this.captureSites;
+    if (!sites.length) {
+      return;
+    }
+    const writes = (w, site) => {
+      const k = w.level;
+      if (site.loops.length < k || k > 0 && site.loops[k - 1] !== w.loops[k - 1]) {
+        return false;
+      }
+      return w.seq > site.seq || site.loops[k] !== void 0 && site.loops[k] === w.loops[k];
+    };
+    const resolved = /* @__PURE__ */ new Map();
+    for (const site of sites) {
+      const copied = site.target.writes.some(
+        (w) => (site.reads === null || site.reads.has(w.name)) && writes(w, site)
+      );
+      if (copied) {
+        this.helpers.add(site.helper);
+      }
+      resolved.set(site.marker, copied ? site.copy : site.live);
+    }
+    for (const t of [this.target, ...this.targets]) {
+      t.code = t.code.flatMap((line) => {
+        if (!line.includes(CAPTURE_MARK)) {
+          return [line];
+        }
+        const lineAt = line.indexOf(CAPTURE_LINE);
+        if (lineAt !== -1) {
+          const marker = line.trimStart().slice(0, line.trimStart().indexOf(CAPTURE_LINE));
+          const indent = line.slice(0, line.length - line.trimStart().length);
+          return resolved.get(marker) === "ctx" ? [] : [indent + line.slice(lineAt + CAPTURE_LINE.length)];
+        }
+        return [line.replace(CAPTURE_MARKER_RE, (m) => resolved.get(m))];
+      });
+    }
   }
   /**
    * A context made under another one made in the same render (a loop item)
@@ -2051,6 +2172,7 @@ ${code}`;
       this.hoistedHandlers.set(expr, id);
       this.staticDefs.push({ id, expr });
     }
+    this.handlerUses.push(expr);
     return id;
   }
   compileTDomNode(ast, ctx) {
@@ -2165,7 +2287,7 @@ ${code}`;
         idx = block.insertData(readExpr, "prop");
         attrs[`block-property-${idx}`] = targetAttr;
       }
-      idx = block.insertHandler(handlerId);
+      idx = block.insertHandler(handlerId, this.handlerContext([handlerId]));
       attrs[`block-handler-${idx}`] = eventType;
       if (modelId) {
         const argIdx = block.data.push(modelId) - 1;
@@ -2173,7 +2295,8 @@ ${code}`;
       }
     }
     for (let ev in ast.on) {
-      const idx = block.insertHandler(this.generateHandlerCode(ev, ast.on[ev]));
+      const handlerId = this.generateHandlerCode(ev, ast.on[ev]);
+      const idx = block.insertHandler(handlerId, this.handlerContext([handlerId]));
       attrs[`block-handler-${idx}`] = ev;
     }
     if (ast.ref) {
@@ -2512,10 +2635,11 @@ ${code}`;
     block = this.createBlock(block, "multi");
     const zero = [];
     if (ast.body) {
+      const start = this.mark();
       const name = this.compileInNewTarget("callBody", ast.body, ctx);
       this.helpers.add("zero");
       this.helpers.add("zeroCtx");
-      zero.push(["[zero]", name], ["[zeroCtx]", "ctx"]);
+      zero.push(["[zero]", name], ["[zeroCtx]", this.capturedContext(this.readsSince(start))]);
     } else if (!ast.context) {
       this.helpers.add("zero");
       zero.push(["[zero]", "null"]);
@@ -2532,13 +2656,23 @@ ${code}`;
       ctxExpr = `Object.assign({}, ${dynCtxVar}, {${entries.join(", ")}})`;
     } else if (!attrs.length && !ast.body) {
       this.helpers.add("withoutZero");
-      ctxExpr = `ctx[zero] ? withoutZero(ctx) : ctx`;
+      ctxExpr = this.captureMarker(
+        "ctx[zero] ? withoutZero(ctx) : ctx",
+        "callContext(ctx)",
+        "callContext",
+        null
+      );
     } else {
       ctxExpr = this.generateId("ctx");
       const loop = this.target.loops[this.target.loops.length - 1];
       this.define(
         ctxExpr,
-        loop ? this.scopeMarker(loop, "ctx", ctxExpr, [...attrs.map(([name]) => name)]) : `Object.create(ctx)`
+        this.captureMarker(
+          loop ? this.scopeMarker(loop, "ctx", ctxExpr, [...attrs.map(([name]) => name)]) : `Object.create(ctx)`,
+          "callContext(ctx)",
+          "callContext",
+          null
+        )
       );
       for (const [name, value] of attrs) {
         this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
@@ -2567,8 +2701,10 @@ ${code}`;
     if (ast.body) {
       this.helpers.add("LazyValue");
       const bodyAst = { type: ASTType.Multi, content: ast.body };
+      const start = this.mark();
       const name2 = this.compileInNewTarget("value", bodyAst, ctx);
-      value = `new LazyValue(${name2}, ctx, this, node, ${this.scopeKey(ctx)})`;
+      const kept = this.capturedContext(this.readsSince(start));
+      value = `new LazyValue(${name2}, ${kept}, this, node, ${this.scopeKey(ctx)})`;
     } else if (ast.defaultValue) {
       value = toStringExpression(
         ctx.translate ? this.translate(ast.defaultValue, ctx.translationCtx) : ast.defaultValue
@@ -2591,6 +2727,7 @@ ${code}`;
       }
       this.addLine(`${this.target.loopCtxVars[defLevel]}[${name}] = ${value};`);
       this.target.writtenLevels.add(defLevel);
+      this.recordWrite(ast.name, defLevel);
     } else {
       if (!level) {
         this.target.needsScopeProtection = true;
@@ -2598,8 +2735,13 @@ ${code}`;
       this.addLine(`ctx[${name}] = ${value};`);
       this.target.writtenLevels.add(level);
       this.target.tSetVars.set(ast.name, level);
+      this.recordWrite(ast.name, level);
     }
     return null;
+  }
+  recordWrite(name, level) {
+    const target = this.target;
+    target.writes.push({ name, seq: ++target.seq, level, loops: [...target.loops] });
   }
   // the key of a site's content: the t-key around it, the site's id, then
   // the key of each open loop, each a segment of its own (see keyOf in the
@@ -2699,13 +2841,20 @@ ${code}`;
     }
     let slotDef = "";
     if (ast.slots) {
+      let slotCtx = null;
+      let slotSite = null;
+      const start = this.mark();
       let slotStr = [];
       for (let slotName in ast.slots) {
         const slotAst = ast.slots[slotName];
         const params = [];
         if (slotAst.content) {
           const name = this.compileInNewTarget("slot", slotAst.content, ctx, slotAst.on);
-          params.push(`__render: ${name}, __ctx: ctx, __owner: this`);
+          if (!slotCtx) {
+            slotCtx = this.capturedContext(null);
+            slotSite = this.captureSites[this.captureSites.length - 1];
+          }
+          params.push(`__render: ${name}, __ctx: ${slotCtx}, __owner: this`);
         }
         const scope = ast.slots[slotName].scope;
         if (scope) {
@@ -2724,6 +2873,9 @@ ${code}`;
         slotStr.push(`${JSON.stringify(slotName)}: ${slotInfo}`);
       }
       slotDef = `{${slotStr.join(", ")}}`;
+      if (slotSite) {
+        slotSite.reads = this.readsSince(start);
+      }
     }
     if (slotDef && !(ast.dynamicProps || hasSlotsProp)) {
       props.push(`slots: ${slotDef}`);
@@ -2777,7 +2929,7 @@ ${code}`;
       id: name,
       expr: `createCatcher(${JSON.stringify(spec)}, [${handlers.join(", ")}])`
     });
-    return `${name}(${expr}, ctx)`;
+    return `${name}(${expr}, ${this.capturedContext(readsOf(handlers.map((id) => this.staticDefs.find((d) => d.id === id)?.expr ?? "")))})`;
   }
   compileTCallSlot(ast, ctx) {
     this.helpers.add("callSlot");
@@ -2850,7 +3002,7 @@ ${code}
 var version = "3.0.0-alpha.49";
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "4029ed6c";
+var buildHash = "a11f5097";
 
 // src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
