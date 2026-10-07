@@ -607,7 +607,7 @@ test("clickbot show rpc error when an error dialog is detected", async () => {
             </div>
         </main>
         <footer class="modal-footer d-empty-none justify-content-around justify-content-md-start flex-wrap gap-1 w-100">
-            <button class="btn btn-primary o-default-button">Close</button>
+            <button class="btn btn-primary o_error_dialog_close">Close</button>
         </footer>`
         .trim()
         .replaceAll(/>[\n\s]+</gm, "><");
