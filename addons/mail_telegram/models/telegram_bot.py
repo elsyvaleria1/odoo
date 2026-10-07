@@ -48,8 +48,15 @@ class TelegramBot(models.Model):
         bots = operating(
             self.with_user(user).with_context(allowed_company_ids=user.company_ids.ids)
         )
-        bots = bots.browse(self._get_notifying_bot_ids()).exists()
-        return bots.filtered(lambda bot: bot._admits_user(user))
+        # a bot of a company not theirs is beyond their reach: it is weighed
+        # where the bots are kept, or reading its company refuses them all
+        admitted = (
+            keeping(self)
+            .browse(self._get_notifying_bot_ids())
+            .exists()
+            .filtered(lambda bot: bot._admits_user(user))
+        )
+        return bots.browse(admitted.ids)
 
     def _get_mail_refusal(self, account, user) -> str | None:
         """Why this bot may not carry `user`'s Odoo mail to the Telegram
