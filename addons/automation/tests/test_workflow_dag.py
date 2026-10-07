@@ -1199,6 +1199,21 @@ class TestApprovalNode(TransactionCase):
         self.partner.invalidate_recordset(["ref"])
         self.assertEqual(self.partner.ref, "approved")
 
+    def test_an_approver_who_is_only_an_internal_user_can_approve(self):
+        gate = self._approval()
+        after = self._action("after", "record.write({'ref': 'approved'})")
+        link(self.env, gate, after)
+        runtime = self._run()
+        activity = self._line(runtime, gate).activity_ids
+        self.assertFalse(self.approver.has_group("base.group_system"))
+
+        activity.with_user(self.approver)._action_done()
+
+        self.assertEqual(self._line(runtime, gate).state, "done")
+        self.assertEqual(runtime.state, "done")
+        self.partner.invalidate_recordset(["ref"])
+        self.assertEqual(self.partner.ref, "approved")
+
     def test_one_approver_of_two_is_not_enough(self):
         second = self.env["res.users"].create(
             {
