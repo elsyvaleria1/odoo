@@ -113,6 +113,7 @@ from . import test_journal_item_split
 from . import test_bank_rec_widget_regressions
 from . import test_bank_statement_amount_alone
 from . import test_bank_statement_auto_reconcile_rule
+from . import test_bank_statement_period_charges
 from . import test_bank_statement_counterparty_key
 from . import test_bank_statement_payment_difference
 from . import test_change_lock_date_wizard

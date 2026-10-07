@@ -154,6 +154,16 @@
                                         groups="account.group_account_readonly"
                                         invisible="type not in ('cash', 'bank')" />
                                     <field
+                                        name="bank_charges_partner_id"
+                                        options="{'no_create': True}"
+                                        groups="account.group_account_readonly"
+                                        invisible="type != 'bank'" />
+                                    <field
+                                        name="bank_charges_pattern"
+                                        placeholder="^(COM |IVA COM|SERV BANCA)"
+                                        groups="account.group_account_readonly"
+                                        invisible="type != 'bank'" />
+                                    <field
                                         name="refund_sequence"
                                         invisible="type not in ['sale', 'purchase']" />
                                     <field

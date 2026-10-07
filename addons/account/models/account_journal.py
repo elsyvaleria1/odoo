@@ -175,7 +175,6 @@ class AccountJournal(models.Model):
     _check_company_domain = models.check_company_domain_parent_of
     _rec_names_search = ["name", "code"]
 
-
     def _default_inbound_payment_methods(self):
         return self.env.ref("account.account_payment_method_manual_in")
 
@@ -394,6 +393,19 @@ class AccountJournal(models.Model):
         domain="[('account_type', '=', 'expense')]",
         check_company=True,
         help="Used to register a loss when the ending balance of a cash register differs from what the system computes",
+    )
+
+    bank_charges_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Charges Invoiced By",
+        help="Who invoices this account's charges, fees and their taxes, in one "
+        "bill per month. With the charge labels, the month's charge "
+        "transactions are matched to that bill automatically.",
+    )
+    bank_charges_pattern = fields.Char(
+        string="Charge Labels",
+        help="A regular expression the labels of this account's charge "
+        "transactions match, e.g. ^(COM |IVA COM|SERV BANCA).",
     )
 
     company_partner_id = fields.Many2one(
@@ -929,6 +941,21 @@ class AccountJournal(models.Model):
         match = re.search(r"[0-9]+$", code or "")
         suffix = match.group() if match else "1"
         return f"{self._get_type_label(journal_type)} ({suffix})"
+
+    @api.constrains("bank_charges_pattern")
+    def _check_bank_charges_pattern(self) -> None:
+        for journal in self.filtered("bank_charges_pattern"):
+            try:
+                re.compile(journal.bank_charges_pattern)
+            except re.error as error:
+                raise ValidationError(
+                    self.env._(
+                        "The charge labels of %(journal)s are not a valid regular "
+                        "expression: %(error)s",
+                        journal=journal.display_name,
+                        error=error,
+                    )
+                ) from error
 
     @api.constrains("type", "bank_account_id")
     @_debug.perf.timed

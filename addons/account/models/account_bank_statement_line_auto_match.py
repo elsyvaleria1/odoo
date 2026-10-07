@@ -29,6 +29,7 @@ class AccountBankStatementLine(models.Model):
             ("outstanding", "Outstanding payment"),
             ("reference", "Document reference"),
             ("amount", "Partner and amount"),
+            ("charges", "The bank's charges for the month"),
             ("amount_alone", "Amount alone, to review"),
             ("model", "Reconciliation model"),
         ],
@@ -200,9 +201,18 @@ class AccountBankStatementLine(models.Model):
         revisit = Domain("cron_last_check", "<", run_start) & Domain(
             "create_date", ">=", run_start - timedelta(days=retry_days)
         )
-        return Domain("is_reconciled", "=", False) & (
-            Domain("cron_last_check", "=", False) | revisit
+        return (
+            Domain("is_reconciled", "=", False)
+            & (Domain("cron_last_check", "=", False) | revisit)
+            & ~self._get_domain_settled_elsewhere()
         )
+
+    def _get_domain_settled_elsewhere(self) -> Domain:
+        """Return the transactions another process is to settle, which the
+        automatic matching leaves alone: settling one first would race that
+        process to a different document. A module owning such a process
+        extends it."""
+        return Domain.FALSE
 
     def _auto_reconcile_isolating_failures(self, company_id=None, retire=True):
         """Reconcile each line under its own savepoint, so one bad line costs one line.
@@ -490,6 +500,11 @@ class AccountBankStatementLine(models.Model):
 
     @_debug.perf.timed
     def _try_auto_reconcile_statement_lines(self, company_id=None) -> None:
+        settled_elsewhere = self.filtered_domain(self._get_domain_settled_elsewhere())
+        if settled_elsewhere:
+            if remaining := self - settled_elsewhere:
+                remaining._try_auto_reconcile_statement_lines(company_id=company_id)
+            return
         st_move_ids = self.mapped("move_id").ids
         self.lock_for_update()
 
@@ -570,6 +585,17 @@ class AccountBankStatementLine(models.Model):
             remaining_st_line_ids -= matched_ids
             _debug.pipeline(
                 "after_amount_matching",
+                automatch=self,
+                remaining_st_line_ids_count=len(remaining_st_line_ids),
+            )
+            if not remaining_st_line_ids:
+                return
+
+            matched_ids = self._match_period_charges(remaining_st_line_ids)
+            self.browse(matched_ids)._update_auto_reconcile_rule("charges")
+            remaining_st_line_ids -= matched_ids
+            _debug.pipeline(
+                "after_period_charges",
                 automatch=self,
                 remaining_st_line_ids_count=len(remaining_st_line_ids),
             )
