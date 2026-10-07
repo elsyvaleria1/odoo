@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import psycopg
+
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import mute_logger
 
@@ -236,6 +238,59 @@ class TestFailedRun(RunCompletionCase):
             "waiting_resume",
             "left in progress, the resume cron would never find the run",
         )
+
+
+class TestLostTransaction(RunCompletionCase):
+    """A step whose transaction lost to a concurrent one did not fail: the
+    error reaches whoever owns the transaction, which runs it again."""
+
+    def _ready_line(self):
+        step = self._action("step", "record.write({'ref': 'ran'})")
+        runtime = self.env["automation.runtime"].create(
+            {
+                "automation_id": self.automation.id,
+                "res_model": "res.partner",
+                "res_id": self.partner.id,
+            }
+        )
+        runtime.action_start()
+        line = self._line(runtime, step)
+        self.assertEqual(line.state, "ready")
+        return line
+
+    def _execute_losing(self, line, target, attribute):
+        # no assertRaises: it opens a savepoint of its own and rolls back to
+        # it, which would hide whether the step was marked failed
+        raised = None
+        lost = psycopg.errors.SerializationFailure("concurrent update")
+        with patch.object(target, attribute, side_effect=lost):
+            try:
+                line.action_execute()
+            except psycopg.errors.SerializationFailure as error:
+                raised = error
+        self.assertIsNotNone(raised, "the lost transaction reaches the caller")
+
+    def _assert_not_failed(self, line):
+        self.assertNotEqual(line.state, "error")
+        self.assertFalse(line.error_message)
+        self.assertNotEqual(line.runtime_id.state, "error")
+
+    def test_a_step_losing_its_transaction_raises_instead_of_failing(self):
+        line = self._ready_line()
+
+        self._execute_losing(line, type(self.env["ir.actions.server"]), "run")
+
+        self._assert_not_failed(line)
+
+    def test_a_savepoint_refused_by_a_concurrent_update_raises_too(self):
+        # 2026-10-07: the flush that opens the step's savepoint wrote a row a
+        # concurrent transaction had committed; marking the step failed was
+        # then refused as well, and only InFailedSqlTransaction surfaced
+        line = self._ready_line()
+
+        self._execute_losing(line, self.env.cr, "savepoint")
+
+        self._assert_not_failed(line)
 
 
 class TestFailedQueuedRun(QueuedCase):

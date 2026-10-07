@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tools import frozendict
@@ -786,6 +787,13 @@ class AutomationRuntimeLine(models.Model):
 
             return result or True
 
+        except PG_RETRY_EXCEPTIONS:
+            # The transaction lost to a concurrent one; the step did not fail.
+            # Raised while opening the savepoint, it leaves the transaction
+            # aborted, and marking the step failed would be refused in turn,
+            # burying the cause under InFailedSqlTransaction. Whoever owns the
+            # transaction -- a request, a cron -- runs it again from scratch.
+            raise
         except Exception as e:
             error_msg = str(e)
             _logger.exception(

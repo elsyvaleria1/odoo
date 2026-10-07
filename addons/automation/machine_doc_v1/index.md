@@ -46,7 +46,7 @@ its Diagram page, read-only and drawn from the run's snapshot.
 | `tests/test_queued_dispatch.py` | Queued runs, the batched dispatcher, commit policy |
 | `tests/test_timed_event_edges.py` | Delayed edges, event and no-event edges, exclusive events, the scheduled state |
 | `tests/test_run_completion.py` | Dead-path skipping, run completion after a pause, exact resume triggers |
-| `tests/test_retry.py` | A failed run fails one step and keeps the rest, retry, cancelling a failed run, the run's own graph |
+| `tests/test_retry.py` | A failed run fails one step and keeps the rest, retry, cancelling a failed run, a step whose transaction lost to a concurrent one raising instead of failing, the run's own graph |
 | `tests/test_step_output.py` | What a step reports: the line's output and summary, an edge branching on `output`, the run diagram showing it |
 | `tests/test_input_step.py` | The Input node: the run waits for the fields it asks for, the dialog built from them, the run continuing once they are filled in; a step that needs fields of its own run step waits and asks for them |
 | `tests/test_step_references.py` | Step keys, parsing references, the problems the graph judges, the scope a step reads, forms on any step, running a chosen ready step |

@@ -32,6 +32,16 @@ step recorded as failed whose document survived would create a second one on
 runtime, its lines and the error message — the execution history was erased by
 precisely the failures it exists to record. Do not "fix" this back into a raise.
 
+**The one exception is a transaction lost to a concurrent one**
+(`PG_RETRY_EXCEPTIONS`: a serialization failure, a deadlock, a lock not
+available), which `action_execute()` re-raises. That is not an outcome of the
+step, and it cannot be recorded: raised by the flush that opens the savepoint,
+it leaves the transaction aborted, and writing `error` is refused in turn —
+on 2026-10-07 a run's step failed that way and only `InFailedSqlTransaction`
+surfaced. Whoever owns the transaction runs it again from scratch (`retrying`
+for a request or a cron job), so the history is not lost: it is written by the
+attempt that wins. Every other exception stays an outcome.
+
 ## Predecessors Are Scoped to One Automation
 
 `_check_predecessors_scope` rejects a `predecessor_ids` entry belonging to a
