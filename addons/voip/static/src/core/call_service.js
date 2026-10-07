@@ -66,7 +66,9 @@ export class CallService {
     }
 
     async reject(call) {
-        this.store.insert(await this.orm.call("phone.call", "reject_call", [[call.id]]));
+        this.store.insert(
+            await this.orm.call("phone.call", "reject_call", [[call.id]]),
+        );
     }
 
     /**

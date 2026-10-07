@@ -48,7 +48,7 @@ export class MoleculeEditor extends FieldComponent {
         this.model3d = null;
         this.viewer = null;
         this.libraryReady = loadJS(
-            "/molecular_screening/static/lib/3dmol/3Dmol-min.js"
+            "/molecular_screening/static/lib/3dmol/3Dmol-min.js",
         ).catch(() => false);
 
         useRecordObserver((record, props) => {
@@ -69,7 +69,7 @@ export class MoleculeEditor extends FieldComponent {
         });
         useLayoutEffect(
             () => this.redraw(),
-            () => [this.state.mode, this.state.element]
+            () => [this.state.mode, this.state.element],
         );
     }
 
@@ -130,7 +130,7 @@ export class MoleculeEditor extends FieldComponent {
     get modeHint() {
         const hints = {
             draw: _t(
-                "Click empty space for an atom, two atoms for a bond, a bond to cycle single → double → triple. Drag to move."
+                "Click empty space for an atom, two atoms for a bond, a bond to cycle single → double → triple. Drag to move.",
             ),
             erase: _t("Click an atom or a bond to remove it."),
             plus: _t("Click an atom to raise its formal charge."),
@@ -258,7 +258,9 @@ export class MoleculeEditor extends FieldComponent {
         }
         const point = this.pointerPosition(event);
         if (this.drag) {
-            if (Math.hypot(point.x - this.drag.from.x, point.y - this.drag.from.y) > 4) {
+            if (
+                Math.hypot(point.x - this.drag.from.x, point.y - this.drag.from.y) > 4
+            ) {
                 this.drag.moved = true;
                 const atom = this.molecule.atoms[this.drag.index];
                 atom.x = point.x;
@@ -274,8 +276,8 @@ export class MoleculeEditor extends FieldComponent {
             atomIndex >= 0
                 ? { type: "atom", index: atomIndex }
                 : bondIndex >= 0
-                ? { type: "bond", index: bondIndex }
-                : null;
+                  ? { type: "bond", index: bondIndex }
+                  : null;
         if (JSON.stringify(next) !== JSON.stringify(this.hover)) {
             this.hover = next;
             this.redraw();
@@ -355,7 +357,9 @@ export class MoleculeEditor extends FieldComponent {
     addBond(a, b) {
         const lo = Math.min(a, b);
         const hi = Math.max(a, b);
-        const existing = this.molecule.bonds.findIndex((bond) => bond.a === lo && bond.b === hi);
+        const existing = this.molecule.bonds.findIndex(
+            (bond) => bond.a === lo && bond.b === hi,
+        );
         if (existing >= 0) {
             this.cycleBond(existing);
             return;
@@ -371,7 +375,9 @@ export class MoleculeEditor extends FieldComponent {
     /* ------------------------------------------------------------ drawing */
 
     themeColor(name) {
-        return getComputedStyle(this.canvasRef.el).getPropertyValue(name).trim() || "#000";
+        return (
+            getComputedStyle(this.canvasRef.el).getPropertyValue(name).trim() || "#000"
+        );
     }
 
     redraw() {
@@ -430,16 +436,24 @@ export class MoleculeEditor extends FieldComponent {
                 bond.order === 1
                     ? [0]
                     : bond.order === 2
-                    ? [-gap, gap]
-                    : [-gap * 1.9, 0, gap * 1.9];
+                      ? [-gap, gap]
+                      : [-gap * 1.9, 0, gap * 1.9];
             ctx.strokeStyle =
-                this.hover?.type === "bond" && this.hover.index === index ? accent : ink;
+                this.hover?.type === "bond" && this.hover.index === index
+                    ? accent
+                    : ink;
             ctx.lineWidth = 1.9;
             ctx.lineCap = "round";
             for (const offset of offsets) {
                 ctx.beginPath();
-                ctx.moveTo(pa.x + ux * trim + nx * offset, pa.y + uy * trim + ny * offset);
-                ctx.lineTo(pb.x - ux * trim + nx * offset, pb.y - uy * trim + ny * offset);
+                ctx.moveTo(
+                    pa.x + ux * trim + nx * offset,
+                    pa.y + uy * trim + ny * offset,
+                );
+                ctx.lineTo(
+                    pb.x - ux * trim + nx * offset,
+                    pb.y - uy * trim + ny * offset,
+                );
                 ctx.stroke();
             }
         });
@@ -477,11 +491,12 @@ export class MoleculeEditor extends FieldComponent {
                 ctx.font = "600 11px monospace";
                 ctx.fillStyle = atom.charge > 0 ? accent : alert;
                 ctx.textAlign = "left";
-                const magnitude = Math.abs(atom.charge) > 1 ? Math.abs(atom.charge) : "";
+                const magnitude =
+                    Math.abs(atom.charge) > 1 ? Math.abs(atom.charge) : "";
                 ctx.fillText(
                     `${magnitude}${atom.charge > 0 ? "+" : "−"}`,
                     atom.x + radius - 2,
-                    atom.y - radius + 4
+                    atom.y - radius + 4,
                 );
             }
         });
@@ -502,7 +517,7 @@ export class MoleculeEditor extends FieldComponent {
                 atoms: model.atoms.length,
                 steps: result.steps,
                 force: result.force.toFixed(4),
-            }
+            },
         );
         await this.showViewer();
     }
@@ -526,7 +541,7 @@ export class MoleculeEditor extends FieldComponent {
             {},
             this.state.spheres
                 ? { sphere: { scale: 0.32 }, stick: { radius: 0.1 } }
-                : { stick: { radius: 0.14 } }
+                : { stick: { radius: 0.14 } },
         );
         this.viewer.zoomTo();
         this.viewer.render();
@@ -542,7 +557,9 @@ export class MoleculeEditor extends FieldComponent {
         if (!this.model3d || !this.hasRelaxedTarget) {
             return;
         }
-        this.props.record.update({ molblock_3d: modelToMolblock(this.model3d, "relaxed") });
+        this.props.record.update({
+            molblock_3d: modelToMolblock(this.model3d, "relaxed"),
+        });
     }
 
     get hasRelaxedTarget() {

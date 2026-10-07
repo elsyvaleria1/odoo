@@ -144,7 +144,9 @@ test("pressing Enter in the input calls the dialed number", async () => {
     await insertText(".o-voip-Keypad-searchBar input:focus", "9223372036854775807");
     await triggerHotkey("Enter");
     expect(
-        pyEnv["phone.call"].search_count([["phone_number", "=", "9223372036854775807"]]),
+        pyEnv["phone.call"].search_count([
+            ["phone_number", "=", "9223372036854775807"],
+        ]),
     ).toBe(1);
 });
 

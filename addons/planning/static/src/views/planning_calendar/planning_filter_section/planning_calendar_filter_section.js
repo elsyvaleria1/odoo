@@ -42,8 +42,12 @@ export class PlanningCalendarFilterSection extends CalendarFilterSection {
             return options;
         }
         const resourceIds = options.map((option) => option.data?.id).filter(Boolean);
-        const resources = await this.orm.read("resource.resource", resourceIds, ["type"]);
-        const typeById = Object.fromEntries(resources.map(({ id, type }) => [id, type]));
+        const resources = await this.orm.read("resource.resource", resourceIds, [
+            "type",
+        ]);
+        const typeById = Object.fromEntries(
+            resources.map(({ id, type }) => [id, type]),
+        );
         for (const option of options) {
             if (option.data?.id) {
                 option.data.resourceType = typeById[option.data.id];

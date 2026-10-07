@@ -1,6 +1,7 @@
 /** @odoo-module native */
 import { markup, onWillStart, proxy } from "@odoo/owl";
 import { AddressRecurrencyConfirmationDialog } from "@planning/components/address_recurrency_confirmation_dialog/address_recurrency_confirmation_dialog";
+import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
 import { formatFloatTime } from "@web/core/formatters";
 import {
     compareDates,
@@ -22,7 +23,6 @@ import { PlanningEmployeeAvatar } from "./planning_employee_avatar.js";
 import { PlanningGanttRendererControls } from "./planning_gantt_renderer_controls.js";
 import { PlanningGanttRowProgressBar } from "./planning_gantt_row_progress_bar.js";
 import { PlanningResourceName } from "./planning_resource_name.js";
-import { RESOURCE_TYPE_ICONS } from "@resource/resource_type_icons";
 import { PlanningSplitTool } from "./planning_split_tool.js";
 
 /** Hours from milliseconds, rounded to five minutes. */

@@ -7,16 +7,86 @@
  */
 
 export const ELEMENTS = {
-    H: { weight: 1.008, mono: 1.0078250319, radius: 0.31, valences: [1], group: 1, color: "#8c9aa0" },
-    C: { weight: 12.011, mono: 12.0, radius: 0.76, valences: [4], group: 14, color: "#3c4f57" },
-    N: { weight: 14.007, mono: 14.0030740052, radius: 0.71, valences: [3, 5], group: 15, color: "#2f6fbf" },
-    O: { weight: 15.999, mono: 15.9949146221, radius: 0.66, valences: [2], group: 16, color: "#c0392b" },
-    S: { weight: 32.06, mono: 31.97207069, radius: 1.05, valences: [2, 4, 6], group: 16, color: "#c8a415" },
-    P: { weight: 30.974, mono: 30.97376151, radius: 1.07, valences: [3, 5], group: 15, color: "#d07c26" },
-    F: { weight: 18.998, mono: 18.9984032, radius: 0.57, valences: [1], group: 17, color: "#4b9b5f" },
-    Cl: { weight: 35.45, mono: 34.96885271, radius: 1.02, valences: [1, 3, 5, 7], group: 17, color: "#3f8f4c" },
-    Br: { weight: 79.904, mono: 78.9183376, radius: 1.2, valences: [1, 3, 5, 7], group: 17, color: "#8a5a2b" },
-    I: { weight: 126.904, mono: 126.904473, radius: 1.39, valences: [1, 3, 5, 7], group: 17, color: "#6f4a9b" },
+    H: {
+        weight: 1.008,
+        mono: 1.0078250319,
+        radius: 0.31,
+        valences: [1],
+        group: 1,
+        color: "#8c9aa0",
+    },
+    C: {
+        weight: 12.011,
+        mono: 12.0,
+        radius: 0.76,
+        valences: [4],
+        group: 14,
+        color: "#3c4f57",
+    },
+    N: {
+        weight: 14.007,
+        mono: 14.0030740052,
+        radius: 0.71,
+        valences: [3, 5],
+        group: 15,
+        color: "#2f6fbf",
+    },
+    O: {
+        weight: 15.999,
+        mono: 15.9949146221,
+        radius: 0.66,
+        valences: [2],
+        group: 16,
+        color: "#c0392b",
+    },
+    S: {
+        weight: 32.06,
+        mono: 31.97207069,
+        radius: 1.05,
+        valences: [2, 4, 6],
+        group: 16,
+        color: "#c8a415",
+    },
+    P: {
+        weight: 30.974,
+        mono: 30.97376151,
+        radius: 1.07,
+        valences: [3, 5],
+        group: 15,
+        color: "#d07c26",
+    },
+    F: {
+        weight: 18.998,
+        mono: 18.9984032,
+        radius: 0.57,
+        valences: [1],
+        group: 17,
+        color: "#4b9b5f",
+    },
+    Cl: {
+        weight: 35.45,
+        mono: 34.96885271,
+        radius: 1.02,
+        valences: [1, 3, 5, 7],
+        group: 17,
+        color: "#3f8f4c",
+    },
+    Br: {
+        weight: 79.904,
+        mono: 78.9183376,
+        radius: 1.2,
+        valences: [1, 3, 5, 7],
+        group: 17,
+        color: "#8a5a2b",
+    },
+    I: {
+        weight: 126.904,
+        mono: 126.904473,
+        radius: 1.39,
+        valences: [1, 3, 5, 7],
+        group: 17,
+        color: "#6f4a9b",
+    },
 };
 
 export const ELEMENT_ORDER = ["C", "N", "O", "S", "P", "F", "Cl", "Br", "I", "H"];
@@ -134,22 +204,39 @@ const AROMATIC_ELEMENTS = ["C", "N", "O", "S", "P"];
 
 function lonePairs(element, charge, used, hydrogens) {
     const group = ELEMENTS[element].group;
-    const electrons = (group <= 2 ? group : group === 14 ? 4 : group - 10) - charge - used - hydrogens;
+    const electrons =
+        (group <= 2 ? group : group === 14 ? 4 : group - 10) -
+        charge -
+        used -
+        hydrogens;
     return Math.max(0, Math.floor(electrons / 2));
 }
 
 /** Every simple cycle of at most eight atoms, as a sorted array of bond indices. */
 export function smallRings(molecule) {
     const inRing = ringBonds(molecule);
-    const links = adjacency(molecule).map((list) => list.filter((link) => inRing.has(link.bond)));
+    const links = adjacency(molecule).map((list) =>
+        list.filter((link) => inRing.has(link.bond)),
+    );
     const found = new Map();
     const walk = (start, node, pathAtoms, pathBonds) => {
         for (const link of links[node]) {
-            if (link.atom === start && pathBonds.length >= 2 && !pathBonds.includes(link.bond)) {
+            if (
+                link.atom === start &&
+                pathBonds.length >= 2 &&
+                !pathBonds.includes(link.bond)
+            ) {
                 const ring = [...pathBonds, link.bond].sort((a, b) => a - b);
                 found.set(ring.join(","), ring);
-            } else if (link.atom > start && !pathAtoms.has(link.atom) && pathAtoms.size < MAX_RING_SIZE) {
-                walk(start, link.atom, new Set([...pathAtoms, link.atom]), [...pathBonds, link.bond]);
+            } else if (
+                link.atom > start &&
+                !pathAtoms.has(link.atom) &&
+                pathAtoms.size < MAX_RING_SIZE
+            ) {
+                walk(start, link.atom, new Set([...pathAtoms, link.atom]), [
+                    ...pathBonds,
+                    link.bond,
+                ]);
             }
         }
     };
@@ -159,7 +246,10 @@ export function smallRings(molecule) {
 
 function piElectrons(molecule, index, links, inRing) {
     const atom = molecule.atoms[index];
-    if (!AROMATIC_ELEMENTS.includes(atom.element) || links.some((link) => link.order === 3)) {
+    if (
+        !AROMATIC_ELEMENTS.includes(atom.element) ||
+        links.some((link) => link.order === 3)
+    ) {
         return null;
     }
     const doubles = links.filter((link) => link.order === 2);
@@ -171,14 +261,19 @@ function piElectrons(molecule, index, links, inRing) {
             return 1;
         }
         // exocyclic C=O/N/S pulls its electron out (2-pyridone); C=C breaks the ring (fulvene)
-        return ["N", "O", "S"].includes(molecule.atoms[doubles[0].atom].element) ? 0 : null;
+        return ["N", "O", "S"].includes(molecule.atoms[doubles[0].atom].element)
+            ? 0
+            : null;
     }
     if (atom.element === "C") {
         return { 1: 0, "-1": 2 }[atom.charge] ?? null;
     }
     const used = links.reduce((total, link) => total + link.order, 0);
     const hydrogens = implicitHydrogens(atom.element, atom.charge, used);
-    if (hydrogens.exceeded || !lonePairs(atom.element, atom.charge, used, hydrogens.count)) {
+    if (
+        hydrogens.exceeded ||
+        !lonePairs(atom.element, atom.charge, used, hydrogens.count)
+    ) {
         return null;
     }
     return 2;
@@ -194,10 +289,12 @@ export function aromaticity(molecule) {
     const links = adjacency(molecule);
     const inRing = ringBonds(molecule);
     const electrons = molecule.atoms.map((_atom, index) =>
-        piElectrons(molecule, index, links[index], inRing)
+        piElectrons(molecule, index, links[index], inRing),
     );
     const ringAtoms = (ring) =>
-        new Set(ring.flatMap((bond) => [molecule.bonds[bond].a, molecule.bonds[bond].b]));
+        new Set(
+            ring.flatMap((bond) => [molecule.bonds[bond].a, molecule.bonds[bond].b]),
+        );
     const huckel = (members) => {
         const figures = [...members].map((index) => electrons[index]);
         return !figures.includes(null) && figures.reduce((a, b) => a + b, 0) % 4 === 2;
@@ -209,7 +306,9 @@ export function aromaticity(molecule) {
         for (const second of rest.slice(position + 1)) {
             const fused = first.some((bond) => second.includes(bond));
             if (fused && huckel(new Set([...ringAtoms(first), ...ringAtoms(second)]))) {
-                aromatic.push(...[first, second].filter((ring) => !aromatic.includes(ring)));
+                aromatic.push(
+                    ...[first, second].filter((ring) => !aromatic.includes(ring)),
+                );
             }
         }
     });
@@ -257,12 +356,14 @@ export function kekulize(molecule, marked) {
     for (const list of partners.values()) {
         list.sort(
             (p, q) =>
-                (molecule.atoms[p.atom].element !== "C") - (molecule.atoms[q.atom].element !== "C") ||
-                p.atom - q.atom
+                (molecule.atoms[p.atom].element !== "C") -
+                    (molecule.atoms[q.atom].element !== "C") || p.atom - q.atom,
         );
     }
     const needy = [...partners.keys()]
-        .filter((index) => molecule.atoms[index].element === "C" && canTakeDouble(index))
+        .filter(
+            (index) => molecule.atoms[index].element === "C" && canTakeDouble(index),
+        )
         .sort((p, q) => p - q);
     const matched = new Map();
     const assign = (queue) => {
@@ -287,7 +388,9 @@ export function kekulize(molecule, marked) {
         return false;
     };
     if (!assign(needy)) {
-        throw new Error("The aromatic bonds cannot be written as alternating single and double bonds.");
+        throw new Error(
+            "The aromatic bonds cannot be written as alternating single and double bonds.",
+        );
     }
     for (const bond of new Set(matched.values())) {
         molecule.bonds[bond].order = 2;
@@ -303,7 +406,7 @@ export function rotatableBonds(molecule) {
         molecule.atoms[nitrogen].element === "N" &&
         molecule.atoms[carbon].element === "C" &&
         links[carbon].some(
-            (link) => link.order === 2 && molecule.atoms[link.atom].element === "O"
+            (link) => link.order === 2 && molecule.atoms[link.atom].element === "O",
         );
 
     let count = 0;
@@ -311,7 +414,10 @@ export function rotatableBonds(molecule) {
         if (bond.order !== 1 || inRing.has(index)) {
             return;
         }
-        if (molecule.atoms[bond.a].element === "H" || molecule.atoms[bond.b].element === "H") {
+        if (
+            molecule.atoms[bond.a].element === "H" ||
+            molecule.atoms[bond.b].element === "H"
+        ) {
             return;
         }
         if (heavyDegree(bond.a) < 2 || heavyDegree(bond.b) < 2) {
@@ -329,7 +435,7 @@ export function hillFormula(counts) {
     const symbols = ["C", "H"].concat(
         Object.keys(counts)
             .filter((symbol) => symbol !== "C" && symbol !== "H")
-            .sort()
+            .sort(),
     );
     return symbols
         .filter((symbol) => counts[symbol])
@@ -372,7 +478,10 @@ export function analyse(molecule) {
     });
 
     const rings = molecule.atoms.length
-        ? Math.max(0, molecule.bonds.length - molecule.atoms.length + componentCount(molecule))
+        ? Math.max(
+              0,
+              molecule.bonds.length - molecule.atoms.length + componentCount(molecule),
+          )
         : 0;
     const piBonds = molecule.bonds.reduce((total, bond) => total + bond.order - 1, 0);
 
@@ -407,23 +516,34 @@ export function toMolblock(molecule, { title = "molecular-screening", origin } =
         y: (centre.y - atom.y) / SKETCH_SCALE,
         z: 0,
     }));
-    return writeMolblock(atoms, molecule.bonds.map((bond) => ({ ...bond })), title, "2D");
+    return writeMolblock(
+        atoms,
+        molecule.bonds.map((bond) => ({ ...bond })),
+        title,
+        "2D",
+    );
 }
 
 export function writeMolblock(atoms, bonds, title, dimension) {
     const pad = (value, width) => String(value).padStart(width);
     const lines = [title, `  molecular_screening      ${dimension}`, ""];
-    lines.push(`${pad(atoms.length, 3)}${pad(bonds.length, 3)}  0  0  0  0  0  0  0  0999 V2000`);
+    lines.push(
+        `${pad(atoms.length, 3)}${pad(bonds.length, 3)}  0  0  0  0  0  0  0  0999 V2000`,
+    );
     for (const atom of atoms) {
         const coordinates = ["x", "y", "z"]
             .map((axis) => (atom[axis] || 0).toFixed(4).padStart(10))
             .join("");
-        lines.push(`${coordinates} ${atom.element.padEnd(3)} 0  0  0  0  0  0  0  0  0  0  0  0`);
+        lines.push(
+            `${coordinates} ${atom.element.padEnd(3)} 0  0  0  0  0  0  0  0  0  0  0  0`,
+        );
     }
     for (const bond of bonds) {
         const a = bond.atom_a ?? bond.a + 1;
         const b = bond.atom_b ?? bond.b + 1;
-        lines.push(`${pad(a, 3)}${pad(b, 3)}${pad(bond.order || bond.bond_order, 3)}  0`);
+        lines.push(
+            `${pad(a, 3)}${pad(b, 3)}${pad(bond.order || bond.bond_order, 3)}  0`,
+        );
     }
     const charged = atoms
         .map((atom, index) => [index + 1, atom.formal_charge || 0])
@@ -432,7 +552,9 @@ export function writeMolblock(atoms, bonds, title, dimension) {
         const chunk = charged.slice(start, start + 8);
         lines.push(
             `M  CHG${pad(chunk.length, 3)}` +
-                chunk.map(([index, charge]) => `${pad(index, 4)}${pad(charge, 4)}`).join("")
+                chunk
+                    .map(([index, charge]) => `${pad(index, 4)}${pad(charge, 4)}`)
+                    .join(""),
         );
     }
     lines.push("M  END");
@@ -476,7 +598,11 @@ export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
         if (order === 4) {
             marked.push(i);
         }
-        bonds.push({ a: Math.min(a, b), b: Math.max(a, b), order: order === 4 ? 1 : order });
+        bonds.push({
+            a: Math.min(a, b),
+            b: Math.max(a, b),
+            order: order === 4 ? 1 : order,
+        });
     }
     for (const line of lines.slice(4 + atomCount + bondCount)) {
         if (line.startsWith("M  CHG")) {
@@ -499,7 +625,7 @@ export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
     const scale = Math.min(
         SKETCH_SCALE,
         (viewport.width - 120) / spanX,
-        (viewport.height - 120) / spanY
+        (viewport.height - 120) / spanY,
     );
     const midX = (Math.max(...xs) + Math.min(...xs)) / 2 || 0;
     const midY = (Math.max(...ys) + Math.min(...ys)) / 2 || 0;
@@ -507,7 +633,9 @@ export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
         element: atom.element,
         charge: atom.charge,
         x: viewport.width / 2 + ((Number.isFinite(atom.x) ? atom.x : 0) - midX) * scale,
-        y: viewport.height / 2 - ((Number.isFinite(atom.y) ? atom.y : 0) - midY) * scale,
+        y:
+            viewport.height / 2 -
+            ((Number.isFinite(atom.y) ? atom.y : 0) - midY) * scale,
     }));
     const molecule = { atoms, bonds };
     kekulize(molecule, marked);
@@ -525,7 +653,9 @@ function bondTarget(model, bond) {
 
 /** sp from a triple bond or two doubles, sp2 from one double, sp3 otherwise. */
 function targetAngle(model, centre) {
-    const attached = model.bonds.filter((bond) => bond.a === centre || bond.b === centre);
+    const attached = model.bonds.filter(
+        (bond) => bond.a === centre || bond.b === centre,
+    );
     const maxOrder = attached.reduce((best, bond) => Math.max(best, bond.order), 1);
     const doubles = attached.filter((bond) => bond.order === 2).length;
     if (maxOrder === 3 || doubles >= 2) {
@@ -563,7 +693,9 @@ export function buildModel(molecule, seed = 1) {
             z: jitter() * 0.4,
         });
     });
-    molecule.bonds.forEach((bond) => bonds.push({ a: bond.a, b: bond.b, order: bond.order }));
+    molecule.bonds.forEach((bond) =>
+        bonds.push({ a: bond.a, b: bond.b, order: bond.order }),
+    );
 
     molecule.atoms.forEach((atom, index) => {
         const used = usedValence(molecule, index);
@@ -644,7 +776,8 @@ export function relax(model, steps = 900) {
     const planar = [];
     for (let centre = 0; centre < n; centre++) {
         const list = [...links[centre]];
-        const ideal = list.length >= 4 ? (109.5 * Math.PI) / 180 : targetAngle(model, centre);
+        const ideal =
+            list.length >= 4 ? (109.5 * Math.PI) / 180 : targetAngle(model, centre);
         for (let i = 0; i < list.length; i++) {
             for (let j = i + 1; j < list.length; j++) {
                 angles.push([list[i], centre, list[j], ideal]);
@@ -681,8 +814,14 @@ export function relax(model, steps = 900) {
             const cosine = Math.max(-0.9999, Math.min(0.9999, dot(u, v) / (lu * lv)));
             const sine = Math.sqrt(1 - cosine * cosine) || 1e-6;
             const error = Math.acos(cosine) - ideal;
-            const gi = scale(sub(scale(u, cosine / lu), scale(v, 1 / lv)), 1 / (lu * sine));
-            const gj = scale(sub(scale(v, cosine / lv), scale(u, 1 / lu)), 1 / (lv * sine));
+            const gi = scale(
+                sub(scale(u, cosine / lu), scale(v, 1 / lv)),
+                1 / (lu * sine),
+            );
+            const gj = scale(
+                sub(scale(v, cosine / lv), scale(u, 1 / lu)),
+                1 / (lv * sine),
+            );
             const k = 0.9 * error;
             for (let axis = 0; axis < 3; axis++) {
                 force[i][axis] -= k * gi[axis];
@@ -705,7 +844,10 @@ export function relax(model, steps = 900) {
         }
 
         for (const [centre, p, q, r] of planar) {
-            const normal = cross(sub(positions[q], positions[p]), sub(positions[r], positions[p]));
+            const normal = cross(
+                sub(positions[q], positions[p]),
+                sub(positions[r], positions[p]),
+            );
             const length = norm(normal) || 1e-6;
             const unit = scale(normal, 1 / length);
             const offset = dot(sub(positions[centre], positions[p]), unit);
@@ -732,7 +874,7 @@ export function relax(model, steps = 900) {
     }
 
     const centre = [0, 1, 2].map(
-        (axis) => positions.reduce((total, position) => total + position[axis], 0) / n
+        (axis) => positions.reduce((total, position) => total + position[axis], 0) / n,
     );
     model.atoms.forEach((atom, index) => {
         atom.x = positions[index][0] - centre[0];

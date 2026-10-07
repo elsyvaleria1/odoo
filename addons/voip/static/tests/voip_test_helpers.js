@@ -10,9 +10,9 @@ import {
 import { patch } from "@web/core/utils/patch";
 
 import { MailActivity } from "./mock_server/mock_models/mail_activity.js";
+import { PhoneCall } from "./mock_server/mock_models/phone_call.js";
 import { ResPartner } from "./mock_server/mock_models/res_partner.js";
 import { ResUsers } from "./mock_server/mock_models/res_users.js";
-import { PhoneCall } from "./mock_server/mock_models/phone_call.js";
 import { VoipProvider } from "./mock_server/mock_models/voip_provider.js";
 
 export function setupVoipTests() {
