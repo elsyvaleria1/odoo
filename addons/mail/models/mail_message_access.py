@@ -87,7 +87,7 @@ class MailMessage(models.Model):
             "model",
             "res_id",
             lambda Document: Document._mail_message_read_reach(),
-            bounded=bounded,
+            probe=bounded,
             only=only,
         )
         return direct | on_documents

@@ -139,7 +139,7 @@ def owner_reach(
     res_id_field: str,
     reach: Reach,
     *,
-    bounded: bool = False,
+    probe: bool = False,
     only: Collection[str] | None = None,
     within: Reach | None = None,
     itself: Domain | None = None,
@@ -152,10 +152,10 @@ def owner_reach(
     # asks nothing of its records, as the record-level check reads no record
     # no rule restricts; a row on no model of the registry is reached by none.
     #
-    # `bounded`, for a search returning a page: each owner is probed per row
-    # (OFFSET 0 keeps the planner from hashing the owner's whole reach for
-    # the rows a page reads, as it would for the count it estimates without
-    # the limit). `only`: the owning models the search holds its rows to
+    # `probe`: each owner is probed per row (OFFSET 0 keeps the planner from
+    # hashing the owner's whole reach), for a page, which reads few rows of
+    # the count the planner estimates without its limit, or a host whose
+    # rows are few against their owners'. `only`: the owning models the search holds its rows to
     # (pinned_values), no other model's branch stated nor planned.
     # `within(Owner)`: a further condition on the row in that owner's branch,
     # as an attachment's field must be one the user reads on its record.
@@ -166,13 +166,16 @@ def owner_reach(
     # an owning model `reach` answers CONCRETE and where a cycle closes (the
     # record-level check by default).
     def to_sql(host: models.BaseModel, alias: str, query: Query) -> SQL:
+        # the reach is the principal's that asked for it: an access domain is
+        # rendered as the superuser
+        host = host.with_env(model.env)
         host.flush_model([model_field, res_id_field])
         stated = _OwnerReach(
             host,
             model_field,
             res_id_field,
             reach,
-            bounded=bounded,
+            probe=probe,
             only=only,
             within=within,
             itself=itself,
@@ -194,7 +197,7 @@ class _OwnerReach:
         res_id_field: str,
         reach: Reach,
         *,
-        bounded: bool,
+        probe: bool,
         only: Collection[str] | None,
         within: Reach | None,
         itself: Domain | None,
@@ -204,7 +207,7 @@ class _OwnerReach:
         self.model_field = model_field
         self.res_id_field = res_id_field
         self.reach = reach
-        self.bounded = bounded
+        self.probe = probe
         self.within = within
         self.itself = itself
         self.decide = decide
@@ -286,7 +289,7 @@ class _OwnerReach:
             owner_sql = SQL(
                 "EXISTS (%s%s)",
                 owned.select(SQL("1")),
-                SQL(" OFFSET 0") if self.bounded else SQL(),
+                SQL(" OFFSET 0") if self.probe else SQL(),
             )
         return SQL("(%s = %s AND %s%s)", model_column, name, owner_sql, row_sql)
 

@@ -159,7 +159,7 @@ class MixinOwnerAccess(models.AbstractModel):
                 field.model_field,
                 field.name,
                 self._access_owner_reach,
-                bounded=bounded,
+                probe=bounded,
                 only=only,
                 decide=self._access_owner_decide,
             )

@@ -54,7 +54,7 @@ class MailFollowers(models.Model):
                 "res_model",
                 "res_id",
                 lambda Document: Document._mail_message_read_reach(),
-                bounded=bounded,
+                probe=bounded,
                 only=only,
             )
 

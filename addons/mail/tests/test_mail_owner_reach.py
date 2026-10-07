@@ -119,3 +119,105 @@ class TestMailOwnerReach(TransactionCase):
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
     def test_follower_search_finds_what_the_check_reads(self):
         self.assert_paths(self.followers, "res_model")
+
+
+@tagged("post_install", "-at_install")
+class TestActivityOwnerReach(TransactionCase):
+    # an activity search finds the user's own activities and those on a
+    # document they read, as the document's own record-level check says it,
+    # one level deep through an activity filed on an activity
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        company_b = cls.env["res.company"].create({"name": "Activity Reach B"})
+        cls.user = new_test_user(
+            cls.env, login="activity_reach_a", groups="base.group_user"
+        )
+        cls.other = new_test_user(
+            cls.env,
+            login="activity_reach_b",
+            groups="base.group_user",
+            company_id=company_b.id,
+            company_ids=[(6, 0, company_b.ids)],
+        )
+        Partner = cls.env["res.partner"]
+        partners = Partner.create(
+            [
+                {"name": f"activity-reach-a-{i}", "company_id": cls.env.company.id}
+                for i in range(3)
+            ]
+        ) | Partner.create(
+            [
+                {"name": f"activity-reach-b-{i}", "company_id": company_b.id}
+                for i in range(3)
+            ]
+        )
+        rng = random.Random(7)
+        Activity = cls.env["mail.activity"].sudo()
+        partner_model = cls.env["ir.model"]._get_id("res.partner")
+        activity_model = cls.env["ir.model"]._get_id("mail.activity")
+        todo = cls.env.ref("mail.mail_activity_data_todo").id
+        assignees = [cls.user.id, cls.other.id, cls.env.ref("base.user_admin").id]
+        cls.on_documents = Activity.create(
+            [
+                {
+                    "activity_type_id": todo,
+                    "res_model_id": partner_model,
+                    "res_id": rng.choice(partners.ids),
+                    "user_id": rng.choice(assignees),
+                    "summary": f"activity-reach-{i}",
+                }
+                for i in range(40)
+            ]
+        )
+        cls.on_activities = Activity.create(
+            [
+                {
+                    "activity_type_id": todo,
+                    "res_model_id": activity_model,
+                    "res_id": rng.choice(cls.on_documents.ids),
+                    "user_id": rng.choice(assignees),
+                    "summary": f"activity-reach-nested-{i}",
+                }
+                for i in range(15)
+            ]
+        )
+        cls.env.flush_all()
+
+    def expected(self, user, activities):
+        partners = self.env["res.partner"].with_user(user)
+
+        def reached(activity):
+            if activity.user_id == user:
+                return True
+            if activity.res_model == "mail.activity":
+                return reached(self.env["mail.activity"].browse(activity.res_id))
+            return bool(partners.browse(activity.res_id)._filtered_access("read"))
+
+        return [a.id for a in activities if reached(a.sudo())]
+
+    @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
+    def test_activity_search_finds_the_documents_the_user_reads(self):
+        activities = (self.on_documents | self.on_activities).sorted("id", reverse=True)
+        domain = [("id", "in", activities.ids)]
+        for user in (self.user, self.other):
+            Activity = self.env["mail.activity"].with_user(user)
+            expected = self.expected(user, activities)
+            with self.subTest(user=user.login):
+                self.assertTrue(0 < len(expected) < len(activities))
+                self.assertEqual(Activity.search(domain, order="id desc").ids, expected)
+                self.assertEqual(Activity.search_count(domain), len(expected))
+                self.assertEqual(
+                    Activity.search(domain, order="id desc", limit=7).ids,
+                    expected[:7],
+                )
+                self.assertEqual(
+                    Activity.browse(activities.ids)._filtered_access("read").ids,
+                    expected,
+                )
+                pinned = domain + [("res_model", "=", "res.partner")]
+                self.assertEqual(
+                    Activity.search(pinned, order="id desc").ids,
+                    self.expected(user, self.on_documents.sorted("id", reverse=True)),
+                )

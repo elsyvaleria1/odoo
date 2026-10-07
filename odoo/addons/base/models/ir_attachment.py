@@ -613,7 +613,7 @@ class IrAttachment(models.Model):
                 "res_model",
                 "res_id",
                 self._attached_record_reach,
-                bounded=bounded,
+                probe=bounded,
                 only=only,
                 within=within,
                 itself=itself,

@@ -17,6 +17,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, Query, frozendict, is_html_empty
 from odoo.tools.access_scan import stable_order
 from odoo.tools.misc import OrderedSet, clean_context, get_lang
+from odoo.tools.owner_reach import owner_reach
 
 from odoo.addons.mail.tools import activity_calendar
 from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput
@@ -38,7 +39,6 @@ _debug = DebugLog(__name__)
 
 ORPHAN_BUCKET = "mail.activity"
 ACTIVITY_MODELS_KEY = "mail.activity.document_models"
-REACH_KEY = "mail.activity.document_reach"
 ON_ACTIVITY = "mail_activity_on_activity"
 SCOPED_TO_MODELS = "mail_activity_scoped_to_models"
 PINNED_TO_SELF = "mail_activity_pinned_to_self"
@@ -575,8 +575,7 @@ class MailActivity(models.Model):
     @api.model
     def _document_reach_domain(self, operation: str) -> Domain:
         # the activities the user reaches through their document, as the
-        # document's own message access says it (_mail_access_domain), with
-        # one branch per document model activities are on:
+        # document's own message access says it (_mail_access_domain):
         # - read: the assignee's, or on a document whose messages they read
         # - write: on a document whose messages they may edit
         # - create: on a document they may post on, or their own on one they
@@ -584,80 +583,55 @@ class MailActivity(models.Model):
         documents = frozenset(m for m in self._activity_models() if m in self.env)
         if (scope := self.env.context.get(SCOPED_TO_MODELS)) is not None:
             documents &= scope
+        if self.env.context.get(ON_ACTIVITY):
+            # an activity filed on an activity reaches through that one, one
+            # level deep: the reach of its reach would recurse forever
+            documents -= {self._name}
         documents = tuple(sorted(documents))
-        nested = self.env.context.get(ON_ACTIVITY)
-        operations = ("create", "read") if operation == "create" else (operation,)
-        asked = []
-        for res_model in documents:
-            Document = self.env[res_model].with_context(active_test=False)
-            if res_model == self._name:
-                # an activity filed on an activity reaches through that one,
-                # one level deep: the reach of its reach would recurse forever
-                if nested:
-                    continue
-                Document = Document.with_context(
-                    **{ON_ACTIVITY: True, SCOPED_TO_MODELS: None}
-                )
-            domains = tuple(Document._mail_access_domain(op) for op in operations)
-            asked.append((Document, domains))
-        # every access check and search of the transaction asks the same; the
-        # domains are all it is a function of, with what expands them
-        key = (
-            REACH_KEY,
-            operation,
-            self.env.uid,
-            *self.env.registry.access_policy.rule_context(self.env),
-            documents,
-            tuple((Document._name, domains) for Document, domains in asked),
-        )
-        try:
-            hash(key)
-        except TypeError:
-            return self._reach_of(operation, documents, asked)
-        cache = self.env.cr.cache
-        if (reach := cache.get(key)) is None:
-            reach = cache[key] = self._reach_of(operation, documents, asked)
-        return reach
-
-    @api.model
-    def _reach_of(
-        self,
-        operation: str,
-        documents: tuple[str, ...],
-        asked: list[tuple[models.BaseModel, tuple[Domain, ...]]],
-    ) -> Domain:
         mine = Domain("user_id", "=", self.env.uid)
-        branches = []
-        for Document, domains in asked:
-            if operation == "create":
-                postable, readable = domains
-                reach = self._document_ids(Document, postable) | (
-                    mine
-                    & (
-                        self._document_ids(Document, readable)
-                        | self._followed_ids(Document._name)
-                    )
-                )
-            else:
-                reach = self._document_ids(Document, domains[0])
-            if not reach.is_false():
-                branches.append(Domain("res_model", "=", Document._name) & reach)
-        reached = Domain.OR(branches)
         if operation == "read":
-            reached = mine | reached
-        elif operation == "create":
-            reached = (mine & Domain("res_model", "not in", documents)) | reached
-        return reached.optimize_full(self)
+            return mine | self._on_documents("read", documents)
+        if operation == "create":
+            followed = Domain.OR(
+                Domain("res_model", "=", name) & self._followed_ids(name)
+                for name in documents
+            )
+            return (
+                self._on_documents("create", documents)
+                | (mine & (self._on_documents("read", documents) | followed))
+                | (mine & Domain("res_model", "not in", documents))
+            )
+        return self._on_documents(operation, documents)
 
     @api.model
-    def _document_ids(self, Document: models.BaseModel, domain: Domain) -> Domain:
-        # an unrestricted reach asks nothing of the document, so an activity
-        # whose document is gone stays within it
-        if domain.is_true() or domain.is_false():
-            return domain
-        # the domain is the user's own reach already: asked again, the
-        # document's rules would only repeat it
-        return Domain("res_id", "in", Document._search(domain, bypass_access=True))
+    def _on_documents(self, operation: str, documents: tuple[str, ...]) -> Domain:
+        # an activity is reached where its document's messages are: each
+        # document probed per row, as activities are few against their
+        # documents and hashing a document model's whole reach costs more
+
+        def decide(activities: MailActivity) -> MailActivity:
+            nested = activities.with_context(
+                **{ON_ACTIVITY: True, SCOPED_TO_MODELS: None}
+            )
+            return nested.browse(
+                nested._search(
+                    Domain("id", "in", activities.ids)
+                    & nested._mail_access_domain(operation),
+                    bypass_access=True,
+                )
+            )
+
+        return owner_reach(
+            self,
+            "res_model",
+            "res_id",
+            lambda Document: Document.with_context(
+                active_test=False
+            )._mail_access_domain(operation),
+            probe=True,
+            only=documents,
+            decide=decide,
+        )
 
     @api.model
     def _followed_ids(self, res_model: str) -> Domain:
