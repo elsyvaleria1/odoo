@@ -136,7 +136,7 @@ of it in the two traps of OWL's proxy, not in the model:
   looked up, and on a first read created, the atom that key's observers
   subscribe to (a `Map` per target, an object and a `Set` per key) before
   asking whether anything was observing. Outside a render nothing is. Fixed in
-  OWL since 1d588236 (vendored `5900e2f4`, `isObserving()`): a read nobody
+  OWL since 1d588236 (vendored `4029ed6c`, `isObserving()`): a read nobody
   observes creates nothing.
 * **The per-field loops went back to the getters for every field.**
   `record.fields[name]` is three proxy reads (`fields`, `config`, `_config`),

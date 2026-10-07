@@ -2850,7 +2850,7 @@ ${code}
 var version = "3.0.0-alpha.49";
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "5900e2f4";
+var buildHash = "4029ed6c";
 
 // src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);

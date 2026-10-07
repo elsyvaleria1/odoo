@@ -2949,9 +2949,17 @@ var PluginManager = class extends Scope {
     return plugin2;
   }
   /**
-   * Throws when the plugin of `pluginConstructor` is being started (its
-   * constructor or its setup is running): it asked, through other plugins,
-   * for itself, and would get itself half started.
+   * Whether the plugin of `pluginConstructor` is being started (its
+   * constructor or its setup is running).
+   */
+  isStarting(pluginConstructor) {
+    return this.startingPath.includes(pluginConstructor);
+  }
+  /**
+   * Throws when the plugin of `pluginConstructor` is being constructed again:
+   * its constructor asked, through other plugins, for itself, which does not
+   * exist yet. (Asked for while its setup runs, it exists: usePlugin hands it
+   * out.)
    */
   assertNotStarting(pluginConstructor) {
     const index = this.startingPath.indexOf(pluginConstructor);
@@ -3270,8 +3278,8 @@ function usePlugin(pluginType) {
   if (!plugin2) {
     throw new OwlError(`Unknown plugin "${pluginType.id}"`);
   }
-  if (isPlugin) {
-    manager.assertNotStarting(plugin2.constructor);
+  if (isPlugin && debug.plugin && manager.isStarting(plugin2.constructor)) {
+    debugLog("plugin", `${pluginType.id} handed out before its setup ends`);
   }
   const scoped = plugin2.constructor.scoped;
   return scoped ? scoped(plugin2, scope) : plugin2;
@@ -6991,7 +6999,7 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "5900e2f4";
+var buildHash = "4029ed6c";
 var build = /* @__PURE__ */ buildName(version, buildHash);
 function buildName(version2, hash) {
   return `${version2}+${hash}`;
@@ -8002,8 +8010,8 @@ var blockDom = {
 };
 var __info__ = {
   version,
-  date: "2026-10-07T01:29:49.392Z",
-  hash: "5900e2f4",
+  date: "2026-10-07T03:09:24.474Z",
+  hash: "4029ed6c",
   url: "https://github.com/odoo/owl"
 };
 export {
