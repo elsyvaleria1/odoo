@@ -15,6 +15,7 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { elementRef } from "@web/core/utils/element_ref";
 import { useMountedListener, useService } from "@web/core/utils/hooks";
+import { ControllerNotFoundError } from "@web/webclient/actions";
 
 import {
     canConnect,
@@ -141,12 +142,33 @@ export class WorkflowCanvas extends Component {
         paper.style.height = `${Math.max(room, FULL_SCREEN_MIN_HEIGHT)}px`;
     }
 
+    get resModel() {
+        return this.isRunMode ? "automation.runtime" : "automation.rule";
+    }
+
     async openFullScreen() {
-        const model = this.isRunMode ? "automation.runtime" : "automation.rule";
-        const action = await this.orm.call(model, "action_view_workflow", [
+        const action = await this.orm.call(this.resModel, "action_view_workflow", [
             [this.resId],
         ]);
         await this.action.doAction(action);
+    }
+
+    // Back to the form the button was pressed on, which reopens on the page
+    // it was left on; a full screen reached by its URL has none behind it.
+    async closeFullScreen() {
+        try {
+            await this.action.restore();
+        } catch (error) {
+            if (!(error instanceof ControllerNotFoundError)) {
+                throw error;
+            }
+            await this.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: this.resModel,
+                res_id: this.resId,
+                views: [[false, "form"]],
+            });
+        }
     }
 
     get isRunMode() {

@@ -1213,6 +1213,30 @@ registry.category("web_tour.tours").add("test_workflow_canvas_framing", {
                 assertCentred(".o_workflow_canvas_full .o_workflow_canvas_paper");
             },
         },
+        {
+            content: "leave full screen",
+            trigger: ".o_workflow_canvas_exit_full_screen",
+            run: "click",
+        },
+        {
+            content: "back on the form, on its Workflow tab, the graph centred",
+            trigger:
+                ".o_workflow_canvas:not(.o_workflow_canvas_full) .o_workflow_canvas_paper .o_flow_editor_node",
+            run() {
+                if (document.querySelector(".o_workflow_canvas_full")) {
+                    throw new Error("still full screen");
+                }
+                if (
+                    document
+                        .querySelector(".o_notebook .nav-link.active")
+                        ?.textContent.trim() !== "Workflow"
+                ) {
+                    throw new Error("the form did not reopen on its Workflow tab");
+                }
+                assertInView(document.querySelector(".o_workflow_canvas_paper"));
+                assertCentred(".o_workflow_canvas_paper");
+            },
+        },
     ],
 });
 

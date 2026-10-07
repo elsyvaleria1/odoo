@@ -47,6 +47,12 @@
                         t-on-click="() => this.openFullScreen()">
                     <i class="fa fa-expand"/>
                 </button>
+                <button type="button" class="btn btn-sm btn-secondary o_workflow_canvas_exit_full_screen"
+                        t-if="this.props.fullScreen"
+                        title="Exit full screen" aria-label="Exit full screen"
+                        t-on-click="() => this.closeFullScreen()">
+                    <i class="fa fa-compress"/>
+                </button>
             </div>
 
             <div t-if="this.state.status === 'loading'" class="text-muted p-4">
