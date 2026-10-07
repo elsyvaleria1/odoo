@@ -67,3 +67,30 @@ class TestRepositoryOfAModule(TransactionCase):
     def test_a_module_outside_any_checkout_has_no_repository(self):
         (self.root / "loose" / "stock_x").mkdir(parents=True)
         self.assertFalse(self._for(self.root / "loose" / "stock_x"))
+
+    def test_a_config_written_by_hand_still_names_its_remote(self):
+        checkout = self.root / "hand"
+        (checkout / ".git").mkdir(parents=True)
+        (checkout / ".git" / "config").write_text(
+            '[core]\nbare = false\n# a comment\n[remote "origin"]\n'
+            'URL = "ssh://git@github.com:22/Agro-Marin/odoo.git"\n'
+        )
+        (checkout / "addons" / "stock_x").mkdir(parents=True)
+        self.assertEqual(
+            self._for(checkout / "addons" / "stock_x"),
+            self.env.ref("error_incident_autofix.repository_odoo"),
+        )
+
+    def test_a_fork_cloned_under_a_known_name_is_no_mapped_repository(self):
+        checkout = self._clone("odoo", "https://github.com/someone/odoo.git")
+        self.assertFalse(self._for(checkout / "addons" / "stock_x"))
+
+    def test_a_host_that_only_ends_in_github_is_not_github(self):
+        checkout = self._clone("agromarin", "https://notgithub.com/Agro-Marin/odoo.git")
+        self.assertEqual(
+            self._for(checkout / "addons" / "stock_x"),
+            self.env.ref("error_incident_autofix.repository_agromarin"),
+        )
+
+    def test_an_incident_of_no_module_has_no_repository(self):
+        self.assertFalse(self.Repository._for_module(""))

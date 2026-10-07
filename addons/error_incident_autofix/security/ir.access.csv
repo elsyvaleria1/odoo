@@ -2,5 +2,5 @@ id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 access_error_incident_autofix_policy_system,error.incident.autofix.policy system,model_error_incident_autofix_policy,base.group_system,permission,crud,,,
 access_error_incident_autofix_repository_system,error.incident.autofix.repository system,model_error_incident_autofix_repository,base.group_system,permission,crud,,,
 access_error_incident_autofix_prompt_system,error.incident.autofix.prompt system,model_error_incident_autofix_prompt,base.group_system,permission,crud,,,
-access_error_incident_autofix_approver,error.incident: an autofix approver reads the incident it decides,error_incident.model_error_incident,group_autofix_approver,permission,r,,,
-access_integration_github_pull_autofix_approver,integration.github.pull: an autofix approver reads the fix's pull request,integration_github.model_integration_github_pull,group_autofix_approver,permission,r,,,
+access_error_incident_autofix_approver,error.incident: an autofix approver reads the incidents put to a decision,error_incident.model_error_incident,group_autofix_approver,permission,r,,,"[('approval_request_id', '!=', False)]"
+access_integration_github_pull_autofix_approver,integration.github.pull: an autofix approver reads the pull requests of those incidents,integration_github.model_integration_github_pull,group_autofix_approver,permission,r,,,"[('incident_id.approval_request_id', '!=', False)]"

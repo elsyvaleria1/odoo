@@ -1,8 +1,10 @@
 from unittest.mock import patch
 
+from odoo.db import db_connect
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.sourcemap import encode_vlq
 from odoo.tests.common import HttpCase, TransactionCase, new_test_user, tagged
+from odoo.tools import SQL
 
 from odoo.addons.error_incident.controllers import main as controllers
 from odoo.addons.error_incident.models.error_incident import client_capture_payload
@@ -28,6 +30,24 @@ def _source_map(failing_line="    const id = record.data.id;", at=10):
 
 
 class ClientErrorCase(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.addClassCleanup(cls._forget_probe_bundles)
+
+    @classmethod
+    def _forget_probe_bundles(cls):
+        # the asset pipeline commits a bundle beside the test transaction, so
+        # its rows outlive the rollback: drop them the same way
+        with db_connect(cls.env.cr.dbname).cursor() as cr:
+            cr.execute(
+                SQL(
+                    "DELETE FROM ir_attachment WHERE url LIKE %s",
+                    "/web/assets/esm/%/error_incident.probe%",
+                )
+            )
+            cr.commit()
+
     def _bundle(self, name="error_incident.probe", **kwargs):
         return self.env["ir.qweb"]._save_esm_attachment(
             name, "/* minified */", sourcemap=_source_map(**kwargs)

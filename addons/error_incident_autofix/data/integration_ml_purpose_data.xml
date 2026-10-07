@@ -3,7 +3,8 @@
 
     <record id="purpose_error_incident_autofix" model="integration.ml.purpose">
         <field name="key">error_incident.autofix</field>
-        <field name="name">Diagnosing and fixing error incidents</field>
+        <field
+            name="name">Diagnosing and fixing error incidents (tracebacks may hold customer data)</field>
     </record>
 
 </odoo>

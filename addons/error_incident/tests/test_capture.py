@@ -73,6 +73,26 @@ class TestCapture(TransactionCase):
         self._capture()
         self.assertEqual(incident.count_regression, 1, "regressed once, not twice")
 
+    def test_a_browsers_report_does_not_reopen_a_resolved_incident(self):
+        incident = self._capture()
+        incident.action_resolve()
+        reported = _payload()
+        reported["source"] = "client"
+        self.Incident._capture(reported)
+        incident.invalidate_recordset()
+        self.assertEqual(
+            (incident.incident_state, incident.count_regression), ("resolved", 0)
+        )
+        self.assertIn("a person decides", incident.message_ids[0].body)
+
+    def test_a_regression_is_announced_once_to_the_modules_that_act_on_it(self):
+        incident = self._capture()
+        incident.action_resolve()
+        with patch.object(type(self.Incident), "_on_regressed", autospec=True) as hook:
+            self._capture()
+            self._capture()
+        self.assertEqual(hook.call_count, 1)
+
     def test_a_rule_sets_a_new_incident_aside(self):
         rule = self.env["error.incident.rule"].create(
             {"name": "crons", "source": "cron", "exception_type": "ValueError"}

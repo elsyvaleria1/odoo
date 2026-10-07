@@ -17,7 +17,17 @@ Errors raised for the user to read -- `UserError`, `AccessError`, `ValidationErr
 recorded. A rule (**Settings > Technical > Error Incidents > Rules**) sets a new incident
 aside by source, exception or module.
 
-Messages and tracebacks pass `odoo.libs.redact.mask_text` before storage.
+Messages and tracebacks pass `odoo.libs.redact.mask_text` before storage. That masks secrets,
+not personal data: a traceback can carry a customer's name or email, which matters wherever
+it is sent on (`error_incident_autofix` sends it to a model only under the company's data
+policy).
+
+Not recorded: an error raised outside a request's transaction -- while its session or route
+is resolved, or while a response streams -- which never reaches `_handle_error`.
+
+A resolved incident that occurs again on the server is reopened as regressed. A browser's
+report of it is recorded but does not reopen it: anyone signed in can make one up, so the
+incident's chatter says a browser reported it again, and a person decides.
 
 ## What makes two occurrences one incident
 

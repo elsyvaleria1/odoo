@@ -140,7 +140,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
             client.merge_pull_request.assert_not_called()
             request.with_user(self.approver).action_approve()
         client.merge_pull_request.assert_called_once_with(
-            "Agro-Marin", "odoo", 7, merge_method="squash"
+            "Agro-Marin", "odoo", 7, merge_method="squash", sha=HEAD
         )
         self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
 
@@ -260,3 +260,62 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         ).sorted("id")[-1]
         [previous] = diagnosis.payload["incident"]["previous_fixes"]
         self.assertEqual(previous["branch"], incident.fix_branch)
+
+    def test_an_approval_is_spent_once_its_operation_ran(self):
+        incident, _pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        incident.approval_request_id.with_user(self.approver).action_approve()
+        run, token = self.env["agent.run"]._claim(self.deployer)
+        run._fail(token, "reverted: unhealthy", retryable=False)
+        self.assertEqual(incident.fix_state, "test_passed")
+        self.assertFalse(incident.approval_request_id, "the approval is spent")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        self.assertEqual(incident.fix_state, "test_passed", "a new decision")
+        self.assertTrue(incident.approval_request_id)
+        self.assertFalse(self.env["agent.run"]._claim(self.deployer))
+
+    def test_an_earlier_fixs_pull_request_speaks_for_that_fix_only(self):
+        incident, old = self._pushed(checks="success")
+        incident.action_resolve()
+        self._occur()
+        self.assertEqual(incident.fix_state, "diagnosing")
+        self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "closed",
+                "merged": True,
+                "merge_commit_sha": MERGED,
+                "head": {
+                    "ref": old.head_ref,
+                    "sha": HEAD,
+                    "repo": {"full_name": REPOSITORY},
+                },
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+        self.assertEqual(incident.fix_state, "diagnosing")
+        self.assertNotEqual(incident.fix_commit, MERGED)
+
+    def test_a_pull_request_without_checks_passes_only_when_the_policy_says(self):
+        incident, pull = self._pushed()
+        self.assertEqual(incident.fix_state, "testing")
+        self.env.ref("error_incident_autofix.policy_default").pass_without_checks = True
+        incident._autofix_pull_changed(pull)
+        self.assertEqual(incident.fix_state, "test_passed")
+
+    def test_an_approver_reads_only_the_incidents_put_to_them(self):
+        decided, _pull = self._pushed(checks="success")
+        other = self.env["error.incident"].create(
+            {
+                "name": "unrelated",
+                "fingerprint": "unrelated-fp",
+                "fix_analysis": "a@b.c",
+            }
+        )
+        decided.with_user(self.admin).action_autofix_merge()
+        Incident = self.env["error.incident"].with_user(self.approver)
+        self.assertEqual(
+            Incident.search([("id", "in", (decided | other).ids)]), decided
+        )

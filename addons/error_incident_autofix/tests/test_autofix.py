@@ -226,3 +226,47 @@ class TestAutofix(RunnerFixtures, TransactionCase):
             common | {"branch", "diagnosis", "push", "commit_author"}, fix.keys()
         )
         self.assertIn("id", fix["incident"])
+
+    def _fixed_and_regressed(self):
+        incident = self._occur(2)
+        self._finish(
+            incident, {"verdict": "defect", "slug": "x"}, "error_incident.diagnose"
+        )
+        self._finish(
+            incident,
+            {"verdict": "fixed", "diff": DIFF, "note": "first try"},
+            "error_incident.fix",
+        )
+        incident.action_resolve()
+        self._occur()
+        return incident
+
+    def test_a_regression_dispatches_once_not_at_every_occurrence(self):
+        incident = self._fixed_and_regressed()
+        self.assertEqual(len(self._runs(incident, "error_incident.diagnose")), 2)
+        for _ in range(4):
+            self._occur()
+        self.assertEqual(len(self._runs(incident, "error_incident.diagnose")), 2)
+        self.assertEqual(incident.fix_state, "diagnosing")
+
+    def test_a_fix_after_a_regression_gets_a_branch_of_its_own(self):
+        incident = self._fixed_and_regressed()
+        first = self._runs(incident, "error_incident.fix").payload["branch"]
+        self._finish(
+            incident, {"verdict": "defect", "slug": "x"}, "error_incident.diagnose"
+        )
+        second = self._runs(incident, "error_incident.fix").sorted("id")[-1]
+        self.assertNotEqual(second.payload["branch"], first)
+        self.assertTrue(second.payload["branch"].endswith("-a2"))
+
+    def test_an_overtaken_run_changes_nothing(self):
+        incident = self._occur(2)
+        stale, token = self.env["agent.run"]._claim(self.runner)
+        incident.write({"fix_state": "none"})
+        incident.action_autofix_dispatch()
+        stale._complete(
+            token,
+            {"verdict": "not_a_defect"},
+            {"input_tokens": 0, "output_tokens": 0, "cost": 0.0},
+        )
+        self.assertEqual(incident.fix_state, "diagnosing")

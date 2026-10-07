@@ -21,6 +21,14 @@ msgid "A checkout maps to one repository."
 msgstr "Un checkout corresponde a un repositorio."
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__pass_without_checks
+msgid ""
+"A fix's pull request that no check runs on -- a repository without CI -- "
+"counts as passing, so it can be merged or hotfixed once a person approves "
+"it. Off, such a fix waits in Testing."
+msgstr "El pull request de una corrección en el que no corre ninguna verificación -- un repositorio sin CI -- cuenta como aprobado, de modo que puede fusionarse o aplicarse como hotfix una vez que una persona lo apruebe. Desactivado, esa corrección espera en Pruebas."
+
+#. module: error_incident_autofix
 #: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_prompt_version_uniq
 msgid "A phase's prompt versions are unique."
 msgstr "Las versiones del prompt de una fase son únicas."
@@ -320,6 +328,11 @@ msgid "Deciding Now"
 msgstr "Decidiendo ahora"
 
 #. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "Delivery"
+msgstr "Entrega"
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_prompt__phase__diagnose
 msgid "Diagnose"
 msgstr "Diagnosticar"
@@ -341,8 +354,8 @@ msgstr "Diagnosticando"
 
 #. module: error_incident_autofix
 #: model:integration.ml.purpose,name:error_incident_autofix.purpose_error_incident_autofix
-msgid "Diagnosing and fixing error incidents"
-msgstr "Diagnóstico y corrección de incidentes de error"
+msgid "Diagnosing and fixing error incidents (tracebacks may hold customer data)"
+msgstr "Diagnóstico y corrección de incidentes de error (las trazas pueden contener datos de clientes)"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__diagnose_timeout
@@ -675,6 +688,11 @@ msgid ""
 "Only an incident an internal user hit; a scheduled action or a job failing "
 "alone waits for a person."
 msgstr "Solo un incidente que sufrió un usuario interno; una acción planificada o un trabajo que falla por sí solo espera a una persona."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__pass_without_checks
+msgid "Pass Without Checks"
+msgstr "Aprobar sin verificaciones"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__pending_approver_ids

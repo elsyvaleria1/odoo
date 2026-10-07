@@ -51,6 +51,12 @@ class ErrorIncidentAutofixPolicy(models.Model):
         help="Only an incident an internal user hit; a scheduled action or a "
         "job failing alone waits for a person.",
     )
+    pass_without_checks = fields.Boolean(
+        string="Pass Without Checks",
+        help="A fix's pull request that no check runs on -- a repository without "
+        "CI -- counts as passing, so it can be merged or hotfixed once a person "
+        "approves it. Off, such a fix waits in Testing.",
+    )
     excluded_exception_types = fields.Text(
         default="odoo.exceptions.AccessError\nodoo.exceptions.AccessDenied",
         help="One exception per line, as a traceback prints it: granting access "

@@ -16,6 +16,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: error_incident
+#. odoo-python
+#: code:addons/error_incident/models/error_incident.py:0
+msgid ""
+"A browser reported it again after it was resolved; a person decides whether "
+"it came back."
+msgstr "Un navegador lo reportó de nuevo después de resolverse; una persona decide si volvió."
+
+#. module: error_incident
 #. odoo-javascript
 #: code:addons/error_incident/static/src/incident_words.js:0
 msgid "A developer decided not to fix it for now."

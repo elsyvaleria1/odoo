@@ -25,17 +25,17 @@ class TestAutofixAccessMatrix(AccessMatrixCase):
         Cell(
             "error.incident",
             "incident",
-            note="an approver reads the incident it decides on; asking to merge or "
-            "hotfix is an administrator's",
+            note="an approver reads an incident only while it is put to a decision "
+            "(test_delivery), not this one; asking to merge or hotfix is an "
+            "administrator's",
             admin_a="rwcd merge hotfix",
-            approver_a="r",
         ),
         Cell(
             "integration.github.pull",
             "pull",
-            note="an approver reads the fix it decides on",
+            note="an approver reads the pull request of an incident put to a "
+            "decision, not this one",
             admin_a="rwcd",
-            approver_a="r",
         ),
     )
 

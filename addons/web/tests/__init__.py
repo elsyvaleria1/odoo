@@ -78,3 +78,4 @@ from . import test_ui_stability
 from . import test_split_frontend_page
 from . import test_page_assets_warm
 from . import test_action_views_request
+from . import test_source_map_content

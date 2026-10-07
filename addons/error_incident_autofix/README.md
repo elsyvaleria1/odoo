@@ -48,7 +48,13 @@ hold in the payload.
   **Autofix > Repositories** (`odoo`, `agromarin`, `l10n`), with its base branch. A checkout
   is known by the GitHub repository its `origin` fetches from -- wherever and under whatever
   directory it is cloned, a worktree included -- and by its directory's name only when it
-  has no GitHub remote.
+  has no GitHub remote; a GitHub origin no record maps, a fork, is no repository's. An
+  incident of no module is never dispatched.
+- **One run counts.** Only the incident's newest diagnosis or fix, while the incident waits
+  for it, moves it: a run overtaken by a regression or a person's dispatch changes nothing.
+- **Regression.** An incident that reopens is the agents' again once, with its attempts
+  counted afresh -- not at every occurrence after. A fix branch is numbered over the
+  incident's whole life (`-a<n>`), so a later fix never reuses an earlier one's branch.
 - **Fix branch.** `<base>-fix-<slug>-i<incident>-a<attempt>`: unique by construction, so a
   recurrence never reuses an old branch.
 - **Prompts.** They are versioned records (**Autofix > Prompts**); each run records the
@@ -75,13 +81,21 @@ pushed ─► testing ─► test_failed
                         └─► (approved hotfix) ─► hotfixing ─► deployed
 ```
 
-- **Checks.** The fix's pull request is followed by webhook (`integration_github`). Its checks
-  move the incident: any failure fails it, all passed passes it.
+- **Checks.** The pull request of the incident's newest fix is followed by webhook
+  (`integration_github`); an earlier fix's pull request no longer speaks for the incident.
+  Its checks move the incident: any failure fails it, all passed passes it. A pull request
+  with no check at all -- a repository without CI -- waits in Testing, unless the policy's
+  **Pass Without Checks** says it counts as passing.
 - **Merge and hotfix are verbs behind an approval.** An administrator asks; a member of
   **Autofix Approver** decides. The group may be a tech lead who is no administrator: it reads
   the incident and its pull request.
   - The approval covers the very commit it was asked for. A pull request pushed to since is
-    refused, not merged.
+    refused, not merged -- by Odoo, and by GitHub too, which is handed that commit with the
+    merge however late a webhook arrives.
+  - An approval is spent once its merge or hotfix ran: the next one -- another fix, a retry
+    after a revert -- is a new decision with a request of its own.
+  - An approver reads the incidents put to a decision, and their pull requests, not the
+    others.
   - Only a fix whose checks pass is merged or hotfixed.
   - An incident holds one request at a time, so merge and hotfix are alternatives: decide or
     cancel one before asking the other.

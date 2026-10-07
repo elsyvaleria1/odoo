@@ -6,19 +6,26 @@ from odoo import fields, models
 from odoo.modules.module import get_module_path
 from odoo.tools import frozendict
 
-_GITHUB_REMOTE = re.compile(r"github\.com[:/]+([\w.-]+/[\w.-]+?)(?:\.git)?/*$")
-_ORIGIN_URL = re.compile(
-    r'^\[remote "origin"\]\s*$(?:\n[ \t]+.*$)*?\n[ \t]+url\s*=\s*(\S+)', re.MULTILINE
+from odoo.addons.integration_github.tools import repository_domain
+
+# github.com itself -- after `//`, `@` or nothing, never `notgithub.com` -- with
+# an ssh port or not, then owner/name
+_GITHUB_REMOTE = re.compile(
+    r"(?:^|[/@])github\.com(?::\d+)?[:/]+([\w.-]+/[\w.-]+?)(?:\.git)?/*$"
 )
+_SECTION = re.compile(r'^\s*\[\s*([^\]"\s]+)(?:\s+"([^"]*)")?\s*\]')
+_URL = re.compile(r"^\s*url\s*=\s*(.*?)\s*$", re.IGNORECASE)
 
 
 def _checkout_root(module: str) -> Path | None:
     """The working tree ``module`` lives in: the nearest directory holding a
     ``.git`` -- a directory in a clone, a file in a worktree."""
+    if not module:
+        return None
     path = (
-        get_module_path(module, display_warning=False)
-        if module and module != "odoo"
-        else odoo.__path__[0]
+        odoo.__path__[0]
+        if module == "odoo"
+        else get_module_path(module, display_warning=False)
     )
     if not path:
         return None
@@ -50,9 +57,27 @@ def github_repository_of(root: Path) -> str | None:
     config = _git_config(root)
     if config is None or not config.is_file():
         return None
-    origin = _ORIGIN_URL.search(config.read_text(errors="replace"))
-    remote = origin and _GITHUB_REMOTE.search(origin.group(1))
+    url = _origin_url(config.read_text(errors="replace"))
+    remote = url and _GITHUB_REMOTE.search(url)
     return remote.group(1) if remote else None
+
+
+def _origin_url(config: str) -> str | None:
+    """The `url` of `[remote "origin"]` in a git config file, as git reads it:
+    any indentation, any case of the key, quoted or not, comments aside."""
+    in_origin = False
+    for line in config.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", ";")):
+            continue
+        if section := _SECTION.match(line):
+            in_origin = (
+                section.group(1).lower() == "remote" and section.group(2) == "origin"
+            )
+            continue
+        if in_origin and (url := _URL.match(line)):
+            return url.group(1).strip('"')
+    return None
 
 
 class ErrorIncidentAutofixRepository(models.Model):
@@ -87,12 +112,11 @@ class ErrorIncidentAutofixRepository(models.Model):
     def _for_module(self, module: str) -> ErrorIncidentAutofixRepository:
         """The repository of the checkout ``module`` lives in: by the GitHub
         repository its ``origin`` fetches from, which names it wherever it is
-        cloned; by the checkout's directory name when it has no such remote."""
+        cloned; by the checkout's directory name only when it has none -- a
+        GitHub origin that is not mapped, a fork, is no mapped repository's."""
         root = _checkout_root(module)
         if root is None:
             return self.browse()
         if github := github_repository_of(root):
-            found = self.search([("github_repository", "=ilike", github)], limit=1)
-            if found:
-                return found
+            return self.search(repository_domain("github_repository", github), limit=1)
         return self.search([("checkout", "=", root.name)], limit=1)

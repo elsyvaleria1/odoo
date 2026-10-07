@@ -15,6 +15,7 @@ DIAGNOSE = "error_incident.diagnose"
 FIX = "error_incident.fix"
 ML_PURPOSE = "error_incident.autofix"
 # fix states an incident rests in; a dispatch starts from one of them
+LIVE_FIX_STATES = ("diagnosing", "fixing")
 IDLE_FIX_STATES = (
     "none",
     "not_a_defect",
@@ -91,8 +92,6 @@ class ErrorIncident(models.Model):
     def _capture(self, payload: dict[str, Any]) -> int:
         incident_id = super()._capture(payload)
         incident = self.browse(incident_id)
-        if incident.incident_state == "regressed" and incident.fix_state != "none":
-            incident.write({"fix_state": "none", "count_fix_attempt": 0})
         policy = self.env["error.incident.autofix.policy"]._current()
         if not policy or policy.mode == "off":
             return incident_id
@@ -106,6 +105,15 @@ class ErrorIncident(models.Model):
                 "Could not consider incident %s for the autofix", incident_id
             )
         return incident_id
+
+    def _on_regressed(self) -> None:
+        """The fix did not hold: the incident is the agents' again, with its
+        attempts counted afresh -- once, when it reopens, not at every
+        occurrence after; a run still at work is left to finish."""
+        super()._on_regressed()
+        for incident in self:
+            if incident.fix_state not in LIVE_FIX_STATES:
+                incident.write({"fix_state": "none", "count_fix_attempt": 0})
 
     def _autofix_refusal(
         self, policy: models.BaseModel, *, by_hand: bool = False
@@ -209,7 +217,10 @@ class ErrorIncident(models.Model):
             else "fix"
         )
         attempt = self.count_fix_attempt + 1
-        branch = f"{repository.base_branch}-fix-{slug}-i{self.id}-a{attempt}"
+        # numbered over the incident's whole life: a fix after a regression
+        # never reuses the branch, nor meets the pull request, of an earlier one
+        lifetime = len(self.fix_run_ids.filtered(lambda run: run.kind == FIX)) + 1
+        branch = f"{repository.base_branch}-fix-{slug}-i{self.id}-a{lifetime}"
         self._autofix_run(
             policy,
             FIX,
@@ -304,6 +315,9 @@ class ErrorIncident(models.Model):
         if run.kind not in AUTOFIX_KINDS:
             self._autofix_delivery_ended(run)
             return
+        if not self._autofix_awaits(run):
+            _debug.logic("autofix.stale_run", incident=self.id, run=run.id)
+            return
         if run.run_state != "succeeded":
             self.write({"fix_state": "failed"})
             return
@@ -312,6 +326,17 @@ class ErrorIncident(models.Model):
             self._autofix_diagnosed(result)
         else:
             self._autofix_fixed(result)
+
+    def _autofix_awaits(self, run: models.BaseModel) -> bool:
+        """Whether the incident is waiting for this run: its newest diagnosis
+        or fix, in the state that run leaves. A run overtaken -- by a
+        regression, a person's dispatch, a retry -- changes nothing."""
+        self.check_singleton()
+        newest = self.fix_run_ids.filtered(lambda r: r.kind in AUTOFIX_KINDS).sorted(
+            "id"
+        )[-1:]
+        waiting = "diagnosing" if run.kind == DIAGNOSE else "fixing"
+        return run == newest and self.fix_state == waiting
 
     def _autofix_diagnosed(self, result: dict[str, Any]) -> None:
         verdict = result.get("verdict")
@@ -333,7 +358,10 @@ class ErrorIncident(models.Model):
         note = str(result.get("note") or "")[:10_000]
         analysis = "\n\n".join(part for part in (self.fix_analysis, note) if part)
         diff = result.get("diff") if isinstance(result.get("diff"), str) else ""
-        if result.get("verdict") != "fixed" or not diff.strip():
+        # a fix an earlier attempt pushed is reported without its diff
+        if result.get("verdict") != "fixed" or not (
+            diff.strip() or result.get("pushed")
+        ):
             self.write({"fix_state": "unchanged", "fix_analysis": analysis})
             return
         self.write(

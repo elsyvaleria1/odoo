@@ -34,6 +34,9 @@
                             <field name="fix_model" />
                             <field name="fix_timeout" />
                         </group>
+                        <group string="Delivery">
+                            <field name="pass_without_checks" />
+                        </group>
                         <group string="Commits">
                             <field name="commit_author_name" />
                             <field name="commit_author_email" />

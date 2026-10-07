@@ -284,7 +284,9 @@ class ErrorIncident(models.Model):
                 )
             else:
                 incident_id, previous_state = self._lock_incident(payload)
-        regressed = previous_state == "resolved"
+        # a browser's report can be made up by anyone signed in: it records an
+        # occurrence, but does not reopen a resolved incident on its own
+        regressed = previous_state == "resolved" and payload["source"] != "client"
         self.env.cr.execute(
             SQL(
                 """
@@ -327,6 +329,14 @@ class ErrorIncident(models.Model):
                 body=self.env._("It occurred again after it was resolved."),
             )
             incident._notify_journey(users=incident.user_ids - hit_by)
+            incident._on_regressed()
+        elif previous_state == "resolved":
+            incident.message_post(
+                body=self.env._(
+                    "A browser reported it again after it was resolved; a person "
+                    "decides whether it came back."
+                ),
+            )
         incident._notify_journey(users=hit_by, occurrence_ref=payload["occurrence_ref"])
         _debug.logic(
             "incident.occurrence",
@@ -335,6 +345,10 @@ class ErrorIncident(models.Model):
             source=payload["source"],
         )
         return incident_id
+
+    def _on_regressed(self) -> None:
+        """It occurred again after it was resolved -- once per reopening, not
+        per occurrence. A hook for the modules that act on a regression."""
 
     def _lock_incident(self, payload: dict[str, Any]) -> tuple[int | None, str | None]:
         self.env.cr.execute(

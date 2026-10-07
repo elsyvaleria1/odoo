@@ -20,8 +20,11 @@ _GECKO_FRAME = re.compile(
 _FIRST_LINE = re.compile(r"^(?P<kind>[A-Za-z_$][\w$.]{0,99}): ?(?P<message>.*)$")
 # Where a bundle names an addon's own source: `layout/<module>/static/src/...`
 # in an esbuild map, `/<module>/static/src/...` for a file served as is.
+# no `..` segment: a path the browser reports names a file under its module,
+# never one it climbs out to
 _OWN_SOURCE = re.compile(
-    r"(?:^|/)(?P<module>[a-z0-9_]+)/(?P<path>static/(?!lib/)[^?#:]+\.(?:js|mjs|ts))$"
+    r"(?:^|/)(?P<module>[a-z0-9_]+)/"
+    r"(?P<path>static/(?!lib/)(?:(?!\.\./)[^?#:])+\.(?:js|mjs|ts))$"
 )
 _ESM_BUNDLE = re.compile(r"^/web/assets/esm/[^/]+/[^/]+\.esm\.js$")
 # A name a minifier did not keep is a letter or two; `Class.method` survives.

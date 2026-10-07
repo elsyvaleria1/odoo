@@ -4,6 +4,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 
+from .error_incident import FIX
 from .error_incident_autofix_policy import DELIVERY_KINDS, HOTFIX, REVISION
 from odoo.addons.integration_github.tools import get_github_client
 
@@ -56,19 +57,26 @@ class ErrorIncident(models.Model):
 
     def _autofix_pull_changed(self, pull: models.BaseModel) -> None:
         self.check_singleton()
-        if self.fix_state not in _REVIEW_STATES:
+        if self.fix_state not in _REVIEW_STATES or pull != self._autofix_pull():
+            # an earlier fix's pull request speaks for that fix, not this one
             return
         if pull.pull_state == "merged":
             self.write({"fix_state": "merged", "fix_commit": pull.merge_commit_sha})
         elif pull.pull_state == "closed":
             self.write({"fix_state": "closed"})
         else:
+            passing = (
+                ("success", "none")
+                if self._autofix_policy_passes_unchecked()
+                else ("success",)
+            )
             self.write(
                 {
-                    "fix_state": {
-                        "failure": "test_failed",
-                        "success": "test_passed",
-                    }.get(pull.checks_state, "testing")
+                    "fix_state": "test_failed"
+                    if pull.checks_state == "failure"
+                    else "test_passed"
+                    if pull.checks_state in passing
+                    else "testing"
                 }
             )
         _debug.logic(
@@ -79,8 +87,15 @@ class ErrorIncident(models.Model):
         )
 
     def _autofix_pull(self) -> models.BaseModel:
+        """The pull request of the incident's newest fix: the one a merge or a
+        hotfix is about."""
         self.check_singleton()
-        return self.pull_ids.filtered(lambda pull: pull.pull_state != "closed")[:1]
+        fix = self.fix_run_ids.filtered(lambda run: run.kind == FIX).sorted("id")[-1:]
+        return fix.github_pull_id
+
+    def _autofix_policy_passes_unchecked(self) -> bool:
+        policy = self.env["error.incident.autofix.policy"]._current()
+        return bool(policy and policy.pass_without_checks)
 
     # -- merge and hotfix, each a person's decision ------------------------------
 
@@ -127,10 +142,13 @@ class ErrorIncident(models.Model):
         for incident in self:
             pull = incident._autofix_pull()
             owner, _, name = pull.repository.partition("/")
+            # the approved commit, and only it: GitHub refuses the merge when
+            # the head moved after the approval, however late its webhook is
             merged = get_github_client(self.env).merge_pull_request(
-                owner, name, pull.number, merge_method="squash"
+                owner, name, pull.number, merge_method="squash", sha=pull.head_sha
             )
             incident.write({"fix_state": "merged", "fix_commit": merged.get("sha")})
+            incident._autofix_release_approval()
             incident.message_post(
                 body=self.env._(
                     "The fix was merged as %(commit)s; it is resolved once production runs it.",
@@ -165,6 +183,19 @@ class ErrorIncident(models.Model):
                 }
             )
             incident.write({"fix_state": "hotfixing", "fix_commit": pull.head_sha})
+            incident._autofix_release_approval()
+
+    def _autofix_release_approval(self) -> None:
+        """The approved operation ran: its approval is spent. The next merge or
+        hotfix of this incident -- another fix, a retry after a revert -- is
+        a new decision with a request of its own."""
+        self.check_singleton()
+        _debug.logic(
+            "autofix.approval_spent",
+            incident=self.id,
+            request=self.approval_request_id.id,
+        )
+        self.approval_request_id = False
 
     # -- production --------------------------------------------------------------
 
@@ -206,7 +237,8 @@ class ErrorIncident(models.Model):
         waiting = self.search(
             [("fix_state", "=", "merged"), ("fix_commit", "!=", False)]
         )
-        if not waiting:
+        policy = self.env["error.incident.autofix.policy"]._current()
+        if not waiting or not policy:
             return
         Run = self.env["agent.run"]
         if Run.search_count(
@@ -221,7 +253,8 @@ class ErrorIncident(models.Model):
             checkout = incident._autofix_repository().checkout
             if checkout:
                 checkouts.setdefault(checkout, []).append(incident.fix_commit)
-        policy = self.env["error.incident.autofix.policy"]._current()
+        if not checkouts:
+            return
         Run.create(
             {
                 "name": "Production revision",
