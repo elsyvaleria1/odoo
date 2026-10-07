@@ -43,19 +43,9 @@ var DEBUG_CHANNELS = [
   "template",
   "event"
 ];
-var debug = Object.seal({
-  reactivity: false,
-  effect: false,
-  computed: false,
-  scope: false,
-  plugin: false,
-  scheduler: false,
-  fiber: false,
-  lifecycle: false,
-  error: false,
-  template: false,
-  event: false
-});
+var debug = Object.seal(
+  Object.fromEntries(DEBUG_CHANNELS.map((channel) => [channel, false]))
+);
 var consoleSink = (channel, message, details) => {
   console.debug(`[owl:${channel}] ${message}`, ...details);
 };
@@ -480,7 +470,7 @@ function updateComputation(computation) {
   }
   if (computation.running) {
     if (debug.error) {
-      debugLog("error", `cycle: ${computation.name} read while it runs`);
+      debugLog("error", `cycle: ${computation.name}`);
     }
     throw new OwlError(
       `Cycle detected: ${computation.name || "a computation"} reads its own value`
@@ -504,7 +494,7 @@ function updateComputation(computation) {
       }
     } catch (error) {
       if (debug.error) {
-        debugLog("error", `${computation.name}: a source threw while it was checked`, error);
+        debugLog("error", `${computation.name}: a source threw`, error);
       }
       computation.state = 0 /* EXECUTED */;
       computation.forward = false;
@@ -759,21 +749,12 @@ function markDownstream(computation) {
 function untrack(fn) {
   const previousComputation = currentComputation;
   const previousObserver = currentObserver;
-  if (previousComputation === void 0) {
-    if (previousObserver === void 0) {
-      return fn();
-    }
-    currentObserver = void 0;
-    try {
-      return fn();
-    } finally {
-      currentObserver = previousObserver;
-    }
+  if (previousComputation === void 0 && previousObserver === void 0) {
+    return fn();
   }
   const previousOwner = currentOwner;
-  currentOwner = previousComputation;
-  currentComputation = void 0;
-  currentObserver = void 0;
+  currentOwner = previousComputation ?? previousOwner;
+  currentComputation = currentObserver = void 0;
   try {
     return fn();
   } finally {
@@ -786,9 +767,7 @@ function runUnowned(fn, arg) {
   const previousComputation = currentComputation;
   const previousObserver = currentObserver;
   const previousOwner = currentOwner;
-  currentComputation = void 0;
-  currentObserver = void 0;
-  currentOwner = void 0;
+  currentComputation = currentObserver = currentOwner = void 0;
   try {
     return fn(arg);
   } finally {
@@ -1234,15 +1213,15 @@ function proxifyTarget(target, shallow) {
   if (isMarkedRaw(target)) {
     return target;
   }
-  const cache3 = shallow ? shallowProxies : deepProxies;
-  const reactive = cache3.get(target);
+  const cache2 = shallow ? shallowProxies : deepProxies;
+  const reactive = cache2.get(target);
   if (reactive) {
     return reactive;
   }
   const methodKeys = collectionMethods(target);
   const handler = methodKeys ? new CollectionHandler(methodKeys, shallow) : new BasicHandler(shallow);
   const proxy2 = new Proxy(target, handler);
-  cache3.set(target, proxy2);
+  cache2.set(target, proxy2);
   targets.set(proxy2, target);
   return proxy2;
 }
@@ -1793,7 +1772,7 @@ function computed(getter, options = {}) {
       }
     } catch (error) {
       if (debug.computed) {
-        debugLog("computed", `${computation.name} failed, the error is its value`, error);
+        debugLog("computed", `${computation.name} failed`, error);
       }
       newFailure = { error };
       newValue = void 0;
@@ -1858,9 +1837,9 @@ function selector(source, options = {}) {
       if (!started) {
         started = true;
       } else if (answered !== !failure) {
-        notifyAll();
+        notify(atoms.keys());
       } else if (!failure && !Object.is(previous, current)) {
-        notifyKeys(previous, current);
+        notify([previous, current]);
         if (++changes >= atoms.size) {
           sweep();
         }
@@ -1874,26 +1853,20 @@ function selector(source, options = {}) {
     true,
     options.name || debug.computed && source.name || "selector"
   );
-  function notify(key) {
-    const atom = atoms.get(key);
-    if (atom === void 0) {
-      return;
-    }
-    onWriteAtom(atom);
-    if (!hasObservers(atom)) {
-      atoms.delete(key);
-    }
-  }
-  function notifyKeys(previous, next) {
+  function notify(keys) {
     untrack(
       () => batch(() => {
-        notify(previous);
-        notify(next);
+        for (const key of keys) {
+          const atom = atoms.get(key);
+          if (atom !== void 0) {
+            onWriteAtom(atom);
+            if (!hasObservers(atom)) {
+              atoms.delete(key);
+            }
+          }
+        }
       })
     );
-  }
-  function notifyAll() {
-    untrack(() => batch(() => atoms.forEach((_, key) => notify(key))));
   }
   function sweep() {
     const before = atoms.size;
@@ -1980,7 +1953,7 @@ function createEffect(fn, immediate, options) {
       let failure = null;
       if (computation.value || computation.owned) {
         try {
-          releaseUntracked(computation);
+          runUnowned(release, computation);
         } catch (error) {
           failure = { error };
         }
@@ -1999,7 +1972,7 @@ function createEffect(fn, immediate, options) {
       if (disposed) {
         computation.value = cleanup;
         removeSources(computation);
-        releaseUntracked(computation);
+        runUnowned(release, computation);
         return void 0;
       }
       if (failure) {
@@ -2038,7 +2011,7 @@ function createEffect(fn, immediate, options) {
     computation.state = 0 /* EXECUTED */;
     removeSources(computation);
     if (computation.value || computation.owned) {
-      releaseUntracked(computation);
+      runUnowned(release, computation);
     }
   }
   try {
@@ -2056,9 +2029,6 @@ function adopt(dispose) {
   }
   return owner;
 }
-function releaseUntracked(effect2) {
-  runUnowned(release, effect2);
-}
 function release(effect2) {
   let failure = null;
   try {
@@ -2066,20 +2036,15 @@ function release(effect2) {
   } catch (error) {
     failure = { error };
   }
+  const cleanup = effect2.value;
+  effect2.value = void 0;
   try {
-    runCleanup(effect2);
+    cleanup?.();
   } catch (error) {
     failure ||= { error };
   }
   if (failure) {
     throw failure.error;
-  }
-}
-function runCleanup(effect2) {
-  const cleanupFn = effect2.value;
-  effect2.value = void 0;
-  if (cleanupFn) {
-    cleanupFn();
   }
 }
 
@@ -2093,10 +2058,6 @@ function asyncComputed(fetcher, options = {}) {
   let runId = 0;
   let inFlight = false;
   let pending = null;
-  function beginRun() {
-    loading.set(true);
-    inFlight = true;
-  }
   function endRun() {
     loading.set(false);
     inFlight = false;
@@ -2119,7 +2080,8 @@ function asyncComputed(fetcher, options = {}) {
     if (scope?.abortSignal) {
       abortSignals.push(scope.abortSignal);
     }
-    beginRun();
+    loading.set(true);
+    inFlight = true;
     error.set(null);
     let promise;
     try {
@@ -2467,16 +2429,16 @@ function instanceType(constructor) {
     }
   });
 }
-function intersection(types3) {
+function intersection(types4) {
   const validate = makeType(function validateIntersection(context) {
-    for (const type of types3) {
+    for (const type of types4) {
       context.validate(type);
     }
   });
-  validate[intersectionSymbol] = types3;
+  validate[intersectionSymbol] = types4;
   validate.toShape = () => {
     const shape = {};
-    for (const member of types3) {
+    for (const member of types4) {
       const memberShape = typeof member.toShape === "function" ? member.toShape() : void 0;
       if (memberShape && !Array.isArray(memberShape)) {
         Object.assign(shape, memberShape);
@@ -2577,29 +2539,29 @@ function recordType(valueType) {
     }
   });
 }
-function tuple(types3) {
+function tuple(types4) {
   const validate = makeType(function validateTuple(context) {
     if (!Array.isArray(context.value)) {
       context.addIssue({ message: "value is not an array" });
       return;
     }
-    if (context.value.length !== types3.length) {
+    if (context.value.length !== types4.length) {
       context.addIssue({ message: "tuple value does not have the correct length" });
       return;
     }
-    for (let index = 0; index < types3.length; index++) {
-      context.withKey(index).validate(types3[index]);
+    for (let index = 0; index < types4.length; index++) {
+      context.withKey(index).validate(types4[index]);
     }
   });
-  validate[shapeSymbol] = types3;
+  validate[shapeSymbol] = types4;
   return validate;
 }
-function union(types3) {
+function union(types4) {
   return makeType(function validateUnion(context) {
     const subIssues = [];
     let deepestIssues = null;
     let deepest = 0;
-    for (const type of types3) {
+    for (const type of types4) {
       const memberIssues = [];
       const subContext = context.withIssues(memberIssues);
       subContext.validate(type);
@@ -2840,16 +2802,13 @@ var EventModifier = {
   PREVENT: 8,
   STOP: 16
 };
-var MODIFIERS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
+var LISTENER_MODIFIERS = ["capture", "passive", "synthetic"];
 function eventModifierMask(key) {
-  const modifiers = key.split(".").slice(1);
-  const selfIndex = modifiers.indexOf("self");
+  const parts = key.split(".");
+  const selfIndex = parts.indexOf("self", 1);
   let mask = 0;
-  for (let i = 0; i < modifiers.length; i++) {
-    const m = modifiers[i];
-    if (!MODIFIERS.has(m)) {
-      throw new OwlError(`Unknown event modifier: '${m}'`);
-    }
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i];
     const beforeSelf = i < selfIndex;
     if (m === "self") {
       mask |= EventModifier.SELF;
@@ -2857,6 +2816,8 @@ function eventModifierMask(key) {
       mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
     } else if (m === "stop") {
       mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
+    } else if (!LISTENER_MODIFIERS.includes(m)) {
+      throw new OwlError(`Unknown event modifier: '${m}'`);
     }
   }
   return mask;
@@ -2940,15 +2901,6 @@ var PluginManager = class extends Scope {
     this.assertNotStarting(pluginConstructor);
     const mark = this.mark();
     const startedMark = this.startedIds.length;
-    const undo = () => {
-      if (debug.plugin) {
-        debugLog("plugin", `start of ${id} failed, undo`, this.startedIds.slice(startedMark));
-      }
-      for (const startedId of this.startedIds.splice(startedMark)) {
-        delete this.plugins[startedId];
-      }
-      this.rollback(mark, (e) => console.error(e));
-    };
     if (debug.plugin) {
       debugLog(
         "plugin",
@@ -2959,20 +2911,19 @@ var PluginManager = class extends Scope {
     let plugin2;
     this.startingPath.push(pluginConstructor);
     try {
-      try {
-        plugin2 = new pluginConstructor(this);
-      } catch (e) {
-        undo();
-        throw e;
-      }
+      plugin2 = new pluginConstructor(this);
       this.plugins[id] = plugin2;
       this.startedIds.push(id);
-      try {
-        plugin2.setup();
-      } catch (e) {
-        undo();
-        throw e;
+      plugin2.setup();
+    } catch (e) {
+      if (debug.plugin) {
+        debugLog("plugin", `start of ${id} failed, undo`, this.startedIds.slice(startedMark));
       }
+      for (const startedId of this.startedIds.splice(startedMark)) {
+        delete this.plugins[startedId];
+      }
+      this.rollback(mark, (e2) => console.error(e2));
+      throw e;
     } finally {
       this.startingPath.pop();
     }
@@ -3415,7 +3366,7 @@ function handleHookRejection(node, fiber, error) {
     if (debug.error) {
       debugLog(
         "error",
-        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} ${node.status === STATUS.DESTROYED ? "after destroy" : "of a superseded render"}, dropped`,
+        `${node.componentName}: ${isAbortError(error) ? "abort" : "rejection"} dropped, ${node.status === STATUS.DESTROYED ? "destroyed" : "superseded"}`,
         error
       );
     }
@@ -3867,19 +3818,12 @@ function createEventHandler(rawEvent, slot) {
 }
 function dispatchTo(owner, slot, mods, ev, currentTarget) {
   const data = owner.data;
-  const fn = owner.handlers[slot.fn];
-  if (slot.arg < 0) {
-    config2.mainEventHandler(fn, mods, data[slot.ctx], ev, currentTarget);
-  } else {
-    config2.mainEventHandler(fn, mods, data[slot.ctx], ev, currentTarget, data[slot.arg]);
-  }
+  const arg = slot.arg < 0 ? void 0 : data[slot.arg];
+  config2.mainEventHandler(owner.handlers[slot.fn], mods, data[slot.ctx], ev, currentTarget, arg);
 }
 var nextNativeEventId = 1;
 function createElementHandler(evName, capture, passive, slot, mods) {
-  let eventKey = `__event__${evName}_${nextNativeEventId++}`;
-  if (capture) {
-    eventKey = `${eventKey}_capture`;
-  }
+  const eventKey = `__event__${evName}_${nextNativeEventId++}${capture ? "_capture" : ""}`;
   function listener(ev) {
     const currentTarget = ev.currentTarget;
     if (!currentTarget || !currentTarget.isConnected) return;
@@ -3898,21 +3842,13 @@ function createElementHandler(evName, capture, passive, slot, mods) {
 }
 var nextSyntheticEventId = 1;
 function createSyntheticHandler(evName, capture, passive, slot, mods) {
-  let eventKey = `__event__synthetic_${evName}`;
-  if (capture) {
-    eventKey = `${eventKey}_capture`;
-  }
-  if (passive) {
-    eventKey = `${eventKey}_passive`;
-  }
+  const eventKey = `__event__synthetic_${evName}${capture ? "_capture" : ""}`;
   setupSyntheticEvent(evName, eventKey, capture, passive);
   const currentId = nextSyntheticEventId++;
   const ownerKey = `__event__synthetic_owner_${currentId}`;
-  const handler = { slot, mods, ownerKey };
+  const handler = { slot, mods, ownerKey, passive };
   function setup(owner) {
-    const handlers = this[eventKey] || {};
-    handlers[currentId] = handler;
-    this[eventKey] = handlers;
+    (this[eventKey] ||= {})[currentId] = handler;
     this[ownerKey] = owner;
   }
   function remove2() {
@@ -3921,15 +3857,36 @@ function createSyntheticHandler(evName, capture, passive, slot, mods) {
   }
   return { setup, remove: remove2 };
 }
-function nativeToSyntheticEvent(eventKey, capture, replayed, event) {
-  if (replayed) {
-    if (replayed.has(event)) {
-      return;
-    }
-    replayed.add(event);
+function ignore() {
+}
+function replayedRange(path, root) {
+  if (!syntheticRootRefs.length) {
+    return [0, path.length - 1];
   }
+  let start = 0;
+  for (let i = 0; i < path.length; i++) {
+    const node = path[i];
+    if (node === document || syntheticRoots.has(node)) {
+      if (node === root) {
+        return [start, i - 1];
+      }
+      start = i + 1;
+    }
+  }
+  return [0, -1];
+}
+function nativeToSyntheticEvent(eventKey, capture, event) {
   const path = event.composedPath();
-  const last = path.length - 1;
+  const [first, last] = replayedRange(path, event.currentTarget);
+  if (last < first) {
+    return;
+  }
+  if (debug.event && syntheticRootRefs.length) {
+    debugLog(
+      "event",
+      `${event.type}: replayed by its ${event.currentTarget.nodeName} over ${last - first + 1} of the ${path.length} nodes of its path`
+    );
+  }
   let stoppedImmediately = false;
   const shadowed = Object.hasOwn(event, "stopImmediatePropagation");
   const stopImmediatePropagation = event.stopImmediatePropagation;
@@ -3938,15 +3895,24 @@ function nativeToSyntheticEvent(eventKey, capture, replayed, event) {
     stopImmediatePropagation.call(this);
   };
   try {
-    for (let i = 0; i <= last; i++) {
-      const node = path[capture ? last - i : i];
+    for (let i = first; i <= last; i++) {
+      const node = path[capture ? last + first - i : i];
       const handlers = node[eventKey];
       if (!handlers || !node.isConnected) {
         continue;
       }
       for (const id in handlers) {
-        const { slot, mods, ownerKey } = handlers[id];
-        dispatchTo(node[ownerKey], slot, mods, event, node);
+        const { slot, mods, ownerKey, passive } = handlers[id];
+        if (passive && !Object.hasOwn(event, "preventDefault")) {
+          event.preventDefault = ignore;
+          try {
+            dispatchTo(node[ownerKey], slot, mods, event, node);
+          } finally {
+            delete event.preventDefault;
+          }
+        } else {
+          dispatchTo(node[ownerKey], slot, mods, event, node);
+        }
         if (stoppedImmediately) {
           return;
         }
@@ -3967,31 +3933,46 @@ var SYNTHETIC_LISTENER = /* @__PURE__ */ Symbol.for("owl.syntheticListener");
 var syntheticEvents = /* @__PURE__ */ new Map();
 var syntheticRoots = /* @__PURE__ */ new WeakSet();
 var syntheticRootRefs = [];
-function listenOn(root, event) {
-  if (root !== document) {
-    event.replayed ||= /* @__PURE__ */ new WeakSet();
-  }
-  root.addEventListener(event.evName, event.listener, event.options);
-}
-function setupSyntheticEvent(evName, eventKey, capture = false, passive = false) {
-  if (syntheticEvents.has(eventKey)) {
-    return;
-  }
-  const listener = (event) => nativeToSyntheticEvent(eventKey, capture, syntheticEvent.replayed, event);
-  listener[SYNTHETIC_LISTENER] = true;
-  const syntheticEvent = {
-    evName,
-    options: { capture, passive },
-    listener,
-    replayed: null
-  };
-  syntheticEvents.set(eventKey, syntheticEvent);
-  listenOn(document, syntheticEvent);
+function roots() {
+  const result = [document];
   for (const ref2 of syntheticRootRefs) {
     const root = ref2.deref();
     if (root) {
-      listenOn(root, syntheticEvent);
+      result.push(root);
     }
+  }
+  return result;
+}
+function listenOn(root, event) {
+  const { capture, passive } = event;
+  root.addEventListener(event.evName, event.listener, { capture, passive });
+}
+function setupSyntheticEvent(evName, eventKey, capture, passive) {
+  const existing = syntheticEvents.get(eventKey);
+  if (existing) {
+    if (existing.passive && !passive) {
+      if (debug.event) {
+        debugLog(
+          "event",
+          `${eventKey}: passive listener replaced, a handler may prevent the default`
+        );
+      }
+      for (const root of roots()) {
+        root.removeEventListener(evName, existing.listener, capture);
+      }
+      existing.passive = false;
+      for (const root of roots()) {
+        listenOn(root, existing);
+      }
+    }
+    return;
+  }
+  const listener = (event) => nativeToSyntheticEvent(eventKey, capture, event);
+  listener[SYNTHETIC_LISTENER] = true;
+  const syntheticEvent = { evName, capture, passive, listener };
+  syntheticEvents.set(eventKey, syntheticEvent);
+  for (const root of roots()) {
+    listenOn(root, syntheticEvent);
   }
 }
 function addSyntheticRoot(target) {
@@ -4215,27 +4196,39 @@ function makeSyncedPropSetter(name) {
     }
   };
 }
-var cache = /* @__PURE__ */ Object.create(null);
-var NO_HANDLERS = [];
-function createBlock(str, handlers = NO_HANDLERS) {
-  const parsed = cache[str] || (cache[str] = parseBlock(str));
-  if (handlers.length !== parsed.handlerN) {
-    throw new OwlError(
-      `Invalid block "${str}": ${parsed.handlerN} handlers, ${handlers.length} given`
-    );
+var types2 = /* @__PURE__ */ Object.create(null);
+var handlerCounts = /* @__PURE__ */ Object.create(null);
+function createBlock(str, handlers) {
+  const type = types2[str];
+  if (type !== void 0 && handlers === void 0) {
+    return type;
   }
-  if (!handlers.length) {
-    return parsed.block || (parsed.block = makeBlockType(parsed, NO_HANDLERS));
+  return makeBlockType(str, handlers);
+}
+function makeBlockType(str, handlers) {
+  let type = types2[str];
+  if (type === void 0) {
+    const { Block, hasChildren, handlerN } = parseBlock(str);
+    if (debug.template) {
+      debugLog("template", `block type made: ${handlerN} handlers, ${str}`);
+    }
+    type = hasChildren ? (data, children = [], handlers2) => new Block(data, handlers2, children) : (data, children, handlers2) => new Block(data, handlers2);
+    types2[str] = type;
+    handlerCounts[str] = handlerN;
   }
-  for (const fn of handlers) {
-    if (fn !== null && typeof fn !== "function") {
-      throw new OwlError(`Invalid handler (expected a function, received: '${fn}')`);
+  if (handlers !== void 0) {
+    if (handlers.length !== handlerCounts[str]) {
+      throw new OwlError(
+        `Invalid block "${str}": ${handlerCounts[str]} handlers, ${handlers.length} given`
+      );
+    }
+    for (const fn of handlers) {
+      if (fn !== null && typeof fn !== "function") {
+        throw new OwlError(`Invalid handler (expected a function, received: '${fn}')`);
+      }
     }
   }
-  return makeBlockType(parsed, handlers);
-}
-function makeBlockType({ Block, hasChildren }, handlers) {
-  return hasChildren ? (data, children = []) => new Block(data, handlers, children) : (data) => new Block(data, handlers);
+  return type;
 }
 function parseBlock(str) {
   const doc = new DOMParser().parseFromString(`<t>${str}</t>`, "text/xml");
@@ -4247,10 +4240,9 @@ function parseBlock(str) {
   const tree = buildTree(node);
   const context = buildContext(tree);
   return {
-    Block: buildBlock(tree.el, context),
+    Block: buildBlock(tree.el, context, str),
     hasChildren: context.children.length > 0,
-    handlerN: context.handlers.length,
-    block: null
+    handlerN: context.handlers.length
   };
 }
 function buildTree(node, parent = null, domParentTree = null) {
@@ -4285,58 +4277,58 @@ function buildTree(node, parent = null, domParentTree = null) {
         const attrs = node.attributes;
         for (let i = 0; i < attrs.length; i++) {
           const attrName = attrs[i].name;
-          const attrValue = attrs[i].value;
+          const attrValue2 = attrs[i].value;
           if (attrName.startsWith("block-handler-arg-")) {
             info.push({
               type: "handlerArg",
               idx: parseInt(attrName.slice(18), 10),
-              handler: parseInt(attrValue, 10)
+              handler: parseInt(attrValue2, 10)
             });
           } else if (attrName.startsWith("block-handler-")) {
             const idx = parseInt(attrName.slice(14), 10);
             info.push({
               type: "handler",
               idx,
-              event: attrValue
+              event: attrValue2
             });
           } else if (attrName.startsWith("block-attribute-")) {
             const idx = parseInt(attrName.slice(16), 10);
             info.push({
               type: "attribute",
               idx,
-              name: attrValue
+              name: attrValue2
             });
           } else if (attrName.startsWith("block-property-")) {
             const idx = parseInt(attrName.slice(15), 10);
             info.push({
               type: "property",
               idx,
-              name: attrValue
+              name: attrValue2
             });
           } else if (attrName.startsWith("block-sync-property-")) {
             const idx = parseInt(attrName.slice(20), 10);
             info.push({
               type: "property",
               idx,
-              name: attrValue,
+              name: attrValue2,
               sync: true
             });
           } else if (attrName === "block-attributes") {
             info.push({
               type: "attributes",
-              idx: parseInt(attrValue, 10)
+              idx: parseInt(attrValue2, 10)
             });
           } else if (attrName === "block-ref") {
             info.push({
               type: "ref",
-              idx: parseInt(attrValue, 10)
+              idx: parseInt(attrValue2, 10)
             });
           } else {
             const ns = attrs[i].namespaceURI;
             if (ns && ns !== XMLNS_URI) {
-              el.setAttributeNS(ns, attrName, attrValue);
+              el.setAttributeNS(ns, attrName, attrValue2);
             } else {
-              el.setAttribute(attrName, attrValue);
+              el.setAttribute(attrName, attrValue2);
             }
           }
         }
@@ -4567,8 +4559,8 @@ function updateCtx(ctx, tree) {
     }
   }
 }
-function buildBlock(template, ctx) {
-  let B = createBlockClass(template, ctx);
+function buildBlock(template, ctx, str) {
+  let B = createBlockClass(template, ctx, str);
   if (ctx.children.length) {
     B = class extends B {
       children;
@@ -4581,7 +4573,7 @@ function buildBlock(template, ctx) {
   }
   return B;
 }
-function createBlockClass(template, ctx) {
+function createBlockClass(template, ctx, str) {
   const { refN, collectors, children, locations, cbRefs } = ctx;
   const locN = locations.length;
   const childN = children.length;
@@ -4675,8 +4667,16 @@ function createBlockClass(template, ctx) {
           locSetters[i].call(refs[locRefIdxs[i]], data[i]);
         }
       }
-      for (let i = 0; i < handlerN; i++) {
-        handlerSetups[i].call(refs[handlerRefIdxs[i]], this);
+      if (handlerN) {
+        const handlers = this.handlers;
+        if (handlers?.length !== handlerN) {
+          throw new OwlError(
+            `Invalid block "${str}": ${handlerN} handlers, ${handlers ? handlers.length : 0} given`
+          );
+        }
+        for (let i = 0; i < handlerN; i++) {
+          handlerSetups[i].call(refs[handlerRefIdxs[i]], this);
+        }
       }
       if (childN) {
         const children2 = this.children;
@@ -4984,17 +4984,14 @@ function removeItems(items, anchor, withAnchor, withBeforeRemove) {
   }
   if (owned) {
     if (debug.template) {
-      debugLog("template", "list items removed at once: their parent holds nothing else");
+      debugLog("template", "list items removed at once: sole children");
     }
     nodeSetTextContent.call(parent, "");
     if (!withAnchor) {
       nodeAppendChild.call(parent, anchor);
     }
   } else if (l > 1 && debug.template) {
-    debugLog(
-      "template",
-      "list items removed one by one: not one node each, or their parent holds other nodes"
-    );
+    debugLog("template", "list items removed one by one: not sole children");
   }
   for (let i = 0; i < l; i++) {
     const item = items[i];
@@ -5116,12 +5113,10 @@ function listenerKey(key) {
 }
 function outerOf(catcher) {
   if (catcher.outer === void 0) {
-    catcher.outer = catcher.findOuter();
+    const first = catcher.child.firstNode();
+    catcher.outer = first ? ownerOf(first, catcher.afterNode.nextSibling) : null;
     if (debug.event) {
-      debugLog(
-        "event",
-        `catcher mounted by its own render: ${catcher.outer ? "an enclosing catcher" : "no enclosing catcher"} found at dispatch`
-      );
+      debugLog("event", `catcher found its outer one at dispatch: ${!!catcher.outer}`);
     }
   }
   return catcher.outer;
@@ -5147,13 +5142,17 @@ function ownerOf(node, from) {
   for (let n = from; n; n = n.nextSibling) {
     let catcher = byEnd.get(n) || null;
     if (catcher) {
-      while (catcher && !catcher.holds(node)) {
+      while (catcher && !holds(catcher, node)) {
         catcher = outerOf(catcher);
       }
       return catcher;
     }
   }
   return null;
+}
+function holds(catcher, node) {
+  const first = catcher.child.firstNode();
+  return !!first && (first === node || !!(first.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
 }
 function listen(keys, parent) {
   let listeners = listenersByParent.get(parent);
@@ -5212,26 +5211,18 @@ function createCatcher(eventsSpec, fns) {
       nodeInsertBefore.call(parent, end, afterNode);
       byEnd.set(end, this);
       for (let i = updating.length - 1; i >= 0; i--) {
-        if (updating[i].parent === parent) {
-          this.outer = updating[i].catcher;
+        if (updating[i].parentEl === parent) {
+          this.outer = updating[i];
           break;
         }
       }
-      updating.push({ parent, catcher: this });
+      updating.push(this);
       try {
         this.child.mount(parent, end);
       } finally {
         updating.pop();
       }
       listen(keys, parent);
-    }
-    findOuter() {
-      const first = this.child.firstNode();
-      return first ? ownerOf(first, this.afterNode.nextSibling) : null;
-    }
-    holds(node) {
-      const first = this.child.firstNode();
-      return !!first && (first === node || !!(first.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING));
     }
     moveBeforeDOMNode(node) {
       this.child.moveBeforeDOMNode(node);
@@ -5249,7 +5240,7 @@ function createCatcher(eventsSpec, fns) {
         return;
       }
       this.ctx = other.ctx;
-      updating.push({ parent: this.parentEl, catcher: this });
+      updating.push(this);
       try {
         this.child.patch(other.child, withBeforeRemove);
       } finally {
@@ -5455,55 +5446,51 @@ var Scheduler = class _Scheduler {
     }
     this.processing = true;
     try {
-      this.runTasks();
+      this.frame = 0;
+      let failed = false;
+      if (debug.scheduler) {
+        debugLog("scheduler", `frame, ${this.tasks.size} task(s)`);
+      }
+      for (let fiber of this.tasks) {
+        if (fiber.root !== fiber) {
+          this.tasks.delete(fiber);
+          continue;
+        }
+        if (fiber.node.fiber !== fiber) {
+          if (debug.scheduler) {
+            debugLog("scheduler", `drop ${fiber.node.componentName}: superseded`);
+          }
+          this.tasks.delete(fiber);
+          continue;
+        }
+        if (fibersInError.has(fiber)) {
+          if (debug.scheduler) {
+            debugLog("scheduler", `drop ${fiber.node.componentName}: failed`);
+          }
+          this.tasks.delete(fiber);
+          failed = true;
+          continue;
+        }
+        if (fiber.counter === 0) {
+          fiber.complete();
+          if (fiber.renderState & APPLIED_TO_DOM) {
+            this.tasks.delete(fiber);
+          }
+        } else if (debug.scheduler) {
+          debugLog(
+            "scheduler",
+            `wait ${fiber.node.componentName}: ${fiber.counter} render(s) pending`
+          );
+        }
+      }
+      if (failed) {
+        this.flush();
+      }
+      if (!this.tasks.size) {
+        _Scheduler.active.delete(this);
+      }
     } finally {
       this.processing = false;
-    }
-  }
-  runTasks() {
-    this.frame = 0;
-    let failed = false;
-    if (debug.scheduler) {
-      debugLog("scheduler", `frame, ${this.tasks.size} task(s)`);
-    }
-    for (let fiber of this.tasks) {
-      if (fiber.root !== fiber) {
-        this.tasks.delete(fiber);
-        continue;
-      }
-      if (fiber.node.fiber !== fiber) {
-        if (debug.scheduler) {
-          debugLog("scheduler", `drop ${fiber.node.componentName}: superseded`);
-        }
-        this.tasks.delete(fiber);
-        continue;
-      }
-      if (fibersInError.has(fiber)) {
-        if (debug.scheduler) {
-          debugLog("scheduler", `drop ${fiber.node.componentName}: failed`);
-        }
-        this.tasks.delete(fiber);
-        failed = true;
-        continue;
-      }
-      if (debug.scheduler && fiber.counter !== 0) {
-        debugLog(
-          "scheduler",
-          `wait ${fiber.node.componentName}: ${fiber.counter} render(s) pending`
-        );
-      }
-      if (fiber.counter === 0) {
-        fiber.complete();
-        if (fiber.renderState & APPLIED_TO_DOM) {
-          this.tasks.delete(fiber);
-        }
-      }
-    }
-    if (failed) {
-      this.flush();
-    }
-    if (!this.tasks.size) {
-      _Scheduler.active.delete(this);
     }
   }
 };
@@ -5531,7 +5518,7 @@ function makeRootFiber(node) {
     if (debug.fiber) {
       debugLog(
         "fiber",
-        `render ${node.componentName} on its own: ${root.node.componentName}'s pass failed`
+        `render ${node.componentName} alone: ${root.node.componentName}'s pass failed`
       );
     }
     root.counter -= cancelFibers(current.children);
@@ -5550,10 +5537,7 @@ function makeRootFiber(node) {
 function recycleFiber(node, current, root) {
   current.renderState += 2;
   if (debug.fiber) {
-    debugLog(
-      "fiber",
-      `re-render ${node.componentName} before its commit (recycle ${current.renderState >> 1})`
-    );
+    debugLog("fiber", `recycle ${node.componentName} (${current.renderState >> 1})`);
   }
   root.locked = true;
   const rendered = current.phase === 0 /* NEW */ ? 0 : 1;
@@ -5592,6 +5576,23 @@ function recycleFiber(node, current, root) {
   return current;
 }
 var subRootHosts = /* @__PURE__ */ new WeakMap();
+var hostedSubRoots = /* @__PURE__ */ new WeakMap();
+function renderSubRootsDeep(node) {
+  const subRoots = hostedSubRoots.get(node);
+  if (subRoots) {
+    for (const subRoot of subRoots) {
+      if (subRoot.status === STATUS.MOUNTED) {
+        if (debug.fiber) {
+          debugLog(
+            "fiber",
+            `deep render of ${node.componentName} reaches its sub-root ${subRoot.componentName}`
+          );
+        }
+        subRoot.render(true);
+      }
+    }
+  }
+}
 function above(node) {
   return node.parent || (node.status === STATUS.MOUNTED ? subRootHosts.get(node) || null : null);
 }
@@ -5698,6 +5699,9 @@ var Fiber2 = class {
           memoResume(outerCollection);
         }
       });
+      if (this.deep && this.bdom) {
+        renderSubRootsDeep(node);
+      }
       const newCounter = root.counter - 1;
       root.counter = newCounter;
       if (debug.fiber) {
@@ -5751,10 +5755,7 @@ var RootFiber2 = class extends Fiber2 {
       current = void 0;
       if (node.status === STATUS.DESTROYED) {
         if (debug.fiber) {
-          debugLog(
-            "fiber",
-            `drop ${node.componentName}'s commit: an onWillPatch hook destroyed it`
-          );
+          debugLog("fiber", `drop ${node.componentName}'s commit: destroyed by onWillPatch`);
         }
         this.locked = false;
         return;
@@ -6385,17 +6386,27 @@ function withDefault(value, defaultValue) {
   return value === void 0 || value === null || value === false ? defaultValue : value;
 }
 function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent, owner) {
-  key = key + "__slot_" + name;
   const slots = ctx.__owl__.props.slots;
-  const slot = slots && slots[name];
+  let slot = slots && slots[name];
   let slotBDom = null;
+  const segment = escapeKey(name);
   if (slot && slot.__render) {
+    const raw = toRaw(slot);
+    if (raw !== slot) {
+      if (debug.template) {
+        debugLog(
+          "template",
+          `slot "${name}": its descriptor is a proxy, rendered from its raw object`
+        );
+      }
+      slot = raw;
+    }
     let slotCtx = slot.__ctx || {};
     if (slot.__scope) {
       slotCtx = ObjectCreate(slotCtx);
       slotCtx[slot.__scope] = extra || {};
     }
-    slotBDom = slot.__render.call(slot.__owner, slotCtx, parent, key);
+    slotBDom = slot.__render.call(slot.__owner, slotCtx, parent, key + MARK + "s" + segment);
   }
   if (defaultContent) {
     let child1 = void 0;
@@ -6403,43 +6414,69 @@ function callSlot(ctx, parent, key, name, dynamic, extra, defaultContent, owner)
     if (slotBDom) {
       child1 = dynamic ? toggler(name, slotBDom) : slotBDom;
     } else {
-      child2 = defaultContent.call(owner, ctx, parent, key);
+      child2 = defaultContent.call(owner, ctx, parent, key + MARK + "d" + segment);
     }
     return multi([child1, child2]);
   }
   return slotBDom || text("");
 }
+var MARK = "";
+var MARK2 = MARK + MARK;
+function escapeKey(value) {
+  const name = String(value);
+  return name.includes(MARK) ? name.replaceAll(MARK, MARK2) : name;
+}
 var objectKeys = /* @__PURE__ */ new WeakMap();
 var nextObjectKey = 0;
-var ID_MARK = "";
-function keyOf(key) {
-  if (typeof key === "string") {
-    return key.includes(ID_MARK) ? key.replaceAll(ID_MARK, ID_MARK + ID_MARK) : key;
+function identityKey(key) {
+  let id = objectKeys.get(key);
+  if (id === void 0) {
+    id = "@" + ++nextObjectKey;
+    objectKeys.set(key, id);
   }
-  if (typeof key === "object" && key !== null || typeof key === "function") {
-    if (Array.isArray(key)) {
-      return keyOf(String(key));
+  return id;
+}
+function keyOf(key) {
+  if (typeof key === "number") {
+    const digits = "" + key;
+    return digits.charCodeAt(digits.length - 1) <= 57 ? digits : "@" + digits;
+  }
+  if (typeof key === "string") {
+    if (key.includes(MARK)) {
+      key = key.replaceAll(MARK, MARK2);
     }
-    let id = objectKeys.get(key);
-    if (id === void 0) {
-      id = ID_MARK + ++nextObjectKey;
-      objectKeys.set(key, id);
-    }
-    return id;
+    return key.charCodeAt(0) <= 64 ? "'" + key : key;
+  }
+  if (typeof key === "object" && key !== null) {
+    return Array.isArray(key) ? arrayKey(key, null) : identityKey(key);
+  }
+  if (typeof key === "function") {
+    return identityKey(key);
   }
   if (typeof key === "symbol") {
     const name = Symbol.keyFor(key);
-    if (name !== void 0) {
-      return ID_MARK + "for:" + name;
-    }
-    let id = objectKeys.get(key);
-    if (id === void 0) {
-      id = ID_MARK + ++nextObjectKey;
-      objectKeys.set(key, id);
-    }
-    return id;
+    return name === void 0 ? identityKey(key) : "@for:" + escapeKey(name);
   }
-  return "" + key;
+  if (typeof key === "bigint") {
+    return "@" + key + "n";
+  }
+  return "@" + key;
+}
+function arrayKey(items, open) {
+  const outer = open || [];
+  outer.push(items);
+  let result = "@[";
+  for (const item of items) {
+    const level = Array.isArray(item) ? outer.indexOf(item) : -1;
+    if (level !== -1) {
+      result += "@^" + (outer.length - level);
+    } else {
+      result += Array.isArray(item) ? arrayKey(item, outer) : keyOf(item);
+    }
+    result += MARK + ",";
+  }
+  outer.pop();
+  return result + MARK + "]";
 }
 function withKey(elem, k) {
   elem.key = k;
@@ -6483,8 +6520,23 @@ var LazyValue = class {
     this.node = node;
     this.key = key;
   }
-  evaluate(siteKey = "") {
-    return this.fn.call(this.component, this.ctx, this.node, this.key + siteKey);
+  // Renders the body at an output site of `node`, whose components it is:
+  // they are in its DOM, its render creates and updates them, and its
+  // destruction or a render dropping the site destroys them. Their key is the
+  // site's, then this value's (its node's id first when it is not `node`: two
+  // components may output their own values at one site of a third).
+  evaluate(siteKey = "", node = this.node) {
+    let key = siteKey + MARK + "v";
+    if (node !== this.node) {
+      key += identityKey(this.node);
+      if (debug.fiber) {
+        debugLog(
+          "fiber",
+          `t-set body of ${this.node.componentName} output by ${node.componentName}: its components are ${node.componentName}'s`
+        );
+      }
+    }
+    return this.fn.call(this.component, this.ctx, node, key + this.key);
   }
   // what an attribute or an interpolation makes of a t-set body: its HTML. A
   // component would be created for a string, never mounted, and kept alive
@@ -6498,6 +6550,31 @@ var LazyValue = class {
     return bdom2.toString();
   }
 };
+function attrValue(value) {
+  if (value instanceof LazyValue) {
+    if (debug.template) {
+      debugLog("template", "t-set body given to an attribute: stringified in the render");
+    }
+    return value.toString();
+  }
+  return value;
+}
+function attrsValue(attrs) {
+  if (Array.isArray(attrs)) {
+    return attrs[1] instanceof LazyValue ? [attrs[0], attrValue(attrs[1])] : attrs;
+  }
+  if (attrs && typeof attrs === "object") {
+    let copy = null;
+    for (const name in attrs) {
+      if (attrs[name] instanceof LazyValue) {
+        copy ||= { ...attrs };
+        copy[name] = attrValue(attrs[name]);
+      }
+    }
+    return copy || attrs;
+  }
+  return attrs;
+}
 function holdsComponent(bdom2) {
   if (bdom2 instanceof ComponentNode) {
     return true;
@@ -6512,7 +6589,7 @@ function holdsComponent(bdom2) {
   }
   return bdom2.child ? holdsComponent(bdom2.child) : false;
 }
-function safeOutput(value, key = "", site = "", depth = 0, k1, k2, k3) {
+function safeOutput(value, node, key = "", site = "", depth = 0, k1, k2, k3) {
   if (value === void 0 || value === null) {
     return toggler("undefined", text(""));
   }
@@ -6525,15 +6602,15 @@ function safeOutput(value, key = "", site = "", depth = 0, k1, k2, k3) {
     safeKey = `lazy_value`;
     let siteKey = key + site;
     if (depth) {
-      siteKey += "__" + keyOf(k1);
+      siteKey += MARK + ":" + keyOf(k1);
       if (depth > 1) {
-        siteKey += "__" + keyOf(k2);
+        siteKey += MARK + ":" + keyOf(k2);
         if (depth > 2) {
-          siteKey += "__" + keyOf(k3);
+          siteKey += MARK + ":" + keyOf(k3);
         }
       }
     }
-    block = value.evaluate(siteKey);
+    block = value.evaluate(siteKey, node);
   } else {
     safeKey = "string_unsafe";
     block = text(value);
@@ -6720,7 +6797,7 @@ var nextClassKey = 1;
 function classKey(C) {
   let key = classKeys.get(C);
   if (key === void 0) {
-    key = `${C.name}#${nextClassKey++}`;
+    key = MARK + "c" + nextClassKey++;
     classKeys.set(C, key);
   }
   return key;
@@ -6767,7 +6844,7 @@ function createComponent(app, name, isStatic, hasSlotsProp, hasDynamicPropList, 
   }
   return (props2, key, ctx, parent, C) => {
     if (isDynamic) {
-      key = classKey(C) + key;
+      key = key + classKey(C);
     }
     let node = ctx.childMap?.get(key);
     const parentFiber = ctx.fiber;
@@ -6828,7 +6905,8 @@ function withoutZero(ctx) {
 }
 function callTemplate(subTemplate, owner, app, ctx, parent, key) {
   const template = app.getTemplate(subTemplate);
-  return toggler(subTemplate, template.call(owner, ctx, parent, key + ID_MARK + subTemplate));
+  const callKey = key + MARK + "t" + escapeKey(subTemplate);
+  return toggler(subTemplate, template.call(owner, ctx, parent, callKey));
 }
 var INVALID_TAG_NAME = /[\s"'<>\/=&`:]|^block-/;
 function checkTagName(tag) {
@@ -6850,8 +6928,9 @@ var helpers = {
   toNumber,
   LazyValue,
   safeOutput,
+  attrValue,
+  attrsValue,
   createCatcher,
-  markRaw,
   OwlError,
   createRef,
   modelExpr,
@@ -6866,7 +6945,7 @@ var helpers = {
 };
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "b654faa9";
+var buildHash = "33bb67f1";
 
 // ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
@@ -7134,6 +7213,11 @@ var App = class _App extends TemplateSet {
       }
       if (subConfig.host) {
         subRootHosts.set(node, subConfig.host);
+        let subRoots = hostedSubRoots.get(subConfig.host);
+        if (!subRoots) {
+          hostedSubRoots.set(subConfig.host, subRoots = /* @__PURE__ */ new Set());
+        }
+        subRoots.add(node);
       }
     } catch (e) {
       error = e;
@@ -7223,6 +7307,9 @@ var App = class _App extends TemplateSet {
         }
         destroyed = true;
         this.roots.delete(root);
+        if (subConfig.host && node) {
+          hostedSubRoots.get(subConfig.host)?.delete(node);
+        }
         node?.destroy();
         resolvePrepared?.();
       }
@@ -7293,7 +7380,7 @@ var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) =
     }
     if (modifiers & EventModifier.SELF && ev.target !== currentTarget) {
       if (debug.event) {
-        debugLog("event", `${ev.type}: skipped by .self, not from its own element`);
+        debugLog("event", `${ev.type}: skipped by .self`);
       }
       return;
     }
@@ -7386,7 +7473,7 @@ function staticProp(key, type) {
 function componentType() {
   return constructorType(Component);
 }
-var types2 = {
+var types3 = {
   ...types,
   component: componentType
 };
@@ -7436,11 +7523,11 @@ function makeProps(type) {
       }
       assertType(
         defaults,
-        types2.object(defaultedShape),
+        types3.object(defaultedShape),
         `Invalid component default props (${componentName})`
       );
     }
-    const validation = types2.object(type);
+    const validation = types3.object(type);
     assertType(node.props, validation, `Invalid component props (${componentName})`);
     node.addHook("willUpdateProps", (np) => {
       assertType(np, validation, `Invalid component props (${componentName})`);
@@ -7653,7 +7740,7 @@ var ErrorBoundary = class extends Component {
       <t t-call-slot="default"/>
     </t>
   `;
-  props = props({ error: types2.signal().optional(() => signal(null)) });
+  props = props({ error: types3.signal().optional(() => signal(null)) });
   setup() {
     onError(
       (e) => untrack(() => {
@@ -7676,12 +7763,12 @@ var PortalContent = class extends Component {
 var Portal = class extends Component {
   static template = xml``;
   props = props({
-    slots: types2.object(["default"]),
-    target: types2.or([
-      types2.string(),
-      types2.signal(types2.instanceOf(HTMLElement)),
-      types2.instanceOf(HTMLElement),
-      types2.literal(null)
+    slots: types3.object(["default"]),
+    target: types3.or([
+      types3.string(),
+      types3.signal(types3.instanceOf(HTMLElement)),
+      types3.instanceOf(HTMLElement),
+      types3.literal(null)
     ]).optional()
   });
   setup() {
@@ -7815,7 +7902,7 @@ var Suspense = class extends Component {
       <t t-call-slot="fallback"/>
     </t>
   `;
-  props = props({ slots: types2.object({ default: types2.any(), fallback: types2.any().optional() }) });
+  props = props({ slots: types3.object({ default: types3.any(), fallback: types3.any().optional() }) });
   prepared = signal(false);
   mounted = signal(false);
   subRootMounted = false;
@@ -7891,8 +7978,8 @@ var blockDom = {
 };
 var __info__ = {
   version: App.version,
-  date: "2026-10-06T19:47:33.029Z",
-  hash: "b654faa9",
+  date: "2026-10-07T00:12:08.386Z",
+  hash: "33bb67f1",
   url: "https://github.com/odoo/owl"
 };
 
@@ -8604,7 +8691,7 @@ var ForEachNoFlag = {
   Value: 8
 };
 var NO_DIRECTIVES = {};
-var cache2 = /* @__PURE__ */ new WeakMap();
+var cache = /* @__PURE__ */ new WeakMap();
 function parse(xml2, customDir) {
   const customDirectives = customDir && Object.keys(customDir).length ? customDir : void 0;
   const ctx = { inPreTag: false, customDirectives };
@@ -8613,10 +8700,10 @@ function parse(xml2, customDir) {
     return _parse(elem, ctx);
   }
   const directivesKey = customDirectives || NO_DIRECTIVES;
-  let astCache = cache2.get(directivesKey);
+  let astCache = cache.get(directivesKey);
   if (!astCache) {
     astCache = /* @__PURE__ */ new WeakMap();
-    cache2.set(directivesKey, astCache);
+    cache.set(directivesKey, astCache);
   }
   let ast = astCache.get(xml2);
   if (!ast) {
@@ -9380,12 +9467,17 @@ function normalizeXML(el) {
 }
 
 // ../owl-compiler/src/code_generator.ts
+var SCOPE_MARK = "scope";
+var SCOPE_MARKER_RE = /\u0001scope\d+\u0001/g;
+var CONTEXT_WRITE = /ctx\['[^']*'\]\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])|ctx\['[^']*'\]\s*(?:\+\+|--)|(?:\+\+|--)\s*ctx\[|delete\s+ctx\[|[[,{:]\s*ctx\['[^']*'\]\s*[,\]}][^;=\n]*?=(?![=>])/;
 var MAX_LAZY_LOOP_KEYS = 3;
+var KEY_MARK = "\\u0002";
 var whitespaceRE = /[ \t\n\r\f]+/g;
 var xmlDoc;
 if (typeof document !== "undefined") {
   xmlDoc = document.implementation.createDocument(null, null, null);
 }
+var LITERAL_RE = /^(?:'[^'\\]*'|"[^"\\]*"|`(?:[^`\\]|\\.)*`|-?\d[\d.e+-]*|true|false|null|undefined|\{.*\})$/s;
 function isProp(tag, key) {
   switch (tag) {
     case "input":
@@ -9457,6 +9549,9 @@ var BlockDescription = class {
       if (hasChildren) {
         params += ", [" + this.children.map((c) => c.varName).join(", ") + "]";
       }
+      if (this.handlers.length) {
+        params += `${hasChildren ? "" : ", null"}, ${this.blockName}_handlers`;
+      }
       if (this.dynamicTagName) {
         return `toggler(${this.dynamicTagName}, ${this.blockName}(${this.dynamicTagName})(${params}))`;
       }
@@ -9493,6 +9588,10 @@ var CodeTarget = class {
   indentLevel = 0;
   loopLevel = 0;
   loopCtxVars = [];
+  // the loops being compiled, innermost last
+  loops = [];
+  // the loop levels whose item (or, for 0, whose function scope) a t-set writes
+  writtenLevels = /* @__PURE__ */ new Set();
   // loop levels whose key is concatenated into a string key: they get a
   // `skey<level>` that tells object keys apart
   stringKeyLevels = /* @__PURE__ */ new Set();
@@ -9535,7 +9634,7 @@ var CodeTarget = class {
   // list's child is always in
   currentKey(ctx) {
     if (ctx.tKeyExpr) {
-      return `${ctx.tKeyExpr} + ${this.stringKey(this.loopLevel)}`;
+      return `\`\${${this.stringKey(this.loopLevel)}}${KEY_MARK}k\${${ctx.tKeyExpr}}\``;
     }
     return `key${this.loopLevel}`;
   }
@@ -9557,6 +9656,7 @@ var TRANSLATABLE_ATTRS = [
 var translationRE = /^(\s*)([\s\S]+?)(\s*)$/;
 var CodeGenerator = class {
   blocks = [];
+  scopeSites = [];
   isDebug = false;
   targets = [];
   target = new CodeTarget("template");
@@ -9612,6 +9712,7 @@ var CodeGenerator = class {
       translationCtx: "",
       tKeyExpr: null
     });
+    this.resolveScopes();
     let mainCode = [`  let { text, createBlock, list, multi, html, toggler } = bdom;`];
     if (this.helpers.size) {
       mainCode.push(`let { ${[...this.helpers].join(", ")} } = helpers;`);
@@ -9636,16 +9737,21 @@ var CodeGenerator = class {
             xmlString = xmlString.slice(0, -close.length) + `</${tag}>\``;
           }
           if (block.handlers.length) {
-            const types3 = `${block.blockName}_types`;
-            mainCode.push(`const ${types3} = Object.create(null);`);
+            const types4 = `${block.blockName}_types`;
             mainCode.push(
-              `let ${block.blockName} = tag => ${types3}[tag] || (${types3}[tag] = createBlock(${xmlString}, [${block.handlers.join(", ")}]));`
+              `const ${block.blockName}_handlers = [${block.handlers.join(", ")}];`,
+              `const ${types4} = Object.create(null);`,
+              `let ${block.blockName} = tag => ${types4}[tag] || (${types4}[tag] = createBlock(${xmlString}, ${block.blockName}_handlers));`
             );
           } else {
             mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
           }
         } else {
-          const handlers = block.handlers.length ? `, [${block.handlers.join(", ")}]` : "";
+          let handlers = "";
+          if (block.handlers.length) {
+            handlers = `, ${block.blockName}_handlers`;
+            mainCode.push(`const ${block.blockName}_handlers = [${block.handlers.join(", ")}];`);
+          }
           mainCode.push(`let ${block.blockName} = createBlock(${xmlString}${handlers});`);
         }
       }
@@ -9681,6 +9787,57 @@ ${code}`;
   }
   define(varName, expr) {
     this.addLine(`const ${varName} = ${expr};`);
+  }
+  scopeMarker(from, itemVar, varName, names) {
+    const marker = `${SCOPE_MARK}${this.scopeSites.length}`;
+    this.scopeSites.push({ marker, target: this.target, from, itemVar, varName, names });
+    return marker;
+  }
+  /**
+   * A context made under another one made in the same render (a loop item)
+   * costs V8 about 1.6 us and 1.2 KB: the item becomes a prototype. A loop
+   * item no t-set writes holds only its loop's names, set when it is made:
+   * a context made under it can be made under the item's own prototype with
+   * a copy of those names instead, which no later write can make stale. That
+   * holds while nothing else writes a context: an expression assigning a
+   * variable (`t-on-click="v = 1"`, a bare-name `t-model.proxy`) turns it off
+   * for the whole template.
+   */
+  resolveScopes() {
+    const sites = this.scopeSites;
+    if (!sites.length) {
+      return;
+    }
+    const code = [
+      ...this.staticDefs.map((d) => d.expr),
+      ...[this.target, ...this.targets].flatMap((t) => t.code)
+    ].join("\n");
+    const writesContext = CONTEXT_WRITE.test(code);
+    const copiable = (loop, target) => !writesContext && !target.writtenLevels.has(loop.level);
+    const base = (loop, target) => loop.parent && copiable(loop.parent, target) ? base(loop.parent, target) : loop.parentVar;
+    const ownNames = (loop, target) => {
+      const names = loop.parent && copiable(loop.parent, target) ? ownNames(loop.parent, target) : [];
+      return [.../* @__PURE__ */ new Set([...names, ...loop.names])];
+    };
+    const resolved = /* @__PURE__ */ new Map();
+    for (const { marker, target, from, itemVar, varName, names } of sites) {
+      let expr = `Object.create(${itemVar})`;
+      if (copiable(from, target)) {
+        expr = `Object.create(${base(from, target)})`;
+        for (const name of ownNames(from, target)) {
+          if (!names.includes(name)) {
+            const key = JSON.stringify(name);
+            expr += `; ${varName}[${key}] = ${itemVar}[${key}]`;
+          }
+        }
+      }
+      resolved.set(marker, expr);
+    }
+    for (const t of [this.target, ...this.targets]) {
+      t.code = t.code.map(
+        (line) => line.includes(SCOPE_MARK) ? line.replace(SCOPE_MARKER_RE, (m) => resolved.get(m)) : line
+      );
+    }
   }
   insertAnchor(block) {
     const tag = `block-child-${block.children.length}`;
@@ -9855,6 +10012,13 @@ ${code}`;
         const isFormat = key.startsWith("t-attf");
         attrName = isFormat ? key.slice(7) : key === "t-att" ? null : key.slice(6);
         expr = isFormat ? interpolate(ast.attrs[key]) : compileExpr(ast.attrs[key]);
+        if (!attrName) {
+          this.helpers.add("attrsValue");
+          expr = `attrsValue(${expr})`;
+        } else if (!LITERAL_RE.test(expr)) {
+          this.helpers.add("attrValue");
+          expr = `attrValue(${expr})`;
+        }
         if (attrName && isProp(ast.tag, attrName)) {
           if (attrName === "readonly") {
             attrName = "readOnly";
@@ -10021,8 +10185,8 @@ ${code}`;
     if (ast.expr === "0") {
       blockStr = this.compileZero(ast, ctx);
     } else {
-      const site = this.generateId("__");
-      const keyExpr = ctx.tKeyExpr ? `${ctx.tKeyExpr} + key` : "key";
+      const site = this.siteId();
+      const keyExpr = ctx.tKeyExpr ? `key + \`${KEY_MARK}k\${${ctx.tKeyExpr}}\`` : "key";
       const level = this.target.loopLevel;
       let keyArgs;
       if (level <= MAX_LAZY_LOOP_KEYS) {
@@ -10032,9 +10196,9 @@ ${code}`;
           }
         }
         const loopKeys = Array.from({ length: level }, (_, i) => `, key${i + 1}`).join("");
-        keyArgs = `${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
+        keyArgs = `node, ${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
       } else {
-        keyArgs = `${this.scopeKey(ctx, site)}, ""`;
+        keyArgs = `node, ${this.scopeKey(ctx, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
       this.helpers.add("safeOutput");
@@ -10116,7 +10280,29 @@ ${code}`;
     }
     this.addLine(`for (let ${loopVar} = 0; ${loopVar} < ${l}; ${loopVar}++) {`);
     this.target.indentLevel++;
-    this.addLine(`let ctx = Object.create(${ctxVar});`);
+    const suffixes = [""];
+    if (!(ast.noFlags & ForEachNoFlag.First)) {
+      suffixes.push("_first");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Last)) {
+      suffixes.push("_last");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Index)) {
+      suffixes.push("_index");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Value)) {
+      suffixes.push("_value");
+    }
+    const parentLoop = this.target.loops[this.target.loops.length - 1] || null;
+    const loopScope = {
+      level: this.target.loopLevel,
+      parentVar: ctxVar,
+      names: suffixes.map((suffix) => ast.elem + suffix),
+      parent: parentLoop
+    };
+    const itemExpr = parentLoop ? this.scopeMarker(parentLoop, ctxVar, "ctx", loopScope.names) : `Object.create(${ctxVar})`;
+    this.addLine(`let ctx = ${itemExpr};`);
+    this.target.loops.push(loopScope);
     const loopVarName = (suffix) => JSON.stringify(ast.elem + suffix);
     this.addLine(`ctx[${loopVarName("")}] = ${keys}[${loopVar}];`);
     if (!(ast.noFlags & ForEachNoFlag.First)) {
@@ -10181,6 +10367,7 @@ ${code}`;
     this.target.indentLevel--;
     this.target.loopLevel--;
     this.target.loopCtxVars.pop();
+    this.target.loops.pop();
     for (const [name, level2] of this.target.tSetVars) {
       if (level2 > this.target.loopLevel) {
         this.target.tSetVars.delete(name);
@@ -10285,7 +10472,11 @@ ${code}`;
       ctxExpr = `ctx[zero] ? withoutZero(ctx) : ctx`;
     } else {
       ctxExpr = this.generateId("ctx");
-      this.define(ctxExpr, `Object.create(ctx)`);
+      const loop = this.target.loops[this.target.loops.length - 1];
+      this.define(
+        ctxExpr,
+        loop ? this.scopeMarker(loop, "ctx", ctxExpr, [...attrs.map(([name]) => name)]) : `Object.create(ctx)`
+      );
       for (const [name, value] of attrs) {
         this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
       }
@@ -10336,26 +10527,31 @@ ${code}`;
         );
       }
       this.addLine(`${this.target.loopCtxVars[defLevel]}[${name}] = ${value};`);
+      this.target.writtenLevels.add(defLevel);
     } else {
       if (!level) {
         this.target.needsScopeProtection = true;
       }
       this.addLine(`ctx[${name}] = ${value};`);
+      this.target.writtenLevels.add(level);
       this.target.tSetVars.set(ast.name, level);
     }
     return null;
   }
-  // the key of a site's content: the site's id, then the key of each open
-  // loop. Every site has an id: without one, a site's loop keys could spell
-  // another site's id (`__2` for the item keyed 2 and for the site __2), and
-  // the two would share a key in their component's children.
-  scopeKey(ctx, site = this.generateId("__")) {
-    let suffix = site;
+  // the key of a site's content: the t-key around it, the site's id, then
+  // the key of each open loop, each a segment of its own (see keyOf in the
+  // runtime): no loop key, t-key or id can spell another, so two sites, or
+  // two items of a site, never share a key in their component's children
+  scopeKey(ctx, site = this.siteId()) {
+    let suffix = ctx.tKeyExpr ? `${KEY_MARK}k\${${ctx.tKeyExpr}}${site}` : site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
-      suffix += `__\${${this.target.stringKey(i)}}`;
+      suffix += `${KEY_MARK}:\${${this.target.stringKey(i)}}`;
     }
-    const key = `key + \`${suffix}\``;
-    return ctx.tKeyExpr ? `${ctx.tKeyExpr} + ${key}` : key;
+    return `key + \`${suffix}\``;
+  }
+  // a keyed site's id, unique in the template, as written in the generated code
+  siteId() {
+    return this.generateId(KEY_MARK);
   }
   /**
    * Formats a prop name and value into a string suitable to be inserted in the
@@ -10467,8 +10663,7 @@ ${code}`;
       slotDef = `{${slotStr.join(", ")}}`;
     }
     if (slotDef && !(ast.dynamicProps || hasSlotsProp)) {
-      this.helpers.add("markRaw");
-      props2.push(`slots: markRaw(${slotDef})`);
+      props2.push(`slots: ${slotDef}`);
     }
     let propString = this.getPropString(props2, ast.dynamicProps);
     let propVar;
@@ -10478,8 +10673,7 @@ ${code}`;
       propString = propVar;
     }
     if (slotDef && (ast.dynamicProps || hasSlotsProp)) {
-      this.helpers.add("markRaw");
-      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots));`);
+      this.addLine(`${propVar}.slots = Object.assign(${slotDef}, ${propVar}.slots);`);
     }
     let expr;
     if (ast.isDynamic) {
@@ -10643,9 +10837,9 @@ export {
   shallowEqual,
   signal,
   status,
-  types2 as t,
+  types3 as t,
   toRaw,
-  types2 as types,
+  types3 as types,
   untrack,
   useApp2 as useApp,
   useConfig,

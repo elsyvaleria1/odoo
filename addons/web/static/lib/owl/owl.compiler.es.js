@@ -10,16 +10,13 @@ var EventModifier = {
   PREVENT: 8,
   STOP: 16
 };
-var MODIFIERS = /* @__PURE__ */ new Set(["stop", "capture", "prevent", "self", "synthetic", "passive"]);
+var LISTENER_MODIFIERS = ["capture", "passive", "synthetic"];
 function eventModifierMask(key) {
-  const modifiers = key.split(".").slice(1);
-  const selfIndex = modifiers.indexOf("self");
+  const parts = key.split(".");
+  const selfIndex = parts.indexOf("self", 1);
   let mask = 0;
-  for (let i = 0; i < modifiers.length; i++) {
-    const m = modifiers[i];
-    if (!MODIFIERS.has(m)) {
-      throw new OwlError(`Unknown event modifier: '${m}'`);
-    }
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i];
     const beforeSelf = i < selfIndex;
     if (m === "self") {
       mask |= EventModifier.SELF;
@@ -27,6 +24,8 @@ function eventModifierMask(key) {
       mask |= beforeSelf ? EventModifier.PREVENT_ANY : EventModifier.PREVENT;
     } else if (m === "stop") {
       mask |= beforeSelf ? EventModifier.STOP_ANY : EventModifier.STOP;
+    } else if (!LISTENER_MODIFIERS.includes(m)) {
+      throw new OwlError(`Unknown event modifier: '${m}'`);
     }
   }
   return mask;
@@ -1516,12 +1515,17 @@ function normalizeXML(el) {
 }
 
 // ../owl-compiler/src/code_generator.ts
+var SCOPE_MARK = "scope";
+var SCOPE_MARKER_RE = /\u0001scope\d+\u0001/g;
+var CONTEXT_WRITE = /ctx\['[^']*'\]\s*(?:[-+*/%&|^]|\*\*|<<|>>>?|&&|\|\||\?\?)?=(?![=>])|ctx\['[^']*'\]\s*(?:\+\+|--)|(?:\+\+|--)\s*ctx\[|delete\s+ctx\[|[[,{:]\s*ctx\['[^']*'\]\s*[,\]}][^;=\n]*?=(?![=>])/;
 var MAX_LAZY_LOOP_KEYS = 3;
+var KEY_MARK = "\\u0002";
 var whitespaceRE = /[ \t\n\r\f]+/g;
 var xmlDoc;
 if (typeof document !== "undefined") {
   xmlDoc = document.implementation.createDocument(null, null, null);
 }
+var LITERAL_RE = /^(?:'[^'\\]*'|"[^"\\]*"|`(?:[^`\\]|\\.)*`|-?\d[\d.e+-]*|true|false|null|undefined|\{.*\})$/s;
 function isProp(tag, key) {
   switch (tag) {
     case "input":
@@ -1593,6 +1597,9 @@ var BlockDescription = class {
       if (hasChildren) {
         params += ", [" + this.children.map((c) => c.varName).join(", ") + "]";
       }
+      if (this.handlers.length) {
+        params += `${hasChildren ? "" : ", null"}, ${this.blockName}_handlers`;
+      }
       if (this.dynamicTagName) {
         return `toggler(${this.dynamicTagName}, ${this.blockName}(${this.dynamicTagName})(${params}))`;
       }
@@ -1629,6 +1636,10 @@ var CodeTarget = class {
   indentLevel = 0;
   loopLevel = 0;
   loopCtxVars = [];
+  // the loops being compiled, innermost last
+  loops = [];
+  // the loop levels whose item (or, for 0, whose function scope) a t-set writes
+  writtenLevels = /* @__PURE__ */ new Set();
   // loop levels whose key is concatenated into a string key: they get a
   // `skey<level>` that tells object keys apart
   stringKeyLevels = /* @__PURE__ */ new Set();
@@ -1671,7 +1682,7 @@ var CodeTarget = class {
   // list's child is always in
   currentKey(ctx) {
     if (ctx.tKeyExpr) {
-      return `${ctx.tKeyExpr} + ${this.stringKey(this.loopLevel)}`;
+      return `\`\${${this.stringKey(this.loopLevel)}}${KEY_MARK}k\${${ctx.tKeyExpr}}\``;
     }
     return `key${this.loopLevel}`;
   }
@@ -1693,6 +1704,7 @@ var TRANSLATABLE_ATTRS = [
 var translationRE = /^(\s*)([\s\S]+?)(\s*)$/;
 var CodeGenerator = class {
   blocks = [];
+  scopeSites = [];
   isDebug = false;
   targets = [];
   target = new CodeTarget("template");
@@ -1748,6 +1760,7 @@ var CodeGenerator = class {
       translationCtx: "",
       tKeyExpr: null
     });
+    this.resolveScopes();
     let mainCode = [`  let { text, createBlock, list, multi, html, toggler } = bdom;`];
     if (this.helpers.size) {
       mainCode.push(`let { ${[...this.helpers].join(", ")} } = helpers;`);
@@ -1773,15 +1786,20 @@ var CodeGenerator = class {
           }
           if (block.handlers.length) {
             const types = `${block.blockName}_types`;
-            mainCode.push(`const ${types} = Object.create(null);`);
             mainCode.push(
-              `let ${block.blockName} = tag => ${types}[tag] || (${types}[tag] = createBlock(${xmlString}, [${block.handlers.join(", ")}]));`
+              `const ${block.blockName}_handlers = [${block.handlers.join(", ")}];`,
+              `const ${types} = Object.create(null);`,
+              `let ${block.blockName} = tag => ${types}[tag] || (${types}[tag] = createBlock(${xmlString}, ${block.blockName}_handlers));`
             );
           } else {
             mainCode.push(`let ${block.blockName} = tag => createBlock(${xmlString});`);
           }
         } else {
-          const handlers = block.handlers.length ? `, [${block.handlers.join(", ")}]` : "";
+          let handlers = "";
+          if (block.handlers.length) {
+            handlers = `, ${block.blockName}_handlers`;
+            mainCode.push(`const ${block.blockName}_handlers = [${block.handlers.join(", ")}];`);
+          }
           mainCode.push(`let ${block.blockName} = createBlock(${xmlString}${handlers});`);
         }
       }
@@ -1817,6 +1835,57 @@ ${code}`;
   }
   define(varName, expr) {
     this.addLine(`const ${varName} = ${expr};`);
+  }
+  scopeMarker(from, itemVar, varName, names) {
+    const marker = `${SCOPE_MARK}${this.scopeSites.length}`;
+    this.scopeSites.push({ marker, target: this.target, from, itemVar, varName, names });
+    return marker;
+  }
+  /**
+   * A context made under another one made in the same render (a loop item)
+   * costs V8 about 1.6 us and 1.2 KB: the item becomes a prototype. A loop
+   * item no t-set writes holds only its loop's names, set when it is made:
+   * a context made under it can be made under the item's own prototype with
+   * a copy of those names instead, which no later write can make stale. That
+   * holds while nothing else writes a context: an expression assigning a
+   * variable (`t-on-click="v = 1"`, a bare-name `t-model.proxy`) turns it off
+   * for the whole template.
+   */
+  resolveScopes() {
+    const sites = this.scopeSites;
+    if (!sites.length) {
+      return;
+    }
+    const code = [
+      ...this.staticDefs.map((d) => d.expr),
+      ...[this.target, ...this.targets].flatMap((t) => t.code)
+    ].join("\n");
+    const writesContext = CONTEXT_WRITE.test(code);
+    const copiable = (loop, target) => !writesContext && !target.writtenLevels.has(loop.level);
+    const base = (loop, target) => loop.parent && copiable(loop.parent, target) ? base(loop.parent, target) : loop.parentVar;
+    const ownNames = (loop, target) => {
+      const names = loop.parent && copiable(loop.parent, target) ? ownNames(loop.parent, target) : [];
+      return [.../* @__PURE__ */ new Set([...names, ...loop.names])];
+    };
+    const resolved = /* @__PURE__ */ new Map();
+    for (const { marker, target, from, itemVar, varName, names } of sites) {
+      let expr = `Object.create(${itemVar})`;
+      if (copiable(from, target)) {
+        expr = `Object.create(${base(from, target)})`;
+        for (const name of ownNames(from, target)) {
+          if (!names.includes(name)) {
+            const key = JSON.stringify(name);
+            expr += `; ${varName}[${key}] = ${itemVar}[${key}]`;
+          }
+        }
+      }
+      resolved.set(marker, expr);
+    }
+    for (const t of [this.target, ...this.targets]) {
+      t.code = t.code.map(
+        (line) => line.includes(SCOPE_MARK) ? line.replace(SCOPE_MARKER_RE, (m) => resolved.get(m)) : line
+      );
+    }
   }
   insertAnchor(block) {
     const tag = `block-child-${block.children.length}`;
@@ -1991,6 +2060,13 @@ ${code}`;
         const isFormat = key.startsWith("t-attf");
         attrName = isFormat ? key.slice(7) : key === "t-att" ? null : key.slice(6);
         expr = isFormat ? interpolate(ast.attrs[key]) : compileExpr(ast.attrs[key]);
+        if (!attrName) {
+          this.helpers.add("attrsValue");
+          expr = `attrsValue(${expr})`;
+        } else if (!LITERAL_RE.test(expr)) {
+          this.helpers.add("attrValue");
+          expr = `attrValue(${expr})`;
+        }
         if (attrName && isProp(ast.tag, attrName)) {
           if (attrName === "readonly") {
             attrName = "readOnly";
@@ -2157,8 +2233,8 @@ ${code}`;
     if (ast.expr === "0") {
       blockStr = this.compileZero(ast, ctx);
     } else {
-      const site = this.generateId("__");
-      const keyExpr = ctx.tKeyExpr ? `${ctx.tKeyExpr} + key` : "key";
+      const site = this.siteId();
+      const keyExpr = ctx.tKeyExpr ? `key + \`${KEY_MARK}k\${${ctx.tKeyExpr}}\`` : "key";
       const level = this.target.loopLevel;
       let keyArgs;
       if (level <= MAX_LAZY_LOOP_KEYS) {
@@ -2168,9 +2244,9 @@ ${code}`;
           }
         }
         const loopKeys = Array.from({ length: level }, (_, i) => `, key${i + 1}`).join("");
-        keyArgs = `${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
+        keyArgs = `node, ${keyExpr}, "${site}"${level ? `, ${level}${loopKeys}` : ""}`;
       } else {
-        keyArgs = `${this.scopeKey(ctx, site)}, ""`;
+        keyArgs = `node, ${this.scopeKey(ctx, site)}, ""`;
       }
       const expr = compileExpr(ast.expr);
       this.helpers.add("safeOutput");
@@ -2252,7 +2328,29 @@ ${code}`;
     }
     this.addLine(`for (let ${loopVar} = 0; ${loopVar} < ${l}; ${loopVar}++) {`);
     this.target.indentLevel++;
-    this.addLine(`let ctx = Object.create(${ctxVar});`);
+    const suffixes = [""];
+    if (!(ast.noFlags & ForEachNoFlag.First)) {
+      suffixes.push("_first");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Last)) {
+      suffixes.push("_last");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Index)) {
+      suffixes.push("_index");
+    }
+    if (!(ast.noFlags & ForEachNoFlag.Value)) {
+      suffixes.push("_value");
+    }
+    const parentLoop = this.target.loops[this.target.loops.length - 1] || null;
+    const loopScope = {
+      level: this.target.loopLevel,
+      parentVar: ctxVar,
+      names: suffixes.map((suffix) => ast.elem + suffix),
+      parent: parentLoop
+    };
+    const itemExpr = parentLoop ? this.scopeMarker(parentLoop, ctxVar, "ctx", loopScope.names) : `Object.create(${ctxVar})`;
+    this.addLine(`let ctx = ${itemExpr};`);
+    this.target.loops.push(loopScope);
     const loopVarName = (suffix) => JSON.stringify(ast.elem + suffix);
     this.addLine(`ctx[${loopVarName("")}] = ${keys}[${loopVar}];`);
     if (!(ast.noFlags & ForEachNoFlag.First)) {
@@ -2317,6 +2415,7 @@ ${code}`;
     this.target.indentLevel--;
     this.target.loopLevel--;
     this.target.loopCtxVars.pop();
+    this.target.loops.pop();
     for (const [name, level2] of this.target.tSetVars) {
       if (level2 > this.target.loopLevel) {
         this.target.tSetVars.delete(name);
@@ -2421,7 +2520,11 @@ ${code}`;
       ctxExpr = `ctx[zero] ? withoutZero(ctx) : ctx`;
     } else {
       ctxExpr = this.generateId("ctx");
-      this.define(ctxExpr, `Object.create(ctx)`);
+      const loop = this.target.loops[this.target.loops.length - 1];
+      this.define(
+        ctxExpr,
+        loop ? this.scopeMarker(loop, "ctx", ctxExpr, [...attrs.map(([name]) => name)]) : `Object.create(ctx)`
+      );
       for (const [name, value] of attrs) {
         this.addLine(`${ctxExpr}[${JSON.stringify(name)}] = ${value};`);
       }
@@ -2472,26 +2575,31 @@ ${code}`;
         );
       }
       this.addLine(`${this.target.loopCtxVars[defLevel]}[${name}] = ${value};`);
+      this.target.writtenLevels.add(defLevel);
     } else {
       if (!level) {
         this.target.needsScopeProtection = true;
       }
       this.addLine(`ctx[${name}] = ${value};`);
+      this.target.writtenLevels.add(level);
       this.target.tSetVars.set(ast.name, level);
     }
     return null;
   }
-  // the key of a site's content: the site's id, then the key of each open
-  // loop. Every site has an id: without one, a site's loop keys could spell
-  // another site's id (`__2` for the item keyed 2 and for the site __2), and
-  // the two would share a key in their component's children.
-  scopeKey(ctx, site = this.generateId("__")) {
-    let suffix = site;
+  // the key of a site's content: the t-key around it, the site's id, then
+  // the key of each open loop, each a segment of its own (see keyOf in the
+  // runtime): no loop key, t-key or id can spell another, so two sites, or
+  // two items of a site, never share a key in their component's children
+  scopeKey(ctx, site = this.siteId()) {
+    let suffix = ctx.tKeyExpr ? `${KEY_MARK}k\${${ctx.tKeyExpr}}${site}` : site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
-      suffix += `__\${${this.target.stringKey(i)}}`;
+      suffix += `${KEY_MARK}:\${${this.target.stringKey(i)}}`;
     }
-    const key = `key + \`${suffix}\``;
-    return ctx.tKeyExpr ? `${ctx.tKeyExpr} + ${key}` : key;
+    return `key + \`${suffix}\``;
+  }
+  // a keyed site's id, unique in the template, as written in the generated code
+  siteId() {
+    return this.generateId(KEY_MARK);
   }
   /**
    * Formats a prop name and value into a string suitable to be inserted in the
@@ -2603,8 +2711,7 @@ ${code}`;
       slotDef = `{${slotStr.join(", ")}}`;
     }
     if (slotDef && !(ast.dynamicProps || hasSlotsProp)) {
-      this.helpers.add("markRaw");
-      props.push(`slots: markRaw(${slotDef})`);
+      props.push(`slots: ${slotDef}`);
     }
     let propString = this.getPropString(props, ast.dynamicProps);
     let propVar;
@@ -2614,8 +2721,7 @@ ${code}`;
       propString = propVar;
     }
     if (slotDef && (ast.dynamicProps || hasSlotsProp)) {
-      this.helpers.add("markRaw");
-      this.addLine(`${propVar}.slots = markRaw(Object.assign(${slotDef}, ${propVar}.slots));`);
+      this.addLine(`${propVar}.slots = Object.assign(${slotDef}, ${propVar}.slots);`);
     }
     let expr;
     if (ast.isDynamic) {
@@ -2729,7 +2835,7 @@ ${code}
 var version = "3.0.0-alpha.49";
 
 // ../owl-runtime/src/build_info.ts
-var buildHash = "b654faa9";
+var buildHash = "33bb67f1";
 
 // src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
