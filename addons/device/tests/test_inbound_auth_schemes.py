@@ -3,6 +3,8 @@ import hmac
 
 from odoo.tools import mute_logger
 
+from odoo.addons.credential.tests.common import flush_after_commit
+
 from .common import DeviceTransactionCase
 
 
@@ -119,6 +121,7 @@ class TestInboundAuthSchemes(DeviceTransactionCase):
         self.assertTrue(
             device.authenticate_request({"Authorization": f"Bearer {token}"})
         )
+        flush_after_commit(self.env)
         self.assertTrue(
             credential.last_used_at,
             "the request-per-event path keeps the side effect it always had",

@@ -7,6 +7,7 @@ from typing import Any, Self
 from cryptography.fernet import Fernet, InvalidToken
 
 from odoo import api, fields, models, tools
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs import redact
 from odoo.libs.json import dumps as json_dumps
@@ -17,6 +18,70 @@ from odoo.tools import SQL, frozendict
 from .credential_use import check_purpose
 
 _logger = logging.getLogger(__name__)
+
+_USAGE_PENDING_KEY = "credential.usage.pending"
+# A flush that loses to a concurrent one on the same row is run again this many
+# times in all; the counts are statistics, so past that they are logged and lost.
+_USAGE_FLUSH_TRIES = 3
+
+
+def _flush_usage(registry, pending: dict) -> None:
+    """Add a transaction's uses to their credentials, in a cursor of its own.
+
+    The counters are added in SQL (column + n), never read and written back,
+    so two flushes on one row both count; rows are locked in id order, so two
+    flushes cannot deadlock.
+    """
+    if not pending:
+        return
+    rows = sorted(pending.items())
+    pending.clear()
+    for attempt in range(1, _USAGE_FLUSH_TRIES + 1):
+        try:
+            with registry.cursor() as cr:
+                for credential_id, (uses, successes, errors, used_at) in rows:
+                    cr.execute(
+                        """
+                        UPDATE credential_credential
+                           SET usage_count = COALESCE(usage_count, 0) + %(uses)s,
+                               success_count = COALESCE(success_count, 0) + %(ok)s,
+                               error_count = COALESCE(error_count, 0) + %(ko)s,
+                               success_rate = CASE
+                                   WHEN COALESCE(success_count, 0) + %(ok)s
+                                        + COALESCE(error_count, 0) + %(ko)s > 0
+                                   THEN (COALESCE(success_count, 0) + %(ok)s) * 100.0
+                                        / (COALESCE(success_count, 0) + %(ok)s
+                                           + COALESCE(error_count, 0) + %(ko)s)
+                                   ELSE 0
+                               END,
+                               last_used_at = GREATEST(
+                                   COALESCE(last_used_at, %(at)s), %(at)s
+                               )
+                         WHERE id = %(id)s
+                        """,
+                        {
+                            "uses": uses,
+                            "ok": successes,
+                            "ko": errors,
+                            "at": used_at,
+                            "id": credential_id,
+                        },
+                    )
+            return
+        except PG_RETRY_EXCEPTIONS:
+            if attempt < _USAGE_FLUSH_TRIES:
+                continue
+            _logger.warning(
+                "Credential uses %s lost to concurrent updates %s times; not counted",
+                [credential_id for credential_id, _counts in rows],
+                attempt,
+            )
+        except Exception:
+            _logger.exception(
+                "Could not count the uses of credentials %s; the uses went ahead",
+                [credential_id for credential_id, _counts in rows],
+            )
+            return
 
 DAYS_NO_EXPIRY = 999
 
@@ -1333,16 +1398,34 @@ class CredentialCredential(models.Model):
         return None
 
     def increment_usage(self, success: bool = True) -> None:
+        """Count one use, and whether it succeeded, once the transaction ends.
+
+        Every call through a credential used to write its row in the caller's
+        transaction; a bot's chats all share one credential, so two calls at
+        once had one transaction fail on that row, a serialization failure
+        surfacing at whatever flush came next. The count is added after the
+        transaction commits or rolls back -- the call happened either way --
+        in a cursor of its own, and is not seen before then.
+        """
         self.check_singleton()
-        vals = {
-            "usage_count": self.usage_count + 1,
-            "last_used_at": fields.Datetime.now(),
-        }
-        if success:
-            vals["success_count"] = self.success_count + 1
-        else:
-            vals["error_count"] = self.error_count + 1
-        self.with_context(**{self._INTERNAL_STATS_UPDATE_KEY: True}).write(vals)
+        self._queue_usage(uses=1, successes=int(success), errors=int(not success))
+
+    def _queue_usage(self, uses=0, successes=0, errors=0) -> None:
+        self.check_singleton()
+        if not self.id:
+            return
+        cr = self.env.cr
+        pending = cr.postcommit.durable_data.get(_USAGE_PENDING_KEY)
+        if pending is None:
+            pending = cr.postcommit.durable_data[_USAGE_PENDING_KEY] = {}
+            registry = self.env.registry
+            cr.postcommit.add_durable(lambda: _flush_usage(registry, pending))
+            cr.postrollback.add(lambda: _flush_usage(registry, pending))
+        counts = pending.setdefault(self.id, [0, 0, 0, None])
+        counts[0] += uses
+        counts[1] += successes
+        counts[2] += errors
+        counts[3] = fields.Datetime.now()
 
     @api.model
     def _get_request_source_ip(self) -> str | bool:
@@ -1476,8 +1559,9 @@ class CredentialCredential(models.Model):
                 )
 
     def mark_as_used(self) -> None:
+        """Record when the credential was last used, once the transaction ends
+        (see increment_usage): every authenticated webhook of a receiver calls
+        this on the same row."""
         self.check_singleton()
-        self.with_context(**{self._INTERNAL_STATS_UPDATE_KEY: True}).write(
-            {"last_used_at": fields.Datetime.now()}
-        )
+        self._queue_usage()
         self._log_access("use")

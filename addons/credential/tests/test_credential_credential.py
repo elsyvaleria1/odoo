@@ -10,6 +10,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import TransactionCase
 from odoo.tools import mute_logger
 
+from odoo.addons.credential.tests.common import flush_after_commit
 from odoo.addons.mixin_encryption.models import (
     mixin_encryption as mixin_mod,
 )
@@ -380,6 +381,7 @@ class TestCredentialCredential(TransactionCase):
         self.assertFalse(credential.last_used_at)
 
         credential.mark_as_used()
+        flush_after_commit(self.env)
 
         self.assertTrue(credential.last_used_at)
 
@@ -928,6 +930,7 @@ class TestCredentialStatsProtection(TransactionCase):
         initial_count = credential.usage_count
 
         credential.increment_usage(success=True)
+        flush_after_commit(self.env)
 
         self.assertEqual(credential.usage_count, initial_count + 1)
         self.assertEqual(credential.success_count, 1)
@@ -944,6 +947,7 @@ class TestCredentialStatsProtection(TransactionCase):
         self.assertFalse(credential.last_used_at)
 
         credential.mark_as_used()
+        flush_after_commit(self.env)
 
         self.assertTrue(credential.last_used_at)
 
