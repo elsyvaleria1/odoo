@@ -88,7 +88,7 @@ server action model AND the workflow node definition.
 | ~~`predecessor_ids`~~ | ~~Many2many self~~ | **REMOVED in Phase 2** — replaced by `workflow.edge` |
 | ~~`successor_ids`~~ | ~~Many2many self~~ | **REMOVED in Phase 2** — replaced by `workflow.edge` |
 | `node_type` | Selection | `action` (default), `wait`, `approval`, `input` or `subflow`. No `parallel`/`join`/`branch` — the edge model is already all three — and no `http_request`, because `state="webhook"` already is one. See vision.md Phase 3 |
-| `approval_user_ids` / `approval_note` | Many2many `res.users` / Char | Who must approve, and what the activity asks |
+| `approval_user_ids` / `approval_mode` / `approval_note` | Many2many `res.users` / Selection / Char | Who receives an activity; whether `all` of them (default) or `any` one must mark it done — under `any` the first release removes the others' activities, after the step is released, so `_fail_missing_approval` does not read the removal as a lost approval; and what the activity asks, an inline template over the run's record (`_render_approval_note`: `{{ object.name }}`) |
 | `subflow_automation_id` | Many2one `automation.rule` | What a Sub-workflow step runs; a cycle is refused |
 | `line_input_field_ids` | Many2many `ir.model.fields` | Fields of the step's own run step (`automation.runtime.line`) that must be filled before it runs; `_get_line_input_fields()` is the hook a module extends with what its step types need. A step reached with one empty pauses and asks, and Continue runs that step only |
 | `input_field_ids` | Many2many `ir.model.fields` | The stored, writable fields of `automation.runtime` an Input step asks someone to fill in. An Input step asks these **or** its form, never both |

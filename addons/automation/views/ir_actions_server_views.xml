@@ -82,6 +82,11 @@
                                 invisible="node_type != 'approval'"
                                 required="node_type == 'approval'" />
                             <field
+                                name="approval_mode"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                invisible="node_type != 'approval'" />
+                            <field
                                 name="approval_note"
                                 invisible="node_type != 'approval'" />
                             <field

@@ -1,6 +1,6 @@
 {
     "name": "Automation Rules",
-    "version": "1.16",
+    "version": "1.17",
     "oldest_upgradable_version": "1.13",
     "category": "Sales/Sales",
     "summary": "Trigger configured actions and workflows from business-record events",

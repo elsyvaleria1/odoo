@@ -124,12 +124,24 @@ class IrActionsServer(models.Model):
         comodel_name="res.users",
         relation="ir_actions_server_approval_user_rel",
         string="Approvers",
-        help="Everyone who must mark their activity done before an Approval "
-        "step lets the workflow continue",
+        help="Who receives an activity when an Approval step is reached. "
+        "Approved By says whether everyone, or any one of them, must mark "
+        "it done for the workflow to continue",
+    )
+    approval_mode = fields.Selection(
+        selection=[("all", "Everyone"), ("any", "Anyone")],
+        string="Approved By",
+        default="all",
+        required=True,
+        help="Everyone: the step waits until each approver has marked their "
+        "activity done. Anyone: the first approver to do so releases the "
+        "step, and the other approvers' activities are removed",
     )
     approval_note = fields.Char(
         string="Ask For",
-        help="Shown on the activity each approver receives",
+        help="Shown on the activity each approver receives. May read the "
+        "record the run is about as object, for example "
+        "{{ object.name }}, with mail's inline template syntax",
     )
 
     input_field_ids = fields.Many2many(
@@ -558,6 +570,21 @@ class IrActionsServer(models.Model):
         """
         self.check_singleton()
         return self.line_input_field_ids
+
+    def _render_approval_note(self, record) -> str:
+        """What the activity of an Approval step asks, with the record the run
+        is about filled in: the step's note rendered as an inline template over
+        `record`, or the step's name when there is no note or it renders empty."""
+        self.check_singleton()
+        note = self.approval_note
+        if not note:
+            return self.name
+        if not record:
+            return note
+        rendered = self.env["mixin.mail.render"]._render_template(
+            note, record._name, [record.id]
+        )
+        return rendered.get(record.id) or self.name
 
     def _workflow_step_detail(self):
         if self.node_type == "input":

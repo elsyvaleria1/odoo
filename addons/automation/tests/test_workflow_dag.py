@@ -1238,6 +1238,58 @@ class TestApprovalNode(TransactionCase):
         self.assertEqual(line.state, "paused")
         self.assertEqual(runtime.state, "waiting_resume")
 
+    def test_anyone_lets_one_approver_of_two_release_the_step(self):
+        second = self.env["res.users"].create(
+            {
+                "name": "Second",
+                "login": "approver_wf_2",
+                "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        gate = self._action(
+            "approve",
+            node_type="approval",
+            approval_mode="any",
+            approval_user_ids=[(6, 0, (self.approver | second).ids)],
+        )
+        after = self._action("after", "record.write({'ref': 'approved'})")
+        link(self.env, gate, after)
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        self.assertEqual(len(line.activity_ids), 2)
+        others = line.activity_ids.filtered(lambda a: a.user_id == second)
+
+        line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+
+        self.assertEqual(line.state, "done")
+        self.assertEqual(self._line(runtime, after).state, "done")
+        self.assertEqual(runtime.state, "done")
+        self.assertFalse(others.exists(), "the other approver has nothing left to do")
+        self.assertFalse(
+            self.env["mail.activity"]
+            .with_context(active_test=False)
+            .search(
+                [
+                    ("automation_runtime_line_id", "=", line.id),
+                    ("user_id", "=", second.id),
+                ]
+            )
+        )
+        self.partner.invalidate_recordset(["ref"])
+        self.assertEqual(self.partner.ref, "approved")
+
+    def test_the_note_reads_the_record(self):
+        gate = self._action(
+            "approve",
+            node_type="approval",
+            approval_user_ids=[(6, 0, self.approver.ids)],
+            approval_note="Approve {{ object.name }}",
+        )
+        runtime = self._run()
+
+        activity = self._line(runtime, gate).activity_ids
+        self.assertEqual(activity.summary, "Approve Approval Partner")
+
     @mute_logger("odoo.addons.automation.models.automation_runtime_line")
     def test_a_refusal_routes_through_an_on_error_edge(self):
         gate = self._approval()

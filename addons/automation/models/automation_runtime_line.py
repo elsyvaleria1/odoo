@@ -580,7 +580,7 @@ class AutomationRuntimeLine(models.Model):
             return
 
         activity_type = self.env.ref("mail.mail_activity_data_todo", False)
-        summary = self.action_id.approval_note or self.name
+        summary = self.action_id._render_approval_note(record)
         self.env["mail.activity"].create(
             [
                 {
@@ -665,12 +665,16 @@ class AutomationRuntimeLine(models.Model):
             ),
         )
         for line in approvals:
-            if line.activity_ids.filtered("active"):
+            pending = line.activity_ids.filtered("active")
+            if pending and line.action_id.approval_mode == "all":
                 continue
             runtime = line.runtime_id
             if runtime.state == "waiting_resume":
                 runtime.state = "in_progress"
             line.action_resume()
+            # once the step is released: removing the activities of a step
+            # still paused is what _fail_missing_approval fails it for
+            pending.unlink()
             runtime._advance()
 
     def action_resume(self):
