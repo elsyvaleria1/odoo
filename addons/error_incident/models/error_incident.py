@@ -99,8 +99,8 @@ class ErrorIncident(models.Model):
     rule_id = fields.Many2one(
         comodel_name="error.incident.rule",
         string="Set Aside By",
-        readonly=True,
         index="btree_not_null",
+        readonly=True,
         ondelete="set null",
     )
     date_first_seen = fields.Datetime(
