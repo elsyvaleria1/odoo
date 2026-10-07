@@ -141,11 +141,11 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _engine_providers(self) -> dict:
-        """{code: provider} of the providers the engine runs, both ways."""
+        """{code: provider} of the providers the engine runs."""
         return {
             code: provider
             for code, provider in self._calendar_sync_providers().items()
-            if provider.adapter and provider.sends
+            if provider.adapter
         }
 
     def _window(self) -> Domain:
@@ -172,28 +172,36 @@ class CalendarSyncAccount(models.Model):
         )
 
     @api.model
-    def _writer(self, record, code: str, running=None):
+    def _actives(self, code: str):
+        return _Actives(self, code)
+
+    @api.model
+    def _writer(self, record, code: str, running=None, active=None):
         """The account a change of `record` goes out through: its organizer's
-        while the organizer synchronizes with `code`, else `running`."""
+        while the organizer synchronizes with `code`, else `running`.
+        `active`, an _Actives of `code`, saves asking twice of a user."""
+        active = active or _Actives(self, code)
         organizer = (
             record.user_id
             if record._name == "calendar.event"
             else record.base_event_id.user_id
         )
-        if organizer and organizer._calendar_sync_active(code):
-            return self._for(organizer, code)
+        if organizer and active(organizer):
+            return active.account(organizer)
         return running or self.browse()
 
     @api.model
-    def _may_insert(self, record, code: str) -> bool:
+    def _may_insert(self, record, code: str, active=None) -> bool:
         """An event goes to the provider through its organizer, or through any
-        attendee when it has none."""
-        organizer = (
-            record.user_id
-            if record._name == "calendar.event"
-            else record.base_event_id.user_id
-        )
-        return not organizer or organizer._calendar_sync_active(code)
+        attendee when it has none; an event of a series goes as the series,
+        and one marked recurring whose series is not made yet waits for it."""
+        if record._name == "calendar.event":
+            if record.follow_recurrence if record.recurrence_id else record.recurrency:
+                return False
+            organizer = record.user_id
+        else:
+            organizer = record.base_event_id.user_id
+        return not organizer or (active or _Actives(self, code))(organizer)
 
     def _calendar_sync(self) -> bool:
         """Read this account's calendar into Odoo, then send what Odoo holds
@@ -201,8 +209,10 @@ class CalendarSyncAccount(models.Model):
         read = self._read()
         if read is None:
             return False
-        self._queue_push()
-        return bool(read[1])
+        changes, applied = read
+        # a first or repaired synchronization does not mail every attendee
+        self._queue_push(quiet=changes.full)
+        return bool(applied)
 
     def _read(self):
         """Read this account's calendar into Odoo: (the changes read, the
@@ -383,34 +393,62 @@ class CalendarSyncAccount(models.Model):
 
     # -- push ----------------------------------------------------------------
 
-    def _queue_push(self) -> None:
+    def _queue_push(self, records=None, quiet=False) -> None:
         """Send what these accounts owe their calendars once this transaction
-        is committed: an insert's id is committed before it is sent."""
+        is committed, an insert's id being committed before it is sent:
+        `records` alone, as an edit in the interface waits for them, or all
+        of it, as a run does. `quiet` sends no invitation or update mails."""
         data = self.env.cr.postcommit.data
         if "calendar_sync.push" not in data:
             data.setdefault_set("calendar_sync.push")
-            cr, dbname = self.env.cr, self.env.cr.dbname
+            data.setdefault_set("calendar_sync.push.records")
+            data.setdefault_set("calendar_sync.push.quiet")
+            data.setdefault_set("calendar_sync.push.deletes")
+            cr, dbname, uid = self.env.cr, self.env.cr.dbname, self.env.uid
 
             @cr.postcommit.add
             def push():
-                account_ids = sorted(cr.postcommit.data.pop("calendar_sync.push"))
+                everything = cr.postcommit.data.pop("calendar_sync.push")
+                records = cr.postcommit.data.pop("calendar_sync.push.records")
+                quiet = cr.postcommit.data.pop("calendar_sync.push.quiet")
+                deletes = cr.postcommit.data.pop("calendar_sync.push.deletes")
+                only = dict.fromkeys(deletes, ())
+                for account_id, model, record_id in records:
+                    only[account_id] = (*only.get(account_id, ()), (model, record_id))
                 with Registry(dbname).cursor() as push_cr:
-                    env = api.Environment(push_cr, self.env.uid, {})
+                    env = api.Environment(push_cr, uid, {})
                     for account in (
                         env["calendar.sync.account"]
                         ._as_engine()
-                        .browse(account_ids)
+                        .browse(sorted({*everything, *only}))
                         .exists()
                     ):
                         owner = account.user_id._calendar_sync_as_owner()
                         try:
-                            account.with_env(owner.env)._push()
+                            account.with_env(owner.env).with_context(
+                                calendar_sync_quiet=account.id in quiet,
+                                calendar_sync_interactive=account.id not in everything,
+                            )._push(
+                                None if account.id in everything else only[account.id]
+                            )
                             push_cr.commit()
                         except Exception:
                             _logger.exception("calendar push of %s failed", account)
                             push_cr.rollback()
 
-        data["calendar_sync.push"].update(self.ids)
+        if records is None:
+            data["calendar_sync.push"].update(self.ids)
+        elif not records:
+            # the deletions alone: the push starts with them
+            data["calendar_sync.push.deletes"].update(self.ids)
+        else:
+            data["calendar_sync.push.records"].update(
+                (account.id, record._name, record.id)
+                for account in self
+                for record in records
+            )
+        if quiet:
+            data["calendar_sync.push.quiet"].update(self.ids)
 
     def _as_engine(self):
         """These accounts as the engine reads them, whoever it runs as."""
@@ -419,9 +457,10 @@ class CalendarSyncAccount(models.Model):
             reason="the engine synchronizes the accounts' calendars",
         )
 
-    def _push(self) -> None:
+    def _push(self, only=None) -> None:
         """Send this account's calendar what Odoo changed: deletions, changes,
-        then new records, committing after each."""
+        then new records, committing after each; of the records, `only` those
+        [(model, id)] when given."""
         self.check_singleton()
         code = self.provider
         if not self.user_id._calendar_sync_active(code):
@@ -438,22 +477,41 @@ class CalendarSyncAccount(models.Model):
             if budget <= 0 or not self._send_delete(tombstone):
                 return
             budget -= 1
-        others = self.browse()
-        for record, writer in self._to_push():
+        others = {}
+        for record, writer in self._to_push(only):
             if writer != self:
-                others |= writer
+                others[writer] = others.get(writer, record.browse()) | record
                 continue
             if budget <= 0 or not self._send(record):
                 break
             budget -= 1
-        others._queue_push()
+        for writer, records in others.items():
+            writer._queue_push(None if only is None else records)
 
-    def _to_push(self):
+    def _to_push(self, only=None):
         """[(record, writer)] of what Odoo owes the calendars of this account's
         provider and this account may send: the records whose links wait to
-        be sent, then its events and series no calendar of the provider has."""
+        be sent, then its events and series no calendar of the provider has;
+        of `only` [(model, id)] when given, those of them."""
         code = self.provider
         Link = self.env["calendar.sync.link"]._engine()
+        active = _Actives(self, code)
+        if only is not None:
+            records = []
+            for model, record_id in only:
+                record = self.env[model].browse(record_id).exists()
+                links = record and Link._of(record, code)
+                if (
+                    links.filtered("pending")
+                    if links
+                    else record
+                    and record.active
+                    and self._may_insert(record, code, active)
+                ):
+                    records.append(record)
+            return [
+                (record, self._writer(record, code, self, active)) for record in records
+            ]
         pending = Link.search(
             [
                 ("account_id.provider", "=", code),
@@ -483,15 +541,20 @@ class CalendarSyncAccount(models.Model):
             .with_env(Link.env)
             .search(
                 Domain("base_event_id.user_id", "=", self.user_id.id)
+                & Domain("rrule", "!=", False)
                 & unlinked
                 & created,
                 limit=PUSH_BUDGET,
             )
         )
         records += [
-            record for record in (*series, *events) if self._may_insert(record, code)
+            record
+            for record in (*series, *events)
+            if self._may_insert(record, code, active)
         ]
-        return [(record, self._writer(record, code, self)) for record in records]
+        return [
+            (record, self._writer(record, code, self, active)) for record in records
+        ]
 
     def _call(self, operation, *args):
         """(result, None), or (None, the error) when the provider refused."""
@@ -543,13 +606,12 @@ class CalendarSyncAccount(models.Model):
                 if error and error.kind not in (ErrorKind.GONE, *PERMANENT):
                     return self._failed(own, record, error)
             Link._of(record, self.provider).unlink()
+        elif not (values := adapter._remote_values(record, self)):
+            # nothing the provider can hold yet: a series with no event
+            return True
         elif own.remote_id:
             remote, error = self._call(
-                adapter._patch,
-                self,
-                own.remote_id,
-                record,
-                adapter._remote_values(record, self),
+                adapter._patch, self, own.remote_id, record, values
             )
             if error:
                 return self._failed(own, record, error)
@@ -573,11 +635,7 @@ class CalendarSyncAccount(models.Model):
             # the insert id is kept before it is sent: a retry sends it again
             self.env.cr.commit()
             remote, error = self._call(
-                adapter._insert,
-                self,
-                record,
-                adapter._remote_values(record, self),
-                own.insert_id,
+                adapter._insert, self, record, values, own.insert_id
             )
             if (
                 error
@@ -596,6 +654,7 @@ class CalendarSyncAccount(models.Model):
                         "pending": False,
                     }
                 )
+                adapter._after_insert(self, record, remote)
         self.env.cr.commit()
         return True
 
@@ -650,3 +709,22 @@ class CalendarSyncAccount(models.Model):
             message_type="comment",
             subtype_xmlid="mail.mt_note",
         )
+
+
+class _Actives:
+    """Whether users synchronize with one provider, and their accounts, each
+    asked once of a user."""
+
+    def __init__(self, Account, code: str) -> None:
+        self.Account, self.code = Account, code
+        self._active, self._accounts = {}, {}
+
+    def __call__(self, user) -> bool:
+        if user.id not in self._active:
+            self._active[user.id] = user._calendar_sync_active(self.code)
+        return self._active[user.id]
+
+    def account(self, user):
+        if user.id not in self._accounts:
+            self._accounts[user.id] = self.Account._for(user, self.code)
+        return self._accounts[user.id]

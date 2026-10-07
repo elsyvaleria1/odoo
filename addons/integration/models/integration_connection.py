@@ -625,7 +625,10 @@ class IntegrationConnection(models.Model):
     @api.model
     def _find_personal(self, service, user=None) -> Self:
         user = user or self.env.user
-        return self.sudo().search(
+        # the service is read as its connection is found, whoever asks
+        elevated = self.sudo()
+        service = service.with_env(elevated.env)
+        return elevated.search(
             [
                 ("service_id", "=", service.id),
                 ("user_id", "=", user.id),

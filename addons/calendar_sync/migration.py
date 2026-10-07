@@ -123,3 +123,32 @@ def link_remote_ids(env, code, sources, column) -> None:
     _logger.info(
         "%s calendar: %s remote ids linked in %s calendars", code, linked, len(accounts)
     )
+
+
+def pend_links(env, code, column) -> None:
+    """Mark the links of `code` pending where their record's `column` says
+    Odoo changed it since the provider heard of it, then drop the column."""
+    cr = env.cr
+    for table, field in (
+        ("calendar_event", "event_id"),
+        ("calendar_recurrence", "recurrence_id"),
+    ):
+        if not schema.column_exists(cr, table, column):
+            continue
+        cr.execute(
+            SQL(
+                """UPDATE calendar_sync_link link
+                      SET pending = true
+                     FROM %(table)s rec, calendar_sync_account account
+                    WHERE link.%(field)s = rec.id
+                      AND rec.%(column)s
+                      AND account.id = link.account_id
+                      AND account.provider = %(code)s""",
+                table=SQL.identifier(table),
+                field=SQL.identifier(field),
+                column=SQL.identifier(column),
+                code=code,
+            )
+        )
+        _logger.info("%s calendar: %s links of %s pending", code, cr.rowcount, table)
+        schema.drop_columns(cr, table, [column])

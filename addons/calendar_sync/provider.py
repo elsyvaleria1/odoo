@@ -25,9 +25,6 @@ class CalendarSyncProvider:
     paused_param: str
     # the adapter model the engine runs; None while the provider runs its own
     adapter: str | None = None
-    # whether the engine sends Odoo's changes too; False while a provider
-    # moving onto the engine still sends them itself
-    sends: bool = True
     capabilities: CalendarSyncCapabilities = CalendarSyncCapabilities()
     # how many days around today a full synchronization reaches
     range_param: str | None = None

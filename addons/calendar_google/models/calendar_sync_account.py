@@ -14,9 +14,6 @@ GOOGLE = CalendarSyncProvider(
     scope=CALENDAR_SCOPE,
     paused_param="google_calendar_sync_paused",
     adapter="calendar.sync.adapter.google",
-    # Google's changes are read by the engine; Odoo's still go out through
-    # mixin.google.calendar.sync
-    sends=False,
     capabilities=CalendarSyncCapabilities(shared_ids=True, client_insert_id=True),
     range_param="calendar_google.sync.range_days",
 )

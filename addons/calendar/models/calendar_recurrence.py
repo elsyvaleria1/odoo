@@ -384,11 +384,12 @@ class CalendarRecurrence(models.Model):
         """Check if all events in this recurrence are in the past.
 
         Shares its name with `calendar.event._is_event_over` on purpose, not by
-        accident: `mixin.google.calendar.sync` is mixed into both models and
-        `_google_patch` asks `self._is_event_over()` without knowing which one
-        it is holding. Same question, different object -- an event is over when
-        it is past, a recurrence when every event in it is. Do not rename either
-        half without the other and that call site.
+        accident: a calendar synchronization adapter (Google's
+        `calendar.sync.adapter.google`) asks `record._is_event_over()` of an
+        event or a series without knowing which one it is holding. Same
+        question, different object -- an event is over when it is past, a
+        recurrence when every event in it is. Do not rename either half without
+        the other and that call site.
 
         :return: True if all events are over, False otherwise
         """

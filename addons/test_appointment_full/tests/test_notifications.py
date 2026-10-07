@@ -83,9 +83,7 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, TestAppointmentNotificationCommon)
             appointment.action_archive()
             self.env.flush_all()
             self.cr.precommit.run()
-        self.assertGoogleEventPatched(
-            "test_google_id", {"status": "cancelled"}, timeout=3
-        )
+            self.assertGoogleEventDeleted("test_google_id")
         self.assertNotSentEmail()
 
 

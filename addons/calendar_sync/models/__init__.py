@@ -1,5 +1,6 @@
 from . import mixin_calendar_sync
 from . import calendar_alarm_manager
+from . import calendar_attendee
 from . import calendar_event
 from . import calendar_recurrence
 from . import calendar_sync_account

@@ -6,3 +6,4 @@ from . import test_sync_odoo2google_mail
 from . import test_credential_storage
 from . import test_sync_candidates
 from . import test_oauth_state
+from . import test_sync_failures

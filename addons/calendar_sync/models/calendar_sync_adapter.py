@@ -47,6 +47,10 @@ class CalendarSyncAdapter(models.AbstractModel):
         raise NotImplementedError
 
     @api.model
+    def _after_insert(self, account, record, remote: RemoteEvent) -> None:
+        """What `record` learns from its insert in `account`'s calendar."""
+
+    @api.model
     def _classify(self, error: Exception) -> CalendarSyncError:
         """`error`, raised by the transport, as the engine handles it."""
         return CalendarSyncError(ErrorKind.TRANSIENT, str(error))

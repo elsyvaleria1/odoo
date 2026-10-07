@@ -7,10 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import Command, api, fields, models, tools
 from odoo.exceptions import ValidationError
-from odoo.fields import Domain
 from odoo.tools.authority_keys import declare_authority_keys
-
-from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 
 declare_authority_keys("calendar_google", "skip_event_permission")
 
@@ -74,42 +71,10 @@ class CalendarEvent(models.Model):
         }
 
     @api.model
-    def _restart_google_sync(self):
-        self.env["calendar.event"].search(self._get_domain_sync()).write(
-            {
-                "need_sync": True,
-            }
-        )
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        description_context = self.env.context.get("skip_contact_description", False)
-        notify_context = self.env.context.get("dont_notify", False)
-        return super(
-            CalendarEvent,
-            self.with_context(
-                dont_notify=notify_context, skip_contact_description=description_context
-            ),
-        ).create(
-            [
-                dict(vals, need_sync=False)
-                if vals.get("recurrence_id") or vals.get("recurrency")
-                else vals
-                for vals in vals_list
-            ]
-        )
-
-    @api.model
     def _has_values_to_sync(self, values) -> bool:
         """Return True if values being updated intersects with Google synced values and False otherwise."""
         synced_fields = self._get_fields_google_synced()
         return any(key in synced_fields for key in values)
-
-    @api.model
-    def _prepare_update_future_events_values(self) -> dict:
-        """Add parameters for updating events within the _update_future_events function scope."""
-        update_future_events_values = super()._prepare_update_future_events_values()
-        return {**update_future_events_values, "need_sync": False}
 
     @api.model
     def _prepare_remove_sync_id_values(self) -> dict:
@@ -117,39 +82,21 @@ class CalendarEvent(models.Model):
         remove_sync_id_values = super()._prepare_remove_sync_id_values()
         return {**remove_sync_id_values, "google_id": False}
 
-    @api.model
-    def _prepare_archive_values(self) -> dict:
-        """Return the parameters for archiving events. Do not synchronize events after archiving."""
-        archive_values = super()._prepare_archive_values()
-        return {**archive_values, "need_sync": False}
-
     def write(self, vals):
-        recurrence_update_setting = vals.get("recurrence_update")
-        if recurrence_update_setting in ("all", "subsequent") and len(self) == 1:
-            vals = dict(vals, need_sync=False)
         syncing = self.env.context.get("google_calendar_syncing") or (
             self.env.context.get("calendar_sync_applying") == "google"
         )
         if not syncing and any(self.env.user != event.user_id for event in self):
             self._check_modify_event_permission(vals)
-        res = super().write(vals)
-        if (
-            recurrence_update_setting == "all"
-            and len(self) == 1
-            and vals.keys() & self._get_fields_google_synced()
-        ):
-            self.recurrence_id.need_sync = True
-        return res
+        return super().write(vals)
 
     def _check_modify_event_permission(self, values) -> None:
         """Check if event modification attempt by attendee is valid to avoid duplicate events creation."""
-        # Edge case: when restarting the synchronization, guests can write 'need_sync=True' on events.
-        google_sync_restart = values.get("need_sync") and len(values)
-        # Edge case 2: when resetting an account, we must be able to erase the event's google_id.
+        # Edge case: when resetting an account, we must be able to erase the event's google_id.
         skip_event_permission = self.env.context.get("skip_event_permission", False)
-        # Edge case 3: check if event is synchronizable in order to make sure the error is worth it.
+        # Edge case 2: check if event is synchronizable in order to make sure the error is worth it.
         is_synchronizable = self._has_values_to_sync(values)
-        if google_sync_restart or skip_event_permission or not is_synchronizable:
+        if skip_event_permission or not is_synchronizable:
             return
         if any(
             event.guests_readonly and self.env.user.id != event.user_id.id
@@ -161,33 +108,6 @@ class CalendarEvent(models.Model):
                     "according to the event permissions set on Google Calendar."
                 )
             )
-
-    def _skip_send_mail_status_update(self):
-        """If a google calendar is not syncing with the user, don't send a mail."""
-        if self._get_event_user()._calendar_sync_active("google"):
-            return True
-        return super()._skip_send_mail_status_update()
-
-    def _get_domain_sync(self):
-        # in case of full sync, limit to a range of 1y in past and 1y in the future by default
-        ICP = self.env["ir.config_parameter"].sudo()
-        day_range = int(ICP.get_param("calendar_google.sync.range_days", default=365))
-        lower_bound = fields.Datetime.subtract(fields.Datetime.now(), days=day_range)
-        upper_bound = fields.Datetime.add(fields.Datetime.now(), days=day_range)
-        return Domain(
-            [
-                ("partner_ids.user_ids", "in", self.env.user.id),
-                ("stop", ">", lower_bound),
-                ("start", "<", upper_bound),
-                # Do not sync events that follow the recurrence, they are already synced at recurrence creation
-                "!",
-                "&",
-                "&",
-                ("recurrency", "=", True),
-                ("recurrence_id", "!=", False),
-                ("follow_recurrence", "=", True),
-            ]
-        )
 
     @api.model
     def _odoo_values(self, google_event, default_reminders=(), event=None):
@@ -382,17 +302,20 @@ class CalendarEvent(models.Model):
         return commands
 
     def action_mass_archive(self, recurrence_update_setting) -> None:
-        """Delete recurrence in Odoo if in 'all' or in 'subsequent' edge case, triggering one mail."""
+        """Delete the series from Google in one request, mailing once, when all
+        of its events go, or all from its base event."""
         self.check_singleton()
-        google_service = GoogleCalendarService(self.env)
         archive_future_events = (
             recurrence_update_setting == "subsequent"
             and self == self.recurrence_id.base_event_id
         )
         if recurrence_update_setting == "all" or archive_future_events:
-            self.recurrence_id.with_context(is_recurrence=True)._google_delete(
-                google_service, self.recurrence_id.google_id
-            )
+            Link = self.env["calendar.sync.link"]
+            # the instances go with their series
+            Link._of(self.recurrence_id.calendar_event_ids, "google").unlink()
+            series = Link._of(self.recurrence_id, "google")
+            series.write({"recurrence_id": False})
+            series.account_id._queue_push(self.browse())
             # Increase performance handling 'subsequent' edge case as it was an 'all' update.
             if archive_future_events:
                 recurrence_update_setting = "all"
@@ -519,13 +442,3 @@ class CalendarEvent(models.Model):
         if not self.active:
             values["status"] = "cancelled"
         return self._update_google_owner_values(values)
-
-    def _get_event_user(self):
-        self.check_singleton()
-        if self.user_id and self.user_id._calendar_sync_connection("google"):
-            return self.user_id
-        return self.env.user
-
-    def _is_google_insertion_blocked(self, sender_user) -> bool:
-        self.check_singleton()
-        return bool(self.user_id and self.user_id != sender_user)

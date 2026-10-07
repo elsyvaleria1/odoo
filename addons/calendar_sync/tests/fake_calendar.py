@@ -23,6 +23,10 @@ class FakeCalendars:
         self.calendars: dict[int, dict[str, dict]] = {}
         self.changed: dict[int, list[str]] = {}
         self.sent: list[tuple[str, int, str]] = []
+        # (account id, record id) the engine said it inserted
+        self.inserted: list[tuple[int, int]] = []
+        # the context of each insert and patch, as the adapter sees it
+        self.contexts: list[dict] = []
         # {operation: kind} fails every call; once=True only the next one
         self.failing: dict[str, tuple[ErrorKind, bool]] = {}
         # an insert that lands, then loses its answer
@@ -128,6 +132,7 @@ class FakeAdapter:
             "insert_id": insert_id,
         }
         server.sent.append(("insert", account.id, remote_id))
+        server.contexts.append(dict(account.env.context))
         if server.lose_insert_answers:
             server.lose_insert_answers -= 1
             raise CalendarSyncError(ErrorKind.TRANSIENT, "the answer was lost")
@@ -142,6 +147,7 @@ class FakeAdapter:
         item = calendar[remote_id]
         item.update(values, etag=str(int(item["etag"]) + 1))
         server.sent.append(("patch", account.id, remote_id))
+        server.contexts.append(dict(account.env.context))
         return server.remote(remote_id, item)
 
     def _delete(self, account, remote_id):
@@ -150,6 +156,9 @@ class FakeAdapter:
         if server.calendar(account).pop(remote_id, None) is None:
             raise CalendarSyncError(ErrorKind.GONE)
         server.sent.append(("delete", account.id, remote_id))
+
+    def _after_insert(self, account, record, remote):
+        self.server.inserted.append((account.id, record.id))
 
     def _classify(self, error):
         return CalendarSyncError(ErrorKind.TRANSIENT, str(error))

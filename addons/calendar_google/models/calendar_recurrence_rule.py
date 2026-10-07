@@ -1,10 +1,8 @@
 import logging
 
 from odoo import api, models
-from odoo.fields import Command, Domain
+from odoo.fields import Command
 from odoo.tools import email_normalize
-
-from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 
 _logger = logging.getLogger(__name__)
 
@@ -19,45 +17,36 @@ class CalendarRecurrence(models.Model):
         no_send_edit=False,
         generic_values_creation=None,
     ):
-        events = self.filtered("need_sync").calendar_event_ids
         detached_events = super()._apply_recurrence(
             specific_values_creation, no_send_edit, generic_values_creation
         )
-
-        google_service = GoogleCalendarService(self.env)
-
-        # If a synced event becomes a recurrence, the event needs to be deleted from
-        # Google since it's now the recurrence which is synced.
-        # Those events are kept in the database and their google_id is updated
-        # according to the recurrence google_id, therefore we need to keep an inactive copy
-        # of those events with the original google id. The next sync will then correctly
-        # delete those events from Google.
-        vals = []
-        for event in events.filtered("google_id"):
-            if (
-                event.active
-                and event.google_id != event.recurrence_id._get_event_google_id(event)
-            ):
-                vals += [
-                    {
-                        "name": event.name,
-                        "google_id": event.google_id,
-                        "start": event.start,
-                        "stop": event.stop,
-                        "active": False,
-                        "need_sync": True,
-                    }
-                ]
-                event.with_user(event._get_event_user())._google_delete(
-                    google_service, event.google_id
-                )
-                event.google_id = False
-        self.env["calendar.event"].with_context(skip_contact_description=True).create(
-            vals
-        )
-
-        self.calendar_event_ids.need_sync = False
+        if self.env.context.get("calendar_sync_applying") != "google":
+            self._google_retire_single_ids()
         return detached_events
+
+    def _google_retire_single_ids(self) -> None:
+        """An event Google holds alone that became an event of a series leaves
+        Google under its own id: its links become tombstones, deleted by the
+        next push, and the series is sent for it."""
+        Link = self.env["calendar.sync.link"]
+        for recurrence in self:
+            if (links := Link._of(recurrence, "google")) and not links.filtered(
+                "pending"
+            ):
+                # Google holds the series as it is: its events' ids are its own
+                continue
+            events = recurrence.calendar_event_ids.filtered(
+                lambda event, recurrence=recurrence: (
+                    event.active
+                    and event.google_id
+                    and event.google_id != recurrence._get_event_google_id(event)
+                )
+            )
+            if not events:
+                continue
+            retired = Link._of(events, "google")
+            retired.write({"event_id": False})
+            retired.account_id._queue_push(events.browse())
 
     def _inverse_google_id(self) -> None:
         super()._inverse_google_id()
@@ -82,20 +71,10 @@ class CalendarRecurrence(models.Model):
 
     def _write_events(self, values, dtstart=None):
         values.pop("google_id", False)
-        # Events will be updated by patch requests, do not sync events for avoiding spam.
-        values["need_sync"] = False
         return super()._write_events(values, dtstart=dtstart)
 
     def _get_fields_google_synced(self):
         return {"rrule"}
-
-    @api.model
-    def _restart_google_sync(self):
-        self.env["calendar.recurrence"].search(self._get_domain_sync()).write(
-            {
-                "need_sync": True,
-            }
-        )
 
     def _write_from_google(self, gevent, vals) -> None:
         current_rrule = self.rrule
@@ -160,7 +139,6 @@ class CalendarRecurrence(models.Model):
                 )
                 self.calendar_event_ids.write(
                     {
-                        "need_sync": False,
                         "partner_ids": [
                             Command.unlink(att.partner_id.id) for att in attendees
                         ],
@@ -196,7 +174,7 @@ class CalendarRecurrence(models.Model):
             (self.calendar_event_ids - base_event_id).unlink()
             base_event_id.with_context(
                 dont_notify=True, google_calendar_syncing=True
-            ).write(dict(new_event_values, google_id=False, need_sync=False))
+            ).write(dict(new_event_values, google_id=False))
             if new_parsed_rrule == current_parsed_rrule:
                 # if the rrule has changed, it will be recalculated below
                 # There is no detached event now
@@ -210,14 +188,11 @@ class CalendarRecurrence(models.Model):
             )
             # We avoid to write time_fields because they are not shared between events.
             self._write_events(
-                dict(
-                    {
-                        field: value
-                        for field, value in new_event_values.items()
-                        if field not in time_fields
-                    },
-                    need_sync=False,
-                )
+                {
+                    field: value
+                    for field, value in new_event_values.items()
+                    if field not in time_fields
+                }
             )
 
         # We apply the rrule check after the time_field check because the google_id are generated according
@@ -232,12 +207,7 @@ class CalendarRecurrence(models.Model):
     def _create_from_google(self, gevents, vals_list):
         attendee_values = {}
         for gevent, vals in zip(gevents, vals_list, strict=False):
-            base_values = dict(
-                self.env["calendar.event"]._odoo_values(
-                    gevent
-                ),  # FIXME default reminders
-                need_sync=False,
-            )
+            base_values = self.env["calendar.event"]._odoo_values(gevent)
             # If we convert a single event into a recurrency on Google, we should reuse this event on Odoo
             # Google reuse the event google_id to identify the recurrence in that case
             base_event = self.env["calendar.event"].search(  # noqa: E8507 - one lookup per synced recurrence, on its google id
@@ -275,15 +245,6 @@ class CalendarRecurrence(models.Model):
         )._apply_recurrence(generic_values_creation=generic_values_creation)
         return recurrence
 
-    def _get_domain_sync(self):
-        # Empty rrule may exists in historical data. It is not a desired behavior but it could have been created with
-        # older versions of the module. When synced, these recurrency may come back from Google after database cleaning
-        # and trigger errors as the records are not properly populated.
-        # We also prevent sync of other user recurrent events.
-        return Domain("calendar_event_ids.user_id", "=", self.env.user.id) & Domain(
-            "rrule", "!=", False
-        )
-
     @api.model
     def _odoo_values(self, google_recurrence, default_reminders=()):
         return {
@@ -316,13 +277,3 @@ class CalendarRecurrence(models.Model):
             },
         }
         return values
-
-    def _get_event_user(self):
-        self.check_singleton()
-        event = self._get_first_event()
-        if event:
-            return event._get_event_user()
-        return self.env.user
-
-    def _is_google_insertion_blocked(self, sender_user) -> bool:
-        return self._has_other_event_owner(sender_user)

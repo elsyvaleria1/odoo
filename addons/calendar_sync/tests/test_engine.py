@@ -101,11 +101,17 @@ class TestCalendarSyncEngine(TransactionCase):
             "fake_outlook": FakeCalendars("fake_outlook", shared_ids=False),
             "fake_google": FakeCalendars("fake_google", shared_ids=True),
         }
+        Account = type(self.env["calendar.sync.account"])
+        installed = Account._adapter_of
         self.startPatcher(
             patch.object(
-                type(self.env["calendar.sync.account"]),
+                Account,
                 "_adapter_of",
-                lambda account, code: FakeAdapter(self.servers[code]),
+                lambda account, code: (
+                    FakeAdapter(self.servers[code])
+                    if code in self.servers
+                    else installed(account, code)
+                ),
             )
         )
 
@@ -136,11 +142,12 @@ class TestCalendarSyncEngine(TransactionCase):
     def _links(self, record, code="fake_outlook"):
         return self.env["calendar.sync.link"]._of(record, code)
 
-    def _event(self, organizer=None, **values):
+    def _event(self, organizer=None, context=None, **values):
         organizer = organizer or self.organizer
         return (
             self.env["calendar.event"]
             .with_user(organizer)
+            .with_context(**(context or {}))
             .create(
                 {
                     "name": "Meeting",
@@ -369,6 +376,62 @@ class TestCalendarSyncEngine(TransactionCase):
             ],
         )
         self.assertEqual(self._links(event).mapped("pending"), [False, False])
+
+    def test_an_edit_sends_that_record_alone_and_at_once(self):
+        account, event = self._linked_event()
+        waiting = self._event(
+            name="Waiting for the next run", context={"no_calendar_sync": True}
+        )
+        self._push()
+        self.servers["fake_outlook"].sent.clear()
+        self.servers["fake_outlook"].contexts.clear()
+
+        event.with_user(self.organizer).name = "Renamed"
+        self._push()
+        self.assertEqual(
+            self.servers["fake_outlook"].sent,
+            [("patch", account.id, self._links(event).remote_id)],
+        )
+        self.assertTrue(
+            self.servers["fake_outlook"].contexts[0]["calendar_sync_interactive"]
+        )
+        self.assertFalse(self._links(waiting))
+
+        self._sync(self.organizer)
+        self.assertTrue(self._links(waiting).remote_id, "the run sends the rest")
+
+    def test_a_first_synchronization_sends_without_mails(self):
+        self._authorize(self.organizer)
+        self._event(context={"no_calendar_sync": True})
+        self._sync(self.organizer)
+        self.assertTrue(self.servers["fake_outlook"].contexts[0]["calendar_sync_quiet"])
+
+        self._event(name="Later")
+        self._sync(self.organizer)
+        self.assertFalse(
+            self.servers["fake_outlook"].contexts[-1]["calendar_sync_quiet"]
+        )
+
+    def test_an_answer_goes_out_through_the_organizer(self):
+        account, event = self._linked_event()
+        self._authorize(self.attendee)
+        attendee = event.attendee_ids.filtered(
+            lambda a: a.partner_id == self.attendee.partner_id
+        )
+        attendee.with_user(self.attendee).do_accept()
+        self._push()
+        self.assertEqual(
+            self.servers["fake_outlook"].sent,
+            [("patch", account.id, self._links(event).remote_id)],
+        )
+
+    def test_an_insert_tells_the_adapter_what_it_inserted(self):
+        account = self._authorize(self.organizer)
+        event = self._event()
+        self._push()
+        self.assertEqual(
+            self.servers["fake_outlook"].inserted, [(account.id, event.id)]
+        )
 
     def test_an_unsynced_field_is_not_sent(self):
         __, event = self._linked_event()

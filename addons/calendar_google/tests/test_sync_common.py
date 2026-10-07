@@ -5,14 +5,14 @@ from unittest.mock import patch
 
 from freezegun import freeze_time
 
-from odoo import fields
+from odoo import api, fields
+from odoo.modules.registry import Registry
 from odoo.tests.common import HttpCase
 
-from odoo.addons.calendar_google.models.mixin_google_calendar_sync import (
-    MixinGoogleCalendarSync,
-    google_calendar_connection,
+from odoo.addons.calendar_google.utils.calendar_google import (
+    TIMEOUT,
+    GoogleCalendarService,
 )
-from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
 from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 from odoo.addons.mail.tests.common import mail_new_test_user
 
@@ -78,60 +78,79 @@ class TestSyncGoogle(HttpCase):
             yield
 
     @contextmanager
-    def mock_google_sync(self, user_id=None):
+    def mock_google_sync(self):
+        """Record what is sent to Google instead of sending it: (values, the
+        timeout when it is not the default) per insert, per patch by id, and
+        the deleted ids."""
         self._gsync_deleted_ids = []
         self._gsync_insert_values = []
         self._gsync_patch_values = defaultdict(list)
 
-        # as these are normally post-commit hooks, we don't change any state here
-        def _mock_delete(model, service, google_id, **kwargs):
-            with google_calendar_connection(
-                user_id or model.env.user.sudo()
-            ) as connection:
-                if connection:
-                    self._gsync_deleted_ids.append(google_id)
+        def kwargs(timeout):
+            return {} if timeout == TIMEOUT else {"timeout": timeout}
 
-        def _mock_insert(model, service, values, **kwargs):
-            if not values:
-                return
-            with google_calendar_connection(
-                user_id or model.env.user.sudo()
-            ) as connection:
-                if connection:
-                    self._gsync_insert_values.append((values, kwargs))
+        def _mock_insert(
+            service, values, connection=None, timeout=TIMEOUT, need_video_call=True
+        ):
+            if connection:
+                self._gsync_insert_values.append((values, kwargs(timeout)))
+            return {}
 
-        def _mock_patch(model, service, google_id, values, **kwargs):
-            with google_calendar_connection(
-                user_id or model.env.user.sudo()
-            ) as connection:
-                if connection:
-                    self._gsync_patch_values[google_id].append((values, kwargs))
+        def _mock_patch(service, event_id, values, connection=None, timeout=TIMEOUT):
+            if connection:
+                self._gsync_patch_values[event_id].append((values, kwargs(timeout)))
+
+        def _mock_delete(service, event_id, connection=None, timeout=TIMEOUT):
+            if connection:
+                self._gsync_deleted_ids.append(event_id)
 
         with (
             self.env.cr.savepoint(),
-            patch.object(
-                MixinGoogleCalendarSync,
-                "_google_insert",
-                autospec=True,
-                wraps=MixinGoogleCalendarSync,
-                side_effect=_mock_insert,
-            ),
-            patch.object(
-                MixinGoogleCalendarSync,
-                "_google_delete",
-                autospec=True,
-                wraps=MixinGoogleCalendarSync,
-                side_effect=_mock_delete,
-            ),
-            patch.object(
-                MixinGoogleCalendarSync,
-                "_google_patch",
-                autospec=True,
-                wraps=MixinGoogleCalendarSync,
-                side_effect=_mock_patch,
-            ),
+            patch.object(GoogleCalendarService, "insert", _mock_insert),
+            patch.object(GoogleCalendarService, "patch", _mock_patch),
+            patch.object(GoogleCalendarService, "delete", _mock_delete),
         ):
             yield
+
+    def push_google(self):
+        """What a commit does next: flush, then send what waits for it."""
+        self.env.flush_all()
+        funcs = self.env.cr.postcommit._funcs
+        while funcs:
+            funcs.popleft()()
+        self.env.invalidate_all()
+
+    def send_google(self, records):
+        """What a run sends of `records`, each through the account Google takes
+        its changes from; a linked record is sent whatever its state."""
+        self.set_google_pending(records)
+        Account = self.env["calendar.sync.account"]
+        running = (
+            Account._for(self.env.user, "google")
+            if self.env.user._calendar_sync_active("google")
+            else Account
+        )
+        by_writer = {}
+        for record in records:
+            if writer := Account._writer(record, "google", running):
+                by_writer.setdefault(writer.id, []).append((record._name, record.id))
+        self.env.flush_all()
+        with Registry(self.env.cr.dbname).cursor() as cr:
+            Accounts = api.Environment(cr, self.env.uid, {})["calendar.sync.account"]
+            for account_id, only in by_writer.items():
+                account = Accounts._as_engine().browse(account_id)
+                owner = account.user_id._calendar_sync_as_owner()
+                account.with_env(owner.env).with_context(**self.env.context)._push(only)
+        self.env.invalidate_all()
+
+    def google_pending(self, record):
+        """Whether Google has yet to hear of `record`: a link of it waits to be
+        sent, or it has none and is active."""
+        links = self.env["calendar.sync.link"]._of(record, "google")
+        return bool(links.filtered("pending")) or (not links and record.active)
+
+    def set_google_pending(self, records, pending=True):
+        self.env["calendar.sync.link"]._of(records, "google").pending = pending
 
     @contextmanager
     def mock_google_service(self):
@@ -150,14 +169,17 @@ class TestSyncGoogle(HttpCase):
             yield
 
     def assertGoogleEventDeleted(self, google_id):
+        self.push_google()
         self.assertIn(
             google_id, self._gsync_deleted_ids, "Event should have been deleted"
         )
 
     def assertGoogleEventNotDeleted(self):
+        self.push_google()
         self.assertFalse(self._gsync_deleted_ids)
 
     def assertGoogleEventInserted(self, values, timeout=None):
+        self.push_google()
         self.assertEqual(len(self._gsync_insert_values), 1)
         matching = []
         for insert_values, insert_kwargs in self._gsync_insert_values:
@@ -172,6 +194,7 @@ class TestSyncGoogle(HttpCase):
         self.assertDictEqual(insert_kwargs, {"timeout": timeout} if timeout else {})
 
     def assertGoogleEventInsertedMultiTime(self, values, timeout=None):
+        self.push_google()
         self.assertGreaterEqual(len(self._gsync_insert_values), 1)
         matching = []
         for insert_values, insert_kwargs in self._gsync_insert_values:
@@ -186,9 +209,11 @@ class TestSyncGoogle(HttpCase):
         self.assertDictEqual(insert_kwargs, {"timeout": timeout} if timeout else {})
 
     def assertGoogleEventNotInserted(self):
+        self.push_google()
         self.assertFalse(self._gsync_insert_values)
 
     def assertGoogleEventPatched(self, google_id, values, timeout=None):
+        self.push_google()
         patch_values_all = self._gsync_patch_values.get(google_id)
         self.assertTrue(patch_values_all)
         matching = []
@@ -202,6 +227,7 @@ class TestSyncGoogle(HttpCase):
         self.assertDictEqual(patch_kwargs, {"timeout": timeout} if timeout else {})
 
     def assertGoogleEventNotPatched(self):
+        self.push_google()
         self.assertFalse(self._gsync_patch_values)
 
     def assertGoogleAPINotCalled(self):
@@ -210,17 +236,11 @@ class TestSyncGoogle(HttpCase):
         self.assertGoogleEventNotDeleted()
 
     def assertGoogleEventSendUpdates(self, expected_value):
+        self.push_google()
         self.assertEqual(len(self._gservice_request_uris), 1)
         uri = self._gservice_request_uris[0]
         uri_parameter = "sendUpdates=%s" % expected_value
         self.assertIn(uri_parameter, uri, "The URL should contain %s" % uri_parameter)
 
     def call_post_commit_hooks(self):
-        """
-        manually calls postcommit hooks defined with the decorator @after_commit
-        """
-
-        funcs = self.env.cr.postcommit._funcs.copy()
-        while funcs:
-            func = funcs.popleft()
-            func()
+        self.push_google()

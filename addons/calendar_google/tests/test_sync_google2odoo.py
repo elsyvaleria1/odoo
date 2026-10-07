@@ -52,7 +52,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             base_event = (
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
-                .create({"name": "coucou", "need_sync": False, **values})
+                .create({"name": "coucou", **values})
             )
             recurrence = (
                 self.env["calendar.recurrence"]
@@ -61,7 +61,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     {
                         "google_id": google_id,
                         "rrule": rrule,
-                        "need_sync": False,
                         "base_event_id": base_event.id,
                     }
                 )
@@ -290,7 +289,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": date(2020, 1, 6),
                 "google_id": google_id,
                 "user_id": self.env.user.id,
-                "need_sync": False,
                 "partner_ids": [
                     (6, 0, self.env.user.partner_id.ids)
                 ],  # current user is attendee
@@ -320,7 +318,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": date(2020, 1, 6),
                 "allday": True,
                 "google_id": google_id,
-                "need_sync": False,
                 "user_id": False,  # Not the current user
                 "partner_ids": [Command.set(user.partner_id.ids)],
             }
@@ -365,7 +362,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": now + timedelta(hours=2),
                 "google_id": "one",
                 "user_id": self.env.user.id,
-                "need_sync": False,
                 "alarm_ids": [(6, 0, [notif30min])],
                 "partner_ids": [(6, 0, (self.env.user | portal_user).partner_id.ids)],
             }
@@ -396,7 +392,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": date(2020, 1, 6),
                 "allday": True,
                 "google_id": google_id,
-                "need_sync": False,
                 "user_id": False,  # Not the current user
                 "partner_ids": [
                     (6, 0, self.env.user.partner_id.ids)
@@ -427,6 +422,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 },
                 "reminders": {"overrides": [], "useDefault": False},
             },
+            timeout=3,
         )
 
     @patch_api
@@ -443,7 +439,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "stop": date(2020, 1, 6),
                     "google_id": google_id,
                     "user_id": False,  # user is not owner
-                    "need_sync": False,
                     "partner_ids": [
                         (6, 0, user.partner_id.ids)
                     ],  # but user is attendee
@@ -492,7 +487,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "start": datetime(2020, 1, 6),
                 "stop": datetime(2020, 1, 6),
                 "user_id": False,  # user is not owner
-                "need_sync": False,
                 "partner_ids": [(6, 0, user.partner_id.ids)],  # but user is attendee
             }
         )
@@ -500,7 +494,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -796,14 +789,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "allday": True,
                 "start": datetime(2020, 1, 6),
                 "stop": datetime(2020, 1, 6),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": recurrence_id,
                 "rrule": "FREQ=WEEKLY;WKST=SU;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
             }
         )
@@ -887,14 +878,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "allday": True,
                 "start": datetime(2020, 1, 6),
                 "stop": datetime(2020, 1, 6),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -935,14 +924,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "allday": True,
                 "start": datetime(2020, 1, 6),
                 "stop": datetime(2020, 1, 6),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -983,14 +970,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "name": "coucou",
                 "start": datetime(2021, 2, 15, 8, 0, 0),
                 "stop": datetime(2021, 2, 15, 10, 0, 0),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -1007,9 +992,11 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         middle_event.write(
             {
                 "start": datetime(2021, 2, 22, 16, 0, 0),
-                "need_sync": False,
             }
         )
+        # moving the event is sent to Google; what follows is about reading
+        self.push_google()
+        self._gsync_patch_values.clear()
 
         values = {
             "id": google_id,
@@ -1054,14 +1041,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "name": "coucou",
                 "start": datetime(2021, 2, 15, 8, 0, 0),
                 "stop": datetime(2021, 2, 15, 10, 0, 0),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -1107,14 +1092,12 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "name": "coucou",
                 "start": datetime(2021, 2, 15, 8, 0, 0),
                 "stop": datetime(2021, 2, 15, 10, 0, 0),
-                "need_sync": False,
             }
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -1380,7 +1363,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         # This test is a bit special because it's testing 2 sync processes. The
         # bug it's protecting against is cross-contamination when event dicts
         # are mutated in different ways during the call to
-        # `_sync_google_calendar()`. If you want to do a new test, this one is
+        # `_calendar_sync_run("google")`. If you want to do a new test, this one is
         # probably not the best example.
         google_id = "oj44nep1ldf8a3ll02uip0c9aa"
         with self.mock_datetime_and_now("2024-06-07"):
@@ -1458,7 +1441,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     [{"method": "popup", "minutes": 30}],
                 ),
             ):
-                self.attendee_user.sudo()._sync_google_calendar(self.google_service)
+                self.attendee_user.sudo()._calendar_sync_run("google")
             events = self.env["calendar.event"].search(
                 [("google_id", "like", google_id)]
             )
@@ -1563,7 +1546,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     [{"method": "popup", "minutes": 30}],
                 ),
             ):
-                self.attendee_user.sudo()._sync_google_calendar(self.google_service)
+                self.attendee_user.sudo()._calendar_sync_run("google")
             events = self.env["calendar.event"].search(
                 [("google_id", "like", google_id)]
             )
@@ -1718,7 +1701,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "stop": date(2020, 1, 6),
                     "google_id": google_id,
                     "user_id": False,  # user is not owner
-                    "need_sync": False,
                     "partner_ids": [
                         (6, 0, user.partner_id.ids)
                     ],  # but user is attendee
@@ -1774,7 +1756,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "stop": date(2020, 1, 6),
                     "allday": True,
                     "google_id": google_id,
-                    "need_sync": False,
                     "user_id": other_user.id,  # Not the current user
                     "partner_ids": [
                         (
@@ -1829,7 +1810,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "start": datetime(2021, 2, 15, 7, 0, 0),
                 "stop": datetime(2021, 2, 15, 9, 0, 0),
                 "event_tz": "Europe/Brussels",
-                "need_sync": False,
                 "partner_ids": [(6, 0, [other_user.partner_id.id])],
             }
         )
@@ -1837,7 +1817,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -1890,7 +1869,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "stop": date(2020, 1, 6),
                     "google_id": google_id,
                     "user_id": False,
-                    "need_sync": False,
                     "partner_ids": [(6, 0, user.partner_id.ids)],
                 }
             )
@@ -1926,7 +1904,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "start": datetime(2021, 2, 15, 7, 0, 0),
                 "stop": datetime(2021, 2, 15, 9, 0, 0),
                 "event_tz": "Europe/Brussels",
-                "need_sync": False,
                 "partner_ids": [(6, 0, [other_user.partner_id.id])],
             }
         )
@@ -1934,7 +1911,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -2041,7 +2017,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": datetime(2020, 1, 13, 20),
                 "allday": False,
                 "google_id": google_id,
-                "need_sync": False,
                 "user_id": self.env.user.partner_id.id,
                 "partner_ids": [
                     (
@@ -2063,7 +2038,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=3;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": event.id,
                 "calendar_event_ids": [(4, event.id)],
             }
@@ -2213,7 +2187,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "stop": date(2020, 1, 6),
                 "google_id": google_id,
                 "user_id": self.env.user.id,
-                "need_sync": False,
                 "partner_ids": [(6, 0, self.env.user.partner_id.ids)],
                 "videocall_location": "https://meet.google.com/odoo_local_videocall",
             }
@@ -2394,7 +2367,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 "allday": True,
                 "start": datetime(2020, 1, 6),
                 "stop": datetime(2020, 1, 6),
-                "need_sync": False,
                 "user_id": self.env.uid,
             }
         )
@@ -2402,7 +2374,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
             {
                 "google_id": google_id,
                 "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=MO",
-                "need_sync": False,
                 "base_event_id": base_event.id,
                 "calendar_event_ids": [(4, base_event.id)],
             }
@@ -3014,7 +2985,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                     "name": "coucou",
                     "start": datetime(2020, 1, 6, 9, 0),
                     "stop": datetime(2020, 1, 6, 10, 0),
-                    "need_sync": False,
                     "partner_ids": [
                         Command.set([organizer.partner_id.id, other_user.partner_id.id])
                     ],
@@ -3028,7 +2998,6 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
                 {
                     "google_id": recurrence_id,
                     "rrule": "FREQ=DAILY;INTERVAL=1;COUNT=3",
-                    "need_sync": False,
                     "base_event_id": base_event.id,
                 }
             )
@@ -3152,7 +3121,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["needsAction", "needsAction", "accepted", "needsAction"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.attendee_user.sudo()._sync_google_calendar(self.google_service)
+            self.attendee_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])
@@ -3195,7 +3164,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["needsAction", "needsAction", "accepted", "needsAction"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.organizer_user.sudo()._sync_google_calendar(self.google_service)
+            self.organizer_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])
@@ -3238,7 +3207,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["accepted", "accepted", "accepted", "accepted"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.attendee_user.sudo()._sync_google_calendar(self.google_service)
+            self.attendee_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])
@@ -3281,7 +3250,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["accepted", "accepted", "accepted", "accepted"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.organizer_user.sudo()._sync_google_calendar(self.google_service)
+            self.organizer_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])
@@ -3330,7 +3299,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["needsAction", "needsAction", "accepted", "accepted"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.attendee_user.sudo()._sync_google_calendar(self.google_service)
+            self.attendee_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])
@@ -3379,7 +3348,7 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         )
         expected_states = ["needsAction", "needsAction", "accepted", "accepted"]
         with self.mock_datetime_and_now("2024-04-22"):
-            self.organizer_user.sudo()._sync_google_calendar(self.google_service)
+            self.organizer_user.sudo()._calendar_sync_run("google")
             attendees = (
                 self.env["calendar.attendee"]
                 .search([("partner_id", "=", self.attendee_user.partner_id.id)])

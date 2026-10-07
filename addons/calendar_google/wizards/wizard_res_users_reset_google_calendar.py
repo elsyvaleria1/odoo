@@ -1,10 +1,5 @@
 from odoo import fields, models
 
-from odoo.addons.calendar_google.models.mixin_google_calendar_sync import (
-    google_calendar_connection,
-)
-from odoo.addons.calendar_google.utils.calendar_google import GoogleCalendarService
-
 
 class WizardResUsersResetGoogleCalendar(models.TransientModel):
     _name = "wizard.res.users.reset.google.calendar"
@@ -37,43 +32,40 @@ class WizardResUsersResetGoogleCalendar(models.TransientModel):
     )
 
     def reset_account(self) -> None:
-        google = GoogleCalendarService(self.env)
-
+        account = self.user_id._calendar_sync_account("google")._as_engine()
         events = self.env["calendar.event"].search(
             [("user_id", "=", self.user_id.id), ("google_id", "!=", False)]
         )
         recurrences = self.env["calendar.recurrence"].search(
             [("base_event_id", "in", events.ids), ("google_id", "!=", False)]
         )
+        Link = self.env["calendar.sync.link"]
+        links = Link._of(events, "google") | Link._of(recurrences, "google")
 
+        # deleted now, while the account the user leaves can still be reached
         if self.delete_policy in ("delete_google", "delete_both"):
-            with google_calendar_connection(self.user_id) as connection:
-                for event in events:
-                    google.delete(event.google_id, connection=connection)
+            adapter = self.env["calendar.sync.adapter.google"]
+            for google_id in set(Link._of(events, "google").mapped("remote_id")):
+                adapter._delete(account, google_id)
 
-        # Delete events according to the selected policy. If the deletion is only in
-        # Google, we won't keep track of the 'google_id' field for events and recurrences.
+        # the user's events forget their Google ids, or go with them
         if self.delete_policy in ("delete_odoo", "delete_both", "delete_google"):
-            # Flag need_sync as False in order to skip the write permission when resetting.
-            events.with_context(skip_event_permission=True).google_id = False
-            recurrences.with_context(skip_event_permission=True).google_id = False
+            links.unlink()
             if self.delete_policy != "delete_google":
                 events.unlink()
+        else:
+            # kept linked: sent again with every event, or left as they are
+            links.pending = self.sync_policy == "all"
 
-        # Define which events must be synchronized in the next synchronization:
-        # in 'all' sync policy we activate the sync for all events and in the 'new'
-        # sync policy we set it as False for skipping existing events synchronization.
-        next_sync_update = {}
-        if self.sync_policy == "all":
-            next_sync_update["need_sync"] = True
-        elif self.sync_policy == "new":
-            next_sync_update["need_sync"] = False
-
-        # Write the next sync update attribute on the existing events.
-        if self.delete_policy not in ("delete_odoo", "delete_both"):
-            events.with_context(skip_event_permission=True).write(next_sync_update)
-
+        account.write(
+            {
+                "sync_token": False,
+                # "new": what exists now is not sent; "all": every event is
+                "insert_since": (
+                    fields.Datetime.now() if self.sync_policy == "new" else False
+                ),
+            }
+        )
         self.env["integration.connection"]._find_personal(
             self.env.ref("integration_google.service_google"), self.user_id
         )._forget_oauth_authorization()
-        self.user_id._calendar_sync_account("google").sync_token = False

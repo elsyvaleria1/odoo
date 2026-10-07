@@ -40,11 +40,13 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
         )
-        for create_user, organizer, responsible, expect_mail, is_public in [
-            (user_root, organizer1, organizer1, False, True),
-            (user_root, None, user_root, True, True),
-            (organizer1, None, organizer1, False, False),
-            (organizer1, organizer2, organizer1, False, True),
+        # an event goes to Google through its organizer, or through its
+        # creator when it has none; otherwise its attendees are mailed
+        for create_user, organizer, expect_mail, is_public in [
+            (user_root, organizer1, False, True),
+            (user_root, None, True, True),
+            (organizer1, None, False, False),
+            (organizer1, organizer2, True, True),
         ]:
             with self.subTest(
                 create_uid=create_user.name if create_user else None,
@@ -52,7 +54,7 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
             ):
                 with (
                     self.mock_mail_gateway(),
-                    self.mock_google_sync(user_id=responsible),
+                    self.mock_google_sync(),
                 ):
                     self.env["calendar.event"].with_user(create_user).create(
                         {
@@ -61,6 +63,7 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
                             "user_id": organizer.id if organizer else False,
                         }
                     )
+                    self.push_google()
                 if not expect_mail:
                     self.assertNotSentEmail()
                     self.assertGoogleEventInserted(
@@ -71,7 +74,6 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
                                     "responseStatus": "needsAction",
                                 }
                             ],
-                            "id": False,
                             "start": {
                                 "dateTime": "2020-01-15T08:00:00+00:00",
                                 "date": None,
@@ -81,7 +83,7 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
                                 "date": None,
                             },
                             "guestsCanModify": is_public,
-                            "organizer": {"email": organizer.email, "self": False}
+                            "organizer": {"email": organizer.email, "self": True}
                             if organizer
                             else False,
                             "summary": "Event",
@@ -91,4 +93,6 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
                     )
                 else:
                     self.assertGoogleEventNotInserted()
-                    self.assertMailMail(partner, "sent", author=user_root.partner_id)
+                    self.assertMailMail(
+                        partner, "sent", author=(organizer or create_user).partner_id
+                    )
