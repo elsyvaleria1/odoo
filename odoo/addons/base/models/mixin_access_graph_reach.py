@@ -8,7 +8,7 @@ from odoo import models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
-from .mixin_access_graph import scope_chain
+from .mixin_access_graph import path_ids
 
 _debug = DebugLog(__name__)
 
@@ -32,6 +32,7 @@ REACH_COLUMNS = (
     "resource_company_id",
     "resource_user_id",
     "date_to",
+    "grant_id",
 )
 
 
@@ -62,14 +63,15 @@ class MixinAccessGraph(models.AbstractModel):
 
     def _access_reach_tracked_columns(self) -> list[str]:
         # the node columns a row is derived from. A change to one re-derives
-        # the node, its children (whose links read it) and what reads it from
-        # outside; a node's paths are its own columns, so a move re-derives
-        # each node of the subtree as the statement writing its paths runs
+        # the node and what reads it (_access_reach_readers). A move rewrites
+        # the parent_path of every node it carries in one statement, which
+        # re-derives the subtree once: the scope a node inherits is read from
+        # parent_path and the boundaries on it, not from access_scope_path,
+        # which the ORM recomputes in many later statements
         graph = self._access_graph
         columns = [
             graph.parent,
             "parent_path",
-            "access_scope_path",
             *self._access_reach_deep_columns(),
         ]
         if anchor := self._access_reach_company_column():
@@ -83,6 +85,7 @@ class MixinAccessGraph(models.AbstractModel):
         return [
             *((graph.owner,) if graph.owner else ()),
             *((graph.container[0],) if graph.container else ()),
+            *((graph.boundary,) if graph.boundary else ()),
         ]
 
     def _access_reach_own_via(self) -> SQL:
@@ -256,9 +259,58 @@ class MixinAccessGraph(models.AbstractModel):
             )
         return anchor
 
-    def _access_reach_rows(self, node_filter: SQL) -> SQL:
+    def _access_reach_scope_ctes(self, node_company: SQL) -> list[tuple[str, SQL]]:
+        # "node_scope": each needed node with the nodes whose grants reach it,
+        # its ancestors up to the nearest boundary and itself, read off its
+        # parent_path (as access_scope_path states them). Set-wise: every path
+        # unnested once, each node's cut found by one join
+        graph: AccessGraph = self._access_graph
+        table = SQL.identifier(self._table)
+        steps = SQL(
+            """SELECT node_row.id AS node_id, %(company)s AS company_id,
+                      step.id AS step_id, step.depth
+                 FROM %(table)s AS node_row
+                 JOIN needed ON needed.id = node_row.id
+                CROSS JOIN LATERAL unnest(%(path)s) WITH ORDINALITY AS step(id, depth)""",
+            company=node_company,
+            table=table,
+            path=path_ids(SQL.identifier("node_row", "parent_path")),
+        )
+        if not graph.boundary:
+            return [
+                ("node_step", steps),
+                (
+                    "node_scope",
+                    SQL("SELECT node_id, company_id, step_id FROM node_step"),
+                ),
+            ]
+        return [
+            ("node_step", steps),
+            (
+                "node_cut",
+                SQL(
+                    """SELECT node_step.node_id, max(node_step.depth) AS depth
+                         FROM node_step JOIN %s AS above ON above.id = node_step.step_id
+                        WHERE node_step.depth = 1 OR above.%s
+                     GROUP BY node_step.node_id""",
+                    table,
+                    SQL.identifier(graph.boundary),
+                ),
+            ),
+            (
+                "node_scope",
+                SQL(
+                    """SELECT node_step.node_id, node_step.company_id, node_step.step_id
+                         FROM node_step JOIN node_cut ON node_cut.node_id = node_step.node_id
+                        WHERE node_step.depth >= node_cut.depth"""
+                ),
+            ),
+        ]
+
+    def _access_reach_rows(self, node_filter: SQL, grants: SQL | None = None) -> SQL:
         # INSERT the rows of the nodes `node_filter` (on alias "node_row")
-        # selects
+        # selects; with `grants` (an int4[]), only the rows those grants are
+        # the source of
         graph: AccessGraph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
         names = type(grant_model)._access_grant_names
@@ -276,25 +328,26 @@ class MixinAccessGraph(models.AbstractModel):
             is_container = SQL("TRUE")
         top = len(graph.roles)
         scope_join = SQL(
-            """CROSS JOIN LATERAL unnest(node.chain) AS scope_node(id)
-               JOIN %(table)s AS held_by
-                 ON held_by.id = scope_node.id
-                AND (held_by.id = node.id OR %(is_container)s)""",
+            """JOIN %(table)s AS held_by
+                 ON held_by.id = node.step_id
+                AND (held_by.id = node.node_id OR %(is_container)s)""",
             table=table,
             is_container=is_container,
         )
         graph_rows = [
             SQL(
-                """SELECT node.id AS resource_id,
+                """SELECT node.node_id AS resource_id,
                           (CASE WHEN grant_row.partner_id IS NULL THEN %(group)s ELSE %(partner)s END)::int2 AS kind,
                           coalesce(grant_row.partner_id, grant_row.group_id) AS pid,
                           array_position(%(roles)s::varchar[], grant_row.%(role)s::varchar)::int2 AS rank,
                           grant_row.company_id AS grant_company_id,
                           node.company_id AS node_company_id,
-                          grant_row.date_to
-                     FROM node %(scope_join)s
+                          grant_row.date_to,
+                          grant_row.id AS grant_id
+                     FROM node_scope AS node %(scope_join)s
                      JOIN %(grant_table)s AS grant_row
-                       ON grant_row.%(resource)s = held_by.id""",
+                       ON grant_row.%(resource)s = held_by.id
+                      AND %(grants)s""",
                 group=GROUP,
                 partner=PARTNER,
                 roles=list(graph.roles),
@@ -302,14 +355,17 @@ class MixinAccessGraph(models.AbstractModel):
                 scope_join=scope_join,
                 grant_table=SQL.identifier(grant_model._table),
                 resource=SQL.identifier(names.resource),
+                grants=SQL("TRUE")
+                if grants is None
+                else SQL("grant_row.id = ANY(%s)", grants),
             )
         ]
-        if graph.owner:
+        if graph.owner and grants is None:
             graph_rows.append(
                 SQL(
-                    """SELECT node.id, %(user)s::int2, held_by.%(owner)s, %(top)s::int2,
-                              NULL::int4, node.company_id, NULL::timestamp
-                         FROM node %(scope_join)s
+                    """SELECT node.node_id, %(user)s::int2, held_by.%(owner)s, %(top)s::int2,
+                              NULL::int4, node.company_id, NULL::timestamp, NULL::int4
+                         FROM node_scope AS node %(scope_join)s
                         WHERE held_by.%(owner)s IS NOT NULL""",
                     user=USER,
                     owner=SQL.identifier(graph.owner),
@@ -328,34 +384,35 @@ class MixinAccessGraph(models.AbstractModel):
                 ),
             ),
             ("needed", needs),
-            (
-                "node",
-                SQL(
-                    "SELECT node_row.id, %s AS company_id, %s AS chain"
-                    " FROM %s AS node_row JOIN needed ON needed.id = node_row.id",
-                    node_company,
-                    scope_chain(SQL.identifier("node_row", "access_scope_path")),
-                    table,
-                ),
-            ),
+            *self._access_reach_scope_ctes(node_company),
             ("graph", SQL(" UNION ").join(graph_rows)),
             *self._access_reach_ctes(),
         ]
         own = SQL(
             """SELECT graph.resource_id, graph.pid::int8 * 4 + graph.kind, graph.kind,
                       graph.pid, (%s)::int2, graph.rank, graph.grant_company_id,
-                      graph.node_company_id, NULL::int4, NULL::int4, graph.date_to
+                      graph.node_company_id, NULL::int4, NULL::int4, graph.date_to,
+                      graph.grant_id
                  FROM graph JOIN scope ON scope.id = graph.resource_id""",
             self._access_reach_own_via(),
         )
+        columns = SQL(", ").join(SQL.identifier(column) for column in REACH_COLUMNS)
+        rows = SQL(" UNION ALL ").join([own, *self._access_reach_derived()])
+        if grants is not None:
+            # the ways of reaching that come from no grant are no grant's
+            rows = SQL(
+                "SELECT * FROM (%s) AS derived (%s) WHERE derived.grant_id IS NOT NULL",
+                rows,
+                columns,
+            )
         return SQL(
             "WITH %s INSERT INTO %s (%s) %s",
             SQL(", ").join(
                 SQL("%s AS (%s)", SQL.identifier(name), body) for name, body in ctes
             ),
             SQL.identifier(self._access_reach_table()),
-            SQL(", ").join(SQL.identifier(column) for column in REACH_COLUMNS),
-            SQL(" UNION ALL ").join([own, *self._access_reach_derived()]),
+            columns,
+            rows,
         )
 
     def _access_reach_closure(self) -> SQL:
@@ -447,12 +504,15 @@ class MixinAccessGraph(models.AbstractModel):
                 node_company_id int4,
                 resource_company_id int4,
                 resource_user_id int4,
-                date_to timestamp
+                date_to timestamp,
+                grant_id int4
             );
             CREATE INDEX IF NOT EXISTS %(key_index)s ON %(reach)s (key) INCLUDE (
                 resource_id, kind, pid, via, rank, grant_company_id, node_company_id,
                 resource_company_id, resource_user_id, date_to);
             CREATE INDEX IF NOT EXISTS %(resource_index)s ON %(reach)s (resource_id);
+            CREATE INDEX IF NOT EXISTS %(grant_index)s ON %(reach)s (grant_id)
+                WHERE grant_id IS NOT NULL;
 
             CREATE OR REPLACE FUNCTION %(closure_fn)s(ids int4[], deep boolean) RETURNS int4[]
             LANGUAGE plpgsql STABLE AS $body$ %(closure)s $body$;
@@ -517,17 +577,36 @@ class MixinAccessGraph(models.AbstractModel):
             END
             $body$;
 
+            -- a grant is the source of its rows, each carrying its id: what
+            -- one grant reaches is added and removed alone, the subtree's
+            -- other rows untouched
+            CREATE OR REPLACE FUNCTION %(add_grants_fn)s(touched int4[], grants int4[])
+            RETURNS void LANGUAGE plpgsql AS $body$
+            DECLARE
+                ids int4[];
+            BEGIN
+                IF grants IS NULL OR cardinality(grants) = 0 THEN
+                    RETURN;
+                END IF;
+                ids := %(closure_fn)s(touched, true);
+                PERFORM 1 FROM %(table)s WHERE id = ANY(ids) ORDER BY id FOR NO KEY UPDATE;
+                %(grant_rows)s;
+            END
+            $body$;
+
             CREATE OR REPLACE FUNCTION %(grant_changed_fn)s() RETURNS trigger
             LANGUAGE plpgsql AS $body$
             BEGIN
-                IF TG_OP = 'INSERT' THEN
-                    PERFORM %(refresh_fn)s(ARRAY(SELECT %(resource)s FROM new_rows), 'deep');
-                ELSIF TG_OP = 'UPDATE' THEN
-                    PERFORM %(refresh_fn)s(ARRAY(
-                        SELECT %(resource)s FROM new_rows
-                        UNION SELECT %(resource)s FROM old_rows), 'deep');
-                ELSE
-                    PERFORM %(refresh_fn)s(ARRAY(SELECT %(resource)s FROM old_rows), 'deep');
+                IF TG_OP IN ('UPDATE', 'DELETE') THEN
+                    PERFORM 1 FROM %(table)s
+                     WHERE id IN (SELECT %(resource)s FROM old_rows)
+                     ORDER BY id FOR NO KEY UPDATE;
+                    DELETE FROM %(reach)s WHERE grant_id IN (SELECT id FROM old_rows);
+                END IF;
+                IF TG_OP IN ('INSERT', 'UPDATE') THEN
+                    PERFORM %(add_grants_fn)s(
+                        ARRAY(SELECT %(resource)s FROM new_rows),
+                        ARRAY(SELECT id FROM new_rows));
                 END IF;
                 RETURN NULL;
             END
@@ -564,6 +643,11 @@ class MixinAccessGraph(models.AbstractModel):
             resource=resource,
             key_index=name("key_index"),
             resource_index=name("resource_index"),
+            grant_index=name("grant_index"),
+            add_grants_fn=name("add_grants"),
+            grant_rows=self._access_reach_rows(
+                SQL("node_row.id = ANY(ids)"), grants=SQL("grants")
+            ),
             closure_fn=name("closure"),
             closure=self._access_reach_closure(),
             refresh_fn=name("refresh"),
@@ -623,8 +707,8 @@ class MixinAccessGraph(models.AbstractModel):
                     SQL.identifier(f"{self._table}_access_scope_chain_idx"),
                 )
             )
+            cr.execute(SQL("DROP TABLE IF EXISTS %s", SQL.identifier(reach)))
             cr.execute(ddl.inlined(cr))
-            cr.execute(SQL("TRUNCATE %s", SQL.identifier(reach)))
             cr.execute(rows)
             cr.execute(SQL("ANALYZE %s", SQL.identifier(reach)))
             cr.execute(

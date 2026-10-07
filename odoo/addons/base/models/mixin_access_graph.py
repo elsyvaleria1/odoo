@@ -35,9 +35,8 @@ class AccessGraph:
     container: tuple[str, typing.Any] | None = None
 
 
-def scope_chain(column: SQL) -> SQL:
-    # a node's access_scope_path as the int4[] of the nodes whose grants
-    # reach it
+def path_ids(column: SQL) -> SQL:
+    # a materialized path ("1/5/9/") as the int4[] of the nodes it names
     return SQL("string_to_array(rtrim(%s, '/'), '/')::int4[]", column)
 
 
@@ -328,7 +327,7 @@ class MixinAccessGraph(models.AbstractModel):
                 grant_table=SQL.identifier(grant_model._table),
                 group=group_id,
                 resource=SQL.identifier(names.resource),
-                chain=scope_chain(SQL.identifier("node", "access_scope_path")),
+                chain=path_ids(SQL.identifier("node", "access_scope_path")),
                 ids=ids,
             )
         )
@@ -379,8 +378,8 @@ class MixinAccessGraph(models.AbstractModel):
         self.flush_model(
             sorted(
                 {
+                    "access_scope_path",
                     *self._access_reach_tracked_columns(),
-                    *((graph.boundary,) if graph.boundary else ()),
                 }
             )
         )
@@ -452,7 +451,7 @@ class MixinAccessGraph(models.AbstractModel):
                     WHERE (grant_row.date_to IS NULL
                            OR grant_row.date_to > now() AT TIME ZONE 'UTC')
                    %(owner)s""",
-                chain=scope_chain(SQL.identifier("access_scope_path")),
+                chain=path_ids(SQL.identifier("access_scope_path")),
                 table=SQL.identifier(self._table),
                 id=self.id,
                 resource=SQL.identifier(names.resource),

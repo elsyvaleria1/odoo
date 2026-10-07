@@ -84,18 +84,20 @@ class DocumentsDocument(models.Model):
                 "direct",
                 SQL(
                     """SELECT graph.resource_id, graph.kind, graph.pid, graph.rank,
-                              graph.grant_company_id, graph.node_company_id, graph.date_to
+                              graph.grant_company_id, graph.node_company_id, graph.date_to,
+                              graph.grant_id
                          FROM graph JOIN document_document AS node_row ON node_row.id = graph.resource_id
                         WHERE node_row.shortcut_document_id IS NULL
                        UNION ALL
                        SELECT node_row.id, graph.kind, graph.pid, graph.rank,
-                              graph.grant_company_id, graph.node_company_id, graph.date_to
+                              graph.grant_company_id, graph.node_company_id, graph.date_to,
+                              graph.grant_id
                          FROM needed
                          JOIN document_document AS node_row ON node_row.id = needed.id
                          JOIN graph ON graph.resource_id = node_row.shortcut_document_id
                        UNION ALL
                        SELECT node_row.id, %(user)s::int2, node_row.owner_id, %(top)s::int2,
-                              NULL::int4, NULL::int4, NULL::timestamp
+                              NULL::int4, NULL::int4, NULL::timestamp, NULL::int4
                          FROM needed
                          JOIN document_document AS node_row ON node_row.id = needed.id
                          JOIN document_document AS target ON target.id = node_row.shortcut_document_id
@@ -116,14 +118,15 @@ class DocumentsDocument(models.Model):
             SQL(
                 """SELECT scope.id, graph.pid::int8 * 4 + graph.kind, graph.kind, graph.pid,
                           %(via)s::int2, graph.rank, graph.grant_company_id,
-                          graph.node_company_id, NULL::int4, scope.owner_id, graph.date_to
+                          graph.node_company_id, NULL::int4, scope.owner_id, graph.date_to,
+                          graph.grant_id
                      FROM scope JOIN graph ON graph.resource_id = scope.shortcut_document_id""",
                 via=TARGET,
             ),
             SQL(
                 """SELECT scope.id, scope.owner_id::int8 * 4 + %(user)s, %(user)s::int2,
                           scope.owner_id, %(via)s::int2, %(top)s::int2, NULL::int4, NULL::int4,
-                          NULL::int4, NULL::int4, NULL::timestamp
+                          NULL::int4, NULL::int4, NULL::timestamp, NULL::int4
                      FROM scope JOIN document_document AS target ON target.id = scope.shortcut_document_id
                     WHERE scope.owner_id = target.owner_id""",
                 user=USER,
@@ -135,7 +138,7 @@ class DocumentsDocument(models.Model):
                           %(via)s::int2,
                           (CASE scope.access_via_link WHEN 'edit' THEN 2 ELSE 1 END)::int2,
                           direct.grant_company_id, direct.node_company_id, scope.company_id,
-                          NULL::int4, direct.date_to
+                          NULL::int4, direct.date_to, direct.grant_id
                      FROM scope JOIN direct ON direct.resource_id = scope.folder_id
                     WHERE scope.access_via_link = ANY(%(linked)s)
                       AND scope.is_access_via_link_hidden IS NOT TRUE""",
@@ -145,7 +148,8 @@ class DocumentsDocument(models.Model):
             SQL(
                 """SELECT scope.id, direct.pid::int8 * 4 + direct.kind, direct.kind, direct.pid,
                           %(via)s::int2, 2::int2, direct.grant_company_id,
-                          direct.node_company_id, NULL::int4, NULL::int4, direct.date_to
+                          direct.node_company_id, NULL::int4, NULL::int4, direct.date_to,
+                          direct.grant_id
                      FROM scope JOIN direct ON direct.resource_id = scope.id
                     WHERE scope.access_via_link = 'edit'""",
                 via=EDIT_LINK,
@@ -154,7 +158,7 @@ class DocumentsDocument(models.Model):
                 """SELECT scope.id, system.id::int8 * 4 + %(group)s, %(group)s::int2, system.id,
                           %(via)s::int2, %(top)s::int2, NULL::int4, scope.company_id, NULL::int4,
                           root.owner_id,
-                          NULL::timestamp
+                          NULL::timestamp, NULL::int4
                      FROM scope
                      CROSS JOIN (SELECT %(system)s AS id) AS system
                      JOIN document_document AS root

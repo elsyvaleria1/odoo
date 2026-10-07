@@ -355,6 +355,32 @@ class TestAccessGraph(TransactionCase):
                     *self.stored_state(created), seed=seed, every_band=False
                 )
 
+    def test_a_grant_writes_only_the_rows_it_is_the_source_of(self):
+        # each row names the grant it comes from: adding a grant to a folder
+        # inserts that grant's rows and leaves every other row of the subtree
+        # where it was; removing it deletes those rows alone
+        created, *_ = self.build(14, size=30, grants=40)
+        folder = created.filtered(lambda node: node.is_container)[0]
+        cr = self.env.cr
+        table = SQL.identifier(self.Node._access_reach_table())
+
+        def rows():
+            self.Node._access_graph_flush()
+            cr.execute(SQL("SELECT ctid, grant_id FROM %s", table))
+            return dict(cr.fetchall())
+
+        before = rows()
+        grant = self.Grant.create(
+            {"node_id": folder.id, "group_id": self.group_y.id, "role": "edit"}
+        )
+        after = rows()
+        self.assertLessEqual(before.keys(), after.keys(), "no row was rewritten")
+        added = {after[ctid] for ctid in after.keys() - before.keys()}
+        self.assertEqual(added, {grant.id})
+        grant.unlink()
+        self.assertEqual(rows(), before)
+        self.assert_table_is_derived()
+
     def test_a_rolled_back_write_leaves_the_rows_it_found(self):
         created, *_ = self.build(13, size=20, grants=30)
         self.assert_table_is_derived()

@@ -1473,6 +1473,48 @@ writing without reading would hide a record from those it lets edit. The label
 guard therefore grants no role beyond the readers, and `ir.access._label_classes`
 counts no other class.
 
+The reach table (`models/mixin_access_graph_reach.py`), `<table>_access_reach`,
+holds one row per way a principal reaches a node:
+- the resource;
+- the principal as one indexed `key` (`pid * 4 + kind`: a partner's grant, a
+  group's grant, or a user owning a node);
+- the `via` (0 the node's own graph; an adopter numbers its own above);
+- the role's `rank`;
+- the grant's and the node's companies, and a company and a user that a via's
+  own test names;
+- `date_to`;
+- the grant the row comes from (`grant_id`).
+
+Rows are derived from the tree and the grants; the scope a node inherits is
+read off its `parent_path` and the boundaries on it. Statement triggers on both
+tables keep the table exact, re-deriving what a statement touched before it
+returns, whoever wrote it:
+- a node's own columns re-derive it and what reads it
+  (`_access_reach_readers`);
+- its owner, its container flag and its boundary (`_access_reach_deep_columns`)
+  re-derive its subtree too;
+- a move re-derives the subtree once, as its `parent_path` statement runs;
+- a grant added inserts the rows it is the source of and a grant removed
+  deletes them, leaving every other row where it was.
+
+The user stays a query-time input: the groups they hold and the companies those
+count in, the companies in use, the clock. So a membership change, a company
+switch or an expiry writes nothing.
+
+A reach is `id IN (SELECT resource_id FROM … WHERE key = ANY(:principals) AND …)`
+(`_access_reach_subquery`). It is stated once per statement through
+`Query.once_set` where several queries share one statement (`SharedOnce`, the
+opened groups).
+
+An adopter adds:
+- its own ways of reaching (`_access_reach_derived`, over `_access_reach_ctes`
+  and `_access_reach_graph_needs`);
+- what reads a node from outside its subtree;
+- the vias its graph reach counts.
+
+The table, its functions and triggers are created at the adopter's install, and
+rebuilt whenever what derives them changes (a signature in the table's comment).
+
 #### MixinAccessGrant — `mixin.access.grant` (`_name`, AbstractModel)
 
 One grant: a role on a node for exactly one principal, a partner or a group
