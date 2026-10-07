@@ -543,12 +543,7 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas_resize(self):
-        """Resize a step, and check the new rect reached the database.
-
-        The size write is the only canvas write with no debounce in front of
-        it, so it is the one a tour can assert on without waiting: the viewport
-        is covered by `automation`'s own tests instead.
-        """
+        """Resize a step, and check the new rect reached the database."""
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Resize", "model_id": model.id, "trigger": "on_hand"}
@@ -585,14 +580,44 @@ class AutomationRuleTestUi(HttpCase):
         self.assertGreater(first.pos_height, bounds["default"]["height"])
         self.assertLess(first.pos_width, bounds["max"]["width"])
         self.assertLess(first.pos_height, bounds["max"]["height"])
-        self.assertTrue(
-            self.env["automation.canvas.viewport"].search(
-                [
-                    ("automation_rule_id", "=", rule.id),
-                    ("user_id", "=", self.env.ref("base.user_admin").id),
-                ]
-            ),
-            "the canvas must store the viewport it framed the graph with",
+
+    def test_workflow_canvas_framing(self):
+        """Open the Workflow tab, then the workflow full screen: each time the
+        box is in view and the graph is centred in it."""
+        model = self.env["ir.model"]._get("res.partner")
+        rule = self.env["automation.rule"].create(
+            {"name": "Canvas Framing", "model_id": model.id, "trigger": "on_hand"}
+        )
+        first, second, third = self.env["ir.actions.server"].create(
+            [
+                {
+                    "name": name,
+                    "model_id": model.id,
+                    "state": "code",
+                    "code": "pass",
+                    "automation_rule_id": rule.id,
+                    "usage": "automation",
+                    "pos_x": pos_x,
+                    "pos_y": pos_y,
+                }
+                for name, pos_x, pos_y in (
+                    ("first", 40, 40),
+                    ("second", 400, 300),
+                    ("third", 900, 60),
+                )
+            ]
+        )
+        self.env["workflow.edge"].create(
+            [
+                {"source_node_id": first.id, "target_node_id": second.id},
+                {"source_node_id": second.id, "target_node_id": third.id},
+            ]
+        )
+
+        self.start_tour(
+            f"/odoo/action-automation.automation_act/{rule.id}",
+            "test_workflow_canvas_framing",
+            login="admin",
         )
 
     def test_workflow_canvas_connect(self):

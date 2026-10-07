@@ -137,6 +137,11 @@ export class FlowEditor extends Component {
     suppressNodeClick = false;
     /** @type {number | null} */
     viewportAnimationFrame = null;
+    // True while the viewport is the editor's own fit, false once the reader
+    // or the consumer placed it: only a fit follows the canvas when it resizes.
+    framed = false;
+    /** @type {ResizeObserver | null} */
+    canvasObserver = null;
     /** @type {Promise<boolean> | null} */
     pendingDetach = null;
     deletingSelection = false;
@@ -162,8 +167,15 @@ export class FlowEditor extends Component {
             if (!this.props.viewport) {
                 this.fitToContent();
             }
+            // A canvas mounted out of sight -- an inactive page, a box sized
+            // after its first paint -- measures nothing until it is laid out.
+            this.canvasObserver = new ResizeObserver(() => this.onCanvasResize());
+            this.canvasObserver.observe(this.canvasEl);
         });
-        onWillDestroy(() => this.cancelViewportAnimation());
+        onWillDestroy(() => {
+            this.cancelViewportAnimation();
+            this.canvasObserver?.disconnect();
+        });
     }
 
     /** @param {FlowEditorProps} nextProps */
@@ -188,6 +200,7 @@ export class FlowEditor extends Component {
             }
         }
         if (nextProps.viewport && nextProps.viewport !== this.props.viewport) {
+            this.framed = false;
             this.store.setViewport(nextProps.viewport);
         }
         const interaction = this.store.interaction;
@@ -622,6 +635,7 @@ export class FlowEditor extends Component {
         if (!this.store.startInteraction({ type: "pan" })) {
             return;
         }
+        this.framed = false;
         this.activePointerId = ev.pointerId;
         this.pointerStart = { x: ev.clientX, y: ev.clientY };
         this.panOrigin = { ...this.store.viewport };
@@ -1156,6 +1170,7 @@ export class FlowEditor extends Component {
         }
         ev.preventDefault();
         this.cancelViewportAnimation();
+        this.framed = false;
         const canvasRect = canvasEl.getBoundingClientRect();
         const pointer = screenToWorld(
             { x: ev.clientX, y: ev.clientY },
@@ -1179,6 +1194,7 @@ export class FlowEditor extends Component {
             return;
         }
         this.cancelViewportAnimation();
+        this.framed = false;
         const canvasRect = canvasEl.getBoundingClientRect();
         const center = {
             x: canvasRect.left + canvasRect.width / 2,
@@ -1201,12 +1217,19 @@ export class FlowEditor extends Component {
         this.zoomBy(0.9);
     }
 
+    onCanvasResize() {
+        if (this.framed) {
+            this.fitToContent();
+        }
+    }
+
     fitToContent() {
         const canvasEl = this.canvasEl;
         if (!canvasEl) {
             return;
         }
         this.cancelViewportAnimation();
+        this.framed = true;
         const canvasRect = canvasEl.getBoundingClientRect();
         const bounds = this.flowBounds;
         if (!bounds || !canvasRect.width || !canvasRect.height) {
@@ -1238,6 +1261,7 @@ export class FlowEditor extends Component {
         if (!target || !canvasEl) {
             return;
         }
+        this.framed = false;
         const canvasRect = canvasEl.getBoundingClientRect();
         const scale = this.store.viewport.scale;
         this.animateViewportTo({

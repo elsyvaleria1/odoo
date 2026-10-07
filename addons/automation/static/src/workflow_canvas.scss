@@ -129,3 +129,15 @@
         opacity: 0.55;
     }
 }
+
+// Full screen, a graph wants the width a graph view gets, not the 1400px a
+// form sheet keeps for prose; nothing else on that form competes for it.
+.o_form_sheet_bg:has(.o_workflow_canvas_full) {
+    max-width: none;
+}
+
+.o_workflow_canvas.o_workflow_canvas_full .o_workflow_canvas_paper {
+    // First paint only: the widget sets the height the window really leaves.
+    height: calc(100vh - 14rem);
+    min-height: 26rem;
+}

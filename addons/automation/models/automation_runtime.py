@@ -1002,6 +1002,24 @@ class AutomationRuntime(models.Model):
             ],
         }
 
+    def action_view_workflow(self) -> dict:
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Workflow of %s", self.name),
+            "res_model": "automation.runtime",
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [
+                (
+                    self.env.ref(
+                        "automation.view_automation_runtime_form_workflow_full"
+                    ).id,
+                    "form",
+                )
+            ],
+        }
+
     def action_view_automation(self):
         self.check_singleton()
         return {

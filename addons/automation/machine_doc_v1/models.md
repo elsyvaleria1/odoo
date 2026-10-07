@@ -61,7 +61,7 @@ so a value added to the Selection without a line here fails the gate.
 | `RUNTIME_HISTORY_LIMIT` | 10 | Recent runs the canvas offers in its run selector |
 
 `models/_canvas.py` holds the geometry contract the canvas persists, read by
-both `ir.actions.server` and `automation.canvas.viewport`:
+`ir.actions.server` and by `automation.rule`'s graph payload:
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
@@ -69,7 +69,6 @@ both `ir.actions.server` and `automation.canvas.viewport`:
 | `NODE_SIZE_MIN` | 160 x 72 | Floor a stored rect is checked against |
 | `NODE_SIZE_MAX` | 480 x 320 | Ceiling a stored rect is checked against |
 | `NODE_HEADER_HEIGHT` | 34 | Where a step's body, and so its ports, start |
-| `SCALE_MIN` / `SCALE_MAX` | 0.2 / 2.0 | Zoom the editor can draw, mirrored server-side |
 
 ---
 
@@ -423,17 +422,15 @@ still referenced it.)
 
 ---
 
-## automation.canvas.viewport (Per-Reader Canvas State)
+## The canvas viewport is not stored
 
-Defined by `models/automation_canvas_viewport.py`. Where one reader last left
-the workflow canvas of one automation: personal, so two people looking at the
-same automation pan and zoom independently, and scoped to its owner by a global
-record rule rather than left readable by anyone who may configure automations.
+The canvas fits the graph to its box whenever the box opens or resizes, until
+the reader pans or zooms; the workflow is centred on every visit, so there is
+no per-reader viewport to keep. `action_view_workflow` (on `automation.rule`
+and `automation.runtime`) opens the same canvas full screen, on
+`view_automation_form_workflow_full` / `view_automation_runtime_form_workflow_full`.
 
-### Key Fields
-
-| Field | Type | Purpose |
-|-------|------|---------|
+-------|------|---------|
 | `user_id` | Many2one `res.users` | The reader the viewport belongs to |
 | `automation_rule_id` | Many2one `automation.rule` | The automation it frames |
 | `pos_x` / `pos_y` | Float | Canvas translation, in screen pixels |

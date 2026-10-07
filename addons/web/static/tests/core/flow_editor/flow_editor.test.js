@@ -629,6 +629,58 @@ describe("FlowEditor: fit to content", () => {
 
         expect(editor.store.viewport).toEqual({ x: 200, y: 75, scale: 1 });
     });
+
+    test("a canvas laid out after its first fit is fitted again", () => {
+        const canvasRect = { left: 0, top: 0, width: 0, height: 0 };
+        const editor = makeEditor({
+            nodes: [
+                node("a", {
+                    position: { x: 0, y: 0 },
+                    size: { width: 200, height: 100 },
+                }),
+            ],
+            canvasRect,
+        });
+        editor.fitToContent();
+        expect(editor.store.viewport).toEqual({ x: 0, y: 0, scale: 1 });
+
+        Object.assign(canvasRect, { width: 800, height: 600 });
+        editor.onCanvasResize();
+
+        expect(editor.store.viewport).toEqual({ x: 300, y: 250, scale: 1 });
+    });
+
+    test("a viewport the reader moved stays put when the canvas resizes", () => {
+        const canvasRect = { left: 0, top: 0, width: 800, height: 600 };
+        const editor = makeEditor({
+            nodes: [
+                node("a", {
+                    position: { x: 0, y: 0 },
+                    size: { width: 200, height: 100 },
+                }),
+            ],
+            canvasRect,
+        });
+        editor.fitToContent();
+        editor.zoomBy(2);
+        const moved = { ...editor.store.viewport };
+
+        Object.assign(canvasRect, { width: 1600, height: 900 });
+        editor.onCanvasResize();
+
+        expect(editor.store.viewport).toEqual(moved);
+    });
+
+    test("a viewport the consumer supplied is not refitted on resize", () => {
+        const editor = makeEditor({
+            nodes: [node("a", { size: { width: 200, height: 100 } })],
+        });
+        editor.store.setViewport({ x: 7, y: 8, scale: 1.5 });
+
+        editor.onCanvasResize();
+
+        expect(editor.store.viewport).toEqual({ x: 7, y: 8, scale: 1.5 });
+    });
 });
 
 describe("FlowEditor: viewport animation", () => {

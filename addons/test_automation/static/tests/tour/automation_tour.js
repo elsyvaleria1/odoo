@@ -1,4 +1,3 @@
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { stepUtils } from "@web_tour/tour_utils";
 
@@ -760,18 +759,40 @@ function openWorkflowTab() {
             run: "click",
         },
         {
-            // The canvas is tall and sits low in the form, so on a short window
-            // its lower half is out of view and a pointer aimed at a port there
-            // lands on nothing at all. A reader scrolls to it; so does this.
-            content: "bring the canvas into view",
-            trigger: ".o_workflow_canvas_paper",
+            // The canvas sits low in a long form; opening its tab brings it
+            // into view, or a pointer aimed at a port there lands on nothing.
+            content: "the canvas came into view with its tab",
+            trigger: ".o_workflow_canvas_paper .o_flow_editor_node",
             run() {
-                document
-                    .querySelector(".o_workflow_canvas_paper")
-                    .scrollIntoView({ block: "center" });
+                assertInView(document.querySelector(".o_workflow_canvas_paper"));
             },
         },
     ];
+}
+
+function assertInView(element) {
+    const rect = element.getBoundingClientRect();
+    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        throw new Error(
+            `the canvas is not in view: ${rect.top}..${rect.bottom} of ${window.innerHeight}`,
+        );
+    }
+}
+
+function assertCentred(paperSelector) {
+    const paper = document.querySelector(paperSelector).getBoundingClientRect();
+    const steps = [
+        ...document.querySelectorAll(`${paperSelector} .o_flow_editor_node`),
+    ].map((step) => step.getBoundingClientRect());
+    const left = Math.min(...steps.map((rect) => rect.left)) - paper.left;
+    const right = paper.right - Math.max(...steps.map((rect) => rect.right));
+    const top = Math.min(...steps.map((rect) => rect.top)) - paper.top;
+    const bottom = paper.bottom - Math.max(...steps.map((rect) => rect.bottom));
+    if (Math.abs(left - right) > 2 || Math.abs(top - bottom) > 2) {
+        throw new Error(
+            `the graph is off centre: left ${left}, right ${right}, top ${top}, bottom ${bottom}`,
+        );
+    }
 }
 
 registry.category("web_tour.tours").add("test_workflow_canvas", {
@@ -1138,7 +1159,7 @@ registry.category("web_tour.tours").add("test_workflow_canvas_resize", {
             },
         },
         {
-            content: "pan the canvas, which is what a viewport is saved from",
+            content: "pan the canvas",
             trigger: ".o_workflow_canvas_paper .o_flow_editor",
             async run(helpers) {
                 await helpers.drag_and_drop(".o_workflow_canvas_toolbar");
@@ -1148,27 +1169,48 @@ registry.category("web_tour.tours").add("test_workflow_canvas_resize", {
             content: "the graph survived both gestures",
             trigger: ".o_workflow_canvas_toolbar:contains(2 steps)",
         },
+    ],
+});
+
+registry.category("web_tour.tours").add("test_workflow_canvas_framing", {
+    steps: () => [
+        ...openWorkflowTab(),
         {
-            // The viewport is saved behind a debounce, and a tour finishes far
-            // inside that window, so waiting for the ROW is the only thing that
-            // makes this deterministic: a fixed sleep would race the timer and
-            // ending here without waiting would race the request.
-            content: "the viewport the canvas framed reaches the database",
-            trigger: ".o_workflow_canvas_toolbar",
-            async run() {
-                for (let attempt = 0; attempt < 40; attempt++) {
-                    const stored = await rpc("/web/dataset/call_kw", {
-                        model: "automation.canvas.viewport",
-                        method: "search_count",
-                        args: [[]],
-                        kwargs: {},
-                    });
-                    if (stored) {
-                        return;
-                    }
-                    await new Promise((resolve) => setTimeout(resolve, 100));
+            content: "the graph is centred in the box of its tab",
+            trigger: ".o_workflow_canvas_paper .o_flow_editor_node",
+            run() {
+                assertCentred(".o_workflow_canvas_paper");
+            },
+        },
+        {
+            content: "open the workflow full screen",
+            trigger: ".o_workflow_canvas_full_screen",
+            run: "click",
+        },
+        {
+            content: "full screen, the canvas reaches the bottom of the window",
+            trigger:
+                ".o_workflow_canvas_full .o_workflow_canvas_paper .o_flow_editor_node",
+            run() {
+                const canvas = document
+                    .querySelector(".o_workflow_canvas_full")
+                    .getBoundingClientRect();
+                if (window.innerHeight - canvas.bottom > 32) {
+                    throw new Error(
+                        `the canvas stops at ${canvas.bottom} of ${window.innerHeight}`,
+                    );
                 }
-                throw new Error("the canvas never stored a viewport");
+                if (document.querySelector(".o_workflow_canvas_full_screen")) {
+                    throw new Error("full screen still offers to go full screen");
+                }
+            },
+        },
+        {
+            content: "the graph is centred full screen too",
+            trigger:
+                ".o_workflow_canvas_full .o_workflow_canvas_paper .o_flow_editor_node",
+            run() {
+                assertCentred(".o_workflow_canvas_full .o_workflow_canvas_paper");
             },
         },
     ],

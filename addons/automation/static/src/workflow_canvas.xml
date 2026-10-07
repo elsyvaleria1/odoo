@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
     <t t-name="automation.WorkflowCanvas">
-        <div class="o_workflow_canvas">
+        <div class="o_workflow_canvas" t-att-class="{'o_workflow_canvas_full': this.props.fullScreen}" t-ref="this.rootRef">
             <div class="o_workflow_canvas_toolbar d-flex align-items-center gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-secondary"
                         t-on-click="() => this.relayout()"
@@ -41,6 +41,12 @@
                     <t t-out="this.state.countNode"/> steps,
                     <t t-out="this.state.countEdge"/> connections
                 </span>
+                <button type="button" class="btn btn-sm btn-secondary o_workflow_canvas_full_screen"
+                        t-if="!this.props.fullScreen and this.resId"
+                        title="Full screen" aria-label="Full screen"
+                        t-on-click="() => this.openFullScreen()">
+                    <i class="fa fa-expand"/>
+                </button>
             </div>
 
             <div t-if="this.state.status === 'loading'" class="text-muted p-4">
@@ -66,7 +72,6 @@
                             readonly="!this.isEditable"
                             ariaLabel.translate="Workflow"
                             flagUnreachableNodes="false"
-                            viewport="this.viewport"
                             minNodeSize="this.minNodeSize"
                             maxNodeSize="this.maxNodeSize"
                             canConnect.bind="this.canConnect"
@@ -79,8 +84,7 @@
                             onNodeClick.bind="this.onNodeClick"
                             onNodeDelete.bind="this.onNodeDelete"
                             onResize.bind="this.onResize"
-                            onSelectionChange.bind="this.onSelectionChange"
-                            onViewportChange.bind="this.onViewportChange"/>
+                            onSelectionChange.bind="this.onSelectionChange"/>
             </div>
 
             <div t-if="this.state.status === 'ready' and this.isRunMode" class="text-muted small mt-2">

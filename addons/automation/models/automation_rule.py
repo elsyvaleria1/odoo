@@ -581,6 +581,22 @@ class AutomationRule(models.Model):
             "context": {"create": False},
         }
 
+    def action_view_workflow(self) -> dict:
+        self.check_singleton()
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Workflow of %s", self.name),
+            "res_model": "automation.rule",
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [
+                (
+                    self.env.ref("automation.view_automation_form_workflow_full").id,
+                    "form",
+                )
+            ],
+        }
+
     def action_sync_running_runs(self) -> None:
         """Bring every run still going up to this automation's graph, running
         nothing."""
@@ -693,7 +709,6 @@ class AutomationRule(models.Model):
                 "max": NODE_SIZE_MAX,
                 "header_height": NODE_HEADER_HEIGHT,
             },
-            "viewport": self.env["automation.canvas.viewport"]._get_viewport(self),
         }
 
     @api.readonly
@@ -734,18 +749,6 @@ class AutomationRule(models.Model):
 
     def _workflow_event_labels(self):
         return {}
-
-    def set_workflow_viewport(self, x, y, scale) -> bool:
-        """Remember where this reader left the canvas of this automation.
-
-        Separate from `write` on purpose: the viewport is the reader's own
-        state, so storing it needs read access to the automation and nothing
-        more, and it never marks the automation itself as modified.
-        """
-        self.check_singleton()
-        self.check_access("read")
-        self.env["automation.canvas.viewport"]._update_viewport(self, x, y, scale)
-        return True
 
     def _copy_actions_to(self, target) -> None:
         self.check_singleton()

@@ -8,7 +8,6 @@ access_workflow_edge_user,workflow.edge.user,model_workflow_edge,base.group_user
 access_workflow_edge_system,workflow.edge.system,model_workflow_edge,base.group_system,permission,cud,,,
 access_automation_runtime_edge_user,automation.runtime.edge.user,model_automation_runtime_edge,base.group_user,permission,r,,,
 access_automation_runtime_edge_system,automation.runtime.edge.system,model_automation_runtime_edge,base.group_system,permission,cud,,,
-access_automation_canvas_viewport_user,automation.canvas.viewport.user,model_automation_canvas_viewport,base.group_user,permission,crud,,,
 automation_runtime_company_rule,Automation Runtime: multi-company,model_automation_runtime,base.group_everyone,guard,crud,company,,
 automation_runtime_line_company_rule,Automation Runtime Line: multi-company,model_automation_runtime_line,base.group_everyone,guard,crud,company,,
 automation_runtime_edge_company_rule,Automation Runtime Edge: multi-company,model_automation_runtime_edge,base.group_everyone,guard,crud,company,,
@@ -16,4 +15,3 @@ access_ir_actions_server_draw_run,ir.actions.server: a run's diagram reads its s
 access_automation_rule_draw_run,automation.rule: a run's diagram reads its automation,model_automation_rule,privilege_draw_run,permission,r,,,
 access_ir_actions_server_start_run,ir.actions.server: starting a run checks its steps,base.model_ir_actions_server,privilege_start_run,permission,r,,,"[('automation_rule_id', '!=', False)]"
 access_automation_rule_start_run,automation.rule: starting a run checks its automation,model_automation_rule,privilege_start_run,permission,r,,,
-automation_canvas_viewport_own_rule,Workflow Canvas Viewport: own rows only,model_automation_canvas_viewport,base.group_everyone,guard,crud,own,,

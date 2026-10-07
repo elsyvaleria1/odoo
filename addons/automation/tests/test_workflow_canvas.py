@@ -304,81 +304,51 @@ class TestStepDetail(TestWorkflowCanvasState):
         self.assertEqual(node["subflow_name"], "")
 
 
-class TestCanvasViewport(TestWorkflowCanvasState):
-    def setUp(self):
-        super().setUp()
-        self.reader = new_test_user(
-            self.env, login="canvas_reader", groups="base.group_system"
-        )
-        self.other = new_test_user(
-            self.env, login="canvas_other", groups="base.group_system"
-        )
-        self.Viewport = self.env["automation.canvas.viewport"]
+class TestFullScreen(TestWorkflowCanvasState):
+    def test_the_rule_opens_its_workflow_on_a_page_of_its_own(self):
+        action = self.automation.action_view_workflow()
 
-    def test_a_viewport_is_stored_for_the_caller(self):
-        self.automation.with_user(self.reader).set_workflow_viewport(-120.0, 60.0, 1.5)
-
-        stored = self.Viewport.search([("automation_rule_id", "=", self.automation.id)])
-        self.assertEqual(stored.user_id, self.reader)
+        self.assertEqual(action["res_model"], "automation.rule")
+        self.assertEqual(action["res_id"], self.automation.id)
         self.assertEqual(
-            (stored.pos_x, stored.pos_y, stored.scale), (-120.0, 60.0, 1.5)
-        )
-
-    def test_saving_twice_updates_the_one_row(self):
-        automation = self.automation.with_user(self.reader)
-        automation.set_workflow_viewport(-120.0, 60.0, 1.5)
-        automation.set_workflow_viewport(-10.0, 20.0, 0.5)
-
-        stored = self.Viewport.search([("automation_rule_id", "=", self.automation.id)])
-        self.assertEqual(len(stored), 1)
-        self.assertEqual((stored.pos_x, stored.pos_y, stored.scale), (-10.0, 20.0, 0.5))
-
-    def test_two_readers_keep_two_viewports(self):
-        self.automation.with_user(self.reader).set_workflow_viewport(-120.0, 60.0, 1.5)
-        self.automation.with_user(self.other).set_workflow_viewport(0.0, 0.0, 1.0)
-
-        self.assertEqual(
-            len(
-                self.Viewport.search([("automation_rule_id", "=", self.automation.id)])
-            ),
-            2,
-        )
-
-    def test_a_reader_sees_only_their_own(self):
-        self.automation.with_user(self.reader).set_workflow_viewport(-120.0, 60.0, 1.5)
-        self.automation.with_user(self.other).set_workflow_viewport(7.0, 8.0, 1.0)
-
-        as_reader = self.Viewport.with_user(self.reader).search([])
-        self.assertEqual(as_reader.user_id, self.reader)
-        self.assertEqual((as_reader.pos_x, as_reader.pos_y), (-120.0, 60.0))
-
-    def test_the_payload_returns_the_callers_own_viewport(self):
-        self.automation.with_user(self.reader).set_workflow_viewport(-120.0, 60.0, 1.5)
-
-        as_reader = self.automation.with_user(self.reader).get_workflow_graph()
-        as_other = self.automation.with_user(self.other).get_workflow_graph()
-
-        self.assertEqual(as_reader["viewport"], {"x": -120.0, "y": 60.0, "scale": 1.5})
-        self.assertIsNone(as_other["viewport"])
-
-    def test_a_zoom_outside_what_the_canvas_draws_is_refused(self):
-        for scale in (0.0, 0.01, 3.0):
-            with self.subTest(scale=scale), self.assertRaises(ValidationError):
-                self.Viewport.create(
-                    {
-                        "user_id": self.reader.id,
-                        "automation_rule_id": self.automation.id,
-                        "scale": scale,
-                    }
+            action["views"],
+            [
+                (
+                    self.env.ref("automation.view_automation_form_workflow_full").id,
+                    "form",
                 )
+            ],
+        )
 
-    def test_deleting_the_automation_takes_its_viewports_with_it(self):
-        self.automation.with_user(self.reader).set_workflow_viewport(-1.0, -2.0, 1.0)
-        rule_id = self.automation.id
+    def test_a_run_opens_its_diagram_on_a_page_of_its_own(self):
+        runtime = self.env["automation.runtime"].create(
+            {
+                "automation_id": self.automation.id,
+                "res_model": "res.partner",
+                "res_id": self.env.user.partner_id.id,
+            }
+        )
 
-        self.automation.unlink()
+        action = runtime.action_view_workflow()
 
-        self.assertFalse(self.Viewport.search([("automation_rule_id", "=", rule_id)]))
+        self.assertEqual(action["res_model"], "automation.runtime")
+        self.assertEqual(action["res_id"], runtime.id)
+        self.assertEqual(
+            action["views"],
+            [
+                (
+                    self.env.ref(
+                        "automation.view_automation_runtime_form_workflow_full"
+                    ).id,
+                    "form",
+                )
+            ],
+        )
+
+    def test_the_graph_carries_no_viewport_to_restore(self):
+        graph = self.automation.get_workflow_graph()
+
+        self.assertNotIn("viewport", graph)
 
 
 class TestWorkflowCounts(TestWorkflowCanvasState):

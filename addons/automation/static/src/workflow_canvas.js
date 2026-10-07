@@ -2,6 +2,7 @@
 
 import {
     Component,
+    onMounted,
     onWillStart,
     onWillUnmount,
     onWillUpdateProps,
@@ -12,8 +13,8 @@ import {
 import { FlowEditor } from "@web/core/flow_editor/flow_editor";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
-import { useService } from "@web/core/utils/hooks";
-import { useDebounced } from "@web/core/utils/timing";
+import { elementRef } from "@web/core/utils/element_ref";
+import { useMountedListener, useService } from "@web/core/utils/hooks";
 
 import {
     canConnect,
@@ -26,6 +27,8 @@ import { WorkflowNode } from "./workflow_node.js";
 
 const CHANNEL_PREFIX = "automation.workflow/";
 const UPDATE_TYPE = "automation.workflow/update";
+const FULL_SCREEN_MARGIN = 16;
+const FULL_SCREEN_MIN_HEIGHT = 416;
 
 export class WorkflowCanvas extends Component {
     static template = "automation.WorkflowCanvas";
@@ -34,6 +37,7 @@ export class WorkflowCanvas extends Component {
         record: t.object(),
         readonly: t.boolean().optional(),
         mode: t.string().optional(),
+        fullScreen: t.boolean().optional(),
     };
     props = useProps(this.constructor.props);
 
@@ -44,6 +48,7 @@ export class WorkflowCanvas extends Component {
         this.action = useService("action");
         this.notification = useService("notification");
         this.bus = useService("bus_service");
+        this.rootRef = elementRef();
         this.state = proxy({
             status: "idle",
             error: "",
@@ -61,17 +66,6 @@ export class WorkflowCanvas extends Component {
         this.requestedRuntimeId = null;
         this.payload = null;
         this.listening = null;
-        // Handed to the editor as a prop, so it is replaced only by a load: a
-        // fresh object on every pan frame would reset the editor's own viewport
-        // mid-gesture.
-        this.viewport = null;
-        this.pendingViewport = null;
-        // Panning and wheel-zooming both report continuously; the reader's
-        // resting position is what is worth a row, not every frame of getting
-        // there. execBeforeUnmount flushes the last one if they navigate away.
-        this.saveViewport = useDebounced(() => this.persistViewport(), 400, {
-            execBeforeUnmount: true,
-        });
         this.onWorkflowUpdate = ({ automation_id, runtime_id }) => {
             if (automation_id !== this.ruleId) {
                 return;
@@ -108,7 +102,51 @@ export class WorkflowCanvas extends Component {
                 await this.load(nextProps.record.resId);
             }
         });
+        onMounted(() => this.frame());
+        useMountedListener(window, "resize", () => this.sizeFullScreen());
         onWillUnmount(() => this.stopListening());
+    }
+
+    // The page is mounted when its tab is chosen, and the editor fits the
+    // graph to its box; the box itself is what has to be in sight. On a
+    // notebook page it starts below the fold of a long form; full screen, its
+    // height is the room the window has left.
+    frame() {
+        if (this.props.fullScreen) {
+            this.sizeFullScreen();
+            return;
+        }
+        this.rootRef.el?.scrollIntoView({ block: "nearest" });
+    }
+
+    sizeFullScreen() {
+        const paper = this.rootRef.el?.querySelector(".o_workflow_canvas_paper");
+        if (!this.props.fullScreen || !paper) {
+            return;
+        }
+        let below = 0;
+        for (
+            let sibling = paper.nextElementSibling;
+            sibling;
+            sibling = sibling.nextElementSibling
+        ) {
+            below += sibling.getBoundingClientRect().height;
+        }
+        const room = Math.round(
+            window.innerHeight -
+                paper.getBoundingClientRect().top -
+                below -
+                FULL_SCREEN_MARGIN,
+        );
+        paper.style.height = `${Math.max(room, FULL_SCREEN_MIN_HEIGHT)}px`;
+    }
+
+    async openFullScreen() {
+        const model = this.isRunMode ? "automation.runtime" : "automation.rule";
+        const action = await this.orm.call(model, "action_view_workflow", [
+            [this.resId],
+        ]);
+        await this.action.doAction(action);
     }
 
     get isRunMode() {
@@ -174,8 +212,6 @@ export class WorkflowCanvas extends Component {
         this.state.runtimeId = payload.runtime_id;
         this.state.runtimeState = payload.runtime_state;
         this.state.selectedEdgeId = null;
-        this.viewport = payload.viewport;
-        this.pendingViewport = null;
         this.state.status = payload.nodes.length ? "ready" : "empty";
         // A graph nobody has placed is laid out here rather than server-side,
         // and banking it is what keeps the reader's own arrangement from being
@@ -220,29 +256,6 @@ export class WorkflowCanvas extends Component {
 
     get maxNodeSize() {
         return this.payload.node_size.max;
-    }
-
-    onViewportChange(viewport) {
-        this.pendingViewport = viewport;
-        this.saveViewport();
-    }
-
-    async persistViewport() {
-        const viewport = this.pendingViewport;
-        if (!viewport || !this.ruleId) {
-            return;
-        }
-        try {
-            await this.orm.call("automation.rule", "set_workflow_viewport", [
-                [this.ruleId],
-                viewport.x,
-                viewport.y,
-                viewport.scale,
-            ]);
-        } catch {
-            // Losing a viewport costs the reader one pan, so it is not worth a
-            // dialog; the graph itself is unaffected.
-        }
     }
 
     async onResize({ phase, node, size }) {
@@ -473,6 +486,7 @@ registry.category("view_widgets").add("automation_workflow_canvas", {
     component: WorkflowCanvas,
     extractProps: ({ attrs }) => ({
         mode: attrs.mode === "run" ? "run" : "definition",
+        fullScreen: Boolean(attrs.full_screen),
     }),
     // A run's canvas redraws when its record was written, whether or not the
     // form shows when that was.
