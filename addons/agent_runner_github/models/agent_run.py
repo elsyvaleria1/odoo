@@ -8,8 +8,9 @@ from odoo.addons.integration_github.tools.app import APP_CATEGORY
 
 _debug = DebugLog(__name__)
 
-# What a fix needs of its repository: push a branch, open a pull request, read
-# what checks say about it. Nothing else of the installation.
+# What a change needs of its repository: push a branch, open a pull request,
+# read what checks say about it. Nothing else of the installation; a kind that
+# only reads narrows it.
 RUN_PERMISSIONS = {
     "contents": "write",
     "pull_requests": "write",
