@@ -45,7 +45,10 @@ hold in the payload.
 | fix | `contents`, `pull_requests: write` | + Edit, MultiEdit, Write | the policy's fix model |
 
 - **Repository.** It is that of the git checkout the incident's module lives in, mapped in
-  **Autofix > Repositories** (`odoo`, `agromarin`, `l10n`), with its base branch.
+  **Autofix > Repositories** (`odoo`, `agromarin`, `l10n`), with its base branch. A checkout
+  is known by the GitHub repository its `origin` fetches from -- wherever and under whatever
+  directory it is cloned, a worktree included -- and by its directory's name only when it
+  has no GitHub remote.
 - **Fix branch.** `<base>-fix-<slug>-i<incident>-a<attempt>`: unique by construction, so a
   recurrence never reuses an old branch.
 - **Prompts.** They are versioned records (**Autofix > Prompts**); each run records the
