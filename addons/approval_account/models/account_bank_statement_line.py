@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.fields import Domain
 
 
 class AccountBankStatementLine(models.Model):
@@ -12,3 +13,18 @@ class AccountBankStatementLine(models.Model):
         "request's own picker to leave out transactions another live request "
         "already holds.",
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        self.env["approval.request"]._claim_bank_statement_lines(lines.company_id)
+        return lines
+
+    def _get_domain_settled_elsewhere(self) -> Domain:
+        # a transaction a live approval request claims is settled by what that
+        # request approves, not matched to a document on its own
+        return super()._get_domain_settled_elsewhere() | Domain(
+            "approval_request_ids",
+            "any",
+            [("state", "not in", ("refused", "cancelled"))],
+        )

@@ -130,7 +130,7 @@ class ApprovalRequestAccess(models.Model):
                 )
 
     def _check_access_write(self) -> None:
-        if self._skip_check_access():
+        if self._skip_check_access() or self._granted_by_privilege("write"):
             return
 
         current_user = self.env.user
@@ -388,6 +388,22 @@ class ApprovalRequestAccess(models.Model):
             ._read_group([("request_id", "in", self.ids)], ["request_id"])
         )
         return self.browse(request.id for (request,) in logged)
+
+    def _granted_by_privilege(self, operation: str) -> bool:
+        # code acting under a privilege writes what the privilege's own rows
+        # allow, owner or not; the rows bound which requests that is
+        if not self.env.privileges:
+            return False
+        domain = self.env["ir.access"]._privilege_domain("approval.request", operation)
+        granted = self.filtered_domain(domain) == self
+        if granted:
+            trace.ACCESS.event(
+                "granted_by_privilege",
+                uid=self.env.uid,
+                operation=operation,
+                record=self,
+            )
+        return granted
 
     def _skip_check_access(self) -> bool:
         skipped = self.env.su or is_approval_manager(self.env)

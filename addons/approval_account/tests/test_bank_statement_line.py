@@ -174,12 +174,12 @@ class TestBankStatementLineRequired(AccountApprovalCommon):
             },
         )
 
-    def _new_request(self, name, category, bsl=None):
+    def _new_request(self, name, category, bsl=None, amount=100.0):
         vals = {
             "name": name,
             "category_id": category.id,
             "partner_id": self.partner_a.id,
-            "amount": 100.0,
+            "amount": amount,
             "date": "2026-06-01",
         }
         if bsl:
@@ -197,7 +197,8 @@ class TestBankStatementLineRequired(AccountApprovalCommon):
         )
 
     def test_approve_blocked_without_bsl(self):
-        request = self._new_request("Blocked", self.category_bsl_required)
+        # an amount no transaction fits: the one that fits would be assigned
+        request = self._new_request("Blocked", self.category_bsl_required, amount=777.0)
         with self.assertRaises(UserError, msg="Approval must be blocked"):
             request.with_user(self.approver).action_approve()
         self.assertEqual(request.state, "pending", "Request must stay pending")
@@ -229,7 +230,7 @@ class TestBankStatementLineRequired(AccountApprovalCommon):
             },
         )
         add_category_approver(category, self.approver, required=True)
-        request = self._new_request("Consent", category)
+        request = self._new_request("Consent", category, amount=777.0)
         request.sudo().date_confirmed = fields.Datetime.now() - timedelta(hours=2)
 
         self.env["approval.request"].cron_consent_approval()

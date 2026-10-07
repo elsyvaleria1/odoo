@@ -1,8 +1,13 @@
+from collections import Counter
 from typing import Any
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.fields import Domain
 from odoo.tools.misc import clean_context
+
+# what makes a waiting request look again for the one transaction it fits
+CLAIM_TRIGGERS = frozenset({"amount", "date", "category_id", "company_id"})
 
 
 class ApprovalRequest(models.Model):
@@ -151,7 +156,10 @@ class ApprovalRequest(models.Model):
                 )
             seen_line_ids.add(line_id)
             self._check_bank_statement_line_available(line_id)
-        return super().create(vals_list)
+        requests = super().create(vals_list)
+        if pending := requests.filtered(lambda request: request.state == "pending"):
+            self._claim_bank_statement_lines(pending.company_id)
+        return requests
 
     def write(self, vals):
         self._check_payment_fields_access(vals)
@@ -169,7 +177,92 @@ class ApprovalRequest(models.Model):
             if self:
                 # The guard above leaves at most one record here.
                 self._check_bank_statement_line_available(line_id, exclude=self)
-        return super().write(vals)
+        result = super().write(vals)
+        if CLAIM_TRIGGERS & set(vals) and "bank_statement_line_id" not in vals:
+            if pending := self.filtered(lambda request: request.state == "pending"):
+                self._claim_bank_statement_lines(pending.company_id)
+        return result
+
+    def action_confirm(self) -> None:
+        result = super().action_confirm()
+        if pending := self.filtered(lambda request: request.state == "pending"):
+            self._claim_bank_statement_lines(pending.company_id)
+        return result
+
+    def _get_bank_statement_line_offer_domain(self) -> Domain:
+        """Return the transactions this request's picker offers, as the
+        field's own domain states them for the client."""
+        self.check_singleton()
+        offered = (
+            Domain("company_id", "=", self.company_id.id)
+            & Domain("date", ">=", self.bank_statement_date)
+            & Domain("date", "<=", self.bank_statement_date_end)
+            & (Domain("amount", "=", self.amount) | Domain("amount", "=", -self.amount))
+            & (
+                Domain("id", "=", self.bank_statement_line_id.id)
+                | Domain(
+                    "approval_request_ids",
+                    "not any",
+                    [("state", "not in", ("refused", "cancelled"))],
+                )
+            )
+        )
+        if not self.include_reconciled_bsl:
+            offered &= Domain("is_reconciled", "=", False)
+        return offered
+
+    @api.model
+    def _claim_bank_statement_lines(self, companies) -> None:
+        """Give each waiting request of `companies` the one transaction its
+        picker offers, when no other waiting request is offered that one.
+
+        A request waits when it is submitted, needs a bank transaction and
+        has none. A transaction two waiting requests could take is left for a
+        person to assign; so is a request offered several.
+        """
+        claimer = self.with_privilege(
+            "approval_account.privilege_claim_bank_line",
+            reason="a bank transaction is claimed by the one waiting request it fits",
+        )
+        waiting = claimer.search(
+            [
+                ("company_id", "in", companies.ids),
+                ("state", "=", "pending"),
+                ("category_id.has_bsl", "=", "required"),
+                ("bank_statement_line_id", "=", False),
+                ("amount", "!=", 0),
+            ]
+        ).filtered("bank_statement_date")
+        if not waiting:
+            return
+        amounts = set(waiting.mapped("amount"))
+        lines = claimer.env["account.bank.statement.line"].search(
+            [
+                ("company_id", "in", waiting.company_id.ids),
+                ("date", ">=", min(waiting.mapped("bank_statement_date"))),
+                ("date", "<=", max(waiting.mapped("bank_statement_date_end"))),
+                ("amount", "in", [*amounts, *(-amount for amount in amounts)]),
+            ]
+        )
+        offers = {
+            request: lines.filtered_domain(
+                request._get_bank_statement_line_offer_domain()
+            )
+            for request in waiting
+        }
+        wanted = Counter(line for offered in offers.values() for line in offered)
+        for request, offered in offers.items():
+            if len(offered) == 1 and wanted[offered] == 1:
+                request.bank_statement_line_id = offered
+                request.message_post(
+                    body=self.env._(
+                        "Bank transaction %(line)s assigned automatically: it is "
+                        "the only one this request fits, and no other waiting "
+                        "request fits it.",
+                        line=offered.display_name,
+                    ),
+                    message_type="notification",
+                )
 
     def _check_payment_fields_access(self, vals: dict) -> None:
         if self._PAYMENT_FIELDS & set(vals) and not self.env.su:

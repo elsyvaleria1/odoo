@@ -7,3 +7,6 @@ approval_category_account_manager,Approval Category: Accounting manager writes a
 access_account_journal_approval,account.journal.approval,account.model_account_journal,base.group_user,permission,r,,,
 account_move_approver_reach,"Journal Entry: an approver reads what they are asked to decide, while they decide",account.model_account_move,approval.group_approval_decider,permission,r,own,approval_pending_user,
 account_move_line_approver_reach,"Journal Item: an approver reads the lines of what they are asked to decide, while they decide",account.model_account_move_line,approval.group_approval_decider,permission,r,own,approval_pending_user,
+privilege_claim_bank_line_request,Approval Request: a bank transaction is assigned to the one waiting request it fits,approval.model_approval_request,privilege_claim_bank_line,permission,ru,all,,"[('state', '=', 'pending')]"
+privilege_claim_bank_line_statement_line,Bank Transaction: assigning one reads the transactions a waiting request fits,account.model_account_bank_statement_line,privilege_claim_bank_line,permission,r,all,,
+privilege_claim_bank_line_statement_move,Journal Entry: assigning a bank transaction reads the entry the transaction is,account.model_account_move,privilege_claim_bank_line,permission,r,all,,"[('statement_line_id', '!=', False)]"
