@@ -61,3 +61,36 @@ hold in the payload.
 - The runner commits the fix itself, with the incident and run as trailers, and with git
   hooks and fsmonitor disabled.
 - A run whose agent touched `.git/` is failed before anything is committed.
+
+## From the pull request to production
+
+```
+pushed ─► testing ─► test_failed
+              └─► test_passed ─► (approved merge) ─► merged ─► deployed
+                        └─► (approved hotfix) ─► hotfixing ─► deployed
+```
+
+- **Checks.** The fix's pull request is followed by webhook (`integration_github`). Its checks
+  move the incident: any failure fails it, all passed passes it.
+- **Merge and hotfix are verbs behind an approval.** An administrator asks; a member of
+  **Autofix Approver** decides. The group may be a tech lead who is no administrator: it reads
+  the incident and its pull request.
+  - The approval covers the very commit it was asked for. A pull request pushed to since is
+    refused, not merged.
+  - Only a fix whose checks pass is merged or hotfixed.
+  - An incident holds one request at a time, so merge and hotfix are alternatives: decide or
+    cancel one before asking the other.
+- **Production.** A *deploy* runner (`runner.py --role deploy`) runs on the production host and
+  never runs an agent.
+  - **Hotfix.** It merges the fix commit into the running checkout, upgrades the modules it
+    touches, restarts and checks health. When the server does not come back healthy, it
+    reverts all of that, and the incident returns to **Tests Passed**.
+  - **Merge.** A merged fix waits for production's own deploy. Every ten minutes Odoo asks the
+    deploy runner which awaited commits the running checkouts contain.
+  - **Resolved.** A contained fix puts the incident **In Production** and resolves it, and its
+    users are told it is fixed.
+  - **What the runner may do.** The deploy runner's checkouts and its upgrade, restart and
+    health commands are the host's own configuration (`tooling/agent_runner/deploy.py`). A
+    lease names a checkout and a commit, nothing to execute.
+- **Regression.** A recurrence after production reopens the incident as regressed, and it is
+  diagnosed again with the fix that did not hold.

@@ -15,10 +15,14 @@ class AgentRun(models.Model):
         selection_add=[
             ("error_incident.diagnose", "Diagnose an Incident"),
             ("error_incident.fix", "Fix an Incident"),
+            ("error_incident.revision", "Report the Production Revision"),
+            ("error_incident.hotfix", "Hotfix Production"),
         ],
         ondelete={
             "error_incident.diagnose": "cascade",
             "error_incident.fix": "cascade",
+            "error_incident.revision": "cascade",
+            "error_incident.hotfix": "cascade",
         },
     )
 

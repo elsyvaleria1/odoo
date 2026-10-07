@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Any
 
@@ -7,6 +8,7 @@ from odoo.libs.debug_log import DebugLog
 
 from .error_incident_autofix_policy import AUTOFIX_KINDS
 
+_logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 DIAGNOSE = "error_incident.diagnose"
@@ -18,8 +20,9 @@ IDLE_FIX_STATES = (
     "unclear",
     "unchanged",
     "proposed",
-    "pushed",
     "failed",
+    "test_failed",
+    "closed",
 )
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+){0,4}$")
 _MAX_DIFF = 200_000
@@ -89,11 +92,18 @@ class ErrorIncident(models.Model):
         incident = self.browse(incident_id)
         if incident.incident_state == "regressed" and incident.fix_state != "none":
             incident.write({"fix_state": "none", "count_fix_attempt": 0})
+        policy = self.env["error.incident.autofix.policy"]._current()
+        if not policy or policy.mode == "off":
+            return incident_id
+        # the error being recorded comes first: an autofix that cannot be
+        # considered is logged, never raised into the capture
         try:
             with self.env.cr.savepoint():
                 incident._autofix_consider()
         except Exception:
-            _debug.logic("autofix.consider_failed", incident=incident_id)
+            _logger.exception(
+                "Could not consider incident %s for the autofix", incident_id
+            )
         return incident_id
 
     def _autofix_refusal(
@@ -290,6 +300,7 @@ class ErrorIncident(models.Model):
         if hasattr(super(), "_agent_run_ended"):
             super()._agent_run_ended(run)
         if run.kind not in AUTOFIX_KINDS:
+            self._autofix_delivery_ended(run)
             return
         if run.run_state != "succeeded":
             self.write({"fix_state": "failed"})

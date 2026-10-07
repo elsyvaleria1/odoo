@@ -17,6 +17,7 @@ class TestErrorIncidentAccessMatrix(AccessMatrixCase):
             "incident",
             note="tracebacks and the engineering trail are the administrators'",
             admin_a="rwcd",
+            installed={"error_incident_autofix": {"admin_a": "merge hotfix"}},
         ),
         Cell("error.occurrence", "occurrence", admin_a="rwcd"),
         Cell("error.incident.rule", "rule", admin_a="rwcd"),

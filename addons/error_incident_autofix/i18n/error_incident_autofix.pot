@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 00:08+0000\n"
-"PO-Revision-Date: 2026-10-07 00:08+0000\n"
+"POT-Creation-Date: 2026-10-07 15:11+0000\n"
+"PO-Revision-Date: 2026-10-07 15:11+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -69,6 +69,21 @@ msgid "Agents"
 msgstr ""
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid ""
+"An agent's fix of %(incident)s passes its checks: %(pull)s, commit "
+"%(commit)s. %(analysis)s"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:approval.category,description:error_incident_autofix.approval_category_autofix
+msgid ""
+"An agent's fix, its checks passing, goes to the base branch or to production"
+" only once a person approves the very commit."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__min_occurrences
 msgid "An incident is dispatched once it occurred this often."
 msgstr ""
@@ -84,15 +99,71 @@ msgid "Analysis"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_approval_category
+msgid "Approval Category"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_request_id
+msgid "Approval Request"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_attachment_count
 msgid "Attachment Count"
 msgstr ""
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_state
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__approval_category__approval_type__autofix
 #: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_root
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_form_autofix
 msgid "Autofix"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:res.groups,name:error_incident_autofix.group_autofix_approver
+msgid "Autofix Approver"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:approval.category.step,name:error_incident_autofix.approval_category_autofix_step_approvers
+msgid "Autofix Approvers"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -129,6 +200,22 @@ msgid "Autofix Review"
 msgstr ""
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "Autofix: %s"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.actions.server,name:error_incident_autofix.ir_cron_autofix_check_production_ir_actions_server
+msgid "Autofix: Ask Production Which Fixes It Runs"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:approval.category,name:error_incident_autofix.approval_category_autofix
+msgid "Autofix: Merge or Hotfix"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__base_branch
 msgid "Base Branch"
 msgstr ""
@@ -136,6 +223,18 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__body
 msgid "Body"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
 msgstr ""
 
 #. module: error_incident_autofix
@@ -183,8 +282,41 @@ msgid "Created on"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
 msgid "Daily Run Cap"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:res.groups,comment:error_incident_autofix.group_autofix_approver
+msgid ""
+"Decides whether an agent's fix is merged, or applied to production before it"
+" is merged. Reads the incident and its pull request to decide."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_pending_user_ids
+msgid "Deciding Now"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -214,10 +346,12 @@ msgstr ""
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -254,6 +388,11 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_branch
 msgid "Fix Branch"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_commit
+msgid "Fix Commit"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -304,6 +443,11 @@ msgid "Followers (Partners)"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_integration_github_pull
+msgid "GitHub Pull Request"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__github_repository
 msgid "GitHub Repository"
 msgstr ""
@@ -319,16 +463,28 @@ msgid "Has Message"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_hotfix
+msgid "Hotfix Production"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__hotfixing
+msgid "Hotfixing"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
 msgid "How Much"
 msgstr ""
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__id
 msgid "ID"
 msgstr ""
 
@@ -341,6 +497,11 @@ msgstr ""
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_has_error
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__deployed
+msgid "In Production"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -375,6 +536,13 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_policy__mode__live
 msgid "Live"
 msgstr ""
@@ -382,6 +550,11 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__max_attempts
 msgid "Max Attempts"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__merged
+msgid "Merged"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -492,10 +665,26 @@ msgid "One module per line, never handed to the agents."
 msgstr ""
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "Only a fix whose pull request passes its checks is merged or hotfixed."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__require_internal_user
 msgid ""
 "Only an incident an internal user hit; a scheduled action or a job failing "
 "alone waits for a person."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -522,6 +711,16 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_diff
 msgid "Proposed Change"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__closed
+msgid "Pull Request Closed"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_revision
+msgid "Report the Production Revision"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -561,6 +760,28 @@ msgid "Since the last regression."
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__testing
+msgid "Testing"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__test_failed
+msgid "Tests Failed"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__test_passed
+msgid "Tests Passed"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_chain_preview
+msgid ""
+"The approvers asking for approval would route this document to now, in the "
+"order they decide. Nothing is written to find them."
+msgstr ""
+
+#. module: error_incident_autofix
 #. odoo-python
 #: code:addons/error_incident_autofix/models/error_incident.py:0
 msgid "The autofix is off."
@@ -572,8 +793,28 @@ msgid "The branch a fix starts from and its pull request targets."
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_commit
+msgid ""
+"The commit production must contain for the fix to be running: the merge, or "
+"the fix branch's head for a hotfix."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_analysis
 msgid "The diagnosis's root cause, then the fix's note."
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid ""
+"The fix was merged as %(commit)s; it is resolved once production runs it."
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "The hotfix was not applied, or was reverted: %(error)s"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -607,6 +848,16 @@ msgid "Unclear"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__version
 msgid "Version"
 msgstr ""
@@ -621,6 +872,26 @@ msgstr ""
 #. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
 msgid "When"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_chain_preview
+msgid "Who Will Approve"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_pending_user_ids
+msgid "Who is deciding this document's approval request right now."
 msgstr ""
 
 #. module: error_incident_autofix

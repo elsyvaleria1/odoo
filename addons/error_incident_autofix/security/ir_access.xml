@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_error_incident_autofix_verbs" model="ir.access">
+        <field
+            name="name">error.incident: an administrator asks to merge or hotfix a fix</field>
+        <field name="model_id" ref="error_incident.model_error_incident" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="verbs">merge,hotfix</field>
+    </record>
+
+</odoo>

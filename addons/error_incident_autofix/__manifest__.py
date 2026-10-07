@@ -8,13 +8,18 @@
     "website": "https://www.agromarin.mx",
     "license": "LGPL-3",
     "depends": [
+        "approval",
         "error_incident_github",
     ],
     "data": [
+        "security/res_groups.xml",
         "security/ir.access.csv",
+        "security/ir_access.xml",
         "data/error_incident_autofix_prompt_data.xml",
         "data/error_incident_autofix_repository_data.xml",
         "data/error_incident_autofix_policy_data.xml",
+        "data/ir_cron.xml",
+        "data/approval_data.xml",
         "views/error_incident_views.xml",
         "views/error_incident_autofix_views.xml",
         "views/error_incident_autofix_menus.xml",

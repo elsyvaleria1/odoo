@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_autofix" model="approval.category">
+        <field name="name">Autofix: Merge or Hotfix</field>
+        <field name="approval_type">autofix</field>
+        <field
+            name="description">An agent's fix, its checks passing, goes to the base branch or to production only once a person approves the very commit.</field>
+        <field name="approval_minimum">1</field>
+        <field name="sequence_code">FIX</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+    <record
+        id="approval_category_autofix_step_approvers"
+        model="approval.category.step"
+        forcecreate="0">
+        <field name="category_id" ref="approval_category_autofix" />
+        <field name="name">Autofix Approvers</field>
+        <field name="sequence" eval="10" />
+        <field name="minimum" eval="1" />
+        <field name="group_id" ref="group_autofix_approver" />
+        <field name="asks_group_members" eval="True" />
+    </record>
+
+    <record id="obligation_incident_merge" model="approval.binding">
+        <field name="model_id" ref="error_incident.model_error_incident" />
+        <field name="verb">merge</field>
+        <field name="mode">request</field>
+        <field name="sudo_policy">enforce</field>
+        <field name="origin">module</field>
+    </record>
+
+    <record id="obligation_incident_hotfix" model="approval.binding">
+        <field name="model_id" ref="error_incident.model_error_incident" />
+        <field name="verb">hotfix</field>
+        <field name="mode">request</field>
+        <field name="sudo_policy">enforce</field>
+        <field name="origin">module</field>
+    </record>
+
+</odoo>

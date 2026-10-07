@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_autofix_approver" model="res.groups">
+        <field name="name">Autofix Approver</field>
+        <field
+            name="comment">Decides whether an agent's fix is merged, or applied to production before it is merged. Reads the incident and its pull request to decide.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('approval.group_approval_approver'))]" />
+    </record>
+
+</odoo>

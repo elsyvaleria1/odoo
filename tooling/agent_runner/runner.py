@@ -286,6 +286,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--url", required=True, help="the Odoo server")
     parser.add_argument("--poll", type=float, default=5, help="seconds between claims")
     parser.add_argument("--once", action="store_true", help="handle one run, then exit")
+    parser.add_argument(
+        "--role",
+        choices=("sandbox", "deploy"),
+        default="sandbox",
+        help="sandbox runs agents; deploy, on the production host, applies fixes",
+    )
     args = parser.parse_args(argv)
     token = os.environ.get("AGENT_RUNNER_TOKEN")
     if not token:
@@ -294,12 +300,16 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     try:
-        from . import incident
+        from . import deploy, incident
     except ImportError:  # run as a script
+        import deploy
         import incident
+    # a sandbox runner runs agents and never deploys; a deploy runner, on the
+    # production host, deploys and never runs an agent
+    roles = {"sandbox": incident.EXECUTORS, "deploy": deploy.EXECUTORS}
     runner = Runner(
         Client(args.url, token),
-        {**EXECUTORS, **incident.EXECUTORS},
+        {**EXECUTORS, **roles[args.role]},
         poll_seconds=args.poll,
     )
     if args.once:

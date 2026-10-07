@@ -1,1 +1,1 @@
-from . import test_access_matrix, test_autofix
+from . import test_access_matrix, test_autofix, test_delivery

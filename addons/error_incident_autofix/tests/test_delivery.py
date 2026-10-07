@@ -1,0 +1,256 @@
+from unittest.mock import MagicMock, patch
+
+from odoo.exceptions import UserError
+from odoo.tests import TransactionCase, new_test_user, tagged
+
+from odoo.addons.agent_runner.tests.common import RunnerFixtures
+from odoo.addons.error_incident.models.error_incident import capture_payload
+from odoo.addons.error_incident_autofix.models import (
+    error_incident_delivery as delivery,
+)
+
+DIFF = "--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-broken\n+fixed\n"
+REPOSITORY = "Agro-Marin/odoo"
+HEAD = "a" * 40
+MERGED = "b" * 40
+
+
+def _defect():
+    raise ValueError("delivery probe")
+
+
+def _payload(user_id):
+    try:
+        _defect()
+    except ValueError as exc:
+        return capture_payload(exc, "request", user_id=user_id)
+    raise AssertionError
+
+
+@tagged("post_install", "-at_install")
+class TestDelivery(RunnerFixtures, TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.ref("error_incident_autofix.policy_default").write(
+            {"mode": "live", "min_occurrences": 2}
+        )
+        cls.employee = new_test_user(
+            cls.env, "delivery.employee", groups="base.group_user"
+        )
+        cls.admin = new_test_user(cls.env, "delivery.admin", groups="base.group_system")
+        cls.approver = new_test_user(
+            cls.env,
+            "delivery.approver",
+            groups="base.group_user,error_incident_autofix.group_autofix_approver",
+        )
+        cls.sandbox = cls._runner("sandbox")
+        cls.deployer = cls._runner("deployer", capabilities=("deploy",))
+
+    def _occur(self):
+        return self.env["error.incident"].browse(
+            self.env["error.incident"]._capture(_payload(self.employee.id))
+        )
+
+    def _finish(self, runner, result, kind):
+        run, token = self.env["agent.run"]._claim(runner)
+        self.assertEqual(run.kind, kind)
+        run._complete(
+            token, result, {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}
+        )
+        return run
+
+    def _pushed(self, checks="none"):
+        """An incident whose live fix is pushed and its pull request open."""
+        self._occur()
+        incident = self._occur()
+        self._finish(
+            self.sandbox, {"verdict": "defect", "slug": "x"}, "error_incident.diagnose"
+        )
+        branch = incident.fix_branch
+        self._finish(
+            self.sandbox,
+            {"verdict": "fixed", "diff": DIFF, "pushed": True, "branch": branch},
+            "error_incident.fix",
+        )
+        self.assertEqual(incident.fix_state, "pushed")
+        pull = self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "open",
+                "head": {"ref": branch, "sha": HEAD},
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+        self.assertEqual(pull.incident_id, incident)
+        if checks != "none":
+            self._check(checks)
+        return incident, pull
+
+    def _check(self, conclusion):
+        completed = conclusion != "pending"
+        self.env["integration.github.check"]._record(
+            REPOSITORY,
+            "check_run:1",
+            {
+                "name": "ci",
+                "head_sha": HEAD,
+                "source": "check_run",
+                "check_status": "completed" if completed else "in_progress",
+                "conclusion": conclusion if completed else False,
+            },
+        )
+        self.env["integration.github.pull"]._checks_moved(REPOSITORY, HEAD)
+
+    def test_the_pull_requests_checks_drive_the_incident(self):
+        incident, _pull = self._pushed()
+        self.assertEqual(incident.fix_state, "testing")
+        self._check("failure")
+        self.assertEqual(incident.fix_state, "test_failed")
+        self._check("success")
+        self.assertEqual(incident.fix_state, "test_passed")
+
+    def test_only_a_passing_fix_is_merged_or_hotfixed(self):
+        incident, _pull = self._pushed(checks="failure")
+        for action in ("action_autofix_merge", "action_autofix_hotfix"):
+            with self.assertRaises(UserError):
+                getattr(incident.with_user(self.admin), action)()
+        self.assertFalse(incident.approval_request_id)
+
+    def _merge_client(self):
+        client = MagicMock()
+        client.merge_pull_request.return_value = {"merged": True, "sha": MERGED}
+        return patch.object(delivery, "get_github_client", return_value=client), client
+
+    def test_a_merge_waits_for_its_approval_then_merges_that_commit(self):
+        incident, _pull = self._pushed(checks="success")
+        patcher, client = self._merge_client()
+        with patcher:
+            incident.with_user(self.admin).action_autofix_merge()
+            request = incident.approval_request_id
+            self.assertEqual(
+                (request.operation, incident.fix_state), ("merge", "test_passed")
+            )
+            client.merge_pull_request.assert_not_called()
+            request.with_user(self.approver).action_approve()
+        client.merge_pull_request.assert_called_once_with(
+            "Agro-Marin", "odoo", 7, merge_method="squash"
+        )
+        self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
+
+    def test_an_approval_covers_the_commit_it_was_asked_for(self):
+        incident, pull = self._pushed(checks="success")
+        patcher, client = self._merge_client()
+        with patcher:
+            incident.with_user(self.admin).action_autofix_merge()
+            pull.head_sha = "c" * 40
+            incident.approval_request_id.with_user(self.approver).action_approve()
+        client.merge_pull_request.assert_not_called()
+        self.assertEqual(incident.fix_state, "test_passed")
+
+    def test_a_merged_fix_is_resolved_once_production_runs_it(self):
+        incident, _pull = self._pushed(checks="success")
+        self._pull_merged()
+        self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
+        Incident = self.env["error.incident"]
+        Incident._cron_autofix_check_production()
+        Incident._cron_autofix_check_production()
+        run, token = self.env["agent.run"]._claim(self.deployer)
+        self.assertEqual(run.kind, "error_incident.revision")
+        self.assertEqual(run.payload, {"checkouts": {"odoo": [MERGED]}})
+        self.assertFalse(self.env["agent.run"]._claim(self.deployer), "asked once")
+        run._complete(
+            token,
+            {"revisions": {"odoo": "d" * 40}, "contained": []},
+            {"input_tokens": 0, "output_tokens": 0, "cost": 0.0},
+        )
+        self.assertEqual(incident.fix_state, "merged", "not running yet")
+        Incident._cron_autofix_check_production()
+        self._finish(
+            self.deployer,
+            {"revisions": {"odoo": MERGED}, "contained": [MERGED]},
+            "error_incident.revision",
+        )
+        self.assertEqual(
+            (incident.fix_state, incident.incident_state), ("deployed", "resolved")
+        )
+
+    def _pull_merged(self):
+        self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "closed",
+                "merged": True,
+                "merge_commit_sha": MERGED,
+                "head": {
+                    "ref": self.env["error.incident"].search([], limit=1).fix_branch,
+                    "sha": HEAD,
+                },
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+
+    def test_an_approved_hotfix_reaches_production_and_resolves_the_incident(self):
+        incident, pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        incident.approval_request_id.with_user(self.approver).action_approve()
+        self.assertEqual((incident.fix_state, incident.fix_commit), ("hotfixing", HEAD))
+        run, token = self.env["agent.run"]._claim(self.deployer)
+        self.assertEqual(run.kind, "error_incident.hotfix")
+        self.assertEqual(
+            run.payload,
+            {
+                "checkout": "odoo",
+                "repository": REPOSITORY,
+                "branch": pull.head_ref,
+                "commit": HEAD,
+            },
+        )
+        self.assertEqual(
+            run._github_permissions(), {"contents": "read", "metadata": "read"}
+        )
+        self.assertFalse(
+            self.env["agent.run"]._claim(self.sandbox), "a sandbox never deploys"
+        )
+        run._complete(
+            token,
+            {"revision": "e" * 40, "contained": [HEAD]},
+            {"input_tokens": 0, "output_tokens": 0, "cost": 0.0},
+        )
+        self.assertEqual(
+            (incident.fix_state, incident.incident_state), ("deployed", "resolved")
+        )
+
+    def test_a_reverted_hotfix_returns_the_fix_to_review(self):
+        incident, _pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        incident.approval_request_id.with_user(self.approver).action_approve()
+        run, token = self.env["agent.run"]._claim(self.deployer)
+        run._fail(
+            token, "reverted: the server did not come back healthy", retryable=False
+        )
+        self.assertEqual(incident.fix_state, "test_passed")
+        self.assertTrue(
+            any(
+                "reverted" in (body or "")
+                for body in incident.message_ids.mapped("body")
+            )
+        )
+
+    def test_a_recurrence_after_the_fix_reopens_the_incident_with_its_history(self):
+        incident, _pull = self._pushed(checks="success")
+        self._pull_merged()
+        self.env["error.incident"]._autofix_contained([MERGED])
+        self.assertEqual(incident.incident_state, "resolved")
+        self._occur()
+        self.assertEqual(incident.incident_state, "regressed")
+        self.assertEqual(incident.fix_state, "diagnosing")
+        diagnosis = incident.fix_run_ids.filtered(
+            lambda run: run.kind == "error_incident.diagnose"
+        ).sorted("id")[-1]
+        [previous] = diagnosis.payload["incident"]["previous_fixes"]
+        self.assertEqual(previous["branch"], incident.fix_branch)
