@@ -3,7 +3,7 @@
   "private": true,
   "description": "Odoo 19.0 JS tooling",
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+    "node": ">=26"
   },
   "dependencies": {
     "acorn": "^8.17.0",
