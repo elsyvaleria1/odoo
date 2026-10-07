@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_error_incident_autofix_root"
+        name="Autofix"
+        parent="error_incident.menu_error_incident_root"
+        sequence="30" />
+
+    <menuitem
+        id="menu_error_incident_autofix_review"
+        name="Review"
+        parent="menu_error_incident_autofix_root"
+        action="action_error_incident_autofix_review"
+        sequence="10" />
+
+    <menuitem
+        id="menu_error_incident_autofix_policy"
+        name="Policy"
+        parent="menu_error_incident_autofix_root"
+        action="action_error_incident_autofix_policy"
+        sequence="20" />
+
+    <menuitem
+        id="menu_error_incident_autofix_repository"
+        name="Repositories"
+        parent="menu_error_incident_autofix_root"
+        action="action_error_incident_autofix_repository"
+        sequence="30" />
+
+    <menuitem
+        id="menu_error_incident_autofix_prompt"
+        name="Prompts"
+        parent="menu_error_incident_autofix_root"
+        action="action_error_incident_autofix_prompt"
+        sequence="40" />
+
+</odoo>

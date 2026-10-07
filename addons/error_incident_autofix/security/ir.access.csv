@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_error_incident_autofix_policy_system,error.incident.autofix.policy system,model_error_incident_autofix_policy,base.group_system,permission,crud,,,
+access_error_incident_autofix_repository_system,error.incident.autofix.repository system,model_error_incident_autofix_repository,base.group_system,permission,crud,,,
+access_error_incident_autofix_prompt_system,error.incident.autofix.prompt system,model_error_incident_autofix_prompt,base.group_system,permission,crud,,,

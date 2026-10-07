@@ -60,7 +60,9 @@ class AgentRun(models.Model):
             )
             return credentials
         _owner, _, name = self.github_repository.partition("/")
-        minted = mint_installation_token(self.env, app, [name], RUN_PERMISSIONS)
+        minted = mint_installation_token(
+            self.env, app, [name], self._github_permissions()
+        )
         _debug.logic("run.github_token", run=self.id, repository=self.github_repository)
         return credentials | {
             "github": {
@@ -69,6 +71,11 @@ class AgentRun(models.Model):
                 "repository": self.github_repository,
             }
         }
+
+    def _github_permissions(self) -> dict[str, str]:
+        """What this run's token may do in its repository; a kind that only
+        reads narrows it."""
+        return dict(RUN_PERMISSIONS)
 
     def _complete(self, token: object, result: object, usage: dict[str, Any]) -> bool:
         first = super()._complete(token, result, usage)

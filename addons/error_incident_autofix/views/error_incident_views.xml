@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_error_incident_form_autofix" model="ir.ui.view">
+        <field name="name">error.incident.form.autofix</field>
+        <field name="model">error.incident</field>
+        <field name="inherit_id" ref="error_incident.view_error_incident_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_autofix_dispatch"
+                    type="object"
+                    string="Hand to the Agents"
+                    invisible="fix_state in ('diagnosing', 'fixing')" />
+            </xpath>
+            <xpath expr="//page[@name='users']" position="before">
+                <page name="autofix" string="Autofix">
+                    <group>
+                        <group>
+                            <field name="fix_state" />
+                            <field name="count_fix_attempt" />
+                            <field name="fix_cost" />
+                        </group>
+                        <group>
+                            <field name="fix_branch" />
+                        </group>
+                    </group>
+                    <field name="fix_analysis" placeholder="No analysis yet." />
+                    <field
+                        name="fix_diff"
+                        widget="code"
+                        options="{'mode': 'diff'}"
+                        invisible="not fix_diff" />
+                    <field name="fix_run_ids">
+                        <list>
+                            <field name="name" />
+                            <field name="run_state" />
+                            <field name="date_finished" />
+                            <field name="cost" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_error_incident_autofix_review_list" model="ir.ui.view">
+        <field name="name">error.incident.autofix.review.list</field>
+        <field name="model">error.incident</field>
+        <field name="priority" eval="30" />
+        <field name="arch" type="xml">
+            <list string="Autofix Review" create="false">
+                <field name="date_last_seen" />
+                <field name="name" />
+                <field name="origin_module" />
+                <field name="count_occurrence" />
+                <field name="count_fix_attempt" optional="show" />
+                <field name="fix_cost" optional="show" sum="Cost" />
+                <field
+                    name="fix_state"
+                    widget="badge"
+                    decoration-danger="fix_state == 'failed'"
+                    decoration-info="fix_state in ('diagnosing', 'fixing')"
+                    decoration-muted="fix_state in ('not_a_defect', 'unchanged')"
+                    decoration-success="fix_state in ('proposed', 'pushed')"
+                    decoration-warning="fix_state == 'unclear'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_error_incident_autofix_review" model="ir.actions.act_window">
+        <field name="name">Autofix Review</field>
+        <field name="res_model">error.incident</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_error_incident_autofix_review_list" />
+        <field name="domain">[('fix_state', '!=', 'none')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No incident was handed to the agents yet</p>
+            <p>In shadow mode, each verdict and proposed change waits here to be compared with what a person would have done.</p>
+        </field>
+    </record>
+
+</odoo>

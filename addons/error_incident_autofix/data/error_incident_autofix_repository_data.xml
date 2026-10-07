@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="repository_odoo" model="error.incident.autofix.repository">
+        <field name="checkout">odoo</field>
+        <field name="github_repository">Agro-Marin/odoo</field>
+        <field name="base_branch">19.0-marin</field>
+    </record>
+
+    <record id="repository_agromarin" model="error.incident.autofix.repository">
+        <field name="checkout">agromarin</field>
+        <field name="github_repository">Agro-Marin/agromarin</field>
+        <field name="base_branch">19.0-marin</field>
+    </record>
+
+    <record id="repository_l10n" model="error.incident.autofix.repository">
+        <field name="checkout">l10n</field>
+        <field name="github_repository">Agro-Marin/l10n</field>
+        <field name="base_branch">19.0-marin</field>
+    </record>
+
+</odoo>

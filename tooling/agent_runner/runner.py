@@ -31,6 +31,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 _logger = logging.getLogger("agent_runner")
@@ -292,9 +293,21 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    runner = Runner(Client(args.url, token), poll_seconds=args.poll)
+    try:
+        from . import incident
+    except ImportError:  # run as a script
+        import incident
+    runner = Runner(
+        Client(args.url, token),
+        {**EXECUTORS, **incident.EXECUTORS},
+        poll_seconds=args.poll,
+    )
     if args.once:
-        return 0 if runner.run_once() else 1
+        try:
+            return 0 if runner.run_once() else 1
+        except TransportError as error:
+            _logger.error("Odoo unreachable: %s", error)
+            return 2
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
@@ -303,4 +316,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # One copy of this module: the executors raise its `Permanent`, which the
+    # copy running as __main__ would not recognise as its own.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import runner
+
+    sys.exit(runner.main())

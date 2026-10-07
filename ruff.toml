@@ -851,7 +851,7 @@ ignore = [
 "addons/mail/static/scripts/odoo-mailgate.py" = ["TID251"]
 "odoo/addons/test_lint/tests/_ir_access_reach_apply.py" = ["TID251"]
 "setup/requirements-check.py" = ["TID251"]
-"tooling/agent_runner/runner.py" = ["TID251"]
+"tooling/agent_runner/*.py" = ["TID251"]
 
 [lint.isort]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]

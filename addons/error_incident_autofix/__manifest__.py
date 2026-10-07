@@ -1,0 +1,22 @@
+{
+    "name": "Error Incident Autofix",
+    "version": "19.0.1.0.0",
+    "category": "Hidden/Tools",
+    "summary": "Diagnose an incident and propose its fix through agent runs, in shadow or live",
+    "description": "When an incident meets the policy -- a server error hit by an internal user, often enough, in a module whose repository is mapped, under the daily cap and the company's machine-learning budget -- queues a diagnosis run for an agent runner. A real defect is handed to a fix run, which works in a clone of the module's repository on a branch named after the incident. In shadow mode the fix stays a proposal -- its diff, analysis and cost reviewed in Odoo, nothing pushed; in live mode the runner pushes the branch and opens the pull request, which error_incident_github follows. A regression is diagnosed again with the history of the fix that did not hold. Read-only runs get a read-only repository token.",
+    "author": "AgroMarin",
+    "website": "https://www.agromarin.mx",
+    "license": "LGPL-3",
+    "depends": [
+        "error_incident_github",
+    ],
+    "data": [
+        "security/ir.access.csv",
+        "data/error_incident_autofix_prompt_data.xml",
+        "data/error_incident_autofix_repository_data.xml",
+        "data/error_incident_autofix_policy_data.xml",
+        "views/error_incident_views.xml",
+        "views/error_incident_autofix_views.xml",
+        "views/error_incident_autofix_menus.xml",
+    ],
+}

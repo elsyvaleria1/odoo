@@ -1,0 +1,634 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* error_incident_autofix
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 19:17+0000\n"
+"PO-Revision-Date: 2026-10-06 19:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: error_incident_autofix
+#: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_repository_checkout_uniq
+msgid "A checkout maps to one repository."
+msgstr "Un checkout corresponde a un repositorio."
+
+#. module: error_incident_autofix
+#: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_prompt_version_uniq
+msgid "A phase's prompt versions are unique."
+msgstr "Las versiones del prompt de una fase son únicas."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "A run is already working on this incident."
+msgstr "Ya hay una ejecución trabajando en este incidente."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__active
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__active
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_cost
+msgid "Agent Cost"
+msgstr "Costo de los agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_agent_run
+msgid "Agent Run"
+msgstr "Ejecución de agente"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_run_ids
+msgid "Agent Runs"
+msgstr "Ejecuciones de agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
+msgid "Agent runs queued per day at most, diagnoses and fixes together."
+msgstr "Ejecuciones de agente encoladas por día como máximo, diagnósticos y correcciones juntos."
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "Agents"
+msgstr "Agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__min_occurrences
+msgid "An incident is dispatched once it occurred this often."
+msgstr "Un incidente se despacha cuando ocurrió esta cantidad de veces."
+
+#. module: error_incident_autofix
+#: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_policy_min_occurrences_positive
+msgid "An incident occurs at least once."
+msgstr "Un incidente ocurre al menos una vez."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_analysis
+msgid "Analysis"
+msgstr "Análisis"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_state
+#: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_root
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_form_autofix
+msgid "Autofix"
+msgstr "Autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.actions.act_window,name:error_incident_autofix.action_error_incident_autofix_policy
+#: model:ir.model,name:error_incident_autofix.model_error_incident_autofix_policy
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "Autofix Policy"
+msgstr "Política de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_error_incident_autofix_prompt
+msgid "Autofix Prompt"
+msgstr "Prompt de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.actions.act_window,name:error_incident_autofix.action_error_incident_autofix_prompt
+msgid "Autofix Prompts"
+msgstr "Prompts de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.actions.act_window,name:error_incident_autofix.action_error_incident_autofix_repository
+msgid "Autofix Repositories"
+msgstr "Repositorios de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_error_incident_autofix_repository
+msgid "Autofix Repository"
+msgstr "Repositorio de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.actions.act_window,name:error_incident_autofix.action_error_incident_autofix_review
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_review_list
+msgid "Autofix Review"
+msgstr "Revisión de autocorrección"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__base_branch
+msgid "Base Branch"
+msgstr "Rama base"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__body
+msgid "Body"
+msgstr "Cuerpo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__checkout
+msgid "Checkout"
+msgstr "Finalizar compra"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__commit_author_email
+msgid "Commit Author Email"
+msgstr "Correo del autor del commit"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__commit_author_name
+msgid "Commit Author Name"
+msgstr "Nombre del autor del commit"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "Commits"
+msgstr "Commits"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_review_list
+msgid "Cost"
+msgstr "Coste"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__create_uid
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__create_uid
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__create_date
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__create_date
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
+msgid "Daily Run Cap"
+msgstr "Tope diario de ejecuciones"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_prompt__phase__diagnose
+msgid "Diagnose"
+msgstr "Diagnosticar"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__diagnose_model
+msgid "Diagnose Model"
+msgstr "Modelo de diagnóstico"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_diagnose
+msgid "Diagnose an Incident"
+msgstr "Diagnosticar un incidente"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__diagnosing
+msgid "Diagnosing"
+msgstr "Diagnosticando"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__diagnose_timeout
+msgid "Diagnosis Timeout (s)"
+msgstr "Tiempo límite del diagnóstico (s)"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_state
+msgid "Driven only by what the agent runs report."
+msgstr "Lo mueve solo lo que informan las ejecuciones de agente."
+
+#. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_error_incident
+msgid "Error Incident"
+msgstr "Incidente de error"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__excluded_exception_types
+msgid "Excluded Exception Types"
+msgstr "Tipos de excepción excluidos"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__excluded_modules
+msgid "Excluded Modules"
+msgstr "Módulos excluidos"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_prompt__phase__fix
+msgid "Fix"
+msgstr "Corregir"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__count_fix_attempt
+msgid "Fix Attempts"
+msgstr "Intentos de corrección"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_branch
+msgid "Fix Branch"
+msgstr "Rama de la corrección"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__fix_model
+msgid "Fix Model"
+msgstr "Modelo de corrección"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__proposed
+msgid "Fix Proposed"
+msgstr "Corrección propuesta"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__pushed
+msgid "Fix Pushed"
+msgstr "Corrección subida"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__fix_timeout
+msgid "Fix Timeout (s)"
+msgstr "Tiempo límite de la corrección (s)"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_fix
+msgid "Fix an Incident"
+msgstr "Corregir un incidente"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__max_attempts
+msgid ""
+"Fix attempts per incident before it waits for a person; a regression starts "
+"the count again."
+msgstr "Intentos de corrección por incidente antes de que espere a una persona; una regresión reinicia la cuenta."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__fixing
+msgid "Fixing"
+msgstr "Corrigiendo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__github_repository
+msgid "GitHub Repository"
+msgstr "Repositorio de GitHub"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_form_autofix
+msgid "Hand to the Agents"
+msgstr "Entregar a los agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "How Much"
+msgstr "Cuánto"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__id
+msgid "ID"
+msgstr "ID"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_has_error
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: error_incident_autofix
+#: model_terms:ir.actions.act_window,help:error_incident_autofix.action_error_incident_autofix_review
+msgid ""
+"In shadow mode, each verdict and proposed change waits here to be compared "
+"with what a person would have done."
+msgstr "En modo sombra, cada veredicto y cambio propuesto espera aquí para compararse con lo que habría hecho una persona."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__kind
+msgid "Kind"
+msgstr "Clase"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__write_uid
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__write_uid
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__write_date
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__write_date
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_policy__mode__live
+msgid "Live"
+msgstr "En vivo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__max_attempts
+msgid "Max Attempts"
+msgstr "Intentos máximos"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__min_occurrences
+msgid "Min Occurrences"
+msgstr "Ocurrencias mínimas"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__mode
+msgid "Mode"
+msgstr "Modo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/agent_run.py:0
+msgid "No Anthropic credential: the runner's own model login is used."
+msgstr "No hay credencial de Anthropic: se usa la sesión del modelo del propio runner."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__unchanged
+msgid "No Change Made"
+msgstr "Sin cambios"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_form_autofix
+msgid "No analysis yet."
+msgstr "Aún sin análisis."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "No autofix policy is configured."
+msgstr "No hay ninguna política de autocorrección configurada."
+
+#. module: error_incident_autofix
+#: model_terms:ir.actions.act_window,help:error_incident_autofix.action_error_incident_autofix_review
+msgid "No incident was handed to the agents yet"
+msgstr "Todavía no se entregó ningún incidente a los agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__none
+msgid "Not Dispatched"
+msgstr "No despachado"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__not_a_defect
+msgid "Not a Defect"
+msgstr "No es un defecto"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_policy__mode__off
+msgid "Off"
+msgstr "Apagado"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__mode
+msgid ""
+"Off: nothing is dispatched. Shadow: incidents are diagnosed and fixes "
+"proposed for review, nothing is pushed and users see nothing. Live: the "
+"runner pushes the fix and opens its pull request."
+msgstr "Apagado: no se despacha nada. Sombra: los incidentes se diagnostican y las correcciones se proponen para revisión; no se sube nada y los usuarios no ven nada. En vivo: el runner sube la corrección y abre su pull request."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__excluded_exception_types
+msgid ""
+"One exception per line, as a traceback prints it: granting access is a "
+"person's decision."
+msgstr "Una excepción por línea, como la imprime un traceback: otorgar acceso es decisión de una persona."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__excluded_modules
+msgid "One module per line, never handed to the agents."
+msgstr "Un módulo por línea, nunca entregado a los agentes."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__require_internal_user
+msgid ""
+"Only an incident an internal user hit; a scheduled action or a job failing "
+"alone waits for a person."
+msgstr "Solo un incidente que sufrió un usuario interno; una acción planificada o un trabajo que falla por sí solo espera a una persona."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__phase
+msgid "Phase"
+msgstr "Fase"
+
+#. module: error_incident_autofix
+#: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_policy
+msgid "Policy"
+msgstr "Política"
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_prompt_form
+msgid "Prompt"
+msgstr "Rápido"
+
+#. module: error_incident_autofix
+#: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_prompt
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_prompt_list
+msgid "Prompts"
+msgstr "Prompts"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_diff
+msgid "Proposed Change"
+msgstr "Cambio propuesto"
+
+#. module: error_incident_autofix
+#: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_repository
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_repository_list
+msgid "Repositories"
+msgstr "Repositorios"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__require_internal_user
+msgid "Require Internal User"
+msgstr "Requiere usuario interno"
+
+#. module: error_incident_autofix
+#: model:ir.ui.menu,name:error_incident_autofix.menu_error_incident_autofix_review
+msgid "Review"
+msgstr "Revisión"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__failed
+msgid "Run Failed"
+msgstr "Ejecución fallida"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de envío del SMS"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_policy__mode__shadow
+msgid "Shadow"
+msgstr "Sombra"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__count_fix_attempt
+msgid "Since the last regression."
+msgstr "Desde la última regresión."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "The autofix is off."
+msgstr "La autocorrección está apagada."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__base_branch
+msgid "The branch a fix starts from and its pull request targets."
+msgstr "La rama de la que parte una corrección y a la que apunta su pull request."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_analysis
+msgid "The diagnosis's root cause, then the fix's note."
+msgstr "La causa raíz del diagnóstico y luego la nota de la corrección."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__checkout
+msgid ""
+"The name of the git checkout a module lives in on the server: odoo, "
+"agromarin, l10n."
+msgstr "El nombre del checkout de git donde vive un módulo en el servidor: odoo, agromarin, l10n."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "The repository of this incident's module is not mapped."
+msgstr "El repositorio del módulo de este incidente no está mapeado."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "This incident's fix attempts are spent."
+msgstr "Se agotaron los intentos de corrección de este incidente."
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "Today's run cap is reached."
+msgstr "Se alcanzó el tope de ejecuciones de hoy."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__unclear
+msgid "Unclear"
+msgstr "No concluyente"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__version
+msgid "Version"
+msgstr "Versión"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_agent_run__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr "Lo que se pide al runner; los módulos que entregan trabajo añaden los suyos."
+
+#. module: error_incident_autofix
+#: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
+msgid "When"
+msgstr "Cuándo"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__company_id
+msgid "Whose machine-learning budget the runs count against."
+msgstr "A cargo de qué presupuesto de aprendizaje automático cuentan las ejecuciones."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__github_repository
+msgid "owner/name"
+msgstr "propietario/nombre"
