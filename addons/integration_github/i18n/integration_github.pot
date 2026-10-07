@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 22:39+0000\n"
-"PO-Revision-Date: 2026-10-06 22:39+0000\n"
+"POT-Creation-Date: 2026-10-07 22:48+0000\n"
+"PO-Revision-Date: 2026-10-07 22:48+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -312,6 +312,11 @@ msgstr ""
 #. module: integration_github
 #: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__head_sha
 msgid "Head Commit"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__head_repository
+msgid "Head Repository"
 msgstr ""
 
 #. module: integration_github
@@ -702,6 +707,12 @@ msgid "Updated"
 msgstr ""
 
 #. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__date_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__date_github_updated
+msgid "Updated on GitHub"
+msgstr ""
+
+#. module: integration_github
 #: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__verification_method
 msgid "Verification Method"
 msgstr ""
@@ -728,6 +739,20 @@ msgid "What the caller proves itself with."
 msgstr ""
 
 #. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_check__date_github
+msgid ""
+"When GitHub last changed the check, as the newest delivery said: an older "
+"delivery, redelivered or reordered, changes nothing."
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__date_github_updated
+msgid ""
+"When GitHub last changed the pull request, as the newest delivery said: an "
+"older delivery, redelivered or reordered, changes nothing."
+msgstr ""
+
+#. module: integration_github
 #: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__source__workflow_run
 msgid "Workflow Run"
 msgstr ""
@@ -741,4 +766,11 @@ msgstr ""
 #: model:ir.model.fields,help:integration_github.field_integration_github_check__repository
 #: model:ir.model.fields,help:integration_github.field_integration_github_pull__repository
 msgid "owner/name"
+msgstr ""
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__head_repository
+msgid ""
+"owner/name of the repository the branch lives in: another than the pull "
+"request's own for one opened from a fork."
 msgstr ""

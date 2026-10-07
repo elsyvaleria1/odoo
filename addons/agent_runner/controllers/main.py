@@ -4,7 +4,7 @@ from odoo import http
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 
-from ..models.agent_run import LeaseLost
+from ..models.agent_run import LIVE_STATES, LeaseLost
 
 _debug = DebugLog(__name__)
 
@@ -30,6 +30,26 @@ def _non_negative(value: object, cast: type) -> Any:
     return cast(max(value, 0))
 
 
+def _usage(body: dict[str, Any]) -> dict[str, Any]:
+    usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
+    return {
+        "input_tokens": _non_negative(usage.get("input_tokens"), int),
+        "output_tokens": _non_negative(usage.get("output_tokens"), int),
+        "cost": _non_negative(usage.get("cost"), float),
+    }
+
+
+def _annotate_spend(run: Any, usage: dict[str, Any]) -> None:
+    """The spend lands on this call's exchange row, under the run's company,
+    where the company's machine-learning budget reads it."""
+    request.admission.annotate(
+        company_id=run.company_id.id,
+        ml_cost=usage["cost"],
+        ml_input_tokens=usage["input_tokens"],
+        ml_output_tokens=usage["output_tokens"],
+    )
+
+
 class AgentRunnerController(http.Controller):
     def _runner_and_body(self) -> tuple[Any, dict[str, Any]]:
         admission = request.admission
@@ -38,10 +58,15 @@ class AgentRunnerController(http.Controller):
         return runner, admission.json()
 
     def _leased_run(self, runner: Any, body: dict[str, Any]) -> Any:
+        """The run ``body`` names, when this runner holds it. Any other id --
+        another runner's run, one that does not exist -- answers as a lost
+        lease, so an id says nothing about which runs exist."""
         run_id = body.get("run")
         if isinstance(run_id, bool) or not isinstance(run_id, int):
             return None
-        run = runner.env["agent.run"].browse(run_id).exists()
+        run = runner.env["agent.run"].search(
+            [("id", "=", run_id), ("runner_id", "=", runner.id)], limit=1
+        )
         return run or None
 
     def _lease_lost(self, run_id: object) -> http.Response:
@@ -63,7 +88,7 @@ class AgentRunnerController(http.Controller):
         runner, body = self._runner_and_body()
         run = self._leased_run(runner, body)
         if run is None:
-            return _answer({"error": "unknown_run"}, status=404)
+            return self._lease_lost(body.get("run"))
         try:
             return _answer(run._heartbeat(body.get("lease_token")))
         except LeaseLost:
@@ -76,7 +101,7 @@ class AgentRunnerController(http.Controller):
         runner, body = self._runner_and_body()
         run = self._leased_run(runner, body)
         if run is None:
-            return _answer({"error": "unknown_run"}, status=404)
+            return self._lease_lost(body.get("run"))
         try:
             accepted = run._append_events(body.get("lease_token"), body.get("events"))
         except LeaseLost:
@@ -95,24 +120,14 @@ class AgentRunnerController(http.Controller):
         runner, body = self._runner_and_body()
         run = self._leased_run(runner, body)
         if run is None:
-            return _answer({"error": "unknown_run"}, status=404)
-        usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
-        usage = {
-            "input_tokens": _non_negative(usage.get("input_tokens"), int),
-            "output_tokens": _non_negative(usage.get("output_tokens"), int),
-            "cost": _non_negative(usage.get("cost"), float),
-        }
+            return self._lease_lost(body.get("run"))
+        usage = _usage(body)
         try:
             first = run._complete(body.get("lease_token"), body.get("result"), usage)
         except LeaseLost:
             return self._lease_lost(run.id)
         if first:
-            request.admission.annotate(
-                company_id=run.company_id.id,
-                ml_cost=usage["cost"],
-                ml_input_tokens=usage["input_tokens"],
-                ml_output_tokens=usage["output_tokens"],
-            )
+            _annotate_spend(run, usage)
         return _answer({"state": run.run_state, "replayed": not first})
 
     @http.route("/agent_runner/v1/fail", receiver_event="agent_fail", **_RUNNER_ROUTE)
@@ -120,13 +135,18 @@ class AgentRunnerController(http.Controller):
         runner, body = self._runner_and_body()
         run = self._leased_run(runner, body)
         if run is None:
-            return _answer({"error": "unknown_run"}, status=404)
+            return self._lease_lost(body.get("run"))
+        usage = _usage(body)
+        first = run.run_state in LIVE_STATES
         try:
             state = run._fail(
                 body.get("lease_token"),
                 body.get("error"),
                 retryable=body.get("retryable") is True,
+                usage=usage,
             )
         except LeaseLost:
             return self._lease_lost(run.id)
+        if first:
+            _annotate_spend(run, usage)
         return _answer({"state": state})

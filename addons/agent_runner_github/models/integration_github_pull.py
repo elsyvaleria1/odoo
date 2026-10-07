@@ -19,23 +19,30 @@ class IntegrationGithubPull(models.Model):
         super()._github_updated()
         runs = self._runs_of_branches()
         for pull in self:
-            run = runs.get((pull.repository, pull.head_ref))
+            run = runs.get((pull.repository.lower(), pull.head_ref))
             if run and not pull.agent_run_id:
                 pull._attach_run(run)
 
     def _runs_of_branches(self) -> dict[tuple[str, str], models.BaseModel]:
-        """The latest run that pushed each unlinked pull request's branch."""
-        unlinked = self.filtered(lambda pull: not pull.agent_run_id and pull.head_ref)
+        """The latest run that pushed each unlinked pull request's branch, by
+        repository whatever its case. A pull request from a fork is no run's,
+        whatever its branch is called."""
+        unlinked = self.filtered(
+            lambda pull: (
+                not pull.agent_run_id and pull.head_ref and pull._from_its_repository()
+            )
+        )
         if not unlinked:
             return {}
         runs = self.env["agent.run"].search(
-            [
-                ("github_repository", "in", list(set(unlinked.mapped("repository")))),
-                ("github_branch", "in", list(set(unlinked.mapped("head_ref")))),
-            ],
+            [("github_branch", "in", list(set(unlinked.mapped("head_ref"))))],
             order="id",
         )
-        return {(run.github_repository, run.github_branch): run for run in runs}
+        return {
+            (run.github_repository.lower(), run.github_branch): run
+            for run in runs
+            if run.github_repository
+        }
 
     def _attach_run(self, run: models.BaseModel) -> None:
         self.check_singleton()

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 15:39+0000\n"
-"PO-Revision-Date: 2026-10-07 15:39+0000\n"
+"POT-Creation-Date: 2026-10-07 22:48+0000\n"
+"PO-Revision-Date: 2026-10-07 22:48+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -421,6 +421,12 @@ msgid "Issue Token"
 msgstr ""
 
 #. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Its credentials could not be prepared: %(reason)s"
+msgstr ""
+
+#. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run__kind
 #: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
 msgid "Kind"
@@ -800,8 +806,9 @@ msgstr ""
 #. module: agent_runner
 #: model:ir.model.fields,help:agent_runner.field_agent_runner__company_id
 msgid ""
-"The company its calls are recorded under. The runs it claims may belong to "
-"any company it is allowed to serve."
+"The company it works for: it claims that company's runs only, and is handed "
+"that company's keys. A machine serving several companies runs one runner per"
+" company."
 msgstr ""
 
 #. module: agent_runner

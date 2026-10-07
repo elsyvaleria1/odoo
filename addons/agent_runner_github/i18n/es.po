@@ -86,6 +86,12 @@ msgid "The branch the run pushed, as it reported it on completion."
 msgstr "La rama que subió la ejecución, tal como la informó al terminar."
 
 #. module: agent_runner_github
+#. odoo-python
+#: code:addons/agent_runner_github/models/agent_run.py:0
+msgid "The company's GitHub App is not installed on %(repository)s."
+msgstr "La GitHub App de la empresa no está instalada en %(repository)s."
+
+#. module: agent_runner_github
 #: model:ir.model.fields,help:agent_runner_github.field_integration_github_pull__agent_run_id
 msgid "The run that pushed this branch."
 msgstr "La ejecución que subió esta rama."

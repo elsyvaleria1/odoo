@@ -159,3 +159,37 @@ class TestProtocol(RunnerFixtures, TransactionCase):
         self.assertEqual(run.run_state, "failed")
         run.action_retry()
         self.assertEqual((run.run_state, run.count_attempt), ("queued", 0))
+
+    def test_a_runner_claims_its_own_companys_runs_only(self):
+        other = self.env["res.company"].create({"name": "Other runner company"})
+        self._run("theirs", company_id=other.id)
+        self.assertIsNone(self.Run._claim(self.first))
+        theirs_runner = self._runner("theirs")
+        theirs_runner.company_id = other
+        self.assertTrue(self.Run._claim(theirs_runner))
+
+    def test_event_data_is_masked_and_bounded(self):
+        self._run()
+        run, token = self.Run._claim(self.first)
+        run._append_events(
+            token,
+            [
+                {"message": "m", "data": {"api_key": "sk-ant-api03-SECRET", "n": 1}},
+                {"message": "big", "data": {"blob": "x" * 50_000}},
+            ],
+        )
+        small, big = run.event_ids.filtered(lambda e: e.event_type == "info").sorted(
+            "id"
+        )
+        self.assertNotIn("SECRET", str(small.data))
+        self.assertEqual(small.data["n"], 1)
+        self.assertEqual(big.data, {"truncated": True})
+
+    def test_every_attempts_spend_adds_up(self):
+        self._run(max_attempts=2)
+        run, token = self.Run._claim(self.first)
+        run._fail(token, "x", retryable=True, usage=self._usage(0.5))
+        run, token = self.Run._claim(self.first)
+        run._complete(token, {}, self._usage(0.25))
+        self.assertAlmostEqual(run.cost, 0.75)
+        self.assertEqual(run.count_input_token, 20)

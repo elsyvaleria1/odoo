@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests.common import HttpCase, tagged
 
@@ -92,9 +94,50 @@ class TestRoutes(RunnerFixtures, HttpCase):
         self.assertEqual((status, answer), (409, {"error": "lease_lost"}))
         self.assertEqual(run.run_state, "leased")
 
-    def test_an_unknown_run_is_refused(self):
-        status, answer = self._post("heartbeat", {"run": 0, "lease_token": "x"})
-        self.assertEqual((status, answer), (404, {"error": "unknown_run"}))
+    def test_a_run_this_runner_does_not_hold_answers_as_a_lost_lease(self):
+        other = self._runner("other runner")
+        held = self._run()
+        self.env["agent.run"]._claim(other)
+        for run_id in (held.id, 0, held.id + 1000):
+            status, answer = self._post(
+                "heartbeat", {"run": run_id, "lease_token": "x"}
+            )
+            self.assertEqual((status, answer), (409, {"error": "lease_lost"}))
+
+    def test_a_failed_attempts_spend_counts_once(self):
+        run = self._run(max_attempts=2)
+        token = self._claim()["lease_token"]
+        body = {
+            "run": run.id,
+            "lease_token": token,
+            "error": "the agent gave no verdict",
+            "retryable": True,
+            "usage": {"input_tokens": 10, "cost": 0.75},
+        }
+        before = self.env.company._ml_spend_this_month()
+        self.assertEqual(self._post("fail", body), (200, {"state": "queued"}))
+        # queued again, the run is no longer this runner's: the replay is refused
+        self.assertEqual(self._post("fail", body), (409, {"error": "lease_lost"}))
+        self.assertAlmostEqual(self.env.company._ml_spend_this_month() - before, 0.75)
+        self.assertEqual((run.cost, run.count_input_token), (0.75, 10))
+
+    def test_credentials_that_cannot_be_prepared_do_not_wedge_the_runner(self):
+        stuck = self._run("stuck", priority=50, max_attempts=1)
+        waiting = self._run("waiting")
+        Run = type(self.env["agent.run"])
+        original = Run._prepare_credentials
+
+        def unreachable(run):
+            if run == stuck:
+                raise ConnectionError("github is unreachable")
+            return original(run)
+
+        with patch.object(Run, "_prepare_credentials", unreachable):
+            status, answer = self._post("claim")
+            self.assertEqual((status, answer), (200, {"run": None}))
+            self.assertEqual(stuck.run_state, "failed")
+            self.assertIn("unreachable", stuck.error)
+            self.assertEqual(self._claim()["id"], waiting.id)
 
     def test_a_wrong_token_reaches_nothing(self):
         run = self._run()

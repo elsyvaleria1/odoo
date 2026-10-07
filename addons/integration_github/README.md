@@ -38,6 +38,15 @@ and acted on at once -- what it records is small, and GitHub waits ten seconds:
 | `ping` | answered `pong` |
 | anything else | acknowledged, `ignored` |
 
+GitHub redelivers and reorders. A pull request or check keeps the timestamp GitHub gave its
+newest delivery, and an older one changes nothing: a late "opened" does not reopen a merged
+pull request, a late "in progress" does not undo a completed check. Two simultaneous first
+deliveries of one pull request or check make one record.
+
+A pull request records the repository its branch lives in (`head_repository`); one opened
+from a fork is never taken for the work of a run, whatever its branch is called.
+Repositories are compared as GitHub does, whatever their case.
+
 A check suite is not a check: GitHub requests one for every installed app, and the suite of
 an app that never runs stays queued forever.
 

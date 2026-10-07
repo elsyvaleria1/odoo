@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.tests.common import TransactionCase, tagged
 
 from .common import RunnerFixtures
@@ -71,3 +73,17 @@ class TestModelCredentials(RunnerFixtures, TransactionCase):
         refused = self._run(ml_purpose=PURPOSE, max_attempts=3)
         self.assertIsNone(self.Run._lease(self.runner))
         self.assertEqual((refused.run_state, refused.count_attempt), ("failed", 1))
+
+    def test_credentials_that_cannot_be_prepared_requeue_the_run(self):
+        run = self._run(ml_purpose=PURPOSE, max_attempts=2)
+        Run = type(self.Run)
+        with patch.object(
+            Run, "_prepare_credentials", side_effect=ConnectionError("timed out")
+        ):
+            self.assertIsNone(self.Run._lease(self.runner))
+            self.assertEqual((run.run_state, run.count_attempt), ("queued", 1))
+            self.assertTrue(
+                any("timed out" in m for m in run.event_ids.mapped("message"))
+            )
+            self.assertIsNone(self.Run._lease(self.runner))
+        self.assertEqual((run.run_state, run.count_attempt), ("failed", 2))

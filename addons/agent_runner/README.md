@@ -44,8 +44,16 @@ All `POST` with a JSON body under `/agent_runner/v1/`, `Authorization: Bearer <t
 | `heartbeat` | `{run, lease_token}` | `{"cancel": bool, "lease_seconds"}` -- extends the lease; the first one marks the run running |
 | `events` | `{run, lease_token, events: [{type, message, data}]}` | `{"accepted": n}` -- `type` is info, progress, warning or error; at most 100 per call, messages masked |
 | `complete` | `{run, lease_token, result, usage: {input_tokens, output_tokens, cost}}` | `{"state", "replayed"}` |
-| `fail` | `{run, lease_token, error, retryable}` | `{"state"}` -- queued again or failed |
+| `fail` | `{run, lease_token, error, retryable, usage}` | `{"state"}` -- queued again or failed; `usage` as for `complete` |
 
+- **A runner works for one company.** It claims its own company's runs only, and is handed
+  that company's keys; a machine serving several companies runs one runner per company.
+- **A runner reaches only the runs it holds.** A call naming any other run -- another
+  runner's, one that does not exist -- answers `409 lease_lost`, so ids reveal nothing.
+- **Credentials that cannot be prepared** -- GitHub unreachable, a credential misconfigured
+  -- put the run back in the queue with one attempt fewer, so it neither blocks the runner
+  nor retries without end; credentials refused (a data policy, a repository the App does not
+  reach) fail it at once.
 - **One run, one runner.** A claim locks the runner's row, so its concurrency holds, and picks
   the run under `FOR UPDATE SKIP LOCKED`, so runners racing for one run never both get it.
 - **A lease is a token.** Only its SHA-256 is stored; a call under any other token -- a
@@ -66,7 +74,8 @@ All `POST` with a JSON body under `/agent_runner/v1/`, `Authorization: Bearer <t
 
 ## Spend
 
-The `usage` of a `complete` lands on that call's `integration.exchange` row as `ml_cost`,
+The `usage` of a `complete` -- or of a `fail`: an attempt that failed spent too -- lands on
+that call's `integration.exchange` row as `ml_cost`,
 `ml_input_tokens` and `ml_output_tokens`, under the run's company -- exactly where
 `res.company._ml_spend_this_month()` reads machine-learning spend. A company at its
 `ml_monthly_budget` is handed no more runs until the month turns.

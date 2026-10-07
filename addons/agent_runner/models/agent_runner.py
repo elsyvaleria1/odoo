@@ -30,8 +30,10 @@ class AgentRunner(models.Model):
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
-        help="The company its calls are recorded under. The runs it claims may "
-        "belong to any company it is allowed to serve.",
+        required=True,
+        help="The company it works for: it claims that company's runs only, and is "
+        "handed that company's keys. A machine serving several companies runs "
+        "one runner per company.",
     )
     capability_ids = fields.Many2many(
         comodel_name="agent.capability",

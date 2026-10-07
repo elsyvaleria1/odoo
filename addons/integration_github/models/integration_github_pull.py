@@ -5,7 +5,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
-from ..tools import get_github_client
+from ..tools import create_once, get_github_client, repository_domain, same_repository
 
 _debug = DebugLog(__name__)
 
@@ -46,6 +46,10 @@ class IntegrationGithubPull(models.Model):
     )
     head_sha = fields.Char(
         string="Head Commit",
+    )
+    head_repository = fields.Char(
+        help="owner/name of the repository the branch lives in: another than the "
+        "pull request's own for one opened from a fork.",
     )
     base_ref = fields.Char(
         string="Base Branch",
@@ -93,6 +97,11 @@ class IntegrationGithubPull(models.Model):
     date_last_event = fields.Datetime(
         string="Last Event",
     )
+    date_github_updated = fields.Datetime(
+        string="Updated on GitHub",
+        help="When GitHub last changed the pull request, as the newest delivery "
+        "said: an older delivery, redelivered or reordered, changes nothing.",
+    )
 
     _number_uniq = models.Constraint(
         "UNIQUE(repository, number)",
@@ -125,11 +134,15 @@ class IntegrationGithubPull(models.Model):
         self, repository: str, pr: dict[str, Any]
     ) -> IntegrationGithubPull:
         merged = bool(pr.get("merged") or pr.get("merged_at"))
+        updated = _github_datetime(pr.get("updated_at"))
         vals = {
             "name": (pr.get("title") or f"#{pr['number']}")[:500],
             "url": pr.get("html_url"),
             "head_ref": pr.get("head", {}).get("ref"),
             "head_sha": pr.get("head", {}).get("sha"),
+            "head_repository": ((pr.get("head") or {}).get("repo") or {}).get(
+                "full_name"
+            ),
             "base_ref": pr.get("base", {}).get("ref"),
             "author_login": pr.get("user", {}).get("login"),
             "is_draft": bool(pr.get("draft")),
@@ -139,16 +152,19 @@ class IntegrationGithubPull(models.Model):
             "date_merged": _github_datetime(pr.get("merged_at")),
             "merge_commit_sha": pr.get("merge_commit_sha") if merged else False,
             "date_last_event": fields.Datetime.now(),
+            "date_github_updated": updated,
         }
-        pull = self.search(
-            [("repository", "=", repository), ("number", "=", pr["number"])], limit=1
+        domain = [
+            *repository_domain("repository", repository),
+            ("number", "=", pr["number"]),
+        ]
+        pull = self.search(domain, limit=1) or create_once(
+            self, domain, {**vals, "repository": repository, "number": pr["number"]}
         )
-        if pull:
-            pull.write(vals)
-        else:
-            pull = self.create(
-                {**vals, "repository": repository, "number": pr["number"]}
-            )
+        if updated and pull.date_github_updated and updated < pull.date_github_updated:
+            _debug.logic("pull.stale_delivery", pull=pull.id, number=pr["number"])
+            return pull
+        pull.write(vals)
         pull._refresh_checks_state()
         pull._github_updated()
         _debug.logic(
@@ -158,6 +174,12 @@ class IntegrationGithubPull(models.Model):
             state=pull.pull_state,
         )
         return pull
+
+    def _from_its_repository(self) -> bool:
+        """Its branch lives in its own repository, not in a fork: what a run
+        pushed can only be such a branch."""
+        self.check_singleton()
+        return same_repository(self.head_repository, self.repository)
 
     def _refresh_checks_state(self) -> None:
         # checks recorded earlier in this transaction are not in a cached value
@@ -214,8 +236,16 @@ def _github_datetime(value: str | None) -> Any:
     return fields.Datetime.to_datetime(value.replace("T", " ").removesuffix("Z"))
 
 
+def _latest(payload: dict[str, Any], *keys: str) -> Any:
+    stamps = [_github_datetime(payload.get(key)) for key in keys]
+    return max((stamp for stamp in stamps if stamp), default=False)
+
+
 def _check_run_vals(run: dict[str, Any]) -> dict[str, Any]:
     return {
+        "date_github": _latest(
+            run, "completed_at", "updated_at", "started_at", "created_at"
+        ),
         "name": run.get("name") or "check",
         "head_sha": run["head_sha"],
         "source": "check_run",
@@ -232,6 +262,7 @@ def _workflow_run_vals(run: dict[str, Any]) -> dict[str, Any]:
 def _status_vals(sha: str, status: dict[str, Any]) -> dict[str, Any]:
     state = status.get("state")
     return {
+        "date_github": _latest(status, "updated_at", "created_at"),
         "name": status.get("context") or "status",
         "head_sha": sha,
         "source": "status",

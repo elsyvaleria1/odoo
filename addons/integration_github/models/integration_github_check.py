@@ -3,6 +3,8 @@ from typing import Any
 from odoo import api, fields, models
 from odoo.tools import frozendict
 
+from ..tools import create_once, repository_domain
+
 # What a check concludes, as GitHub spells it across check runs, workflow runs and
 # commit statuses.
 PASSING = frozenset({"success", "neutral", "skipped"})
@@ -63,6 +65,11 @@ class IntegrationGithubCheck(models.Model):
     date_updated = fields.Datetime(
         string="Updated",
     )
+    date_github = fields.Datetime(
+        string="Updated on GitHub",
+        help="When GitHub last changed the check, as the newest delivery said: an "
+        "older delivery, redelivered or reordered, changes nothing.",
+    )
 
     _external_ref_uniq = models.Constraint(
         "UNIQUE(repository, external_ref)",
@@ -76,16 +83,22 @@ class IntegrationGithubCheck(models.Model):
         """Create the check, or move it on: GitHub redelivers and reorders, and a
         re-run reuses a check run's id."""
         vals = {**vals, "date_updated": fields.Datetime.now()}
-        check = self.search(
-            [("repository", "=", repository), ("external_ref", "=", external_ref)],
-            limit=1,
-        )
-        if check:
-            check.write(vals)
+        domain = [
+            *repository_domain("repository", repository),
+            ("external_ref", "=", external_ref),
+        ]
+        check = self.search(domain, limit=1)
+        if not check:
+            return create_once(
+                self,
+                domain,
+                {**vals, "repository": repository, "external_ref": external_ref},
+            )
+        stamp = fields.Datetime.to_datetime(vals.get("date_github"))
+        if stamp and check.date_github and stamp < check.date_github:
             return check
-        return self.create(
-            {**vals, "repository": repository, "external_ref": external_ref}
-        )
+        check.write(vals)
+        return check
 
     def _aggregate_state(self) -> str:
         """``none``, ``pending``, ``failure`` or ``success`` for these checks of

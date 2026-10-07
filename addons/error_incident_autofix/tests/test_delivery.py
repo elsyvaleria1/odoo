@@ -80,7 +80,11 @@ class TestDelivery(RunnerFixtures, TransactionCase):
                 "number": 7,
                 "title": "Fix x",
                 "state": "open",
-                "head": {"ref": branch, "sha": HEAD},
+                "head": {
+                    "ref": branch,
+                    "sha": HEAD,
+                    "repo": {"full_name": REPOSITORY},
+                },
                 "base": {"ref": "19.0-marin"},
             },
         )
@@ -189,6 +193,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
                 "head": {
                     "ref": self.env["error.incident"].search([], limit=1).fix_branch,
                     "sha": HEAD,
+                    "repo": {"full_name": REPOSITORY},
                 },
                 "base": {"ref": "19.0-marin"},
             },

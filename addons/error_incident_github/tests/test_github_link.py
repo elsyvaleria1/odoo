@@ -46,6 +46,7 @@ class TestPullLinking(RunnerFixtures, WebhookDelivery, HttpCase):
         payload = fixture(f"pull_request__{action}")
         payload["repository"]["full_name"] = REPOSITORY
         payload["pull_request"]["head"]["ref"] = branch
+        payload["pull_request"]["head"]["repo"] = {"full_name": REPOSITORY}
         payload["pull_request"].update(pull)
         return payload
 

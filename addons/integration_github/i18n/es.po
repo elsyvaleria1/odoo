@@ -315,6 +315,11 @@ msgid "Head Commit"
 msgstr "Commit principal"
 
 #. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__head_repository
+msgid "Head Repository"
+msgstr "Repositorio de la rama"
+
+#. module: integration_github
 #: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__contract_limits
 msgid "Held To"
 msgstr "Sujeto a"
@@ -702,6 +707,12 @@ msgid "Updated"
 msgstr "Actualizado"
 
 #. module: integration_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_check__date_github
+#: model:ir.model.fields,field_description:integration_github.field_integration_github_pull__date_github_updated
+msgid "Updated on GitHub"
+msgstr "Actualizado en GitHub"
+
+#. module: integration_github
 #: model:ir.model.fields,field_description:integration_github.field_integration_github_webhook__verification_method
 msgid "Verification Method"
 msgstr "Método de verificación"
@@ -728,6 +739,20 @@ msgid "What the caller proves itself with."
 msgstr "Con qué se identifica quien llama."
 
 #. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_check__date_github
+msgid ""
+"When GitHub last changed the check, as the newest delivery said: an older "
+"delivery, redelivered or reordered, changes nothing."
+msgstr "Cuándo cambió GitHub la verificación por última vez, según la entrega más reciente: una entrega anterior, reenviada o desordenada, no cambia nada."
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__date_github_updated
+msgid ""
+"When GitHub last changed the pull request, as the newest delivery said: an "
+"older delivery, redelivered or reordered, changes nothing."
+msgstr "Cuándo cambió GitHub el pull request por última vez, según la entrega más reciente: una entrega anterior, reenviada o desordenada, no cambia nada."
+
+#. module: integration_github
 #: model:ir.model.fields.selection,name:integration_github.selection__integration_github_check__source__workflow_run
 msgid "Workflow Run"
 msgstr "Ejecución de workflow"
@@ -742,3 +767,10 @@ msgstr "p. ej. Agro-Marin App"
 #: model:ir.model.fields,help:integration_github.field_integration_github_pull__repository
 msgid "owner/name"
 msgstr "propietario/nombre"
+
+#. module: integration_github
+#: model:ir.model.fields,help:integration_github.field_integration_github_pull__head_repository
+msgid ""
+"owner/name of the repository the branch lives in: another than the pull "
+"request's own for one opened from a fork."
+msgstr "owner/nombre del repositorio donde vive la rama: distinto del propio del pull request cuando se abrió desde un fork."

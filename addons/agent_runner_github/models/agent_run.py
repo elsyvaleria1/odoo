@@ -3,7 +3,12 @@ from typing import Any
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.integration_github.tools import mint_installation_token
+from odoo.addons.agent_runner.models.agent_run import CredentialsRefused
+from odoo.addons.integration_github.tools import (
+    mint_installation_token,
+    repository_domain,
+    same_repository,
+)
 from odoo.addons.integration_github.tools.app import APP_CATEGORY
 
 _debug = DebugLog(__name__)
@@ -68,6 +73,18 @@ class AgentRun(models.Model):
         minted = mint_installation_token(
             self.env, app, [name], self._github_permissions()
         )
+        if not any(
+            same_repository(granted, self.github_repository)
+            for granted in minted.repositories
+        ):
+            # the App's installation holds a repository of that name under
+            # another owner, or none: its token would not reach this one
+            raise CredentialsRefused(
+                self.env._(
+                    "The company's GitHub App is not installed on %(repository)s.",
+                    repository=self.github_repository,
+                )
+            )
         _debug.logic("run.github_token", run=self.id, repository=self.github_repository)
         return credentials | {
             "github": {
@@ -94,13 +111,14 @@ class AgentRun(models.Model):
         """The pull request of the branch this run pushed, once both exist --
         whichever GitHub or the runner reports first."""
         self.check_singleton()
-        pull = self.env["integration.github.pull"].search(
+        pulls = self.env["integration.github.pull"].search(
             [
-                ("repository", "=", self.github_repository),
+                *repository_domain("repository", self.github_repository),
                 ("head_ref", "=", self.github_branch),
+                ("agent_run_id", "in", (False, self.id)),
             ],
             order="id desc",
-            limit=1,
         )
+        pull = pulls.filtered(lambda pull: pull._from_its_repository())[:1]
         if pull:
             pull._attach_run(self)

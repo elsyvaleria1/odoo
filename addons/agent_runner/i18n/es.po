@@ -421,6 +421,12 @@ msgid "Issue Token"
 msgstr "Emitir token"
 
 #. module: agent_runner
+#. odoo-python
+#: code:addons/agent_runner/models/agent_run.py:0
+msgid "Its credentials could not be prepared: %(reason)s"
+msgstr "No se pudieron preparar sus credenciales: %(reason)s"
+
+#. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run__kind
 #: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
 msgid "Kind"
@@ -800,9 +806,10 @@ msgstr "Los topes cuyo cruce hace rechazar una llamada."
 #. module: agent_runner
 #: model:ir.model.fields,help:agent_runner.field_agent_runner__company_id
 msgid ""
-"The company its calls are recorded under. The runs it claims may belong to "
-"any company it is allowed to serve."
-msgstr "La empresa bajo la que se registran sus llamadas. Las ejecuciones que reclama pueden pertenecer a cualquier empresa a la que pueda servir."
+"The company it works for: it claims that company's runs only, and is handed "
+"that company's keys. A machine serving several companies runs one runner per"
+" company."
+msgstr "La empresa para la que trabaja: solo toma las ejecuciones de esa empresa y solo recibe sus claves. Una máquina que sirve a varias empresas usa un runner por empresa."
 
 #. module: agent_runner
 #: model:ir.model.fields,help:agent_runner.field_agent_runner__capability_ids

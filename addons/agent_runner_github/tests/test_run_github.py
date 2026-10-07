@@ -60,6 +60,17 @@ class TestRunCredentials(RunnerFixtures, TransactionCase):
             self.assertNotIn("github", run._lease_answer(token)["credentials"])
         mint.assert_not_called()
 
+    def test_a_token_that_does_not_reach_the_repository_is_refused(self):
+        self._app()
+        run = self._run(github_repository="other-owner/agromarin")
+        minted = InstallationToken(
+            "ghs_run", "2026-10-07T00:00:00Z", ("Agro-Marin/agromarin",)
+        )
+        with patch.object(github_run, "mint_installation_token", return_value=minted):
+            self.assertIsNone(self.env["agent.run"]._lease(self.runner))
+        self.assertEqual(run.run_state, "failed")
+        self.assertIn("not installed on other-owner/agromarin", run.error)
+
     def test_without_an_app_the_run_is_told_it_has_no_token(self):
         self._run(github_repository=REPOSITORY)
         run, token = self.env["agent.run"]._claim(self.runner)
@@ -74,8 +85,8 @@ class TestRunPullLink(RunnerFixtures, TransactionCase):
         super().setUpClass()
         cls.runner = cls._runner("linker")
 
-    def _complete(self, branch=BRANCH):
-        run = self._run(github_repository=REPOSITORY)
+    def _complete(self, branch=BRANCH, repository=REPOSITORY):
+        run = self._run(github_repository=repository)
         claimed, token = self.env["agent.run"]._claim(self.runner)
         claimed._complete(
             token,
@@ -84,14 +95,19 @@ class TestRunPullLink(RunnerFixtures, TransactionCase):
         )
         return run
 
-    def _pull(self, branch=BRANCH):
+    def _pull(self, branch=BRANCH, number=4, head_repository=REPOSITORY, **pr):
         return self.env["integration.github.pull"]._upsert_from_github(
             REPOSITORY,
             {
-                "number": 4,
+                "number": number,
                 "title": "x",
                 "state": "open",
-                "head": {"ref": branch, "sha": "a" * 40},
+                "head": {
+                    "ref": branch,
+                    "sha": "a" * 40,
+                    "repo": {"full_name": head_repository},
+                },
+                **pr,
             },
         )
 
@@ -109,3 +125,26 @@ class TestRunPullLink(RunnerFixtures, TransactionCase):
         run = self._complete()
         self._pull(branch="unrelated")
         self.assertFalse(run.github_pull_id)
+
+    def test_a_pull_request_from_a_fork_is_no_runs(self):
+        run = self._complete()
+        pull = self._pull(head_repository="stranger/agromarin")
+        self.assertFalse(run.github_pull_id)
+        self.assertFalse(pull.agent_run_id)
+        self._complete(branch="other")
+        self.assertFalse(pull.agent_run_id)
+
+    def test_a_repository_is_one_whatever_its_case(self):
+        run = self._complete(repository=REPOSITORY.lower())
+        pull = self._pull()
+        self.assertEqual(pull.agent_run_id, run)
+
+    def test_a_later_run_on_the_same_branch_leaves_the_earlier_pull_alone(self):
+        first = self._complete()
+        earlier = self._pull(state="closed", merged=True)
+        self.assertEqual(earlier.agent_run_id, first)
+        second = self._complete()
+        self.assertEqual(earlier.agent_run_id, first)
+        self.assertFalse(second.github_pull_id)
+        newer = self._pull(number=5)
+        self.assertEqual((newer.agent_run_id, second.github_pull_id), (second, newer))

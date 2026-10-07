@@ -1,16 +1,20 @@
 import hashlib
 import hmac
+import logging
 import secrets
 from datetime import timedelta
 from typing import Any
 
+import psycopg
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.redact import mask_text
+from odoo.libs.redact import dump_masked, mask_data, mask_text
 from odoo.tools import SQL
 
 _debug = DebugLog(__name__)
+_logger = logging.getLogger(__name__)
 
 LEASE_SECONDS_PARAM = "agent_runner.lease_seconds"
 DEFAULT_LEASE_SECONDS = 300
@@ -18,6 +22,13 @@ LIVE_STATES = ("leased", "running")
 FINAL_STATES = ("succeeded", "failed", "cancelled")
 EVENT_TYPES = ("info", "progress", "warning", "error")
 MAX_EVENTS_PER_CALL = 100
+MAX_EVENT_DATA = 16_000
+
+
+class CredentialsRefused(Exception):
+    """The run may not have its credentials -- its data policy keeps its
+    purpose from the model, its repository is not the App's -- and no other
+    attempt will change that."""
 
 
 class LeaseLost(Exception):
@@ -28,6 +39,15 @@ class LeaseLost(Exception):
 
 def _digest(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _masked_data(data: object) -> dict[str, Any] | bool:
+    if not isinstance(data, dict):
+        return False
+    masked = mask_data(data)
+    if len(dump_masked(masked)) > MAX_EVENT_DATA:
+        return {"truncated": True}
+    return masked
 
 
 class AgentRun(models.Model):
@@ -145,16 +165,19 @@ class AgentRun(models.Model):
     )
     count_input_token = fields.Integer(
         string="Input Tokens",
+        default=0,
         copy=False,
         readonly=True,
     )
     count_output_token = fields.Integer(
         string="Output Tokens",
+        default=0,
         copy=False,
         readonly=True,
     )
     cost = fields.Float(
         digits=(16, 6),
+        default=0,
         copy=False,
         readonly=True,
     )
@@ -244,6 +267,7 @@ class AgentRun(models.Model):
                     SELECT id FROM agent_run
                      WHERE run_state = 'queued'
                        AND capability_id = ANY(%s)
+                       AND company_id = %s
                        AND company_id <> ALL(%s)
                      ORDER BY priority DESC, id
                      LIMIT 1
@@ -262,6 +286,7 @@ class AgentRun(models.Model):
              RETURNING run.id
                 """,
                 runner.capability_ids.ids,
+                runner.company_id.id,
                 blocked,
                 runner.id,
                 _digest(token),
@@ -293,18 +318,38 @@ class AgentRun(models.Model):
     def _lease(self, runner: models.BaseModel) -> dict[str, Any] | None:
         """What `_claim` leases ``runner``, with the credentials it acts with.
 
-        A run whose credentials are refused -- its data policy no longer lets
-        its purpose reach the model -- fails for good rather than going back to
-        the queue to be refused again, and the next run is tried.
+        A run whose credentials are refused fails for good, and the next run is
+        tried. One whose credentials cannot be prepared now -- GitHub
+        unreachable, a credential misconfigured -- goes back to the queue with
+        one attempt fewer, so it can neither block the runner forever nor be
+        retried without end; the runner asks again at its next poll.
         """
         while found := self._claim(runner):
             run, token = found
             try:
                 with self.env.cr.savepoint():
                     return run._lease_answer(token)
-            except UserError as refusal:
+            except CredentialsRefused as refusal:
                 run._log_event("error", str(refusal))
                 run._end_attempt(str(refusal), requeue=False)
+            except psycopg.Error:
+                raise
+            except Exception as error:
+                _logger.warning(
+                    "The credentials of agent run %s could not be prepared",
+                    run.id,
+                    exc_info=True,
+                )
+                reason = mask_text(f"{type(error).__name__}: {error}", 1000)
+                run._log_event(
+                    "error",
+                    self.env._(
+                        "Its credentials could not be prepared: %(reason)s",
+                        reason=reason,
+                    ),
+                )
+                run._end_attempt(reason, requeue=True)
+                return None
         return None
 
     def _holds(self, token: object) -> bool:
@@ -330,13 +375,16 @@ class AgentRun(models.Model):
     def _prepare_credentials(self) -> dict[str, Any]:
         """What the runner needs to act for this run alone -- a repository token,
         a model key. Handed with the lease, never kept on the runner. Raises
-        `UserError` when the run may not have them."""
+        `CredentialsRefused` when the run may not have them."""
         if not self.ml_purpose:
             return {}
         provider = self.env.ref("integration_machine_learning.ai_provider_anthropic")
-        self.env["integration.ml.policy"]._check_allowed(
-            self.company_id, self.ml_purpose, provider
-        )
+        try:
+            self.env["integration.ml.policy"]._check_allowed(
+                self.company_id, self.ml_purpose, provider
+            )
+        except UserError as refusal:
+            raise CredentialsRefused(str(refusal)) from refusal
         connection = self.env["integration.connection"]._resolve(
             provider.endpoint_id, company=self.company_id
         )
@@ -390,7 +438,7 @@ class AgentRun(models.Model):
                     "message": mask_text(message, 4000)
                     if isinstance(message, str)
                     else False,
-                    "data": data if isinstance(data, dict) else False,
+                    "data": _masked_data(data),
                 }
             )
         self.env["agent.run.event"].create(vals_list)
@@ -412,9 +460,7 @@ class AgentRun(models.Model):
                 "result": result if isinstance(result, dict) else {},
                 "date_finished": fields.Datetime.now(),
                 "date_lease_until": False,
-                "count_input_token": usage["input_tokens"],
-                "count_output_token": usage["output_tokens"],
-                "cost": usage["cost"],
+                **self._spend_vals(usage),
             }
         )
         self._log_event("system", self.env._("Succeeded."))
@@ -422,18 +468,35 @@ class AgentRun(models.Model):
         _debug.logic("run.succeeded", run=self.id, cost=usage["cost"])
         return True
 
-    def _fail(self, token: object, error: object, retryable: bool) -> str:
+    def _fail(
+        self,
+        token: object,
+        error: object,
+        retryable: bool,
+        usage: dict[str, Any] | None = None,
+    ) -> str:
         """Fail the attempt; the run is queued again while it has attempts left
-        and the runner says another could succeed. Returns the run's state."""
+        and the runner says another could succeed. What the attempt spent
+        counts like a completion's. Returns the run's state."""
         if not self._holds(token):
             raise LeaseLost
         if self.run_state not in LIVE_STATES:
             # a replay of a failure already recorded under this lease
             return self.run_state
+        if usage:
+            self.write(self._spend_vals(usage))
         message = mask_text(error, 4000) if isinstance(error, str) else ""
         self._log_event("error", message or self.env._("The runner gave no reason."))
         self._end_attempt(message, requeue=retryable)
         return self.run_state
+
+    def _spend_vals(self, usage: dict[str, Any]) -> dict[str, Any]:
+        """Every attempt's spend, added up."""
+        return {
+            "count_input_token": self.count_input_token + usage["input_tokens"],
+            "count_output_token": self.count_output_token + usage["output_tokens"],
+            "cost": self.cost + usage["cost"],
+        }
 
     def _end_attempt(self, error: str, *, requeue: bool) -> None:
         if requeue and self.count_attempt < self.max_attempts:
