@@ -100,6 +100,7 @@ class ErrorIncident(models.Model):
         comodel_name="error.incident.rule",
         string="Set Aside By",
         readonly=True,
+        index="btree_not_null",
         ondelete="set null",
     )
     date_first_seen = fields.Datetime(
