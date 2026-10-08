@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -195,6 +196,34 @@ def test_a_run_stopped_while_its_agent_worked_commits_nothing(world):
         change.change(_lease(), reporter)
     assert world.branches() == ["19.0-marin"]
     assert stopped.value.usage["cost"] == pytest.approx(0.25)
+
+
+def _alive(pid):
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text(encoding="ascii")
+    except FileNotFoundError:
+        return False
+    # a zombie is dead: only its parent has yet to reap it
+    return stat.rsplit(")", 1)[-1].split()[0] != "Z"
+
+
+@pytest.mark.parametrize("linger", ["hang", "leave"])
+def test_nothing_the_agent_started_outlives_it(world, linger):
+    world.behave(linger=linger, verdict={"verdict": "declined"})
+    if linger == "hang":
+        with pytest.raises(agent.Permanent, match="timed out"):
+            change.change(_lease(timeout=2), StubReporter())
+    else:
+        # the agent answered, and its child holds the output open: the run
+        # goes on at once instead of waiting for it to the deadline
+        started = time.monotonic()
+        change.change(_lease(timeout=30), StubReporter())
+        assert time.monotonic() - started < 10
+    pid = int((world.fake / "child.pid").read_text())
+    deadline = time.monotonic() + 5
+    while _alive(pid) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert not _alive(pid)
 
 
 def test_a_failure_after_the_agent_ran_carries_its_spend(world):

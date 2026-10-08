@@ -1,4 +1,9 @@
+import re
+import shutil
+import subprocess
+import sys
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -208,3 +213,21 @@ def test_an_empty_claim_answer_is_no_run(monkeypatch):
     client = agent.Client("http://odoo.test", "t")
     monkeypatch.setattr(client, "_post", lambda verb, body: {})
     assert client.claim() is None
+
+
+def test_what_the_readme_installs_is_what_the_runner_imports(tmp_path):
+    readme = (Path(__file__).parent / "README.md").read_text()
+    [line] = re.findall(r"^install .* -t /opt/agent-runner/$", readme, re.MULTILINE)
+    for name in re.findall(r"\b\w+\.py\b", line):
+        shutil.copy(Path(__file__).parent / name, tmp_path)
+    # as the service runs runner.py: a script whose directory is all there is
+    probe = tmp_path / "probe.py"
+    probe.write_text("import change, deploy, incident, runner\n")
+    imported = subprocess.run(
+        [sys.executable, "-E", "-s", str(probe)],
+        cwd="/",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert imported.returncode == 0, imported.stderr

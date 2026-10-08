@@ -24,6 +24,12 @@ FAKE_CLAUDE = textwrap.dedent(
     if behaviour.get("noise"):
         sys.stderr.write("x" * behaviour["noise"])
         sys.stderr.flush()
+    if behaviour.get("linger"):
+        import subprocess, time
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+        (here / "child.pid").write_text(str(child.pid))
+        if behaviour["linger"] == "hang":
+            time.sleep(120)
     if behaviour.get("exit"):
         sys.exit(behaviour["exit"])
     verdict = behaviour.get("verdict")

@@ -34,6 +34,7 @@ import json
 import os
 import re
 import secrets
+import signal
 import subprocess
 import tempfile
 import time
@@ -156,6 +157,8 @@ def _agent(
         "--permission-mode",
         "acceptEdits" if tools == EDIT_TOOLS else "default",
     ]
+    # a session of its own: the agent is ended with everything it started, so
+    # nothing of it is alive when git next runs with the repository's token
     process = subprocess.Popen(
         command,
         cwd=cwd,
@@ -164,6 +167,7 @@ def _agent(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        start_new_session=True,
     )
     deadline = time.monotonic() + float(payload.get("timeout", 1800))
     while True:
@@ -171,10 +175,15 @@ def _agent(
         # blocks on a full one
         try:
             stdout, stderr = process.communicate(timeout=1)
+            _end_session(process)
             break
         except subprocess.TimeoutExpired:
+            if process.poll() is not None:
+                # the agent answered: what it left running holds its pipes open
+                _end_session(process)
+                continue
             if reporter.stop.is_set() or time.monotonic() > deadline:
-                process.kill()
+                _end_session(process)
                 process.communicate()
                 if reporter.stop.is_set():
                     raise Stopped("stopped") from None
@@ -199,6 +208,11 @@ def _agent(
         if answer.get("is_error"):
             raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
         return _verdict(answer.get("result", "")), spend
+
+
+def _end_session(process: subprocess.Popen) -> None:
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 @contextlib.contextmanager

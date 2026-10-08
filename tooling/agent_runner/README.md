@@ -36,7 +36,10 @@ GitHub App installation token for the run's repository alone, and the company's 
 key when the company's data policy lets the run's purpose reach Anthropic. The agent's
 process gets `PATH`, `LANG`, `HOME` and that key, nothing of the runner's environment. Git
 gets the repository token in its environment, never on its command line, where every user of
-the machine reads it.
+the machine reads it. The agent runs in a session of its own and is ended with everything it
+started -- when it answers, times out or is stopped -- so no process of it is alive when git
+next runs with that token. A runner process holds one run at a time; more at once are more
+services, each of which systemd gives a user of its own (`DynamicUser=`).
 
 The agent writes files. Over the tree it wrote, git runs without hooks or fsmonitor and
 reads no configuration but the clone's own -- not a `.gitconfig` the agent left in the tree
@@ -66,7 +69,7 @@ a model login of its own there.
 ## Installing it as a service
 
 ```bash
-install -D -m 0644 runner.py change.py incident.py deploy.py -t /opt/agent-runner/
+install -D -m 0644 runner.py gitops.py change.py incident.py deploy.py -t /opt/agent-runner/
 install -D -m 0644 systemd/agent-runner-sandbox.service -t /etc/systemd/system/
 install -D -m 0600 systemd/sandbox.env.example /etc/agent-runner/sandbox.env   # then edit
 systemctl enable --now agent-runner-sandbox.service
