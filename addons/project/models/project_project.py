@@ -2356,6 +2356,11 @@ class ProjectProject(models.Model):
         for group_name, _group_method, group_data in groups:
             if group_name in ["portal", "portal_customer"] and not portal_privacy:
                 group_data["has_button_access"] = False
+            elif group_name == "portal_customer" and not self._admits_link_partner(
+                self._portal_customer()
+            ):
+                # the button carries the customer's link, which would not open
+                group_data["has_button_access"] = False
         return groups
 
     def action_project_task_burndown_chart_report(self) -> dict:
@@ -2911,6 +2916,46 @@ class ProjectProject(models.Model):
             )
             return accessible
         return self.env.user._is_internal()
+
+    def _admits_link_partner(self, partner: Any, task: Any = None) -> bool:
+        """Whether a link naming `partner` (none for a partnerless link) may
+        open this project, or `task` in it: what the privacy lets that
+        partner's own portal account reach, so nothing on a team-only
+        project, and on an invited-users one the project for its live
+        collaborators and a task also for its followers."""
+        self.check_singleton()
+        # read as the access policy reads it: whoever presents the link or is
+        # notified, the project's own settings decide
+        project = self.env["ir.access"]._access_evaluator(self._name).browse(self.id)
+        visibility = project.privacy_visibility
+        if visibility == "followers":
+            admitted = False
+        elif visibility == "invited_users":
+            Collaborator = project.env["project.collaborator"]
+            admitted = bool(partner) and (
+                bool(
+                    Collaborator.search_count(
+                        Domain("project_id", "=", project.id)
+                        & Domain("partner_id", "=", partner.id)
+                        & Domain.custom(to_sql=Collaborator._live_sql),
+                        limit=1,
+                    )
+                )
+                or bool(
+                    task and partner in task.with_env(project.env).message_partner_ids
+                )
+            )
+        else:
+            admitted = True
+        _debug.logic(
+            "link_partner_admitted",
+            project=self.id,
+            task=task.id if task else None,
+            visibility=visibility,
+            partner=partner.id,
+            admitted=admitted,
+        )
+        return admitted
 
     def _add_collaborators(
         self, partners: Any, access_mode: str = "advanced_edit"

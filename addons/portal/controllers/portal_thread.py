@@ -119,26 +119,22 @@ class PortalChatter(ThreadController):
         )
 
         Message = request.env["mail.message"]
-        if kw.get("token"):
+        # the credentials /portal/chatter_init and posting read: the signed
+        # hash names the visitor whose messages are theirs to edit
+        token, _hash, pid = kw.get("token"), kw.get("hash"), kw.get("pid")
+        if token or _hash:
             thread = self._get_thread_with_access(
-                thread_model,
-                thread_id,
-                token=kw.get("token"),
+                thread_model, thread_id, token=token, hash=_hash, pid=pid
             )
             if not thread:
                 _debug.logic(
                     "chatter_fetch_refused",
-                    reason="token_rejected",
+                    reason="credentials_rejected",
                     model=thread_model,
                     record=thread_id,
                 )
                 raise NotFound
-            if portal_partner := get_portal_partner(
-                thread,
-                _hash=None,
-                pid=None,
-                token=kw.get("token"),
-            ):
+            if portal_partner := get_portal_partner(thread, _hash, pid, token):
                 request.update_context(
                     portal_data={
                         "portal_partner": portal_partner,
@@ -155,7 +151,8 @@ class PortalChatter(ThreadController):
             model=thread_model,
             record=thread_id,
             messages=len(messages),
-            by_token=bool(kw.get("token")),
+            by_token=bool(token),
+            signed=bool(_hash),
         )
         return {
             **res,

@@ -68,8 +68,8 @@ class MixinPortal(models.AbstractModel):
     def _compute_access_token(self) -> None:
         # the token this request opened the record with, so a page reached by
         # a link carried over from before posts back with it; otherwise the
-        # customer's link, shown again from the sealed secret; a record nobody
-        # was sent a link to has none
+        # customer's link, shown again from the sealed secret, while the
+        # record admits it; a record nobody was sent a link to has none
         presented = _presented_link_tokens()
         tokens = {
             record.id: presented[record._name, record.id]
@@ -96,6 +96,7 @@ class MixinPortal(models.AbstractModel):
                     link.res_id not in tokens
                     and link.id in shown
                     and link.partner_id.id == customers[link.res_id].id
+                    and not link._record_refusal()
                 ):
                     tokens[link.res_id] = shown[link.id]
         for record in self:

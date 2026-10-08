@@ -833,6 +833,13 @@ class AccessLink(models.Model):
             return "expired"
         if ROLE_RANK[self.role] < ROLE_RANK[role]:
             return "role"
+        return self._record_refusal()
+
+    def _record_refusal(self) -> str:
+        """Why the record this link names refuses it now, whatever the link's
+        own state (a setting of the record closing it to links); "" when it
+        does not. Read on every presentation, so a record that closes revokes
+        nothing and a link issued before the record closed is refused too."""
         return ""
 
     def _admits_session(self) -> bool:

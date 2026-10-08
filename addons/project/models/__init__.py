@@ -1,3 +1,4 @@
+from . import access_link
 from . import home_menu_badge
 from . import mixin_project_column
 from . import mixin_project_column_container

@@ -3,7 +3,7 @@
 
     <template id="portal_task_sign_button" name="Sign Button">
         <a
-            t-if="task._has_to_be_signed()"
+            t-if="worksheet_sign_url and task._has_to_be_signed()"
             role="button"
             class="btn btn-primary align-self-start"
             data-bs-toggle="modal"
@@ -16,7 +16,9 @@
     <template id="portal_task_sign_modal" name="Sign Modal">
         <!-- modal relative to the sign action -->
         <div role="dialog" class="modal fade" id="modalaccept">
-            <div class="modal-dialog" t-if="task._has_to_be_signed()">
+            <div
+                class="modal-dialog"
+                t-if="worksheet_sign_url and task._has_to_be_signed()">
                 <form
                     id="accept"
                     method="POST"
@@ -37,9 +39,7 @@
                     </header>
                     <main class="modal-body" id="sign-dialog">
                         <t t-call="portal.signature_form">
-                            <t
-                                t-set="call_url"
-                                t-value="'%s/worksheet/sign/%s%s' % (task.access_url, source, '?access_token=%s' % task_token if task_token else '')" />
+                            <t t-set="call_url" t-value="worksheet_sign_url" />
                             <t t-set="default_name" t-value="task.partner_id.name" />
                             <t t-set="font_color" t-value="'black'" />
                             <t t-set="send_label">Sign Report</t>

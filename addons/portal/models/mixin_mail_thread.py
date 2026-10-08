@@ -187,6 +187,13 @@ class MixinMailThread(models.AbstractModel):
 
     def _verify_sign_token(self, signature, pid, token: str | None = None) -> bool:
         signed = self._portal_hash_signed(pid, token)
+        if not signed[1]:
+            # a record closed to its customer's link has no token to sign
+            # over, and a hash over none would speak for anyone's `pid`
+            _debug.logic(
+                "hash_refused", model=self._name, record=self.id, reason="no_token"
+            )
+            return False
         if tools.is_hmac_valid(self.env, PARTNER_HASH_SCOPE, signed, signature):
             return True
         return _legacy_hash_valid(self, signature, signed)

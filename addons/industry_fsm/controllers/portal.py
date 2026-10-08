@@ -3,8 +3,13 @@ from urllib.parse import urlencode
 
 from odoo.exceptions import AccessError, MissingError
 from odoo.http import request, route
+from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.base.models.access_link import ROLE_RANK
 from odoo.addons.portal.controllers import portal
+from odoo.addons.portal.utils import get_url_with_params, thread_link
+
+_debug = DebugLog(__name__)
 
 WORKSHEET_SOURCES = frozenset({"fsm", "project"})
 
@@ -17,7 +22,56 @@ class CustomerPortal(portal.CustomerPortal):
     def _task_get_page_view_values(self, task, access_token, /, **kwargs):
         values = super()._task_get_page_view_values(task, access_token, **kwargs)
         values["source"] = self._get_worksheet_source(task, kwargs.get("source"))
+        values["worksheet_sign_url"] = self._get_worksheet_sign_url(task, values)
         return values
+
+    def _get_worksheet_sign_url(self, task, values):
+        # the credential the page holds signs when the sign route takes it: the
+        # session's own access, or a comment link of the task or its project
+        # naming someone of the task customer's company; a view link signs
+        # nothing
+        url = f"{task.access_url}/worksheet/sign/{values['source']}"
+        token = values.get("task_token")
+        if not token:
+            return url
+        link = getattr(request, "access_link", None)
+        own_link = bool(link) and link.res_model == task._name
+        if own_link:
+            signs = ROLE_RANK[link.role] >= ROLE_RANK[
+                "comment"
+            ] and self._signs_for_customer(task, link.partner_id)
+            params = {"access_token": token}
+        else:
+            pid = values.get("pid")
+            signs = bool(pid and values.get("hash")) and self._signs_for_customer(
+                task, task.env["res.partner"].browse(int(pid))
+            )
+            params = {"access_token": token, "pid": pid, "hash": values.get("hash")}
+        _debug.logic(
+            "worksheet_sign_offered",
+            task=task.id,
+            by="task_link" if own_link else "project_link",
+            signs=signs,
+        )
+        return get_url_with_params(url, params) if signs else None
+
+    @staticmethod
+    def _signs_for_customer(task_sudo, partner):
+        # the signature is the customer's sign-off: a link signs for the
+        # partner it names only within the task customer's commercial entity
+        partner = task_sudo.env["res.partner"].browse(partner.id if partner else [])
+        customer = task_sudo.partner_id.commercial_partner_id
+        signs = bool(customer and partner) and (
+            partner.commercial_partner_id == customer
+        )
+        _debug.logic(
+            "worksheet_signer",
+            task=task_sudo.id,
+            partner=partner.id if partner else None,
+            customer=customer.id,
+            signs=signs,
+        )
+        return signs
 
     @staticmethod
     def _get_worksheet_source(task, source):
@@ -49,12 +103,31 @@ class CustomerPortal(portal.CustomerPortal):
         self, task_id, access_token=None, source=False, name=None, signature=None
     ):
         # get from query string if not on json param
-        access_token = access_token or request.httprequest.args.get("access_token")
+        query = request.httprequest.args
+        access_token = access_token or query.get("access_token")
+        by_project_link = False
         try:
             task_sudo = request.env["access.link"]._open_record(
                 "project.task", task_id, access_token=access_token, role="comment"
             )
-        except AccessError, MissingError:
+        except MissingError:
+            return {"error": request.env._("Invalid Task.")}
+        except AccessError:
+            task_sudo = self._open_task_by_project_link(
+                task_id, access_token, query.get("pid"), query.get("hash")
+            )
+            if not task_sudo:
+                return {"error": request.env._("Invalid Task.")}
+            by_project_link = True
+            signer = task_sudo.env["res.partner"].browse(int(query["pid"]))
+        else:
+            # the session signs with its own access; a link for its partner
+            signer = (
+                None
+                if task_sudo.with_user(request.env.user).has_access("read")
+                else thread_link(task_sudo, access_token, role="comment").partner_id
+            )
+        if signer is not None and not self._signs_for_customer(task_sudo, signer):
             return {"error": request.env._("Invalid Task.")}
 
         if not task_sudo._has_to_be_signed():
@@ -94,12 +167,21 @@ class CustomerPortal(portal.CustomerPortal):
             ],
         )
         source = self._get_worksheet_source(task_sudo, source)
-        return {
-            "force_refresh": True,
-            "redirect_url": task_sudo.get_portal_url(
+        _debug.lifecycle(
+            "worksheet_signed", task=task_sudo.id, by_project_link=by_project_link
+        )
+        if by_project_link:
+            # back on the page the project's link opened, never on the task's
+            # own customer link
+            redirect_url = get_url_with_params(
+                f"{task_sudo.project_id.access_url}/task/{task_sudo.id}",
+                {"access_token": access_token, "source": source},
+            )
+        else:
+            redirect_url = task_sudo.get_portal_url(
                 query_string=f"&{urlencode({'source': source})}"
-            ),
-        }
+            )
+        return {"force_refresh": True, "redirect_url": redirect_url}
 
     def _show_task_report(self, task_sudo, report_type, download):
         if not task_sudo.is_fsm:

@@ -12,7 +12,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import groupby as groupbyelem
 
-from odoo.addons.base.models.access_link import ROLE_RANK
+from odoo.addons.base.models.access_link import (
+    ROLE_RANK,
+    LinkLoginRequired,
+    LinkRefused,
+)
 from odoo.addons.portal.controllers.portal import (
     CustomerPortal,
     _parse_bool_param,
@@ -388,6 +392,7 @@ class ProjectCustomerPortal(CustomerPortal):
         project_id: int | None = None,
         task_id: int | None = None,
         access_token: str | None = None,
+        report_type: str | None = None,
         **kw: Any,
     ) -> Response:
         project_sudo = request.link_subject
@@ -419,14 +424,18 @@ class ProjectCustomerPortal(CustomerPortal):
             project=project_id,
             uid=request.env.uid,
             token=bool(access_token),
+            report_type=report_type,
         )
+        # the report the page prints, read through the link that opened it
+        if report_type in ("pdf", "html", "text"):
+            return self._show_task_report(
+                task_sudo, report_type, download=kw.get("download")
+            )
         task_sudo.attachment_ids.generate_access_token()
         values = self._task_get_page_view_values(
             task_sudo, access_token, project=project_sudo, **kw
         )
         values["project"] = project_sudo
-        if access_token and not values["task_token"]:
-            values.update(self._project_link_chatter_values(project_sudo, access_token))
         return request.render("project.portal_my_task", values)
 
     def _project_link_chatter_values(
@@ -446,12 +455,46 @@ class ProjectCustomerPortal(CustomerPortal):
             commenting=commenting,
         )
         if not (partner and commenting):
-            return {"task_token": access_token}
+            return {"task_token": access_token, "pid": None, "hash": None}
         return {
             "task_token": access_token,
             "pid": partner.id,
             "hash": project_sudo._sign_token(partner.id, token=access_token),
         }
+
+    def _open_task_by_project_link(
+        self, task_id: int, access_token: str | None, pid: Any, signature: Any
+    ) -> Any:
+        # a project's link speaking for the partner it names, signed as the
+        # task page signs it, acts on the task as the task's own comment link
+        Task = request.env["project.task"]
+        try:
+            # the bearer acts on the record as the server (decision I1)
+            project_sudo = (
+                request.env["access.link"]
+                ._resolve(
+                    access_token, model="project.project", role="comment", action="act"
+                )
+                .record
+            )
+        except LinkRefused, LinkLoginRequired:
+            return Task
+        task_sudo = project_sudo.env["project.task"].browse(task_id).exists()
+        opened = (
+            bool(task_sudo)
+            and isinstance(signature, str)
+            and str(pid or "").isdigit()
+            and task_sudo._portal_verify_parent_hash(
+                signature, int(pid), token=access_token
+            )
+        )
+        _debug.logic(
+            "task_opened_by_project_link",
+            task=task_id,
+            project=project_sudo.id,
+            opened=opened,
+        )
+        return task_sudo if opened else Task
 
     @http.route(
         "/my/projects/<int:project_id>/task/<int:task_id>/subtasks",
@@ -668,6 +711,15 @@ class ProjectCustomerPortal(CustomerPortal):
         )
         if access_token:
             values.update(access_token=access_token, token=access_token)
+        if project and access_token and not values["task_token"]:
+            values.update(self._project_link_chatter_values(project, access_token))
+        # the page's own route prints it: a project's link opens the task
+        # under its project only
+        values["task_report_url"] = get_url_with_params(
+            f"{project.access_url}/task/{task.id}" if project else task.access_url,
+            {"report_type": "pdf"}
+            | ({"access_token": access_token} if access_token else {}),
+        )
         if project:
             values["project_id"] = project.id
             history = request.session.get("my_project_tasks_history", [])

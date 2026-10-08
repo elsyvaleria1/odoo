@@ -458,7 +458,7 @@ counters are the server's.
 
 **Key Methods:**
 - `_issue(record, partner=, role=, audience=, date_to=, cause=, ...)` — a live link and its token, the same one again for the same person, role, audience and cause
-- `_resolve(token, model=, res_id=, role=, action=)` — the one door: hash, indexed lookup, record, revocation, expiry, role and audience; every refusal is `LinkRefused`, a link for signed-in people met by a visitor `LinkLoginRequired`; records the use
+- `_resolve(token, model=, res_id=, role=, action=)` — the one door: hash, indexed lookup, record, revocation, expiry, role, the record's own refusal (`_record_refusal`, a model whose setting closes a record to links, read on every presentation) and audience; every refusal is `LinkRefused`, a link for signed-in people met by a visitor `LinkLoginRequired`; records the use
 - `_open_record(model, res_id, access_token=, role=)` — the record as the server when the session may read it or the token is a live link to it at `role`; `MissingError` for a record that is gone, `AccessError` for every refusal: the door of RPC routes and helpers, where an `auth="link"` route (`link=`, `link_role=`, `link_param=`, `link_refused=`) is the door of a page
 - `action_revoke(reason)`, `action_extend(date_to)` — the sharer or an administrator
 - `_record_links(records, domain)`, `_update_record_links(records, vals, domain)` (role and expiry only), `_revoke_record_links(records, reason, domain)` — for whoever may read (list) or write (change) the records

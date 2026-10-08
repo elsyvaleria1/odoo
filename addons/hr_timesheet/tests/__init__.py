@@ -7,3 +7,4 @@ from . import test_employee_delete_wizard
 from . import test_timesheet_import_template
 from . import test_time_units
 from . import test_portal_task_page_logged_out
+from . import test_portal_project_link_report

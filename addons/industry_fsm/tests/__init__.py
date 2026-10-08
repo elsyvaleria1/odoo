@@ -13,3 +13,4 @@ from . import test_fsm_planning_overlap
 from . import test_task_calendar_view
 from . import test_webmanifest
 from . import test_fsm_portal_sign
+from . import test_fsm_portal_project_link_sign

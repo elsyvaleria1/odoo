@@ -16,3 +16,4 @@ from . import test_portal_mixin_sharing
 from . import test_portal_share_invitation
 from . import test_message_post_hooks
 from . import test_share_dialog_link
+from . import test_portal_chatter_fetch_identity

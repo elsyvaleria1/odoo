@@ -95,3 +95,4 @@ from . import test_project_satellites
 from . import test_project_public_link
 from . import test_project_open_items
 from . import test_project_link_task_chatter_read
+from . import test_project_link_loose_ends

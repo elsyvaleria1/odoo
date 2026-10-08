@@ -2259,6 +2259,11 @@ class ProjectTask(models.Model):
                 task_dependencies.update(children_dependencies)
         return task_mapping, task_dependencies
 
+    def _admits_link_partner(self, partner: Any) -> bool:
+        self.check_singleton()
+        project = self.project_id
+        return not project or project._admits_link_partner(partner, task=self)
+
     def _is_opened_by_project_link(self, token: str | None, role: str) -> bool:
         # a project's link reaches the tasks its page lists
         project = self.project_id
@@ -4051,12 +4056,14 @@ class ProjectTask(models.Model):
             "portal",
         ]
         for group_name, _group_method, group_data in groups:
-            if group_name in ("customer", "user") or (
-                group_name == "portal_customer" and not portal_privacy
-            ):
+            if group_name in ("customer", "user"):
                 group_data["has_button_access"] = False
-            elif group_name == "portal_customer" and portal_privacy:
-                group_data["has_button_access"] = True
+            elif group_name == "portal_customer":
+                # the button carries the customer's link: offered where it opens
+                group_data["has_button_access"] = (
+                    portal_privacy
+                    and self._admits_link_partner(self._portal_customer())
+                )
 
         return groups
 
