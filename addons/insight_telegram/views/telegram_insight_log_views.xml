@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_insight_log_view_list" model="ir.ui.view">
+        <field name="name">telegram.insight.log.list</field>
+        <field name="model">telegram.insight.log</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" decoration-warning="not answered">
+                <field name="create_date" string="Asked On" />
+                <field name="user_id" />
+                <field name="question" />
+                <field name="query" />
+                <field name="answered" />
+                <field name="bot_id" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="telegram_insight_log_view_form" model="ir.ui.view">
+        <field name="name">telegram.insight.log.form</field>
+        <field name="model">telegram.insight.log</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="create_date" string="Asked On" />
+                        <field name="user_id" />
+                        <field name="bot_id" />
+                        <field name="query" />
+                        <field name="answered" />
+                    </group>
+                    <group string="Question">
+                        <field name="question" colspan="2" nolabel="1" />
+                    </group>
+                    <group string="Answer">
+                        <field name="answer" colspan="2" nolabel="1" />
+                    </group>
+                    <group string="Interpretation">
+                        <field name="interpretation" colspan="2" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="telegram_insight_log_view_search" model="ir.ui.view">
+        <field name="name">telegram.insight.log.search</field>
+        <field name="model">telegram.insight.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="question" />
+                <field name="user_id" />
+                <filter
+                    name="unanswered"
+                    string="Unanswered"
+                    domain="[('answered', '=', False)]" />
+                <filter
+                    name="group_query"
+                    string="Report"
+                    context="{'group_by': 'query'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_telegram_insight_log" model="ir.actions.act_window">
+        <field name="name">Questions Asked</field>
+        <field name="res_model">telegram.insight.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

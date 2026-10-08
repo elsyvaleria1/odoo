@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="telegram_bot_view_form_ask" model="ir.ui.view">
+        <field name="name">telegram.bot.form.inherit.insight</field>
+        <field name="model">telegram.bot</field>
+        <field name="inherit_id" ref="telegram.view_telegram_bot_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="insight_ai" string="Questions">
+                    <group>
+                        <field name="insight_ai_enabled" widget="boolean_toggle" />
+                        <field
+                            name="insight_ai_provider_id"
+                            options="{'no_create': True}"
+                            invisible="not insight_ai_enabled"
+                            required="insight_ai_enabled" />
+                        <field
+                            name="insight_ai_model_id"
+                            placeholder="vendor default"
+                            options="{'no_create': True}"
+                            invisible="not insight_ai_enabled" />
+                        <field
+                            name="insight_reader_user_id"
+                            options="{'no_create': True}"
+                            invisible="not insight_ai_enabled"
+                            required="insight_ai_enabled" />
+                    </group>
+                    <div
+                        class="alert alert-warning"
+                        role="alert"
+                        invisible="not insight_ai_enabled">
+                        Members of <strong>Ask Odoo through Telegram</strong>
+                        get answers read from every company, on a read-only
+                        transaction: any message or voice note they send
+                        is a question. Give the company's policy for the
+                        purpose <code>telegram.insight</code> the Anthropic
+                        provider.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

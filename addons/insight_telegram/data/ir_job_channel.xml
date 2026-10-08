@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="job_channel_telegram_insight" model="ir.job.channel">
+        <field name="name">telegram_insight</field>
+        <field name="capacity">2</field>
+    </record>
+
+</odoo>

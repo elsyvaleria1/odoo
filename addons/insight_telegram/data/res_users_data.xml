@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="user_reader" model="res.users">
+        <field name="name">Telegram Questions Reader</field>
+        <field name="login">__telegram_insight_reader__</field>
+        <field name="active" eval="False" />
+        <field name="principal_type">service</field>
+        <field name="tz">America/Mexico_City</field>
+    </record>
+
+</odoo>

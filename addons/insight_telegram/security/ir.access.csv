@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+telegram_insight_log_rule_system,Telegram Question: administrators read the questions asked,model_telegram_insight_log,base.group_system,permission,r,
+telegram_insight_log_privilege_create,Telegram Question: the bot records each question it is asked,model_telegram_insight_log,privilege_log_question,permission,c,

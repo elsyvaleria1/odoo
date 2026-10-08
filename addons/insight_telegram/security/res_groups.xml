@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="group_insight_telegram" model="res.groups">
+        <field name="name">Ask Odoo through Telegram</field>
+        <field
+            name="comment">Members may ask the questions bot anything about Odoo data. The answer is read from every company, whatever the member may read in Odoo: grant it only to whoever may see everything.</field>
+    </record>
+
+    <record id="privilege_log_question" model="res.groups">
+        <field
+            name="name">Privilege: the questions bot keeps the questions it is asked</field>
+        <field
+            name="comment">The answer runs as the person who asked, who reads no question log: recording each question, answered or not, is the bot's own bookkeeping.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,541 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* telegram_insight
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(count)s pending"
+msgstr "%(count)s pendientes"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(free)s free"
+msgstr "%(free)s libres"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(products)s products, %(orders)s manufacturing orders"
+msgstr "%(products)s productos, %(orders)s órdenes de producción"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "(none)"
+msgstr "(sin asignar)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "(the number in brackets is the late ones)"
+msgstr "(el número entre paréntesis son las atrasadas)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Accounts payable to suppliers"
+msgstr "Cuentas por pagar a proveedores"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Accounts receivable from customers"
+msgstr "Cuentas por cobrar a clientes"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Active employees"
+msgstr "Empleados activos"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answer
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
+msgid "Answer"
+msgstr "Respuesta"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_ai_enabled
+msgid "Answer Odoo Questions"
+msgstr "Responder preguntas sobre Odoo"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answered
+msgid "Answered"
+msgstr "Respondida"
+
+#. module: insight_telegram
+#: model:integration.ml.purpose,name:insight_telegram.purpose_telegram_insight
+msgid "Answering questions about Odoo data"
+msgstr "Responder preguntas sobre los datos de Odoo"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "As of %(day)s"
+msgstr "Al %(day)s"
+
+#. module: insight_telegram
+#: model:res.groups,name:insight_telegram.group_insight_telegram
+msgid "Ask Odoo through Telegram"
+msgstr "Preguntar a Odoo por Telegram"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid ""
+"Ask anything about the data in Odoo, in your own words: sales, collections, "
+"inventory, purchases, production, people."
+msgstr ""
+"Pregunta lo que quieras sobre los datos de Odoo, con tus propias palabras: "
+"ventas, cobranza, inventario, compras, producción, personal."
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__user_id
+msgid "Asked By"
+msgstr "Preguntó"
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_list
+msgid "Asked On"
+msgstr "Fecha"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Bank and cash balances"
+msgstr "Saldos de bancos y caja"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__bot_id
+msgid "Bot"
+msgstr "Bot"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Confirmed purchase orders, before taxes"
+msgstr "Órdenes de compra confirmadas, sin impuestos"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Confirmed sales orders, before taxes (counter sales excluded)"
+msgstr "Pedidos de venta confirmados, sin impuestos (no incluye mostrador)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Counter (point of sale) sales, taxes included"
+msgstr "Ventas de mostrador (punto de venta), con impuestos"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Customer invoicing, before taxes, net of credit notes"
+msgstr "Facturación a clientes, sin impuestos, neta de notas de crédito"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_chat__display_name
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_handler_insight__display_name
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Example: %(example)s"
+msgstr "Ejemplo: %(example)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Finished production"
+msgstr "Producción terminada"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I could not answer that right now. Please try again."
+msgstr "No pude responder eso en este momento. Intenta de nuevo, por favor."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "I could not find «%(value)s»."
+msgstr "No encontré «%(value)s»."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I could not hear the voice note. Please type it."
+msgstr "No pude escuchar la nota de voz. Escríbela, por favor."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I did not find what you asked for."
+msgstr "No encontré lo que me solicitaste."
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_chat__id
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_handler_insight__id
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__id
+msgid "ID"
+msgstr "ID"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__interpretation
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
+msgid "Interpretation"
+msgstr "Interpretación"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_model_id
+msgid "Leave empty to use the vendor default."
+msgstr "Déjalo vacío para usar el modelo predeterminado del proveedor."
+
+#. module: insight_telegram
+#: model:res.groups,comment:insight_telegram.group_insight_telegram
+msgid ""
+"Members may ask the questions bot anything about Odoo data. The answer is "
+"read from every company, whatever the member may read in Odoo: grant it only"
+" to whoever may see everything."
+msgstr ""
+"Los miembros pueden preguntarle al bot de preguntas cualquier cosa sobre los"
+" datos de Odoo. La respuesta se lee de todas las compañías, sin importar lo "
+"que el miembro pueda ver en Odoo: otórgalo solo a quien pueda verlo todo."
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_bot_view_form_ask
+msgid ""
+"Members of <strong>Ask Odoo through Telegram</strong>\n"
+"                        get answers read from every company, on a read-only\n"
+"                        transaction: any message or voice note they send\n"
+"                        is a question. Give the company's policy for the\n"
+"                        purpose <code>telegram.insight</code> the Anthropic\n"
+"                        provider."
+msgstr ""
+"Los miembros de <strong>Preguntar a Odoo por Telegram</strong>\n"
+"                        reciben respuestas de reportes de solo lectura sobre todas las compañías:\n"
+"                        cualquier mensaje o nota de voz que envíen es una pregunta. El\n"
+"                        modelo solo elige el reporte; en la política de la compañía\n"
+"                        para el propósito <code>telegram.insight</code> asigna un proveedor\n"
+"                        de chat."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No bank or cash journal found."
+msgstr "No encontré diarios de banco ni de caja."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No records in that period."
+msgstr "No hay registros en ese periodo."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No stock found."
+msgstr "No hay existencias."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Nothing pending."
+msgstr "No hay nada pendiente."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Nothing was produced in that period."
+msgstr "No se produjo nada en ese periodo."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Overdue: **%(amount)s**"
+msgstr "Vencido: **%(amount)s**"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Pending customer deliveries"
+msgstr "Entregas a clientes pendientes"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Pending: **%(amount)s** (%(count)s documents)"
+msgstr "Pendiente: **%(amount)s** (%(count)s documentos)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Pending: **%(count)s**, of which late: **%(late)s**"
+msgstr "Pendientes: **%(count)s**, atrasadas: **%(late)s**"
+
+#. module: insight_telegram
+#: model:res.groups,name:insight_telegram.privilege_log_question
+msgid "Privilege: the questions bot keeps the questions it is asked"
+msgstr "Privilegio: el bot de preguntas guarda las preguntas que recibe"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__query
+msgid "Query"
+msgstr "Reporte"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__question
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
+msgid "Question"
+msgstr "Pregunta"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Question about Odoo"
+msgstr "Pregunta sobre Odoo"
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_bot_view_form_ask
+msgid "Questions"
+msgstr "Preguntas"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_ai_model_id
+msgid "Questions AI Model"
+msgstr "Modelo de IA para preguntas"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_ai_provider_id
+msgid "Questions AI Provider"
+msgstr "Proveedor de IA para preguntas"
+
+#. module: insight_telegram
+#: model:ir.actions.act_window,name:insight_telegram.action_telegram_insight_log
+#: model:ir.ui.menu,name:insight_telegram.menu_telegram_insight_log
+msgid "Questions Asked"
+msgstr "Preguntas recibidas"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_reader_user_id
+msgid "Questions Reader"
+msgstr "Lector de preguntas"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Questions about Odoo"
+msgstr "Preguntas sobre Odoo"
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_search
+msgid "Report"
+msgstr "Reporte"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Stock on hand"
+msgstr "Existencias"
+
+#. module: insight_telegram
+#: model:ir.model,name:insight_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: insight_telegram
+#: model:ir.model,name:insight_telegram.model_telegram_chat
+msgid "Telegram Chat Session"
+msgstr "Sesión de chat de Telegram"
+
+#. module: insight_telegram
+#: model:ir.model,name:insight_telegram.model_telegram_insight_log
+msgid "Telegram Question"
+msgstr "Pregunta de Telegram"
+
+#. module: insight_telegram
+#: model:ir.model,name:insight_telegram.model_telegram_handler_insight
+msgid "Telegram: Ask Odoo"
+msgstr "Telegram: preguntar a Odoo"
+
+#. module: insight_telegram
+#: model:res.groups,comment:insight_telegram.privilege_log_question
+msgid ""
+"The answer runs as the person who asked, who reads no question log: "
+"recording each question, answered or not, is the bot's own bookkeeping."
+msgstr ""
+"La respuesta corre como la persona que preguntó, que no lee la bitácora de "
+"preguntas: registrar cada pregunta, respondida o no, es contabilidad del "
+"propio bot."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid ""
+"The bot only reads: it never creates or changes anything. It remembers the "
+"last few questions, so you can follow up."
+msgstr ""
+"El bot solo consulta: nunca crea ni modifica nada. Recuerda las últimas "
+"preguntas, así que puedes seguir preguntando sobre el mismo tema."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__company_id
+msgid "The company the bot speaks for: where the question belongs."
+msgstr "La compañía por la que habla el bot: a la que pertenece la pregunta."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__interpretation
+msgid "The report and parameters the model extracted from the question."
+msgstr "El reporte y los parámetros que el modelo extrajo de la pregunta."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__query
+msgid "The report the question was routed to; empty when none answers it."
+msgstr ""
+"El reporte al que se dirigió la pregunta; vacío cuando ninguno la responde."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_reader_user_id
+msgid ""
+"The user the questions are read as, on a read-only transaction that sees "
+"every company: its language and timezone shape the answer, never what it may"
+" read."
+msgstr ""
+"El usuario con el que se leen las preguntas, en una transacción de solo "
+"lectura que ve todas las compañías: su idioma y zona horaria dan forma a la "
+"respuesta, nunca limitan lo que puede leer."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_provider_id
+msgid ""
+"The vendor that reads each question and picks the report that answers it. "
+"One short call per question: a fast, inexpensive model is enough, since the "
+"figures come from the reports, never from it."
+msgstr ""
+"El proveedor que lee cada pregunta y elige el reporte que la responde. Una "
+"llamada corta por pregunta: basta un modelo rápido y barato, porque las "
+"cifras salen de los reportes, nunca de él."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "This bot is not set up to answer questions yet."
+msgstr "Este bot todavía no está configurado para responder preguntas."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Total %(currency)s: **%(amount)s**"
+msgstr "Total %(currency)s: **%(amount)s**"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Total: **%(amount)s** (%(count)s documents)"
+msgstr "Total: **%(amount)s** (%(count)s documentos)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Total: **%(count)s**"
+msgstr "Total: **%(count)s**"
+
+#. module: insight_telegram
+#: model:integration.ml.purpose,name:insight_telegram.purpose_speech_transcription_ask
+msgid "Transcribing questions about Odoo data"
+msgstr "Transcribir preguntas sobre los datos de Odoo"
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_search
+msgid "Unanswered"
+msgstr "Sin respuesta"
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_enabled
+msgid ""
+"When enabled, this bot answers questions about Odoo data asked by members of"
+" the 'Ask Odoo through Telegram' group, from a catalogue of read-only "
+"reports. It can never write."
+msgstr ""
+"Si está activo, este bot responde las preguntas sobre los datos de Odoo que "
+"hagan los miembros del grupo 'Preguntar a Odoo por Telegram', con un "
+"catálogo de reportes de solo lectura. Nunca puede escribir."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
+msgid ""
+"Whether a report answered. The unanswered questions are the ones the "
+"catalogue should learn next."
+msgstr ""
+"Si algún reporte respondió. Las preguntas sin respuesta son las que el "
+"catálogo debe aprender después."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "You can also ask with a voice note 🎙."
+msgstr "También puedes preguntar con una nota de voz 🎙."
+
+#. module: insight_telegram
+#: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_bot_view_form_ask
+msgid "vendor default"
+msgstr "predeterminado del proveedor"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "«%(value)s» matched: %(names)s%(more)s"
+msgstr "«%(value)s» coincidió con: %(names)s%(more)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "… and %(count)s more"
+msgstr "… y %(count)s más"
