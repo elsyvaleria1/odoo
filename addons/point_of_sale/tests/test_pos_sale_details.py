@@ -514,15 +514,21 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         self.make_payment(deduction, self.cash_pm1, deduction.amount_total)
 
         report = self.report.get_sale_details(session_ids=[session.id])
-        self.assertFalse(report["refund_products"], "a deduction is not a refund")
         rows = [row for c in report["products"] for row in c["products"]]
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["quantity"], 1.0)
-        self.assertEqual(rows[0]["total_paid"], 100.0)
-        self.assertEqual(rows[0]["base_amount"], 100.0)
-        self.assertEqual(report["products_info"], {"total": 100.0, "qty": 1.0})
+        returned = [row for c in report["refund_products"] for row in c["products"]]
+        self.assertEqual([row["quantity"] for row in rows], [2.0])
         self.assertEqual(
-            report["taxes_info"], {"tax_amount": 10.0, "base_amount": 100.0}
+            [(row["quantity"], row["total_paid"]) for row in returned],
+            [(1.0, 100.0)],
+            "a negative line is returned goods, read in the refund block's direction",
+        )
+        self.assertEqual(report["products_info"], {"total": 200.0, "qty": 2.0})
+        self.assertEqual(report["refund_info"], {"total": 100.0, "qty": 1.0})
+        self.assertEqual(
+            report["taxes_info"], {"tax_amount": 20.0, "base_amount": 200.0}
+        )
+        self.assertEqual(
+            report["refund_taxes_info"], {"tax_amount": 10.0, "base_amount": 100.0}
         )
 
     def test_a_started_session_without_sales_is_still_in_scope(self):
@@ -1498,3 +1504,213 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         )
         _logger.debug("Unposted difference state=%s row=%s", move.state, row)
         self.assertEqual(row["money_difference"], 0)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSaleDetailsDirections(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.report = self.env["report.point_of_sale.report_saledetails"]
+        self.config.open_ui()
+        self.session = self.config.current_session_id
+        self.session.set_opening_control(0, None)
+
+    def _paid_order(self, product, *lines):
+        order = self.env["pos.order"].create(
+            {
+                "session_id": self.session.id,
+                "company_id": self.env.company.id,
+                "partner_id": self.partner_a.id,
+                "amount_paid": 0,
+                "amount_total": 0,
+                "amount_tax": 0,
+                "amount_return": 0,
+                "lines": [
+                    odoo.Command.create(
+                        {
+                            "product_id": product.id,
+                            "qty": qty,
+                            "price_unit": price,
+                            "discount": discount,
+                            "price_subtotal": 0,
+                            "price_subtotal_incl": 0,
+                            "tax_ids": [odoo.Command.clear()],
+                        }
+                    )
+                    for qty, price, discount in lines
+                ],
+            }
+        )
+        order.lines._onchange_amount_line_all()
+        order._onchange_amount_all()
+        self.make_payment(order, self.cash_pm1, order.amount_total)
+        return order
+
+    @staticmethod
+    def _rows(categories):
+        return [row for category in categories for row in category["products"]]
+
+    def test_discounts_of_sales_and_refunds_are_separate_magnitudes(self):
+        product = self.create_product("Discount refund", self.categ_basic, 100)
+        order = self._paid_order(product, (1, 100, 10))
+        refund = order._refund()
+        self.make_payment(refund, self.cash_pm1, refund.amount_total)
+
+        report = self.report.get_sale_details(session_ids=self.session.ids)
+        _logger.debug(
+            "Discount split sold=%s/%s refunded=%s/%s",
+            report["discount_number"],
+            report["discount_amount"],
+            report.get("refund_discount_number"),
+            report.get("refund_discount_amount"),
+        )
+        self.assertEqual(report["discount_number"], 1)
+        self.assertAlmostEqual(report["discount_amount"], 10)
+        self.assertEqual(report["refund_discount_number"], 1)
+        self.assertAlmostEqual(report["refund_discount_amount"], 10)
+        rendered = self.env["ir.actions.report"]._render_qweb_html(
+            "point_of_sale.sale_details_report",
+            [],
+            data={"session_ids": self.session.ids},
+        )[0]
+        discounts = (
+            lxml_html.fromstring(rendered)
+            .xpath('//*[@id="discounts"]')[0]
+            .text_content()
+        )
+        _logger.debug("Rendered discounts=%s", " ".join(discounts.split()))
+        self.assertIn("Number of refund discounts: 1", " ".join(discounts.split()))
+        self.assertNotIn("-10", discounts)
+
+    def test_negative_line_of_an_ordinary_order_is_a_refunded_product(self):
+        product = self.create_product("Numpad return", self.categ_basic, 100)
+        order = self._paid_order(product, (2, 100, 0), (-1, 100, 0))
+        self.assertFalse(order.is_refund)
+
+        report = self.report.get_sale_details(session_ids=self.session.ids)
+        sold = self._rows(report["products"])
+        refunded = self._rows(report["refund_products"])
+        _logger.debug("Negative line sold=%s refunded=%s", sold, refunded)
+        self.assertEqual([row["quantity"] for row in sold], [2])
+        self.assertEqual([row["quantity"] for row in refunded], [1])
+        self.assertEqual(refunded[0]["total_paid"], 100)
+        self.assertEqual(report["products_info"]["total"], 200)
+        self.assertEqual(report["refund_info"]["total"], 100)
+
+    def test_positive_line_of_a_refund_order_is_a_sold_product(self):
+        product = self.create_product("Exchange", self.categ_basic, 100)
+        order = self._paid_order(product, (1, 100, 0))
+        refund = order._refund()
+        refund.write(
+            {
+                "lines": [
+                    odoo.Command.create(
+                        {
+                            "product_id": product.id,
+                            "qty": 1,
+                            "price_unit": 30,
+                            "price_subtotal": 30,
+                            "price_subtotal_incl": 30,
+                            "tax_ids": [odoo.Command.clear()],
+                        }
+                    )
+                ]
+            }
+        )
+        refund._onchange_amount_all()
+        self.make_payment(refund, self.cash_pm1, refund.amount_total)
+        self.assertTrue(refund.is_refund)
+
+        report = self.report.get_sale_details(session_ids=self.session.ids)
+        sold = self._rows(report["products"])
+        refunded = self._rows(report["refund_products"])
+        _logger.debug("Exchange sold=%s refunded=%s", sold, refunded)
+        self.assertEqual(sorted(row["total_paid"] for row in sold), [30, 100])
+        self.assertEqual([row["total_paid"] for row in refunded], [100])
+
+    def test_first_category_is_picked_by_sequence_like_the_analysis(self):
+        late, early = self.env["pos.category"].create(
+            [
+                {"name": "Alpha by name", "sequence": 20},
+                {"name": "Zulu by name", "sequence": 10},
+            ]
+        )
+        self.assertLess(late.id, early.id)
+        product = self.create_product("Two categories", self.categ_basic, 100)
+        product.product_tmpl_id.pos_categ_ids = (late | early).ids
+        order = self._paid_order(product, (1, 100, 0))
+        self.env.flush_all()
+
+        report = self.report.get_sale_details(session_ids=self.session.ids)
+        analysis = self.env["report.pos.order"].search([("order_id", "=", order.id)])
+        _logger.debug(
+            "Category report=%s analysis=%s",
+            [category["name"] for category in report["products"]],
+            analysis.pos_categ_id.name,
+        )
+        self.assertEqual(analysis.pos_categ_id, early)
+        self.assertEqual([c["name"] for c in report["products"]], [early.name])
+
+    def test_scope_is_resolved_once_per_report(self):
+        product = self.create_product("Resolved once", self.categ_basic, 100)
+        self._paid_order(product, (1, 100, 0))
+        calls = {}
+        report_class = type(self.report)
+        for name in (
+            "_get_report_currency",
+            "_get_date_start_and_date_stop",
+            "_get_complete_sessions",
+        ):
+            original = getattr(report_class, name)
+
+            def counted(record, *args, _name=name, _original=original, **kwargs):
+                calls[_name] = calls.get(_name, 0) + 1
+                return _original(record, *args, **kwargs)
+
+            self.patch(report_class, name, counted)
+
+        self.report.get_sale_details()
+        _logger.debug("Date report resolution calls=%s", calls)
+        self.assertEqual(
+            calls,
+            {
+                "_get_report_currency": 1,
+                "_get_date_start_and_date_stop": 1,
+                "_get_complete_sessions": 1,
+            },
+        )
+        calls.clear()
+        self.report.get_sale_details(session_ids=self.session.ids)
+        _logger.debug("Session report resolution calls=%s", calls)
+        self.assertEqual(
+            calls, {"_get_report_currency": 1, "_get_complete_sessions": 1}
+        )
+
+    def test_partly_selected_consolidated_invoice_counts_the_selected_share(self):
+        product = self.create_product("Shared invoice", self.categ_basic, 100)
+        product.type = "service"
+        inside = self._paid_order(product, (1, 100, 0))
+        outside = self._paid_order(product, (1, 50, 0))
+        orders = inside | outside
+        self.env["wizard.pos.order.invoice"].create(
+            {"consolidated_billing": True}
+        ).with_context(active_ids=orders.ids).action_create_invoices()
+        self.assertEqual(len(orders.account_move), 1)
+        now = fields.Datetime.now()
+        outside.date_order = now - timedelta(days=5)
+
+        report = self.report.get_sale_details(
+            now - timedelta(hours=1), now + timedelta(hours=1), self.config.ids
+        )
+
+        invoices = self._rows(
+            [{"products": group["invoices"]} for group in report["invoice_list"]]
+        )
+        _logger.debug("Partial invoice rows=%s", invoices)
+        self.assertEqual(len(invoices), 1)
+        self.assertEqual(invoices[0]["order_ref"], inside.pos_reference)
+        self.assertEqual(invoices[0]["total"], 100)
+        self.assertEqual(invoices[0]["move_total"], 150)
+        self.assertEqual(report["invoice_total"], 100)
+        self.assertEqual(report["invoice_total"], report["currency"]["total_paid"])

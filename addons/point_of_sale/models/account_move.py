@@ -117,19 +117,22 @@ class AccountMove(models.Model):
     def _compute_invoice_payments_widget(self) -> None:
         super()._compute_invoice_payments_widget()
         for move in self:
-            if move.invoice_payments_widget:
-                if move.state == "posted" and move.is_invoice(include_receipts=True):
-                    reconciled_partials = move._get_all_reconciled_invoice_partials()
-                    for i, reconciled_partial in enumerate(reconciled_partials):
-                        counterpart_line = reconciled_partial["aml"]
-                        pos_payment = counterpart_line.move_id.sudo().pos_payment_ids[
-                            :1
-                        ]
-                        move.invoice_payments_widget["content"][i].update(
-                            {
-                                "pos_payment_name": pos_payment.payment_method_id.name,
-                            }
-                        )
+            if (
+                not move.invoice_payments_widget
+                or move.state != "posted"
+                or not move.is_invoice(include_receipts=True)
+            ):
+                continue
+            content = move.invoice_payments_widget["content"]
+            counterparts = (
+                self.env["account.move"]
+                .sudo()
+                .browse([row["move_id"] for row in content])
+            )
+            for row, counterpart in zip(content, counterparts, strict=True):
+                row["pos_payment_name"] = counterpart.pos_payment_ids[
+                    :1
+                ].payment_method_id.name
 
     def _compute_amounts(self) -> None:
         super()._compute_amounts()

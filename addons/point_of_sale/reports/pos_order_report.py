@@ -1,6 +1,6 @@
 from odoo import fields, models
 from odoo.libs.sql import SQL
-from odoo.tools import frozendict
+from odoo.tools import Query, frozendict
 
 CURRENCY_RATE = "COALESCE(NULLIF(s.currency_rate, 0), 1.0)"
 
@@ -44,6 +44,7 @@ class ReportPosOrder(models.Model):
         "pos.payment": ["pos_order_id", "payment_method_id"],
         "product.product": ["product_tmpl_id", "weight", "volume"],
         "product.template": ["categ_id", "uom_id", "pos_categ_ids"],
+        "pos.category": ["sequence", "name"],
         "res.company": ["currency_id"],
         "res.currency": ["decimal_places"],
     }
@@ -125,7 +126,7 @@ class ReportPosOrder(models.Model):
         string="Average Price",
         readonly=True,
         aggregator="avg",
-        help="Quantity-weighted price before discount, per product unit of measure, in company currency.",
+        help="Price before discount, per product unit of measure, in company currency, weighted by sold and refunded quantities alike.",
     )
     price_subtotal_nodiscount = fields.Monetary(
         string="Subtotal w/o Discount",
@@ -152,7 +153,8 @@ class ReportPosOrder(models.Model):
         }
 
     def _with_cte(self) -> SQL:
-        return SQL("""
+        return SQL(
+            """
             first_payment_by_order AS (
                 -- Pick once per order, before joining its lines. The lowest
                 -- payment ID preserves the first-recorded-payment convention.
@@ -161,14 +163,57 @@ class ReportPosOrder(models.Model):
                 FROM pos_payment
                 ORDER BY pos_order_id, id
             ),
-            first_pos_category AS (
-                SELECT
-                    product_template_id,
-                    MIN(pos_category_id) AS id
-                FROM pos_category_product_template_rel
-                GROUP BY product_template_id
-            )
-        """)
+            first_pos_category AS (%s)
+        """,
+            self._first_pos_category_query(),
+        )
+
+    def _first_pos_category_query(self, templates=None) -> SQL:
+        # The ORM order of pos.category, with the name read in en_US so the
+        # pick does not depend on who reads the report.
+        return SQL(
+            """
+            SELECT DISTINCT ON (rel.product_template_id)
+                rel.product_template_id, rel.pos_category_id AS id
+            FROM pos_category_product_template_rel rel
+            JOIN pos_category categ ON categ.id = rel.pos_category_id
+            %s
+            ORDER BY
+                rel.product_template_id,
+                categ.sequence,
+                categ.name->>'en_US',
+                categ.id
+            """,
+            SQL("WHERE rel.product_template_id = ANY(%s)", templates.ids)
+            if templates is not None
+            else SQL(),
+        )
+
+    def _get_first_pos_category_by_template(self, templates) -> dict:
+        if not templates:
+            return {}
+        self.env["product.template"].flush_model(["pos_categ_ids"])
+        self.env["pos.category"].flush_model(["sequence", "name"])
+        rows = self.env.execute_query(self._first_pos_category_query(templates))
+        category_ids = dict(rows)
+        categories = self.env["pos.category"].browse(set(category_ids.values()))
+        by_id = {category.id: category for category in categories}
+        empty = self.env["pos.category"]
+        return {
+            template.id: by_id.get(category_ids.get(template.id), empty)
+            for template in templates
+        }
+
+    def _read_group_select(self, aggregate_spec: str, query: Query) -> SQL:
+        if aggregate_spec != "price_average:avg":
+            return super()._read_group_select(aggregate_spec, query)
+        # A refunded unit carries a price too; a signed weight would let a
+        # refund drag the average outside the prices charged, or void it.
+        return SQL(
+            "SUM(%(f_price)s * ABS(%(f_qty)s)) / NULLIF(SUM(ABS(%(f_qty)s)), 0.0)",
+            f_qty=self._field_to_sql(self._table, "product_uom_qty", query),
+            f_price=self._field_to_sql(self._table, "price_average", query),
+        )
 
     def _get_fields_select(self) -> dict:
         return {

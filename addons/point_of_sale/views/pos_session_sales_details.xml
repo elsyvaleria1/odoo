@@ -383,6 +383,26 @@
                             </span>
                         </div>
                     </div>
+                    <t t-if="refund_discount_number">
+                        <div class="row">
+                            <div class="col-12">
+                                <strong>Number of refund discounts</strong>: <span t-out="refund_discount_number">1</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <strong>Amount of refund discounts</strong>:
+                                <span t-if="currency['position']">
+                                    <span t-out="refund_discount_amount" t-options="{'widget': 'float', 'precision': currency['precision']}">10.00</span>
+                                    <span t-out="currency[&quot;symbol&quot;]">$</span>
+                                </span>
+                                <span t-else="">
+                                    <span t-out="currency[&quot;symbol&quot;]">$</span>
+                                    <span t-out="refund_discount_amount" t-options="{'widget': 'float', 'precision': currency['precision']}">10.00</span>
+                                </span>
+                            </div>
+                        </div>
+                    </t>
                     <br />
                 </div>
                 <div class="oe_structure" />
@@ -402,7 +422,15 @@
                                     t-foreach="invoiceSession[&quot;invoices&quot;]"
                                     t-as="invoice">
                                     <td class="ps-2 fw-bold"><span t-out="invoice['name']">Invoice Name</span></td>
-                                    <td><span t-out="invoice['order_ref']">Order Ref</span></td>
+                                    <td>
+                                        <span t-out="invoice['order_ref']">Order Ref</span>
+                                        <span
+                                            t-if="invoice.get('partial')"
+                                            class="text-muted">
+                                            (share of
+                                            <t t-out="invoice['move_total']" t-options="{'widget': 'float', 'precision': currency['precision']}">150.00</t>)
+                                        </span>
+                                    </td>
                                     <td class="text-end">
                                         <span t-if="currency['position']">
                                             <span t-out="invoice['total']" t-options="{'widget': 'float', 'precision': currency['precision']}">123.45</span><span t-out="currency[&quot;symbol&quot;]">$</span>

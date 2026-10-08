@@ -49,6 +49,12 @@
                     <t t-set="refund_products" t-value="data['refund_products']" />
                     <t t-set="discount_number" t-value="data['discount_number']" />
                     <t t-set="discount_amount" t-value="data['discount_amount']" />
+                    <t
+                        t-set="refund_discount_number"
+                        t-value="data['refund_discount_number']" />
+                    <t
+                        t-set="refund_discount_amount"
+                        t-value="data['refund_discount_amount']" />
                     <t t-set="invoice_list" t-value="data['invoice_list']" />
                     <t t-set="invoice_total" t-value="data['invoice_total']" />
                 </t>

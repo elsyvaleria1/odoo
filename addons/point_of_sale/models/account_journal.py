@@ -46,8 +46,7 @@ class AccountJournal(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_journal_except_with_active_payments(self) -> None:
-        for journal in self:
-            journal._check_no_active_payments()
+        self._check_no_active_payments()
 
     @api.ondelete(at_uninstall=True)
     def _unlink_journal_cascade_pos_payment_methods(self) -> None:

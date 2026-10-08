@@ -33,7 +33,9 @@ class TestAuditVerification2(TestPoSCommon):
             {"name": "Cat A", "products": [dict(row)]},
             {"name": "Cat B", "products": [dict(row)]},
         ]
-        _, totals = report._get_total_and_qty_per_category(categories)
+        _, totals = report._get_total_and_qty_per_category(
+            categories, self.env.company.currency_id
+        )
         _logger.info("R1 grand totals: %r", totals)
         self.assertEqual(
             totals["qty"],

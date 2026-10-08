@@ -2,6 +2,7 @@ import logging
 
 import odoo
 from odoo import fields
+from odoo.exceptions import ValidationError
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
@@ -189,6 +190,73 @@ class TestPosAccountingUnits(TestPoSCommon):
         vals_neg = session._prepare_balancing_line_vals(-30.0, move, balancing_account)
         self.assertAlmostEqual(vals_neg["debit"], 30.0)
         self.assertAlmostEqual(vals_neg["credit"], 0.0)
+
+    def test_invoice_payment_widget_names_pos_methods_from_one_partial_read(self):
+        self._start_pos_session(self.cash_pm1 | self.bank_pm1, 0)
+        orders = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product, 2)],
+                    "payments": [(self.bank_pm1, 120), (self.cash_pm1, 80)],
+                    "customer": self.customer,
+                    "uuid": "acct-widget-1",
+                },
+            ]
+        )
+        order = orders["acct-widget-1"]
+        order.action_pos_order_invoice()
+        move = order.account_move
+        calls = []
+        move_class = type(move)
+        original = move_class._get_all_reconciled_invoice_partials
+
+        def counted(record):
+            calls.append(record.id)
+            return original(record)
+
+        self.patch(move_class, "_get_all_reconciled_invoice_partials", counted)
+        move.invalidate_recordset(["invoice_payments_widget"])
+        content = move.invoice_payments_widget["content"]
+        _logger.debug("Invoice widget content=%s calls=%s", content, calls)
+        self.assertEqual(
+            sorted((row["amount"], row["pos_payment_name"]) for row in content),
+            sorted([(120, self.bank_pm1.name), (80, self.cash_pm1.name)]),
+        )
+        self.assertEqual(calls, [move.id])
+
+    def test_journal_unlink_checks_the_whole_selection_once(self):
+        journal_model = self.env["account.journal"]
+        free = journal_model.create(
+            [
+                {"name": f"Unlink check {index}", "code": f"UCK{index}", "type": "bank"}
+                for index in range(3)
+            ]
+        )
+        calls = []
+        journal_class = type(free)
+        original = journal_class._check_no_active_payments
+
+        def counted(record):
+            calls.append(record.ids)
+            return original(record)
+
+        self.patch(journal_class, "_check_no_active_payments", counted)
+        expected = free.ids
+        free.unlink()
+        _logger.debug("Journal unlink checks=%s", calls)
+        self.assertEqual(calls, [expected])
+
+        linked = journal_model.create(
+            [
+                {"name": f"Linked check {index}", "code": f"LCK{index}", "type": "bank"}
+                for index in range(2)
+            ]
+        )
+        self.env["pos.payment.method"].create(
+            {"name": "Linked check method", "journal_id": linked[1].id}
+        )
+        with self.assertRaises(ValidationError):
+            linked.unlink()
 
 
 @odoo.tests.tagged("post_install", "-at_install")

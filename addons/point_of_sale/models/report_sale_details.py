@@ -37,6 +37,10 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
             config_ids, session_ids, date_start, date_stop
         )
         currency = self._get_report_currency(configs)
+        sessions.check_access("read")
+        # Completeness counts every captured order, including those the user
+        # cannot read: the drawer and fiscal counters cover all of them.
+        complete_sessions = self.sudo()._get_complete_sessions(orders, sessions)
         companies = configs.company_id or self.env.company
         _debug.pipeline(
             "sale_details_scope",
@@ -51,7 +55,7 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         with _debug.perf("sales_totals", cr=self.env.cr, orders=len(orders)):
             sales = self._get_sales_totals(orders, currency)
         with _debug.perf("counted_payments", cr=self.env.cr):
-            payments = self._get_counted_payments(orders, sessions)
+            payments = self._get_counted_payments(orders, complete_sessions)
             self._update_payment_rows_with_report_currency(
                 payments, orders, sessions, currency
             )
@@ -77,15 +81,28 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
                 "total_paid": currency.round(sales["total"]),
                 "precision": currency.decimal_places,
             },
-            "discount_number": sales["discount_number"],
-            "discount_amount": sales["discount_amount"],
-            **self._prepare_products_section(configs, sales["sold"], sales["refunded"]),
+            "discount_number": len(sales["sold"]["discounted_orders"]),
+            "discount_amount": sales["sold"]["discount_amount"],
+            "refund_discount_number": len(sales["refunded"]["discounted_orders"]),
+            "refund_discount_amount": sales["refunded"]["discount_amount"],
+            **self._prepare_products_section(
+                currency, sales["sold"], sales["refunded"]
+            ),
             **self._prepare_payments_section(payments, session_ids),
             **self._prepare_invoice_section(orders, currency),
         }
-        return self._finalize_sale_details(data, orders, configs, sessions)
+        return self._finalize_sale_details(
+            data,
+            orders,
+            configs,
+            sessions,
+            currency=currency,
+            complete_sessions=complete_sessions,
+        )
 
-    def _finalize_sale_details(self, data, orders, configs, sessions):
+    def _finalize_sale_details(
+        self, data, orders, configs, sessions, *, currency, complete_sessions
+    ):
         """Extend a report using its resolved selection instead of searching again."""
         return data
 
@@ -170,9 +187,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         if session_ids:
             return domain & Domain("session_id", "in", session_ids)
 
-        date_start, date_stop = self._get_date_start_and_date_stop(
-            date_start, date_stop
-        )
         domain &= Domain("date_order", ">=", date_start)
         domain &= Domain("date_order", "<=", date_stop)
 
@@ -220,25 +234,34 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         total = 0.0
         sold = self._prepare_sales_accumulator()
         refunded = self._prepare_sales_accumulator()
-        discounted_orders = set()
-        discount_amount = 0.0
         precision = self.env["decimal.precision"].get_precision("Product Unit")
+        orders = orders.with_context(active_test=False)
+        categories = self.env["report.pos.order"]._get_first_pos_category_by_template(
+            orders.lines.product_id.product_tmpl_id
+        )
 
-        for order in orders.with_context(active_test=False):
+        for order in orders:
             total += self._convert_order_amount(
                 order.amount_total, order, report_currency
             )
 
             session_currency = order.session_id.currency_id
             for line in order.lines:
-                accumulator = refunded if line.order_id.is_refund else sold
+                accumulator = refunded if self._is_refund_line(line) else sold
                 self._update_products_and_taxes(
-                    line, accumulator, session_currency, precision, report_currency
+                    line,
+                    accumulator,
+                    categories[line.product_id.product_tmpl_id.id],
+                    session_currency,
+                    precision,
+                    report_currency,
                 )
                 if line.discount > 0:
-                    discounted_orders.add(order.id)
-                    discount_amount += self._convert_order_amount(
-                        line._get_discount_amount(), order, report_currency
+                    accumulator["discounted_orders"].add(order.id)
+                    accumulator["discount_amount"] += abs(
+                        self._convert_order_amount(
+                            line._get_discount_amount(), order, report_currency
+                        )
                     )
 
         _debug.logic(
@@ -246,16 +269,12 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
             total=total,
             sold_categories=len(sold["products"]),
             refunded_categories=len(refunded["products"]),
-            discounted_orders=len(discounted_orders),
-            discount=discount_amount,
+            discounted_orders=len(sold["discounted_orders"]),
+            refund_discounted_orders=len(refunded["discounted_orders"]),
+            discount=sold["discount_amount"],
+            refund_discount=refunded["discount_amount"],
         )
-        return {
-            "total": total,
-            "sold": sold,
-            "refunded": refunded,
-            "discount_number": len(discounted_orders),
-            "discount_amount": discount_amount,
-        }
+        return {"total": total, "sold": sold, "refunded": refunded}
 
     def _convert_order_amount(self, amount, order, currency, round=True):
         if order.currency_id == currency:
@@ -269,10 +288,19 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         )
 
     def _prepare_sales_accumulator(self) -> dict:
-        return {"products": {}, "base_amount": 0.0, "taxes": {}}
+        return {
+            "products": {},
+            "base_amount": 0.0,
+            "taxes": {},
+            "discounted_orders": set(),
+            "discount_amount": 0.0,
+        }
+
+    def _is_refund_line(self, line) -> bool:
+        return line.qty < 0
 
     def _get_line_quantity(self, line):
-        return line.qty * (-1 if line.order_id.is_refund else 1)
+        return abs(line.qty)
 
     def _get_product_total_amount(self, line):
         return line.currency_id.round(
@@ -283,7 +311,7 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         )
 
     def _update_products_and_taxes(
-        self, line, accumulator, currency, precision, report_currency=None
+        self, line, accumulator, category, currency, precision, report_currency=None
     ) -> None:
         report_currency = report_currency or currency
 
@@ -292,7 +320,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
                 amount, line.order_id, report_currency, round=round
             )
 
-        category = line.product_id.product_tmpl_id.pos_categ_ids[:1]
         combo_products_label = (
             " (" + ", ".join(line.combo_line_ids.product_id.mapped("name")) + ")"
             if line.combo_line_ids
@@ -353,15 +380,12 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         row[2] += base_amount
         accumulator["base_amount"] += base_amount
 
-    def _prepare_products_section(self, configs, sold, refunded) -> dict:
-        report = self.with_context(
-            report_currency_id=self._get_report_currency(configs).id,
+    def _prepare_products_section(self, currency, sold, refunded) -> dict:
+        products, products_info = self._get_total_and_qty_per_category(
+            self._serialize_products_by_category(sold["products"]), currency
         )
-        products, products_info = report._get_total_and_qty_per_category(
-            self._serialize_products_by_category(sold["products"])
-        )
-        refund_products, refund_info = report._get_total_and_qty_per_category(
-            self._serialize_products_by_category(refunded["products"])
+        refund_products, refund_info = self._get_total_and_qty_per_category(
+            self._serialize_products_by_category(refunded["products"]), currency
         )
         return {
             "products": products,
@@ -416,12 +440,8 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         rows.sort(key=lambda row: (row[0], row[1]))
         return [{"name": name, "products": products} for name, _id, products in rows]
 
-    def _get_total_and_qty_per_category(self, categories) -> tuple:
+    def _get_total_and_qty_per_category(self, categories, currency) -> tuple:
         qty_precision = self.env["decimal.precision"].get_precision("Product Unit")
-        currency = (
-            self.env["res.currency"].browse(self.env.context.get("report_currency_id"))
-            or self.env.company.currency_id
-        )
         for category_dict in categories:
             category_dict["qty"] = round(
                 sum(product["quantity"] for product in category_dict["products"]),
@@ -442,12 +462,12 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
             ),
         }
 
-    def _get_counted_payments(self, orders, sessions):
+    def _get_counted_payments(self, orders, complete_sessions):
         payments = self._get_payment_totals(orders)
-        sessions.check_access("read")
         accounting_report = self.sudo()
-        sessions = accounting_report._get_complete_sessions(orders, sessions.sudo())
-        return accounting_report._prepare_counted_payments(payments, sessions)
+        return accounting_report._prepare_counted_payments(
+            payments, complete_sessions.with_env(accounting_report.env)
+        )
 
     def _prepare_counted_payments(self, payments, sessions):
         payments_by_session = {}
@@ -933,7 +953,11 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return session.currency_id._convert(amount, currency, session.company_id, date)
 
     def _prepare_invoice_section(self, orders, currency) -> dict:
-        """List invoices from the same order selection as sales and payments."""
+        """List invoices from the same order selection as sales and payments.
+
+        An invoice also covering unselected orders counts only the selected
+        orders' totals, so that adjacent windows add up to what was invoiced.
+        """
         invoice_list = []
         invoice_total = 0.0
         invoiced_orders = orders.filtered("is_invoiced").sorted("id")
@@ -947,19 +971,36 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
                 if move in listed_moves:
                     continue
                 listed_moves |= move
-                total = move.currency_id._convert(
+                selected = orders_by_move[move]
+                move_total = move.currency_id._convert(
                     move.amount_total_in_currency_signed,
                     currency,
                     move.company_id,
                     move.date,
                 )
+                partial = len(selected) != move.pos_order_count
+                total = (
+                    sum(
+                        self._convert_order_amount(order.amount_total, order, currency)
+                        for order in selected
+                    )
+                    if partial
+                    else move_total
+                )
+                _debug.logic(
+                    "invoice_share",
+                    move=move.id,
+                    partial=partial,
+                    total=total,
+                    move_total=move_total,
+                )
                 invoices.append(
                     {
                         "total": total,
+                        "move_total": move_total,
+                        "partial": partial,
                         "name": move.name,
-                        "order_ref": ", ".join(
-                            orders_by_move[move].mapped("pos_reference")
-                        ),
+                        "order_ref": ", ".join(selected.mapped("pos_reference")),
                     }
                 )
                 invoice_total += total

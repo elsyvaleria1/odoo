@@ -125,7 +125,7 @@ class TestReportPoSOrder(TestPoSCommon):
             aggregates=["price_average:avg"],
         )
 
-        self.assertFalse(average)
+        self.assertAlmostEqual(average, 120)
         self.assertEqual(rows.mapped("delay_validation"), [45, 45, 45])
         zero_line = rows.filtered(lambda row: not row.product_uom_qty)
         self.assertFalse(zero_line.price_average)
@@ -310,6 +310,21 @@ class TestReportPoSOrder(TestPoSCommon):
         self.assertAlmostEqual(average, 210)
         rows = self.env["report.pos.order"].search([("order_id", "=", order.id)])
         self.assertEqual(rows.product_uom_id, dozen)
+
+    def test_average_price_weighs_refunded_units_by_their_magnitude(self):
+        order = self._create_report_order((2, -1), price_unit=100)
+        order.lines.filtered(lambda line: line.qty < 0).write(
+            {"price_unit": 50, "price_subtotal": -50, "price_subtotal_incl": -50}
+        )
+        self.env.flush_all()
+
+        [(average,)] = self.env["report.pos.order"]._read_group(
+            [("order_id", "=", order.id)],
+            aggregates=["price_average:avg"],
+        )
+
+        _debug.logic("refund_weighted_average", average=average)
+        self.assertAlmostEqual(average, 250 / 3)
 
     def test_report_keeps_config_without_session(self):
         order = self._create_report_order()
