@@ -233,12 +233,12 @@ class PosConfig(models.Model):
         help="Set a maximum difference allowed between the expected and counted money during the closing of the session."
     )
     receipt_header = fields.Text(
-        help="A short text that will be inserted as a header in the printed receipt.",
         write_classification="point_of_sale.receipt_text",
+        help="A short text that will be inserted as a header in the printed receipt.",
     )
     receipt_footer = fields.Text(
-        help="A short text that will be inserted as a footer in the printed receipt.",
         write_classification="point_of_sale.receipt_text",
+        help="A short text that will be inserted as a footer in the printed receipt.",
     )
     basic_receipt = fields.Boolean(
         help="Print basic ticket without prices. Can be used for gifts."
