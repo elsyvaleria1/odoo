@@ -168,8 +168,10 @@ doc (`odoo/addons/test_lint/machine_doc_v1/index.md`) states what counts as an
 elevation, a write and a guard. The enterprise and agromarin floors are read
 only where those repositories are on the addons path (`lint_full_scope.sh`).
 
-Four real-dependency pytest suites run only when
-named: `tests/contract` (`ODOO_CONTRACT_REQUIRE_DEPS=1`; PostgreSQL + psql +
+One database-free pytest suite, `tests/transport` (the HTTP/1.1 parser, the
+threaded server and the prefork worker over real sockets; each test must give
+back every thread and descriptor it took), and four real-dependency suites run
+only when named: `tests/contract` (`ODOO_CONTRACT_REQUIRE_DEPS=1`; PostgreSQL + psql +
 pg_dump), `tests/process` (boots real `odoo-bin` processes), `tests/loading`
 (installs `base` into a scratch database; pins the loader phase order, the
 uninstall reload, migration ordering, migration-stage schema visibility and the
@@ -312,8 +314,9 @@ runs.**
 ### The limits of "enforced"
 
 **The integration suites are the only thing that runs addon tests in Python.**
-There is no DB-free suite: the integration suites and `tests/contract`,
-`tests/process`, `tests/loading` and `tests/perf` are what run Python.
+The integration suites and `tests/contract`, `tests/process`, `tests/loading`
+and `tests/perf` are what run Python against a database; `tests/transport` is
+the one DB-free suite, and it covers the HTTP transport only.
 
 **The JS suites run through `WebSuite` and `MobileWebSuite`** in
 `addons/web/tests/test_js.py`, and `website`'s `WebsiteSuite` and

@@ -104,13 +104,16 @@ Every `factcheck.sh` under `odoo` and `addons` blocks. Nothing runs them for you
 
 ### Python — pytest, from the repo root
 
-There is no database-free pytest suite. The pytest suites under `tests/` need real dependencies; `pytest` alone runs all four, and each runs alone when named. Run them **from the repo root**: `testpaths` and `pythonpath = .` resolve against the rootdir located by `pytest.ini`. Started from a parent, the tree is collected as plain files and fails en masse rather than skipping quietly.
+`pytest` alone runs all five suites under `tests/`, and each runs alone when named. One is database-free, `tests/transport`; the other four need real dependencies. Run them **from the repo root**: `testpaths` and `pythonpath = .` resolve against the rootdir located by `pytest.ini`. Started from a parent, the tree is collected as plain files and fails en masse rather than skipping quietly.
 
 ```bash
+pytest tests/transport                               # no database: parser, servers, raw sockets; seconds
 ODOO_CONTRACT_REQUIRE_DEPS=1 pytest tests/contract   # needs PostgreSQL + psql + pg_dump
 pytest tests/process                                 # boots real odoo-bin processes
 pytest tests/loading                                 # installs base into a scratch database
 ```
+
+`tests/transport` holds `odoo/libs/http1.py`, `odoo/service/_transport.py`, `httpd.py` and the prefork worker over real sockets: framing and smuggling cases, pipelining, timeouts, descriptor and thread leaks. Each of its tests must give back every thread and descriptor it took (`conftest.py`). Run it after any change to those files.
 
 `tests/contract` pins what we *assume* about psycopg, psql and pg_dump against the real programs. It is skip-guarded: without that variable a missing dependency reports green while comparing nothing.
 

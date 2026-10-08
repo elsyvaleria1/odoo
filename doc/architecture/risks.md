@@ -14,7 +14,7 @@ subject, under *what this view does not cover*.
 |---|---|---|
 | R1 | The layering is true of imports and false of the runtime graph | Medium |
 | R2 | Migration stage (`pre`/`post`) is unenforced and unrecoverable | High |
-| R3 | No suite runs without a database, and the structure is held by review | High |
+| R3 | Only the transport suite runs without a database, and the structure is held by review | High |
 | R4 | Headless test runs skip the tours they select | High |
 | R5 | `web` publishes no API | Medium |
 | R6 | A deleted migration is guarded only as far as its module's declared floor | Medium |
@@ -64,11 +64,12 @@ idempotent statements in 12 s, a `-i mail` on `base` 994, and a migration that
 would stop the run stops the preview with the same error. The production-copy
 rehearsal still owns the whole answer; this is the minute before the twenty.
 
-## R3 — No suite runs without a database, and the structure is held by review
+## R3 — Only the transport suite runs without a database, and the structure is held by review
 
 **What.** What runs Python is the integration suites and `tests/contract`,
 `tests/process`, `tests/loading` and `tests/perf`; every one needs PostgreSQL or
-a real process, and none reads an import graph. Of the dependency rules in
+a real process, and none reads an import graph. `tests/transport` is the
+exception, and it holds the HTTP transport only. Of the dependency rules in
 [`module.md`](module.md#dependency-rules) only the `odoo.orm.*` half of
 `facade-boundary` is mechanical (ruff `E8508`); the layer contracts, the ORM's
 `env["<base model>"]` reaches outside the ports, the statements Layers 1–2

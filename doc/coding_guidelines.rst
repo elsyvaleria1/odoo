@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.62
-:Date: 2026-10-06
+:Version: 7.63
+:Date: 2026-10-07
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -4533,11 +4533,12 @@ concerns Tier 2.
      - ``TransactionCase`` / ``HttpCase``
      - SQL, ACLs, several modules, or the web client.
 
-Real-resource pytest suites, from the ``odoo/`` checkout (``pytest`` alone runs
-all four):
+The pytest suites, from the ``odoo/`` checkout (``pytest`` alone runs all five);
+``tests/transport`` is the one that needs no database:
 
 .. code-block:: bash
 
+   pytest tests/transport  # HTTP parser and servers over real sockets, no database
    ODOO_CONTRACT_REQUIRE_DEPS=1 pytest tests/contract  # PostgreSQL + psql/pg_dump
    pytest tests/process    # boots real odoo-bin processes
    pytest tests/loading    # installs base into a scratch DB
@@ -4549,6 +4550,12 @@ all four):
   ``ODOO_CONTRACT_REQUIRE_DEPS=1``**; without it a missing dependency passes.
 * **Add a process test only for behaviour that vanishes when anything is mocked;
   assert only observables** (port, process tree, HTTP response) ``[review]``.
+* **A change to the HTTP transport** (``odoo/libs/http1.py``,
+  ``odoo/service/_transport.py``, ``httpd.py``, the prefork worker) **adds its
+  case to** ``tests/transport`` **over a real socket, and every test there gives
+  back each thread and descriptor it took** ``[review]``. Why: the parser is
+  hand-written, and a smuggling or descriptor bug passes every integration
+  suite.
 * **Readiness is a served request, never a log line** ``[review]``. Why:
   ``ThreadedServer.run`` logs "HTTP service running" before
   ``preload_registries``, so requests still block.
@@ -6165,6 +6172,11 @@ collisions, so an eighth fails and so does a renumbering.
    * - Version
      - Date
      - Summary
+   * - 7.63
+     - 2026-10-07
+     - §6.0: ``tests/transport`` returns as the one database-free pytest suite;
+       a transport change adds its case there, and every test gives back each
+       thread and descriptor it took.
    * - 7.62
      - 2026-10-06
      - §10.8: an access decision is made explicitly, never read off whether a
