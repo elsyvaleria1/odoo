@@ -244,7 +244,7 @@ class MixinOrderInvoice(models.AbstractModel):
         "line_ids.display_type",
     )
     def _compute_is_invoiceable(self) -> None:
-        lines_to_invoice = Domain(self._get_domain_rollup_lines()) & Domain(
+        lines_to_invoice = self._get_domain_rollup_lines() & Domain(
             "invoice_state", "in", ("to do", "partial")
         )
         for order in self:

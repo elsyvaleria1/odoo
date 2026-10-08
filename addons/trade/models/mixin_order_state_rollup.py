@@ -1,4 +1,5 @@
 from odoo import models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
 STATE_NOTHING = "no"
@@ -14,14 +15,11 @@ class MixinOrderStateRollup(models.AbstractModel):
     _name = "mixin.order.state.rollup"
     _description = "Order Line State Rollup"
 
-    def _get_domain_rollup_lines(self):
-        return [
-            ("is_downpayment", "=", False),
-            ("display_type", "=", False),
-        ]
+    def _get_domain_rollup_lines(self) -> Domain:
+        return Domain("is_downpayment", "=", False) & Domain("display_type", "=", False)
 
-    def _get_domain_rollup_pending_lines(self, state_field):
-        return []
+    def _get_domain_rollup_pending_lines(self, state_field) -> Domain:
+        return Domain.TRUE
 
     def _rollup_line_states(self, state_field, nothing_may_be_pending=False) -> tuple:
         lines_domain = self._get_domain_rollup_lines()
@@ -29,7 +27,7 @@ class MixinOrderStateRollup(models.AbstractModel):
 
         states_per_order = {}
         for order, state in lines._read_group(
-            lines_domain + [("order_id", "in", self._origin.ids)],
+            lines_domain & Domain("order_id", "in", self._origin.ids),
             ["order_id", state_field],
         ):
             states_per_order.setdefault(order.id, set()).add(state)
@@ -46,12 +44,14 @@ class MixinOrderStateRollup(models.AbstractModel):
                 order.id
                 for (order,) in lines._read_group(
                     lines_domain
-                    + self._get_domain_rollup_pending_lines(state_field)
-                    + [
-                        ("order_id", "in", ambiguous_ids),
-                        (state_field, "=", STATE_NOTHING),
-                        ("product_qty", "!=", 0),
-                    ],
+                    & self._get_domain_rollup_pending_lines(state_field)
+                    & Domain(
+                        [
+                            ("order_id", "in", ambiguous_ids),
+                            (state_field, "=", STATE_NOTHING),
+                            ("product_qty", "!=", 0),
+                        ]
+                    ),
                     ["order_id"],
                 )
             }

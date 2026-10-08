@@ -2139,21 +2139,19 @@ class SaleOrder(models.Model):
             )
             order.write(subscription_values)
 
-    def _get_domain_rollup_pending_lines(self, state_field):
+    def _get_domain_rollup_pending_lines(self, state_field) -> Domain:
         domain = super()._get_domain_rollup_pending_lines(state_field)
         if state_field != "invoice_state":
             return domain
         # A prepaid recurring line of a closed subscription reads "no" because no
         # further period will be billed, not because a quantity is waiting to be.
-        return [
-            *domain,
-            "!",
-            "&",
-            "&",
-            ("order_id.subscription_state", "in", SUBSCRIPTION_CLOSED_STATE),
-            ("recurring_invoice", "=", True),
-            ("product_id.invoice_policy", "!=", "transferred"),
-        ]
+        return domain & ~Domain(
+            [
+                ("order_id.subscription_state", "in", SUBSCRIPTION_CLOSED_STATE),
+                ("recurring_invoice", "=", True),
+                ("product_id.invoice_policy", "!=", "transferred"),
+            ]
+        )
 
     def _invoice_is_considered_free(self, invoiceable_lines) -> tuple:
         """

@@ -14,7 +14,7 @@ class SaleOrder(models.Model):
         help="Task from which this quotation have been created",
     )
 
-    def _get_domain_rollup_lines(self):
+    def _get_domain_rollup_lines(self) -> Domain:
         # A free field-service line outside anglo-saxon accounting is never
         # invoiced (SaleOrderLine._compute_invoice_state below marks it "no"),
         # so it must not read as a line still pending in the order's rollup,
@@ -24,7 +24,7 @@ class SaleOrder(models.Model):
             & Domain("task_id.is_fsm", "=", True)
             & Domain("company_id.account_config_id.anglo_saxon_accounting", "=", False)
         )
-        return Domain(super()._get_domain_rollup_lines()) & ~free_service_line
+        return super()._get_domain_rollup_lines() & ~free_service_line
 
     @api.model_create_multi
     def create(self, vals_list):

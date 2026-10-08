@@ -3,7 +3,7 @@ from typing import Self
 from odoo import api, fields, models
 from odoo.api import SUPERUSER_ID
 from odoo.exceptions import UserError, ValidationError
-from odoo.fields import Command
+from odoo.fields import Command, Domain
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
@@ -1090,7 +1090,7 @@ class SaleOrder(models.Model):
         self.check_singleton()
         if "no" in states:
             invoiceable_lines = self.line_ids.filtered_domain(
-                self._get_domain_rollup_lines() + [("invoice_state", "=", "to do")],
+                self._get_domain_rollup_lines() & Domain("invoice_state", "=", "to do"),
             )
             auxiliary_lines = invoiceable_lines.filtered(
                 lambda sol: not sol._can_be_invoiced_alone(),
