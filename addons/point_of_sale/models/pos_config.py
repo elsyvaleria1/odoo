@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime, time
 from uuid import uuid4
 
 from odoo import SUPERUSER_ID, Command, api, fields, models, tools
@@ -232,10 +233,12 @@ class PosConfig(models.Model):
         help="Set a maximum difference allowed between the expected and counted money during the closing of the session."
     )
     receipt_header = fields.Text(
-        help="A short text that will be inserted as a header in the printed receipt."
+        help="A short text that will be inserted as a header in the printed receipt.",
+        write_classification="point_of_sale.receipt_text",
     )
     receipt_footer = fields.Text(
-        help="A short text that will be inserted as a footer in the printed receipt."
+        help="A short text that will be inserted as a footer in the printed receipt.",
+        write_classification="point_of_sale.receipt_text",
     )
     basic_receipt = fields.Boolean(
         help="Print basic ticket without prices. Can be used for gifts."
@@ -270,11 +273,13 @@ class PosConfig(models.Model):
     pricelist_id = fields.Many2one(
         comodel_name="product.pricelist",
         string="Default Pricelist",
+        check_company=True,
         help="The pricelist used if no customer is selected or if the customer has no Sale Pricelist configured if any.",
     )
     available_pricelist_ids = fields.Many2many(
         comodel_name="product.pricelist",
         string="Available Pricelists",
+        check_company=True,
         help="Make several pricelists available in the Point of Sale. You can also apply a pricelist to specific customers from their contact form (in Sales tab). To be valid, this pricelist must be listed here as an available pricelist. Otherwise the default pricelist will apply.",
     )
     company_id = fields.Many2one(
@@ -328,7 +333,10 @@ class PosConfig(models.Model):
     module_pos_discount = fields.Boolean(string="Global Discounts")
     module_pos_appointment = fields.Boolean(string="Online Booking")
     is_posbox = fields.Boolean(string="PosBox")
-    is_header_or_footer = fields.Boolean(string="Custom Header & Footer")
+    is_header_or_footer = fields.Boolean(
+        string="Custom Header & Footer",
+        write_classification="point_of_sale.receipt_text",
+    )
     module_pos_hr = fields.Boolean(help="Show employee login screen")
     amount_authorized_diff = fields.Float(
         string="Amount Authorized Difference",
@@ -610,7 +618,6 @@ class PosConfig(models.Model):
         record = read_records[0]
         record["_server_version"] = exp_version()
         record["_base_url"] = config.get_base_url()
-        record["access_token"] = config.access_token
         record["_data_server_date"] = (
             self.env.context.get("pos_last_server_date") or self.env.cr.now()
         )
@@ -622,13 +629,11 @@ class PosConfig(models.Model):
         )
         record["_pos_special_products_ids"] = config._get_special_products().ids
 
-        taxes = self.env["account.tax"].search(
-            self.env["account.tax"]._load_pos_data_domain({}, config)
-        )
-        product_fields = taxes._eval_taxes_computation_prepare_product_fields()
         record["_product_default_values"] = self.env[
             "account.tax"
-        ]._eval_taxes_computation_prepare_product_default_values(product_fields)
+        ]._eval_taxes_computation_prepare_product_default_values(
+            config._get_tax_product_field_names()
+        )
 
         if not record["use_pricelist"]:
             record["pricelist_id"] = False
@@ -947,7 +952,8 @@ class PosConfig(models.Model):
 
     @api.constrains("company_id", "payment_method_ids")
     def _check_company_payment(self) -> None:
-        for config in self:
+        # a company-less method passes check_company but is refused here
+        for config in self.sudo():
             if any(
                 method.company_id != config.company_id
                 for method in config.payment_method_ids
@@ -1023,32 +1029,6 @@ class PosConfig(models.Model):
                 )
             )
 
-    @api.constrains("company_id", "pricelist_id", "available_pricelist_ids")
-    def _check_pricelists(self) -> None:
-        for config in self.sudo():
-            if (
-                config.pricelist_id.company_id
-                and config.pricelist_id.company_id != config.company_id
-            ):
-                raise ValidationError(
-                    self.env._(
-                        "The default pricelist must belong to no company or the company of the point of sale."
-                    )
-                )
-
-    @api.constrains("company_id", "available_pricelist_ids")
-    def _check_companies(self) -> None:
-        for config in self:
-            if any(
-                pricelist.company_id.id not in [False, config.company_id.id]
-                for pricelist in config.available_pricelist_ids
-            ):
-                raise ValidationError(
-                    self.env._(
-                        "The selected pricelists must belong to no company or the company of the point of sale."
-                    )
-                )
-
     def _check_company_has_template(self) -> None:
         self.check_singleton()
         if not self.company_has_template:
@@ -1100,16 +1080,6 @@ class PosConfig(models.Model):
                             "You cannot share open orders with configuration that does not use the same currency."
                         )
                     )
-
-    def _check_header_footer(self, values) -> None:
-        if (
-            not self.env.is_admin()
-            and {"is_header_or_footer", "receipt_header", "receipt_footer"}
-            & values.keys()
-        ):
-            raise AccessError(
-                self.env._("Only administrators can edit receipt headers and footers")
-            )
 
     def _check_company_has_fiscal_country(self) -> None:
         self.check_singleton()
@@ -1167,8 +1137,6 @@ class PosConfig(models.Model):
                     env_company=self.env.company.id,
                 )
                 self._add_company_defaults(vals)
-        for vals in vals_list:
-            self._check_header_footer(vals)
 
         pos_configs = super().create(vals_list)
         for config in pos_configs:
@@ -1327,9 +1295,40 @@ class PosConfig(models.Model):
         "iface_tipproduct",
         "default_preset_id",
         "module_pos_appointment",
+        "currency_id",
     )
     def _compute_last_data_change(self) -> None:
         self.last_data_change = self.env.cr.now()
+
+    def _get_pos_data_change_date(self):
+        self.check_singleton()
+        rate_change = self._get_currency_rate_change_date()
+        if rate_change and rate_change > self.last_data_change:
+            _debug.logic(
+                "data_change_from_rate",
+                config=self.id,
+                rate_change=rate_change,
+                last_data_change=self.last_data_change,
+            )
+            return rate_change
+        return self.last_data_change
+
+    def _get_currency_rate_change_date(self):
+        # the client caches prices converted at the rate of the day it loaded them
+        company = self.company_id
+        if self.currency_id == company.currency_id:
+            return None
+        [(effective_date, written)] = self.env["res.currency.rate"]._read_group(
+            [
+                ("currency_id", "in", (self.currency_id | company.currency_id).ids),
+                ("company_id", "in", [False, company.root_id.id]),
+                ("name", "<=", fields.Date.today()),
+            ],
+            aggregates=["name:max", "write_date:max"],
+        )
+        if not effective_date:
+            return None
+        return max(datetime.combine(effective_date, time.min), written)
 
     def write(self, vals):
         vals = dict(vals)
@@ -1340,7 +1339,6 @@ class PosConfig(models.Model):
                 fields=sorted(vals),
                 from_settings=bool(self.env.context.get("from_settings_view")),
             )
-        self._check_header_footer(vals)
         tip_updates = self._update_vals_default_tip_product(vals)
         if "is_order_printer" in vals and not vals["is_order_printer"]:
             vals["printer_ids"] = [fields.Command.clear()]
@@ -1570,8 +1568,7 @@ class PosConfig(models.Model):
 
     def _check_before_creating_new_session(self):
         self._check_company_has_template()
-        self._check_companies()
-        self._check_pricelists()
+        self._check_company(["pricelist_id", "available_pricelist_ids"])
         self._check_company_payment()
         self._check_currencies()
         self._check_profit_loss_cash_journal()
@@ -1610,8 +1607,7 @@ class PosConfig(models.Model):
         return self._prepare_action_view_session(self.current_session_id.id)
 
     def _prepare_action_view_session(self, session_id) -> dict:
-        self._check_companies()
-        self._check_pricelists()
+        self._check_company(["pricelist_id", "available_pricelist_ids"])
         return {
             "name": self.env._("Session"),
             "view_mode": "form,list",
@@ -1651,38 +1647,40 @@ class PosConfig(models.Model):
     def get_limited_partners_loading(self, offset=0):
         self.check_singleton()
         partners = self.env["res.partner"]
-        partner_query = partners._search(partners._get_picker_domain())
-        self.env["res.partner"].flush_model(
-            ["active", "name", "company_id", "is_manufacturer"]
+        query = partners._search(
+            partners._get_picker_domain()
+            & fields.Domain("active", "=", True)
+            & fields.Domain("company_id", "in", [self.company_id.id, False])
         )
+        partners.flush_model(["name", "is_manufacturer"])
         self.env["pos.order"].flush_model(["partner_id", "company_id"])
-        return self.env.execute_query(
+        order_counts = query.left_join(
+            query.table,
+            "id",
             SQL(
-                """
-            WITH pm AS (
-                SELECT partner_id, count(partner_id) AS order_count
+                """(
+                SELECT partner_id, count(*) AS order_count
                   FROM pos_order
-                 WHERE company_id = %(company)s
+                 WHERE company_id = %s
+                   AND partner_id IS NOT NULL
               GROUP BY partner_id
-            )
-                SELECT partner.id
-                  FROM res_partner AS partner
-             LEFT JOIN pm ON partner.id = pm.partner_id
-                 WHERE (partner.company_id = %(company)s OR partner.company_id IS NULL)
-                   AND partner.active
-                   AND partner.id IN (%(accessible_partners)s)
-              ORDER BY COALESCE(pm.order_count, 0) DESC,
-                       partner.is_manufacturer IS TRUE,
-                       partner.name,
-                       partner.id
-                 LIMIT %(limit)s OFFSET %(offset)s
-                """,
-                company=self.company_id.id,
-                accessible_partners=partner_query.select(),
-                limit=self._get_limited_partner_count(),
-                offset=offset,
-            )
+            )""",
+                self.company_id.id,
+            ),
+            "partner_id",
+            "pos_order_count",
         )
+        partner = SQL.identifier(query.table)
+        query.order = SQL(
+            "COALESCE(%s, 0) DESC, %s.is_manufacturer IS TRUE, %s.name, %s.id",
+            SQL.identifier(order_counts, "order_count"),
+            partner,
+            partner,
+            partner,
+        )
+        query.limit = self._get_limited_partner_count()
+        query.offset = offset
+        return self.env.execute_query(query.select())
 
     def action_pos_config_modal_edit(self) -> dict:
         return {
@@ -1945,7 +1943,6 @@ class PosConfig(models.Model):
             )
         )
         has_chart_template = bool(self.env.company.account_config_id.chart_template)
-        main_company = self.env.ref("base.main_company", raise_if_not_found=False)
         return {
             "has_pos_config": has_pos_config,
             "has_chart_template": has_chart_template,
@@ -1957,8 +1954,7 @@ class PosConfig(models.Model):
                     limit=1,
                 )
             ),
-            "is_main_company": (main_company and self.env.company.id == main_company.id)
-            or False,
+            "is_main_company": self._is_main_company(),
         }
 
     @api.model
@@ -1968,6 +1964,11 @@ class PosConfig(models.Model):
         )
         pos_restaurant_module.button_immediate_install()
         return {"installed_with_demo": pos_restaurant_module.demo}
+
+    def _get_tax_product_field_names(self) -> set:
+        Tax = self.env["account.tax"]
+        taxes = Tax.search(Tax._load_pos_data_domain({}, self))
+        return taxes._eval_taxes_computation_prepare_product_fields()
 
     def _get_available_pricelists(self):
         self.check_singleton()

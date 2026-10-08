@@ -30,4 +30,27 @@
         <field name="verbs">choose_balancing_account</field>
     </record>
 
+    <record id="access_class_receipt_text" model="ir.access.class">
+        <field name="name">point_of_sale.receipt_text</field>
+        <field
+            name="description">The custom header and footer a point of sale prints on every receipt. Everyone who reads the point of sale reads them; only access administrators change them.</field>
+    </record>
+
+    <record id="access_receipt_text_erp_manager" model="ir.access">
+        <field name="name">point_of_sale.receipt_text: access administrators</field>
+        <field name="group_id" ref="base.group_erp_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_receipt_text" />
+    </record>
+
+    <record id="access_pos_config_load_demo_data" model="ir.access">
+        <field
+            name="name">pos.config: an administrator fills a point of sale with sample data</field>
+        <field name="model_id" ref="model_pos_config" />
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="verbs">load_demo_data</field>
+    </record>
+
 </odoo>

@@ -28,12 +28,8 @@ class ProductProduct(models.Model):
 
     @api.model
     def _load_pos_data_fields(self, config):
-        taxes = self.env["account.tax"].search(
-            self.env["account.tax"]._check_company_domain(config.company_id.id)
-        )
-        product_fields = taxes._eval_taxes_computation_prepare_product_fields()
         return sorted(
-            product_fields.union(
+            config._get_tax_product_field_names().union(
                 {
                     "id",
                     "lst_price",

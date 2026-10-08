@@ -358,8 +358,18 @@ class AccountFiscalPosition(models.Model):
         ]
 
     @api.model
+    def _get_auto_apply_fiscal_positions(self, company=None):
+        company = company or self.env.company
+        return self.search(
+            Domain(self._check_company_domain(company))
+            & Domain("auto_apply", "=", True)
+        )
+
+    @api.model
     @_debug.perf.timed
-    def _get_fiscal_position(self, partner, delivery=None, company=None):
+    def _get_fiscal_position(
+        self, partner, delivery=None, company=None, *, auto_apply_fpos=None
+    ):
         if not partner:
             return self.env["account.fiscal.position"]
 
@@ -397,9 +407,10 @@ class AccountFiscalPosition(models.Model):
             _debug.logic("fiscal_position_no_country_none", partner=partner)
             return self.env["account.fiscal.position"]
 
-        all_auto_apply_fpos = self.search(
-            Domain(self._check_company_domain(company))
-            & Domain("auto_apply", "=", True)
+        all_auto_apply_fpos = (
+            auto_apply_fpos
+            if auto_apply_fpos is not None
+            else self._get_auto_apply_fiscal_positions(company)
         )
 
         fpos = all_auto_apply_fpos._get_first_matching_fpos(delivery, company)

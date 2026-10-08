@@ -76,12 +76,13 @@ class CopyMixin(_ModelStubs):
             _debug.logic(
                 "copy.unreadable_comodel_withheld", model=self._name, fields=unreadable
             )
-        # create checks write_groups too, so a gated value the user may not set
-        # would refuse the whole copy: the duplicate takes the field's default
+        # create checks what writing a field needs (write_groups, a write
+        # class), so a gated value the user may not set would refuse the whole
+        # copy: the duplicate takes the field's default
         withheld = [
             name
             for name, field in fields_to_copy.items()
-            if field.write_groups and not self._has_field_access(field, "write")
+            if not self._has_field_access(field, "write")
         ]
         for name in withheld:
             del fields_to_copy[name]

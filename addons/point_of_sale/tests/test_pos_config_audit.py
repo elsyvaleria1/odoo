@@ -29,7 +29,7 @@ class TestPosConfigAudit(TestPoSCommon):
             }
         )
 
-        with self.assertRaisesRegex(ValidationError, "default pricelist must belong"):
+        with self.assertRaisesRegex(UserError, "pricelist_id"):
             self.config.write({"company_id": company.id})
 
     def test_printer_menu_tracks_archiving_and_deletion(self):
@@ -457,7 +457,7 @@ class TestPosConfigAudit(TestPoSCommon):
         )
         first = self.config.copy({"name": "pl-a", "pricelist_id": shared.id})
         second = self.config.copy({"name": "pl-b", "pricelist_id": owned.id})
-        (first | second)._check_pricelists()
+        (first | second)._check_company(["pricelist_id", "available_pricelist_ids"])
 
     def test_the_removed_helpers_stay_removed(self):
         for gone in (

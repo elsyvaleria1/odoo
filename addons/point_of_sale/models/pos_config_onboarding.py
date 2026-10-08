@@ -7,13 +7,11 @@ _debug = DebugLog(__name__)
 
 class PosConfigOnboarding(models.Model):
     _inherit = "pos.config"
+    _access_verbs = {"load_demo_data": models.Verb(methods=("load_demo_data",))}
 
     def get_record_by_ref(self, recordRefs) -> list:
-        return [
-            self.env.ref(record).id
-            for record in recordRefs
-            if self.env.ref(record, raise_if_not_found=False)
-        ]
+        records = (self.env.ref(ref, raise_if_not_found=False) for ref in recordRefs)
+        return [record.id for record in records if record]
 
     def load_demo_data(self):
         xml_id = (
@@ -212,11 +210,7 @@ class PosConfigOnboarding(models.Model):
         existing_session = self.env.ref(
             "point_of_sale.pos_closed_session_2", raise_if_not_found=False
         )
-        if (
-            with_demo_data
-            and self.env.company.id == self.env.ref("base.main_company").id
-            and not existing_session
-        ):
+        if with_demo_data and self._is_main_company() and not existing_session:
             convert.convert_file(
                 self._get_env_with_clean_context(),
                 "point_of_sale",
@@ -317,9 +311,13 @@ class PosConfigOnboarding(models.Model):
         )
         return {"config_id": config.id}
 
-    def _get_suffixed_ref_name(self, ref_name):
+    @api.model
+    def _is_main_company(self) -> bool:
         main_company = self.env.ref("base.main_company", raise_if_not_found=False)
-        if main_company and self.env.company.id == main_company.id:
+        return bool(main_company) and self.env.company == main_company
+
+    def _get_suffixed_ref_name(self, ref_name):
+        if self._is_main_company():
             return ref_name
         else:
             _debug.logic(

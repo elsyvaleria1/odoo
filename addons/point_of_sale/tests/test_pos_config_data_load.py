@@ -1,0 +1,331 @@
+import logging
+from datetime import timedelta
+from unittest.mock import patch
+
+import odoo
+from odoo import Command, fields
+from odoo.db.metrics import observing_statements
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import new_test_user
+
+from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosConfigDataLoad(TestPoSCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.manager = new_test_user(
+            cls.env,
+            login="pos_data_load_manager",
+            groups="base.group_user,point_of_sale.group_pos_manager",
+            company_id=cls.company.id,
+        )
+
+    def _set_last_data_change(self, config, value):
+        config.flush_recordset(["last_data_change"])
+        self.env.cr.execute(
+            "UPDATE pos_config SET last_data_change = %s WHERE id = %s",
+            (value, config.id),
+        )
+        config.invalidate_recordset(["last_data_change"])
+
+    def _statements_to_compute_fiscal_positions(self, partners):
+        partners.invalidate_recordset(["fiscal_position_id"])
+        partners = partners.browse(partners.ids)
+        with observing_statements():
+            before = self.env.cr.sql_statement_count
+            positions = [partner.fiscal_position_id for partner in partners]
+            return self.env.cr.sql_statement_count - before, positions
+
+    def test_partner_fiscal_positions_cost_the_same_for_three_or_thirty(self):
+        FiscalPosition = self.env["account.fiscal.position"]
+        be, us = self.env.ref("base.be"), self.env.ref("base.us")
+        position_be, position_us = FiscalPosition.create(
+            [
+                {"name": "Auto BE", "auto_apply": True, "country_id": be.id},
+                {"name": "Auto US", "auto_apply": True, "country_id": us.id},
+            ]
+        )
+        partners = self.env["res.partner"].create(
+            [
+                {"name": f"Fpos partner {i}", "country_id": (be if i % 2 else us).id}
+                for i in range(30)
+            ]
+        )
+        self.env.flush_all()
+        few_count, few = self._statements_to_compute_fiscal_positions(partners[:3])
+        many_count, many = self._statements_to_compute_fiscal_positions(partners)
+        _logger.debug("fiscal position statements: 3=%s 30=%s", few_count, many_count)
+        self.assertEqual(many_count, few_count)
+        self.assertEqual(few, many[:3])
+        for partner, position in zip(partners, many, strict=True):
+            expected = position_be if partner.country_id == be else position_us
+            self.assertEqual(position, expected)
+
+    def test_partners_rank_by_orders_then_brand_then_name(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "100000"
+        )
+        Partner = self.env["res.partner"]
+        loyal, regular, zed, abe, brand, archived = Partner.create(
+            [
+                {"name": "Rank Loyal"},
+                {"name": "Rank Regular"},
+                {"name": "Rank Zed"},
+                {"name": "Rank Abe"},
+                {"name": "Rank Aaa Brand", "is_manufacturer": True},
+                {"name": "Rank Archived"},
+            ]
+        )
+        elsewhere = self.env["res.company"].create({"name": "Rank elsewhere"})
+        foreign = Partner.create({"name": "Rank Foreign", "company_id": elsewhere.id})
+        session = self.open_new_session()
+        for partner in (loyal, loyal, regular, archived, foreign):
+            self.env["pos.order"].create(
+                {
+                    "session_id": session.id,
+                    "partner_id": partner.id,
+                    "amount_tax": 0,
+                    "amount_total": 0,
+                    "amount_paid": 0,
+                    "amount_return": 0,
+                }
+            )
+        archived.active = False
+        ours = {loyal.id, regular.id, zed.id, abe.id, brand.id, archived.id, foreign.id}
+        ranked = [
+            row[0]
+            for row in self.config.get_limited_partners_loading()
+            if row[0] in ours
+        ]
+        self.assertEqual(ranked, [loyal.id, regular.id, abe.id, zed.id, brand.id])
+        self.assertEqual(
+            [row[0] for row in self.config.get_limited_partners_loading(offset=1)],
+            [row[0] for row in self.config.get_limited_partners_loading()][1:],
+        )
+
+    def test_a_partner_search_pages_by_the_configured_customer_count(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "2"
+        )
+        self.env["res.partner"].create(
+            [{"name": f"Paged Customer {i}"} for i in range(3)]
+        )
+        page = self.env["res.partner"].get_new_partner(
+            self.config.id, [("name", "ilike", "Paged Customer%")], 0
+        )["res.partner"]
+        self.assertEqual(len(page), 2)
+
+    def test_a_manager_who_is_not_an_admin_can_duplicate_a_config(self):
+        self.config.write({"is_header_or_footer": True, "receipt_header": "Hdr"})
+        duplicate = self.config.with_user(self.manager).copy({"name": "Dup"})
+        self.assertEqual(duplicate.name, "Dup")
+        self.assertFalse(duplicate.receipt_header)
+
+    def test_an_admin_duplicate_keeps_the_receipt_header(self):
+        self.config.write({"is_header_or_footer": True, "receipt_header": "Hdr"})
+        duplicate = self.config.copy({"name": "Dup"})
+        self.assertEqual(duplicate.receipt_header, "Hdr")
+        self.assertTrue(duplicate.is_header_or_footer)
+
+    def test_a_manager_who_is_not_an_admin_cannot_edit_the_receipt(self):
+        for vals in (
+            {"receipt_header": "Hdr"},
+            {"receipt_footer": "Ftr"},
+            {"is_header_or_footer": True},
+        ):
+            with self.subTest(vals=vals), self.assertRaises(AccessError):
+                self.config.with_user(self.manager).write(vals)
+
+    def test_a_pricelist_moved_to_another_company_is_refused_as_such(self):
+        linked, other = self.env["product.pricelist"].create(
+            [
+                {"name": "Moved pricelist", "currency_id": self.config.currency_id.id},
+                {"name": "Kept pricelist", "currency_id": self.config.currency_id.id},
+            ]
+        )
+        self.config.write(
+            {
+                "use_pricelist": True,
+                "available_pricelist_ids": [Command.link(linked.id)],
+            }
+        )
+        elsewhere = self.env["res.company"].create({"name": "Pricelist elsewhere"})
+        linked.company_id = elsewhere
+        self.assertFalse(linked.with_user(self.manager).has_access("read"))
+        with self.assertRaises(UserError) as caught:
+            self.config.with_user(self.manager).write(
+                {"available_pricelist_ids": [Command.link(other.id)]}
+            )
+        self.assertNotIsInstance(caught.exception, AccessError)
+        with self.assertRaises(UserError) as caught:
+            self.config.with_user(self.manager)._check_before_creating_new_session()
+        self.assertNotIsInstance(caught.exception, AccessError)
+
+    def test_a_foreign_default_pricelist_is_refused(self):
+        elsewhere = self.env["res.company"].create({"name": "Pricelist elsewhere"})
+        foreign = self.env["product.pricelist"].create(
+            {
+                "name": "Foreign pricelist",
+                "company_id": elsewhere.id,
+                "currency_id": self.config.currency_id.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            self.config.write({"pricelist_id": foreign.id})
+
+    def test_a_shared_pricelist_is_accepted(self):
+        shared = self.env["product.pricelist"].create(
+            {
+                "name": "Shared pricelist",
+                "company_id": False,
+                "currency_id": self.config.currency_id.id,
+            }
+        )
+        self.config.write(
+            {
+                "use_pricelist": True,
+                "available_pricelist_ids": [Command.link(shared.id)],
+                "pricelist_id": shared.id,
+            }
+        )
+        self.assertEqual(self.config.pricelist_id, shared)
+
+    def test_only_an_admin_manager_may_load_demo_data(self):
+        with (
+            patch.object(
+                type(self.env["pos.config"]),
+                "_load_onboarding_furniture_demo_data",
+                autospec=True,
+            ) as loader,
+            self.assertRaises(AccessError),
+        ):
+            self.config.with_user(self.manager).load_demo_data()
+        loader.assert_not_called()
+        admin = new_test_user(
+            self.env,
+            login="pos_data_load_admin",
+            groups="base.group_user,base.group_system,point_of_sale.group_pos_manager",
+            company_id=self.company.id,
+        )
+        self.assertTrue(self.config.with_user(admin).has_access("load_demo_data"))
+        self.assertFalse(
+            self.config.with_user(self.manager).has_access("load_demo_data")
+        )
+
+    def test_record_refs_resolve_to_the_existing_records_only(self):
+        Config = self.env["pos.config"]
+        self.assertEqual(
+            Config.get_record_by_ref(
+                ["base.main_company", "point_of_sale.no_such_record", "base.us"]
+            ),
+            [self.env.ref("base.main_company").id, self.env.ref("base.us").id],
+        )
+
+    def test_the_furniture_scenario_survives_a_missing_main_company_reference(self):
+        Config = self.env["pos.config"]
+        is_main = self.env.company == self.env.ref("base.main_company")
+        self.assertEqual(Config.get_pos_kanban_view_state()["is_main_company"], is_main)
+        self.env["ir.model.data"].search(
+            [("module", "=", "base"), ("name", "=", "main_company")]
+        ).unlink()
+        self.env.registry.clear_cache()
+        non_cash = self.config.payment_method_ids.filtered(
+            lambda method: not method.is_cash_count
+        )
+        with (
+            patch.object(
+                type(Config),
+                "_create_journal_and_payment_methods",
+                autospec=True,
+                return_value=(self.config.journal_id, non_cash.ids),
+            ),
+            patch.object(
+                type(Config), "_load_onboarding_furniture_demo_data", autospec=True
+            ),
+        ):
+            result = Config.load_onboarding_furniture_scenario(with_demo_data=True)
+        self.assertTrue(Config.browse(result["config_id"]).exists())
+        self.assertFalse(Config.get_pos_kanban_view_state()["is_main_company"])
+
+    def test_product_fields_and_defaults_name_the_same_tax_fields(self):
+        Tax = type(self.env["account.tax"])
+        with patch.object(
+            Tax,
+            "_eval_taxes_computation_prepare_product_fields",
+            autospec=True,
+            return_value={"weight"},
+        ):
+            product_fields = self.env["product.product"]._load_pos_data_fields(
+                self.config
+            )
+            payload = self.env["pos.config"]._load_pos_data_read(
+                self.config, self.config
+            )
+        self.assertIn("weight", product_fields)
+        self.assertEqual(set(payload[0]["_product_default_values"]), {"weight"})
+        self.assertEqual(payload[0]["access_token"], self.config.access_token)
+
+    def test_a_currency_change_marks_the_pos_data_changed(self):
+        journal = self.env["account.journal"].create(
+            {
+                "name": "PoS Sale In Other Currency",
+                "type": "sale",
+                "code": "POSOC",
+                "company_id": self.company.id,
+                "currency_id": self.other_currency.id,
+            }
+        )
+        config = self.config.copy({"name": "Currency switch"})
+        config.write({"use_pricelist": False, "available_pricelist_ids": False})
+        old = fields.Datetime.to_datetime("2000-01-01 00:00:00")
+        self._set_last_data_change(config, old)
+        config.write({"journal_id": journal.id})
+        self.assertEqual(config.currency_id, self.other_currency)
+        self.assertGreater(config.last_data_change, old)
+
+    def test_a_rate_change_marks_converted_prices_changed(self):
+        config = self.other_currency_config
+        now = self.env.cr.now()
+        self._set_last_data_change(config, now - timedelta(hours=1))
+        self.env["res.currency.rate"].create(
+            {
+                "currency_id": self.other_currency.id,
+                "name": fields.Date.today() - timedelta(days=1),
+                "rate": 0.4,
+            }
+        )
+        self.assertGreater(config._get_pos_data_change_date(), now - timedelta(hours=1))
+
+    def test_a_future_rate_leaves_converted_prices_cached(self):
+        config = self.other_currency_config
+        now = self.env.cr.now()
+        self.env["res.currency.rate"].create(
+            {
+                "currency_id": self.other_currency.id,
+                "name": fields.Date.today() + timedelta(days=1),
+                "rate": 0.4,
+            }
+        )
+        self._set_last_data_change(config, now + timedelta(minutes=1))
+        self.assertEqual(config._get_pos_data_change_date(), config.last_data_change)
+
+    def test_a_rate_change_leaves_a_company_currency_pos_cached(self):
+        self._set_last_data_change(
+            self.config, fields.Datetime.to_datetime("2000-01-01")
+        )
+        self.env["res.currency.rate"].create(
+            {
+                "currency_id": self.other_currency.id,
+                "name": fields.Date.today() - timedelta(days=2),
+                "rate": 0.4,
+            }
+        )
+        self.assertEqual(
+            self.config._get_pos_data_change_date(), self.config.last_data_change
+        )

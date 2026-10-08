@@ -14,13 +14,9 @@ class ResCountryState(models.Model):
 
     @api.model
     def _load_pos_data_domain(self, data, config):
+        # the referenced countries include those of the referenced states
         country_ids = self.env["res.country"]._get_referenced_country_ids(data, config)
-        state_ids = self._get_referenced_state_ids(data, config)
-        return [
-            "|",
-            ("country_id", "in", list(country_ids)),
-            ("id", "in", list(state_ids)),
-        ]
+        return [("country_id", "in", list(country_ids))]
 
     @api.model
     def _load_pos_data_fields(self, config):

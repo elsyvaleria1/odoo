@@ -106,6 +106,11 @@ class TestFieldClasses(TransactionCase):
         self.record.with_user(self.plain).write({"bonus": 2.0})
         self.assertEqual(self.record.bonus, 2.0)
 
+    def test_a_copy_withholds_a_field_of_a_write_class_its_user_lacks(self):
+        self.assertEqual(self.record.with_user(self.plain).copy().bonus, 0.0)
+        self.plain.group_ids += self.pay_write_group
+        self.assertEqual(self.record.with_user(self.plain).copy().bonus, 1.0)
+
     def test_a_related_field_carries_its_target_class(self):
         field = self.env[MODEL]._fields["parent_wage"]
         self.assertIn("test_ir_access.pay", field.access_classes.read)

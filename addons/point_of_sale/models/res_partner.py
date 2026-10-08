@@ -89,7 +89,7 @@ class ResPartner(models.Model):
             new_partners = self.search(
                 fields.Domain(domain) & self._get_picker_domain(),
                 offset=offset,
-                limit=100,
+                limit=config._get_limited_partner_count(),
             )
         fiscal_positions = new_partners.fiscal_position_id
         _debug.pipeline(
@@ -142,11 +142,13 @@ class ResPartner(models.Model):
     @api.depends_context("company")
     @api.depends("property_account_position_id", "country_id", "state_id", "zip", "vat")
     def _compute_fiscal_position_id(self) -> None:
+        FiscalPosition = self.env["account.fiscal.position"].with_company(
+            self.env.company
+        )
+        auto_apply_fpos = FiscalPosition._get_auto_apply_fiscal_positions()
         for partner in self:
-            partner.fiscal_position_id = (
-                self.env["account.fiscal.position"]
-                .with_company(self.env.company)
-                ._get_fiscal_position(partner)
+            partner.fiscal_position_id = FiscalPosition._get_fiscal_position(
+                partner, auto_apply_fpos=auto_apply_fpos
             )
 
     @api.model
