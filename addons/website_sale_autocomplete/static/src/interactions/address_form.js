@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { googlePlacesSession } from "@google_address_autocomplete/google_places_session";
+import { addressSession } from "@address_autocomplete/address_session";
 import { registry } from "@web/core/registry";
 import { KeepLast } from "@web/core/utils/concurrency";
 import { Interaction } from "@web/public/interaction";
@@ -33,7 +33,7 @@ export class AddressForm extends Interaction {
         const inputContainerEl = inputEl.parentNode;
         if (inputEl.value.length >= 5) {
             this.keepLast.add(
-                googlePlacesSession
+                addressSession
                     .getAddressPropositions({
                         partial_address: inputEl.value,
                     })
@@ -43,6 +43,7 @@ export class AddressForm extends Interaction {
                             "website_sale_autocomplete.AutocompleteDropDown",
                             {
                                 results: response.results,
+                                credit: response.credit,
                             },
                             inputContainerEl,
                         );
@@ -76,11 +77,15 @@ export class AddressForm extends Interaction {
         dropdownEl.appendChild(spinnerEl);
 
         const address = await this.waitFor(
-            googlePlacesSession.getAddressDetails({
+            addressSession.getAddressDetails({
                 address: currentTargetEl.innerText,
-                google_place_id: currentTargetEl.dataset.googlePlaceId,
+                ref: currentTargetEl.dataset.ref,
             }),
         );
+        if (!address) {
+            dropdownEl.remove();
+            return;
+        }
 
         if (address.formatted_street_number) {
             this.streetAndNumberInput.value = address.formatted_street_number;

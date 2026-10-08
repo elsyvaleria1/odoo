@@ -16,7 +16,7 @@
         "stock_account",
         "phone_validation",
         "partner_autocomplete",
-        "google_address_autocomplete",
+        "address_autocomplete",
     ],
     "data": [
         "security/point_of_sale_security.xml",
@@ -225,7 +225,7 @@
                 "web/static/src/webclient/actions/**/*css",
             ),
             "partner_autocomplete/static/src/**/*",
-            "google_address_autocomplete/static/src/**/*",
+            "address_autocomplete/static/src/**/*",
             (
                 "remove",
                 "web/static/src/**/*.dark.scss",

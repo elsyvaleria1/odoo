@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+    <t t-name="address_autocomplete.AddressAutoCompleteTemplate">
+        <AutoComplete
+            value="this.props.record.data[this.props.name] || ''"
+            sources="this.sources"
+            placeholder="this.props.placeholder"
+            searchOnInputClick="false"
+            inputDebounceDelay="350"
+            input="this.input"
+        >
+            <t t-set-slot="option" t-slot-scope="optionScope">
+                <span t-if="optionScope.data.credit" class="o-address-autocomplete-credit">
+                    <img
+                        t-att-src="this.colorScheme.isDark ? optionScope.data.credit.dark : optionScope.data.credit.light"
+                        t-att-alt="optionScope.data.credit.label"/>
+                </span>
+                <strong t-else="" t-out="optionScope.label"/>
+            </t>
+        </AutoComplete>
+    </t>
+</templates>

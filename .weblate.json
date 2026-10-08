@@ -812,9 +812,14 @@
                 "new_base": "addons/integration_google/i18n/integration_google.pot"
             },
             {
-                "name": "google_address_autocomplete",
-                "filemask": "addons/google_address_autocomplete/i18n/*.po",
-                "new_base": "addons/google_address_autocomplete/i18n/google_address_autocomplete.pot"
+                "name": "address_autocomplete",
+                "filemask": "addons/address_autocomplete/i18n/*.po",
+                "new_base": "addons/address_autocomplete/i18n/address_autocomplete.pot"
+            },
+            {
+                "name": "address_autocomplete_google",
+                "filemask": "addons/address_autocomplete_google/i18n/*.po",
+                "new_base": "addons/address_autocomplete_google/i18n/address_autocomplete_google.pot"
             },
             {
                 "name": "calendar_google",

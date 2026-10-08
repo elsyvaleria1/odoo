@@ -156,7 +156,7 @@
             "@frontdesk/*": ["./addons/frontdesk/static/src/*"],
             "@gamification/*": ["./addons/gamification/static/src/*"],
             "@geoengine/*": ["./addons/geoengine/static/src/*"],
-            "@google_address_autocomplete/*": ["./addons/google_address_autocomplete/static/src/*"],
+            "@address_autocomplete/*": ["./addons/address_autocomplete/static/src/*"],
             "@calendar_google/*": ["./addons/calendar_google/static/src/*"],
             "@calendar_sync/*": ["./addons/calendar_sync/static/src/*"],
             "@captcha/*": ["./addons/captcha/static/src/*"],

@@ -5,10 +5,10 @@
         <div t-attf-class="dropdown-menu position-relative #{results.length ? 'show' : ''}">
             <a class="dropdown-item js_autocomplete_result"
                t-foreach="results" t-as="result" t-key="result_index"
-               t-att-data-google-place-id="result['google_place_id']">
-                <t t-out="result['formatted_address']"/>
+               t-att-data-ref="result['ref']">
+                <t t-out="result['label']"/>
             </a>
-            <img class="ms-auto pe-1" src="/google_address_autocomplete/static/src/img/powered_by_google_on_white.png" alt="Powered by Google"/>
+            <img t-if="credit" class="ms-auto pe-1" t-att-src="credit['light']" t-att-alt="credit['label']"/>
         </div>
     </t>
 </templates>

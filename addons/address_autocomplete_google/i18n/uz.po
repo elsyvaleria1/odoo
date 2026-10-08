@@ -1,0 +1,137 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* address_autocomplete_google
+#
+#
+# Translated by:
+# Deepvision - info@deepvision.uz | +998 77-093-0007
+# Amon Olimov - amon.bars@gmail.com
+# Jonibek Yorqulov - j.yorqulov@deepvision.uz
+# Mirzohidkhon Ulugkhujaev ulugkhujayevmirzohidxon@gmail.com
+#
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-25 18:36+0000\n"
+"PO-Revision-Date: 2025-10-08 18:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: address_autocomplete_google
+#: model_terms:ir.ui.view,arch_db:address_autocomplete_google.res_config_settings_view_form
+#, fuzzy
+msgid ""
+"<i class=\"oi oi-arrow-right\"/>\n"
+"                            Create a Google Project and get a key"
+msgstr ""
+"<i class=\"oi oi-arrow-right\"/> Google loyihasi yarating va kalit oling"
+
+#. module: address_autocomplete_google
+#: model_terms:ir.ui.view,arch_db:address_autocomplete_google.res_config_settings_view_form
+#, fuzzy
+msgid ""
+"<i class=\"oi oi-arrow-right\"/>\n"
+"                            Enable billing on your Google Project"
+msgstr ""
+"<i class=\"oi oi-arrow-right\"/> Google loyihangizda to‘lov tizimini "
+"faollashtiring"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Additional street field"
+msgstr "Qo‘shimcha ko‘cha maydoni"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Address AutoComplete"
+msgstr "Manzilni avtomatik to‘ldirish"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "City field"
+msgstr "Shahar maydoni"
+
+#. module: address_autocomplete_google
+#: model:ir.model,name:address_autocomplete_google.model_res_config_settings
+#, fuzzy
+msgid "Config Settings"
+msgstr "Sozlamalarni sozlash"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Country field"
+msgstr "Mamlakat maydoni"
+
+#. module: address_autocomplete_google
+#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__display_name
+#, fuzzy
+msgid "Display Name"
+msgstr "Ko‘rsatiladigan nom"
+
+#. module: address_autocomplete_google
+#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__google_places_api_key
+#, fuzzy
+msgid "Google Places API Key"
+msgstr "Google Places API kaliti"
+
+#. module: address_autocomplete_google
+#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__id
+#, fuzzy
+msgid "ID"
+msgstr "ID"
+
+#. module: address_autocomplete_google
+#: model_terms:ir.ui.view,arch_db:address_autocomplete_google.res_config_settings_view_form
+#, fuzzy
+msgid "Paste your API key"
+msgstr "API kalitingizni kiriting"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Searching for addresses..."
+msgstr "Manzillar qidirilmoqda..."
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "State field"
+msgstr "Viloyat maydoni"
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Street field"
+msgstr "Ko‘cha maydoni"
+
+#. module: address_autocomplete_google
+#. odoo-python
+#: code:addons/address_autocomplete_google/controllers/address_autocomplete_google.py:0
+#, fuzzy
+msgid "You don't have access to the full autocomplete feature."
+msgstr "Siz to‘liq avtomatik to‘ldirish imkoniyatidan foydalana olmaysiz."
+
+#. module: address_autocomplete_google
+#. odoo-javascript
+#: code:addons/address_autocomplete_google/static/src/address_autocomplete/address_autocomplete_google.js:0
+#, fuzzy
+msgid "Zip field"
+msgstr "Pochta indeksi maydoni"

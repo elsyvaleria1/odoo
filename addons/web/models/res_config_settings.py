@@ -73,7 +73,7 @@ class ResConfigSettings(models.TransientModel):
     module_geocoding = fields.Boolean(string="Geocoding")
     module_captcha_recaptcha = fields.Boolean(string="reCAPTCHA")
     module_captcha_turnstile = fields.Boolean(string="Cloudflare Turnstile")
-    module_google_address_autocomplete = fields.Boolean(
+    module_address_autocomplete_google = fields.Boolean(
         string="Google Address Autocomplete"
     )
 

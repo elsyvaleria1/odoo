@@ -1,0 +1,12 @@
+.o_field_address_autocomplete {
+    .o-autocomplete.dropdown {
+        width: 100%;
+    }
+    .o-address-autocomplete-credit {
+        display: flex;
+        justify-content: flex-end;
+        img {
+            height: 1rem;
+        }
+    }
+}

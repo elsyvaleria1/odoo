@@ -17,9 +17,9 @@
         <field name="arch" type="xml">
             <setting position="after" id="shared_user_account_setting">
                 <setting
-                    id="autocomplete_googleplaces_setting"
-                    string="Google Address Validation"
-                    help="Use Google Places API to validate addresses"
+                    id="address_autocomplete_setting"
+                    string="Address Autocomplete"
+                    help="Suggest addresses at checkout through the address provider chosen in the general settings"
                     documentation="/applications/websites/website/configuration/address_autocomplete.html">
                     <field name="module_website_sale_autocomplete" />
                 </setting>

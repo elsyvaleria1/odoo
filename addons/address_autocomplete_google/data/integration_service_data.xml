@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_google_places" model="integration.service">
+        <field name="name">Google Places</field>
+        <field name="code">google_places</field>
+        <field name="category">other</field>
+        <field name="provider">Google LLC</field>
+        <field
+            name="website">https://developers.google.com/maps/documentation/places/web-service</field>
+        <field
+            name="documentation_url">https://developers.google.com/maps/documentation/places/web-service/autocomplete</field>
+        <field name="environment">production</field>
+        <field name="endpoint_url">https://maps.googleapis.com</field>
+    </record>
+
+</odoo>

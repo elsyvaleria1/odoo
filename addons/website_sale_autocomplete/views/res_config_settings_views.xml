@@ -2,38 +2,23 @@
 <odoo>
 
     <record
-        id="res_config_settings_view_form_inherit_autocomplete_googleplaces"
+        id="res_config_settings_view_form_inherit_address_autocomplete"
         model="ir.ui.view">
         <field
-            name="name">res.config.settings.view.form.inherit.autocomplete.googleplaces</field>
+            name="name">res.config.settings.view.form.inherit.address.autocomplete</field>
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="website_sale.res_config_settings_view_form" />
         <field name="arch" type="xml">
             <xpath
-                expr="//setting[@id='autocomplete_googleplaces_setting']"
+                expr="//setting[@id='address_autocomplete_setting']"
                 position="inside">
                 <div>
                     <div class="content-group row mt16">
                         <label
-                            for="website_google_places_api_key"
+                            for="website_address_autocomplete_key"
                             string="API Key"
                             class="col-4" />
-                        <field name="website_google_places_api_key" class="col-6" />
-                    </div>
-                    <div class="mt8">
-                        <a
-                            target="_blank"
-                            href="https://console.cloud.google.com/getting-started">
-                            <i class="oi oi-arrow-right" />
-                            Create a Google Project and get a key
-                        </a>
-                        <br />
-                        <a
-                            target="_blank"
-                            href="https://console.cloud.google.com/billing">
-                            <i class="oi oi-arrow-right" />
-                            Enable billing on your Google Project
-                        </a>
+                        <field name="website_address_autocomplete_key" class="col-6" />
                     </div>
                 </div>
             </xpath>
