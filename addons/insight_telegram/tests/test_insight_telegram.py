@@ -5,15 +5,19 @@ from unittest.mock import PropertyMock, patch
 from psycopg import errors as pg_errors
 
 from odoo import Command
+from odoo.libs.json import dumps as json_dumps
+from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.insight_telegram.models.telegram_chat import CHUNK_LIMIT, _chunks
 from odoo.addons.insight_telegram.services import catalog
+from odoo.addons.insight_telegram.services.insight_agent import InsightAgent
 from odoo.addons.insight_telegram.services.insight_assistant import (
     InsightAssistant,
     _schema,
 )
 from odoo.addons.insight_telegram.services.odoo_reader import OdooReader
+from odoo.addons.insight_telegram.services.odoo_tools import OdooTools
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
 
 
@@ -50,6 +54,113 @@ class TestOdooReader(TransactionCase):
         with self.reader.env() as env:
             env.cr.execute("SHOW statement_timeout")
             self.assertEqual(env.cr.fetchone()[0], "20s")
+
+
+def _call(reader, name, **arguments):
+    return json_loads(reader.call(name, arguments))
+
+
+@tagged("post_install", "-at_install")
+class TestOdooTools(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.reader_user = cls.env.ref("insight_telegram.user_reader")
+        cls.probe = cls.env["res.partner"].create(
+            {"name": "Ask Probe Partner", "is_company": True}
+        )
+
+    def setUp(self):
+        super().setUp()
+        # the reader opens its own cursors: in test mode they share the test
+        # transaction, read-only ones under a read-only savepoint
+        self.reader = OdooTools(OdooReader(self.registry, self.reader_user.id))
+
+    def test_search_reads_what_the_reader_user_could_not(self):
+        self.assertFalse(self.reader_user.active, "the reader never logs in")
+        rows = _call(
+            self.reader,
+            "search_records",
+            model="res.partner",
+            domain=[["name", "=", "Ask Probe Partner"]],
+            fields=["name", "is_company"],
+        )["records"]
+        self.assertEqual(
+            rows,
+            [{"id": self.probe.id, "name": "Ask Probe Partner", "is_company": True}],
+        )
+
+    def test_count_and_aggregate(self):
+        domain = [["name", "=", "Ask Probe Partner"]]
+        self.assertEqual(
+            _call(self.reader, "count_records", model="res.partner", domain=domain),
+            {"count": 1},
+        )
+        groups = _call(
+            self.reader,
+            "aggregate_records",
+            model="res.partner",
+            domain=domain,
+            groupby=["is_company"],
+            aggregates=["__count"],
+        )["groups"]
+        self.assertEqual(groups, [{"is_company": True, "__count": 1}])
+
+    def test_find_and_describe_models(self):
+        models = _call(self.reader, "find_models", query="res.partner")["models"]
+        self.assertIn("res.partner", [row["model"] for row in models])
+        described = _call(self.reader, "describe_model", model="res.partner")["fields"]
+        self.assertEqual(described["name"]["type"], "char")
+        self.assertNotIn("image_1920", described, "binaries are never offered")
+
+    def test_secret_models_are_refused(self):
+        for model in (
+            "ir.config_parameter",
+            "res.users.apikeys",
+            "credential.credential",
+        ):
+            with self.subTest(model=model):
+                result = _call(self.reader, "count_records", model=model)
+                self.assertIn("secrets", result["error"])
+        found = _call(self.reader, "find_models", query="config_parameter")["models"]
+        self.assertNotIn("ir.config_parameter", [row["model"] for row in found])
+
+    def test_a_hidden_field_cannot_be_probed_through_a_filter(self):
+        # a filter, an order or a grouping on a secret answers yes/no about
+        # its value: each is refused like a read would be
+        probes = [
+            {"domain": [["credential_id.name", "=like", "a%"]]},
+            {"domain": [["credential_id", "any", [["name", "=", "x"]]]]},
+            {"order": "credential_id desc"},
+        ]
+        for probe in probes:
+            with self.subTest(probe=probe):
+                result = _call(
+                    self.reader,
+                    "search_records",
+                    model="telegram.bot",
+                    fields=["name"],
+                    **probe,
+                )
+                self.assertIn("cannot be used here", result["error"])
+        result = _call(
+            self.reader,
+            "aggregate_records",
+            model="telegram.bot",
+            groupby=["credential_id"],
+            aggregates=["__count"],
+        )
+        self.assertIn("cannot be used here", result["error"])
+
+    def test_mistakes_come_back_as_errors_the_model_can_read(self):
+        result = _call(
+            self.reader, "search_records", model="res.partner", fields=["no_such_field"]
+        )
+        self.assertIn("no_such_field", result["error"])
+        result = _call(self.reader, "count_records", model="no.such.model")
+        self.assertIn("find_models", result["error"])
+        result = _call(self.reader, "drop_table", model="res.partner")
+        self.assertIn("Unknown tool", result["error"])
 
 
 @tagged("post_install", "-at_install")
@@ -145,6 +256,15 @@ class TestCatalog(TransactionCase):
         self.env["hr.employee"].create({"name": "Ask Probe Employee"})
         text = self._answer("headcount")
         self.assertIn(f"Total: **{before + 1}**", text)
+
+    def test_salaries_read_the_current_contract(self):
+        if "hr.version" not in self.env:
+            self.skipTest("hr is not installed")
+        employee = self.env["hr.employee"].create({"name": "Ask Probe Earner"})
+        employee.current_version_id.wage = 23456
+        text = self._answer("salaries", employee="Ask Probe Earner")
+        self.assertIn("Ask Probe Earner", text)
+        self.assertIn("$23,456.00", text)
 
     def test_every_report_runs_on_an_empty_period(self):
         # a report must answer, not crash, whatever the data
@@ -320,3 +440,85 @@ class TestInsightHandler(TelegramBotTestCase):
         self.assertGreater(len(chunks), 1)
         self.assertTrue(all(len(chunk) <= CHUNK_LIMIT for chunk in chunks))
         self.assertIn("<b>7</b> &amp; más", chunks[0])
+
+    def test_the_bot_runs_no_agent_until_asked(self):
+        self.assertFalse(self.test_bot.insight_agent_enabled)
+        self.assertEqual(
+            self.test_bot.insight_agent_provider_id,
+            self.env.ref("integration_machine_learning.ai_provider_anthropic"),
+        )
+        self.assertEqual(
+            self.test_bot.insight_agent_model_id,
+            self.env.ref("integration_machine_learning.ai_model_claude_haiku_4_5"),
+        )
+
+    def test_a_greeting_gets_what_the_bot_answers(self):
+        sent = self._run_job("Hola", {"query": "help"})
+        self.assertIn("Ask me about the business", sent)
+        log = self.env["telegram.insight.log"].search(
+            [("bot_id", "=", self.test_bot.id)]
+        )
+        self.assertTrue(log.answered)
+        self.assertEqual(log.query, "help")
+
+    def test_a_question_no_report_answers_goes_to_the_agent(self):
+        with (
+            patch.object(
+                InsightAgent, "available", new_callable=PropertyMock, return_value=True
+            ),
+            patch.object(
+                InsightAgent, "answer", return_value="Hay **3** almacenes."
+            ) as agent,
+        ):
+            sent = self._run_job("¿Cuántos almacenes hay?", {"query": "none"})
+        self.assertEqual(agent.call_count, 1)
+        self.assertIn("AI-consulted answer", sent)
+        self.assertIn("Hay <b>3</b> almacenes.", sent)
+        log = self.env["telegram.insight.log"].search(
+            [("bot_id", "=", self.test_bot.id)]
+        )
+        self.assertTrue(log.answered)
+        self.assertEqual(log.query, "agent")
+        self.assertEqual(self.test_chat._insight_history()[-1]["answer"], log.answer)
+
+    def test_the_agent_loop_reads_then_answers(self):
+        responses = iter(
+            [
+                {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "call_1",
+                            "name": "count_records",
+                            "input": {"model": "stock.warehouse"},
+                        }
+                    ]
+                },
+                {"content": [{"type": "text", "text": "Hay 3 almacenes."}]},
+            ]
+        )
+        seen = []
+
+        def turn(agent, model, system, messages, *, last):
+            seen.append([dict(message) for message in messages])
+            return next(responses)
+
+        class FakeTools:
+            def call(self, name, arguments):
+                return json_dumps({"count": 3})
+
+            def companies(self):
+                return "Main (id 1, MXN)"
+
+        model = self.env["integration.ml.model"].search([], limit=1)
+        with (
+            patch.object(InsightAgent, "_chat_model", return_value=model),
+            patch.object(InsightAgent, "_turn", turn),
+        ):
+            answer = InsightAgent(self.test_bot).answer(
+                "¿Cuántos almacenes?", [], FakeTools(), tz="UTC", today="2026-10-08"
+            )
+        self.assertEqual(answer, "Hay 3 almacenes.")
+        tool_result = seen[1][-1]["content"][0]
+        self.assertEqual(tool_result["tool_use_id"], "call_1")
+        self.assertEqual(json_loads(tool_result["content"]), {"count": 3})

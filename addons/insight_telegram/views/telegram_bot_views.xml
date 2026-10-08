@@ -25,6 +25,20 @@
                             options="{'no_create': True}"
                             invisible="not insight_ai_enabled"
                             required="insight_ai_enabled" />
+                        <field
+                            name="insight_agent_enabled"
+                            widget="boolean_toggle"
+                            invisible="not insight_ai_enabled" />
+                        <field
+                            name="insight_agent_provider_id"
+                            options="{'no_create': True}"
+                            invisible="not insight_agent_enabled"
+                            required="insight_agent_enabled" />
+                        <field
+                            name="insight_agent_model_id"
+                            placeholder="vendor default"
+                            options="{'no_create': True}"
+                            invisible="not insight_agent_enabled" />
                     </group>
                     <div
                         class="alert alert-warning"
@@ -35,7 +49,9 @@
                         any message or voice note they send is a question. The
                         model only picks the report; give the company's policy
                         for the purpose <code>telegram.insight</code> the
-                        provider chosen above.
+                        provider chosen above, and, with the agent on, the
+                        policy for <code>telegram.insight.agent</code> the
+                        agent's provider.
                     </div>
                 </page>
             </xpath>

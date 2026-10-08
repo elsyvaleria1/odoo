@@ -7,6 +7,7 @@ PURPOSE = "telegram.insight"
 TRANSCRIPTION_PURPOSE = "speech.transcription.insight"
 TRANSCRIBE_CONTEXT = "Pregunta sobre los datos de Odoo de AgroMarin."
 NONE = "none"
+HELP = "help"
 
 _TEXT = {"type": ["string", "null"]}
 
@@ -19,14 +20,16 @@ Reports:
 {reports}
 
 Rules:
-- Pick the report that answers the question; if none does, or the question \
-is not about the business data, answer "{none}".
+- Pick the report that answers the question. A greeting, thanks, or a \
+question about what you can do is "{help}". If no report answers it, answer \
+"{none}".
 - Today is {today}. Turn any period ("this month", "last week", "in \
 September", "so far this year") into date_from and date_to, ISO dates, both \
 inclusive. Leave them null when no period is said.
 - group_by: how the owner wants it broken down, else null.
 - company, warehouse (branch: CDG, SJN, BAL, OBR...), partner (customer or \
-supplier), product, salesperson: the names as the owner wrote them, else null.
+supplier), product, salesperson, employee: the names as the owner wrote them, \
+else null.
 - overdue_only: true when he asks only for overdue or late items.
 - top: how many items he wants listed, else null.
 - A follow-up ("and last month?", "by branch") keeps the previous question's \
@@ -69,7 +72,9 @@ class InsightAssistant(BotAssistant):
             "chat",
             MlRequest(
                 purpose=PURPOSE,
-                system=SYSTEM_PROMPT.format(reports=reports, today=today, none=NONE),
+                system=SYSTEM_PROMPT.format(
+                    reports=reports, today=today, none=NONE, help=HELP
+                ),
                 prompt=f"{earlier}\n\nQuestion: {question}".strip(),
                 response_schema=_schema(queries),
                 temperature=0,
@@ -79,14 +84,14 @@ class InsightAssistant(BotAssistant):
             company_id=self._company.id,
         )
         data = result.data if isinstance(result.data, dict) else {}
-        if data.get("query") not in queries:
+        if data.get("query") not in queries and data.get("query") != HELP:
             data["query"] = NONE
         return data
 
 
 def _schema(queries) -> dict:
     properties = {
-        "query": {"type": "string", "enum": [*queries, NONE]},
+        "query": {"type": "string", "enum": [*queries, HELP, NONE]},
         "date_from": _TEXT,
         "date_to": _TEXT,
         "group_by": {"type": ["string", "null"], "enum": [*GROUPS, None]},

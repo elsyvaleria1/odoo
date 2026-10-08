@@ -705,8 +705,77 @@ def run_headcount(ask):
     return lines
 
 
+def run_salaries(ask):
+    domain = ask.filter_domain(
+        {
+            "company": ("company_id", "res.company", ("name",), None),
+            "employee": ("id", "hr.employee", ("name",), None),
+        }
+    )
+    employees = ask.env["hr.employee"].search(domain).filtered("current_version_id")
+    lines = [
+        "**" + ask._("Salaries by current contract") + "**",
+        ask._("As of %(day)s", day=ask.format_day(ask.today)),
+    ]
+    if not employees:
+        lines.append(ask._("No employee with a contract found."))
+        return lines
+    totals = defaultdict(float)
+    for employee in employees:
+        totals[employee.company_id.currency_id] += employee.current_version_id.wage
+    for currency, amount in totals.items():
+        lines.append(
+            ask._(
+                "Total: **%(amount)s** (%(count)s employees)",
+                amount=money(amount, currency),
+                count=len(
+                    employees.filtered(
+                        lambda e, c=currency: e.company_id.currency_id == c
+                    )
+                ),
+            )
+        )
+    if ask.params.get("employee"):
+        lines += [
+            f"• {employee.name}"
+            + (
+                f" ({employee.current_version_id.job_id.name})"
+                if employee.current_version_id.job_id
+                else ""
+            )
+            + f": **{money(employee.current_version_id.wage, employee.company_id.currency_id)}**"
+            for employee in employees.sorted(lambda e: -e.current_version_id.wage)[
+                : ask.top
+            ]
+        ]
+        return lines
+    key = (
+        (lambda employee: employee.company_id.display_name)
+        if ask.group == "company"
+        else (
+            lambda employee: (
+                employee.current_version_id.department_id.display_name
+                or ask._("(none)")
+            )
+        )
+    )
+    groups = defaultdict(lambda: [0.0, 0])
+    for employee in employees:
+        entry = groups[(key(employee), employee.company_id.currency_id)]
+        entry[0] += employee.current_version_id.wage
+        entry[1] += 1
+    ranked = sorted(groups.items(), key=lambda item: item[1][0], reverse=True)
+    lines += [
+        f"• {label}: {money(amount, currency)} ({count})"
+        for (label, currency), (amount, count) in ranked[: ask.top]
+    ]
+    if len(ranked) > ask.top:
+        lines.append(ask._("… and %(count)s more", count=len(ranked) - ask.top))
+    return lines
+
+
 GROUPS = ("company", "warehouse", "salesperson", "partner", "product", "month")
-FILTERS = ("company", "warehouse", "partner", "product", "salesperson")
+FILTERS = ("company", "warehouse", "partner", "product", "salesperson", "employee")
 
 QUERIES = {
     query.key: query
@@ -803,6 +872,17 @@ QUERIES = {
             ("product",),
             ("company", "product", "warehouse"),
             requires="mrp.production",
+        ),
+        Query(
+            "salaries",
+            "What employees earn (sueldos, salarios, nómina, cuánto gana alguien) "
+            "by their current contract: one employee by name, or totals by "
+            "department or company.",
+            run_salaries,
+            ("company",),
+            ("company", "employee"),
+            periodic=False,
+            requires="hr.version",
         ),
         Query(
             "headcount",

@@ -63,6 +63,16 @@ msgid "Active employees"
 msgstr "Empleados activos"
 
 #. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_agent_model_id
+msgid "Agent AI Model"
+msgstr "Modelo de IA del agente"
+
+#. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_agent_provider_id
+msgid "Agent AI Provider"
+msgstr "Proveedor de IA del agente"
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answer
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
 msgid "Answer"
@@ -74,14 +84,30 @@ msgid "Answer Odoo Questions"
 msgstr "Responder preguntas sobre Odoo"
 
 #. module: insight_telegram
+#: model:ir.model.fields,field_description:insight_telegram.field_telegram_bot__insight_agent_enabled
+msgid "Answer the Rest with an AI Agent"
+msgstr "Responder lo demás con un agente de IA"
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answered
 msgid "Answered"
 msgstr "Respondida"
 
 #. module: insight_telegram
+#: model:integration.ml.purpose,name:insight_telegram.purpose_telegram_insight_agent
+msgid "Answering open questions about Odoo data with an agent"
+msgstr "Responder con un agente preguntas abiertas sobre los datos de Odoo"
+
+#. module: insight_telegram
 #: model:integration.ml.purpose,name:insight_telegram.purpose_telegram_insight
 msgid "Answering questions about Odoo data"
 msgstr "Responder preguntas sobre los datos de Odoo"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Anything else I look up in Odoo with AI, and say so in the answer."
+msgstr "Lo demás lo busco en Odoo con IA, y te lo indico en la respuesta."
 
 #. module: insight_telegram
 #. odoo-python
@@ -188,6 +214,28 @@ msgstr "Producción terminada"
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"For example: «how much did we sell this month by branch?» or «how much do "
+"customers owe us?»"
+msgstr ""
+"Por ejemplo: «¿cuánto vendimos este mes por sucursal?» o «¿cuánto nos deben "
+"los clientes?»"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Hi! Ask me about the business in your own words."
+msgstr "¡Hola! Pregúntame sobre el negocio con tus propias palabras."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I answer exactly about: %(topics)s."
+msgstr "Respondo con cifras exactas sobre: %(topics)s."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I could not answer that right now. Please try again."
 msgstr "No pude responder eso en este momento. Intenta de nuevo, por favor."
 
@@ -234,6 +282,7 @@ msgid "Last Updated on"
 msgstr "Última actualización el"
 
 #. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_model_id
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_model_id
 msgid "Leave empty to use the vendor default."
 msgstr "Déjalo vacío para usar el modelo predeterminado del proveedor."
@@ -257,20 +306,30 @@ msgid ""
 "                        any message or voice note they send is a question. The\n"
 "                        model only picks the report; give the company's policy\n"
 "                        for the purpose <code>telegram.insight</code> the\n"
-"                        provider chosen above."
+"                        provider chosen above, and, with the agent on, the\n"
+"                        policy for <code>telegram.insight.agent</code> the\n"
+"                        agent's provider."
 msgstr ""
 "Los miembros de <strong>Preguntar a Odoo por Telegram</strong>\n"
 "                        reciben respuestas de reportes de solo lectura sobre todas las compañías:\n"
 "                        cualquier mensaje o nota de voz que envíen es una pregunta. El\n"
 "                        modelo solo elige el reporte; en la política de la compañía\n"
 "                        para el propósito <code>telegram.insight</code> asigna el\n"
-"                        proveedor elegido arriba."
+"                        proveedor elegido arriba y, con el agente activo, en la\n"
+"                        política de <code>telegram.insight.agent</code> el\n"
+"                        proveedor del agente."
 
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "No bank or cash journal found."
 msgstr "No encontré diarios de banco ni de caja."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No employee with a contract found."
+msgstr "No encontré empleados con contrato."
 
 #. module: insight_telegram
 #. odoo-python
@@ -382,6 +441,12 @@ msgstr "Reporte"
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Salaries by current contract"
+msgstr "Sueldos según contrato vigente"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "Stock on hand"
 msgstr "Existencias"
 
@@ -453,6 +518,17 @@ msgstr ""
 "respuesta, nunca limitan lo que puede leer."
 
 #. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_provider_id
+msgid ""
+"The vendor that answers the questions no report covers. Only Anthropic is "
+"offered: the agent reads Odoo through several rounds of tool calls on its "
+"Messages API."
+msgstr ""
+"El proveedor que responde las preguntas que ningún reporte cubre. Solo se "
+"ofrece Anthropic: el agente lee Odoo con varias rondas de llamadas a "
+"herramientas en su API de mensajes."
+
+#. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_provider_id
 msgid ""
 "The vendor that reads each question and picks the report that answers it. "
@@ -484,6 +560,12 @@ msgstr "Total: **%(amount)s** (%(count)s documentos)"
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Total: **%(amount)s** (%(count)s employees)"
+msgstr "Total: **%(amount)s** (%(count)s empleados)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "Total: **%(count)s**"
 msgstr "Total: **%(count)s**"
 
@@ -496,6 +578,18 @@ msgstr "Transcribir preguntas sobre los datos de Odoo"
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_search
 msgid "Unanswered"
 msgstr "Sin respuesta"
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_enabled
+msgid ""
+"When a question fits no catalogued report, let a chat model read the "
+"database with read-only tools and answer it, marked as an AI answer to "
+"verify. Off: such a question is declined."
+msgstr ""
+"Cuando una pregunta no corresponde a ningún reporte del catálogo, un modelo "
+"de chat lee la base de datos con herramientas de solo lectura y la responde,"
+" marcada como respuesta de IA por verificar. Apagado: esa pregunta se "
+"rechaza."
 
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_enabled
@@ -524,9 +618,81 @@ msgid "You can also ask with a voice note 🎙."
 msgstr "También puedes preguntar con una nota de voz 🎙."
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "bank and cash balances"
+msgstr "saldos de bancos y caja"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "counter sales"
+msgstr "ventas de mostrador"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "employees"
+msgstr "empleados"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "invoicing"
+msgstr "facturación"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "pending deliveries"
+msgstr "entregas pendientes"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "production"
+msgstr "producción"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "purchases"
+msgstr "compras"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "salaries"
+msgstr "sueldos"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "sales orders"
+msgstr "pedidos de venta"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "stock"
+msgstr "existencias"
+
+#. module: insight_telegram
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_bot_view_form_ask
 msgid "vendor default"
 msgstr "predeterminado del proveedor"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "what customers owe"
+msgstr "lo que nos deben los clientes"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "what we owe suppliers"
+msgstr "lo que debemos a proveedores"
 
 #. module: insight_telegram
 #. odoo-python
@@ -539,3 +705,9 @@ msgstr "«%(value)s» coincidió con: %(names)s%(more)s"
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "… and %(count)s more"
 msgstr "… y %(count)s más"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "🔎 AI-consulted answer, please verify it."
+msgstr "🔎 Respuesta consultada con IA, verifícala."

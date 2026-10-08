@@ -33,6 +33,37 @@ class TelegramBot(models.Model):
         ondelete="set null",
         help="Leave empty to use the vendor default.",
     )
+    insight_agent_enabled = fields.Boolean(
+        string="Answer the Rest with an AI Agent",
+        help="When a question fits no catalogued report, let a chat model read "
+        "the database with read-only tools and answer it, marked as an AI "
+        "answer to verify. Off: such a question is declined.",
+    )
+    insight_agent_provider_id = fields.Many2one(
+        comodel_name="integration.ml.provider",
+        string="Agent AI Provider",
+        default=lambda self: self.env.ref(
+            "integration_machine_learning.ai_provider_anthropic",
+            raise_if_not_found=False,
+        ),
+        domain="[('code', '=', 'claude')]",
+        ondelete="restrict",
+        help="The vendor that answers the questions no report covers. Only "
+        "Anthropic is offered: the agent reads Odoo through several rounds of "
+        "tool calls on its Messages API.",
+    )
+    insight_agent_model_id = fields.Many2one(
+        comodel_name="integration.ml.model",
+        string="Agent AI Model",
+        default=lambda self: self.env.ref(
+            "integration_machine_learning.ai_model_claude_haiku_4_5",
+            raise_if_not_found=False,
+        ),
+        domain="[('provider_id', '=', insight_agent_provider_id), "
+        "('kind', '=', 'chat')]",
+        ondelete="set null",
+        help="Leave empty to use the vendor default.",
+    )
     insight_reader_user_id = fields.Many2one(
         comodel_name="res.users",
         string="Questions Reader",

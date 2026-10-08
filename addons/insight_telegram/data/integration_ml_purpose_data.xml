@@ -7,6 +7,13 @@
         <field name="sensitive" eval="True" />
     </record>
 
+    <record id="purpose_telegram_insight_agent" model="integration.ml.purpose">
+        <field name="key">telegram.insight.agent</field>
+        <field
+            name="name">Answering open questions about Odoo data with an agent</field>
+        <field name="sensitive" eval="True" />
+    </record>
+
     <record id="purpose_speech_transcription_ask" model="integration.ml.purpose">
         <field name="key">speech.transcription.insight</field>
         <field name="name">Transcribing questions about Odoo data</field>
