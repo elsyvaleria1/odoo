@@ -1,4 +1,5 @@
 import base64
+from contextlib import suppress
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -304,10 +305,8 @@ class TestSendAndWait(TelegramBotTestCase):
         def poisoned(bot, file_id):
             # what a step does when it catches a serialization failure and
             # carries on: the transaction is left aborted
-            try:
+            with suppress(psycopg.errors.DivisionByZero):
                 cr.execute("SELECT 1 / 0")
-            except psycopg.errors.DivisionByZero:
-                pass
             return {"content": JPEG, "file_path": "photos/file_7.jpg"}
 
         before = fields.Datetime.now()

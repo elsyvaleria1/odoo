@@ -1,9 +1,8 @@
 from odoo import models
 from odoo.exceptions import UserError
 
-from odoo.addons.automation.models.workflow_edge import EVENT_CONDITIONS
-
 from .automation_telegram_wait import ANSWER_KINDS
+from odoo.addons.automation.models.workflow_edge import EVENT_CONDITIONS
 
 
 class AutomationRuntimeLine(models.Model):

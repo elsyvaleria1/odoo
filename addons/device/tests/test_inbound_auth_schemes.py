@@ -3,9 +3,8 @@ import hmac
 
 from odoo.tools import mute_logger
 
-from odoo.addons.credential.tests.common import flush_after_commit
-
 from .common import DeviceTransactionCase
+from odoo.addons.credential.tests.common import flush_after_commit
 
 
 class TestInboundAuthSchemes(DeviceTransactionCase):
