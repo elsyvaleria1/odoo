@@ -6,33 +6,21 @@ patch(ProjectTaskTemplateDropdown.prototype, {
     /**
      * @override
      */
-    async onWillStart() {
-        await Promise.all([
-            super.onWillStart(),
-            !this.props.projectId &&
-                this.props.context.fsm_mode &&
-                this.fetchFsmTaskTemplates(),
-        ]);
-    },
-
-    async fetchFsmTaskTemplates() {
-        this.state.taskTemplates = await this.orm
-            .cache({
-                type: "disk",
-                update: "always",
-                callback: (result, hasChanged) => {
-                    if (hasChanged) {
-                        this.state.taskTemplates = result;
-                    }
-                },
-            })
-            .searchRead(
-                "project.task",
-                [
-                    ["is_template", "=", true],
-                    ["is_fsm", "=", true],
-                ],
-                ["id", "name"],
-            );
+    async fetchTemplates(props) {
+        if (props.projectId || !props.context.fsm_mode) {
+            return super.fetchTemplates(props);
+        }
+        this.state.templates = await this.cachedOrm((templates) => {
+            if (!this.props.projectId) {
+                this.state.templates = templates;
+            }
+        }).searchRead(
+            "project.task",
+            [
+                ["is_template", "=", true],
+                ["is_fsm", "=", true],
+            ],
+            ["id", "name"],
+        );
     },
 });

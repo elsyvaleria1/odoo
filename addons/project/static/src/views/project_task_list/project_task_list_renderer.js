@@ -10,11 +10,6 @@ export class ProjectTaskListRenderer extends ListSelectionSameFieldMixin(ListRen
         GroupConfigMenu: ProjectTaskGroupConfigMenu,
     };
 
-    /** @returns {boolean} */
-    haveAllSelectedTasksSameField(field) {
-        return this.haveAllSelectedSameField(field);
-    }
-
     isCellReadonly(column, record) {
         let readonly = false;
         if (column.name === "step_id") {

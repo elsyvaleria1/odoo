@@ -710,7 +710,11 @@ class AccountAnalyticLine(models.Model):
         return "unit_amount" if self.project_id else super()._split_amount_fname()
 
     def _is_timesheet_encode_uom_day(self) -> bool:
-        company_uom = self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
+        company = self.env.company.with_privilege(
+            "hr_timesheet.privilege_read_timesheet_encoding",
+            reason="timesheets are shown in the unit their company encodes them in",
+        )
+        company_uom = company.hr_timesheet_config_id.timesheet_encode_uom_id
         return company_uom == self.env.ref("uom.product_uom_day")
 
     def _is_updatable_timesheet(self) -> bool:

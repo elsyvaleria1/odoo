@@ -24,3 +24,4 @@ hr_timesheet_config_rule_company_group_portal,hr_timesheet.config: the reader's 
 hr_timesheet_config_rule_erp_manager,hr_timesheet.config: every company for an access-rights manager,model_hr_timesheet_config,base.group_erp_manager,permission,r,,,,,
 hr_timesheet_config_rule_erp_manager_group_system,hr_timesheet.config: every company for an access-rights manager,model_hr_timesheet_config,base.group_system,permission,cud,,,,,
 timesheets_analysis_report_comp_rule,Timesheets Analysis Report multi-company,model_timesheets_analysis_report,base.group_everyone,guard,crud,company,,,,
+privilege_read_timesheet_encoding_config,hr_timesheet.config: a page showing timesheets reads its company's encoding unit,model_hr_timesheet_config,privilege_read_timesheet_encoding,permission,r,company,,,,

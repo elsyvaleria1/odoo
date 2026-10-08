@@ -60,7 +60,6 @@ class TestSaleOrderAccess(TransactionCase):
         self.project_company_2 = self.env["project.project"].create(
             {
                 "name": "Project Company 2",
-                "user_id": self.admin_user.id,
                 "company_id": self.company_2.id,
                 "partner_id": self.partner.id,
                 "allow_billable": True,

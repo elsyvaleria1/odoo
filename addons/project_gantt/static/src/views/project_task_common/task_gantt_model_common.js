@@ -7,17 +7,17 @@ import { GanttModel } from "@web_gantt/gantt_model";
 export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
     // Public
 
-    setup() {
-        super.setup(...arguments);
-        this.getHighlightIds = () => [];
-    }
-
     async unscheduleTask(id) {
         await this.orm.call("project.task", "action_unschedule_task", [id]);
         this.fetchData();
     }
 
     // Protected
+
+    /** @returns {Promise<number[] | null>} */
+    async _fetchHighlightIds() {
+        return null;
+    }
 
     /** @override */
     async _fetchData(metaData, additionalContext) {
@@ -37,7 +37,7 @@ export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
      */
     async _fetchCompanionData(metaData) {
         const [highlightIds, deadlines] = await Promise.all([
-            this.getHighlightIds(),
+            this._fetchHighlightIds(),
             this.orm.isSample || this.viewContext.isSmall
                 ? null
                 : this.orm.call(

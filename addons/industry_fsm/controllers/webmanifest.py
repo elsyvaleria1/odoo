@@ -1,8 +1,6 @@
-from odoo.tools.translate import LazyTranslate
+from odoo.http import request
 
 from odoo.addons.web.controllers import webmanifest
-
-_lt = LazyTranslate(__name__)
 
 
 class WebManifest(webmanifest.WebManifest):
@@ -10,15 +8,15 @@ class WebManifest(webmanifest.WebManifest):
         if app_id == "industry_fsm":
             return [
                 {
-                    "name": _lt("New task"),
+                    "name": request.env._("New task"),
                     "url": "/scoped_app/field-service/new",
                 },
                 {
-                    "name": _lt("My Tasks"),
+                    "name": request.env._("My Tasks"),
                     "url": "/scoped_app/field-service",
                 },
                 {
-                    "name": _lt("My Calendar"),
+                    "name": request.env._("My Calendar"),
                     "url": "/scoped_app/field-service?view_type=calendar",
                 },
             ]

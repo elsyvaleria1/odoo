@@ -1,5 +1,5 @@
 from odoo.fields import Command
-from odoo.tests import new_test_user, tagged
+from odoo.tests import Form, new_test_user, tagged
 from odoo.tests.common import TransactionCase
 
 
@@ -162,3 +162,80 @@ class TestTaskAssigneesWrittenAsUsers(TransactionCase):
         twins = self.env["project.task"].create([shared, shared])
         self.assertEqual(twins.mapped("user_ids"), self.user)
         self.assertEqual(shared["user_ids"], self.user.ids)
+
+    def test_direct_users_written_alongside_users_win(self):
+        stranger = new_test_user(
+            self.env, login="assignee.direct", groups="base.group_user"
+        )
+        task = self.env["project.task"].create(
+            {
+                "name": "Both",
+                "project_id": self.project.id,
+                "user_ids": self.user.ids,
+                "direct_user_ids": stranger.ids,
+            }
+        )
+        self.assertFalse(task.employee_ids)
+        self.assertEqual(task.user_ids, stranger)
+
+    def test_users_given_by_context_default_are_composed(self):
+        stranger = new_test_user(
+            self.env, login="assignee.by_default", groups="base.group_user"
+        )
+        task = (
+            self.env["project.task"]
+            .with_context(default_user_ids=(self.user | stranger).ids)
+            .create({"name": "Defaulted", "project_id": self.project.id})
+        )
+        self.assertEqual(task.employee_ids, self.employee)
+        self.assertEqual(task.direct_user_ids, stranger)
+        self.assertEqual(task.user_ids, self.user | stranger)
+
+        task.employee_ids = False
+        self.assertEqual(task.user_ids, stranger, "the users follow the employees")
+
+    def test_a_default_of_users_is_offered_as_assignees(self):
+        defaults = (
+            self.env["project.task"]
+            .with_context(default_user_ids=self.user.ids)
+            .default_get(["user_ids", "employee_ids", "direct_user_ids"])
+        )
+        self.assertNotIn("user_ids", defaults)
+        self.assertEqual(defaults["employee_ids"], [Command.set(self.employee.ids)])
+        self.assertEqual(defaults["direct_user_ids"], [Command.set([])])
+
+    def test_users_are_assigned_through_a_view_that_shows_only_them(self):
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "Assign users",
+                "model": "project.task",
+                "type": "form",
+                "arch": '<form><field name="name"/><field name="user_ids"/></form>',
+            }
+        )
+        with Form(self.env["project.task"], view=view) as task_form:
+            task_form.name = "Assigned in a form"
+            task_form.user_ids.add(self.user)
+        task = task_form.record
+        self.assertEqual(task.employee_ids, self.employee)
+
+        with Form(task, view=view) as task_form:
+            task_form.user_ids.clear()
+        self.assertFalse(task.employee_ids)
+
+    def test_a_direct_assignee_given_an_employee_is_assigned_as_that_employee(self):
+        newcomer = new_test_user(
+            self.env, login="assignee.newcomer", groups="base.group_user"
+        )
+        task = self.env["project.task"].create(
+            {"name": "Early", "project_id": self.project.id, "user_ids": newcomer.ids}
+        )
+        self.assertEqual(task.direct_user_ids, newcomer)
+
+        employee = self.env["hr.employee"].create(
+            {"name": "Newcomer", "user_id": newcomer.id}
+        )
+
+        self.assertEqual(task.employee_ids, employee)
+        self.assertFalse(task.direct_user_ids)
+        self.assertEqual(task.user_ids, newcomer)

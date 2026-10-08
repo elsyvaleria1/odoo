@@ -19,6 +19,9 @@
         "web.assets_backend": [
             "project_hr/static/src/js/tours/project.js",
         ],
+        "web.assets_tests": [
+            "project_hr/static/tests/tours/**/*",
+        ],
     },
     "post_init_hook": "post_init_hook",
 }

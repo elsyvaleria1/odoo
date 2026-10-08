@@ -1,5 +1,4 @@
 /** @odoo-module native */
-import { useProjectModelActions } from "@project/views/project_highlight_tasks";
 import { TaskGanttModelCommon } from "@project_gantt/views/project_task_common/task_gantt_model_common";
 import { Domain } from "@web/core/domain";
 import { deserializeDateTime, endOf, serializeDateTime } from "@web/core/l10n/dates";
@@ -13,13 +12,6 @@ const MAP_MANY_2_MANY_FIELDS = [
 
 export class TaskGanttModel extends TaskGanttModelCommon {
     // Public
-
-    setup() {
-        super.setup(...arguments);
-        this.getHighlightIds = useProjectModelActions({
-            getContext: () => this.viewContext.searchModel.context,
-        }).getHighlightIds;
-    }
 
     getDialogContext() {
         const context = super.getDialogContext(...arguments);
@@ -79,6 +71,14 @@ export class TaskGanttModel extends TaskGanttModelCommon {
     }
 
     // Protected
+
+    /** @override */
+    async _fetchHighlightIds() {
+        if (!this.viewContext.searchModel.context?.highlight_conflicting_task) {
+            return null;
+        }
+        return this.orm.search("project.task", [["planning_overlap", "!=", false]]);
+    }
 
     /**
      * In the case of special Many2many Fields, like triage_ids in project.task

@@ -11,6 +11,8 @@
         "hr",
     ],
     "data": [
+        "security/res_groups.xml",
+        "security/ir.access.csv",
         "data/todo_mail_alias.xml",
     ],
     "auto_install": True,

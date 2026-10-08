@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_book_employee_tasks" model="res.groups">
+        <field
+            name="name">Privilege: a user's dated tasks are booked on the employee they are given</field>
+        <field
+            name="comment">A task assigned to a user who holds no employee books nobody's time. Once the user is given an employee, whoever creates it or links it rebooks that user's dated tasks on its resource, and reads nothing else of project.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -33,6 +33,8 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
             },
         )
         failed_message = "The auto shift date feature should take the employee's calendar into account."
+        # task_1 is booked on Armande from the moment she is employed; 9-12 holds
+        # none of her afternoons, so it lasts the 3 hours it held when placed
         self.assertEqual(
             self.task_1.date_start,
             new_task_3_begin_date - relativedelta(days=1, hour=14),
@@ -56,6 +58,7 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
                 ).strftime("%Y-%m-%d %H:%M:%S"),
             },
         )
+        # its 3 hours, held 14-17 when placed, end at 10 in Armande's mornings
         self.assertEqual(
             self.task_1.date_start,
             new_task_3_begin_date + relativedelta(days=-1, hour=11),

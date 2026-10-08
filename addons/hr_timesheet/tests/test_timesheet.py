@@ -12,12 +12,6 @@ class TestCommonTimesheet(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        rule = cls.env.ref(
-            "timesheet_grid.hr_timesheet_rule_approver_update", raise_if_not_found=False
-        )
-        if rule:
-            rule.active = False
-
         cls.partner = cls.env["res.partner"].create(
             {
                 "name": "Customer Task",
@@ -148,13 +142,6 @@ class TestTimesheet(TestCommonTimesheet):
     def setUp(self):
         super().setUp()
         self.env.registry.setup_models(self.env.cr)
-
-        rule = self.env.ref(
-            "timesheet_grid.timesheet_line_rule_user_update-unlink",
-            raise_if_not_found=False,
-        )
-        if rule:
-            rule.active = False
 
     def test_log_timesheet(self):
         Timesheet = self.env["account.analytic.line"]
@@ -573,6 +560,9 @@ class TestTimesheet(TestCommonTimesheet):
                 "login": "user_project_manager",
                 "group_ids": [(6, 0, [self.ref("project.group_project_manager")])],
             }
+        )
+        self.env["hr.employee"].create(
+            {"name": "Project Manager", "user_id": project_manager.id}
         )
 
         project = self.env["project.project"].create(

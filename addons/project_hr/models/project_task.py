@@ -6,6 +6,8 @@ from odoo.tools import LazyTranslate
 _lt = LazyTranslate(__name__)
 _debug = DebugLog(__name__)
 
+ASSIGNEE_FIELDS = frozenset({"employee_ids", "direct_user_ids"})
+
 
 class ProjectTask(models.Model):
     _name = "project.task"
@@ -41,7 +43,7 @@ class ProjectTask(models.Model):
         compute="_compute_user_ids",
         default=None,
         store=True,
-        readonly=True,
+        readonly=False,
         tracking=False,
     )
 
@@ -207,17 +209,35 @@ class ProjectTask(models.Model):
         )
         return {"employee_ids": employee_commands, "direct_user_ids": direct_commands}
 
+    @api.model
+    def default_get(self, fields):
+        defaults = super().default_get(fields)
+        if "user_ids" not in defaults or not ASSIGNEE_FIELDS.issubset(fields):
+            return defaults
+        user_value = defaults.pop("user_ids")
+        _debug.logic("task_default_users_composed", users=user_value)
+        for fname, commands in self._assignee_commands_for_users(
+            user_value, self.env.company
+        ).items():
+            if f"default_{fname}" not in self.env.context:
+                defaults[fname] = commands
+        return defaults
+
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [dict(vals) for vals in vals_list]
+        context = self.env.context
         for vals in vals_list:
-            if "user_ids" not in vals:
+            if "user_ids" in vals:
+                user_value = vals.pop("user_ids")
+            elif "default_user_ids" in context:
+                user_value = context["default_user_ids"]
+            else:
                 continue
-            user_value = vals.pop("user_ids")
-            if "employee_ids" in vals:
+            if vals.keys() & ASSIGNEE_FIELDS:
                 _debug.logic(
                     "task_user_ids_dropped",
-                    reason="employee_ids_given_explicitly",
+                    reason="assignees_given_explicitly",
                     on="create",
                 )
                 continue
@@ -230,7 +250,12 @@ class ProjectTask(models.Model):
                 or self.env.company
             )
             vals.update(self._assignee_commands_for_users(user_value, company))
-        tasks = super().create(vals_list)
+        # a context default lands on user_ids as a value of its own, which a
+        # computed field that is not readonly keeps instead of composing
+        without_default = self.with_context(
+            {key: value for key, value in context.items() if key != "default_user_ids"}
+        )
+        tasks = super(ProjectTask, without_default).create(vals_list).with_env(self.env)
         now = fields.Datetime.now()
         for task in tasks:
             if task.employee_ids and not task.date_assign:
@@ -333,7 +358,7 @@ class ProjectTask(models.Model):
             # the caller's dict stays theirs: web_gantt_write reuses it per batch
             vals = dict(vals)
             user_value = vals.pop("user_ids")
-            if "employee_ids" not in vals:
+            if not vals.keys() & ASSIGNEE_FIELDS:
                 if len(self.company_id) > 1:
                     _debug.logic(
                         "task_assignees_split_by_company",

@@ -7,8 +7,7 @@
                 revenue="revenue"
                 labels="this.props.labels"
                 formatMonetary="this.props.formatMonetary.bind(this)"
-                onProjectActionClick="this.props.onProjectActionClick.bind(this)"
-                onClick="(params) => this.props.onProjectActionClick(params)"
+                onClick="this.props.onClick"
                 projectId="this.props.projectId"
                 context="this.props.context"
             />

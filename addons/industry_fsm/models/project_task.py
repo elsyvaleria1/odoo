@@ -660,6 +660,8 @@ class ProjectTask(models.Model):
         planned_hours_mapped = super(
             ProjectTask, self - fsm_tasks
         )._planned_hours_per_user_for_scale(users, start, stop)
+        if not fsm_tasks:
+            return planned_hours_mapped
         users_work_intervals, _dummy = users.sudo()._get_valid_work_intervals(
             start, stop
         )

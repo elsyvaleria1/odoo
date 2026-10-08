@@ -1,6 +1,14 @@
 from odoo.tests import TransactionCase, new_test_user
 
 
+def assign_in_form(task_form, user):
+    # project_hr's task form shows the employees it composes the users from
+    if "employee_ids" in task_form._view["fields"]:
+        task_form.employee_ids = user.employee_ids
+    else:
+        task_form.user_ids = user
+
+
 class TestIndustryFsmCommon(TransactionCase):
     @classmethod
     def setUpClass(cls):

@@ -8,7 +8,6 @@ export class ProjectProfitabilitySection extends Component {
         revenue: t.object(),
         labels: t.object(),
         formatMonetary: t.function(),
-        onProjectActionClick: t.function(),
         onClick: t.function(),
         projectId: t.number(),
         context: t.object(),
@@ -76,7 +75,7 @@ export class ProjectProfitabilitySection extends Component {
                 views: [[false, "form"]],
             });
         } else {
-            this.props.onProjectActionClick(params);
+            this.props.onClick(params);
         }
     }
 }

@@ -6,6 +6,8 @@ from odoo.http import request, route
 
 from odoo.addons.portal.controllers import portal
 
+WORKSHEET_SOURCES = frozenset({"fsm", "project"})
+
 
 class CustomerPortal(portal.CustomerPortal):
     def _prepare_worksheet_context(self, task_sudo):
@@ -14,8 +16,14 @@ class CustomerPortal(portal.CustomerPortal):
 
     def _task_get_page_view_values(self, task, access_token, /, **kwargs):
         values = super()._task_get_page_view_values(task, access_token, **kwargs)
-        values["source"] = kwargs.get("source")
+        values["source"] = self._get_worksheet_source(task, kwargs.get("source"))
         return values
+
+    @staticmethod
+    def _get_worksheet_source(task, source):
+        if source in WORKSHEET_SOURCES:
+            return source
+        return "fsm" if task.is_fsm else "project"
 
     @route(
         [
@@ -85,6 +93,7 @@ class CustomerPortal(portal.CustomerPortal):
                 )
             ],
         )
+        source = self._get_worksheet_source(task_sudo, source)
         return {
             "force_refresh": True,
             "redirect_url": task_sudo.get_portal_url(

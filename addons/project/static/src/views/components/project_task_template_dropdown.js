@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { onWillUpdateProps, proxy, t } from "@odoo/owl";
+import { onWillUpdateProps, t } from "@odoo/owl";
 import { useAppContext } from "@web/core/app_context";
 import { _t } from "@web/core/translation";
 import { clearUncommittedChanges } from "@web/webclient/actions";
@@ -15,13 +15,7 @@ export class ProjectTaskTemplateDropdown extends TemplateDropdown {
     setup() {
         super.setup();
         this.appContext = useAppContext();
-        // industry_fsm's patch fills this key
-        this.state = proxy({ taskTemplates: [] });
         onWillUpdateProps(this.onWillUpdateProps);
-    }
-
-    get templates() {
-        return this.state.taskTemplates;
     }
 
     get templateResModel() {
@@ -48,12 +42,12 @@ export class ProjectTaskTemplateDropdown extends TemplateDropdown {
 
     async fetchTemplates({ projectId }) {
         if (!projectId) {
-            this.state.taskTemplates = [];
+            this.state.templates = [];
             return;
         }
-        this.state.taskTemplates = await this.cachedOrm((templates) => {
+        this.state.templates = await this.cachedOrm((templates) => {
             if (this.props.projectId === projectId) {
-                this.state.taskTemplates = templates;
+                this.state.templates = templates;
             }
         }).call("project.project", "get_template_tasks", [projectId]);
     }

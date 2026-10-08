@@ -6,7 +6,7 @@ patch(ProjectTaskListRenderer.prototype, {
     isCellReadonly(column, record) {
         let readonly = false;
         if (column.name === "sale_line_id") {
-            readonly = !this.haveAllSelectedTasksSameField("partner_id");
+            readonly = !this.haveAllSelectedSameField("partner_id");
         }
         return readonly || super.isCellReadonly(column, record);
     },

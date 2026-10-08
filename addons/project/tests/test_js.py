@@ -30,3 +30,10 @@ class ProjectSuite(web_test_js.HOOTCommon):
             "Project test files selected by no CI suite filter (they will "
             "never run):\n- " + "\n- ".join(uncovered),
         )
+
+
+@odoo.tests.tagged("post_install", "-at_install", "project_js")
+class MobileProjectSuite(web_test_js.MobileHOOTMixin, web_test_js.HOOTCommon):
+    @odoo.tests.no_retry
+    def test_project(self):
+        self._run_hoot("@project", preset="mobile", tag="-headless", timeout=900)

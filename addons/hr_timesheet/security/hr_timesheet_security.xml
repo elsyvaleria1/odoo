@@ -42,4 +42,12 @@
         </record>
     </data>
 
+    <record id="privilege_read_timesheet_encoding" model="res.groups">
+        <field
+            name="name">Privilege: a page showing timesheets reads the unit its company encodes them in</field>
+        <field
+            name="comment">Timesheets are shown in hours or days as their company encodes them, on portal pages a logged-out link holder opens too. Whoever reads a timesheet amount reads the encoding unit of the company's timesheet configuration, and nothing else of it is needed.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

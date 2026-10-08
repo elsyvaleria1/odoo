@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from odoo.tests import Form, tagged
 
-from .common import TestIndustryFsmCommon
+from .common import TestIndustryFsmCommon, assign_in_form
 
 
 @tagged("post_install", "-at_install")
@@ -75,7 +75,7 @@ class TestAutoCreateFsmProject(TestIndustryFsmCommon):
         task_form.name = "test task"
         task_form.project_id = fsm_project
         task_form.partner_id = self.partner
-        task_form.user_ids = self.env.user
+        assign_in_form(task_form, self.env.user)
         task_form.date_start = False
         task_form.date_end = False
         task_form.save()
@@ -85,5 +85,7 @@ class TestAutoCreateFsmProject(TestIndustryFsmCommon):
         task_form.date_end = now + relativedelta(days=1)
         task = task_form.save()
         self.assertEqual(
-            task.allocated_hours, 8.0, "the task allocated hours should be 8.0"
+            task.allocated_hours,
+            24.0,
+            "an employee without a calendar is fully flexible: the whole day",
         )

@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo.tests import Form
 
+from .common import assign_in_form
 from odoo.addons.project.tests.test_project_base import TestProjectCommon
 
 
@@ -35,7 +36,7 @@ class TestTaskCalendarView(TestProjectCommon):
         task_form.date_start = now
         task_form.date_end = now + relativedelta(days=1)
         task_form.partner_id = self.partner_1
-        task_form.user_ids = self.env.user
+        assign_in_form(task_form, self.env.user)
         task = task_form.save()
 
         self.assertEqual(task.date_start, now)

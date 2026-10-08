@@ -5,7 +5,6 @@ export const projectProfitabilityProps = {
     data: t.object(),
     labels: t.object(),
     formatMonetary: t.function(),
-    onProjectActionClick: t.function(),
     onClick: t.function(),
 };
 

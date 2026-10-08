@@ -8,7 +8,6 @@
                 data="this.state.data.profitability_items"
                 labels="this.state.data.profitability_labels"
                 formatMonetary="this.formatMonetary.bind(this)"
-                onProjectActionClick="this.onProjectActionClick.bind(this)"
                 onClick="(params) => this.onProjectActionClick(params)"
                 projectId="this.projectId"
                 context="this.context"
