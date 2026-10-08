@@ -242,15 +242,21 @@ class CreateMixin(_ModelStubs):
                     raise ValueError(f"Invalid field {key!r} on model {self._name!r}")
                 if field.store:
                     stored[key] = val
-                if field.inherited and field.related_field is not None:
+                delegated = field.inherited and field.related_field is not None
+                if delegated:
                     inherited[field.related_field.model_name][key] = val
                 elif field.inverse and field not in precomputed:
                     inversed[key] = val
                     inverses_by_hook[field.inverse].add(field)
                 elif not field.store and not field.compute:
                     cached_only[key] = val
+                # a delegated value was applied by the parent's create, which has
+                # returned: protected here, it reads (and caches) as empty from
+                # anything an inverse below flushes or computes
                 if (
-                    field.compute and (not field.readonly or field.precompute)
+                    field.compute
+                    and (not field.readonly or field.precompute)
+                    and not delegated
                 ) or key in cached_only:
                     protected.update(self.pool.field_computed.get(field, [field]))
                 if field.is_many2one and field.bypass_search_access and not self.env.su:

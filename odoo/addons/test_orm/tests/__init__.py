@@ -9,6 +9,7 @@ from . import (
     test_company_checks,
     test_compute_check_deferral,
     test_create_access_batching,
+    test_create_inverse_flush,
     test_count_field,
     test_domain,
     test_domain_evaluator_parity,
