@@ -66,7 +66,10 @@ def compute_http_thread_limit(
 ) -> tuple[int, int]:
     listeners = count_listener_permits(settings, listeners_spawned=listeners_spawned)
     pool = get_http_pool_size(settings, evented=evented)
-    auto_limit = max((pool - listeners) // 2, 1)
+    # The evented child's requests are websocket handshakes; half its pool is
+    # left to the websocket hub's database threads (get_websocket_db_threads).
+    share = 4 if evented else 2
+    auto_limit = max((pool - listeners) // share, 1)
     limit = get_env_int("ODOO_MAX_HTTP_THREADS", auto_limit, minimum=0, logger=_logger)
     _debug.logic(
         "httpd.thread_limit",

@@ -882,7 +882,24 @@ def test_the_evented_child_reads_its_own_pool_and_holds_no_listener(monkeypatch)
             settings, listeners_spawned=False, evented=True
         )
     assert threaded == 1
-    assert evented == 20
+    assert evented == 10
+
+
+def test_the_evented_child_leaves_half_its_pool_to_websocket_jobs(monkeypatch):
+    import odoo
+    from odoo.service import _limits
+
+    monkeypatch.delenv("ODOO_MAX_HTTP_THREADS", raising=False)
+    monkeypatch.delenv("ODOO_WEBSOCKET_DB_THREADS", raising=False)
+    monkeypatch.setattr(odoo, "evented", True)
+    with server_settings.override(
+        db_maxconn=8,
+        db_maxconn_gevent=40,
+        max_cron_threads=2,
+        job_workers=2,
+        stream_workers=1,
+    ):
+        assert _limits.get_websocket_db_threads() == 20
 
 
 def test_an_evented_child_without_its_own_pool_reads_db_maxconn(monkeypatch):
@@ -891,7 +908,7 @@ def test_an_evented_child_without_its_own_pool_reads_db_maxconn(monkeypatch):
         limit, _ = httpd.compute_http_thread_limit(
             server_settings.current(), listeners_spawned=False, evented=True
         )
-    assert limit == 4
+    assert limit == 2
 
 
 def test_a_stop_after_init_server_counts_no_listener_permit(monkeypatch):
