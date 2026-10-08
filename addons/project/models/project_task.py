@@ -2259,18 +2259,22 @@ class ProjectTask(models.Model):
                 task_dependencies.update(children_dependencies)
         return task_mapping, task_dependencies
 
-    def _portal_verify_parent_hash(
-        self, signature: str, pid: int, token: str | None = None
-    ) -> bool:
-        # a project's link reaches the tasks its page lists, and only with the
-        # hash signed over that very link: a bare hash would be judged against
-        # whichever link the project's customer holds, at no role at all
+    def _is_opened_by_project_link(self, token: str | None, role: str) -> bool:
+        # a project's link reaches the tasks its page lists
         project = self.project_id
         if not (project and token and self.active) or self.has_template_ancestor:
             return False
-        return project._portal_token_opens(
-            token, role="comment", action=None
-        ) and project._verify_sign_token(signature, pid, token=token)
+        return project._portal_token_opens(token, role=role, action=None)
+
+    def _portal_verify_parent_hash(
+        self, signature: str, pid: int, token: str | None = None
+    ) -> bool:
+        # only the hash signed over the very link that may comment speaks for
+        # `pid`: a bare hash would be judged against whichever link the
+        # project's customer holds, at no role at all
+        return self._is_opened_by_project_link(
+            token, "comment"
+        ) and self.project_id._verify_sign_token(signature, pid, token=token)
 
     @_debug.perf.timed
     def _update_copied_dependencies(self, copied_tasks: Self) -> None:
@@ -4852,28 +4856,52 @@ class ProjectTask(models.Model):
 
     @api.model
     def _get_thread_with_access(
-        self, thread_id, *, project_sharing_id=None, **kwargs
+        self,
+        thread_id,
+        *,
+        project_sharing_id=None,
+        token=None,
+        message_operation="read",
+        **kwargs,
     ) -> Self:
         thread = super()._get_thread_with_access(
-            thread_id, project_sharing_id=project_sharing_id, **kwargs
+            thread_id,
+            project_sharing_id=project_sharing_id,
+            token=token,
+            message_operation=message_operation,
+            **kwargs,
         )
-        if thread or not project_sharing_id:
+        if thread or not (project_sharing_id or token):
             return thread
-        project = self.env["project.project"].browse(project_sharing_id).exists()
-        shared = bool(project) and project._is_project_sharing_accessible()
+        task_sudo = (
+            self.sudo().with_context(active_test=False).browse(thread_id).exists()
+        )
+        if project_sharing_id:
+            project = self.env["project.project"].browse(project_sharing_id).exists()
+            shared = bool(project) and project._is_project_sharing_accessible()
+            _debug.logic(
+                "sharing_thread_access",
+                task=thread_id,
+                project=project_sharing_id,
+                shared=shared,
+            )
+            if not shared or task_sudo.project_id != project:
+                return self.browse()
+            return task_sudo
+        # the project's link reads its tasks' chatter; speaking takes the hash
+        # signed for the link's partner, as a bare token would post as nobody
+        granted = (
+            message_operation == "read"
+            and bool(task_sudo)
+            and task_sudo._is_opened_by_project_link(token, "view")
+        )
         _debug.logic(
-            "sharing_thread_access",
+            "project_link_thread_access",
             task=thread_id,
-            project=project_sharing_id,
-            shared=shared,
+            operation=message_operation,
+            granted=granted,
         )
-        if not shared:
-            return self.browse()
-        return (
-            self.sudo()
-            .with_context(active_test=False)
-            .search([("id", "=", thread_id), ("project_id", "=", project.id)])
-        )
+        return task_sudo if granted else self.browse()
 
     @_debug.perf.timed
     def get_mention_suggestions(self, search: str, limit: int = 8) -> dict:

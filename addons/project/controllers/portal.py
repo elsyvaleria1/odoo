@@ -432,8 +432,9 @@ class ProjectCustomerPortal(CustomerPortal):
     def _project_link_chatter_values(
         self, project_sudo: Any, access_token: str
     ) -> dict[str, Any]:
-        # a task has no link of its own here: the project's link speaks in its
-        # chatter, signed for the link's partner as the project's mails are
+        # a task has no link of its own here: the project's link reads its
+        # chatter, and speaks in it signed for the link's partner as the
+        # project's mails are
         link = request.access_link
         partner = link.partner_id
         commenting = ROLE_RANK[link.role] >= ROLE_RANK["comment"]
@@ -445,7 +446,7 @@ class ProjectCustomerPortal(CustomerPortal):
             commenting=commenting,
         )
         if not (partner and commenting):
-            return {}
+            return {"task_token": access_token}
         return {
             "task_token": access_token,
             "pid": partner.id,

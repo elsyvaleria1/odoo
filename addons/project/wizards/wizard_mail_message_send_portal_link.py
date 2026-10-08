@@ -6,14 +6,18 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-UNSHAREABLE_TASK_PRIVACY = ("invited_users", "followers")
+UNSHAREABLE_PRIVACY = ("invited_users", "followers")
+PRIVACY_FIELD = {
+    "project.project": "privacy_visibility",
+    "project.task": "project_privacy_visibility",
+}
 
 
-def _is_unshareable_task(record: models.BaseModel) -> bool:
-    return (
-        record._name == "project.task"
-        and record.project_privacy_visibility in UNSHAREABLE_TASK_PRIVACY
-    )
+def _get_unshareable_privacy_field(record: models.BaseModel) -> str | None:
+    field_name = PRIVACY_FIELD.get(record._name)
+    if field_name and record[field_name] in UNSHAREABLE_PRIVACY:
+        return field_name
+    return None
 
 
 class WizardMailMessageSendPortalLink(models.TransientModel):
@@ -22,32 +26,49 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
     @api.depends("res_model", "res_id")
     def _compute_share_link(self) -> None:
         unshareable = self.filtered(
-            lambda wizard: _is_unshareable_task(wizard._get_portal_record())
+            lambda wizard: _get_unshareable_privacy_field(wizard._get_portal_record())
         )
         unshareable.share_link = False
         super(WizardMailMessageSendPortalLink, self - unshareable)._compute_share_link()
 
+    def _check_link_shareable(self, record: models.BaseModel) -> None:
+        field_name = _get_unshareable_privacy_field(record)
+        if not field_name:
+            return
+        _debug.logic(
+            "link_share_refused",
+            model=record._name,
+            record=record.id,
+            visibility=record[field_name],
+        )
+        visibility = dict(record._fields[field_name]._description_selection(self.env))[
+            record[field_name]
+        ]
+        if record._name == "project.task":
+            message = self.env._(
+                "This task cannot be shared by link: its project is visible "
+                "to “%(visibility)s”.",
+                visibility=visibility,
+            )
+        else:
+            message = self.env._(
+                "This project cannot be shared by link: it is visible "
+                "to “%(visibility)s”.",
+                visibility=visibility,
+            )
+        raise UserError(message)
+
     def _get_shared_record(self) -> models.BaseModel:
         record = super()._get_shared_record()
-        if _is_unshareable_task(record):
-            _debug.logic(
-                "task_share_refused",
-                task=record.id,
-                visibility=record.project_privacy_visibility,
-            )
-            visibility = dict(
-                record._fields["project_privacy_visibility"]._description_selection(
-                    self.env
-                )
-            )[record.project_privacy_visibility]
-            raise UserError(
-                self.env._(
-                    "This task cannot be shared by link: its project is visible "
-                    "to “%(visibility)s”.",
-                    visibility=visibility,
-                )
-            )
+        # a task's dialog only hands out links; a project's also invites
+        # collaborators, which its privacy allows
+        if record._name == "project.task":
+            self._check_link_shareable(record)
         return record
+
+    def action_issue_share_link(self) -> dict[str, Any]:
+        self._check_link_shareable(self._get_shared_record())
+        return super().action_issue_share_link()
 
     def action_send_mail(self) -> dict[str, Any]:
         result = super().action_send_mail()
