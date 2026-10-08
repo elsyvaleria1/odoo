@@ -1,6 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import SQL
 
 _debug = DebugLog(__name__)
 
@@ -46,10 +47,23 @@ class AccountAnalyticAccount(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_existing_tasks(self) -> None:
-        has_tasks = self.env["project.task"].search_count(
-            [("project_id.account_id", "in", self.ids)],
-            limit=1,
+        # a deletion guard binds whoever deletes: the tasks they cannot read
+        # and the archived ones keep the account as much as the others
+        self.env["project.project"].flush_model(["account_id"])
+        self.env["project.task"].flush_model(["project_id"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT 1
+                  FROM project_task task
+                  JOIN project_project project ON project.id = task.project_id
+                 WHERE project.account_id = ANY(%s)
+                 LIMIT 1
+                """,
+                self.ids,
+            )
         )
+        has_tasks = bool(self.env.cr.rowcount)
         _debug.logic("unlink_checked", accounts=self, has_tasks=bool(has_tasks))
         if has_tasks:
             raise UserError(
@@ -59,6 +73,7 @@ class AccountAnalyticAccount(models.Model):
             )
 
     def action_view_projects(self) -> dict:
+        self.check_singleton()
         kanban_view_id = self.env.ref("project.view_project_kanban").id
         result = {
             "type": "ir.actions.act_window",

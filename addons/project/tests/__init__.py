@@ -91,3 +91,4 @@ from . import test_project_task_dependency_types
 from . import test_project_task_followup
 from . import test_project_link_chatter_scope
 from . import test_dependency_review_fixes
+from . import test_project_satellites

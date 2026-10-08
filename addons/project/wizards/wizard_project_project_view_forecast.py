@@ -99,7 +99,7 @@ class WizardProjectProjectViewForecast(models.TransientModel):
             weeks=self.weeks_of_history,
         )
         if not self.remaining_items or self.remaining_items <= 0:
-            self.result_text = "No remaining items to forecast."
+            self.result_text = self.env._("No remaining items to forecast.")
             return self._prepare_action_reopen()
 
         throughput = self._get_weekly_throughput()
@@ -107,7 +107,7 @@ class WizardProjectProjectViewForecast(models.TransientModel):
             "forecast_throughput", project=self.project_id.id, throughput=throughput
         )
         if not throughput or all(t == 0 for t in throughput):
-            self.result_text = (
+            self.result_text = self.env._(
                 "No historical throughput data available. "
                 "Close some tasks to build forecasting data."
             )

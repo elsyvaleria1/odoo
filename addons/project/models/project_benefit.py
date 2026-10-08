@@ -106,11 +106,14 @@ class ProjectBenefit(models.Model):
             return
         scheduled = 0
         for benefit in benefits:
+            owner = benefit.accountable_id
             benefit.activity_schedule(
                 "mail.mail_activity_data_todo",
                 date_deadline=benefit.date_review,
-                summary=self.env._("Benefit review: %s", benefit.name),
-                user_id=benefit.accountable_id.id,
+                summary=benefit.with_context(lang=owner.lang).env._(
+                    "Benefit review: %s", benefit.name
+                ),
+                user_id=owner.id,
             )
             benefit.date_review_reminder = benefit.date_review
             scheduled += 1
