@@ -81,7 +81,7 @@ Top-level layout of `addons/web/` (detailed maps are separate docs):
 | `static/src/` | 898 JavaScript/OWL source files across 249 directories (FSD layers) | `DIRECTORY_MAP.md` |
 | `static/lib/` | 19 directories (18 vendored libraries + generated `popper_compat/`) — DO NOT MODIFY | `static/lib/versions.json` |
 | `static/tests/` | 840 `.js` (incl. 770 `*.test.js` Hoot suites), mirroring the `static/src/` tree | `TEST_TAGS.md` |
-| `tests/` | 80 Python test files (`test_*.py`) | `TEST_TAGS.md` |
+| `tests/` | 81 Python test files (`test_*.py`) | `TEST_TAGS.md` |
 | `machine_doc_v1/` | This directory: `COMPONENT_DIAGRAM.md` (18 audit areas) · `FLOW_DIAGRAM.md` (14 sequence diagrams) · `LAZY_VIEW_LOADING.md` · `VIEW_TEARDOWN_COST.md` (both decision records: investigated, not pursued) · `LIST_EDIT_RENDER_COST.md` (decision record: row-level waste fixed, renderer-level amplification measured and not pursued) · `HOME_DASHBOARD.md` (the data tiles: server, layers, client, tint) · `UI_STABILITY.md` (decision record: what a navigation paints and what a write restyles, measured and fixed) · `FIRST_VISIT_ROUND_TRIPS.md` (decision record: an action not yet cached comes with its views) · the maps below · `factcheck.sh` | — |
 | `views/` · `data/` · `security/` · `i18n/` | XML templates, data fixtures, `ir.access.csv`, translations | — |
 
@@ -497,7 +497,7 @@ includes it.
 |----------|-------|
 | Python (controllers) | 24 (22 Controller classes across 20 route-bearing files + `__init__.py`, `export_writers.py`, `json_helpers.py`, `utils.py`) |
 | Python (models) | 28 (27 model files + `__init__.py`) |
-| Python (tests) | 80 (`test_*.py`; 82 files incl. `__init__.py` and the `tests/bundle_services.py` helper) |
+| Python (tests) | 81 (`test_*.py`; 83 files incl. `__init__.py` and the `tests/bundle_services.py` helper) |
 | JavaScript (src) | 898 (896 carry `@ts-check`; `module_loader.js` + `service_worker.js` are the two exclusions) |
 | JavaScript (tests) | 840 (incl. 770 `*.test.js` Hoot suites) |
 | JavaScript (vendored libs) | 93 |
