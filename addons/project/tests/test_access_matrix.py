@@ -298,6 +298,15 @@ class TestProjectAccessMatrix(AccessMatrixCase):
         Cell(
             "account.analytic.line",
             "analytic_line",
+            note="hr_timesheet gives a line outside every project to analytic accounting",
+            installed={"hr_timesheet": {"manager_a": "-rwcd", "manager_ab": "-rwcd"}},
+            manager_a="rwcd",
+            manager_ab="rwcd",
+        ),
+        Cell(
+            "account.analytic.line",
+            "timesheet_line",
+            needs="hr_timesheet",
             manager_a="rwcd",
             manager_ab="rwcd",
         ),
@@ -549,6 +558,17 @@ class TestProjectAccessMatrix(AccessMatrixCase):
             "analytic_line": env["account.analytic.line"].create(
                 {"name": "matrix", "account_id": analytic.id, "company_id": a.id}
             ),
+            "timesheet_line": env["account.analytic.line"].create(
+                {
+                    "name": "matrix timesheet",
+                    "project_id": project_followers.id,
+                    "employee_id": env["hr.employee"]
+                    .create({"name": "matrix timesheet employee", "company_id": a.id})
+                    .id,
+                }
+            )
+            if "project_id" in env["account.analytic.line"]._fields
+            else None,
             "activity_plan": activity_plan,
             "activity_plan_template": env["mail.activity.plan.template"].create(
                 {
