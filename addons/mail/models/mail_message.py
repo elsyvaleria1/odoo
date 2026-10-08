@@ -539,8 +539,12 @@ class MailMessage(models.Model):
         elif message.sudo(False).has_access(mode):
             return message
 
+        # a thread credential (token, hash) opens the thread, never the notes
+        # its holder could not read: reacting to one or rewriting it is refused
+        # as reading it is; a guest's own channel note needs no credential
+        guarded = mode == "read" or any(kwargs.values())
         if (
-            mode == "read"
+            guarded
             and not self.env.user._is_internal()
             and message.sudo(False)._get_forbidden_internal(mode)
         ):

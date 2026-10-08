@@ -396,7 +396,12 @@ class ProjectCustomerPortal(CustomerPortal):
         if access_token:
             Task = Task.sudo()
         task_sudo = Task.search(
-            [("project_id", "=", project_id), ("id", "=", task_id)], limit=1
+            [
+                ("project_id", "=", project_id),
+                ("id", "=", task_id),
+                ("has_template_ancestor", "=", False),
+            ],
+            limit=1,
         ).sudo()
         if not task_sudo:
             _debug.logic(

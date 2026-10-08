@@ -2194,17 +2194,15 @@ class ProjectTask(models.Model):
     def _portal_verify_parent_hash(
         self, signature: str, pid: int, token: str | None = None
     ) -> bool:
-        # a project's link, and the hash signed over it, reach its tasks; posting
-        # wants a link that may comment, a view link only reads
+        # a project's link reaches the tasks its page lists, and only with the
+        # hash signed over that very link: a bare hash would be judged against
+        # whichever link the project's customer holds, at no role at all
         project = self.project_id
-        if not project:
+        if not (project and token and self.active) or self.has_template_ancestor:
             return False
-        opens = bool(token) and project._portal_token_opens(
+        return project._portal_token_opens(
             token, role="comment", action=None
-        )
-        return project._verify_sign_token(
-            signature, pid, token=token if opens else None
-        )
+        ) and project._verify_sign_token(signature, pid, token=token)
 
     @_debug.perf.timed
     def _update_copied_dependencies(self, copied_tasks: Self) -> None:
