@@ -1075,7 +1075,12 @@ class AccountReturn(models.Model):
 
     def _get_tax_closing_payable_and_receivable_accounts(self) -> tuple:
         payable_accounts, receivable_accounts = self._get_tax_group_closing_accounts()
-        return payable_accounts | self._get_settlement_accounts(), receivable_accounts
+        return (
+            payable_accounts
+            | self._get_settlement_accounts()
+            | self._get_settlement_lines().account_id,
+            receivable_accounts,
+        )
 
     def _get_tax_group_closing_accounts(self) -> tuple:
         country = (
@@ -1101,16 +1106,12 @@ class AccountReturn(models.Model):
 
     def _get_settlement_accounts(self):
         self.check_singleton()
-        accounts = self.env["account.account"].union(
+        return self.env["account.account"].union(
             *(
                 self.type_id.with_company(company).settlement_account_id
                 for company in self.company_ids
             )
         )
-        if accounts or not self.type_id.settle_per_concept:
-            return accounts
-        payable_accounts, _receivable_accounts = self._get_tax_group_closing_accounts()
-        return payable_accounts.filtered("reconcile")
 
     def _has_single_settlement_account(self) -> bool:
         self.check_singleton()
@@ -1118,9 +1119,16 @@ class AccountReturn(models.Model):
 
     def _get_settlement_lines(self):
         self.check_singleton()
-        accounts = self._get_settlement_accounts()
-        return self.closing_move_ids.line_ids.filtered(
-            lambda line: line.account_id in accounts and line.parent_state == "posted"
+        lines = self.closing_move_ids.line_ids.filtered(
+            lambda line: line.parent_state == "posted"
+        )
+        if accounts := self._get_settlement_accounts():
+            return lines.filtered(lambda line: line.account_id in accounts)
+        if not self.type_id.settle_per_concept or not self.type_id.payment_partner_id:
+            return lines.browse()
+        authority = self.type_id.payment_partner_id
+        return lines.filtered(
+            lambda line: line.partner_id == authority and line.account_id.reconcile
         )
 
     def _is_settled_by_ledger(self) -> bool:
