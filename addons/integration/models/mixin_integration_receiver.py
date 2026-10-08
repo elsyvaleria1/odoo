@@ -181,10 +181,12 @@ class MixinIntegrationReceiver(models.AbstractModel):
     def unlink(self) -> bool:
         endpoint_refs = [f"{record._name},{record.id}" for record in self]
 
+        # a refusal outlives its endpoint: it is the record of who was turned
+        # away, and only the retention sweep removes it
         event_logs = (
             self.env["integration.exchange"]
             .sudo()
-            .search([("channel_id", "in", endpoint_refs)])
+            .search([("channel_id", "in", endpoint_refs), ("state", "!=", "refused")])
         )
 
         # Run access checks and deletion vetoes while their exchange evidence

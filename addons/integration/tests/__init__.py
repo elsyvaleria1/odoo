@@ -44,3 +44,4 @@ from . import test_connection_gate
 from . import test_stream
 from . import test_oauth2_once
 from . import test_oauth_connections
+from . import test_receiver_deletion

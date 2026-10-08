@@ -40,7 +40,9 @@ class TestBotReceivers(TelegramBotTestCase):
         self.assertEqual(self.test_bot.webhook_receiver_id.name, "Renamed bot webhook")
 
     def test_the_receivers_speak_for_the_bot_company(self):
-        receivers = self.test_bot.webhook_receiver_id | self.test_bot.mini_app_receiver_id
+        receivers = (
+            self.test_bot.webhook_receiver_id | self.test_bot.mini_app_receiver_id
+        )
         self.assertEqual(receivers.company_id, self.test_bot.company_id)
 
         self.test_bot.company_id = self.env["res.company"].create({"name": "Xiuman"})
@@ -66,6 +68,21 @@ class TestBotReceivers(TelegramBotTestCase):
             self._exchanges(receiver).filtered(lambda row: row.state != "refused"),
             "the refusal is the only row",
         )
+
+    def test_a_bot_whose_webhook_refused_a_call_can_be_deleted(self):
+        self.test_bot._update_webhook_secret("update-secret")
+        receiver = self.test_bot.webhook_receiver_id
+        receiver._check_inbound_request(
+            {"X-Telegram-Bot-Api-Secret-Token": "forged"},
+            body=b'{"message": {}}',
+            remote_addr="149.154.167.220",
+        )
+        refusal = self._refusals(receiver)
+
+        self.test_bot.unlink()
+
+        self.assertFalse(receiver.exists())
+        self.assertTrue(refusal.exists(), "the retention sweep removes it")
 
     def _mini_app_resolution(self, **params):
         mocked = MagicMock()
