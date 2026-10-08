@@ -157,7 +157,7 @@ def loads(
             )
         except ValueError, RecursionError:
             raise error from None
-    if isinstance(value, (dict, list, float)) and _has_wide_integer(s):
+    if _may_hold_wide_integer(s, value):
         # orjson reads an integer past 64 bits as a float; the stdlib keeps it
         # exact. orjson parsed first, so what it rejects is still rejected.
         return _json.loads(bytes(s) if isinstance(s, memoryview) else s)
@@ -232,6 +232,49 @@ _WIDE_NEGATIVE = b"-" + b"0" * 19
 # a run's grammar (a leading zero followed by more digits stays invalid)
 _OVERFLOWING_RUN = b"0" * 309
 _NOT_A_DIGIT = re.compile(rb"[^0]")
+
+
+# what orjson reads a wide integer as: a float of at least 2**63 in magnitude,
+# 2**64 and up when positive (it keeps a u64 exact), -2**63 - 1 and down
+_WIDE_FLOAT = float(2**63)
+# a body this short is cheaper to byte-scan than to walk; past it, the walk
+# visits few nodes for a large body (an upload's base64 string is one node)
+_BYTE_SCAN_LIMIT = 65536
+_WALK_BUDGET = 10_000
+
+
+def _may_hold_wide_integer(s: str | bytes | bytearray | memoryview, value: Any) -> bool:
+    kind = type(value)
+    if kind is float:
+        return abs(value) >= _WIDE_FLOAT
+    if kind is not dict and kind is not list:
+        return False
+    if len(s) <= _BYTE_SCAN_LIMIT:
+        return _has_wide_integer(s) and bool(_holds_wide_float(value, None))
+    found = _holds_wide_float(value, _WALK_BUDGET)
+    if found is not None:
+        return found
+    return _has_wide_integer(s) and bool(_holds_wide_float(value, None))
+
+
+def _holds_wide_float(value: Any, budget: int | None) -> bool | None:
+    # a float of that magnitude is also what a float literal (1e19) reads as:
+    # finding one only sends the body to the stdlib, which reads both right
+    pending = [value]
+    visited = 0
+    while pending:
+        item = pending.pop()
+        kind = type(item)
+        if kind is dict:
+            pending.extend(item.values())
+        elif kind is list:
+            pending.extend(item)
+        elif kind is float and abs(item) >= _WIDE_FLOAT:
+            return True
+        visited += 1
+        if budget is not None and visited > budget:
+            return None
+    return False
 
 
 def _has_wide_integer(s: str | bytes | bytearray | memoryview) -> bool:
