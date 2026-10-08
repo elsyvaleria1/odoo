@@ -27,6 +27,19 @@
                     invisible="not date_departure or not trip_pending_count" />
                 <field name="trip_pending_count" invisible="1" />
             </xpath>
+            <!-- Every stop made, the trip waits for its return: nothing to validate. -->
+            <xpath expr="//header/button[@name='action_done'][1]" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="date_departure and not trip_pending_count"
+                    separator=" or " />
+            </xpath>
+            <xpath expr="//header/button[@name='action_done'][2]" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="date_departure and not trip_pending_count"
+                    separator=" or " />
+            </xpath>
             <field name="vehicle_id" position="attributes">
                 <attribute name="readonly">date_departure</attribute>
             </field>

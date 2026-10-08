@@ -241,6 +241,21 @@ class TestTrip(TransactionCase):
         with self.assertRaises(UserError):
             trip.odometer_return = 1300.0
 
+    def test_the_batch_is_done_when_the_trip_returns_not_at_its_last_stop(self):
+        # As BATCH/OUT/26/10/0002 (CDG, 2026-10-08): both stops delivered at
+        # 14:18 showed the batch done while the truck drove back until 16:00.
+        first, second = self._picking(), self._picking()
+        trip = self._trip(first | second)
+        trip.action_depart()
+        first.action_deliver()
+        second.action_deliver()
+        self.assertEqual(trip.state, "in_progress")
+        self.assertEqual(trip.trip_state, "in_transit")
+        trip.odometer_return = 1250.0
+        trip.action_return()
+        self.assertEqual(trip.state, "done")
+        self.assertEqual(trip.trip_state, "closed")
+
     def test_a_reader_of_the_vehicle_dates_the_departure_and_the_return(self):
         picking = self._picking()
         trip = self._trip(picking, odometer_return=1250.0)
@@ -291,6 +306,7 @@ class TestTrip(TransactionCase):
         trip.action_done()
         self.assertEqual(set(pickings.mapped("state")), {"done"})
         self.assertEqual(trip.trip_state, "in_transit")
+        self.assertEqual(trip.state, "in_progress")
 
     def test_no_transfer_boards_a_trip_that_already_left(self):
         trip = self._trip(self._picking())

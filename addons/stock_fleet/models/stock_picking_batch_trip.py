@@ -133,6 +133,14 @@ class StockPickingBatch(models.Model):
         for batch in emptied.filtered("date_return"):
             batch.state = "done"
         super(StockPickingBatch, self - emptied)._compute_state()
+        # Nor is it done at its last delivery: the vehicle still has to come back,
+        # and a batch shown as done reads as a trip already closed.
+        for batch in (self - emptied).filtered(
+            lambda batch: (
+                batch.state == "done" and batch.date_departure and not batch.date_return
+            )
+        ):
+            batch.state = "in_progress"
 
     @api.depends("picking_ids.state")
     def _compute_trip_counts(self) -> None:
