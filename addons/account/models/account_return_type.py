@@ -94,6 +94,12 @@ class AccountReturnType(models.Model):
         help="The authority the tax is owed to. It is the partner of the closing entry's "
         "settlement line and of the payments that settle it.",
     )
+    filing_channel = fields.Selection(
+        selection="_selection_filing_channel",
+        tracking=True,
+        help="How a return of this type reaches the authority. Empty, submitting only "
+        "records that it was submitted.",
+    )
     settlement_account_id = fields.Many2one(
         comodel_name="account.account",
         string="Settlement Account",
@@ -190,6 +196,10 @@ class AccountReturnType(models.Model):
             record.is_ec_sales_list_return_type = (
                 report and generic_ec_sales_report in (report, report.root_report_id)
             )
+
+    @api.model
+    def _selection_filing_channel(self) -> list:
+        return self.env["account.return.submission"]._fields["channel"].selection
 
     @api.depends("payment_bank_account_id")
     def _compute_payment_partner_id(self) -> None:

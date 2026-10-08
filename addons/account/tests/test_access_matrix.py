@@ -508,6 +508,26 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             manager_ab="rwcd",
         ),
         Cell(
+            "account.return.submission",
+            "return_submission",
+            billing_a="r",
+            basic_a="r",
+            accountant_a="rwcd",
+            manager_a="rwcd",
+            reader_a="r",
+            manager_ab="rwcd",
+        ),
+        Cell(
+            "account.return.submission.line",
+            "return_submission_line",
+            billing_a="r",
+            basic_a="r",
+            accountant_a="rwcd",
+            manager_a="rwcd",
+            reader_a="r",
+            manager_ab="rwcd",
+        ),
+        Cell(
             "account.return.check",
             "return_check",
             billing_a="r",
@@ -767,6 +787,13 @@ class TestAccountAccessMatrix(AccessMatrixCase):
                 "company_id": a.id,
             }
         )
+        submission = env["account.return.submission"].create(
+            {
+                "return_id": account_return.id,
+                "channel": "manual",
+                "line_ids": [Command.create({"name": "matrix amount", "amount": 10.0})],
+            }
+        )
         horizontal = env["account.report.horizontal.group"].create(
             {
                 "name": "matrix horizontal",
@@ -905,6 +932,8 @@ class TestAccountAccessMatrix(AccessMatrixCase):
                     "amount": 10.0,
                 }
             ),
+            "return_submission": submission,
+            "return_submission_line": submission.line_ids,
             "return_check": env["account.return.check"].create(
                 {"code": "matrix", "name": "matrix", "return_id": account_return.id}
             ),

@@ -60,6 +60,9 @@
                                 <field
                                     name="settlement_account_id"
                                     invisible="category == 'audit'" />
+                                <field
+                                    name="filing_channel"
+                                    invisible="category == 'audit'" />
                             </group>
                         </group>
                     </sheet>

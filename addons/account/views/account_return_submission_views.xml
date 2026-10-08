@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_return_submission_list" model="ir.ui.view">
+        <field name="name">account.return.submission.list</field>
+        <field name="model">account.return.submission</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="return_id" />
+                <field name="channel" />
+                <field name="external_ref" />
+                <field name="date_sent" optional="show" />
+                <field name="date_accepted" optional="show" />
+                <field name="rectifies_id" optional="hide" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-danger="state in ('rejected', 'error')"
+                    decoration-info="state in ('sending', 'acknowledged')"
+                    decoration-success="state == 'accepted'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_return_submission_form" model="ir.ui.view">
+        <field name="name">account.return.submission.form</field>
+        <field name="model">account.return.submission</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="Confirm Filed"
+                        invisible="channel != 'manual' or state not in ('draft', 'error')"
+                        class="btn-primary" />
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="Send"
+                        invisible="channel == 'manual' or state not in ('draft', 'error')"
+                        class="btn-primary" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,acknowledged,accepted" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="return_id" readonly="True" />
+                            <field name="channel" readonly="True" />
+                            <field name="external_ref" readonly="state == 'accepted'" />
+                            <field name="rectifies_id" invisible="not rectifies_id" />
+                        </group>
+                        <group>
+                            <field name="date_sent" />
+                            <field name="date_accepted" />
+                            <field name="is_test" readonly="state != 'draft'" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                    </group>
+                    <group>
+                        <field
+                            name="receipt_attachment_ids"
+                            widget="many2many_binary" />
+                        <field
+                            name="request_attachment_id"
+                            invisible="not request_attachment_id" />
+                        <field
+                            name="error_message"
+                            invisible="not error_message"
+                            class="text-danger" />
+                    </group>
+                    <field name="line_ids" readonly="state == 'accepted'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="code" />
+                            <field name="name" />
+                            <field name="currency_id" column_invisible="True" />
+                            <field name="amount" />
+                        </list>
+                    </field>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_return_submission_search" model="ir.ui.view">
+        <field name="name">account.return.submission.search</field>
+        <field name="model">account.return.submission</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="return_id" />
+                <field name="external_ref" />
+                <filter
+                    name="pending"
+                    string="Waiting on the Authority"
+                    domain="[('state', 'in', ('sending', 'acknowledged'))]" />
+                <filter
+                    name="failed"
+                    string="Rejected or Failed"
+                    domain="[('state', 'in', ('rejected', 'error'))]" />
+                <separator />
+                <filter
+                    name="groupby_return"
+                    string="Return"
+                    context="{'group_by': 'return_id'}" />
+                <filter
+                    name="groupby_state"
+                    string="Status"
+                    context="{'group_by': 'state'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_return_submission" model="ir.actions.act_window">
+        <field name="name">Tax Filings</field>
+        <field name="res_model">account.return.submission</field>
+        <field name="path">tax-filings</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_account_return_submission_search" />
+    </record>
+
+</odoo>

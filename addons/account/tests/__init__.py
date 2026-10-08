@@ -132,6 +132,7 @@ from . import test_account_reports_journal_filter
 from . import test_account_reports_tours
 from . import test_account_returns
 from . import test_account_return_payment
+from . import test_account_return_submission
 from . import test_account_sales_report_generic
 from . import test_general_ledger_report
 from . import test_trial_balance_report

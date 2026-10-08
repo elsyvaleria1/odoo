@@ -164,6 +164,11 @@ class AccountReturn(models.Model):
         inverse_name="return_id",
         string="Payments",
     )
+    submission_ids = fields.One2many(
+        comodel_name="account.return.submission",
+        inverse_name="return_id",
+        string="Submissions",
+    )
     period_amount_to_pay = fields.Monetary(currency_field="amount_to_pay_currency_id")
     amount_to_pay_currency_id = fields.Many2one(
         comodel_name="res.currency",
@@ -1232,7 +1237,47 @@ class AccountReturn(models.Model):
         _debug.lifecycle("action_submit", records=self)
         self.check_singleton()
         self._check_all_branches_allowed()
+        if self.type_id.filing_channel:
+            return self._submit_through_channel()
         return self._proceed_with_submission()
+
+    def _submit_through_channel(self) -> dict | None:
+        self.check_singleton()
+        self._check_failing_checks_in_current_stage()
+        submission = self.env["account.return.submission"].create(
+            {
+                "return_id": self.id,
+                "channel": self.type_id.filing_channel,
+                "rectifies_id": self._get_accepted_submission().id,
+            }
+        )
+        if submission.channel == "manual":
+            return submission._get_records_action(target="new")
+        return submission.action_send()
+
+    def _get_accepted_submission(self):
+        self.check_singleton()
+        return self.submission_ids.filtered(
+            lambda submission: submission.state == "accepted"
+        )[:1]
+
+    def _on_submission_accepted(self, submission) -> None:
+        self.check_singleton()
+        _debug.lifecycle("_on_submission_accepted", records=self, submission=submission)
+        if self.state in ("submitted", "paid"):
+            return
+        self._proceed_with_submission()
+
+    def _check_resettable(self) -> None:
+        self.check_singleton()
+        if self._get_accepted_submission():
+            raise UserError(
+                self.env._(
+                    "%(name)s was filed and the authority accepted it; resetting would "
+                    "erase what it holds. File a rectification instead.",
+                    name=self.display_name,
+                )
+            )
 
     def _proceed_with_submission(self):
         self._check_failing_checks_in_current_stage()
@@ -1349,6 +1394,7 @@ class AccountReturn(models.Model):
             raise UserError(
                 self.env._("Only an Accounting Administrator can reset a tax return")
             )
+        self._check_resettable()
 
         # Check if it is the last return locked
         domain = [
@@ -1498,6 +1544,7 @@ class AccountReturn(models.Model):
         return True
 
     def _reset_common(self) -> None:
+        self._check_resettable()
         self._reset_checks_for_states(
             [
                 state

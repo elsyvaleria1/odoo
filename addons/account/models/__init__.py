@@ -133,6 +133,10 @@ from . import account_followup_report
 from . import account_return_type
 from . import account_return
 from . import account_return_payment
+from . import account_return_submission
+from . import account_return_submission_line
+from . import mixin_account_return_filing_channel
+from . import account_return_filing_manual
 from . import account_return_check_template
 from . import account_return_check
 from . import mail_activity

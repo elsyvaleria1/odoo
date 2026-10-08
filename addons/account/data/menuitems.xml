@@ -24,6 +24,13 @@
         sequence="68" />
 
     <menuitem
+        id="menu_account_return_submission"
+        name="Tax Filings"
+        parent="account.menu_account_closing"
+        action="action_account_return_submission"
+        sequence="69" />
+
+    <menuitem
         id="menu_view_tax_units"
         parent="account.menu_account_accounting"
         action="action_view_tax_units"
