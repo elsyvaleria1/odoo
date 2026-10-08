@@ -942,6 +942,23 @@ class MrpBom(models.Model):
 
     def _get_rolled_up_cost(self, product, quantity, as_component=False):
         self.check_singleton()
+        scratch = self.env.context.get("bom_cost_share_cache")
+        key = (
+            "rolled_up_cost",
+            self.id,
+            product.id if product else False,
+            quantity,
+            as_component,
+            self.env.context.get("rolled_up_bom_ids", frozenset()),
+        )
+        if scratch is not None and key in scratch:
+            return scratch[key]
+        cost = self._compute_rolled_up_cost(product, quantity, as_component)
+        if scratch is not None:
+            scratch[key] = cost
+        return cost
+
+    def _compute_rolled_up_cost(self, product, quantity, as_component):
         company = self.company_id or self.env.company
         currency = company.currency_id
         factor = quantity / (self.product_qty or 1.0)

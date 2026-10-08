@@ -5354,6 +5354,15 @@ class TestBoMAuditFixes(TestMrpCommon):
         )
         self.assertEqual(product.product_tmpl_id.get_forecast_bom_id(), own.id)
         self.assertEqual(product.get_forecast_bom_id(), own.id)
+        variant_bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "product_id": product.id,
+                "sequence": 0,
+            }
+        )
+        self.assertEqual(product.product_tmpl_id.get_forecast_bom_id(), own.id)
+        self.assertEqual(product.get_forecast_bom_id(), variant_bom.id)
 
     def test_a_kit_of_another_company_does_not_block_this_companys_stock(self):
         company_b = self.env["res.company"].create({"name": "Kit company"})
@@ -5389,3 +5398,41 @@ class TestBoMAuditFixes(TestMrpCommon):
         )
         quant.action_apply_inventory()
         self.assertEqual(product.with_company(self.env.company).qty_available, 4)
+
+    def test_a_bom_containing_its_own_product_prices_it_at_its_standard_price(self):
+        product = self._product("Reprocessed")
+        product.standard_price = 7
+        additive = self._product("Additive")
+        additive.standard_price = 2
+        placeholder = self._product("Placeholder")
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": placeholder.id}),
+                    Command.create({"product_id": additive.id}),
+                ],
+            }
+        )
+        self_line = bom.bom_line_ids.filtered(
+            lambda line: line.product_id == placeholder
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE mrp_bom_line SET product_id = %s WHERE id = %s",
+            [product.id, self_line.id],
+        )
+        self.env.invalidate_all()
+        self.assertEqual(self_line.child_bom_id, bom)
+        self.assertEqual(bom._get_rolled_up_cost(product, 1), 9)
+        production = self.env["mrp.production"].create(
+            {"product_id": product.id, "bom_id": bom.id, "product_qty": 1}
+        )
+        overview = self.env["report.mrp.report_mo_overview"]._get_report_data(
+            production.id
+        )
+        self.assertEqual(
+            sum(line["summary"]["bom_cost"] for line in overview["components"]), 9
+        )
+        structure = self.env["report.mrp.report_bom_structure"]._get_report_data(bom.id)
+        self.assertEqual(structure["lines"]["bom_cost"], 9)

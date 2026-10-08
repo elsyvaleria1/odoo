@@ -1623,6 +1623,18 @@ class TestProcurement(TestMrpCommon):
         orders = self._run_batched_manufacture(product, 1.5, self.uom_dozen)
         self.assertEqual(orders.mapped("product_qty"), [1.5])
 
+    def test_a_procurement_tops_up_an_open_order_to_the_batch_size(self):
+        product, _component = self._create_per_dozen_product()
+        product.bom_ids.write({"product_uom_id": self.uom_unit.id, "product_qty": 1})
+        product.bom_ids.write({"enable_batch_size": True, "batch_size": 200})
+        reference = self.env["stock.reference"].create({"name": "Top up"})
+        values = {"reference_ids": reference}
+        self._run_batched_manufacture(product, 50, self.uom_unit, values)
+        orders = self._run_batched_manufacture(product, 50, self.uom_unit, values)
+        self.assertEqual(orders.mapped("product_qty"), [100.0])
+        orders = self._run_batched_manufacture(product, 150, self.uom_unit, values)
+        self.assertEqual(sorted(orders.mapped("product_qty")), [50.0, 200.0])
+
     def test_update_mo_producing_qty_with_mtso_rule_and_some_available_stock(self):
         warehouse = self.env["stock.warehouse"].search([], limit=1)
         warehouse.write({"manufacture_steps": "pbm_sam"})

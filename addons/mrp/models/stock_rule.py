@@ -223,6 +223,10 @@ class StockRule(models.Model):
             _debug.logic(
                 "procurement_routed", bom=bom, mo=mo, batch=bool(is_batch_size)
             )
+            if mo and is_batch_size:
+                procurement = rule._top_up_production(mo, procurement, bom)
+                if procurement is None:
+                    continue
             if not mo or is_batch_size:
                 if not bom:
                     waiting_moves = procurement.values.get("move_dest_ids")
@@ -255,35 +259,9 @@ class StockRule(models.Model):
                         "procurements"
                     ].append(procurement)
             else:
-                merged = mo._prepare_merged_quantity_vals(
-                    mo.product_id,
-                    [
-                        (mo.product_qty, mo.product_uom_id),
-                        (procurement.product_qty, procurement.product_uom_id),
-                    ],
+                rule._merge_into_production(
+                    mo, procurement, procurement.product_qty, procurement.product_uom_id
                 )
-                if merged["product_uom_id"] != mo.product_uom_id.id:
-                    mo._convert_to_product_uom(round=False)
-                self.env["wizard.mrp.production.update.quantity"].sudo().with_context(
-                    skip_activity=True
-                ).create(
-                    {"mo_id": mo.id, "product_qty": merged["product_qty"]}
-                ).change_prod_qty()
-                _debug.lifecycle(
-                    "production_qty_increased",
-                    mo=mo,
-                    qty=procurement.product_qty,
-                    unit=procurement.product_uom_id,
-                )
-                if procurement.values.get("move_dest_ids"):
-                    mo.move_finished_ids.filtered_domain(
-                        [
-                            ("product_id", "=", procurement.product_id.id),
-                            ("state", "not in", ("done", "cancel")),
-                        ]
-                    ).move_dest_ids = [
-                        Command.link(m.id) for m in procurement.values["move_dest_ids"]
-                    ]
 
         for company_id in new_productions_values_by_company:
             productions_vals_list = new_productions_values_by_company[company_id][
@@ -424,6 +402,46 @@ class StockRule(models.Model):
         return self.env["mrp.bom"]._get_bom_by_product(
             product_id, picking_type=False, bom_type="normal", company_id=company_id.id
         )[product_id]
+
+    def _merge_into_production(self, mo, procurement, quantity, unit) -> None:
+        merged = mo._prepare_merged_quantity_vals(
+            mo.product_id,
+            [(mo.product_qty, mo.product_uom_id), (quantity, unit)],
+        )
+        if merged["product_uom_id"] != mo.product_uom_id.id:
+            mo._convert_to_product_uom(round=False)
+        self.env["wizard.mrp.production.update.quantity"].sudo().with_context(
+            skip_activity=True
+        ).create(
+            {"mo_id": mo.id, "product_qty": merged["product_qty"]}
+        ).change_prod_qty()
+        _debug.lifecycle("production_qty_increased", mo=mo, qty=quantity, unit=unit)
+        if procurement.values.get("move_dest_ids"):
+            mo.move_finished_ids.filtered_domain(
+                [
+                    ("product_id", "=", procurement.product_id.id),
+                    ("state", "not in", ("done", "cancel")),
+                ]
+            ).move_dest_ids = [
+                Command.link(m.id) for m in procurement.values["move_dest_ids"]
+            ]
+
+    def _top_up_production(self, mo, procurement, bom):
+        unit = bom.product_uom_id
+        room = bom.batch_size - mo.product_uom_id._get_quantity_in_unit(
+            mo.product_qty, unit, round=False
+        )
+        if unit.compare(room, 0) <= 0:
+            return procurement
+        demand = procurement.product_uom_id._get_quantity_in_unit(
+            procurement.product_qty, unit, round=False
+        )
+        added = min(room, demand)
+        self._merge_into_production(mo, procurement, added, unit)
+        rest = demand - added
+        if unit.is_zero(rest):
+            return None
+        return procurement._replace(product_qty=rest, product_uom_id=unit)
 
     def _get_mo_picking_type(self, procurement, bom):
         warehouse = (

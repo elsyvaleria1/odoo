@@ -2132,10 +2132,13 @@ class MrpProduction(models.Model):
             done_moves = self._get_main_finished_moves().filtered_domain(
                 [("state", "=", "done")]
             )
-            earlier = done_moves[:-1]
-            done_moves[-1:].quantity = vals["qty_producing"] - sum(
-                earlier.mapped("quantity")
-            )
+            remaining = vals["qty_producing"]
+            for move in done_moves[:-1]:
+                kept = min(move.quantity, max(remaining, 0.0))
+                if move.product_uom_id.compare(kept, move.quantity):
+                    move.quantity = kept
+                remaining -= kept
+            done_moves[-1:].quantity = max(remaining, 0.0)
         if (
             self._has_workorders()
             and not self.workorder_ids.operation_id

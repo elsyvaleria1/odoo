@@ -568,6 +568,10 @@ class TestOrderGuards(TestMrpCommon):
         self.assertEqual(len(finished), 2)
         production.qty_producing = 3
         self.assertEqual(sum(finished.mapped("quantity")), 3)
+        production.qty_producing = 0.5
+        self.assertEqual(finished.sorted("id").mapped("quantity"), [0.5, 0.0])
+        self.assertEqual(production.qty_produced, 0.5)
+        self.assertEqual(self.finished.qty_available, 0.5)
 
     def test_rescheduling_leaves_done_moves_dated_when_they_happened(self):
         production = self._posted_twice()

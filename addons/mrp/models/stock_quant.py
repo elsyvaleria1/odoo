@@ -38,7 +38,7 @@ class StockQuant(models.Model):
             or (
                 product_id
                 and product_id.with_company(
-                    location_id.company_id or self.env.company
+                    (location_id and location_id.company_id) or self.env.company
                 ).is_kit
             )
         )

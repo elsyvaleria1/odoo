@@ -68,12 +68,13 @@ class ProductTemplate(models.Model):
     def get_forecast_bom_id(self):
         self.check_singleton()
         Bom = self.env["mrp.bom"]
-        return Bom.search(
-            Bom._get_domain_bom(
-                self.product_variant_ids, company_id=self.env.company.id
-            ),
-            order="sequence, product_id, id",
-            limit=1,
+        domain = Bom._get_domain_bom(
+            self.product_variant_ids, company_id=self.env.company.id
+        )
+        order = "sequence, id"
+        return (
+            Bom.search(domain & Domain("product_id", "=", False), order=order, limit=1)
+            or Bom.search(domain, order=order, limit=1)
         ).id
 
     def action_archive(self):

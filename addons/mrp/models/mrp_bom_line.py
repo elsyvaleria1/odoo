@@ -62,7 +62,10 @@ class MrpBomLine(models.Model):
     def _get_rolled_up_cost(self, quantity, company) -> float:
         self.check_singleton()
         child_bom = self.child_bom_id
-        if not child_bom:
+        ancestors = self.env.context.get("rolled_up_bom_ids", frozenset()) | {
+            self.bom_id.id
+        }
+        if not child_bom or child_bom.id in ancestors:
             return company.currency_id.round(
                 self.product_id._get_standard_cost(
                     quantity, self.product_uom_id, company
@@ -71,7 +74,7 @@ class MrpBomLine(models.Model):
         child_quantity = self.product_uom_id._get_quantity_estimate(
             quantity, child_bom.product_uom_id, round=False
         )
-        return child_bom._get_rolled_up_cost(
+        return child_bom.with_context(rolled_up_bom_ids=ancestors)._get_rolled_up_cost(
             self.product_id, child_quantity, as_component=True
         ) * child_bom._get_finished_cost_share(self.product_id)
 

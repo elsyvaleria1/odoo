@@ -2726,3 +2726,9 @@ class TestMpsMps(common.TransactionCase):
                 "mrp_mps_show_actual_demand_year_minus_2"
             )
         )
+
+    def test_a_batch_size_does_not_round_the_replenishment_up(self):
+        self.mps_table.bom_id = self.bom_table
+        self.bom_table.write({"enable_batch_size": True, "batch_size": 10})
+        self.mps_table.write({"forecast_target_qty": 0, "min_to_replenish_qty": 0})
+        self.assertEqual(self.mps_table._get_replenish_qty(-3), 3)

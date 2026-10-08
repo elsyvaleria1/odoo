@@ -1294,16 +1294,6 @@ class MrpProductionSchedule(models.Model):
         rtype: float
         """
         optimal_qty = self.forecast_target_qty - after_forecast_qty
-        if self.bom_id.enable_batch_size:
-            batch_size = self.bom_id.product_uom_id._get_quantity_in_unit(
-                self.bom_id.batch_size, self.product_uom_id
-            )
-            optimal_qty = (
-                float_round(
-                    optimal_qty / batch_size, precision_digits=0, rounding_method="UP"
-                )
-                * batch_size
-            )
 
         if optimal_qty <= 0:
             by = "target_reached"  # debuglog

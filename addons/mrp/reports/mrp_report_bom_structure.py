@@ -88,6 +88,9 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
     @api.model
     def _get_report_data(self, bom_id, searchQty=0, searchVariant=False):
         self = self._with_bom_company(self.env["mrp.bom"].browse(bom_id))
+        self = self.with_context(
+            bom_cost_share_cache=self.env["mrp.bom"]._get_explosion_scratch()
+        )
         bom = self.env["mrp.bom"].browse(bom_id)
         bom_quantity = searchQty or bom.product_qty or 1
 
@@ -147,6 +150,12 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
     ):
         no_bom_lines = self.env["mrp.bom.line"]
         line_quantities = {}
+        ancestors = self.env.context.get("bom_report_ancestors", frozenset()) | {bom.id}
+        child_boms = {
+            line: line.child_bom_id
+            for line in bom.bom_line_ids
+            if line.child_bom_id and line.child_bom_id.id not in ancestors
+        }
         for line in bom.bom_line_ids:
             if product and line._is_bom_line_skipped(product):
                 continue
@@ -154,7 +163,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 current_quantity / (bom.product_qty or 1.0)
             ) * line.product_qty
             line_quantities[line.id] = line_quantity
-            if line.child_bom_id:
+            if line in child_boms:
                 continue
             no_bom_lines |= line
             self._update_product_info(
@@ -179,9 +188,11 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 continue
             new_index = f"{index}{component_index}"
             line_quantity = line_quantities.get(line.id, 0.0)
-            if line.child_bom_id:
-                component = self._get_bom_data(
-                    line.child_bom_id,
+            if line in child_boms:
+                component = self.with_context(
+                    bom_report_ancestors=ancestors
+                )._get_bom_data(
+                    child_boms[line],
                     warehouse,
                     line.product_id,
                     line_quantity,
