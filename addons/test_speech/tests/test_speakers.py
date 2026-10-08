@@ -56,6 +56,22 @@ class TestSpeakers(SpeechCase):
             sorted(attachment.speaker_ids.mapped("label")), ["SPEAKER_1", "SPEAKER_2"]
         )
 
+    def test_a_segment_shows_each_voice_under_the_person_put_on_it(self):
+        attachment = self._transcribed()
+        segment = self._recording()._add_media_segment(attachment, 0, 6000)
+        self.assertEqual(
+            segment.transcript_speakers,
+            {"SPEAKER_0": "SPEAKER_0", "SPEAKER_1": "SPEAKER_1"},
+        )
+        partner = self.env["res.partner"].create({"name": "Víctor"})
+        attachment.speaker_ids.filtered(
+            lambda s: s.label == "SPEAKER_1"
+        ).partner_id = partner
+        self.assertEqual(
+            segment.transcript_speakers,
+            {"SPEAKER_0": "SPEAKER_0", "SPEAKER_1": "Víctor"},
+        )
+
     def test_a_name_typed_by_hand_stays_until_a_person_is_chosen(self):
         voice = self._transcribed().speaker_ids[:1]
         voice.name = "La del rancho"

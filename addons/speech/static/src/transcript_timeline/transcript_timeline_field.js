@@ -18,7 +18,11 @@ export class TranscriptTimelineField extends MediaTimelineField {
 
     /** @param {any} record */
     _toSegment(record) {
-        return { ...super._toSegment(record), cues: record.data.transcript_cues ?? [] };
+        return {
+            ...super._toSegment(record),
+            cues: record.data.transcript_cues ?? [],
+            speakers: record.data.transcript_speakers ?? {},
+        };
     }
 
     /** @returns {Cue[]} */
@@ -35,6 +39,14 @@ export class TranscriptTimelineField extends MediaTimelineField {
         return offset >= cue.start && offset < cue.end;
     }
 
+    /**
+     * @param {Cue} cue
+     * @returns {string}
+     */
+    speakerOf(cue) {
+        return this.current?.speakers?.[cue.speaker] || cue.speaker;
+    }
+
     /** @param {Cue} cue */
     onCueClick(cue) {
         this.seek((this.current?.startMs ?? 0) + Math.round(cue.start * 1000));
@@ -47,5 +59,6 @@ registry.category("fields").add("transcript_timeline", {
     relatedFields: () => [
         ...MEDIA_TIMELINE_FIELDS,
         { name: "transcript_cues", type: "json" },
+        { name: "transcript_speakers", type: "json" },
     ],
 });

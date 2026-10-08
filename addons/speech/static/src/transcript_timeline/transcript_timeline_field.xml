@@ -15,7 +15,7 @@
                     t-att-class="{ 'fw-bold': this.isCueActive(cue) }"
                     t-on-click="() => this.onCueClick(cue)">
                     <span t-if="cue.speaker" class="text-muted me-1">
-                        <t t-out="cue.speaker" />:
+                        <t t-out="this.speakerOf(cue)" />:
                     </span>
                     <t t-out="cue.text" />
                 </div>
