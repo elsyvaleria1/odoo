@@ -5,7 +5,7 @@ from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, Query, SetDefinitions
+from odoo.tools import Query, SetDefinitions
 
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
 from odoo.addons.base.models.res_users_grant import projecting
@@ -537,11 +537,8 @@ class ResGroups(models.Model):
         return self.sudo().browse(self._get_user_type_group_ids())
 
     @api.model
-    @tools.ormcache(cache="groups")
     def _get_privilege_group_ids(self) -> frozenset[int]:
-        self.flush_model(["is_privilege"])
-        self.env.cr.execute(SQL("SELECT id FROM res_groups WHERE is_privilege"))
-        return frozenset(group_id for (group_id,) in self.env.cr.fetchall())
+        return self._get_group_catalog()[1]
 
     @api.model
     @tools.ormcache(cache="groups")
@@ -699,8 +696,12 @@ class ResGroups(models.Model):
         ]
 
     @api.model
-    @tools.ormcache(cache="groups")
     def _get_group_definitions(self) -> SetDefinitions:
+        return self._get_group_catalog()[0]
+
+    @api.model
+    @tools.ormcache(cache="groups")
+    def _get_group_catalog(self) -> tuple[SetDefinitions, frozenset[int]]:
         groups = self.sudo().search([], order="id")
         id_to_ref = groups.get_external_id()
         data = {
@@ -712,7 +713,7 @@ class ResGroups(models.Model):
             for group in groups
         }
         _debug.perf.count("group_definitions_computed", groups=len(data))
-        return SetDefinitions(data)
+        return SetDefinitions(data), frozenset(groups.filtered("is_privilege").ids)
 
     @api.model
     def _is_feature_enabled(self, group_reference: str) -> bool:
