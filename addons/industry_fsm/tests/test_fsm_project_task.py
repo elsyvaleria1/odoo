@@ -5,7 +5,8 @@ from freezegun import freeze_time
 
 from odoo.tests import Form, tagged
 
-from .common import TestIndustryFsmCommon, assign_in_form
+from .common import TestIndustryFsmCommon
+from odoo.addons.project.tests.test_project_base import assign_in_form
 
 
 @tagged("post_install", "-at_install")

@@ -1,6 +1,7 @@
 from odoo.tests import Form
 
 from odoo.addons.hr_timesheet.tests.test_timesheet import TestCommonTimesheet
+from odoo.addons.project.tests.test_project_base import assign_in_form
 
 
 class TestProjectTaskQuickCreate(TestCommonTimesheet):
@@ -20,8 +21,5 @@ class TestProjectTaskQuickCreate(TestCommonTimesheet):
             view="project.quick_create_task_form",
         )
         task_form.display_name = "hello"
-        if "employee_ids" in task_form._view["fields"]:
-            task_form.employee_ids.set(self.empl_employee)
-        else:
-            task_form.user_ids.set(self.user_employee)
+        assign_in_form(task_form, self.user_employee)
         self.assertEqual(task_form.display_name, "hello")

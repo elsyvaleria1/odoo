@@ -4,6 +4,7 @@ import re
 from odoo.tests import Form, common, freeze_time
 
 from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.project.tests.test_project_base import assign_in_form
 
 
 @freeze_time("2020-01-01")
@@ -256,10 +257,7 @@ class TestProjectLeaves(common.TransactionCase):
 
         with Form(self.env["project.task"]) as task_form:
             task_form.name = "Test Task"
-            if "employee_ids" in task_form._view["fields"]:
-                task_form.employee_ids = self.employee_hruser
-            else:
-                task_form.user_ids = self.employee_hruser.user_id
+            assign_in_form(task_form, self.employee_hruser.user_id)
             task_form.project_id = self.project
             task_form.date_end = datetime.datetime(2020, 1, 2)
             task_form.date_start = datetime.datetime(2020, 1, 1)

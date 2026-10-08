@@ -4,8 +4,10 @@ from dateutil.relativedelta import relativedelta
 
 from odoo.tests import Form
 
-from .common import assign_in_form
-from odoo.addons.project.tests.test_project_base import TestProjectCommon
+from odoo.addons.project.tests.test_project_base import (
+    TestProjectCommon,
+    assign_in_form,
+)
 
 
 class TestTaskCalendarView(TestProjectCommon):
