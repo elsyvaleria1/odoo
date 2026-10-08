@@ -110,7 +110,7 @@ export class ProductTemplateAccounting extends Base {
         );
         const now = getNow();
         const rules = this.models["product.pricelist.item"]
-            .readMany([...productRulesSet, ...tmplRulesSet, ...generalRulesIds])
+            .getMany([...productRulesSet, ...tmplRulesSet, ...generalRulesIds])
             .filter(
                 (r) =>
                     (!r.min_quantity || r.min_quantity <= quantity) &&

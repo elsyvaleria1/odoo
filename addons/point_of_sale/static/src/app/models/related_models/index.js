@@ -103,53 +103,33 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
             return result;
         }
 
-        read(value) {
+        get(value) {
             const id = /^\d+$/.test(value) ? parseInt(value) : value;
             return this[STORE_SYMBOL].getById(this.name, id);
         }
 
-        readFirst() {
+        getFirst() {
             return this.orderedRecords[0];
         }
 
-        readBy(key, val) {
+        getBy(key, val) {
             return this[STORE_SYMBOL].get(this.name, key, val);
         }
 
-        readAll() {
+        getAll() {
             return this.orderedRecords;
         }
 
-        readAllBy(key) {
+        getAllBy(key) {
             return this[STORE_SYMBOL].getRecordsByIds(this.name, key);
         }
 
-        readMany(ids) {
-            return ids.map((value) => this.read(value)).filter(Boolean);
-        }
-
-        getAllBy() {
-            return this.readAllBy(...arguments);
+        getMany(ids) {
+            return ids.map((value) => this.get(value)).filter(Boolean);
         }
 
         getAllIds() {
             return this[STORE_SYMBOL].getRecordsIds(this.name);
-        }
-
-        getAll() {
-            return this.readAll(...arguments);
-        }
-
-        getBy() {
-            return this.readBy(...arguments);
-        }
-
-        get() {
-            return this.read(...arguments);
-        }
-
-        getFirst() {
-            return this.readFirst(...arguments);
         }
 
         map(fn) {
@@ -593,11 +573,13 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
                 if (inverse && !inverse.dummy && record.isSynced) {
                     const modelCommands = commands[field.relation];
                     const map = backend ? modelCommands.delete : modelCommands.unlink;
-                    const oldVal = map.get(inverse.name);
-                    map.set(inverse.name, [
-                        ...(oldVal || []),
-                        { id: record.id, parentId: record[field.name].id },
-                    ]);
+                    if (!map.has(inverse.name)) {
+                        map.set(inverse.name, []);
+                    }
+                    map.get(inverse.name).push({
+                        id: record.id,
+                        parentId: record[field.name].id,
+                    });
                 }
             };
             this[STORE_SYMBOL].remove(record);
@@ -629,6 +611,7 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
                 }
             }
 
+            this._dropCommandsOf(id);
             aggregatedUpdates.remove(record);
             aggregatedUpdates.fireEventAndDirty({
                 silentModels: opts.silent ? [record.model.name] : [],
@@ -636,6 +619,30 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
             const key = database[this.name]?.key || "id";
             this.triggerEvents("delete", { key: record[key], id: record.id });
             return id;
+        }
+
+        _dropCommandsOf(parentId) {
+            // a deleted parent is never serialized again, so nothing would consume these
+            const modelCommands = commands[this.name];
+            for (const map of [modelCommands.unlink, modelCommands.delete]) {
+                for (const [fieldName, list] of map) {
+                    const kept = list.filter((cmd) => cmd.parentId !== parentId);
+                    if (kept.length === list.length) {
+                        continue;
+                    }
+                    log.logic("delete: drop pending commands", () => ({
+                        model: this.name,
+                        parent: parentId,
+                        field: fieldName,
+                        dropped: list.length - kept.length,
+                    }));
+                    if (kept.length) {
+                        map.set(fieldName, kept);
+                    } else {
+                        map.delete(fieldName);
+                    }
+                }
+            }
         }
 
         backLink(record, link) {
@@ -741,22 +748,28 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
             });
         }
 
-        _isPendingDeletion(modelName, key, id) {
+        _pendingDeletionIds() {
+            const idsByModel = new Map();
             for (const parentModel in commands) {
                 const parentFields = getFields(parentModel);
                 const modelCommands = commands[parentModel];
                 for (const map of [modelCommands.unlink, modelCommands.delete]) {
-                    for (const [fieldName, list] of map.entries()) {
-                        if (parentFields[fieldName]?.relation !== modelName) {
+                    for (const [fieldName, list] of map) {
+                        const childModel = parentFields[fieldName]?.relation;
+                        if (!childModel) {
                             continue;
                         }
-                        if (list.some((cmd) => cmd.id === id || cmd.id === key)) {
-                            return true;
+                        if (!idsByModel.has(childModel)) {
+                            idsByModel.set(childModel, new Set());
+                        }
+                        const ids = idsByModel.get(childModel);
+                        for (const cmd of list) {
+                            ids.add(cmd.id);
                         }
                     }
                 }
             }
-            return false;
+            return idsByModel;
         }
 
         _loadData(rawData, modelsToLoad = [], opts = {}) {
@@ -773,6 +786,7 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
             try {
                 const results = {};
                 const { serverData = true, connectRecords = true } = opts;
+                let pendingDeletionIds;
                 for (const model in rawData) {
                     if (!modelsToLoad.includes(model) && modelsToLoad.length !== 0) {
                         continue;
@@ -797,8 +811,11 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
                             !existingRecord &&
                             dynamicModels.includes(model)
                         ) {
+                            pendingDeletionIds ??= this._pendingDeletionIds();
+                            const pending = pendingDeletionIds.get(model);
                             if (
-                                this._isPendingDeletion(model, vals[modelKey], vals.id)
+                                pending &&
+                                (pending.has(vals.id) || pending.has(vals[modelKey]))
                             ) {
                                 log.logic("loadData: skip pending deletion", () => ({
                                     model,

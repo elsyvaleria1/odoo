@@ -30,7 +30,7 @@ export class AccountFiscalPosition extends Base {
             }
         }
 
-        const resolved = this.models["account.tax"].readMany(newTaxIds);
+        const resolved = this.models["account.tax"].getMany(newTaxIds);
         log.logic("getTaxesAfterFiscalPosition: mapped", () => ({
             fiscalPosition: this.id,
             from: taxes.map((t) => t.id),

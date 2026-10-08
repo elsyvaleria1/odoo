@@ -29,21 +29,21 @@ describe("models with backlinks", () => {
             const p2 = models["product.template"].create({ pos_categ_ids: [c1] });
             const p3 = models["product.template"].create({ pos_categ_ids: [c2] });
 
-            const readC1 = models["pos.category"].read(c1.id);
+            const readC1 = models["pos.category"].get(c1.id);
             expect(readC1).toEqual(c1);
 
-            const readP1 = models["product.template"].read(p1.id);
+            const readP1 = models["product.template"].get(p1.id);
             expect(readP1).toEqual(p1);
 
             expect(readP1.pos_categ_ids).toEqual([c1]);
 
-            const readMany = models["product.template"].readMany([p2.id, p3.id]);
+            const readMany = models["product.template"].getMany([p2.id, p3.id]);
             expect(readMany).toEqual([p2, p3]);
 
-            const readNonExistent = models["product.template"].read(9999);
+            const readNonExistent = models["product.template"].get(9999);
             expect(readNonExistent).toBe(undefined);
 
-            const readNonExistentC = models["pos.category"].read(9999);
+            const readNonExistentC = models["pos.category"].get(9999);
             expect(readNonExistentC).toBe(undefined);
         });
 
@@ -140,7 +140,7 @@ describe("models with backlinks", () => {
             expect(o1.lines).toInclude(l1);
 
             l1.delete();
-            expect(models["pos.order.line"].read(l1.id)).toBe(undefined);
+            expect(models["pos.order.line"].get(l1.id)).toBe(undefined);
             expect(o1.lines).not.toInclude(l1);
         });
 
@@ -154,7 +154,7 @@ describe("models with backlinks", () => {
             expect(l1.order_id).toBe(o1);
 
             l1.delete();
-            expect(models["pos.order.line"].read(l1.id)).toBe(undefined);
+            expect(models["pos.order.line"].get(l1.id)).toBe(undefined);
             expect(o1.lines).not.toInclude(l1);
         });
     });
@@ -175,13 +175,13 @@ describe("models with backlinks", () => {
             const c1 = models["pos.category"].create({});
             const c2 = models["pos.category"].create({ parent_id: c1 });
 
-            const readC1 = models["pos.category"].read(c1.id);
+            const readC1 = models["pos.category"].get(c1.id);
             expect(readC1.child_ids).toEqual([c2]);
 
-            const readC2 = models["pos.category"].read(c2.id);
+            const readC2 = models["pos.category"].get(c2.id);
             expect(readC2.parent_id).toEqual(c1);
 
-            const readMany = models["pos.category"].readMany([c1.id, c2.id]);
+            const readMany = models["pos.category"].getMany([c1.id, c2.id]);
             expect(readMany).toEqual([c1, c2]);
         });
 
@@ -268,7 +268,7 @@ describe("models with backlinks", () => {
             expect(c1.child_ids).toInclude(c2);
 
             c2.delete();
-            expect(models["pos.category"].read(c2.id)).toBe(undefined);
+            expect(models["pos.category"].get(c2.id)).toBe(undefined);
             expect(c1.child_ids).not.toInclude(c2);
         });
 
@@ -281,7 +281,7 @@ describe("models with backlinks", () => {
             expect(c1.child_ids).toInclude(c2);
 
             c1.delete();
-            expect(models["pos.category"].read(c1.id)).toBe(undefined);
+            expect(models["pos.category"].get(c1.id)).toBe(undefined);
             expect(c2.parent_id).toBe(undefined);
         });
     });
@@ -324,9 +324,9 @@ describe("models with backlinks", () => {
                 pos_categ_ids: [["link", c1, c2]],
             });
 
-            const readT1 = models["product.template"].read(t1.id);
+            const readT1 = models["product.template"].get(t1.id);
             expect(readT1).toEqual(t1);
-            const readP1 = models["product.template"].read(t2.id);
+            const readP1 = models["product.template"].get(t2.id);
             expect(readP1).toEqual(t2);
 
             expect(readT1.pos_categ_ids).toInclude(c1);
@@ -335,7 +335,7 @@ describe("models with backlinks", () => {
             expect(readP1.pos_categ_ids).toInclude(c1);
             expect(readP1.pos_categ_ids).toInclude(c2);
 
-            const readMany = models["product.template"].readMany([t1.id, t2.id]);
+            const readMany = models["product.template"].getMany([t1.id, t2.id]);
             expect(readMany[0]).toBe(t1);
             expect(readMany[1]).toBe(t2);
         });
@@ -393,7 +393,7 @@ describe("models with backlinks", () => {
             expect(t1.pos_categ_ids).toInclude(c1);
 
             c1.delete();
-            expect(models["pos.category"].read(c1.id)).toBe(undefined);
+            expect(models["pos.category"].get(c1.id)).toBe(undefined);
             expect(t1.pos_categ_ids).not.toInclude(c1);
             expect(t1.pos_categ_ids).toInclude(c2);
         });
@@ -421,17 +421,17 @@ describe("models with backlinks", () => {
                     combo_line_ids: [l1, l2, l3],
                 });
 
-                const readL1 = models["pos.order.line"].read(l1.id);
+                const readL1 = models["pos.order.line"].get(l1.id);
                 expect(readL1).toEqual(l1);
 
-                const readL4 = models["pos.order.line"].read(l4.id);
+                const readL4 = models["pos.order.line"].get(l4.id);
                 expect(readL4).toEqual(l4);
 
                 expect(
                     [l1, l2, l3].every((n) => readL4.combo_line_ids.includes(n)),
                 ).toBe(true);
 
-                const readMany = models["pos.order.line"].readMany([l2.id, l3.id]);
+                const readMany = models["pos.order.line"].getMany([l2.id, l3.id]);
                 expect(readMany[0]).toBe(l2);
                 expect(readMany[1]).toBe(l3);
             });
@@ -498,7 +498,7 @@ describe("models with backlinks", () => {
                 expect([l1, l2].every((n) => l3.combo_line_ids.includes(n))).toBe(true);
 
                 l1.delete();
-                expect(models["pos.order.line"].read(l1.id)).toBe(undefined);
+                expect(models["pos.order.line"].get(l1.id)).toBe(undefined);
                 expect(l3.combo_line_ids).not.toInclude(l1);
             });
         });
@@ -527,10 +527,10 @@ describe("models without backlinks", () => {
             const p1 = models["product.template"].create({ pos_categ_ids: [c1] });
             const p2 = models["product.template"].create({ pos_categ_ids: [c1] });
 
-            const readC1 = models["pos.category"].read(c1.id);
+            const readC1 = models["pos.category"].get(c1.id);
             expect(readC1).toEqual(c1);
 
-            const readP1 = models["product.template"].read(p1.id);
+            const readP1 = models["product.template"].get(p1.id);
             expect(readP1).toEqual(p1);
 
             expect(readC1.backLink("product.template.pos_categ_ids")).toEqual([p1, p2]);
@@ -569,7 +569,7 @@ describe("models without backlinks", () => {
             expect(c1.backLink("<-product.template.pos_categ_ids")).toEqual([p1]);
 
             c1.delete();
-            expect(models["pos.category"].read(c1.id)).toBe(undefined);
+            expect(models["pos.category"].get(c1.id)).toBe(undefined);
             expect(p1.pos_categ_ids).toHaveLength(0);
         });
     });
@@ -603,13 +603,13 @@ describe("models without backlinks", () => {
                 pos_categ_ids: [["link", c1]],
             });
 
-            const readT1 = models["product.template"].read(p1.id);
+            const readT1 = models["product.template"].get(p1.id);
             expect(readT1).toEqual(p1);
 
-            const readP1 = models["product.template"].read(p2.id);
+            const readP1 = models["product.template"].get(p2.id);
             expect(readP1).toEqual(p2);
 
-            const readMany = models["product.template"].readMany([p2.id, p3.id]);
+            const readMany = models["product.template"].getMany([p2.id, p3.id]);
             expect(readMany).toEqual([p2, p3]);
         });
 
@@ -653,7 +653,7 @@ describe("models without backlinks", () => {
                 pos_categ_ids: [tag1, tag2],
             });
             models["product.template"].update(product, { pos_categ_ids: [["clear"]] });
-            const updatedProduct = models["product.template"].read(product.id);
+            const updatedProduct = models["product.template"].get(product.id);
             expect(updatedProduct.pos_categ_ids).toHaveLength(0);
 
             models["product.template"].update(product, {
@@ -681,11 +681,11 @@ describe("models without backlinks", () => {
             expect(t1.backLink("<-product.template.pos_categ_ids")).toInclude(p1);
 
             p1.delete();
-            expect(models["product.template"].read(p1.id)).toBe(undefined);
+            expect(models["product.template"].get(p1.id)).toBe(undefined);
             expect(t1.backLink("<-product.template.pos_categ_ids")).not.toInclude(p1);
 
             t1.delete();
-            expect(models["pos.category"].read(t1.id)).toBe(undefined);
+            expect(models["pos.category"].get(t1.id)).toBe(undefined);
             expect(p1.pos_categ_ids).toHaveLength(0);
         });
     });

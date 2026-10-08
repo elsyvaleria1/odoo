@@ -75,34 +75,19 @@ patch(TicketScreen.prototype, {
             order.state = "paid";
             order.uiState.screen_data.value = { name: "", props: {} };
 
-            const serializedTipLine = order.getSelectedOrderline().serializeForORM();
-            order.getSelectedOrderline().delete();
+            const tipLine = order.getSelectedOrderline();
+            const tipAmount = tipLine.price_unit;
+            const serializedTipLine = tipLine.serializeForORM();
+            tipLine.delete();
 
             promises.push(
-                new Promise((resolve) => {
-                    const fn = async () => {
-                        const tipLine = await this.pos.data.create("pos.order.line", [
-                            serializedTipLine,
-                        ]);
-                        const state = await this.pos.data.ormWrite(
-                            "pos.order",
-                            [order.id],
-                            {
-                                is_tipped: true,
-                                tip_amount: tipLine[0].price_unit,
-                            },
-                        );
-
-                        if (state) {
-                            order.update({
-                                is_tipped: true,
-                                tip_amount: tipLine[0].price_unit,
-                            });
-                        }
-                        resolve();
-                    };
-                    fn();
-                }),
+                (async () => {
+                    await this.pos.data.create("pos.order.line", [serializedTipLine]);
+                    await this.pos.data.write("pos.order", [order.id], {
+                        is_tipped: true,
+                        tip_amount: tipAmount,
+                    });
+                })(),
             );
         }
 

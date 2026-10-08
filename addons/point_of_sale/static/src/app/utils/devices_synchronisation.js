@@ -198,7 +198,7 @@ export default class DevicesSynchronisation {
      */
     processDeletedRecords(deletedRecords) {
         for (const [model, ids] of Object.entries(deletedRecords)) {
-            const records = this.models[model].readMany(ids).filter(Boolean);
+            const records = this.models[model].getMany(ids).filter(Boolean);
             const dbTable = this.pos.data.opts.databaseTable[model];
             log.lifecycle("processDeletedRecords", () => ({
                 model,

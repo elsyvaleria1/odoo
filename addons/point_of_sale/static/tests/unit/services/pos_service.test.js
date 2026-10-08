@@ -532,7 +532,7 @@ describe("pos_store.js", () => {
         expect(groupedSearchTest2Prods2).toHaveLength(100);
 
         store.searchProductWord = "";
-        const productWoCategory = store.models["product.template"].readMany([15, 16]);
+        const productWoCategory = store.models["product.template"].getMany([15, 16]);
         const groupedSearchTest3 = store.productToDisplayByCateg;
         expect(groupedSearchTest3[groupedSearchTest3.length - 1][0]).toEqual("0");
         expect(groupedSearchTest3[groupedSearchTest3.length - 1][1]).toHaveLength(2);

@@ -5,6 +5,7 @@ import { FloorScreen } from "@pos_restaurant/app/screens/floor_screen/floor_scre
 import { mountWithCleanup, patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { appContextOf } from "@web/core/app_context";
 import { cookie } from "@web/core/browser/cookie";
+import { ConnectionLostError } from "@web/core/network";
 
 definePosRestaurantModels();
 
@@ -110,6 +111,29 @@ test("_createTableHelper", async () => {
     expect(table.height).toBe(table.width);
     expect(table.position_v >= 0).toBe(true);
     expect(table.position_h >= 10).toBe(true);
+});
+
+test.tags("desktop");
+test("a table created offline is queued and nothing is selected", async () => {
+    const store = await setupPosEnv();
+    const floor = store.models["restaurant.floor"].get(2);
+    const screen = await mountWithCleanup(FloorScreen, {});
+    screen.selectFloor(floor);
+    store.data.network.unsyncData = [];
+    patchWithCleanup(store.data.orm, {
+        create: async () => {
+            throw new ConnectionLostError();
+        },
+    });
+    const tables = store.models["restaurant.table"].length;
+
+    await screen.createTable();
+
+    expect(screen.state.selectedTableIds).toEqual([]);
+    expect(store.models["restaurant.table"].length).toBe(tables);
+    expect(store.data.network.unsyncData.map(({ args: [op] }) => op.model)).toEqual([
+        "restaurant.table",
+    ]);
 });
 
 test("_getNewTableNumber", async () => {

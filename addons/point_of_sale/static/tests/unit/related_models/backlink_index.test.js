@@ -177,7 +177,60 @@ describe("delete command bookkeeping", () => {
         models["pos.order"].delete(order);
 
         expect([...models.commands["pos.order.line"].unlink.entries()]).toEqual([]);
-        expect(models._isPendingDeletion("pos.order", "o1", 1)).toBe(false);
+        expect(models._pendingDeletionIds().has("pos.order")).toBe(false);
+    });
+
+    test("deleting a parent drops the commands its deleted children left", async () => {
+        await makeMockServer();
+        const models = getRelatedModelsInstance(false);
+        models.loadConnectedData({
+            "pos.order": [
+                { id: 1, uuid: "o1", lines: [11, 12, 13] },
+                { id: 2, uuid: "o2", lines: [21] },
+            ],
+            "pos.order.line": [
+                { id: 11, uuid: "l11", order_id: 1 },
+                { id: 12, uuid: "l12", order_id: 1 },
+                { id: 13, uuid: "l13", order_id: 1 },
+                { id: 21, uuid: "l21", order_id: 2 },
+            ],
+        });
+        for (const id of [11, 12, 21]) {
+            models["pos.order.line"].delete(models["pos.order.line"].get(id));
+        }
+
+        models["pos.order"].delete(models["pos.order"].get(1));
+
+        expect([...models.commands["pos.order"].unlink.entries()]).toEqual([
+            ["lines", [{ id: 21, parentId: 2 }]],
+        ]);
+    });
+
+    test("a reload skips the children pending deletion and only those", async () => {
+        await makeMockServer();
+        const models = getRelatedModelsInstance(false);
+        const rows = {
+            "pos.order": [{ id: 3, uuid: "o3", lines: [31, 32] }],
+            "pos.order.line": [
+                { id: 31, uuid: "l31", order_id: 3 },
+                { id: 32, uuid: "l32", order_id: 3 },
+            ],
+        };
+        models.loadConnectedData(rows);
+        models["pos.order.line"].delete(models["pos.order.line"].get(31));
+
+        models.loadConnectedData({
+            ...rows,
+            "pos.order.line": [
+                ...rows["pos.order.line"],
+                { id: 33, uuid: "l33", order_id: 3 },
+            ],
+        });
+
+        expect(models["pos.order.line"].get(31)).toBe(undefined);
+        expect(models["pos.order.line"].getMany([32, 33]).map((l) => l.id)).toEqual([
+            32, 33,
+        ]);
     });
 
     test("deleting a child still records the unlink on its parent", async () => {

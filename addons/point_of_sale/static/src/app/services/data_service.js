@@ -27,6 +27,15 @@ import { logPosMessage } from "../utils/pretty_console_log.js";
 const CONSOLE_COLOR = "#28ffeb";
 const MAX_SYNC_ATTEMPTS = 5;
 const log = makeLogger("pos.data");
+const UNQUEUEABLE_TYPES = new Set(["read", "search_read"]);
+
+export class QueuedOperation {
+    constructor(uuid) {
+        this.uuid = uuid;
+    }
+}
+
+export const isQueued = (result) => result instanceof QueuedOperation;
 
 export class PosData extends SignalStore {
     static modelToLoad = [];
@@ -49,8 +58,9 @@ export class PosData extends SignalStore {
         this.records = {};
         this.opts = new DataServiceOptions();
         this.channels = [];
+        this.dirtyLocalRecords = new Map();
         this.debouncedSynchronizeLocalDataInIndexedDB = debounce(
-            this.syncLocalDataInIndexedDB.bind(this),
+            () => this.syncLocalDataInIndexedDB({ onlyDirty: true }),
             300,
         );
 
@@ -188,7 +198,8 @@ export class PosData extends SignalStore {
 
     async deleteRecordsInIndexedDB(model, ids) {
         log.lifecycle("[idb] delete", () => ({ model, ids: ids.length }));
-        return await this.indexedDB.delete(model, ids);
+        // after any write in flight, which would otherwise put the row back
+        return await this.indexedDBMutex.exec(() => this.indexedDB.delete(model, ids));
     }
 
     async initIndexedDB(relations) {
@@ -222,18 +233,70 @@ export class PosData extends SignalStore {
         return db;
     }
 
-    async syncLocalDataInIndexedDB() {
-        return this.indexedDBMutex.exec(() => this._synchronizeLocalDataInIndexedDB());
+    async syncLocalDataInIndexedDB(opts = {}) {
+        return this.indexedDBMutex.exec(() =>
+            this._synchronizeLocalDataInIndexedDB(opts),
+        );
     }
 
-    async _synchronizeLocalDataInIndexedDB() {
+    markLocalRecordsDirty(model, ids) {
+        const tracked = this.opts.databaseTable;
+        const visited = new Set();
+        const mark = (record) => {
+            if (visited.has(record)) {
+                return;
+            }
+            visited.add(record);
+            const modelName = record.model.name;
+            if (tracked[modelName]) {
+                if (!this.dirtyLocalRecords.has(modelName)) {
+                    this.dirtyLocalRecords.set(modelName, new Set());
+                }
+                this.dirtyLocalRecords.get(modelName).add(record);
+            }
+            // a child marks its parents _dirty, which their rows carry
+            for (const field of record.model.getParentFields()) {
+                const parent = record[field.name];
+                if (parent?.model) {
+                    mark(parent);
+                }
+            }
+        };
+        for (const id of ids) {
+            const record = this.models[model].get(id);
+            if (record) {
+                mark(record);
+            }
+        }
+    }
+
+    takeDirtyLocalRecords(model) {
+        const dirty = this.dirtyLocalRecords.get(model);
+        this.dirtyLocalRecords.delete(model);
+        const live = [...(dirty || [])].filter(
+            (record) => this.models[model].get(record.id) === record,
+        );
+        if (model === "pos.order") {
+            for (const uuid of this.localUnsyncedPaidOrderUuids) {
+                const order = this.models[model].getBy("uuid", uuid);
+                if (order && !dirty?.has(order)) {
+                    live.push(order);
+                }
+            }
+        }
+        return live;
+    }
+
+    async _synchronizeLocalDataInIndexedDB({ onlyDirty = false } = {}) {
         const endSync = log.perf("synchronizeLocalDataInIndexedDB");
         const modelsParams = Object.entries(this.opts.databaseTable);
         const data = {};
+        let written = 0;
         for (const [model, params] of modelsParams) {
             const put = [];
             const remove = [];
-            const modelData = this.models[model].getAll();
+            const dirty = this.takeDirtyLocalRecords(model);
+            const modelData = onlyDirty ? dirty : this.models[model].getAll();
 
             for (const record of modelData) {
                 const isToRemove = params.condition(record);
@@ -248,8 +311,10 @@ export class PosData extends SignalStore {
             }
 
             data[model] = put;
+            written += put.length;
             log.pipeline("[idb] synchronizeLocalData: model", () => ({
                 model,
+                onlyDirty,
                 put: put.length,
                 remove: remove.length,
             }));
@@ -293,7 +358,7 @@ export class PosData extends SignalStore {
                 }
             }
         }
-        endSync({ models: Object.keys(data).length });
+        endSync({ models: Object.keys(data).length, onlyDirty, written });
 
         return data;
     }
@@ -662,25 +727,7 @@ export class PosData extends SignalStore {
     }
 
     initListeners() {
-        const databaseTable = this.opts.databaseTable;
-        for (const dynamicModel of this.opts.dynamicModels) {
-            if (!this.models[dynamicModel]) {
-                continue;
-            }
-
-            this.models[dynamicModel].addEventListener(
-                "update",
-                this.debouncedSynchronizeLocalDataInIndexedDB.bind(this),
-            );
-
-            if (databaseTable[dynamicModel]) {
-                this.models[dynamicModel].addEventListener("delete", (params) => {
-                    if (params.key !== undefined) {
-                        this.indexedDB.delete(dynamicModel, [params.key]);
-                    }
-                });
-            }
-        }
+        this.listenToLocalChanges();
 
         const ignore = new Set(Object.keys(this.opts.databaseTable));
         for (const model of Object.keys(this.relations)) {
@@ -707,6 +754,34 @@ export class PosData extends SignalStore {
         }
     }
 
+    listenToLocalChanges() {
+        const databaseTable = this.opts.databaseTable;
+        for (const dynamicModel of this.opts.dynamicModels) {
+            if (!this.models[dynamicModel]) {
+                continue;
+            }
+
+            const persist = (ids) => {
+                this.markLocalRecordsDirty(dynamicModel, ids);
+                this.debouncedSynchronizeLocalDataInIndexedDB();
+            };
+            this.models[dynamicModel].addEventListener("update", (params) =>
+                persist([params.id]),
+            );
+            this.models[dynamicModel].addEventListener("create", (params) =>
+                persist(params.ids),
+            );
+
+            if (databaseTable[dynamicModel]) {
+                this.models[dynamicModel].addEventListener("delete", (params) => {
+                    if (params.key !== undefined) {
+                        this.deleteRecordsInIndexedDB(dynamicModel, [params.key]);
+                    }
+                });
+            }
+        }
+    }
+
     async execute({
         type,
         model,
@@ -721,10 +796,20 @@ export class PosData extends SignalStore {
         uuid = "",
         optimistic = false,
     }) {
-        const queuedArgs =
-            queue && method !== "sync_from_ui"
-                ? JSON.parse(JSON.stringify(arguments[0]))
-                : undefined;
+        const queueable =
+            queue && method !== "sync_from_ui" && !UNQUEUEABLE_TYPES.has(type);
+        const queuedArgs = queueable
+            ? JSON.parse(JSON.stringify(arguments[0]))
+            : undefined;
+        // sent on the first attempt too: it may commit before the connection drops
+        const operationUuid = uuid || (queueable ? uuidv4() : "");
+        const withOperation = (kw = {}) =>
+            operationUuid
+                ? {
+                      ...kw,
+                      context: { ...kw.context, pos_operation_uuid: operationUuid },
+                  }
+                : kw;
         this._inFlight = (this._inFlight ?? 0) + 1;
         this.network.loading = true;
         const endExecute = log.perf(
@@ -753,23 +838,26 @@ export class PosData extends SignalStore {
 
             switch (type) {
                 case "write":
-                    result = await this.orm.write(model, ids, values);
+                    result = await this.orm.write(model, ids, values, withOperation());
                     break;
                 case "delete":
-                    result = await this.orm.unlink(model, ids);
+                    result = await this.orm.unlink(model, ids, withOperation());
                     break;
                 case "call":
-                    result = await this.orm.call(model, method, args, kwargs);
+                    result = await this.orm.call(
+                        model,
+                        method,
+                        args,
+                        withOperation(kwargs),
+                    );
                     break;
                 case "read":
-                    queue = false;
                     result = await this.orm.read(model, ids, fields, {
                         ...options,
                         load: false,
                     });
                     break;
                 case "search_read":
-                    queue = false;
                     result = await this.orm.searchRead(model, args, fields, {
                         ...options,
                         load: false,
@@ -777,7 +865,7 @@ export class PosData extends SignalStore {
             }
 
             if (type === "create") {
-                const response = await this.orm.create(model, values);
+                const response = await this.orm.create(model, values, withOperation());
                 result = values.map((value, index) => ({
                     ...value,
                     id: response[index],
@@ -842,49 +930,45 @@ export class PosData extends SignalStore {
             }
             return result;
         } catch (error) {
-            let throwErr = true;
             endExecute({ inFlight: this._inFlight, error: error?.constructor?.name });
-            const uuids = this.network.unsyncData.map((d) => d.uuid);
+            const alreadyQueued = this.network.unsyncData.some(
+                (d) => d.uuid === operationUuid,
+            );
             log.logic("execute: error", () => ({
                 type,
                 model,
                 method,
-                queue,
-                alreadyQueued: uuids.includes(uuid),
+                queueable,
+                alreadyQueued,
                 connectionLost: error instanceof ConnectionLostError,
                 error: error?.constructor?.name,
             }));
             if (
-                queue &&
-                !uuids.includes(uuid) &&
-                method !== "sync_from_ui" &&
-                error instanceof ConnectionLostError
+                !queueable ||
+                alreadyQueued ||
+                !(error instanceof ConnectionLostError)
             ) {
-                const entry = {
-                    args: [queuedArgs],
-                    appliedLocally: optimistic,
-                    date: toISO(now()),
-                    try: 1,
-                    uuid: uuidv4(),
-                };
-                await this.mutex.exec(async () => {
-                    await this._persistQueueEntry(entry);
-                    this.network.unsyncData.push(entry);
-                });
-
-                throwErr = false;
-                log.logic("queued offline", () => ({
-                    type,
-                    model,
-                    method,
-                    uuid: entry.uuid,
-                    queue: this.network.unsyncData.length,
-                }));
-            }
-
-            if (throwErr) {
                 throw error;
             }
+            const entry = {
+                args: [queuedArgs],
+                appliedLocally: optimistic,
+                date: toISO(now()),
+                try: 1,
+                uuid: operationUuid,
+            };
+            await this.mutex.exec(async () => {
+                await this._persistQueueEntry(entry);
+                this.network.unsyncData.push(entry);
+            });
+            log.logic("queued offline", () => ({
+                type,
+                model,
+                method,
+                uuid: entry.uuid,
+                queue: this.network.unsyncData.length,
+            }));
+            return new QueuedOperation(entry.uuid);
         } finally {
             this._inFlight -= 1;
             this.network.loading = this._inFlight > 0;
@@ -1016,6 +1100,7 @@ export class PosData extends SignalStore {
                 if (["product.product", "product.template"].includes(model)) {
                     const domain =
                         model === "product.product" ? "product_variant_ids.id" : "id";
+                    // never queued: a replay holds this.mutex, which queueing takes
                     await this.callRelated(
                         "product.template",
                         "load_product_from_pos",
@@ -1025,6 +1110,7 @@ export class PosData extends SignalStore {
                                 load_archived: true,
                             },
                         },
+                        false,
                     );
                     endFetch({ ids: ids.size, via: "load_product_from_pos" });
                     continue;
@@ -1362,7 +1448,7 @@ export class PosData extends SignalStore {
         method,
         args = [],
         kwargs = {},
-        queue = true,
+        queue = false,
         loadMessingRecords = false,
     ) {
         let data = await this.execute({
@@ -1373,6 +1459,9 @@ export class PosData extends SignalStore {
             kwargs,
             queue,
         });
+        if (isQueued(data)) {
+            return data;
+        }
 
         if (loadMessingRecords) {
             data = await this.missingRecursive(data);
@@ -1413,7 +1502,7 @@ export class PosData extends SignalStore {
             queue,
             optimistic,
         });
-        if (result !== undefined && this.deviceSync?.dispatch) {
+        if (!isQueued(result) && this.deviceSync?.dispatch) {
             Promise.resolve(
                 this.deviceSync.dispatch({ [model]: ids.map((id) => ({ id })) }),
             ).catch(() => {});

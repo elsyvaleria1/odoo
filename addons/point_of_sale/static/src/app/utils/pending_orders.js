@@ -42,10 +42,10 @@ export function getPendingOrder(pos) {
         )
         .filter(Boolean);
     const orderToUpdate = pos.models["pos.order"]
-        .readMany(Array.from(pos.pendingOrder.write))
+        .getMany(Array.from(pos.pendingOrder.write))
         .filter(Boolean);
     const orderToDelete = pos.models["pos.order"]
-        .readMany(Array.from(pos.pendingOrder.delete))
+        .getMany(Array.from(pos.pendingOrder.delete))
         .filter(Boolean);
 
     log.logic("getPendingOrder", () => ({

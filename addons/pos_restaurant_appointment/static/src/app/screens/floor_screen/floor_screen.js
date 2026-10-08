@@ -7,6 +7,9 @@ import { patch } from "@web/core/utils/patch";
 patch(FloorScreen.prototype, {
     async _createTableHelper() {
         const table = await super._createTableHelper(...arguments);
+        if (!table) {
+            return table;
+        }
         const appointmentRessource = this.pos.models["resource.resource"].get(
             table.resource_id?.id,
         );

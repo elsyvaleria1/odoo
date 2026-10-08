@@ -1,5 +1,9 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { RPCError } from "@web/core/network";
+import { tick } from "@odoo/hoot-dom";
+import { Deferred } from "@odoo/hoot-mock";
+import { isQueued } from "@point_of_sale/app/services/data_service";
+import { patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { ConnectionLostError, RPCError } from "@web/core/network";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
 import { getFilledOrder, setupPosEnv } from "../utils.js";
@@ -96,5 +100,190 @@ describe("data_service", () => {
         expect(calls).toBe(1);
         expect(data.network.unsyncData).toHaveLength(0);
         expect(data.network.deadSyncData).toHaveLength(1);
+    });
+
+    test("an operation queued offline resolves to its queue entry and carries its uuid on every attempt", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        const sent = [];
+        patchWithCleanup(data.orm, {
+            create: async (_model, _values, kwargs) => {
+                sent.push(kwargs?.context?.pos_operation_uuid);
+                throw new ConnectionLostError();
+            },
+        });
+
+        const result = await data.create("pos.category", [{ name: "Offline" }]);
+
+        expect(isQueued(result)).toBe(true);
+        expect(data.network.unsyncData.map((entry) => entry.uuid)).toEqual([
+            result.uuid,
+        ]);
+        expect(sent).toEqual([result.uuid]);
+
+        patchWithCleanup(data.orm, {
+            create: async (_model, _values, kwargs) => {
+                sent.push(kwargs?.context?.pos_operation_uuid);
+                return [4242];
+            },
+        });
+        await data.syncData();
+
+        expect(sent).toEqual([result.uuid, result.uuid]);
+        expect(data.network.unsyncData).toHaveLength(0);
+        expect(store.models["pos.category"].get(4242).name).toBe("Offline");
+    });
+
+    test("a read is never queued, even when asked to", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        data.network.offline = true;
+
+        let error;
+        try {
+            await data.searchRead("pos.category", [], [], {}, true);
+        } catch (e) {
+            error = e;
+        }
+
+        expect(error).toBeInstanceOf(ConnectionLostError);
+        expect(data.network.unsyncData).toHaveLength(0);
+    });
+
+    test("a replayed create whose missing product cannot be fetched still completes", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        data.network.deadSyncData = [];
+        data.network.unsyncData.push({
+            args: [
+                {
+                    type: "create",
+                    model: "product.combo.item",
+                    values: [{ product_id: 99999, combo_id: 1, extra_price: 0 }],
+                    queue: true,
+                },
+            ],
+            date: "2025-01-01 00:00:00",
+            try: 1,
+            uuid: "replay-1",
+        });
+        const called = [];
+        patchWithCleanup(data.orm, {
+            create: async () => [4243],
+            call: async (model, method) => {
+                called.push(`${model}.${method}`);
+                throw new ConnectionLostError();
+            },
+        });
+
+        let settled = false;
+        const replay = data.syncData().finally(() => {
+            settled = true;
+        });
+        for (let i = 0; i < 20 && !settled; i++) {
+            await tick();
+        }
+
+        expect(settled).toBe(true);
+        await replay;
+        expect(called).toEqual(["product.template.load_product_from_pos"]);
+        expect(data.network.unsyncData).toHaveLength(0);
+        expect(store.models["product.combo.item"].get(4243)).not.toBe(undefined);
+    });
+
+    test("a keystroke burst writes the edited line and its order, not every open order", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        for (let i = 0; i < 30; i++) {
+            await getFilledOrder(store);
+        }
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => `${model}:${row.uuid ?? row.id}`));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+        data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+
+        await data._synchronizeLocalDataInIndexedDB();
+        const fullSync = written.length;
+        written.length = 0;
+
+        const order = store.models["pos.order"].getAll().at(-1);
+        const line = order.lines[0];
+        for (const qty of [1, 12, 123, 12, 1]) {
+            line.setQuantity(qty);
+        }
+        data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+        await data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+
+        expect(fullSync).toBe(90);
+        expect(written.sort()).toEqual(
+            [`pos.order:${order.uuid}`, `pos.order.line:${line.uuid}`].sort(),
+        );
+    });
+
+    test("a line deleted after its edit is not written back", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => `${model}:${row.uuid}`));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+        const [line, kept] = order.lines;
+        line.setQuantity(7);
+        kept.setQuantity(8);
+        line.delete();
+        data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+
+        await data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+
+        expect(written).not.toInclude(`pos.order.line:${line.uuid}`);
+        expect(written).toInclude(`pos.order.line:${kept.uuid}`);
+    });
+
+    test("a delete waits for the write in flight instead of being overwritten by it", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const line = order.lines[0];
+        const operations = [];
+        const writing = new Deferred();
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                if (model === "pos.order.line") {
+                    await writing;
+                    operations.push(...rows.map((row) => `create:${row.uuid}`));
+                }
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+            delete: async (model, keys) => {
+                operations.push(...keys.map((key) => `delete:${key}`));
+            },
+        });
+
+        const sync = data.indexedDBMutex.exec(() =>
+            data._synchronizeLocalDataInIndexedDB(),
+        );
+        await tick();
+        const deletion = data.deleteRecordsInIndexedDB("pos.order.line", [line.uuid]);
+        await tick();
+        writing.resolve();
+        await Promise.all([sync, deletion]);
+
+        expect(operations.filter((op) => op.endsWith(line.uuid))).toEqual([
+            `create:${line.uuid}`,
+            `delete:${line.uuid}`,
+        ]);
     });
 });

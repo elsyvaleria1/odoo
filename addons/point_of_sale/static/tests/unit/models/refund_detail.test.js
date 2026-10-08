@@ -49,3 +49,18 @@ describe("a refund detail lives on the refunded order", () => {
         expect(refundLine.setQuantity(-1)).toBe(true);
     });
 });
+
+describe("the till counts a draft refund made elsewhere", () => {
+    test("it refuses what the server's guard, which counts only settled refunds, would accept", async () => {
+        const store = await setupPosEnv();
+        const { originalLine, refundLine } = await anOrderBeingRefunded(store);
+        // the server's refunded_qty includes a 2-unit draft refund on another till;
+        // the cash of a till refund is handed back at once, so the till stays stricter
+        originalLine.refunded_qty = 2;
+
+        expect(originalLine.qty).toBe(3);
+        expect(originalLine.refundedQty).toBe(3);
+        expect(refundLine.setQuantity(-2)).not.toBe(true);
+        expect(refundLine.setQuantity(-1)).toBe(true);
+    });
+});

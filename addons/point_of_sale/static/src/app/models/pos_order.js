@@ -758,16 +758,11 @@ export class PosOrder extends PosOrderAccounting {
 
     updatePricelistAndFiscalPosition(newPartner) {
         let newPartnerPricelist, newPartnerFiscalPosition;
-        const defaultFiscalPosition = this.models["account.fiscal.position"].find(
-            (position) => position.id === this.config.default_fiscal_position_id?.id,
-        );
+        const defaultFiscalPosition = this.config.default_fiscal_position_id;
 
         if (newPartner) {
-            newPartnerFiscalPosition = newPartner.fiscal_position_id
-                ? this.models["account.fiscal.position"].find(
-                      (position) => position.id === newPartner.fiscal_position_id?.id,
-                  )
-                : defaultFiscalPosition;
+            newPartnerFiscalPosition =
+                newPartner.fiscal_position_id || defaultFiscalPosition;
             newPartnerPricelist =
                 this.config.available_pricelist_ids.find(
                     (pricelist) =>

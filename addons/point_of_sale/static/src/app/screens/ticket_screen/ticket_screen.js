@@ -613,7 +613,7 @@ export class TicketScreen extends Component {
     getFilteredOrderList() {
         if (this.state.filter === "SYNCED") {
             return this.pos.models["pos.order"]
-                .readMany(this.pos.screenState.ticketScreen.syncedPageOrderIds || [])
+                .getMany(this.pos.screenState.ticketScreen.syncedPageOrderIds || [])
                 .filter(Boolean);
         }
         return this._getFilteredOrders().slice(

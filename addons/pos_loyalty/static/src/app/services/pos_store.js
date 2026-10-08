@@ -624,7 +624,7 @@ patch(PosStore.prototype, {
     },
 
     computeDiscountProductIdsForAllRewards(data) {
-        const products = this.models["product.product"].readMany(data.ids);
+        const products = this.models["product.product"].getMany(data.ids);
         for (const reward of this.models["loyalty.reward"].getAll()) {
             this.computeDiscountProductIds(reward, products);
         }

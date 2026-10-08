@@ -15,7 +15,7 @@ export class ProductTemplate extends ProductTemplateAccounting {
     }
 
     isTracked() {
-        const pickingType = this.models["stock.picking.type"].readAll()[0];
+        const pickingType = this.models["stock.picking.type"].getAll()[0];
 
         return (
             ["serial", "lot"].includes(this.tracking) &&

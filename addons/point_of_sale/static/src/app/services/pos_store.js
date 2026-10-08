@@ -1443,7 +1443,7 @@ export class PosStore extends WithLazyGetterTrap {
 
             if (payload) {
                 const attributeValues = this.models["product.template.attribute.value"]
-                    .readMany(payload.attribute_value_ids)
+                    .getMany(payload.attribute_value_ids)
                     .filter(
                         (value) => value.attribute_id.create_variant !== "no_variant",
                     )

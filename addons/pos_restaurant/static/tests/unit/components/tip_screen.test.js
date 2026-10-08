@@ -2,8 +2,13 @@ import { expect, test } from "@odoo/hoot";
 import { getFilledOrder, setupPosEnv } from "@point_of_sale/../tests/unit/utils";
 import { definePosRestaurantModels } from "@pos_restaurant/../tests/unit/data/generate_model_definitions";
 import { TipScreen } from "@pos_restaurant/app/screens/tip_screen/tip_screen";
-import { MockServer, mountWithCleanup } from "@web/../tests/web_test_helpers";
+import {
+    MockServer,
+    mountWithCleanup,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
 import { now, serializeDateTime } from "@web/core/l10n/dates";
+import { ConnectionLostError } from "@web/core/network";
 
 definePosRestaurantModels();
 
@@ -57,4 +62,31 @@ test("overallAmountStr", async () => {
     const tip = screen.utils.formatCurrency(2);
     const overall = screen.utils.formatCurrency(total + 2);
     expect(result).toBe(`${original} + ${tip} tip = ${overall}`);
+});
+
+test("validateTip offline marks the order tipped and queues the tip line before the tip", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    order.addPaymentline(store.models["pos.payment.method"].get(2));
+    await store.syncAllOrders();
+    TipScreen.prototype.printTipReceipt = async () => {};
+    const screen = await mountWithCleanup(TipScreen, {
+        props: {
+            orderUuid: order.uuid,
+        },
+    });
+    store.data.network.unsyncData = [];
+    const offline = async () => {
+        throw new ConnectionLostError();
+    };
+    patchWithCleanup(store.data.orm, { create: offline, write: offline });
+
+    screen.state.inputTipAmount = "2";
+    await screen.validateTip();
+
+    expect(order.is_tipped).toBe(true);
+    expect(order.tip_amount).toBe(2);
+    expect(
+        store.data.network.unsyncData.map(({ args: [op] }) => `${op.type} ${op.model}`),
+    ).toEqual(["create pos.order.line", "write pos.order"]);
 });

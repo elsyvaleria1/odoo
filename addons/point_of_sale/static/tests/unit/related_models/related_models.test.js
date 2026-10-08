@@ -877,7 +877,7 @@ describe("Related Model", () => {
             "pos.category": [{ id: 12 }, { id: 13 }],
         });
 
-        let records = models["product.template"].readAllBy("pos_categ_ids");
+        let records = models["product.template"].getAllBy("pos_categ_ids");
         const p1 = models["product.template"].get(91);
         const p2 = models["product.template"].get(92);
         expect(Object.keys(records).length).toBe(2);

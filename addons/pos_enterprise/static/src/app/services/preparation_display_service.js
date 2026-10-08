@@ -452,7 +452,7 @@ export class PrepDisplay extends WithLazyGetterTrap {
         );
         const stages = this.data.models["pos.prep.stage"].getAll();
         stages.map((stage) => (stage.recallHistory = []));
-        await this.data.callRelated("pos.prep.display", "reset", [[this.id]]);
+        await this.data.callRelated("pos.prep.display", "reset", [[this.id]], {}, true);
     }
     async loadPosHasProducts() {
         return await this.orm.call("pos.prep.display", "pos_has_valid_product", [], {});

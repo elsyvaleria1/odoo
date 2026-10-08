@@ -19,6 +19,7 @@ import { TextInputPopup } from "@point_of_sale/app/components/popups/text_input_
 import { useTrackedAsync } from "@point_of_sale/app/hooks/hooks";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 import { getOrderChanges } from "@point_of_sale/app/models/utils/order_change";
+import { isQueued } from "@point_of_sale/app/services/data_service";
 import { ask } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { loadImage } from "@point_of_sale/utils";
 import { NumpadDropdown } from "@pos_restaurant/app/components/numpad_dropdown/numpad_dropdown";
@@ -657,8 +658,8 @@ export class FloorScreen extends Component {
     }
     async createTableFromRaw(newTableData) {
         newTableData.active = true;
-        const table = await this.pos.data.create("restaurant.table", [newTableData]);
-        return table[0];
+        const created = await this.pos.data.create("restaurant.table", [newTableData]);
+        return isQueued(created) ? null : created[0];
     }
     async unMergeTable(table) {
         const mainOrder = this.pos.getActiveOrdersOnTable(table.rootTable)?.[0];
@@ -773,9 +774,10 @@ export class FloorScreen extends Component {
 
     async createTable() {
         const newTable = await this._createTableHelper();
-        if (newTable) {
-            this.state.selectedTableIds = [newTable.id];
+        if (!newTable) {
+            return;
         }
+        this.state.selectedTableIds = [newTable.id];
 
         // Ensure the new table is visible
         const margin = 40;
@@ -812,13 +814,17 @@ export class FloorScreen extends Component {
         const floor = this.activeFloor;
         const tables = this.activeFloor.table_ids;
         const newFloorName = floor.name + " (copy)";
-        const copyFloor = await this.pos.data.create("restaurant.floor", [
-            {
-                name: newFloorName,
-                background_color: "#ACADAD",
-                pos_config_ids: [this.pos.config.id],
-            },
-        ]);
+        const copyFloor = await this.pos.data.create(
+            "restaurant.floor",
+            [
+                {
+                    name: newFloorName,
+                    background_color: "#ACADAD",
+                    pos_config_ids: [this.pos.config.id],
+                },
+            ],
+            false,
+        );
 
         this.pos.isEditMode = true;
         for (const table of tables) {

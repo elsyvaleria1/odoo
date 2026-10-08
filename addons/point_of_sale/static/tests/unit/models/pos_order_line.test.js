@@ -105,7 +105,7 @@ test("[get prices()] with multiple taxes settings", async () => {
     const models = store.models;
     const rawData = getAllPricesData();
     const product = models["product.product"].get(5);
-    product.taxes_id = models["account.tax"].readMany([1, 2]);
+    product.taxes_id = models["account.tax"].getMany([1, 2]);
     rawData["pos.order.line"][0].qty = 1;
     rawData["pos.order.line"][0].tax_ids = [1, 2];
 
@@ -154,7 +154,7 @@ test("[get prices()] with one price-included and one price-excluded tax", async 
     const product = models["product.product"].get(5);
     const rawData = getAllPricesData();
     models["account.tax"].get(1).price_include = true;
-    product.taxes_id = models["account.tax"].readMany([1, 2]);
+    product.taxes_id = models["account.tax"].getMany([1, 2]);
     rawData["pos.order.line"][0].tax_ids = [1, 2];
 
     const data = models.loadConnectedData(rawData);
@@ -359,4 +359,33 @@ describe("Test taxes after fiscal position", () => {
             orderLine.prepareBaseLineForTaxesComputationExtraValues();
         expect(nonTaxedProductlineValues.tax_ids.length).toBe(0);
     });
+});
+
+test("a combo another device zeroed keeps the share it had when this device loaded it", async () => {
+    const store = await setupPosEnv();
+    const models = store.models;
+    const serverRows = () => {
+        const rows = getAllPricesData();
+        rows["pos.order"][1].state = "draft";
+        for (const row of [...rows["pos.order"], ...rows["pos.order.line"]]) {
+            row.uuid = `remote-${row.id}`;
+        }
+        return rows;
+    };
+    models.loadConnectedData(serverRows());
+    const parent = models["pos.order.line"].get(2);
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([2, 1]);
+
+    const zeroed = serverRows();
+    for (const line of zeroed["pos.order.line"].filter((l) =>
+        [2, 3, 4].includes(l.id),
+    )) {
+        line.qty = 0;
+    }
+    models.loadConnectedData(zeroed);
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([0, 0]);
+
+    parent.setQuantity(3);
+
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([6, 3]);
 });
