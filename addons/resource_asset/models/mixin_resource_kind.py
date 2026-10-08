@@ -52,9 +52,11 @@ class MixinResourceKind(models.AbstractModel):
     # the asset form's buttons call the resource; a form of this model shows
     # them, and an object button must name a method of the record it is on
     action_accept_operator_change = _resource_action("action_accept_operator_change")
+    action_create_maintenance_order = _resource_action("action_create_maintenance_order")
     action_dispose = _resource_action("action_dispose")
     action_end_maintenance = _resource_action("action_end_maintenance")
     action_open_depreciation = _resource_action("action_open_depreciation")
+    action_register_fuel = _resource_action("action_register_fuel")
     action_set_available = _resource_action("action_set_available")
     action_set_in_service = _resource_action("action_set_in_service")
     action_set_maintenance = _resource_action("action_set_maintenance")
@@ -63,14 +65,19 @@ class MixinResourceKind(models.AbstractModel):
     action_view_device_devices = _resource_action("action_view_device_devices")
     action_view_documents = _resource_action("action_view_documents")
     action_view_flagged_parts = _resource_action("action_view_flagged_parts")
+    action_view_gps_device = _resource_action("action_view_gps_device")
     action_view_logs = _resource_action("action_view_logs")
     action_view_logs_all = _resource_action("action_view_logs_all")
+    action_view_logs_assignation = _resource_action("action_view_logs_assignation")
     action_view_logs_fuel = _resource_action("action_view_logs_fuel")
     action_view_logs_service = _resource_action("action_view_logs_service")
     action_view_maintenance = _resource_action("action_view_maintenance")
     action_view_maintenance_plans = _resource_action("action_view_maintenance_plans")
+    action_view_open_order = _resource_action("action_view_open_order")
     action_view_operator_history = _resource_action("action_view_operator_history")
     action_view_parts = _resource_action("action_view_parts")
+    action_view_tracking_history = _resource_action("action_view_tracking_history")
+    action_view_wallet_cards = _resource_action("action_view_wallet_cards")
 
     @api.depends("resource_id.display_name")
     def _compute_display_name(self):

@@ -251,3 +251,28 @@ class TestGpsDeviceKanbanAsset(TransactionCase):
 
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0].get("t-if"), "record.asset_id.raw_value")
+
+
+class TestKindFormButtons(TransactionCase):
+    def test_every_button_on_a_resource_kind_form_runs_on_the_kind(self):
+        kinds = [
+            name
+            for name in self.env.registry["mixin.resource.kind"]._inherit_children
+            if not self.env.registry[name]._abstract
+        ]
+        self.assertIn("resource.asset.vehicle", kinds)
+        for name in kinds:
+            with self.subTest(kind=name):
+                view = self.env["ir.ui.view"].browse(
+                    self.env[name].get_view(view_type="form")["id"]
+                )
+                arch = etree.fromstring(view.get_combined_arch())
+                buttons = {
+                    button.get("name")
+                    for button in arch.iter("button")
+                    if button.get("type") == "object"
+                }
+                self.assertIn("action_view_gps_device", buttons)
+                self.assertEqual(
+                    sorted(b for b in buttons if not hasattr(self.env[name], b)), []
+                )
