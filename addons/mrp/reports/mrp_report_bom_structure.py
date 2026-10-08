@@ -27,6 +27,16 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
             [("company_id", "=", company.id)], limit=1
         )
 
+    def _warm_tree_quantities(self, bom, product) -> None:
+        products = product
+        boms, seen = bom, self.env["mrp.bom"]
+        while boms:
+            seen |= boms
+            lines = boms.bom_line_ids
+            products |= lines.product_id
+            boms = lines.child_bom_id - seen
+        products.filtered("is_storable").mapped("qty_available_virtual")
+
     def _with_bom_company(self, bom) -> Self:
         if not bom.company_id or bom.company_id == self.env.company:
             return self
@@ -93,6 +103,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
             )
 
         warehouse = self._get_default_warehouse(bom)
+        self._warm_tree_quantities(bom, product)
 
         with _debug.perf(
             "bom_structure_report",
@@ -1086,9 +1097,9 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         component_1["quantity"] += component_2["quantity"]
         component_1["base_bom_line_qty"] += component_2["base_bom_line_qty"]
         component_1["bom_cost"] += component_2["bom_cost"]
-        if component_2.get("availability_delay") is False or component_2.get(
-            "availability_delay"
-        ) >= component_1.get("availability_delay"):
+        delay_1 = component_1.get("availability_delay")
+        delay_2 = component_2.get("availability_delay")
+        if delay_1 is not False and (delay_2 is False or delay_2 >= delay_1):
             component_1.update(self._format_availability(component_2))
         if not component_1.get("components"):
             return

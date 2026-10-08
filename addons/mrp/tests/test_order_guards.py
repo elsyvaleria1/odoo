@@ -1,7 +1,8 @@
 import gc
+from datetime import timedelta
 from unittest.mock import patch
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, TransactionCase, tagged
 
@@ -526,6 +527,59 @@ class TestOrderGuards(TestMrpCommon):
         production.picking_type_id = other.manu_type_id
 
         self.assertEqual(production.move_finished_ids.warehouse_id, other)
+
+    def test_a_draft_keeps_its_edited_byproduct_when_only_dates_move(self):
+        self.bom.byproduct_ids = [
+            Command.create(
+                {"product_id": self.byproduct.id, "product_qty": 3, "cost_share": 10}
+            )
+        ]
+        production = self._production(1)
+        byproduct = production.move_byproduct_ids
+        byproduct.write({"product_uom_qty": 7, "cost_share": 25})
+
+        production.date_start = fields.Datetime.now() + timedelta(days=3)
+        self.assertEqual((byproduct.product_uom_qty, byproduct.cost_share), (7.0, 25.0))
+        self.assertEqual(byproduct.date, production.date_end)
+
+        production.product_qty = 2
+        self.assertEqual((byproduct.product_uom_qty, byproduct.cost_share), (6.0, 10.0))
+
+    def _posted_twice(self):
+        self.env["stock.quant"]._update_available_quantity(
+            self.component, self.stock_location, 100
+        )
+        production = self._production(4)
+        production.action_confirm()
+        production.qty_producing = 1
+        production.move_raw_ids.picked = True
+        production._post_inventory()
+        production.qty_producing = 4
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+        self.assertEqual(production.state, "done")
+        return production
+
+    def test_correcting_a_done_order_counts_every_posted_batch_once(self):
+        production = self._posted_twice()
+        finished = production.move_finished_ids.filtered(
+            lambda move: move.product_id == self.finished and move.state == "done"
+        )
+        self.assertEqual(len(finished), 2)
+        production.qty_producing = 3
+        self.assertEqual(sum(finished.mapped("quantity")), 3)
+
+    def test_rescheduling_leaves_done_moves_dated_when_they_happened(self):
+        production = self._posted_twice()
+        done = production.move_raw_ids | production.move_finished_ids
+        dates = done.mapped("date")
+        production.with_context(force_date=True).write(
+            {
+                "date_start": fields.Datetime.now() + timedelta(days=30),
+                "date_end": fields.Datetime.now() + timedelta(days=31),
+            }
+        )
+        self.assertEqual(done.mapped("date"), dates)
 
     def test_a_fractional_run_costs_its_expected_time_per_unit(self):
         self.bom.operation_ids = [

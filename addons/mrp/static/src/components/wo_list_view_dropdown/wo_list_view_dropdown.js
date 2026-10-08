@@ -36,10 +36,11 @@ export class WorkorderStateDropdown extends Component {
     }
 
     targetIds() {
-        const selection = this.props.record.model.root.selection;
-        return selection?.length
+        const record = this.props.record;
+        const selection = record.model.root.selection || [];
+        return selection.includes(record)
             ? selection.map((workorder) => workorder.resId)
-            : [this.props.record.resId];
+            : [record.resId];
     }
 
     async setState(state) {

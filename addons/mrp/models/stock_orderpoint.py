@@ -317,17 +317,7 @@ class StockWarehouseOrderpoint(models.Model):
         Bom = self.env["mrp.bom"]
         domain = Domain.OR(
             Bom._get_domain_kit(company)
-            & (
-                Domain("product_id", "in", orderpoints.product_id.ids)
-                | (
-                    Domain("product_id", "=", False)
-                    & Domain(
-                        "product_tmpl_id",
-                        "in",
-                        orderpoints.product_id.product_tmpl_id.ids,
-                    )
-                )
-            )
+            & Bom._get_domain_bom_products(orderpoints.product_id)
             for company, orderpoints in self.grouped("company_id").items()
         )
         if Bom.search_count(domain, limit=1):

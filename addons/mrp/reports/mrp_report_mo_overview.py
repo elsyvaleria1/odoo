@@ -1121,9 +1121,8 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                         move_raw.product_uom_id.rounding
                     ),
                     "real_cost": currency.round(
-                        product.standard_price
-                        * move_raw.product_uom_id._get_quantity_report(
-                            available_qty, product.uom_id
+                        self._get_component_standard_cost(
+                            production, move_raw, available_qty
                         )
                     ),
                     "currency_id": currency.id,
@@ -1153,9 +1152,8 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                 )
             else:
                 to_order_line["summary"]["mo_cost"] = currency.round(
-                    product.standard_price
-                    * move_raw.product_uom_id._get_quantity_report(
-                        missing_quantity, product.uom_id
+                    self._get_component_standard_cost(
+                        production, move_raw, missing_quantity
                     )
                 )
                 to_order_line["summary"]["bom_cost"] = currency.round(
@@ -1240,8 +1238,8 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
             if production.bom_id
             else False
         )
-        real_cost = product.standard_price * in_transit["uom_id"]._get_quantity_report(
-            in_transit["quantity"], product.uom_id
+        real_cost = product._get_standard_cost(
+            in_transit["quantity"], in_transit["uom_id"], production.company_id
         )
         if self._is_production_started(production) or not production.bom_id:
             mo_cost_decorator = self._get_comparison_decorator(
@@ -1591,8 +1589,7 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
         )._get_lead_days(product, bom_id=bom)
         return {
             "delay": delays["total_delay"],
-            "cost": product.standard_price
-            * uom_id._get_quantity_report(quantity, product.uom_id),
+            "cost": product._get_standard_cost(quantity, uom_id, production.company_id),
             "currency": production.company_id.currency_id,
         }
 

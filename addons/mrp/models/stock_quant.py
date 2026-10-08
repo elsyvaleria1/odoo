@@ -7,7 +7,10 @@ class StockQuant(models.Model):
 
     @api.constrains("product_id")
     def _check_kits(self) -> None:
-        if self.sudo().product_id.filtered("is_kit"):
+        if any(
+            quants.sudo().product_id.with_company(company).filtered("is_kit")
+            for company, quants in self.grouped("company_id").items()
+        ):
             raise UserError(
                 self.env._(
                     "You should update the components quantity instead of directly updating the quantity of the kit product."
@@ -32,5 +35,10 @@ class StockQuant(models.Model):
                 package_id,
                 owner_id,
             )
-            or (product_id and product_id.is_kit)
+            or (
+                product_id
+                and product_id.with_company(
+                    location_id.company_id or self.env.company
+                ).is_kit
+            )
         )

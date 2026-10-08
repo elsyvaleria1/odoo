@@ -10,12 +10,13 @@ export class MrpShouldConsumeOwl extends FloatField {
         super.setup();
         this.fields = this.props.record.fields;
         this.record = proxy(this.props.record);
-        this.displayShouldConsume = !["done", "draft", "cancel"].includes(
-            this.record.data.state,
-        );
         this.inputSpanRef = this.numpadDecimalRef;
         onMounted(this._renderPrefix);
         onPatched(this._renderPrefix);
+    }
+
+    get displayShouldConsume() {
+        return !["done", "draft", "cancel"].includes(this.record.data.state);
     }
 
     _renderPrefix() {

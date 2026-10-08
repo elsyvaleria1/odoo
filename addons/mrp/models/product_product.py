@@ -86,13 +86,7 @@ class ProductProduct(models.Model):
     @api.depends_context("company")
     def _compute_is_kit(self):
         Bom = self.env["mrp.bom"].sudo()
-        domain = Bom._get_domain_kit() & (
-            Domain("product_id", "in", self.ids)
-            | (
-                Domain("product_id", "=", False)
-                & Domain("product_tmpl_id", "in", self.product_tmpl_id.ids)
-            )
-        )
+        domain = Bom._get_domain_kit() & Bom._get_domain_bom_products(self)
         kit_product_ids = set()
         kit_template_ids = set()
         for product, template in Bom._read_group(
@@ -325,7 +319,11 @@ class ProductProduct(models.Model):
 
     def get_forecast_bom_id(self):
         self.check_singleton()
-        return self.env["mrp.bom"]._get_bom_by_product(self)[self].id
+        return (
+            self.env["mrp.bom"]
+            ._get_bom_by_product(self, company_id=self.env.company.id)[self]
+            .id
+        )
 
     def action_view_bom(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(

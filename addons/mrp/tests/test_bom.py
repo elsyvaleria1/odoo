@@ -5317,3 +5317,75 @@ class TestBoMAuditFixes(TestMrpCommon):
             part, self.stock_location, 30
         )
         self.assertEqual(kit.qty_available, 2.5)
+
+    def test_merging_report_lines_keeps_an_unavailable_component_unavailable(self):
+        def line(state, delay):
+            return {
+                "quantity": 1,
+                "base_bom_line_qty": 1,
+                "bom_cost": 0,
+                "resupply_avail_delay": delay,
+                "stock_avail_state": state,
+                "availability_display": state,
+                "availability_state": state,
+                "availability_delay": delay,
+            }
+
+        unavailable, expected = line("unavailable", False), line("expected", 3)
+        self.env["report.mrp.report_bom_structure"]._merge_components(
+            unavailable, expected
+        )
+        self.assertEqual(unavailable["availability_state"], "unavailable")
+        self.assertIs(unavailable["availability_delay"], False)
+        self.assertEqual(unavailable["quantity"], 2)
+
+    def test_a_template_forecast_opens_the_bom_the_variants_use(self):
+        product = self._product("Forecast product")
+        other_company = self.env["res.company"].create({"name": "Forecast co"})
+        _foreign, own = self.env["mrp.bom"].create(
+            [
+                {
+                    "product_tmpl_id": product.product_tmpl_id.id,
+                    "company_id": other_company.id,
+                    "sequence": 1,
+                },
+                {"product_tmpl_id": product.product_tmpl_id.id, "sequence": 2},
+            ]
+        )
+        self.assertEqual(product.product_tmpl_id.get_forecast_bom_id(), own.id)
+        self.assertEqual(product.get_forecast_bom_id(), own.id)
+
+    def test_a_kit_of_another_company_does_not_block_this_companys_stock(self):
+        company_b = self.env["res.company"].create({"name": "Kit company"})
+        product = self._product("Kit elsewhere")
+        product.company_id = False
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "company_id": company_b.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": self._product("Elsewhere part").id})
+                ],
+            }
+        )
+        self.env.user.company_ids |= company_b
+        env_b = self.env(
+            context=dict(
+                self.env.context,
+                allowed_company_ids=[company_b.id, self.env.company.id],
+            )
+        )
+        quant = (
+            env_b["stock.quant"]
+            .with_context(inventory_mode=True)
+            .create(
+                {
+                    "product_id": product.id,
+                    "location_id": self.stock_location.id,
+                    "inventory_quantity": 4,
+                }
+            )
+        )
+        quant.action_apply_inventory()
+        self.assertEqual(product.with_company(self.env.company).qty_available, 4)

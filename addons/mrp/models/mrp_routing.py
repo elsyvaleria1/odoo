@@ -206,6 +206,7 @@ class MrpRoutingWorkcenter(models.Model):
         "workorder_ids",
         "workorder_ids.duration",
         "workorder_ids.qty_produced",
+        "workorder_ids.operation_demand_qty",
         "workorder_ids.state",
         "bom_id.product_id",
         "bom_id.product_qty",
@@ -232,6 +233,13 @@ class MrpRoutingWorkcenter(models.Model):
                         item.product_id,
                         item.product_uom_id,
                         item.qty_produced,
+                        operation.bom_id,
+                    )
+                elif item.operation_demand_qty:
+                    product, unit, quantity, bom = (
+                        operation._get_capacity_product(),
+                        operation.bom_id.product_uom_id,
+                        item.operation_demand_qty,
                         operation.bom_id,
                     )
                 else:
@@ -425,11 +433,7 @@ class MrpRoutingWorkcenter(models.Model):
             return variants
         no_variant_values = self._get_no_variant_values()
         return variants.filtered(
-            lambda variant: (
-                not self.env["mrp.bom"]._is_skipped_for_no_variant(
-                    variant, values, no_variant_values
-                )
-            )
+            lambda variant: not self._is_bom_line_skipped(variant, no_variant_values)
         )
 
     def _get_capacity_product(self):

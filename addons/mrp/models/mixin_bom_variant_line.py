@@ -36,12 +36,33 @@ class MixinBomVariantLine(models.AbstractModel):
         if not product or product._name == "product.template":
             return False
         return bool(
-            self.env["mrp.bom"]._is_skipped_for_no_variant(
+            self._is_skipped_for_no_variant(
                 product,
                 self.bom_product_template_attribute_value_ids,
                 never_attribute_values,
             )
         )
+
+    def _is_skipped_for_no_variant(
+        self, product, bom_attribute_values, never_attribute_values=False
+    ) -> bool:
+        no_variant_bom_attributes = bom_attribute_values.filtered(
+            lambda av: av.attribute_id.create_variant == "no_variant"
+        )
+        other_attribute_valid = product._has_all_variant_values(
+            bom_attribute_values - no_variant_bom_attributes
+        )
+        if not no_variant_bom_attributes:
+            return not other_attribute_valid
+        if not never_attribute_values:
+            return True
+
+        matched_attributes = (
+            no_variant_bom_attributes & never_attribute_values
+        ).attribute_id
+        if matched_attributes != no_variant_bom_attributes.attribute_id:
+            return True
+        return not other_attribute_valid
 
     def _filtered_applicable_to(self, product, never_attribute_values=False) -> Self:
         return self.filtered(

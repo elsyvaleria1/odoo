@@ -37,7 +37,7 @@
   "lint_hand_rolled_range_odoo": 26,
   "lint_n_plus_one_query_agromarin": 33,
   "lint_n_plus_one_query_l10n": 163,
-  "lint_n_plus_one_query_odoo": 224,
+  "lint_n_plus_one_query_odoo": 223,
   "lint_null_exempt_composite_unique_l10n": 8,
   "lint_null_exempt_composite_unique_odoo": 14,
   "lint_row_counter_in_test_l10n": 2,

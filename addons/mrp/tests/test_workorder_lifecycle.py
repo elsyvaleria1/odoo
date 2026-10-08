@@ -84,6 +84,87 @@ class TestWorkorderLifecycle(TestMrpCommon):
         self.assertTrue(running.exists())
         self.assertTrue(closed.exists())
 
+    def test_lowering_the_duration_cuts_overlapping_timers_together(self):
+        workorder = self._confirmed_production(self.bom).workorder_ids[0]
+        start = fields.Datetime.now().replace(microsecond=0) - timedelta(hours=3)
+        first, second = self._timers(
+            workorder,
+            ("mrp.block_reason7", start, start + timedelta(minutes=60)),
+            ("mrp.block_reason7", start, start + timedelta(minutes=60)),
+        )
+        self.assertEqual(workorder.duration, 60)
+
+        workorder.duration = 30
+
+        self.assertEqual(workorder.duration, 30)
+        self.assertEqual(workorder._get_duration(), 30)
+        self.assertEqual(
+            (first | second).mapped("date_end"), [start + timedelta(minutes=30)] * 2
+        )
+
+    def test_lowering_the_duration_counts_a_blockage_on_working_hours_only(self):
+        workorder = self._confirmed_production(self.bom).workorder_ids[0]
+        monday = datetime(2026, 1, 5, 12, 0)
+        productive, blocked = self._timers(
+            workorder,
+            (
+                "mrp.block_reason7",
+                monday - timedelta(hours=3),
+                monday - timedelta(hours=2),
+            ),
+            ("mrp.block_reason0", monday, monday + timedelta(days=1)),
+        )
+        before = workorder._get_duration()
+        self.assertLess(before, 60 + 24 * 60)
+
+        workorder.duration = before - 30
+
+        self.assertAlmostEqual(workorder._get_duration(), before - 30, delta=0.02)
+        self.assertTrue(productive.exists())
+        self.assertTrue(blocked.exists())
+
+    def test_lowering_the_duration_to_nothing_removes_every_closed_timer(self):
+        workorder = self._confirmed_production(self.bom).workorder_ids[0]
+        start = fields.Datetime.now().replace(microsecond=0) - timedelta(hours=3)
+        timers = self._timers(
+            workorder,
+            ("mrp.block_reason7", start, start + timedelta(minutes=20)),
+            (
+                "mrp.block_reason7",
+                start + timedelta(minutes=40),
+                start + timedelta(minutes=60),
+            ),
+        )
+        workorder.duration = 0
+        self.assertFalse(timers.exists())
+        self.assertEqual(workorder.duration, 0)
+
+    def test_a_capacity_written_in_the_order_unit_wins(self):
+        dozen = self.env.ref("uom.product_uom_dozen")
+        workcenter = self.env["mrp.workcenter"].create(
+            {"name": "Packing", "time_start": 0, "time_stop": 0}
+        )
+        self.env["mrp.workcenter.capacity"].create(
+            [
+                {
+                    "workcenter_id": workcenter.id,
+                    "product_id": self.finished.id,
+                    "product_uom_id": self.finished.uom_id.id,
+                    "capacity": 6,
+                    "time_start": 30,
+                },
+                {
+                    "workcenter_id": workcenter.id,
+                    "product_id": self.finished.id,
+                    "product_uom_id": dozen.id,
+                    "capacity": 1,
+                    "time_start": 5,
+                },
+            ]
+        )
+        capacity, setup, _cleanup = workcenter._get_capacity(self.finished, dozen)
+        self.assertEqual((capacity, setup), (1, 5))
+
     def test_setting_to_do_keeps_a_blocked_order_blocked(self):
         production = self._confirmed_production(self.bom)
         production.button_plan()
@@ -389,6 +470,10 @@ class TestWorkorderLifecycle(TestMrpCommon):
             self._confirmed_production(bom, qty=10).workorder_ids.duration_expected,
             40,
         )
+
+        bom.bom_line_ids.product_qty = 2
+        kit.operation_ids._compute_operation_times()
+        self.assertEqual(kit.operation_ids.time_cycle, 1)
 
     def test_the_form_follows_the_history_window(self):
         workcenter = self.env["mrp.workcenter"].create(

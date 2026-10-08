@@ -43,64 +43,42 @@ export class MrpTimer extends Component {
     props = useProps(this.constructor.props);
 
     setup() {
-        this.state = proxy({
-            duration: this.props.value,
-        });
-        this.lastDateTime = Date.now();
-        this.ongoing = this.props.ongoing;
-        onWillStart(() => {
-            if (this.ongoing) {
-                this._startTimers();
-            }
-        });
-        onWillUpdateProps((nextProps) => {
-            const rerun = !this.ongoing && nextProps.ongoing;
-            this.ongoing = nextProps.ongoing;
-            if (rerun) {
-                this.state.duration = nextProps.value;
-                this._startTimers();
-            }
-        });
-        onWillDestroy(() => this._stopTimers());
+        this.state = proxy({ duration: this.props.value });
+        this.value = this.props.value;
+        this.ongoing = false;
+        onWillStart(() => this._follow(this.props.value, this.props.ongoing));
+        onWillUpdateProps((nextProps) =>
+            this._follow(nextProps.value, nextProps.ongoing),
+        );
+        onWillDestroy(() => this._stop());
     }
 
     get durationFormatted() {
         return formatMinutes(this.state.duration);
     }
 
-    _startTimers() {
-        this._stopTimers();
-        this.lastDateTime = Date.now();
-        this._runTimer();
-        this._runSleepTimer();
+    _follow(value, ongoing) {
+        if (value !== this.value || (ongoing && !this.ongoing)) {
+            this.value = value;
+            this.base = value;
+            this.startedAt = Date.now();
+            this.state.duration = value;
+        }
+        this.ongoing = ongoing;
+        if (!ongoing) {
+            this._stop();
+        } else if (!this._interval) {
+            this._interval = setInterval(() => this._tick(), 1000);
+        }
     }
 
-    _stopTimers() {
-        clearTimeout(this._tickTimer);
-        clearTimeout(this._sleepTimer);
+    _tick() {
+        this.state.duration = this.base + (Date.now() - this.startedAt) / 60000;
     }
 
-    _runTimer() {
-        this._tickTimer = setTimeout(() => {
-            if (this.ongoing) {
-                this.state.duration += 1 / 60;
-                this._runTimer();
-            }
-        }, 1000);
-    }
-
-    _runSleepTimer() {
-        this._sleepTimer = setTimeout(() => {
-            if (!this.ongoing) {
-                return;
-            }
-            const diff = Date.now() - this.lastDateTime - 10000;
-            if (diff > 1000) {
-                this.state.duration += diff / (1000 * 60);
-            }
-            this.lastDateTime = Date.now();
-            this._runSleepTimer();
-        }, 10000);
+    _stop() {
+        clearInterval(this._interval);
+        this._interval = undefined;
     }
 }
 
@@ -119,8 +97,9 @@ class MrpTimerField extends Component {
             parse: (v) => parseFloatTime(v),
         });
 
+        this.state = proxy({ duration: this.props.record.data[this.props.name] });
         useRecordObserver(async (record) => {
-            this.duration = await this.getLiveDuration(record);
+            this.state.duration = await this.getLiveDuration(record);
         });
     }
 
@@ -134,13 +113,12 @@ class MrpTimerField extends Component {
         return this.orm.call("mrp.workorder", "get_duration", [record.resId]);
     }
 
+    get duration() {
+        const value = this.props.record.data[this.props.name];
+        return this.props.record.dirty ? value : this.state.duration;
+    }
+
     get durationFormatted() {
-        if (
-            this.props.record.data[this.props.name] !== this.duration &&
-            this.props.record.dirty
-        ) {
-            this.duration = this.props.record.data[this.props.name];
-        }
         return formatMinutes(this.duration);
     }
 

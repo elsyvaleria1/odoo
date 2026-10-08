@@ -2,9 +2,14 @@ import { openFormView, start, startServer } from "@mail/../tests/mail_test_helpe
 import { defineMrpModels } from "@mrp/../tests/mrp_test_helpers";
 import { MrpTimer } from "@mrp/widgets/timer";
 import { describe, expect, test } from "@odoo/hoot";
-import { advanceTime } from "@odoo/hoot-mock";
-import { Component, useProps, xml } from "@odoo/owl";
-import { mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
+import { advanceTime, animationFrame } from "@odoo/hoot-mock";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import {
+    contains,
+    mountView,
+    mountWithCleanup,
+    onRpc,
+} from "@web/../tests/web_test_helpers";
 import { registry } from "@web/core/registry";
 
 describe.current.tags("desktop");
@@ -109,4 +114,66 @@ test("MrpTimer stays frozen when not ongoing", async () => {
     expect(".test-timer").toHaveText("05:00");
     await advanceTime(30000);
     expect(".test-timer").toHaveText("05:00");
+});
+
+test("MrpTimer counts elapsed time, not ticks, across a stalled minute", async () => {
+    class Parent extends Component {
+        static components = { MrpTimer };
+        static props = {};
+        static template = xml`<div class="test-timer"><MrpTimer value="0" ongoing="true"/></div>`;
+        props = useProps(this.constructor.props);
+    }
+    await mountWithCleanup(Parent);
+    await advanceTime(60000);
+    expect(".test-timer").toHaveText("01:00");
+});
+
+test("MrpTimer shows a new value while stopped and restarts from it", async () => {
+    class Parent extends Component {
+        static components = { MrpTimer };
+        static props = {};
+        static template = xml`<div class="test-timer"><MrpTimer value="this.state.value" ongoing="this.state.ongoing"/></div>`;
+        props = useProps(this.constructor.props);
+        setup() {
+            this.state = proxy({ value: 5, ongoing: false });
+        }
+    }
+    const parent = await mountWithCleanup(Parent);
+    expect(".test-timer").toHaveText("05:00");
+    parent.state.value = 7;
+    await animationFrame();
+    expect(".test-timer").toHaveText("07:00");
+    parent.state.ongoing = true;
+    await animationFrame();
+    await advanceTime(2000);
+    expect(".test-timer").toHaveText("07:02");
+    parent.state.value = 20;
+    await animationFrame();
+    expect(".test-timer").toHaveText("20:00");
+});
+
+test("a row's state dropdown changes only that row unless the row is selected", async () => {
+    const pyEnv = await startServer();
+    const [first, second] = pyEnv["res.fake"].create([
+        { state: "ready" },
+        { state: "ready" },
+    ]);
+    onRpc("has_group", () => true);
+    onRpc("set_state", ({ args }) => {
+        expect.step(args[0]);
+        return true;
+    });
+    await start();
+    await mountView({
+        resModel: "res.fake",
+        type: "list",
+        arch: `<list><field name="state"/><widget name="wo_list_view_dropdown"/></list>`,
+    });
+    await contains(".o_data_row:eq(0) .o_list_record_selector input").click();
+    await contains(".o_data_row:eq(1) .o_widget_wo_list_view_dropdown button").click();
+    await contains(".o-dropdown-item:contains(In Progress)").click();
+    expect.verifySteps([[second]]);
+    await contains(".o_data_row:eq(0) .o_widget_wo_list_view_dropdown button").click();
+    await contains(".o-dropdown-item:contains(In Progress)").click();
+    expect.verifySteps([[first]]);
 });

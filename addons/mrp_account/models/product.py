@@ -86,15 +86,18 @@ class ProductProduct(models.Model):
                 total * share / bom.product_qty, self.uom_id
             )
         product = bom.product_id or bom.product_tmpl_id.product_variant_id
-        byproduct_lines = bom.byproduct_ids.filtered(
-            lambda b: b.product_id == self and b.cost_share != 0
-        )
-        product_uom_qty = 0
-        for line in byproduct_lines:
-            product_uom_qty += line.product_uom_id._get_quantity_in_unit(
+        shares = {
+            line: share
+            for line, share in bom._get_byproduct_cost_shares(product).items()
+            if line.product_id == self and share
+        }
+        product_uom_qty = sum(
+            line.product_uom_id._get_quantity_in_unit(
                 line.product_qty, self.uom_id, round=False
             )
-        byproduct_cost_share = sum(byproduct_lines.mapped("cost_share"))
+            for line in shares
+        )
+        byproduct_cost_share = sum(shares.values()) * 100
         total = bom._get_rolled_up_cost(product, bom.product_qty)
         _debug.logic(
             "bom_price",

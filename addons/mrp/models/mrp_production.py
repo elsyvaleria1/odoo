@@ -28,6 +28,9 @@ from odoo.addons.web.controllers.utils import clean_action
 
 declare_authority_keys("mrp", "allow_more")
 
+BYPRODUCT_EDITABLE_FIELDS = frozenset(
+    ("product_uom_qty", "product_uom_id", "cost_share", "operation_id")
+)
 _debug = DebugLog(__name__)
 
 SIZE_BACK_ORDER_NUMBERING = 3
@@ -1084,15 +1087,18 @@ class MrpProduction(models.Model):
         location_by_company = self.env["stock.location"]._read_group(
             [("company_id", "in", self.company_id.ids), ("usage", "=", "production")],
             ["company_id"],
-            ["id:array_agg"],
+            ["id:min"],
         )
-        location_by_company = {company.id: ids for company, ids in location_by_company}
+        location_by_company = {
+            company.id: location_id for company, location_id in location_by_company
+        }
         for production in self:
             prod_loc = production.product_id.with_company(
                 production.company_id
             ).property_stock_production
-            comp_locs = location_by_company.get(production.company_id.id)
-            production.production_location_id = prod_loc or (comp_locs and comp_locs[0])
+            production.production_location_id = prod_loc or location_by_company.get(
+                production.company_id.id
+            )
 
     @api.depends("product_id.tracking")
     def _compute_show_final_lots(self) -> None:
@@ -1681,7 +1687,8 @@ class MrpProduction(models.Model):
                     production.move_finished_ids = [
                         Command.update(m.id, updated_values)
                         for m in production.move_finished_ids
-                        if any(
+                        if m.state not in ("done", "cancel")
+                        and any(
                             updated_values.get(field)
                             and m[field] != updated_values[field]
                             for field in ("date", "date_deadline")
@@ -1793,7 +1800,7 @@ class MrpProduction(models.Model):
                 continue
             production.serial_numbers_count = len(production.trace_producing_ids)
 
-    def _update_qty_producing(self):
+    def _apply_qty_producing_change(self):
         if self.state in ["draft", "cancel"] or (
             self.state == "done" and self.is_locked
         ):
@@ -1815,11 +1822,11 @@ class MrpProduction(models.Model):
 
     @api.onchange("qty_producing")
     def _onchange_qty_producing(self) -> None:
-        self._update_qty_producing()
+        self._apply_qty_producing_change()
 
     @api.onchange("trace_producing_ids")
     def _onchange_lot_producing(self):
-        if self._update_qty_producing():
+        if self._apply_qty_producing_change():
             return self._get_serial_numbers_warning()
         return None
 
@@ -2084,9 +2091,13 @@ class MrpProduction(models.Model):
             production_to_replan.button_unplan()
         if vals.get("date_start"):
             date_start = self[:1].date_start
-            self.move_raw_ids.write({"date": date_start, "date_deadline": date_start})
+            self.move_raw_ids.filtered(
+                lambda move: move.state not in ("done", "cancel")
+            ).write({"date": date_start, "date_deadline": date_start})
         if vals.get("date_end"):
-            self.move_finished_ids.write({"date": self[:1].date_end})
+            self.move_finished_ids.filtered(
+                lambda move: move.state not in ("done", "cancel")
+            ).write({"date": self[:1].date_end})
         if vals.get("date_deadline"):
             deadline = fields.Datetime.to_datetime(vals["date_deadline"])
             self.move_finished_ids.filtered(
@@ -2118,9 +2129,13 @@ class MrpProduction(models.Model):
     def _post_write_one(self, vals) -> None:
         self.check_singleton()
         if self.state == "done" and "qty_producing" in vals:
-            self._get_main_finished_moves().filtered_domain(
+            done_moves = self._get_main_finished_moves().filtered_domain(
                 [("state", "=", "done")]
-            ).quantity = vals["qty_producing"]
+            )
+            earlier = done_moves[:-1]
+            done_moves[-1:].quantity = vals["qty_producing"] - sum(
+                earlier.mapped("quantity")
+            )
         if (
             self._has_workorders()
             and not self.workorder_ids.operation_id
@@ -2533,6 +2548,9 @@ class MrpProduction(models.Model):
             byproduct_moves.setdefault(move.byproduct_id.id, move)
         pending_main_moves = list(main_moves)
         kept_ids = set(kept._ids)
+        keep_byproduct_edits = self._is_finished_structure_unchanged(
+            main_moves, bom_byproducts
+        )
         for move_finished_values in self._prepare_moves_finished_vals():
             byproduct_id = move_finished_values["byproduct_id"]
             if byproduct_id:
@@ -2541,6 +2559,12 @@ class MrpProduction(models.Model):
                 move = pending_main_moves.pop(0) if pending_main_moves else None
             if move:
                 kept_ids.add(move.id)
+                if byproduct_id and keep_byproduct_edits:
+                    move_finished_values = {
+                        field: value
+                        for field, value in move_finished_values.items()
+                        if field not in BYPRODUCT_EDITABLE_FIELDS
+                    }
                 list_move_finished += [Command.update(move.id, move_finished_values)]
             elif deferred_move_vals is not None and isinstance(self.id, int):
                 deferred_move_vals.append(move_finished_values)
@@ -2552,6 +2576,18 @@ class MrpProduction(models.Model):
             if move.id not in kept_ids
         ]
         self.move_finished_ids = list_move_finished
+
+    def _is_finished_structure_unchanged(self, main_moves, byproduct_moves) -> bool:
+        self.check_singleton()
+        return bool(
+            len(main_moves) == 1
+            and main_moves.product_id == self.product_id
+            and main_moves.product_uom_id == self.product_uom_id
+            and not self.product_uom_id.compare(
+                main_moves.product_uom_qty, self.product_qty
+            )
+            and all(move.byproduct_id.bom_id == self.bom_id for move in byproduct_moves)
+        )
 
     def _prepare_moves_raw_vals(self):
         moves = []

@@ -388,7 +388,7 @@ class MrpWorkorder(models.Model):
                     raise UserError(
                         self.env._("You need to log in to process this work order.")
                     )
-                main_employee = self.env["hr.employee"].get_session_owner()
+                main_employee = self._get_acting_employee().id
                 if not main_employee:
                     _debug.logic(
                         "workorder_start_refused",
@@ -1113,27 +1113,20 @@ class MrpWorkorder(models.Model):
     def button_pending(self) -> None:
         Employee = self.env["hr.employee"]
         # Determine current employee
-        if not self.env.context.get("mrp_display"):
-            employee = self.env.user.employee_id
-        else:
-            connected_employees = Employee.get_employees_connected()
-            if not connected_employees:
-                raise UserError(
-                    self.env._("You need to log in to process this work order.")
-                )
-            # `get_session_owner` returns an id; the branch above yields a record,
-            # and `employee.id` below needs both branches to agree.
-            employee = Employee.browse(Employee.get_session_owner())
+        if self.env.context.get("mrp_display") and not (
+            Employee.get_employees_connected()
+        ):
+            raise UserError(
+                self.env._("You need to log in to process this work order.")
+            )
+        employee = self._get_acting_employee()
         if employee:
             # Stop productivity only for the current employee
             self.stop_employee([employee.id])
         super().button_pending()
 
     def action_mark_as_done(self):
-        if self.env.context.get("mrp_display"):
-            main_employee_connected = self.env["hr.employee"].get_session_owner()
-        else:
-            main_employee_connected = self.env.user.employee_id.id
+        main_employee_connected = self._get_acting_employee().id
 
         for wo in self:
             if not main_employee_connected:
@@ -1270,15 +1263,14 @@ class MrpWorkorder(models.Model):
                 self.current_quality_check_id = new_check
 
     def _get_connected_employee(self):
-        if self.env.context.get("mrp_display"):
-            if self.env.context.get("employee_id"):
-                connected_employee_id = self.env.context.get("employee_id")
-            else:
-                connected_employee_id = self.env["hr.employee"].get_session_owner()
-            connected_employee = self.env["hr.employee"].browse(connected_employee_id)
-        elif self.employee_assigned_ids:
-            connected_employee = self.employee_assigned_ids[0]
-        else:
-            connected_employee = self.env.user.employee_id
+        if not self.env.context.get("mrp_display") and self.employee_assigned_ids:
+            return self.employee_assigned_ids[0]
+        return self._get_acting_employee()
 
-        return connected_employee
+    def _get_acting_employee(self):
+        Employee = self.env["hr.employee"]
+        if self.env.context.get("mrp_display"):
+            return Employee.browse(
+                self.env.context.get("employee_id") or Employee.get_session_owner()
+            )
+        return self.env.user.employee_id

@@ -147,8 +147,13 @@ class StockWarehouse(models.Model):
 
     def _prepare_rule_routings(self):
         result = super()._prepare_rule_routings()
-        production_location_id = self._get_production_location()
+        production_locations = {}
         for warehouse in self:
+            if warehouse.company_id not in production_locations:
+                production_locations[warehouse.company_id] = (
+                    warehouse._get_production_location()
+                )
+            production_location_id = production_locations[warehouse.company_id]
             result[warehouse.id].update(
                 {
                     "mrp_one_step": [],

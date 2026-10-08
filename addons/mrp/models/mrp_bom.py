@@ -667,16 +667,17 @@ class MrpBom(models.Model):
         )
 
     @api.model
+    def _get_domain_bom_products(self, products):
+        return Domain("product_id", "in", products.ids) | (
+            Domain("product_id", "=", False)
+            & Domain("product_tmpl_id", "in", products.product_tmpl_id.ids)
+        )
+
+    @api.model
     def _get_domain_bom(
         self, products, picking_type=None, company_id=False, bom_type=False
     ):
-        domain = (
-            Domain("product_id", "in", products.ids)
-            | (
-                Domain("product_id", "=", False)
-                & Domain("product_tmpl_id", "in", products.product_tmpl_id.ids)
-            )
-        ) & Domain("active", "=", True)
+        domain = self._get_domain_bom_products(products) & Domain("active", "=", True)
         if company_id or self.env.context.get("company_id"):
             domain &= Domain(
                 "company_id",
@@ -1231,28 +1232,6 @@ class MrpBom(models.Model):
             )
         )
         return self.env["document.document"].search(domain)
-
-    @api.model
-    def _is_skipped_for_no_variant(
-        self, product, bom_attribute_values, never_attribute_values=False
-    ) -> bool:
-        no_variant_bom_attributes = bom_attribute_values.filtered(
-            lambda av: av.attribute_id.create_variant == "no_variant"
-        )
-        other_attribute_valid = product._has_all_variant_values(
-            bom_attribute_values - no_variant_bom_attributes
-        )
-        if not no_variant_bom_attributes:
-            return not other_attribute_valid
-        if not never_attribute_values:
-            return True
-
-        matched_attributes = (
-            no_variant_bom_attributes & never_attribute_values
-        ).attribute_id
-        if matched_attributes != no_variant_bom_attributes.attribute_id:
-            return True
-        return not other_attribute_valid
 
     @api.depends_context("orderpoint_id", "default_orderpoint_id")
     def _compute_show_set_bom_button(self) -> None:

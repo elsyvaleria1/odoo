@@ -656,32 +656,11 @@ class MrpWorkcenter(models.Model):
         _debug.perf.count(
             "workcenter_working_minutes", workcenter=self.id, spans=len(spans)
         )
-        work_intervals = self._get_working_intervals(
-            min(start for start, _stop in spans),
-            max(stop for _start, stop in spans),
-        )
-        minutes = []
-        for start, stop in spans:
-            worked = work_intervals & Intervals(
-                [
-                    (
-                        localized(start),
-                        localized(stop),
-                        self.env["resource.calendar.attendance"],
-                    )
-                ]
-            )
-            minutes.append(
-                round(
-                    sum(
-                        (interval_stop - interval_start).total_seconds()
-                        for interval_start, interval_stop, _records in worked
-                    )
-                    / 60.0,
-                    2,
-                )
-            )
-        return minutes
+        working_intervals = self._get_working_intervals_of_spans(spans)
+        return [
+            round(self._get_occupied_minutes([], [span], working_intervals), 2)
+            for span in spans
+        ]
 
     def _get_unavailability_intervals(self, start_datetime, end_datetime) -> dict:
         unavailable_per_resource = self.resource_id._get_unavailable_intervals(
@@ -950,8 +929,8 @@ class MrpWorkcenter(models.Model):
     def _get_capacity(self, product, unit, default_capacity=1) -> tuple:
         self.check_singleton()
         ranked = [
-            (product, product.uom_id),
             (product, unit),
+            (product, product.uom_id),
             (self.env["product.product"], unit),
             (self.env["product.product"], product.uom_id),
         ]

@@ -67,7 +67,14 @@ class ProductTemplate(models.Model):
 
     def get_forecast_bom_id(self):
         self.check_singleton()
-        return self.bom_ids[:1].id
+        Bom = self.env["mrp.bom"]
+        return Bom.search(
+            Bom._get_domain_bom(
+                self.product_variant_ids, company_id=self.env.company.id
+            ),
+            order="sequence, product_id, id",
+            limit=1,
+        ).id
 
     def action_archive(self):
         still_used = self._get_still_used_bom_lines()

@@ -127,6 +127,16 @@ class MrpWorkorder(models.Model):
         string="Original Production Quantity",
         readonly=True,
     )
+    operation_demand_qty = fields.Float(
+        string="Operation Quantity Done",
+        digits="Product Unit",
+        copy=False,
+        readonly=True,
+        help="What the operation worked on when the work order finished, in its"
+        " own bill of materials' unit. For an operation of a kit it differs"
+        " from the quantity produced, and later changes to the kit do not"
+        " rewrite it.",
+    )
     company_id = fields.Many2one(related="production_id.company_id")
     qty_producing = fields.Float(
         string="Currently Produced Quantity",
@@ -799,19 +809,80 @@ class MrpWorkorder(models.Model):
 
     def _shorten_timeline(self, duration_to_remove):
         self.check_singleton()
-        timers_to_unlink = self.env["mrp.workcenter.productivity"]
-        for timer in self.time_ids.filtered("date_end").sorted():
-            if duration_to_remove <= 0.0:
-                break
-            if timer.duration <= duration_to_remove:
-                duration_to_remove -= timer.duration
-                timers_to_unlink |= timer
-            else:
-                timer.date_start = timer.date_end - timedelta(
-                    minutes=timer.duration - duration_to_remove
-                )
-                break
+        timers = self.time_ids.filtered(
+            lambda timer: timer.date_start and timer.date_end
+        )
+        if not timers or duration_to_remove <= 0.0:
+            return self.env["mrp.workcenter.productivity"]
+        target = max(self._get_duration() - duration_to_remove, 0.0)
+        cut = self._get_timeline_cut(timers, target)
+        timers_to_unlink = timers.filtered(lambda timer: timer.date_start >= cut)
+        (timers - timers_to_unlink).filtered(
+            lambda timer: timer.date_end > cut
+        ).date_end = cut
+        _debug.logic(
+            "timeline_shortened",
+            workorder=self.id,
+            removed=duration_to_remove,
+            cut=cut,
+            unlinked=len(timers_to_unlink),
+        )
         return timers_to_unlink
+
+    def _get_timeline_cut(self, timers, target_minutes):
+        spans_by_workcenter = {
+            workcenter: [
+                (
+                    timer.date_start,
+                    timer.date_end,
+                    timer.loss_id._is_measured_on_working_time(),
+                )
+                for timer in workcenter_timers
+            ]
+            for workcenter, workcenter_timers in timers.grouped("workcenter_id").items()
+        }
+        working_intervals = {
+            workcenter: workcenter._get_working_intervals_of_spans(
+                [(start, stop) for start, stop, on_calendar in spans if on_calendar]
+            )
+            for workcenter, spans in spans_by_workcenter.items()
+        }
+
+        def occupied_until(cut):
+            minutes = 0.0
+            for workcenter, spans in spans_by_workcenter.items():
+                clipped = [
+                    (start, min(stop, cut), on_calendar)
+                    for start, stop, on_calendar in spans
+                    if start < cut
+                ]
+                minutes += workcenter._get_occupied_minutes(
+                    [
+                        (start, stop)
+                        for start, stop, on_calendar in clipped
+                        if not on_calendar
+                    ],
+                    [
+                        (start, stop)
+                        for start, stop, on_calendar in clipped
+                        if on_calendar
+                    ],
+                    working_intervals[workcenter],
+                )
+            return minutes
+
+        origin = min(timers.mapped("date_start")).replace(microsecond=0)
+        if target_minutes <= 0.0:
+            return origin
+        low = 0
+        high = int((max(timers.mapped("date_end")) - origin).total_seconds()) + 1
+        while high - low > 1:
+            middle = (low + high) // 2
+            if occupied_until(origin + timedelta(seconds=middle)) < target_minutes:
+                low = middle
+            else:
+                high = middle
+        return origin + timedelta(seconds=high)
 
     @api.depends("duration", "duration_expected", "state")
     def _compute_progress(self) -> None:
@@ -1331,6 +1402,13 @@ class MrpWorkorder(models.Model):
             }
             if not workorder.date_start or date_end < workorder.date_start:
                 vals["date_start"] = date_end
+            if workorder.operation_id.bom_id not in (
+                workorder.production_bom_id,
+                self.env["mrp.bom"],
+            ):
+                vals["operation_demand_qty"] = workorder._get_operation_demand(
+                    vals["qty_produced"]
+                )[2]
             all_vals_dict[frozenset(vals.items())] |= workorder
         _debug.lifecycle(
             "workorder_done", workorders=workorders_to_end, groups=len(all_vals_dict)
