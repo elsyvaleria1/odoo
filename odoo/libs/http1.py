@@ -15,6 +15,7 @@ __all__ = [
     "BodyError",
     "BodyLimits",
     "BodyReader",
+    "BodyTimeout",
     "BufferedSource",
     "ChunkedReader",
     "Framing",
@@ -58,6 +59,10 @@ class ProtocolError(Exception):
 
 class BodyError(OSError):
     status = HTTPStatus.BAD_REQUEST
+
+
+class BodyTimeout(BodyError):
+    status = HTTPStatus.REQUEST_TIMEOUT
 
 
 @dataclass(frozen=True, slots=True)
@@ -321,7 +326,8 @@ class BufferedSource:
         self.buffer += data
         return True
 
-    def take_line(self, limit: int) -> bytes:
+    def take_line(self, limit: int, receive: Callable[[], bool] | None = None) -> bytes:
+        receive = receive or self.receive_into_buffer
         while True:
             end = self.buffer.find(b"\n")
             if end > limit:
@@ -332,7 +338,7 @@ class BufferedSource:
                 return line
             if len(self.buffer) > limit:
                 raise BodyError("chunk framing line too long")
-            if not self.receive_into_buffer():
+            if not receive():
                 raise BodyError("connection closed inside a chunked body")
 
 
@@ -340,15 +346,29 @@ class BufferedSource:
 class BodyLimits:
     max_chunk_line: int = 4096
     max_trailer_bytes: int = 16384
+    # mod_reqtimeout's model: a fixed allowance plus credit for every byte
+    # received at the minimum rate, so a large upload on a fair link passes
+    # and a client dripping bytes does not
+    timeout: float = 20.0
+    min_rate: float = 500.0
+
+
+_DEFAULT_BODY_LIMITS = BodyLimits()
 
 
 class _BodyReader(io.RawIOBase):
     def __init__(
-        self, source: BufferedSource, on_first_read: Callable[[], None] | None
+        self,
+        source: BufferedSource,
+        on_first_read: Callable[[], None] | None,
+        limits: BodyLimits,
     ) -> None:
         super().__init__()
         self._source = source
         self._on_first_read = on_first_read
+        self._limits = limits
+        self._started: float | None = None
+        self._received = 0
         self.bytes_read = 0
         self.error: BodyError | None = None
 
@@ -364,6 +384,23 @@ class _BodyReader(io.RawIOBase):
 
     def readable(self) -> bool:
         return True
+
+    def _receive(self) -> bool:
+        now = time.monotonic()
+        if self._started is None:
+            self._started = now
+        else:
+            limits = self._limits
+            credit = self._received / limits.min_rate if limits.min_rate else 0.0
+            if now > self._started + limits.timeout + credit:
+                raise BodyTimeout("request body not received in time")
+        before = len(self._source.buffer)
+        try:
+            more = self._source.receive_into_buffer()
+        except TimeoutError as exc:
+            raise BodyTimeout("request body stalled") from exc
+        self._received += len(self._source.buffer) - before
+        return more
 
     def _available(self, most: int) -> int:
         if self.error is not None:
@@ -436,8 +473,9 @@ class LengthReader(_BodyReader):
         source: BufferedSource,
         length: int,
         on_first_read: Callable[[], None] | None = None,
+        limits: BodyLimits = _DEFAULT_BODY_LIMITS,
     ) -> None:
-        super().__init__(source, on_first_read)
+        super().__init__(source, on_first_read, limits)
         self._remaining = length
 
     @property
@@ -447,7 +485,7 @@ class LengthReader(_BodyReader):
     def _ready(self, most: int) -> int:
         if self._remaining <= 0:
             return 0
-        if not self._source.buffer and not self._source.receive_into_buffer():
+        if not self._source.buffer and not self._receive():
             raise BodyError("connection closed before the declared Content-Length")
         return min(most, self._remaining, len(self._source.buffer))
 
@@ -466,8 +504,7 @@ class ChunkedReader(_BodyReader):
         limits: BodyLimits,
         on_first_read: Callable[[], None] | None = None,
     ) -> None:
-        super().__init__(source, on_first_read)
-        self._limits = limits
+        super().__init__(source, on_first_read, limits)
         self._chunk_left = 0
         self._done = False
 
@@ -476,7 +513,7 @@ class ChunkedReader(_BodyReader):
         return self._done
 
     def _line(self) -> bytes:
-        line = self._source.take_line(self._limits.max_chunk_line)
+        line = self._source.take_line(self._limits.max_chunk_line, self._receive)
         if not line.endswith(b"\r\n"):
             raise BodyError("chunked framing requires CRLF")
         return line[:-2]
@@ -500,7 +537,7 @@ class ChunkedReader(_BodyReader):
                 self._read_trailers()
                 self._done = True
                 return 0
-        if not self._source.buffer and not self._source.receive_into_buffer():
+        if not self._source.buffer and not self._receive():
             raise BodyError("connection closed inside a chunk")
         return min(most, self._chunk_left, len(self._source.buffer))
 

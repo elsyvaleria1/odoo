@@ -346,6 +346,8 @@ Knobs, read from the environment:
 | `ODOO_HTTP_HEAD_TIMEOUT` | `10 s` | from the first byte of a request head to its end; a partial head past it gets `408` |
 | `ODOO_HTTP_KEEPALIVE_TIMEOUT` | `75 s` | an idle kept-alive connection is closed after this |
 | `ODOO_HTTP_MAX_IDLE_CONNECTIONS` | `4096` | idle connections held; past it the oldest idle one is closed |
+| `ODOO_HTTP_BODY_TIMEOUT` | `20 s` | a request body must arrive within this plus one second per `ODOO_HTTP_BODY_MIN_RATE` bytes received, counted from the application's first read that waits on the network; past it, or past one silent `ODOO_HTTP_SOCKET_TIMEOUT` mid-body, the answer is `408` |
+| `ODOO_HTTP_BODY_MIN_RATE` | `500 B/s` | the pace that earns a body more time: 4 MiB at 1 MiB/s passes a 2 s budget, one byte per 1.5 s does not; `0` gives no credit, so the timeout bounds the whole body |
 | `ODOO_HTTP_DRAIN_BYTES` | `1 MiB` | unread request body discarded, within one second, to keep a connection alive; beyond it the connection closes after a two-second lingering close |
 
 **What the parser refuses**, each with the connection closed: conflicting

@@ -276,6 +276,8 @@ for label, text in {
     "keepalive timeout": f"| `ODOO_HTTP_KEEPALIVE_TIMEOUT` | `{int(lim.keepalive_timeout)} s` |",
     "idle connections": f"| `ODOO_HTTP_MAX_IDLE_CONNECTIONS` | `{lim.max_idle_connections}` |",
     "drain bytes": f"| `ODOO_HTTP_DRAIN_BYTES` | `{lim.drain_bytes // MIB} MiB` |",
+    "body timeout": f"| `ODOO_HTTP_BODY_TIMEOUT` | `{int(lim.body.timeout)} s` |",
+    "body min rate": f"| `ODOO_HTTP_BODY_MIN_RATE` | `{int(lim.body.min_rate)} B/s` |",
 }.items():
     contains(label, text)
 

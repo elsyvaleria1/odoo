@@ -5,6 +5,7 @@ import pytest
 from odoo.libs.http1 import (
     BodyError,
     BodyLimits,
+    BodyTimeout,
     BufferedSource,
     ChunkedReader,
     LengthReader,
@@ -154,3 +155,62 @@ def test_a_clean_body_records_no_error():
     reader = LengthReader(source(b"abc"), 3)
     assert reader.read() == b"abc"
     assert reader.error is None
+
+
+class _Clock:
+    def __init__(self):
+        self.now = 1000.0
+
+    def monotonic(self):
+        return self.now
+
+
+def _paced(clock, pieces, step):
+    queue = list(pieces)
+
+    def recv(size):
+        clock.now += step
+        return queue.pop(0) if queue else b""
+
+    return BufferedSource(recv)
+
+
+@pytest.mark.parametrize("reader_class", ["length", "chunked"])
+def test_a_body_dripping_below_the_minimum_rate_times_out(monkeypatch, reader_class):
+    from odoo.libs import http1
+
+    clock = _Clock()
+    monkeypatch.setattr(http1, "time", clock)
+    limits = BodyLimits(timeout=2.0, min_rate=500.0)
+    if reader_class == "length":
+        reader = LengthReader(_paced(clock, [b"x"] * 10, 1.5), 10, limits=limits)
+    else:
+        wire = [bytes([b]) for b in b"a\r\n" + b"x" * 10 + b"\r\n0\r\n\r\n"]
+        reader = ChunkedReader(_paced(clock, wire, 1.5), limits)
+    with pytest.raises(BodyTimeout) as info:
+        reader.read()
+    assert info.value.status == 408
+    assert reader.error is info.value
+    assert clock.now - 1000.0 < 6, "the budget is 2 s plus 2 ms per byte"
+
+
+def test_a_large_body_at_a_fair_rate_earns_its_time(monkeypatch):
+    from odoo.libs import http1
+
+    clock = _Clock()
+    monkeypatch.setattr(http1, "time", clock)
+    chunk = b"x" * (1 << 20)
+    reader = LengthReader(
+        _paced(clock, [chunk] * 4, 1.0), 4 << 20, limits=BodyLimits(timeout=2.0)
+    )
+    assert len(reader.read()) == 4 << 20, "4 MiB at 1 MiB/s, well past 2 s"
+
+
+def test_a_socket_timeout_inside_a_body_is_a_body_timeout():
+    def recv(size):
+        raise TimeoutError("timed out")
+
+    reader = LengthReader(BufferedSource(recv), 10)
+    with pytest.raises(BodyTimeout) as info:
+        reader.read()
+    assert isinstance(info.value.__cause__, TimeoutError)

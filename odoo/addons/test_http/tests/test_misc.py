@@ -1,3 +1,8 @@
+import contextlib
+import dataclasses
+import select
+import socket
+import time
 from io import BytesIO, StringIO
 from socket import gethostbyname
 from types import SimpleNamespace
@@ -13,6 +18,7 @@ from odoo import http
 from odoo.http import prepare_content_disposition_header, rewind_uploaded_files, root
 from odoo.http.constants import DEFAULT_ALLOWED_METHODS
 from odoo.libs.json import dumps as json_dumps
+from odoo.service.server import get_server
 from odoo.tests import tagged
 from odoo.tests.common import HOST, BaseCase, get_db_name, new_test_user
 from odoo.tools import config, file_path, mute_logger
@@ -625,3 +631,47 @@ class TestHttpCorsCredentials(TestHttpBase):
                 cors_credentials=True,
             )
             def never(self): ...
+
+
+@tagged("post_install", "-at_install")
+class TestHttpBodyBudget(TestHttpBase):
+    def _post_dripping(self, body: bytes, pause: float) -> bytes:
+        port = self.http_port()
+        cookies = "; ".join(f"{k}={v}" for k, v in self.opener.cookies.items())
+        head = (
+            f"POST /test_http/echo-json HTTP/1.1\r\nHost: {HOST}:{port}\r\n"
+            f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n"
+            f"Cookie: {cookies}\r\nConnection: close\r\n\r\n"
+        ).encode()
+        with socket.create_connection((HOST, port)) as sock:
+            sock.settimeout(10)
+            sock.sendall(head + body[:1])
+            for byte in body[1:]:
+                time.sleep(pause)
+                try:
+                    sock.sendall(bytes([byte]))
+                except OSError:
+                    break
+                readable, _, _ = select.select([sock], [], [], 0)
+                if readable:
+                    break
+            buf = b""
+            with contextlib.suppress(ConnectionResetError):
+                while chunk := sock.recv(65536):
+                    buf += chunk
+        return buf
+
+    def test_a_body_too_slow_for_its_budget_is_a_408_not_a_500(self):
+        httpd = get_server().httpd
+        limits = dataclasses.replace(
+            httpd.limits, body=dataclasses.replace(httpd.limits.body, timeout=0.5)
+        )
+        body = json_dumps({"jsonrpc": "2.0", "method": "call", "params": {}}).encode()
+        with (
+            self.allow_requests(),
+            patch.object(httpd, "limits", limits),
+            self.assertNoLogs("odoo", "ERROR"),
+        ):
+            raw = self._post_dripping(body, pause=0.8)
+        self.assertTrue(raw.startswith(b"HTTP/1.1 408 "), raw[:200])
+        self.assertIn(b"Connection: close", raw)

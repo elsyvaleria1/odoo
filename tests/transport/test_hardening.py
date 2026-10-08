@@ -87,3 +87,69 @@ def test_a_body_read_behind_100_continue_keeps_the_connection(server):
     [reply] = parse_responses(buf)
     assert reply.status == 200
     assert "connection" not in reply.headers
+
+
+def _drip(port, head, pieces, pause):
+    with socket.create_connection(("127.0.0.1", port)) as sock:
+        sock.settimeout(10)
+        started = time.monotonic()
+        sock.sendall(head)
+        buf = b""
+        for piece in pieces:
+            time.sleep(pause)
+            try:
+                sock.sendall(piece)
+            except OSError:
+                break
+            sock.setblocking(False)
+            try:
+                buf += sock.recv(65536)
+            except BlockingIOError:
+                pass
+            finally:
+                sock.settimeout(10)
+            if buf:
+                break
+        try:
+            while chunk := sock.recv(65536):
+                buf += chunk
+        except ConnectionResetError:
+            pass
+        return buf, time.monotonic() - started
+
+
+def test_a_body_dripping_one_byte_per_1_5_s_gets_a_408():
+    head = b"POST /c HTTP/1.1\r\nHost: h\r\nContent-Length: 20\r\nConnection: close\r\n\r\n"
+    with serving(_environ_echo, ODOO_HTTP_BODY_TIMEOUT="2") as srv:
+        buf, elapsed = _drip(srv.server_port, head, [b"x"] * 20, 1.5)
+    [reply] = parse_responses(buf)
+    assert reply.status == 408
+    assert reply.headers["connection"] == "close"
+    assert 2.5 < elapsed < 8, f"{elapsed:.1f}s for a 2 s budget"
+
+
+def test_four_mib_at_one_mib_per_second_passes_a_2_s_budget():
+    size = 4 << 20
+    head = (
+        b"POST /c HTTP/1.1\r\nHost: h\r\nConnection: close\r\nContent-Length: %d\r\n\r\n"
+        % size
+    )
+    piece = b"x" * (1 << 18)
+    with serving(_environ_echo, ODOO_HTTP_BODY_TIMEOUT="2") as srv:
+        buf, elapsed = _drip(srv.server_port, head, [piece] * 16, 0.25)
+    [reply] = parse_responses(buf)
+    assert (reply.status, reply.body) == (200, b"|%d" % size)
+    assert elapsed > 3.5
+
+
+def test_a_body_that_stops_arriving_gets_a_408_not_a_silent_close():
+    with (
+        serving(_environ_echo, ODOO_HTTP_SOCKET_TIMEOUT="0.3") as srv,
+        socket.create_connection(("127.0.0.1", srv.server_port)) as sock,
+    ):
+        sock.settimeout(5)
+        sock.sendall(b"POST /c HTTP/1.1\r\nHost: h\r\nContent-Length: 10\r\n\r\nabc")
+        buf = b""
+        while chunk := sock.recv(65536):
+            buf += chunk
+    assert parse_responses(buf)[0].status == 408

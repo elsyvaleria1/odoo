@@ -115,6 +115,14 @@ class TransportLimits:
             max_idle_connections=get_env_int(
                 "ODOO_HTTP_MAX_IDLE_CONNECTIONS", 4096, minimum=0, logger=_logger
             ),
+            body=BodyLimits(
+                timeout=get_env_float(
+                    "ODOO_HTTP_BODY_TIMEOUT", 20.0, minimum=0.1, logger=_logger
+                ),
+                min_rate=get_env_float(
+                    "ODOO_HTTP_BODY_MIN_RATE", 500.0, minimum=0.0, logger=_logger
+                ),
+            ),
         )
         _debug.lifecycle(
             "httpd.limits_resolved",
@@ -123,6 +131,8 @@ class TransportLimits:
             head_timeout=limits.head_timeout,
             drain_bytes=limits.drain_bytes,
             max_idle_connections=limits.max_idle_connections,
+            body_timeout=limits.body.timeout,
+            body_min_rate=limits.body.min_rate,
             test_enable=current().test_enable,
         )
         return limits
@@ -589,7 +599,9 @@ def _open_reader(
     on_first_read = exchange.continue_upload if head.expect_continue else None
     if head.chunked:
         return ChunkedReader(conn.source, limits.body, on_first_read)
-    return LengthReader(conn.source, head.content_length or 0, on_first_read)
+    return LengthReader(
+        conn.source, head.content_length or 0, on_first_read, limits.body
+    )
 
 
 def _run_exchange(
