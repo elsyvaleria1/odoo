@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 03:04+0000\n"
-"PO-Revision-Date: 2026-10-08 03:04+0000\n"
+"POT-Creation-Date: 2026-10-08 19:50+0000\n"
+"PO-Revision-Date: 2026-10-08 19:50+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -779,6 +779,12 @@ msgid "Ratings"
 msgstr ""
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "Refused: %s."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_revision
 msgid "Report the Production Revision"
 msgstr ""
@@ -837,6 +843,12 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__test_passed
 msgid "Tests Passed"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "The approval request was refused: %s."
 msgstr ""
 
 #. module: error_incident_autofix
@@ -975,4 +987,22 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__github_repository
 msgid "owner/name"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "the fix it asked about did not hold"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "the pull request moved past the commit it asked about"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "the pull request was merged or closed on GitHub"
 msgstr ""

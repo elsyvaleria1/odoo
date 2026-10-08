@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import threading
 import time
 from pathlib import Path
@@ -286,6 +287,53 @@ def test_a_branch_a_person_pushed_to_after_this_run_is_still_this_runs(world):
     outcome = change.change(_lease(), StubReporter())
     assert outcome.result["commit"] == first
     assert outcome.result["note"] == "pushed by an earlier attempt"
+
+
+def test_an_answer_out_of_turns_says_so_and_counts_what_it_spent(world):
+    world.behave(max_turns=True)
+    with pytest.raises(RuntimeError, match="error_max_turns") as failed:
+        change.change(_lease(), StubReporter())
+    assert failed.value.usage == {"input_tokens": 0, "output_tokens": 2, "cost": 0.3}
+
+
+def test_an_agent_that_cannot_start_says_so(world, monkeypatch):
+    monkeypatch.setenv("AGENT_RUNNER_CLAUDE", "/nonexistent/claude")
+    with pytest.raises(RuntimeError, match="the agent cannot start"):
+        change.change(_lease(), StubReporter())
+
+
+def test_the_runners_home_keeps_no_project_of_a_run(world, monkeypatch, tmp_path):
+    home = tmp_path / "runner-home"
+    monkeypatch.setenv("HOME", str(home))
+    seen = []
+    real = change.run_in_session
+
+    def leaving_a_project(command, *, cwd, **kwargs):
+        project = (
+            home / ".claude" / "projects" / re.sub(r"[^A-Za-z0-9-]", "-", str(cwd))
+        )
+        (project / "memory").mkdir(parents=True)
+        seen.append(project)
+        return real(command, cwd=cwd, **kwargs)
+
+    monkeypatch.setattr(change, "run_in_session", leaving_a_project)
+    world.behave(verdict={"verdict": "declined"})
+    lease = _lease()
+    lease["credentials"] = {}  # the runner's own login, in its own home
+    change.change(lease, StubReporter())
+    assert seen and not seen[0].exists()
+
+
+def test_a_branch_merged_into_its_base_is_still_this_runs(world):
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    first = change.change(_lease(), StubReporter()).result["commit"]
+    merger = world.root / "merger"
+    fakes._git(world.root, "clone", "-q", str(world.origin), str(merger))
+    fakes._git(merger, "checkout", "-q", "19.0-marin")
+    fakes._git(merger, "merge", "-q", "--ff-only", f"origin/{BRANCH}")
+    fakes._git(merger, "push", "-q", "origin", "19.0-marin")
+    outcome = change.change(_lease(), StubReporter())
+    assert outcome.result["commit"] == first
 
 
 def test_a_verbose_agent_is_read_by_its_result_message(world):

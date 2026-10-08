@@ -1,16 +1,15 @@
 import logging
 from typing import Any
 
-import requests
+import psycopg
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import ConcurrencyError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
 from ..tools import create_once, get_github_client, repository_domain, same_repository
-from odoo.addons.integration.tools.exceptions import CommError
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -191,13 +190,24 @@ class IntegrationGithubPull(models.Model):
             and vals["head_sha"] != pull.head_sha
         ):
             # two heads in one second: which is the pull request's now, only
-            # GitHub can say -- a late one would roll the head back
+            # GitHub can say -- a late one would roll the head back. Its
+            # answer is the pull request alone, so a failure to list checks
+            # cannot undo it; the head's checks arrive as they always do
             _debug.logic("pull.same_second_heads", pull=pull.id, number=pr["number"])
             try:
                 with self.env.cr.savepoint():
-                    pull.action_refresh()
-                return pull
-            except UserError, ValueError, CommError, requests.RequestException:
+                    owner, name = _split_repository(repository)
+                    current = get_github_client(self.env).get_pull_request(
+                        owner, name, pr["number"]
+                    )
+                    return self._upsert_from_github(
+                        repository, current, authoritative=True
+                    )
+            except psycopg.Error, ConcurrencyError:
+                raise
+            except Exception:
+                # no answer -- a credential, the network, GitHub itself: the
+                # delivery is ingested as it was before GitHub was asked
                 _logger.warning(
                     "Pull request %s#%s: two heads in one second, and GitHub "
                     "could not be asked which is current; the later delivery wins",

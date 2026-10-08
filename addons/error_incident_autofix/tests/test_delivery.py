@@ -277,9 +277,9 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         self.assertFalse(self.env["agent.run"]._claim(self.deployer))
 
     def test_an_earlier_fixs_pull_request_speaks_for_that_fix_only(self):
-        incident, old = self._pushed(checks="success")
-        incident.action_resolve()
-        self._occur()
+        incident, old = self._pushed(checks="failure")
+        self.assertEqual(incident.fix_state, "test_failed")
+        incident.with_user(self.admin).action_autofix_dispatch()
         self.assertEqual(incident.fix_state, "diagnosing")
         self.env["integration.github.pull"]._upsert_from_github(
             REPOSITORY,
@@ -392,13 +392,42 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
         self.assertTrue(incident.date_fix_merged)
 
-    def test_a_regression_releases_the_approval_asked_about_the_fix(self):
+    def test_a_recurrence_before_the_fix_ships_leaves_it_on_its_way(self):
         incident, _pull = self._pushed(checks="success")
         incident.with_user(self.admin).action_autofix_merge()
         request = incident.approval_request_id
-        self.assertEqual(request.state, "pending")
+        runs = len(incident.fix_run_ids)
         incident.action_resolve()
         self._occur()
         self.assertEqual(incident.incident_state, "regressed")
+        self.assertEqual(incident.fix_state, "test_passed")
+        self.assertEqual(
+            (incident.approval_request_id, request.state), (request, "pending")
+        )
+        self.assertEqual(len(incident.fix_run_ids), runs, "nothing dispatched again")
+
+    def test_a_pull_request_closed_on_github_refuses_its_pending_approval(self):
+        incident, pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_merge()
+        request = incident.approval_request_id
+        self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "closed",
+                "head": {
+                    "ref": pull.head_ref,
+                    "sha": HEAD,
+                    "repo": {"full_name": REPOSITORY},
+                },
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+        self.assertEqual(incident.fix_state, "closed")
         self.assertFalse(incident.approval_request_id)
         self.assertEqual(request.state, "refused")
+        self.assertIn("merged or closed on GitHub", request.refusal_note)
+        self.assertNotIn(
+            "cancelled", " ".join(incident.message_ids.mapped("body")).lower()
+        )

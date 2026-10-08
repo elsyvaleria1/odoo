@@ -19,7 +19,8 @@ _logger = logging.getLogger(__name__)
 _GITHUB_REMOTE = re.compile(
     r"(?:^|[/@])(?:www\.)?github\.com(?:-[\w.-]+)?(?::\d+)?[:/]+"
     r"([\w.-]+/[\w.-]+?)(?:\.git)?/*$",
-    re.IGNORECASE,
+    # ASCII: a dotless i is another host, not GitHub in other case
+    re.IGNORECASE | re.ASCII,
 )
 
 

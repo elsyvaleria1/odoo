@@ -94,8 +94,8 @@ def run_in_session(
     end_on_exit: bool = False,
 ) -> Finished:
     """Run ``command`` in a session of its own. Run out of time or stopped,
-    it is ended with everything it started; exited, so is what it left when
-    ``end_on_exit``. Its output is read as it comes, and no longer waited for
+    it is ended with everything it started in that session; exited, so is
+    what it left there when ``end_on_exit``. Its output is read as it comes, and no longer waited for
     than a moment once the command is gone: a process that left the session
     and holds it cannot hold the caller."""
     process = subprocess.Popen(
@@ -156,9 +156,31 @@ def run_in_session(
 
 
 def end_session(process: subprocess.Popen) -> None:
-    # the session's leader cannot leave its process group: this reaches it
+    """Kill every process of ``process``'s session: its process group, and
+    each member that made a group of its own. A session's id stays reserved
+    while any member lives, so the id names no stranger."""
     with contextlib.suppress(ProcessLookupError):
         os.killpg(process.pid, signal.SIGKILL)
+    for pid in _session_members(process.pid):
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.kill(pid, signal.SIGKILL)
+
+
+def _session_members(session: int) -> list[int]:
+    members = []
+    with contextlib.suppress(OSError):
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                stat = (entry / "stat").read_text()
+            except OSError:
+                continue
+            # after the command's name: state, ppid, pgrp, session
+            fields = stat.rsplit(")", 1)[-1].split()
+            if len(fields) > 3 and fields[3] == str(session):
+                members.append(int(entry.name))
+    return members
 
 
 class Client:

@@ -28,6 +28,8 @@ class TestSourceMapContent(HttpCase):
             [("url", "in", [f"{cls.map.url}.gz", f"{cls.map.url}.zst"])]
         )
         new_test_user(cls.env, "map.employee", password="map.employee.pass")
+        # what is asserted is the external mode's: the maps are the server's
+        cls.env["ir.config_parameter"].set_param("web.esbuild.source_maps", "external")
 
     def _status(self, url):
         return self.url_open(url).status_code
@@ -84,6 +86,15 @@ class TestSourceMapContent(HttpCase):
         self.assertIn(
             b"the source", self.url_open(f"/web/content/{self.map.id}").content
         )
+
+    def test_a_map_served_to_an_administrator_is_kept_by_no_shared_cache(self):
+        self.authenticate("admin", "admin")
+        for url in (self.map.url, *self.copies.mapped("url")):
+            response = self.url_open(url)
+            self.assertEqual(response.status_code, 200, url)
+            self.assertEqual(
+                response.headers["Cache-Control"], "private, no-store", url
+            )
 
     def test_linked_maps_are_everyones(self):
         self.env["ir.config_parameter"].set_param("web.esbuild.source_maps", "linked")

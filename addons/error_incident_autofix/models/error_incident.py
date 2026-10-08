@@ -16,6 +16,16 @@ FIX = "error_incident.fix"
 ML_PURPOSE = "error_incident.autofix"
 # fix states an incident rests in; a dispatch starts from one of them
 LIVE_FIX_STATES = ("diagnosing", "fixing", "hotfixing")
+# a fix on its way to production that has not run there yet: an occurrence
+# is no news of it. A proposal is not among them: a person applies it by hand
+UNSHIPPED_FIX_STATES = (
+    "pushed",
+    "testing",
+    "test_failed",
+    "test_passed",
+    "merged",
+    "not_deployed",
+)
 IDLE_FIX_STATES = (
     "none",
     "not_a_defect",
@@ -110,14 +120,17 @@ class ErrorIncident(models.Model):
     def _on_regressed(self) -> None:
         """The fix did not hold: the incident is the agents' again, with its
         attempts counted afresh -- once, when it reopens, not at every
-        occurrence after; a run still at work is left to finish."""
+        occurrence after. A run still at work is left to finish, and a fix not
+        yet in production keeps its way there: the error recurring before it
+        ran says nothing of it."""
         super()._on_regressed()
         for incident in self:
-            if incident.fix_state not in LIVE_FIX_STATES:
-                incident.write({"fix_state": "none", "count_fix_attempt": 0})
-                # a merge or hotfix asked about the fix that did not hold is
-                # no decision left to take
-                incident._autofix_release_approval()
+            if incident.fix_state in LIVE_FIX_STATES + UNSHIPPED_FIX_STATES:
+                continue
+            incident.write({"fix_state": "none", "count_fix_attempt": 0})
+            incident._autofix_release_approval(
+                self.env._("the fix it asked about did not hold")
+            )
 
     def _autofix_refusal(
         self, policy: models.BaseModel, *, by_hand: bool = False

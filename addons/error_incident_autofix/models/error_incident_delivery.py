@@ -71,7 +71,14 @@ class ErrorIncident(models.Model):
         snapshot = self.approval_request_id.operation_snapshot or {}
         if snapshot.get("head") and snapshot["head"] != pull.head_sha:
             # what was asked about is gone: its approval covers nothing
-            self._autofix_release_approval()
+            self._autofix_release_approval(
+                self.env._("the pull request moved past the commit it asked about")
+            )
+        elif pull.pull_state in ("merged", "closed"):
+            # merged or closed on GitHub: no merge or hotfix is left to decide
+            self._autofix_release_approval(
+                self.env._("the pull request was merged or closed on GitHub")
+            )
         if pull.pull_state == "merged":
             self.write(
                 {
@@ -208,20 +215,27 @@ class ErrorIncident(models.Model):
             incident.write({"fix_state": "hotfixing", "fix_commit": pull.head_sha})
             incident._autofix_release_approval()
 
-    def _autofix_release_approval(self) -> None:
+    def _autofix_release_approval(self, reason: str | None = None) -> None:
         """The approval is spent -- its operation ran, or what it was asked
         about changed: the next merge or hotfix of this incident is a new
-        decision with a request of its own. One still pending is refused, so
-        no approver grants it after."""
+        decision with a request of its own. One still pending is refused for
+        ``reason``, so no approver grants it after."""
         self.check_singleton()
-        if not self.approval_request_id:
+        request = self.approval_request_id
+        if not request:
             return
-        _debug.logic(
-            "autofix.approval_spent",
-            incident=self.id,
-            request=self.approval_request_id.id,
-        )
-        self._refuse_pending_approval()
+        _debug.logic("autofix.approval_spent", incident=self.id, request=request.id)
+        if reason and request.state not in request._TERMINAL_STATES | {"new"}:
+            request._force_terminal(
+                "refused",
+                body=self.env._("Refused: %s.", reason),
+                refusal_reason=self.env.ref("approval.refusal_reason_other"),
+                refusal_note=reason,
+            )
+            self.message_post(
+                body=self.env._("The approval request was refused: %s.", reason),
+                message_type="notification",
+            )
         self.approval_request_id = False
 
     def _split_for_approval(self, operation: str) -> tuple:
@@ -237,7 +251,9 @@ class ErrorIncident(models.Model):
                 and incident.approval_request_id.operation_snapshot
                 != incident._get_approval_snapshot(operation)
             ):
-                incident._autofix_release_approval()
+                incident._autofix_release_approval(
+                    self.env._("the pull request moved past the commit it asked about")
+                )
         return super()._split_for_approval(operation)
 
     # -- production --------------------------------------------------------------

@@ -109,3 +109,10 @@ class TestRepositoryOfAModule(TransactionCase):
     def test_a_github_host_is_known_whatever_its_case(self):
         checkout = self._clone("somewhere", "https://GitHub.com/Agro-Marin/odoo.git")
         self.assertEqual(self._for(checkout), self._ref("odoo"))
+
+    def test_a_look_alike_host_is_not_github(self):
+        for url in (
+            "https://g\u0131thub.com/Agro-Marin/odoo.git",
+            "git@G\u0130THUB.COM:Agro-Marin/odoo",
+        ):
+            self.assertIsNone(repository.github_repository_of(url), url)

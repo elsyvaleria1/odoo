@@ -157,14 +157,20 @@ def _agent(
     ]
     # the agent is ended with everything it started, so nothing of it is
     # alive when git next runs with the repository's token
-    finished = run_in_session(
-        command,
-        cwd=cwd,
-        env=env,
-        timeout=float(payload.get("timeout", 1800)),
-        stop=reporter.stop,
-        end_on_exit=True,
-    )
+    try:
+        finished = run_in_session(
+            command,
+            cwd=cwd,
+            env=env,
+            timeout=float(payload.get("timeout", 1800)),
+            stop=reporter.stop,
+            end_on_exit=True,
+        )
+    except OSError as error:
+        raise RuntimeError(f"the agent cannot start: {error}") from error
+    finally:
+        if not key:
+            _forget_project(env["HOME"], cwd)
     if finished.ended == "stopped":
         raise Stopped("stopped")
     if finished.ended:
@@ -180,17 +186,28 @@ def _agent(
         raise RuntimeError(f"the agent's output is not JSON: {said}") from error
     usage = answer.get("usage") or {}
     spend = {
-        "input_tokens": int(usage.get("input_tokens", 0))
-        + int(usage.get("cache_read_input_tokens", 0))
-        + int(usage.get("cache_creation_input_tokens", 0)),
-        "output_tokens": int(usage.get("output_tokens", 0)),
-        "cost": float(answer.get("total_cost_usd", 0)),
+        "input_tokens": int(usage.get("input_tokens") or 0)
+        + int(usage.get("cache_read_input_tokens") or 0)
+        + int(usage.get("cache_creation_input_tokens") or 0),
+        "output_tokens": int(usage.get("output_tokens") or 0),
+        "cost": float(answer.get("total_cost_usd") or 0),
     }
     with spent(spend):
         # a failed answer exits non-zero and still says what it spent
         if answer.get("is_error") or finished.returncode:
-            raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
+            said = answer.get("result") or answer.get("subtype") or "no reason given"
+            raise RuntimeError(f"the agent failed: {str(said)[:500]}")
         return _verdict(answer.get("result", "")), spend
+
+
+def _forget_project(home: str, cwd: Path) -> None:
+    """Claude Code leaves an empty project directory per working directory
+    under the home it runs with, however it was told to keep no session: one
+    per clone, without end, under the runner's own home. An empty one goes."""
+    project = Path(home, ".claude", "projects", re.sub(r"[^A-Za-z0-9-]", "-", str(cwd)))
+    for directory in (project / "memory", project):
+        with contextlib.suppress(OSError):
+            directory.rmdir()
 
 
 def _confinement(tools: str) -> list[str]:
@@ -444,6 +461,9 @@ def _pushed_already(
         return None
     git(checkout, "fetch", "--quiet", url, f"refs/heads/{branch}", token=auth)
     log = git(checkout, "log", "--format=%H%x1f%B%x1e", "FETCH_HEAD", "--not", "HEAD")
+    if not log.strip():
+        # the branch is merged into its base: its commits are the base's now
+        log = git(checkout, "log", "-n", "200", "--format=%H%x1f%B%x1e", "FETCH_HEAD")
     for entry in log.split("\x1e"):
         sha, _, message = entry.strip().partition("\x1f")
         if f"Agent-Run: {run_id}" in message.splitlines():

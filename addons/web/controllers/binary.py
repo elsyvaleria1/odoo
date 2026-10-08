@@ -325,7 +325,9 @@ class Binary(http.Controller):
             send_file_kwargs["immutable"] = True
             send_file_kwargs["max_age"] = http.STATIC_CACHE_LONG
 
-        return _vary_on_encoding(stream.prepare_response(**send_file_kwargs))
+        return self._source_map_private(
+            filename, _vary_on_encoding(stream.prepare_response(**send_file_kwargs))
+        )
 
     def _get_generated_asset_stream(
         self,
@@ -420,7 +422,20 @@ class Binary(http.Controller):
         if filename.endswith(SOURCE_MAP_SUFFIXES) and not self._source_map_published():
             _debug.logic("esm_source_map_withheld", filename=filename)
             raise request.prepare_not_found_error()
-        return self._serve_generated_esm(f"/web/assets/esm/{unique}/{filename}")
+        return self._source_map_private(
+            filename, self._serve_generated_esm(f"/web/assets/esm/{unique}/{filename}")
+        )
+
+    @staticmethod
+    def _source_map_private(filename: str, response: Response) -> Response:
+        # a map served past the gate is this user's: no shared cache may keep
+        # it for the next visitor, whatever its asset's caching says
+        env = request.env
+        if filename.endswith(SOURCE_MAP_SUFFIXES) and (
+            env.registry.settings.get(env, "web.esbuild.source_maps", "") != "linked"
+        ):
+            response.headers["Cache-Control"] = "private, no-store"
+        return response
 
     @staticmethod
     def _source_map_published() -> bool:

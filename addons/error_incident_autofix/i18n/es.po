@@ -763,6 +763,12 @@ msgid "Pull Request Closed"
 msgstr "Pull request cerrado"
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "Refused: %s."
+msgstr "Rechazada: %s."
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_revision
 msgid "Report the Production Revision"
 msgstr "Informar la revisión de producción"
@@ -822,6 +828,12 @@ msgstr "Pruebas fallidas"
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__test_passed
 msgid "Tests Passed"
 msgstr "Pruebas aprobadas"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "The approval request was refused: %s."
+msgstr "La solicitud de aprobación fue rechazada: %s."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_chain_preview
@@ -960,3 +972,21 @@ msgstr "A cargo de qué presupuesto de aprendizaje automático cuentan las ejecu
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__github_repository
 msgid "owner/name"
 msgstr "propietario/nombre"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident.py:0
+msgid "the fix it asked about did not hold"
+msgstr "la corrección por la que preguntaba no se sostuvo"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "the pull request moved past the commit it asked about"
+msgstr "el pull request avanzó más allá del commit por el que preguntaba"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "the pull request was merged or closed on GitHub"
+msgstr "el pull request se fusionó o se cerró en GitHub"

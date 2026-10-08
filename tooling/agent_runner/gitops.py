@@ -95,6 +95,31 @@ def git(
     return completed.stdout
 
 
+def git_bytes(
+    cwd: Path | None,
+    *args: str,
+    input: bytes | None = None,
+    trusted: bool = False,
+    timeout: float = TIMEOUT,
+) -> subprocess.CompletedProcess[bytes]:
+    """git as `git` runs it, its input and output bytes as they are: a patch is
+    no text -- a CRLF line or a Latin-1 file is in it byte for byte."""
+    try:
+        return subprocess.run(
+            ["git", *_SAFE, *args],
+            cwd=cwd,
+            input=input,
+            capture_output=True,
+            env=git_env(trusted=trusted),
+            check=False,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"git {_verb(args)} timed out after {timeout:.0f}s"
+        ) from error
+
+
 def is_ancestor(cwd: Path, commit: str, of: str, *, trusted: bool = False) -> bool:
     """Whether ``of`` holds ``commit``; a commit unknown here is held by
     nothing."""

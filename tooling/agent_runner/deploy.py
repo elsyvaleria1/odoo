@@ -38,14 +38,14 @@ import re
 import shlex
 import subprocess
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:
-    from .gitops import GITHUB, git, is_ancestor
+    from .gitops import GITHUB, git, git_bytes, is_ancestor
     from .runner import Outcome, Permanent, Reporter, run_in_session
 except ImportError:  # run as a script beside runner.py
-    from gitops import GITHUB, git, is_ancestor
+    from gitops import GITHUB, git, git_bytes, is_ancestor
     from runner import Outcome, Permanent, Reporter, run_in_session
 
 _SHA = re.compile(r"\A[0-9a-f]{7,40}\Z")
@@ -124,7 +124,10 @@ def _run(
     # run out of time, it is killed with everything it started, not left
     # upgrading under the revert; exited, what it started -- a server it
     # restarted -- runs on, and is not waited for
-    finished = run_in_session(command, env=_host_env(), timeout=timeout)
+    try:
+        finished = run_in_session(command, env=_host_env(), timeout=timeout)
+    except OSError as error:
+        raise RuntimeError(f"{what} cannot start: {error}") from error
     if finished.ended:
         raise RuntimeError(f"{what} timed out after {timeout:.0f}s")
     if finished.returncode:
@@ -162,16 +165,23 @@ def _healthy() -> bool:
 
 
 def _modules(checkout: Path, before: str, after: str) -> list[str]:
-    """The modules whose files the change touches: a file's nearest directory
-    that holds a __manifest__.py."""
+    """The modules whose files the change touches, as ``after`` has them: a
+    file's nearest directory holding a __manifest__.py there -- a module the
+    change adds included, and a file moved in counted where it lands."""
+    manifests = {
+        PurePosixPath(path).parent
+        for path in _git(checkout, "ls-tree", "-r", "-z", "--name-only", after).split(
+            "\0"
+        )
+        if PurePosixPath(path).name == "__manifest__.py"
+    }
+    changed = _git(
+        checkout, "diff", "--no-renames", "--name-only", "-z", before, after
+    ).split("\0")
     modules = set()
-    for path in _git(checkout, "diff", "--name-only", "-z", before, after).split("\0"):
-        if not path:
-            continue
-        for parent in (checkout / path).parents:
-            if parent == checkout or checkout not in parent.parents:
-                break
-            if (parent / "__manifest__.py").is_file():
+    for path in filter(None, changed):
+        for parent in PurePosixPath(path).parents:
+            if parent in manifests:
                 modules.add(parent.name)
                 break
     return sorted(modules)
@@ -244,29 +254,55 @@ def _confirmed_running(checkout: Path, applied: str) -> bool:
     )
 
 
-def _change_present(checkout: Path, applied: str) -> bool:
-    """Whether the running tree still holds the hotfix commit ``applied``: its
-    own diff, made against production's files, reverses cleanly -- false once
-    a person reverted it."""
-    return _applies(
-        checkout, _git(checkout, "show", "--binary", "--format=", applied), "--reverse"
+def _patch(checkout: Path, before: str, after: str, *options: str) -> bytes:
+    """What ``after`` changes from ``before``, as a patch git applies back
+    byte for byte: plumbing, which no diff setting of the host's reshapes."""
+    done = git_bytes(
+        checkout,
+        "diff-tree",
+        "-p",
+        "--binary",
+        "--full-index",
+        "--no-color",
+        "--src-prefix=a/",
+        "--dst-prefix=b/",
+        *options,
+        before,
+        after,
+        trusted=True,
     )
+    if done.returncode:
+        raise RuntimeError(
+            f"git diff-tree failed: {done.stderr.decode(errors='replace')[-500:]}"
+        )
+    return done.stdout
 
 
-def _applies(checkout: Path, diff: str, *options: str) -> bool:
-    if not diff.strip():
-        return True
-    check = subprocess.run(
-        ["git", "apply", "--check", *options, "-"],
-        cwd=checkout,
-        input=diff,
-        capture_output=True,
-        text=True,
-        env=_host_env(),
-        check=False,
+def _apply(
+    checkout: Path, patch: bytes, *options: str
+) -> subprocess.CompletedProcess[bytes]:
+    return git_bytes(
+        checkout,
+        "apply",
+        "--whitespace=nowarn",
+        *options,
+        "-",
+        input=patch,
+        trusted=True,
         timeout=COMMAND_TIMEOUT,
     )
-    return check.returncode == 0
+
+
+def _change_present(checkout: Path, applied: str) -> bool:
+    """Whether the running tree still holds the hotfix commit ``applied``: its
+    own lines, with no context around them -- what a later edit beside them
+    changes is no matter -- reverse cleanly. False once a person reverted it."""
+    patch = _patch(checkout, f"{applied}^", applied, "-U0")
+    return (
+        not patch.strip()
+        or _apply(checkout, patch, "--reverse", "--check", "--unidiff-zero").returncode
+        == 0
+    )
 
 
 def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
@@ -295,47 +331,31 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
     if _contains(checkout, commit):
         # production's own deploy brought it: activating it is that deploy's
         return Outcome(result={"revision": head, "contained": [commit], "modules": []})
-    applied = _hotfix_of(checkout, commit)
-    if applied and not _change_present(checkout, applied):
-        # a person reverted the hotfix since: it is applied no more
-        applied = None
-    if applied:
-        if _confirmed_running(checkout, applied):
-            return Outcome(
-                result={"revision": head, "contained": [commit], "modules": []}
-            )
-        # applied, but never confirmed running: an earlier attempt died
-        # between the two; it can be reverted while it is still the tip
-        reporter.event(
-            f"{commit[:12]} is applied but not confirmed running; activating",
-            "progress",
-        )
-        before = (
-            _git(checkout, "rev-parse", f"{applied}^").strip()
-            if applied == head
-            else head
-        )
-        return _activate_or_revert(checkout, before, head, modules, commit, reporter)
-
-    try:
-        # what the branch adds to its base, as one change: a merge of the base
-        # into the branch -- GitHub's "Update branch" -- brings nothing more
-        _git(
-            checkout,
-            "apply",
-            "--3way",
-            "--index",
-            "-",
-            input=_git(checkout, "diff", "--binary", base, commit),
-        )
-    except RuntimeError as error:
-        _git(checkout, "reset", "--quiet", "--hard", head)
+    patch = _patch(checkout, base, commit)
+    if not patch.strip():
         raise Permanent(
-            f"the fix does not apply to production's revision {head[:12]}: {error}"
-        ) from error
-    if not _git(checkout, "diff", "--cached", "--name-only").strip():
-        # production holds the change already, by another way: nothing to apply
+            f"{commit[:12]} adds nothing to {base_branch}: it is merged there "
+            "already, and reaches production with the base's deploy"
+        )
+    applied = _hotfix_of(checkout, commit)
+    if applied and _change_present(checkout, applied):
+        return _applied_already(checkout, applied, head, modules, commit, reporter)
+
+    # what the branch adds to its base, as one change: a merge of the base
+    # into the branch -- GitHub's "Update branch" -- brings nothing more
+    done = _apply(checkout, patch, "--3way", "--index")
+    if done.returncode:
         _git(checkout, "reset", "--quiet", "--hard", head)
+        said = (done.stderr or done.stdout).decode(errors="replace").strip()[-500:]
+        raise Permanent(
+            f"the fix does not apply to production's revision {head[:12]}: {said}"
+        )
+    if not _git(checkout, "diff", "--cached", "--name-only").strip():
+        _git(checkout, "reset", "--quiet", "--hard", head)
+        if applied:
+            # the hotfix is there after all, in a shape the check missed
+            return _applied_already(checkout, applied, head, modules, commit, reporter)
+        # production holds the change already, by another way: nothing to apply
         return Outcome(result={"revision": head, "contained": [commit], "modules": []})
     _git(
         checkout,
@@ -352,6 +372,28 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
     after = _git(checkout, "rev-parse", "HEAD").strip()
     reporter.event(f"applied {commit[:12]} on {checkout.name}", "progress")
     return _activate_or_revert(checkout, head, after, modules, commit, reporter)
+
+
+def _applied_already(
+    checkout: Path,
+    applied: str,
+    head: str,
+    modules: list[str],
+    commit: str,
+    reporter: Reporter,
+) -> Outcome:
+    """The hotfix commit ``applied`` is in the running tree. Confirmed running,
+    it is contained; else an earlier attempt died between applying and
+    confirming, and it is activated -- revertible while it is still the tip."""
+    if _confirmed_running(checkout, applied):
+        return Outcome(result={"revision": head, "contained": [commit], "modules": []})
+    reporter.event(
+        f"{commit[:12]} is applied but not confirmed running; activating", "progress"
+    )
+    before = (
+        _git(checkout, "rev-parse", f"{applied}^").strip() if applied == head else head
+    )
+    return _activate_or_revert(checkout, before, head, modules, commit, reporter)
 
 
 def _activate_or_revert(

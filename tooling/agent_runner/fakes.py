@@ -31,6 +31,10 @@ FAKE_CLAUDE = textwrap.dedent(
         (here / "child.pid").write_text(str(child.pid))
         if behaviour["linger"] in ("hang", "detach"):
             time.sleep(120)
+    if behaviour.get("max_turns"):
+        print(json.dumps({{"type": "result", "subtype": "error_max_turns", "is_error": True,
+                          "total_cost_usd": 0.3, "usage": {{"input_tokens": None, "output_tokens": 2}}}}))
+        sys.exit(1)
     if behaviour.get("fail"):
         # Claude Code's failed answer: the result says why and what it spent
         print(json.dumps({{"type": "result", "is_error": True, "result": behaviour["fail"],

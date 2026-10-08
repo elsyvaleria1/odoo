@@ -48,7 +48,7 @@ hold in the payload.
   **Autofix > Repositories** (`odoo`, `agromarin`, `l10n`), with its base branch. A checkout
   is known by the GitHub repository its `origin` fetches from -- wherever and under whatever
   directory it is cloned, a worktree included -- and by its directory's name only when it
-  has no remote at all; a GitHub origin no record maps, a fork, another host, or an origin
+  has no `origin`; a GitHub origin no record maps, a fork, another host, or an origin
   git cannot read -- git missing, the tree refused -- is no repository's. An incident of no
   module is never dispatched. The repository is asked of git last, once every other
   condition holds.
@@ -118,6 +118,7 @@ pushed ─► testing ─► test_failed
     health commands are the host's own configuration (`tooling/agent_runner/deploy.py`). A
     lease names a checkout and a commit, nothing to execute.
 - **Regression.** A recurrence after production reopens the incident as regressed, and it is
-  diagnosed again with the fix that did not hold; a merge or hotfix still asked about that fix
-  is refused. A person reopening a resolved incident resets it the same way, but leaves it in
+  diagnosed again with the fix that did not hold. A recurrence before the fix ran in
+  production -- in review, merged, waiting for a deploy -- leaves that fix on its way, its
+  approval with it. A person reopening a resolved incident resets it the same way, but leaves it in
   their hands: it is dispatched again only by hand.

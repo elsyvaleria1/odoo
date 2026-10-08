@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -231,3 +232,15 @@ def test_what_the_readme_installs_is_what_the_runner_imports(tmp_path):
         check=False,
     )
     assert imported.returncode == 0, imported.stderr
+
+
+def test_a_session_ends_whole_even_a_member_that_made_a_group_of_its_own(tmp_path):
+    marker = tmp_path / "survivor"
+    agent.run_in_session(
+        ["bash", "-c", f"set -m; (sleep 2; touch {marker}) & exit 0"],
+        env={"PATH": "/usr/bin:/bin"},
+        timeout=10,
+        end_on_exit=True,
+    )
+    time.sleep(3)
+    assert not marker.exists()

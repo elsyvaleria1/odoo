@@ -141,3 +141,16 @@ class TestDeliveryOrder(TransactionCase):
         ):
             self._head("c" * 40)
         self.assertEqual(pull.head_sha, "c" * 40)
+
+    def test_two_heads_of_one_second_survive_any_failure_to_ask_github(self):
+        # an encrypted App key fails as a TypeError: the delivery still lands
+        pull = self._head(SHA)
+        with patch.object(
+            pull_module,
+            "get_github_client",
+            side_effect=TypeError(
+                "Password was not given but private key is encrypted"
+            ),
+        ):
+            self._head("c" * 40)
+        self.assertEqual(pull.head_sha, "c" * 40)

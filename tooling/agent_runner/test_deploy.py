@@ -420,3 +420,102 @@ def test_a_command_whose_detached_child_holds_its_output_is_bounded():
     started = time.monotonic()
     deploy._run(["sh", "-c", "setsid sleep 15 &"], "the restart", timeout=30)
     assert time.monotonic() - started < agent.OUTPUT_GRACE + 3
+
+
+def _fix_writing(host, branch, path, content: bytes):
+    _git(host.dev, "checkout", "-q", "-B", branch, "19.0-marin")
+    target = host.dev / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    _git(host.dev, "add", ".")
+    _git(
+        host.dev,
+        "-c",
+        "user.name=d",
+        "-c",
+        "user.email=d@x",
+        "commit",
+        "-qm",
+        f"fix {branch}",
+    )
+    _git(host.dev, "push", "-q", "-f", str(host.origin), branch)
+    return _git(host.dev, "rev-parse", "HEAD")
+
+
+def test_a_patch_reaches_git_byte_for_byte(host, monkeypatch, tmp_path):
+    # CRLF lines, a Latin-1 file, and a host whose git colours and unprefixes
+    # its diffs: none of it reshapes the patch
+    config = tmp_path / "gitconfig"
+    config.write_text("[color]\n\tdiff = always\n[diff]\n\tnoprefix = true\n")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
+    branch = "19.0-marin-fix-b-i8-a1"
+    _fix_writing(host, branch, "addons/stock_x/data.csv", b"a,b\r\n1,2\r\n")
+    fix = _fix_writing(
+        host, branch, "addons/stock_x/i18n/es.po", "a\u00f1o\n".encode("latin-1")
+    )
+    _git(host.dev, "checkout", "-q", branch)
+    (host.dev / "addons/stock_x/data.csv").write_bytes(b"a,b\r\n1,2\r\n")
+    _git(host.dev, "add", ".")
+    _git(host.dev, "-c", "user.name=d", "-c", "user.email=d@x", "commit", "-qm", "both")
+    _git(host.dev, "push", "-q", "-f", str(host.origin), branch)
+    fix = _git(host.dev, "rev-parse", "HEAD")
+    deploy.hotfix(_hotfix_lease(host, branch=branch, commit=fix), StubReporter())
+    assert (
+        host.production / "addons/stock_x/data.csv"
+    ).read_bytes() == b"a,b\r\n1,2\r\n"
+    assert (
+        host.production / "addons/stock_x/i18n/es.po"
+    ).read_bytes() == "a\u00f1o\n".encode("latin-1")
+
+
+@pytest.mark.parametrize("beside", ["l4", "l3"])
+def test_a_hotfix_edited_beside_is_activated_not_taken_for_contained(host, beside):
+    _push_base(host, "addons/stock_x/models.py", _lines(), "ten lines")
+    _git(host.production, "pull", "-q", "--ff-only")
+    fix = _new_fix(
+        host,
+        "19.0-marin-fix-h-i9-a1",
+        "addons/stock_x/models.py",
+        _lines(l5="line5 fixed"),
+    )
+    lease = _hotfix_lease(host, branch="19.0-marin-fix-h-i9-a1", commit=fix)
+    deploy.hotfix(lease, StubReporter())
+    _git(host.production, "update-ref", "-d", deploy.HEALTHY)
+    # a later production commit edits beside the hotfix: its patch no longer
+    # reverses, though the fix is there
+    _commit(
+        host.production,
+        "addons/stock_x/models.py",
+        _lines(**{beside: f"{beside} nearby", "l5": "line5 fixed"}),
+        "an edit beside the hotfix",
+    )
+    outcome = deploy.hotfix(lease, StubReporter())
+    assert host.calls()[-2:] == ["upgrade stock_x", "restart"]
+    assert len(host.calls()) == 4, "activated, not answered contained"
+    assert outcome.result["modules"] == ["stock_x"]
+
+
+def test_a_fix_merged_into_its_base_already_says_so(host):
+    _git(host.dev, "checkout", "-q", "19.0-marin")
+    _git(host.dev, "merge", "-q", "--ff-only", "19.0-marin-fix-x-i3-a1")
+    _git(host.dev, "push", "-q", str(host.origin), "19.0-marin")
+    with pytest.raises(agent.Permanent, match="merged there already"):
+        deploy.hotfix(_hotfix_lease(host), StubReporter())
+
+
+def test_the_modules_are_those_the_change_leaves(host):
+    branch = "19.0-marin-fix-n-i10-a1"
+    _git(host.dev, "checkout", "-q", "-B", branch, "19.0-marin")
+    _git(host.dev, "mv", "addons/stock_x/models.py", "addons/stock_x/core.py")
+    _commit(host.dev, "addons/new_mod/__manifest__.py", "{}\n", "a new module")
+    _git(host.dev, "push", "-q", "-f", str(host.origin), branch)
+    fix = _git(host.dev, "rev-parse", "HEAD")
+    outcome = deploy.hotfix(
+        _hotfix_lease(host, branch=branch, commit=fix), StubReporter()
+    )
+    assert outcome.result["modules"] == ["new_mod", "stock_x"]
+
+
+def test_a_command_that_cannot_start_says_so():
+    with pytest.raises(RuntimeError, match="the upgrade cannot start"):
+        deploy._run(["/nonexistent/upgrade"], "the upgrade")

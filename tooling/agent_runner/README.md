@@ -128,14 +128,17 @@ production does not run yet. A fix that does not apply cleanly is refused, the c
 as it was. After the upgrade and restart the server must come back healthy; the revision that
 did is recorded as `refs/agent-runner/healthy`, so an attempt that finds the fix applied but
 never confirmed running activates it again rather than report it deployed, and one that finds
-the hotfix commit's own change gone -- a person reverted it -- applies it again. A fix whose
-change production already holds, by another way, is reported running without a commit. When
-the server does not come back, the code is reverted, the modules upgraded and the server
-restarted again; the database is not restored, so a fix whose upgrade migrated data is undone
-in code only. A revert that itself fails, or leaves the server unhealthy, says that production
-needs a person. A host command that runs out of time is killed with every process it started
-in its session, so no upgrade goes on under the revert; one that exited is not waited for past
-a moment, whatever it left holding its output -- a server it started runs on. With
+the hotfix commit's own lines gone -- a person reverted it; an edit beside them does not count
+-- applies it again, while one whose re-application changes nothing is the applied fix,
+activated or, if confirmed, reported running. A fix whose change production already holds by
+another way, with no hotfix of it, is reported running without a commit. A fix merged into its
+base already is refused: it reaches production with the base's deploy. When the server does
+not come back, the code is reverted, the modules upgraded and the server restarted again; the
+database is not restored, so a fix whose upgrade migrated data is undone in code only. A
+revert that itself fails, or leaves the server unhealthy, says that production needs a person.
+A host command that runs out of time is killed with every process it started in its session,
+so no upgrade goes on under the revert; one that exited is not waited for past a moment,
+whatever it left holding its output -- a server it started runs on. With
 `AGENT_RUNNER_DEPLOY_STOP` and `_START` set, the server is stopped for the upgrade instead of
 upgraded while it serves.
 
