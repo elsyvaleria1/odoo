@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import psycopg
+
 from odoo.exceptions import AccessError, RetryableJobError
 
 from ..tools import errors
@@ -149,6 +151,23 @@ class TestOutbox(TelegramBotTestCase):
         method, payload = call.call_args.args[:2]
         self.assertEqual(method, "sendMessage")
         self.assertEqual(payload["chat_id"], self.test_chat.chat_id)
+
+    def test_a_conflict_reading_the_token_leaves_the_message_queued(self):
+        # the token's decryption is counted in the job's transaction: losing
+        # it to a concurrent job used to strand the message `uncertain`
+        message = self._queued()
+        conflict = psycopg.errors.SerializationFailure("concurrent update")
+        with (
+            patch.object(
+                type(self.test_bot), "_get_telegram_client", side_effect=conflict
+            ),
+            patch(_CALL) as call,
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            message._deliver()
+
+        self.assertFalse(call.called)
+        self.assertEqual(message.state, "outgoing")
 
     def test_a_message_left_sending_is_uncertain_never_resent(self):
         message = self._queued()

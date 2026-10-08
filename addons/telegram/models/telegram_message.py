@@ -243,10 +243,14 @@ class TelegramMessage(models.Model):
         if not message._consume_send_budget():
             self.env["ir.job"]._defer(1, reason="rate limit")
             return
+        # the client reads the bot's token, which counts a decryption in this
+        # transaction: losing that to a concurrent job must happen before the
+        # message is stamped `sending`, or the replay finds it `uncertain`
+        client = bot._get_telegram_client()
         if not message._side_claim():
             return
         try:
-            result = message._call(bot, chat)
+            result = message._call(bot, chat, client)
         except errors.TelegramRetryAfter as error:
             message._side_write({"state": "outgoing"})
             self.env["ir.job"]._defer(error.seconds, reason="flood control")
@@ -350,8 +354,8 @@ class TelegramMessage(models.Model):
         bridge cancels what its reader already saw elsewhere."""
         return True
 
-    def _call(self, bot, chat):
-        client = bot._get_telegram_client()
+    def _call(self, bot, chat, client=None):
+        client = client or bot._get_telegram_client()
         payload = {**(self.payload or {}), "chat_id": chat.chat_id}
         if self.target_id:
             payload["message_id"] = int(self.target_id.msg_uid)

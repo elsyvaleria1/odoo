@@ -832,10 +832,9 @@ class IntegrationConnection(models.Model):
         return self.service_id.sudo()
 
     def _check_call_budget(self) -> None:
+        service_spent, connection_spent = self._spend_call_budget()
         service = self._get_call_service()
-        if service.rate_limit_enabled and not service.check_rate_limit(
-            company_id=self.company_id.id or None
-        ):
+        if service_spent:
             raise BudgetSpent(
                 self.env._(
                     "Rate limit exceeded for service '%(service)s'. Please try again "
@@ -843,16 +842,7 @@ class IntegrationConnection(models.Model):
                     service=service.code,
                 )
             )
-        if self.budget_requests > 0 and not self.env[
-            "rate.limit.bucket"
-        ].consume_for_key(
-            f"integration.connection:{self.id}",
-            subject_model=self._name,
-            subject_id=self.id,
-            capacity=float(self.budget_requests),
-            window_seconds=max(self.budget_window_seconds, 1),
-            company_id=self.company_id.id or None,
-        ):
+        if connection_spent:
             raise BudgetSpent(
                 self.env._(
                     "%(connection)s has used its call budget of %(budget)s calls per "
@@ -862,6 +852,40 @@ class IntegrationConnection(models.Model):
                     window=self.budget_window_seconds,
                 )
             )
+
+    def _spend_call_budget(self) -> tuple[bool, bool]:
+        """Take one call from the service's and the connection's budgets;
+        `(service_spent, connection_spent)` when either had none left.
+
+        Counted on a side cursor reading committed rows: a bucket row read in
+        the caller's transaction serialises every call of the service, and
+        the loser of two concurrent calls fails after it may already have
+        recorded what it was sending -- a Telegram outbox job then cannot know
+        whether its message went out."""
+        self.check_singleton()
+        service = self._get_call_service()
+        with self.env.registry.cursor() as cr:
+            cr.use_read_committed()
+            env = self.env(cr=cr, su=True)
+            service_spent = bool(
+                service.rate_limit_enabled
+                and not service.with_env(env).check_rate_limit(
+                    company_id=self.company_id.id or None
+                )
+            )
+            connection_spent = bool(
+                not service_spent
+                and self.budget_requests > 0
+                and not env["rate.limit.bucket"].consume_for_key(
+                    f"integration.connection:{self.id}",
+                    subject_model=self._name,
+                    subject_id=self.id,
+                    capacity=float(self.budget_requests),
+                    window_seconds=max(self.budget_window_seconds, 1),
+                    company_id=self.company_id.id or None,
+                )
+            )
+        return service_spent, connection_spent
 
     def _settle_call(
         self,
