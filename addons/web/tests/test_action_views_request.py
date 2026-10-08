@@ -3,7 +3,7 @@ from odoo.tests import BaseCase, tagged
 from ..controllers.action import _views_request
 
 
-@tagged("post_install", "-at_install", "web_action")
+@tagged("post_install", "-at_install", "web_unit", "web_action")
 class TestViewsRequest(BaseCase):
     """The views /web/action/load and /web/action/run fetch with an action."""
 

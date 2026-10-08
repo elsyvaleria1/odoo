@@ -209,7 +209,7 @@ set. A change is only verified once both have run.
 
 | Tag | Files | Scope |
 |-----|-------|-------|
-| `web_action` | test_action | Breadcrumb loading |
+| `web_action` | test_action, test_action_views_request | Breadcrumb loading, the views an action is loaded with |
 | `web_assets` | test_assets, test_asset_generation_race, test_design_system, test_esm_pipeline, test_web_bundle_size | Bundle generation, asset cursors, compiled-CSS invariants (incl. `web.assets_frontend`, which no other test compiles) |
 | `web_db` | test_db_manager | Database manager UI |
 | `web_domain` | test_domain | Domain validation endpoint |
