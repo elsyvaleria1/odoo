@@ -13,7 +13,7 @@ class AccountReturnPayment(models.Model):
             "company": models.Anchor("return_id.company_ids", shared=False),
         }
     )
-    _inherit = ["mixin.mail.thread"]
+    _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _description = "Tax Return Payment"
     _order = "id desc"
     _check_company_auto = True
@@ -72,12 +72,17 @@ class AccountReturnPayment(models.Model):
     )
     is_instructed = fields.Boolean(copy=False)
     is_cancelled = fields.Boolean(copy=False)
+    is_expired = fields.Boolean(
+        copy=False,
+        help="The reference lapsed unpaid; the authority will not take money against it.",
+    )
     state = fields.Selection(
         selection=[
             ("draft", "Draft"),
             ("instructed", "Instructed"),
             ("in_process", "In Process"),
             ("paid", "Paid"),
+            ("expired", "Expired"),
             ("cancelled", "Cancelled"),
         ],
         compute="_compute_state",
@@ -85,7 +90,13 @@ class AccountReturnPayment(models.Model):
         tracking=True,
     )
 
-    @api.depends("is_cancelled", "is_instructed", "payment_id.state", "return_id.state")
+    @api.depends(
+        "is_cancelled",
+        "is_expired",
+        "is_instructed",
+        "payment_id.state",
+        "return_id.state",
+    )
     def _compute_state(self) -> None:
         for record in self:
             if record.is_cancelled or record.payment_id.state in (
@@ -99,6 +110,8 @@ class AccountReturnPayment(models.Model):
                 record.state = "paid"
             elif record.payment_id.state == "in_process":
                 record.state = "in_process"
+            elif record.is_expired:
+                record.state = "expired"
             elif record.is_instructed:
                 record.state = "instructed"
             else:
@@ -133,6 +146,17 @@ class AccountReturnPayment(models.Model):
             )
         if self.state == "cancelled":
             raise UserError(self.env._("A cancelled payment cannot be paid."))
+        if self.state == "expired" or (
+            self.date_due and self.date_due < fields.Date.context_today(self)
+        ):
+            raise UserError(
+                self.env._(
+                    "The reference %(reference)s lapsed on %(date)s; get a new one from the "
+                    "authority.",
+                    reference=self.reference or self.display_name,
+                    date=self.date_due,
+                )
+            )
         if not self._get_settlement_account():
             raise UserError(
                 self.env._(
@@ -192,3 +216,26 @@ class AccountReturnPayment(models.Model):
                 )
             )
         self.is_cancelled = True
+
+    @api.model
+    def _cron_expire_references(self) -> None:
+        lapsed = self.search(
+            [
+                ("date_due", "<", fields.Date.context_today(self)),
+                ("state", "in", ("draft", "instructed")),
+            ]
+        )
+        _debug.pipeline("references_expired", records=lapsed)
+        lapsed.is_expired = True
+        for record in lapsed:
+            record.activity_schedule(
+                "mail.mail_activity_data_todo",
+                summary=self.env._("Payment reference lapsed"),
+                note=self.env._(
+                    "%(reference)s for %(name)s lapsed unpaid; get a new reference from "
+                    "the authority.",
+                    reference=record.reference or record.display_name,
+                    name=record.return_id.display_name,
+                ),
+                user_id=record.return_id.create_uid.id or self.env.uid,
+            )

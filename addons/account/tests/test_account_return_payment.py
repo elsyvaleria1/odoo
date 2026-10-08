@@ -282,3 +282,32 @@ class TestAccountReturnPayment(TestAccountReportsCommon):
 
         wizard.action_mark_as_paid()
         self.assertEqual(tax_return.state, "paid")
+
+    def test_a_lapsed_reference_expires_and_cannot_be_paid(self):
+        tax_return, wizard = self._submitted_return()
+        wizard.journal_id = self.bank_journal
+        return_payment = self.env["account.return.payment"].create(
+            {
+                **wizard._prepare_return_payment_vals(),
+                "reference": "REF-OLD",
+                "date_due": "2024-03-10",
+                "is_instructed": True,
+            }
+        )
+        current = self.env["account.return.payment"].create(
+            {
+                **wizard._prepare_return_payment_vals(),
+                "reference": "REF-NEW",
+                "date_due": fields.Date.add(fields.Date.today(), days=5),
+                "is_instructed": True,
+            }
+        )
+
+        self.env["account.return.payment"]._cron_expire_references()
+
+        self.assertEqual(return_payment.state, "expired")
+        self.assertEqual(current.state, "instructed")
+        self.assertTrue(return_payment.activity_ids)
+        with self.assertRaises(UserError):
+            return_payment.action_create_payment()
+        self.assertEqual(tax_return.state, "submitted")
