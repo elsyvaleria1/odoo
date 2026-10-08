@@ -38,7 +38,9 @@ export async function executeClientAction(action, options, am) {
         return am.updateUI(controller, options);
     } else {
         const token = am.navigation.snapshot();
-        const next = await /** @type {any} */ (clientAction)(am.env, action, options);
+        const next = await /** @type {import("registries").ClientActionFunction} */ (
+            clientAction
+        )(am.env, action, options);
         if (next) {
             token.throwIfSuperseded();
             const depth = nextActionDepth(options);

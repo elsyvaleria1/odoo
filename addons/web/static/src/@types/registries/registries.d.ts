@@ -5,7 +5,11 @@ declare module "registries" {
     import { NotificationOptions } from "@web/ui/notification/notification_service";
     import { Interaction } from "@web/public/interaction";
     import { Compiler } from "@web/views/view_compiler";
-    import { ActionDescription } from "@web/webclient/actions/action_service";
+    import {
+        ActionDescription,
+        ActionOptions,
+        ActionRequest,
+    } from "@web/webclient/actions/action_service";
 
     interface ActionHandlerParams {
         action: ActionDescription;
@@ -16,8 +20,15 @@ declare module "registries" {
         params: ActionHandlerParams,
     ) => void | Promise<void>;
 
+    export type ClientActionFunction = (
+        env: OdooEnv,
+        action: ActionDescription,
+        options: ActionOptions,
+    ) => void | ActionRequest | Promise<void | ActionRequest>;
+
     export type ActionsRegistryItemShape = (
-        ((env: OdooEnv, action: ActionDescription) => void) | ComponentConstructor
+        | ClientActionFunction
+        | ComponentConstructor
     ) & {
         displayName?: string;
         path?: string;
