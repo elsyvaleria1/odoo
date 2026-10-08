@@ -465,7 +465,7 @@ class TestTrip(TransactionCase):
     def test_the_trip_sheet_barcodes_are_wide_enough_for_a_phone(self):
         sheet = self._sheet(self._trip(self._picking() | self._picking()))
         self.assertEqual(sheet.count('name="td_trip_barcode"'), 2)
-        self.assertEqual(sheet.count("width: 100mm; height: 15mm;"), 2)
+        self.assertEqual(sheet.count("width: 75mm; height: 11.25mm;"), 2)
         self.assertEqual(
             sheet.count("padding: 4mm 5mm;"),
             2,
@@ -477,6 +477,12 @@ class TestTrip(TransactionCase):
             "The office barcode prints 0.25 mm bars with no quiet zone: the "
             "operators' phones could not read one apart from the next.",
         )
+
+    def test_the_sheet_title_is_the_batch_name_alone(self):
+        trip = self._trip(self._picking())
+        sheet = self._sheet(trip)
+        self.assertNotIn("Summary:", sheet)
+        self.assertIn(f"<h3><span>{trip.name}</span></h3>", sheet)
 
     def test_a_batch_that_does_not_dispatch_keeps_the_office_barcode(self):
         self.out_type.dispatch_management = False

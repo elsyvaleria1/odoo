@@ -104,7 +104,7 @@
         </xpath>
         <!-- The operator scans each transfer off the sheet with a phone camera,
             which could not read the office barcode: 56 mm wide, 0.25 mm bars,
-            rows touching. The trip sheet draws the bars across 100 mm (0.45 mm
+            rows touching. The trip sheet draws the bars across 75 mm (0.34 mm
             each) and leaves the quiet zone to the cell's 5 mm padding, since the
             image's own would take a quarter of the width; the rows are spaced
             and a row never splits from its barcode across a page break. -->
@@ -125,8 +125,15 @@
                 style="vertical-align: middle; padding: 4mm 5mm;">
                 <span
                     t-field="pick.name"
-                    t-options="{'widget': 'barcode', 'quiet': 0, 'width': 1200, 'height': 180, 'img_style': 'width: 100mm; height: 15mm;'}" />
+                    t-options="{'widget': 'barcode', 'quiet': 0, 'width': 900, 'height': 135, 'img_style': 'width: 75mm; height: 11.25mm;'}" />
             </td>
+        </xpath>
+        <!-- The title is the batch's name alone: "Summary:" pushed a long name
+            onto a second line beside its barcode. -->
+        <xpath
+            expr="//div[hasclass('page')]/div[hasclass('d-flex')]//h3"
+            position="replace">
+            <h3><span t-field="o.name">Batch Name</span></h3>
         </xpath>
         <!-- The trip sheet rides with the load, where only the transfer and the
             barcode that opens it matter; status and date are the office's. The
