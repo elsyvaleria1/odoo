@@ -238,7 +238,7 @@ cite(
 import os
 from unittest.mock import patch
 from odoo.release import MIN_PG_VERSION
-from odoo.service import _limits, _prefork, _threaded, _worker, lifecycle
+from odoo.service import _limits, _prefork, _threaded, _worker, httpd, lifecycle
 from odoo.service import settings as server_settings
 from odoo.service._prefork import _EXIT_OUTCOMES
 from odoo.service._transport import TransportLimits, get_http_socket_timeout
@@ -276,6 +276,7 @@ for label, text in {
     "keepalive timeout": f"| `ODOO_HTTP_KEEPALIVE_TIMEOUT` | `{int(lim.keepalive_timeout)} s` |",
     "idle connections": f"| `ODOO_HTTP_MAX_IDLE_CONNECTIONS` | `{lim.max_idle_connections}` |",
     "drain bytes": f"| `ODOO_HTTP_DRAIN_BYTES` | `{lim.drain_bytes // MIB} MiB` |",
+    "max queue": f"| `ODOO_HTTP_MAX_QUEUE` | `max({httpd.MIN_QUEUE}, {httpd.QUEUE_PER_THREAD} × ODOO_MAX_HTTP_THREADS)` |",
     "body timeout": f"| `ODOO_HTTP_BODY_TIMEOUT` | `{int(lim.body.timeout)} s` |",
     "body min rate": f"| `ODOO_HTTP_BODY_MIN_RATE` | `{int(lim.body.min_rate)} B/s` |",
 }.items():

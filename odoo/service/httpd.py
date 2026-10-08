@@ -40,6 +40,8 @@ _MAX_PIPELINED = 16
 _ACCEPT_BACKOFF = 0.1
 _RESOURCE_WARNING_INTERVAL = 60.0
 _RESOURCE_ERRNOS = frozenset({errno.EMFILE, errno.ENFILE, errno.ENOBUFS, errno.ENOMEM})
+MIN_QUEUE = 64
+QUEUE_PER_THREAD = 8
 
 
 def count_listener_permits(settings: ServerSettings, *, listeners_spawned: bool) -> int:
@@ -148,6 +150,10 @@ class WorkerPool:
     @property
     def busy(self) -> int:
         return self._busy
+
+    @property
+    def queued(self) -> int:
+        return len(self._jobs)
 
     @property
     def saturated(self) -> bool:
@@ -274,7 +280,15 @@ class WorkerPool:
         return pending
 
 
-_THREAD_EXHAUSTION_RESPONSE = b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+_UNAVAILABLE_RESPONSE = (
+    b"HTTP/1.1 503 Service Unavailable\r\nRetry-After: 1\r\n"
+    b"Content-Length: 0\r\nConnection: close\r\n\r\n"
+)
+
+
+def compute_max_queue(max_http_threads: int) -> int:
+    default = max(MIN_QUEUE, QUEUE_PER_THREAD * max_http_threads)
+    return get_env_int("ODOO_HTTP_MAX_QUEUE", default, minimum=0, logger=_logger)
 
 
 class ThreadedHTTPServer:
@@ -316,6 +330,7 @@ class ThreadedHTTPServer:
             multiprocess=False,
             exposes_socket=True,
         )
+        self.max_queue = compute_max_queue(self.max_http_threads)
         self._pool = WorkerPool(
             self.max_http_threads or None, self._serve_connection, self._wake
         )
@@ -333,11 +348,14 @@ class ThreadedHTTPServer:
         self._listening_fd = -1
         self._accept_paused_until = 0.0
         self._resource_warned_at = -_RESOURCE_WARNING_INTERVAL
+        self._shed_warned_at = -_RESOURCE_WARNING_INTERVAL
+        self._shed_since_warning = 0
         _debug.lifecycle(
             "httpd.server_created",
             host=host,
             port=self.server_port,
             max_http_threads=self.max_http_threads,
+            max_queue=self.max_queue,
             outlives_exec=self.listener_outlives_exec,
         )
 
@@ -419,6 +437,9 @@ class ThreadedHTTPServer:
         self._submit(conn)
 
     def _submit(self, conn: Connection) -> None:
+        if self.max_queue and self._pool.queued >= self.max_queue:
+            self._shed(conn)
+            return
         conn.ready_at = time.monotonic()
         conn.sock.setblocking(True)
         conn.sock.settimeout(self.limits.socket_timeout)
@@ -433,9 +454,38 @@ class ThreadedHTTPServer:
                 busy=self._pool.busy,
                 limit=self.max_http_threads,
             )
-            with contextlib.suppress(OSError):
-                conn.sock.sendall(_THREAD_EXHAUSTION_RESPONSE)
-            conn.close()
+            self._refuse(conn)
+
+    def _shed(self, conn: Connection) -> None:
+        self._shed_since_warning += 1
+        now = time.monotonic()
+        if now - self._shed_warned_at >= _RESOURCE_WARNING_INTERVAL:
+            _logger.warning(
+                "%d HTTP request(s) answered 503: %d already wait for a worker "
+                "(ODOO_HTTP_MAX_QUEUE) with %d busy",
+                self._shed_since_warning,
+                self._pool.queued,
+                self._pool.busy,
+            )
+            self._shed_warned_at = now
+            self._shed_since_warning = 0
+        _debug.logic(
+            "httpd.queue_shed",
+            peer=conn.addr[0],
+            queued=self._pool.queued,
+            max_queue=self.max_queue,
+            busy=self._pool.busy,
+        )
+        self._refuse(conn)
+
+    @staticmethod
+    def _refuse(conn: Connection) -> None:
+        # Written from the selector thread: a blocking send to a client that
+        # does not read would stall every other connection behind it.
+        with contextlib.suppress(OSError):
+            conn.sock.setblocking(False)
+            conn.sock.send(_UNAVAILABLE_RESPONSE)
+        conn.close()
 
     def _park(self, conn: Connection, now: float) -> None:
         conn.sock.setblocking(False)
