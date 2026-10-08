@@ -361,8 +361,12 @@ application reads it -- a malformed or over-long chunk line, trailers over
 of whatever the application built from the error, and the connection is closed.
 Header names containing `_` are dropped from the
 environ, because `X_Forwarded_For` and `X-Forwarded-For` would otherwise both
-become `HTTP_X_FORWARDED_FOR`. `100 Continue` is sent only when the application
-first reads the body.
+become `HTTP_X_FORWARDED_FOR`. Repeated `Cookie` fields are joined with `; `,
+every other repeated field with `,`. `100 Continue` is sent only when the
+application first reads the body; a response sent without asking for it carries
+`Connection: close`, and the connection closes at once, since the body was never
+sent. The logged first line of a request the parser refuses is cut at 512
+characters.
 
 **The access log** is the logger `odoo.service.http.access`, no longer
 `werkzeug`. It keeps werkzeug's line and record shape (the request line is the

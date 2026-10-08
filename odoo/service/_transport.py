@@ -48,6 +48,7 @@ WSGIApp = Callable[[dict[str, Any], Callable[..., Any]], Iterable[bytes]]
 
 REQUEST_THREAD_PREFIX = "odoo.service.http.request."
 _SEND_SLICE = 65536
+_LOGGED_LINE_CAP = 512
 _PEER_GONE = (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)
 _CONTROL_CHARS = str.maketrans(
     {c: rf"\x{c:02x}" for c in [*range(0x20), *range(0x7F, 0xA0)]} | {ord("\\"): r"\\"}
@@ -308,7 +309,10 @@ def prepare_wsgi_environ(
         if key != "CONTENT_TYPE":
             key = f"HTTP_{key}"
             if key in environ:
-                value = f"{environ[key]},{value}"
+                # RFC 9110 5.3 joins repeated fields with commas, but a cookie
+                # value may hold one; RFC 6265 5.4 lists cookies with "; "
+                separator = "; " if key == "HTTP_COOKIE" else ","
+                value = f"{environ[key]}{separator}{value}"
         environ[key] = value
     if identity.exposes_socket:
         environ["odoo.socket"] = conn.sock
@@ -325,6 +329,7 @@ class Exchange:
     __slots__ = (
         "bytes_sent",
         "conn",
+        "continue_sent",
         "head",
         "keep_alive",
         "reader",
@@ -345,6 +350,7 @@ class Exchange:
         self.response_headers: list[tuple[str, str]] = []
         self.response: ResponseHead | None = None
         self.bytes_sent = 0
+        self.continue_sent = False
         self.upgraded = False
 
     def start_response(
@@ -374,7 +380,16 @@ class Exchange:
     def continue_upload(self) -> None:
         if self.response is None:
             _debug.pipeline("httpd.continue_sent", path=self.head.path)
+            self.continue_sent = True
             self.conn.send(b"HTTP/1.1 100 Continue\r\n\r\n")
+
+    @property
+    def body_withheld(self) -> bool:
+        return (
+            self.head.expect_continue
+            and not self.continue_sent
+            and not self.reader.exhausted
+        )
 
     def _send_head(self, first: bytes) -> None:
         if self.status is None:
@@ -384,7 +399,7 @@ class Exchange:
             self.response_headers,
             method=self.head.method,
             version=self.head.version,
-            keep_alive=self.keep_alive,
+            keep_alive=self.keep_alive and not self.body_withheld,
         )
         if self.response.code == 101:
             self.upgraded = True
@@ -503,7 +518,8 @@ def _read_head(conn: Connection, limits: TransportLimits) -> tuple[int, int] | N
 
 
 def _first_line(buffer: bytearray) -> str:
-    line = bytes(buffer[: buffer.find(b"\n")] if b"\n" in buffer else buffer[:200])
+    end = buffer.find(b"\n")
+    line = bytes(buffer[: min(end, _LOGGED_LINE_CAP) if end >= 0 else _LOGGED_LINE_CAP])
     return line.rstrip(b"\r").decode("latin-1")
 
 
@@ -762,6 +778,11 @@ def _settle(
         )
     if reader.exhausted:
         return Outcome.PERSIST if persist else Outcome.CLOSE
+    if exchange.body_withheld:
+        # The client is waiting for a 100 that will not come: nothing is in
+        # flight to drain or linger for, and the response said close.
+        _debug.logic("httpd.body_never_requested", path=head.path)
+        return Outcome.CLOSE
     drained = False
     if persist:
         try:
