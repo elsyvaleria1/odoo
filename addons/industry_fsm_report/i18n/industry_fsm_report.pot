@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:45+0000\n"
-"PO-Revision-Date: 2025-12-30 18:45+0000\n"
+"POT-Creation-Date: 2026-10-08 03:13+0000\n"
+"PO-Revision-Date: 2026-10-08 03:13+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -30,7 +30,7 @@ msgstr ""
 #. module: industry_fsm_report
 #: model_terms:ir.ui.view,arch_db:industry_fsm_report.view_project_kanban_inherit_industry_fsm_report
 msgid ""
-"<span class=\"fa fa-pencil me-1\" aria-label=\"Worksheet Template\" "
+"<span class=\"fa-solid fa-pencil me-1\" aria-label=\"Worksheet Template\" "
 "title=\"Worksheet Template\"/>"
 msgstr ""
 
@@ -48,13 +48,13 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:industry_fsm_report.view_task_form2_inherit
 msgid ""
 "<span class=\"o_stat_text\">Worksheet</span>\n"
-"                            <span class=\"o_stat_text\">Complete</span>"
+"                        <span class=\"o_stat_text\">Complete</span>"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_3
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_3_ir_ui_view_1
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_4_ir_ui_view_1
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_1
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_1_ir_ui_view_1
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_2_ir_ui_view_1
 msgid "Add details about your intervention..."
 msgstr ""
 
@@ -69,9 +69,9 @@ msgid "By Worksheet Template"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_7
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_7
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_3
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_7
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_7
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_1
 msgid "Comments"
 msgstr ""
 
@@ -86,11 +86,6 @@ msgid "Complete custom worksheets for your interventions"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model,website_form_label:industry_fsm_report.model_project_task
-msgid "Create a Task"
-msgstr ""
-
-#. module: industry_fsm_report
 #: model:ir.model.fields,help:industry_fsm_report.field_project_task__worksheet_template_id
 msgid ""
 "Create templates for each type of intervention you have and customize their "
@@ -99,17 +94,17 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__create_uid
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_2
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_2
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_2
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_2
 msgid "Created by"
 msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__create_date
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_1
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_1
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_3_ir_ui_view_3
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_4_ir_ui_view_3
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_1
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_1
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_1_ir_ui_view_3
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.x_project_task_worksheet_template_2_ir_ui_view_3
 msgid "Created on"
 msgstr ""
 
@@ -121,18 +116,18 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field6
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Date"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model,name:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_1
+#: model:ir.model,name:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_1
 msgid "Default Worksheet"
 msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field2
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Description of the Intervention"
 msgstr ""
 
@@ -142,7 +137,7 @@ msgid "Design worksheet templates"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model,name:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_1
+#: model:ir.model,name:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_1
 msgid "Device Installation and Maintenance"
 msgstr ""
 
@@ -152,7 +147,6 @@ msgid "Discard"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_report_config_update_layout__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_ir_model__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_project__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task__display_name
@@ -160,10 +154,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task_recurrence__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_report_industry_fsm_worksheet_custom__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_report_project_task_user__display_name
-#: model:ir.model.fields,field_description:industry_fsm_report.field_worksheet_template__display_name
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__display_name
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_3
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_3
+#: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_report_config_update_layout__display_name
+#: model:ir.model.fields,field_description:industry_fsm_report.field_worksheet_template__display_name
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_3
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_3
 msgid "Display Name"
 msgstr ""
 
@@ -194,14 +189,13 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field4
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid ""
 "I hereby certify that this device meets the requirements of an acceptable "
 "device at the time of testing."
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_report_config_update_layout__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_ir_model__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_project__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task__id
@@ -209,16 +203,17 @@ msgstr ""
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task_recurrence__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_report_industry_fsm_worksheet_custom__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_report_project_task_user__id
-#: model:ir.model.fields,field_description:industry_fsm_report.field_worksheet_template__id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__id
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_4
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_4
+#: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_report_config_update_layout__id
+#: model:ir.model.fields,field_description:industry_fsm_report.field_worksheet_template__id
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_4
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_4
 msgid "ID"
 msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field1
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Intervention Type"
 msgstr ""
 
@@ -230,15 +225,15 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__write_uid
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_6
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_6
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_6
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_6
 msgid "Last Updated by"
 msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__write_date
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_5
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_5
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_5
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_5
 msgid "Last Updated on"
 msgstr ""
 
@@ -254,7 +249,7 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field3
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Manufacturer"
 msgstr ""
 
@@ -264,8 +259,8 @@ msgid "Models"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_field_x_name
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_field_x_name
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_field_x_name
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_field_x_name
 msgid "Name"
 msgstr ""
 
@@ -328,7 +323,7 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field5
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Serial Number"
 msgstr ""
 
@@ -356,8 +351,8 @@ msgstr ""
 #. module: industry_fsm_report
 #: model:ir.model,name:industry_fsm_report.model_project_task
 #: model:ir.model.fields,field_description:industry_fsm_report.field_wizard_project_task_create_worksheet_template__task_id
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_3_ir_model_fields_9
-#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_4_ir_model_fields_9
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_ir_model_fields_9
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_ir_model_fields_9
 msgid "Task"
 msgstr ""
 
@@ -378,7 +373,7 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model.fields,field_description:industry_fsm_report.fsm_template_field7
-#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_4
+#: model_terms:ir.ui.view,arch_db:industry_fsm_report.report_custom_x_project_task_worksheet_template_2
 msgid "Technician Signature"
 msgstr ""
 
@@ -393,7 +388,7 @@ msgstr ""
 msgid ""
 "Use these keywords in the title to set new tasks:\n"
 "\n"
-"        30h Allocate 30 hours to the task\n"
+"        30h Plan 30 hours for the task\n"
 "        #tags Set tags on the task\n"
 "        @user Assign the task to a user\n"
 "        ! Set the task a medium priority\n"
@@ -417,6 +412,7 @@ msgstr ""
 
 #. module: industry_fsm_report
 #: model:ir.model,name:industry_fsm_report.model_worksheet_template
+#: model:ir.model.fields,field_description:industry_fsm_report.field_project_cfd_report__worksheet_template_id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_project__worksheet_template_id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task__worksheet_template_id
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task_burndown_chart_report__worksheet_template_id
@@ -436,8 +432,24 @@ msgid "Worksheet Templates"
 msgstr ""
 
 #. module: industry_fsm_report
-#: model:ir.actions.act_window,name:industry_fsm_report.x_project_task_worksheet_template_3_ir_actions_act_window_1
-#: model:ir.actions.act_window,name:industry_fsm_report.x_project_task_worksheet_template_4_ir_actions_act_window_1
+#. odoo-python
+#: code:addons/industry_fsm_report/models/worksheet_template.py:0
+msgid "Worksheet: %(template)s"
+msgstr ""
+
+#. module: industry_fsm_report
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_1_project_task_field
+msgid "Worksheet: Default Worksheet"
+msgstr ""
+
+#. module: industry_fsm_report
+#: model:ir.model.fields,field_description:industry_fsm_report.x_project_task_worksheet_template_2_project_task_field
+msgid "Worksheet: Device Installation and Maintenance"
+msgstr ""
+
+#. module: industry_fsm_report
+#: model:ir.actions.act_window,name:industry_fsm_report.x_project_task_worksheet_template_1_ir_actions_act_window_1
+#: model:ir.actions.act_window,name:industry_fsm_report.x_project_task_worksheet_template_2_ir_actions_act_window_1
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_project__allow_worksheets
 #: model:ir.model.fields,field_description:industry_fsm_report.field_project_task__allow_worksheets
 msgid "Worksheets"

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-25 18:37+0000\n"
-"PO-Revision-Date: 2026-01-25 18:37+0000\n"
+"POT-Creation-Date: 2026-10-08 03:13+0000\n"
+"PO-Revision-Date: 2026-10-08 03:13+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -43,21 +43,11 @@ msgstr ""
 #. module: sale_project
 #: model_terms:ir.ui.view,arch_db:sale_project.view_edit_project_inherit_form
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this project has been cancelled. We recommend either "
-"updating the sales order item or cancelling this project in alignment with "
-"the cancellation of the sales order.\" invisible=\"sale_order_state != "
-"'cancel'\"/>"
-msgstr ""
-
-#. module: sale_project
-#: model_terms:ir.ui.view,arch_db:sale_project.view_sale_project_inherit_form
-msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this task has been cancelled. We recommend either "
-"updating the sales order item or cancelling this task in alignment with the "
-"cancellation of the sales order.\" invisible=\"sale_order_state != "
-"'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this project has been cancelled. We recommend "
+"either updating the sales order item or cancelling this project in alignment"
+" with the cancellation of the sales order.\" invisible=\"sale_order_state !="
+" 'cancel'\"/>"
 msgstr ""
 
 #. module: sale_project
@@ -102,15 +92,6 @@ msgid "<span class=\"o_stat_text\">Sales Order</span>"
 msgstr ""
 
 #. module: sale_project
-#: model_terms:ir.ui.view,arch_db:sale_project.task_type_edit_inherit_sale_project
-msgid ""
-"<span name=\"rating_status_helper\">\n"
-"                    <span invisible=\"rating_status == 'periodic'\">A rating request will be sent as soon as a task reaches this stage, provided the project is billable.</span>\n"
-"                    <span invisible=\"rating_status == 'stage'\">Rating requests will be sent as long as the task remains in this stage, provided the project is billable.</span>\n"
-"                </span>"
-msgstr ""
-
-#. module: sale_project
 #: model_terms:ir.ui.view,arch_db:sale_project.project_milestone_view_form
 msgid "<span>)</span>"
 msgstr ""
@@ -132,13 +113,18 @@ msgid ""
 msgstr ""
 
 #. module: sale_project
-#: model:ir.model.fields,help:sale_project.field_sale_order_line__qty_delivered_method
+#: model:ir.model.fields,help:sale_project.field_sale_order_line__qty_transferred_method
 msgid ""
-"According to product configuration, the delivered quantity can be automatically computed by mechanism:\n"
-"  - Manual: the quantity is set manually on the line\n"
-"  - Analytic From expenses: the quantity is the quantity sum from posted expenses\n"
-"  - Timesheet: the quantity is the sum of hours recorded on tasks linked to this sale line\n"
-"  - Stock Moves: the quantity comes from confirmed pickings\n"
+"According to product configuration, the delivered quantity can\n"
+"        be automatically computed by mechanism:\n"
+"\n"
+"        -Manual: the quantity is set manually on the line\n"
+"\n"
+"        -Analytic From expenses: the quantity is the quantity sum from posted expenses\n"
+"\n"
+"        -Timesheet: the quantity is the sum of hours recorded on tasks linked to this sale line\n"
+"\n"
+"        -Stock Moves: the quantity comes from confirmed pickings\n"
 msgstr ""
 
 #. module: sale_project
@@ -206,11 +192,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/sale_project/models/sale_order.py:0
 msgid "Create a Project"
-msgstr ""
-
-#. module: sale_project
-#: model:ir.model,website_form_label:sale_project.model_project_task
-msgid "Create a Task"
 msgstr ""
 
 #. module: sale_project
@@ -301,6 +282,11 @@ msgid "Delivered"
 msgstr ""
 
 #. module: sale_project
+#: model:ir.model.fields,field_description:sale_project.field_sale_order_line__qty_transferred_method
+msgid "Delivered Qty Method"
+msgstr ""
+
+#. module: sale_project
 #: model:product.template,name:sale_project.product_service_create_project_only_product_template
 msgid "Digital Marketing Campaign (project)"
 msgstr ""
@@ -319,14 +305,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:sale_project.field_project_project__display_name
 #: model:ir.model.fields,field_description:sale_project.field_project_task__display_name
 #: model:ir.model.fields,field_description:sale_project.field_project_task_recurrence__display_name
-#: model:ir.model.fields,field_description:sale_project.field_project_task_type__display_name
-#: model:ir.model.fields,field_description:sale_project.field_wizard_project_project_create_from_template__display_name
 #: model:ir.model.fields,field_description:sale_project.field_project_update__display_name
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user__display_name
 #: model:ir.model.fields,field_description:sale_project.field_sale_order__display_name
 #: model:ir.model.fields,field_description:sale_project.field_sale_order_line__display_name
 #: model:ir.model.fields,field_description:sale_project.field_sale_order_template_line__display_name
 #: model:ir.model.fields,field_description:sale_project.field_sale_report__display_name
+#: model:ir.model.fields,field_description:sale_project.field_wizard_project_project_create_from_template__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -366,14 +351,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:sale_project.field_project_project__id
 #: model:ir.model.fields,field_description:sale_project.field_project_task__id
 #: model:ir.model.fields,field_description:sale_project.field_project_task_recurrence__id
-#: model:ir.model.fields,field_description:sale_project.field_project_task_type__id
-#: model:ir.model.fields,field_description:sale_project.field_wizard_project_project_create_from_template__id
 #: model:ir.model.fields,field_description:sale_project.field_project_update__id
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user__id
 #: model:ir.model.fields,field_description:sale_project.field_sale_order__id
 #: model:ir.model.fields,field_description:sale_project.field_sale_order_line__id
 #: model:ir.model.fields,field_description:sale_project.field_sale_order_template_line__id
 #: model:ir.model.fields,field_description:sale_project.field_sale_report__id
+#: model:ir.model.fields,field_description:sale_project.field_wizard_project_project_create_from_template__id
 msgid "ID"
 msgstr ""
 
@@ -453,14 +437,9 @@ msgid "Materials"
 msgstr ""
 
 #. module: sale_project
-#: model:ir.model.fields,field_description:sale_project.field_sale_order_line__qty_delivered_method
-msgid "Method to update delivered qty"
-msgstr ""
-
-#. module: sale_project
 #. odoo-python
 #: code:addons/sale_project/models/sale_order.py:0
-#: model:ir.model.fields.selection,name:sale_project.selection__sale_order_line__qty_delivered_method__milestones
+#: model:ir.model.fields.selection,name:sale_project.selection__sale_order_line__qty_transferred_method__milestones
 #: model_terms:ir.ui.view,arch_db:sale_project.view_order_form_inherit_sale_project
 msgid "Milestones"
 msgstr ""
@@ -625,6 +604,11 @@ msgid "Role To Users"
 msgstr ""
 
 #. module: sale_project
+#: model:ir.model,name:sale_project.model_sale_order
+msgid "Sale Order"
+msgstr ""
+
+#. module: sale_project
 #: model_terms:ir.ui.view,arch_db:sale_project.view_edit_project_inherit_form
 msgid "Sales & Invoicing"
 msgstr ""
@@ -638,10 +622,10 @@ msgstr ""
 #. odoo-python
 #: code:addons/sale_project/models/project_milestone.py:0
 #: code:addons/sale_project/models/project_task.py:0
-#: model:ir.model,name:sale_project.model_sale_order
 #: model:ir.model.fields,field_description:sale_project.field_project_project__reinvoiced_sale_order_id
 #: model:ir.model.fields,field_description:sale_project.field_project_task__sale_order_id
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user__sale_order_id
+#: model:ir.model.fields,field_description:sale_project.field_report_project_task_user_fsm__sale_order_id
 #: model:project.project,name:sale_project.so_template_project
 msgid "Sales Order"
 msgstr ""
@@ -653,6 +637,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:sale_project.field_project_project__sale_line_id
 #: model:ir.model.fields,field_description:sale_project.field_project_task__sale_line_id
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user__sale_line_id
+#: model:ir.model.fields,field_description:sale_project.field_report_project_task_user_fsm__sale_line_id
 #: model_terms:ir.ui.view,arch_db:sale_project.project_sharing_inherit_project_task_view_form
 #: model_terms:ir.ui.view,arch_db:sale_project.view_sale_project_inherit_form
 msgid "Sales Order Item"
@@ -676,6 +661,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/sale_project/models/project_project.py:0
 #: code:addons/sale_project/static/src/components/project_right_side_panel/components/project_profitability_section.xml:0
+#: model:ir.embedded.actions,name:sale_project.project_embedded_action_sales_order_items
+#: model:ir.embedded.actions,name:sale_project.project_embedded_action_sales_order_items_dashboard
 #: model_terms:ir.ui.view,arch_db:sale_project.project_update_default_description
 msgid "Sales Order Items"
 msgstr ""
@@ -764,11 +751,6 @@ msgid "Task Recurrence"
 msgstr ""
 
 #. module: sale_project
-#: model:ir.model,name:sale_project.model_project_task_type
-msgid "Task Stage"
-msgstr ""
-
-#. module: sale_project
 #: model:ir.model.fields,field_description:sale_project.field_product_product__task_template_id
 #: model:ir.model.fields,field_description:sale_project.field_product_template__task_template_id
 msgid "Task Template"
@@ -823,6 +805,14 @@ msgid ""
 msgstr ""
 
 #. module: sale_project
+#: model_terms:ir.ui.view,arch_db:sale_project.view_sale_project_inherit_form
+msgid ""
+"The sales order associated with this task has been cancelled. We recommend "
+"either updating the sales order item or cancelling this task in alignment "
+"with the cancellation of the sales order."
+msgstr ""
+
+#. module: sale_project
 #. odoo-python
 #: code:addons/sale_project/models/sale_order_line.py:0
 msgid "This task has been created from: %(order_link)s (%(product_name)s)"
@@ -846,11 +836,19 @@ msgid "Track Service"
 msgstr ""
 
 #. module: sale_project
+#: model:ir.model.fields,help:sale_project.field_project_task__task_to_invoice
+msgid ""
+"True when the task's sale order still has something left to invoice (fork "
+"invoice_state 'to do' or 'partial'); false when there is nothing to invoice "
+"('no'), it is fully invoiced ('done'), or over-invoiced ('over done')."
+msgstr ""
+
+#. module: sale_project
 #: model:ir.model.fields,help:sale_project.field_project_task__display_name
 msgid ""
 "Use these keywords in the title to set new tasks:\n"
 "\n"
-"        30h Allocate 30 hours to the task\n"
+"        30h Plan 30 hours for the task\n"
 "        #tags Set tags on the task\n"
 "        @user Assign the task to a user\n"
 "        ! Set the task a medium priority\n"
@@ -895,16 +893,4 @@ msgstr ""
 #. odoo-python
 #: code:addons/sale_project/models/sale_order.py:0
 msgid "[Project] %(task_name)s"
-msgstr ""
-
-#. module: sale_project
-#. odoo-python
-#: code:addons/sale_project/models/product_template.py:0
-msgid "delivered_manual"
-msgstr ""
-
-#. module: sale_project
-#. odoo-python
-#: code:addons/sale_project/models/sale_order.py:0
-msgid "sale_line_id"
 msgstr ""
