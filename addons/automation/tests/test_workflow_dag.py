@@ -1192,6 +1192,7 @@ class TestApprovalNode(TransactionCase):
         runtime = self._run()
 
         self._line(runtime, gate).activity_ids._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
 
         self.assertEqual(self._line(runtime, gate).state, "done")
         self.assertEqual(self._line(runtime, after).state, "done")
@@ -1207,8 +1208,18 @@ class TestApprovalNode(TransactionCase):
         activity = self._line(runtime, gate).activity_ids
         self.assertFalse(self.approver.has_group("base.group_system"))
 
+        resume = self.env.ref("automation.ir_cron_data_automation_resume")
+        queued = self.env["ir.cron.trigger"].search_count([("cron_id", "=", resume.id)])
+
         activity.with_user(self.approver)._action_done()
 
+        self.assertEqual(self._line(runtime, gate).state, "paused")
+        self.assertEqual(
+            self.env["ir.cron.trigger"].search_count([("cron_id", "=", resume.id)]),
+            queued + 1,
+            "the approver wakes the dispatcher and moves no run themself",
+        )
+        self.env["automation.runtime"]._dispatch_due_steps()
         self.assertEqual(self._line(runtime, gate).state, "done")
         self.assertEqual(runtime.state, "done")
         self.partner.invalidate_recordset(["ref"])
@@ -1234,6 +1245,7 @@ class TestApprovalNode(TransactionCase):
         self.assertEqual(len(line.activity_ids), 2)
 
         line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
 
         self.assertEqual(line.state, "paused")
         self.assertEqual(runtime.state, "waiting_resume")
@@ -1260,6 +1272,7 @@ class TestApprovalNode(TransactionCase):
         others = line.activity_ids.filtered(lambda a: a.user_id == second)
 
         line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
 
         self.assertEqual(line.state, "done")
         self.assertEqual(self._line(runtime, after).state, "done")
@@ -1691,6 +1704,7 @@ class TestRunSettlement(TransactionCase):
         runtime = self._run()
 
         self._line(runtime, gate).activity_ids.unlink()
+        self.env["automation.runtime"]._dispatch_due_steps()
 
         self.assertEqual(self._line(runtime, gate).state, "error")
         self.partner.invalidate_recordset(["ref"])

@@ -637,45 +637,59 @@ class AutomationRuntimeLine(models.Model):
             else:
                 runtime.action_error()
 
-    def _fail_missing_approval(self) -> None:
-        for line in self.filtered(
-            lambda step: (
-                step.state == "paused"
-                and step.action_id.node_type == "approval"
-                and not step.activity_ids.filtered("active")
-            ),
-        ):
-            runtime = line.runtime_id
-            if runtime.state == "waiting_resume":
-                runtime.state = "in_progress"
-            line.action_mark_error(
-                self.env._(
-                    "The approval activity was removed before anyone acted on it."
+    @api.model
+    def _settle_approvals(self, rules=None) -> None:
+        """Release the approval steps their approvers answered, and fail those
+        whose every activity was removed unanswered. An approver only closes
+        their own activity; the dispatcher moves the run, as the rule runs it.
+        """
+        paused = self.search(
+            [
+                ("state", "=", "paused"),
+                ("action_id.node_type", "=", "approval"),
+                ("runtime_id.state", "in", ("in_progress", "waiting_resume")),
+                *(
+                    [("runtime_id.automation_id", "in", rules.ids)]
+                    if rules is not None
+                    else [("runtime_id.automation_id.active", "=", True)]
                 ),
-            )
-            if line._contains_its_error():
-                runtime._advance()
-            else:
-                runtime.action_error()
-
-    def _check_approval_complete(self) -> None:
-        approvals = self.filtered(
-            lambda step: (
-                step.state == "paused" and step.action_id.node_type == "approval"
-            ),
+            ],
+            order="id",
         )
-        for line in approvals:
-            pending = line.activity_ids.filtered("active")
+        for line in paused:
+            activities = line.with_context(active_test=False).activity_ids
+            pending = activities.filtered("active")
+            if activities == pending:
+                if not pending:
+                    line._fail_missing_approval()
+                continue
             if pending and line.action_id.approval_mode == "all":
                 continue
-            runtime = line.runtime_id
-            if runtime.state == "waiting_resume":
-                runtime.state = "in_progress"
-            line.action_resume()
-            # once the step is released: removing the activities of a step
-            # still paused is what _fail_missing_approval fails it for
-            pending.unlink()
+            line._release_approval(pending)
+
+    def _fail_missing_approval(self) -> None:
+        self.check_singleton()
+        runtime = self.runtime_id
+        if runtime.state == "waiting_resume":
+            runtime.state = "in_progress"
+        self.action_mark_error(
+            self.env._("The approval activity was removed before anyone acted on it."),
+        )
+        if self._contains_its_error():
             runtime._advance()
+        else:
+            runtime.action_error()
+
+    def _release_approval(self, pending) -> None:
+        self.check_singleton()
+        runtime = self.runtime_id
+        if runtime.state == "waiting_resume":
+            runtime.state = "in_progress"
+        self.action_resume()
+        # once the step is released: removing the activities of a step still
+        # paused is what fails it
+        pending.unlink()
+        runtime._advance()
 
     def action_resume(self):
         paused = self.filtered(lambda step: step.state == "paused")

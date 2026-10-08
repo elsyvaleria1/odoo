@@ -165,6 +165,7 @@ class TestTerminalPauses(RunCompletionCase):
         self.assertEqual(runtime.state, "waiting_resume")
 
         self._line(runtime, gate).activity_ids._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
 
         self.assertEqual(runtime.state, "done")
 

@@ -13,18 +13,20 @@ class MailActivity(models.Model):
     )
 
     def _action_done(self, feedback=False, attachment_ids=None):
-        # an approver answers as themself; releasing the step writes the run,
-        # which is the system's to write (automation.runtime is cud for
-        # base.group_system only), as starting the run was the rule's
-        lines = self.automation_runtime_line_id
+        # an approver answers as themself and moves no run: the dispatcher
+        # settles the step their activity holds, running the workflow as its
+        # rule does
+        approvals = self.filtered("automation_runtime_line_id")
         result = super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
-        lines.sudo()._check_approval_complete()
+        if approvals:
+            self.env["automation.runtime"]._request_dispatch()
         return result
 
     def unlink(self):
         # whoever may unlink an activity need not read it; an approval's
         # activity is its approver's, who reads it
-        lines = self._filtered_access("read").automation_runtime_line_id
+        approvals = self._filtered_access("read").filtered("automation_runtime_line_id")
         result = super().unlink()
-        lines.exists().sudo()._fail_missing_approval()
+        if approvals:
+            self.env["automation.runtime"]._request_dispatch()
         return result

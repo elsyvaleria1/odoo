@@ -492,6 +492,7 @@ class AutomationRuntime(models.Model):
     @api.model
     def _dispatch_due_steps(self, rules=None) -> int:
         self = self.with_context(tracking_disable=True)
+        self.env["automation.runtime.line"]._settle_approvals(rules=rules)
         self._resume_waiting_executions(rules=rules)
         Line = self.env["automation.runtime.line"]
         handled = set()
