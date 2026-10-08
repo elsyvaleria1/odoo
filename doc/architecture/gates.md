@@ -200,7 +200,14 @@ interpreter-bound loop (`_bench.calibration_ms`), and above the file's
 judged" instead of failing; statement counts stay exact either way. The same
 code read 51 and 127 ms an hour apart as this machine throttled, and dividing
 by the calibration over-corrected (the loop slowed 3× where the ORM slowed
-1.9×), which is why it gates rather than scales. Every `measure`d flow also
+1.9×), which is why it gates rather than scales. A machine at full speed can
+still be **shared**: a round that waited for a CPU (the thread's run-queue
+time in `/proc/thread-self/schedstat`) more than 5 % of its residual is not
+read, and when every round of a flow did, its time floors print "not judged"
+too. Measured 2026-10-08 with 20 of 22 cores busy, the 2.4 ms residual of the
+1 000-partner write batch read 4.3–4.4 ms in rounds that waited 3.6–13.8 ms,
+against 0–0.006 ms idle; the calibration loop, on a free core, saw nothing.
+Every `measure`d flow also
 reads `sql_chars`, the characters of SQL text it sends per operation: as
 deterministic as the count, so judged on every machine and under `--perf-counts-only`,
 but held to a **±10 % band** both ways (an alias or a reordered clause moves it

@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from ._bench import ServerClock, calibration_ms
+from ._bench import ServerClock, calibration_ms, measure, run_delay
 from .conftest import CALIBRATION_KEY, _check
 
 FLOORS = {
@@ -54,6 +54,57 @@ def test_a_reading_within_tolerance_is_judged_and_green():
         calibration=24.0,
         floors_data=FLOORS,
     )
+
+
+def test_a_flow_that_waited_for_a_cpu_in_every_round_leaves_time_unjudged():
+    assert not _check(
+        "scenario",
+        {**READINGS, "rounds": 3, "rounds_contended": 3},
+        counts_only=False,
+        calibration=20.0,
+        floors_data=FLOORS,
+    )
+
+
+def test_a_flow_with_one_clean_round_is_judged():
+    with pytest.raises(AssertionError, match=r"non_sql_ms reads 30\.0"):
+        _check(
+            "scenario",
+            {**READINGS, "rounds": 3, "rounds_contended": 2},
+            counts_only=False,
+            calibration=20.0,
+            floors_data=FLOORS,
+        )
+
+
+class _Counter:
+    count = chars = 0
+    seconds = 0.0
+
+    def reset(self):
+        self.seconds = 0.0
+
+
+def test_a_round_that_waited_for_a_cpu_is_not_the_reading():
+    # three rounds of 5, 2 and 9 ms; the 2 ms one spent 1 ms on the run queue,
+    # so it is not the floor's reading even though it is the fastest
+    ticks = iter([0.0, 0.005, 1.0, 1.002, 2.0, 2.009])
+    waits = iter([0.0, 0.0, 0.0, 0.001, 0.001, 0.001])
+    readings = measure(
+        lambda: None,
+        _Counter(),
+        repeat=1,
+        rounds=3,
+        clock=lambda: next(ticks),
+        waited=lambda: next(waits),
+    )
+    assert readings["wall_ms"] == 5.0
+    assert readings["rounds"] == 3
+    assert readings["rounds_contended"] == 1
+
+
+def test_the_run_delay_is_a_duration():
+    assert run_delay() >= 0.0
 
 
 def test_the_calibration_is_a_positive_duration():

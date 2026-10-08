@@ -114,6 +114,12 @@ def _check(
                 f"[perf] {scenario}: time floors not judged -- calibration reads "
                 f"{calibration} ms against {reference} ms when the floors were set"
             )
+    if time_judged and readings.get("rounds_contended", 0) == readings.get("rounds"):
+        time_judged = False
+        print(
+            f"[perf] {scenario}: time floors not judged -- every one of its "
+            f"{readings['rounds']} rounds waited for a CPU"
+        )
     for key, floor in floors.items():
         assert key in readings, f"{scenario}.{key} was not measured"
         value = readings[key]

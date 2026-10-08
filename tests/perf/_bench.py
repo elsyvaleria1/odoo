@@ -5,6 +5,7 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
+from pathlib import Path
 
 
 class StatementCounter:
@@ -91,6 +92,21 @@ class ServerClock:
 _MISSING = object()
 
 
+_SCHEDSTAT = Path("/proc/thread-self/schedstat")
+# a round counts when it waited for a CPU less than this share of its residual,
+# a fifth of the tolerance a floor is judged with
+CLEAN_WAIT_SHARE = 0.05
+
+
+def run_delay() -> float:
+    # seconds the calling thread has spent runnable but waiting for a CPU
+    # (Linux schedstat); elsewhere no wait is known and every round counts
+    try:
+        return int(_SCHEDSTAT.read_text(encoding="ascii").split()[1]) / 1e9
+    except OSError:
+        return 0.0
+
+
 def measure(
     fn: Callable[[], object],
     counter: StatementCounter,
@@ -98,6 +114,7 @@ def measure(
     repeat: int,
     rounds: int = 5,
     clock: Callable[[], float] | None = None,
+    waited: Callable[[], float] = run_delay,
 ) -> dict[str, float]:
     if repeat < 1 or rounds < 1:
         raise ValueError("repeat and rounds must be positive")
@@ -105,10 +122,12 @@ def measure(
     fn()
     fn()
     samples = []
+    clean = []
     statements = []
     chars = []
     for _ in range(rounds):
         counter.reset()
+        wait_start = waited()
         start = clock()
         cpu_start = time.thread_time()
         for _ in range(repeat):
@@ -126,12 +145,21 @@ def measure(
                 "non_sql_ms": (wall - counter.seconds) / repeat * 1000,
             }
         )
+        if waited() - wait_start <= CLEAN_WAIT_SHARE * (wall - counter.seconds):
+            clean.append(samples[-1])
     # the fastest round is the floor's reading: another process's burst lands
     # in some rounds and not others, and measured 2026-09-22 under eight busy
     # neighbours the fastest round of a sale cycle rose 22 % where the median
-    # rose 54 %; the median is kept beside it for the record
+    # rose 54 %; the median is kept beside it for the record. Only a round
+    # that barely waited for a CPU is read: a write batch's 2.4 ms residual
+    # beside its 360 ms of SQL read 4.3-4.4 ms in rounds that waited 3.6-13.8 ms
+    # on the run queue, with 20 of 22 cores busy, against 0-0.006 ms idle
+    # (2026-10-08)
+    read = clean or samples
     return {
-        **{key: round(min(row[key] for row in samples), 3) for key in samples[0]},
+        **{key: round(min(row[key] for row in read), 3) for key in samples[0]},
+        "rounds": rounds,
+        "rounds_contended": rounds - len(clean),
         "non_sql_ms_median": round(
             statistics.median(row["non_sql_ms"] for row in samples), 3
         ),
