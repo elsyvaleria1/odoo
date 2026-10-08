@@ -141,7 +141,11 @@ class ReplicaRouter:
         }
 
     def cursor(
-        self, readonly: bool = False, *, pin_key: typing.Hashable | None = None
+        self,
+        readonly: bool = False,
+        *,
+        pin_key: typing.Hashable | None = None,
+        before_replica: typing.Callable[[], object] | None = None,
     ) -> tuple[BaseCursor, CursorMode]:
         if self.readonly is None:
             return self.primary.cursor(), "rw"
@@ -155,7 +159,7 @@ class ReplicaRouter:
                 reason="pinned",
             )
             return self._primary_cursor(pin_key), "ro->rw"
-        cr = self._resolve_replica_cursor(self.readonly)
+        cr = self._resolve_replica_cursor(self.readonly, before_replica)
         if cr is not None:
             _debug.logic(
                 "replica.route",
@@ -183,7 +187,11 @@ class ReplicaRouter:
             primary.on_commit_if_written(lambda: self.pins.pin(pin_key))
         return primary
 
-    def _resolve_replica_cursor(self, replica: Connection) -> BaseCursor | None:
+    def _resolve_replica_cursor(
+        self,
+        replica: Connection,
+        before_replica: typing.Callable[[], object] | None = None,
+    ) -> BaseCursor | None:
         sample_due = self.lag.is_sample_due()
         if not (self.lag.is_replica_usable() or sample_due):
             _debug.logic("replica.skipped", reason="lagging", lag=self.lag.last_lag)
@@ -196,6 +204,14 @@ class ReplicaRouter:
                 cooldown_remaining_s=self.breaker.cooldown_remaining,
             )
             return None
+        # Chosen but not yet borrowed: a caller that must also read the primary
+        # does it now, so it never holds a cursor of each at once.
+        if before_replica is not None:
+            try:
+                before_replica()
+            except BaseException:
+                self.breaker.release(attempt)
+                raise
         # Any refusal falls back, not only a transport one: the probe files a
         # replica that has not replayed the database's creation as
         # InvalidCatalogName, a ProgrammingError, which raised into every

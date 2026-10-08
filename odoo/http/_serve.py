@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import logging
+from collections.abc import Callable
 from typing import Any
 
 import psycopg
@@ -225,7 +226,11 @@ class _RequestServeMixin(RequestState):
                     with borrow_request():
                         registry = Registry(db)
                 with _debug.perf("http.registry.cursor", db=db):
-                    cr = registry.cursor(readonly=True, pin_key=self.session.sid)
+                    cr = registry.cursor(
+                        readonly=True,
+                        pin_key=self.session.sid,
+                        before_replica=self._session_binding_check(registry),
+                    )
                 with _debug.perf("http.registry.signaling", cr=cr, db=db):
                     self.registry = registry.check_signaling(cr)
                 span.set(reloaded=self.registry is not registry)
@@ -273,6 +278,23 @@ class _RequestServeMixin(RequestState):
             if cr is not None:
                 cr.close()
             raise
+
+    def _session_binding_check(self, registry: Registry) -> Callable[[], None] | None:
+        if self.session.uid is None:
+            return None
+        return functools.partial(self._check_session_binding_on_primary, registry)
+
+    # A replica cursor cannot answer whether the session was revoked, and the
+    # request must not open a primary one while it holds the replica's.
+    def _check_session_binding_on_primary(self, registry: Registry) -> None:
+        session = self.session
+        with (
+            _debug.perf("http.session.binding_precheck", db=registry.db_name) as span,
+            registry.cursor(readonly=True, primary=True) as cr,
+        ):
+            valid = get_ir_http(registry)._check_session_binding(cr, session)
+            span.set(valid=valid)
+        self.scratch.session_binding = (session.sid, session.uid, valid)
 
     def _select_serve_target_and_mode(self, registry: Registry) -> tuple[Any, bool]:
         try:

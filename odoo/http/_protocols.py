@@ -171,6 +171,9 @@ class HttpExtension(Protocol):
     def _post_logout(self, retired_identifier: str | None) -> None:
         pass
 
+    def _check_session_binding(self, cr: Any, session: Session) -> bool:
+        pass
+
     def _apply_max_upload_size(self) -> None:
         pass
 

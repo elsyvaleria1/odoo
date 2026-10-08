@@ -26,6 +26,7 @@ def is_session_valid(
     request: Request | None = None,
     *,
     fresh_primary_cr: BaseCursor | None = None,
+    binding_valid: bool | None = None,
 ) -> bool:
     session._remove_old_sessions()
     if "deletion_time" in session and session["deletion_time"] <= time.time():
@@ -39,9 +40,11 @@ def is_session_valid(
     if not isinstance(actual, str) or not consteq(expected, actual):
         _debug.logic("session.invalid", reason="token_mismatch", uid=session.uid)
         return False
-    if not env["auth.user.client"]._is_session_valid(
-        session, fresh_primary_cr=fresh_primary_cr
-    ):
+    if binding_valid is None:
+        binding_valid = env["auth.user.client"]._is_session_valid(
+            session, fresh_primary_cr=fresh_primary_cr
+        )
+    if not binding_valid:
         return False
     if request:
         try:

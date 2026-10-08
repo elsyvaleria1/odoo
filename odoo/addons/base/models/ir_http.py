@@ -13,6 +13,7 @@ from werkzeug.datastructures import WWWAuthenticate
 import odoo
 from odoo import api, http, models, tools
 from odoo.api import SUPERUSER_ID
+from odoo.db import BaseCursor
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessDenied, ConcurrencyError
 from odoo.http import (
@@ -20,6 +21,7 @@ from odoo.http import (
     HTTPException,
     NotFound,
     Response,
+    Session,
     Unauthorized,
     abort,
     prepare_routing_map,
@@ -362,6 +364,7 @@ class IrHttp(models.AbstractModel):
                     request.env,
                     request,
                     fresh_primary_cr=request.fresh_primary_cursor,
+                    binding_valid=request.session_binding_verdict,
                 ):
                     _debug.logic("session_invalidated", uid=request.session.uid)
                     request.session.logout(keep_db=True)
@@ -495,6 +498,11 @@ class IrHttp(models.AbstractModel):
             env["auth.user.client"]._observe(request)
         except Exception:
             _logger.warning("Client observation failed after login", exc_info=True)
+
+    @classmethod
+    def _check_session_binding(cls, cr: BaseCursor, session: Session) -> bool:
+        env = api.Environment(cr, session.uid, {})
+        return env["auth.user.client"]._is_session_valid(session, fresh_primary_cr=cr)
 
     @classmethod
     def _post_logout(cls, retired_identifier: str | None) -> None:

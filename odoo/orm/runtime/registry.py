@@ -3,7 +3,7 @@ import threading
 import time
 import types
 import typing
-from collections.abc import Collection, Hashable, Iterable, Mapping
+from collections.abc import Callable, Collection, Hashable, Iterable, Mapping
 from contextlib import ExitStack, closing, nullcontext
 
 import psycopg
@@ -748,13 +748,16 @@ class Registry(
         *,
         pin_key: Hashable | None = None,
         primary: bool = False,
+        before_replica: Callable[[], object] | None = None,
     ) -> BaseCursor:
         if primary:
             primary_cr = self._replica.primary.cursor()
             if readonly:
                 primary_cr.enforce_readonly()
             return primary_cr
-        cr, mode = self._replica.cursor(readonly, pin_key=pin_key)
+        cr, mode = self._replica.cursor(
+            readonly, pin_key=pin_key, before_replica=before_replica
+        )
         if mode != "rw":
             thread = current_worker_thread()
             if hasattr(thread, "cursor_mode"):

@@ -221,3 +221,63 @@ class TestAgainstARealStandby:
         cr.commit()
         cr.close()
         assert not router.pins.is_pinned("reader")
+
+    def test_the_read_before_the_replica_runs_on_the_primary_before_its_borrow(
+        self, router
+    ):
+        _wait_until_the_replica_is_within_the_ceiling(router)
+        replica = router.readonly
+        order = []
+
+        class _Watched:
+            def cursor(self, **kwargs):
+                order.append("replica")
+                return replica.cursor(**kwargs)
+
+        def before_replica():
+            cr = router.primary.cursor()
+            try:
+                cr.execute("SELECT pg_is_in_recovery()")
+                order.append(("primary", cr.fetchone()))
+            finally:
+                cr.close()
+
+        router.readonly = _Watched()
+        try:
+            cr, mode = router.cursor(readonly=True, before_replica=before_replica)
+        finally:
+            router.readonly = replica
+        try:
+            cr.execute("SELECT pg_is_in_recovery()")
+            assert (mode, cr.fetchone()) == ("ro", (True,))
+        finally:
+            cr.close()
+        assert order == [("primary", (False,)), "replica"]
+
+    def test_the_read_before_the_replica_runs_only_for_the_replica(self, router):
+        _wait_until_the_replica_is_within_the_ceiling(router)
+        replica = router.readonly
+        borrowed = []
+
+        class _Watched:
+            def cursor(self, **kwargs):
+                borrowed.append(kwargs)
+                return replica.cursor(**kwargs)
+
+        def refuse():
+            raise LookupError("refused")
+
+        router.pins.pin("writer")
+        router.readonly = _Watched()
+        try:
+            cr, mode = router.cursor(
+                readonly=True, pin_key="writer", before_replica=refuse
+            )
+            cr.close()
+            assert mode == "ro->rw"
+            with pytest.raises(LookupError):
+                router.cursor(readonly=True, before_replica=refuse)
+        finally:
+            router.readonly = replica
+        assert borrowed == []
+        assert router.breaker.closed

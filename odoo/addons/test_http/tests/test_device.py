@@ -12,6 +12,7 @@ from odoo.http import STORED_SESSION_BYTES
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.service import security
+from odoo.tests.cursor import TestCursor
 from odoo.tests.utils import HOST, get_db_name
 
 from .test_common import TestHttpBase
@@ -465,6 +466,41 @@ class TestDevice(TestHttpBase):
             res = self.hit("2024-01-01 08:00:02", "/test_http/greeting-user")
             self.assertIn("/web/login", res.url)
         self.assertEqual(primary_opened, [], "no second cursor for the binding")
+
+    def test_a_replica_routed_request_reads_the_binding_before_its_cursor(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        acquire = self.registry.cursor
+        replica_cursors = []
+        held_at_primary = []
+        prechecks = []
+
+        def cursor(readonly=False, *, primary=False, before_replica=None, **kwargs):
+            if primary:
+                held_at_primary.extend(c for c in replica_cursors if not c.closed)
+                return acquire(readonly, primary=True, **kwargs)
+            if not readonly:
+                return acquire(readonly, **kwargs)
+            if before_replica is not None:
+                prechecks.append(before_replica)
+                before_replica()
+            replica_cursors.append(acquire(readonly, **kwargs))
+            return replica_cursors[-1]
+
+        def readonly_pool(cr):
+            return any(cr is replica for replica in replica_cursors)
+
+        with (
+            patch.object(self.registry, "cursor", cursor),
+            patch.object(TestCursor, "readonly_pool", property(readonly_pool)),
+        ):
+            res = self.hit("2024-01-01 08:00:01", "/test_http/greeting-user")
+            self.assertNotIn("/web/login", res.url)
+            self.user_internal.auth_client_ids._revoke()
+            res = self.hit("2024-01-01 08:00:02", "/test_http/greeting-user")
+            self.assertIn("/web/login", res.url)
+        self.assertEqual(held_at_primary, [], "a replica cursor was held")
+        self.assertEqual(len(prechecks), 2)
 
     def test_deletion_invalidate_sid(self):
         session = self.authenticate(self.user_internal.login, self.user_internal.login)

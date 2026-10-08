@@ -126,6 +126,14 @@ class Request(
             return None
         return env.cr
 
+    @property
+    def session_binding_verdict(self) -> bool | None:
+        found = getattr(self.scratch, "session_binding", None)
+        session = self.session
+        if found is None or found[:2] != (session.sid, session.uid):
+            return None
+        return found[2]
+
     def _post_init(self) -> None:
         if self._post_init_done:
             return

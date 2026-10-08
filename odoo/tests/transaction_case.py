@@ -1559,7 +1559,11 @@ class BaseCase(TestCase):
     def _registry_test_mode_patches(cls, *, cr: Cursor, registry: Registry):
 
         def _patched_cursor(
-            readonly: bool = False, *, pin_key: object = None, primary: bool = False
+            readonly: bool = False,
+            *,
+            pin_key: object = None,
+            primary: bool = False,
+            before_replica: object = None,
         ):
             return TestCursor(
                 cr,

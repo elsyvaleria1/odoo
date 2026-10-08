@@ -29,7 +29,7 @@ class TestIrHttpImplementsProtocol(TransactionCase):
             for name, func in inspect.getmembers(HttpExtension, inspect.isfunction)
             if not name.startswith("__")
         ]
-        self.assertGreaterEqual(len(hooks), 13, "protocol hooks went missing")
+        self.assertGreaterEqual(len(hooks), 16, "protocol hooks went missing")
         for name, proto_func in hooks:
             with self.subTest(hook=name):
                 impl = getattr(ir_http, name, None)

@@ -39,6 +39,7 @@ Application.__call__
 
     else:
         Request._serve_db
+            registry['ir.http']._check_session_binding   # before a replica cursor only
             env['ir.http']._match
             if not match:
                 transaction.retrying(Request._serve_ir_http_fallback)
@@ -172,6 +173,15 @@ authenticated cookie, before accessing these resources.
 **`ir.http._authenticate`** — ensures the user on the current environment
 satisfies `@route(auth=...)`. Using the ORM outside abstract models is unsafe
 before this runs.
+
+**`ir.http._check_session_binding`** — whether a logged-in session's client
+binding still stands, read on a short read-only primary cursor that `_serve_db`
+opens and closes just before the router hands it a replica cursor. A replica
+cannot answer it (revocation must come from a primary snapshot no older than
+the request), and opening the primary cursor once the replica's is held would
+make one request hold two connections; `_authenticate` uses the verdict,
+`Request.session_binding_verdict`, instead. Without a replica the request's
+own cursor is the primary and the check runs on it.
 
 **`ir.http._pre_dispatch` / `Dispatcher.pre_dispatch`** — prepares the system for
 the request; often saves extra query-string parameters in the session (`?debug=1`).
