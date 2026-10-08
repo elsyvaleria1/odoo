@@ -381,6 +381,19 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
                 self.assertEqual(encoding, expected)
                 self.assertEqual(bool(variant), bool(expected))
 
+    def test_serving_an_encoded_copy_reads_the_copy_alone(self):
+        """An asset and its copies never change: once known, serving a copy
+        searches nothing and reads neither the asset nor another copy."""
+        asset = self._create_generated_asset(
+            b"a{color:red}\n" * 2000, mimetype="text/css"
+        )
+        accept = parse_accept_header("gzip")
+        asset._get_asset_stream("a.css", accept)
+        self.env.invalidate_all()
+        with self.assertQueryCount(1):
+            stream = asset._get_asset_stream("a.css", accept)
+        self.assertEqual((stream.encoding, stream.mimetype), ("gzip", "text/css"))
+
     def test_the_variants_go_with_their_asset(self):
         asset = self._create_generated_asset(b"function g(){}\n" * 1000)
         variants = self._asset_variants(asset)

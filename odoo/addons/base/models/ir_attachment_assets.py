@@ -4,11 +4,12 @@ from compression import zstd
 from datetime import timedelta
 from typing import Any, Self
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 from odoo.api import ValuesType
 from odoo.fields import Domain
 from odoo.http import Stream
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
 from odoo.tools.assets.constants import ESM_BRIDGE_REFRESH_DAYS, ESM_BRIDGE_URL_PREFIX
 
 _logger = logging.getLogger(__name__)
@@ -87,43 +88,55 @@ class IrAttachment(models.Model):
             for _encoding, suffix, mimetype, compress in ASSET_ENCODINGS
         ]
 
-    def _get_encoded_asset_variant(self, accept_encodings: Any) -> tuple[Self, str]:
+    @tools.ormcache("self.id", cache="assets")
+    def _encoded_asset_variants(self) -> tuple[str, frozendict]:
+        """(this generated asset's mimetype, {encoding: id of its encoded
+        copy}): an asset and its copies never change once made, and going they
+        clear the assets cache, so the hot path neither searches its copies nor
+        reads the asset it serves one of."""
         self.check_singleton()
         url = self.url or ""
         if (
             not url.startswith(ASSETS_URL_PREFIX)
             or self.file_size < _ENCODED_ASSET_FLOOR
         ):
-            return self.browse(), ""
-        accepted = [
-            (encoding, suffix)
-            for encoding, suffix, _mimetype, _compress in ASSET_ENCODINGS
-            if accept_encodings.quality(encoding) > 0
-        ]
-        if not accepted:
-            return self.browse(), ""
-        variants = self._search_generated_assets(
-            urls=[url + suffix for _encoding, suffix in accepted]
+            return self.mimetype, frozendict()
+        ids = {
+            variant.url: variant.id
+            for variant in self._search_generated_assets(
+                urls=[url + suffix for _encoding, suffix, _m, _c in ASSET_ENCODINGS]
+            )
+        }
+        return self.mimetype, frozendict(
+            {
+                encoding: ids[url + suffix]
+                for encoding, suffix, _mimetype, _compress in ASSET_ENCODINGS
+                if url + suffix in ids
+            }
         )
-        by_url = {variant.url: variant for variant in variants}
-        for encoding, suffix in accepted:
-            if variant := by_url.get(url + suffix):
-                return variant, encoding
+
+    def _get_encoded_asset_variant(self, accept_encodings: Any) -> tuple[Self, str]:
+        """The encoded copy of this asset a client accepting
+        `accept_encodings` is served, and its encoding; none when it accepts
+        none of them or the asset has no copies."""
+        self.check_singleton()
+        __, variants = self._encoded_asset_variants()
+        for encoding, _suffix, _mimetype, _compress in ASSET_ENCODINGS:
+            if encoding in variants and accept_encodings.quality(encoding) > 0:
+                return self.browse(variants[encoding]), encoding
         return self.browse(), ""
 
     def _get_asset_stream(self, filename: str, accept_encodings: Any = None) -> Stream:
         binary = self.env["ir.binary"]
-        stream = binary._get_stream_from_record(self, "raw", filename)
-        if accept_encodings is None or not self.id:
-            return stream
-        variant, encoding = self._get_encoded_asset_variant(accept_encodings)
-        if not variant:
-            return stream
-        encoded = binary._get_stream_from_record(variant, "raw", filename)
-        encoded.mimetype = stream.mimetype
-        encoded.encoding = encoding
-        _debug.logic("asset_encoded", filename=filename, encoding=encoding)
-        return encoded
+        if accept_encodings is not None and self.id:
+            variant, encoding = self._get_encoded_asset_variant(accept_encodings)
+            if variant:
+                encoded = binary._get_stream_from_record(variant, "raw", filename)
+                encoded.mimetype = self._encoded_asset_variants()[0]
+                encoded.encoding = encoding
+                _debug.logic("asset_encoded", filename=filename, encoding=encoding)
+                return encoded
+        return binary._get_stream_from_record(self, "raw", filename)
 
     def _encoded_variants(self) -> Self:
         variant_urls = [
