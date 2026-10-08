@@ -10,7 +10,12 @@ from odoo.libs.json import loads as _loads
 from odoo.tools import get_lang
 
 from ._protocols import get_ir_http
-from .constants import DEFAULT_LANG, STORED_SESSION_BYTES, prepare_default_session
+from .constants import (
+    DEFAULT_LANG,
+    ISSUED_SID_KEY,
+    STORED_SESSION_BYTES,
+    prepare_default_session,
+)
 from .core import request
 
 _logger = logging.getLogger(__name__)
@@ -79,7 +84,9 @@ class Session(collections.abc.MutableMapping):
         "rotation",
         "should_rotate",
         "sid",
+        "sid_issued",
         "store",
+        "unstored_sid",
     )
 
     def __init__(self, data: dict[str, Any], sid: str, new: bool = False) -> None:
@@ -92,7 +99,9 @@ class Session(collections.abc.MutableMapping):
         self.should_rotate: bool = False
         self.rotation: tuple[Session, bool] | None = None
         self.sid: str = sid
+        self.sid_issued: bool = False
         self.store: Any = None
+        self.unstored_sid: bool = False
 
     def snapshot(self) -> Session:
         snapshot = Session(_copy_session_data(self.__data), self.sid, self.is_new)
@@ -101,7 +110,9 @@ class Session(collections.abc.MutableMapping):
         snapshot.is_dirty = self.is_dirty
         snapshot.mtime = self.mtime
         snapshot.should_rotate = self.should_rotate
+        snapshot.sid_issued = self.sid_issued
         snapshot.store = self.store
+        snapshot.unstored_sid = self.unstored_sid
         return snapshot
 
     def restore(self, snapshot: Session) -> None:
@@ -113,6 +124,8 @@ class Session(collections.abc.MutableMapping):
         self.mtime = snapshot.mtime
         self.can_save = snapshot.can_save
         self.should_rotate = snapshot.should_rotate
+        self.sid_issued = snapshot.sid_issued
+        self.unstored_sid = snapshot.unstored_sid
         self.rotation = None
         _debug.lifecycle(
             "http.session.restored", sid=self.sid[:8], uid=self.uid, is_new=self.is_new
@@ -196,6 +209,22 @@ class Session(collections.abc.MutableMapping):
     @debug.setter
     def debug(self, debug: str | None) -> None:
         self["debug"] = debug
+
+    @property
+    def issued_sid(self) -> str:
+        return self.get(ISSUED_SID_KEY) or self.sid
+
+    @property
+    def csrf_binding(self) -> str:
+        # An anonymous identity is bound under its own domain: the sid it was
+        # issued may be a cookie that names no stored session (a revoked one,
+        # or a deleted predecessor of a live family), and a token minted for
+        # it must never verify against a stored family's prefix.
+        if issued := self.get(ISSUED_SID_KEY):
+            return f"~{issued}"
+        if self.is_new and self.rotation is None:
+            return f"~{self.sid}"
+        return self.sid[:STORED_SESSION_BYTES]
 
     @property
     def session_token(self) -> str | None:
@@ -297,8 +326,13 @@ class Session(collections.abc.MutableMapping):
         retired_identifier = self._retired_identifier()
         db = self.db if keep_db else None
         debug = self.debug
+        issued_sid = self.get(ISSUED_SID_KEY)
         self.clear()
         self.update(prepare_default_session(), db=db, debug=debug)
+        if issued_sid:
+            # the hard rotation this demands drops it; an anonymous logout
+            # that keeps its sid keeps the tokens its pages carry
+            self[ISSUED_SID_KEY] = issued_sid
         context = self.context
         assert context is not None
         context["lang"] = request.get_default_lang() if request else DEFAULT_LANG

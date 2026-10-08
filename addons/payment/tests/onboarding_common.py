@@ -81,7 +81,9 @@ class OnboardingStateCases:
 
     def _session_csrf_token(self) -> str:
         max_ts = int(time.time() + 3600)
-        digest = _get_csrf_digest(_get_csrf_secret(self.env), self.session.sid, max_ts)
+        digest = _get_csrf_digest(
+            _get_csrf_secret(self.env), self.session.csrf_binding, max_ts
+        )
         return f"{digest}o{max_ts}"
 
     def test_the_admin_onboarding_completes(self):

@@ -9,7 +9,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import consteq
 
 from ._protocols import RequestState
-from .constants import CSRF_TOKEN_MAX_AGE, STORED_SESSION_BYTES
+from .constants import CSRF_TOKEN_MAX_AGE
 
 _debug = DebugLog(__name__)
 
@@ -28,8 +28,8 @@ def _get_csrf_secret(env: Any) -> str:
     return secret
 
 
-def _get_csrf_digest(secret: str, sid: str, max_ts: int | str) -> str:
-    payload = f"{sid[:STORED_SESSION_BYTES]}{max_ts}".encode()
+def _get_csrf_digest(secret: str, binding: str, max_ts: int | str) -> str:
+    payload = f"{binding}{max_ts}".encode()
     return hmac.new(secret.encode("ascii"), payload, hashlib.sha256).hexdigest()
 
 
@@ -40,10 +40,9 @@ class _RequestCsrfMixin(RequestState):
         if time_limit is None:
             time_limit = CSRF_TOKEN_MAX_AGE
         max_ts = int(time.time() + time_limit)
-        hm = _get_csrf_digest(secret, self.session.sid, max_ts)
+        hm = _get_csrf_digest(secret, self.session.csrf_binding, max_ts)
 
-        if self.session.is_new:
-            self.session.mark_dirty()
+        self.session.sid_issued = True
         _debug.lifecycle(
             "http.csrf.token_issued",
             sid=self.session.sid[:8],
@@ -75,7 +74,7 @@ class _RequestCsrfMixin(RequestState):
             _debug.logic("http.csrf.malformed", reason="non_ascii")
             return False
 
-        valid = consteq(hm, _get_csrf_digest(secret, self.session.sid, max_ts))
+        valid = consteq(hm, _get_csrf_digest(secret, self.session.csrf_binding, max_ts))
         if not valid:
             _debug.logic("http.csrf.mismatch", sid=self.session.sid[:8])
         return valid

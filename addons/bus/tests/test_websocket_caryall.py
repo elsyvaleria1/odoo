@@ -402,6 +402,25 @@ class TestWebsocketCaryall(WebsocketCase):
             "Downgraded connections must share one public session, not mint one each",
         )
 
+    def test_anonymous_handshake_stores_nothing_for_the_visitor(self):
+        store = http.root.session_store
+        planted = [store.generate_key(), store.generate_key()]
+        _ws1, session1 = self._connect_and_capture_server_session(
+            cookie=f"session_id={planted[0]};"
+        )
+        with patch.object(store, "save", wraps=store.save) as save:
+            _ws2, session2 = self._connect_and_capture_server_session(
+                cookie=f"session_id={planted[1]};"
+            )
+        save.assert_not_called()
+        self.assertFalse(session1.uid)
+        self.assertEqual(session1.sid, session2.sid)
+        self.assertNotIn(session1.sid, planted)
+        for sid in planted:
+            self.assertTrue(
+                store.get(sid).is_new, "a handshake must not store the visitor's cookie"
+            )
+
     def test_matching_origin_keeps_session(self):
         new_test_user(self.env, login="test_user", password="Password!1")
         user_session = self.authenticate("test_user", "Password!1")

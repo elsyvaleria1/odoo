@@ -22,7 +22,12 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps_bytes as _dumps_bytes
 from odoo.libs.json import loads as _loads
 
-from .constants import SESSION_DELETION_TIMER, SESSION_LIFETIME, STORED_SESSION_BYTES
+from .constants import (
+    ISSUED_SID_KEY,
+    SESSION_DELETION_TIMER,
+    SESSION_LIFETIME,
+    STORED_SESSION_BYTES,
+)
 from .exceptions import SessionExpiredException
 from .session import Session
 
@@ -128,6 +133,13 @@ class SessionStore(ABC):
         _debug.lifecycle("http.session.new", sid=session.sid[:8])
         return session
 
+    def new_unstored(self, sid: str) -> Session:
+        session = self.session_class({}, self._require_key(sid), True)
+        session.store = self
+        session.unstored_sid = True
+        _debug.lifecycle("http.session.unstored", sid=sid[:8])
+        return session
+
     def get(self, sid: str) -> Session:
         if not self.is_valid_key(sid):
             _debug.logic("http.session.get", sid=sid[:8], found=False, invalid_key=True)
@@ -196,6 +208,9 @@ class SessionStore(ABC):
         self._remove_sid(session.sid)
 
     def keep_alive(self, session: Session) -> None:
+        if session.unstored_sid:
+            self.save(session)
+            return
         with self._lock(session.sid):
             if self._touch(session.sid):
                 session.mtime = time.time()
@@ -237,7 +252,24 @@ class SessionStore(ABC):
 
     # -- merge, rotation, adoption ------------------------------------------
 
+    def _settle_anonymous_identity(self, session: Session) -> None:
+        if session.uid is None and ISSUED_SID_KEY not in session:
+            session[ISSUED_SID_KEY] = session.sid
+        if session.unstored_sid:
+            # Never written under a sid the client chose: a stored session
+            # answering to a planted cookie would be shared with the planter,
+            # and one answering to a revoked cookie would resurrect its family.
+            session.sid = self.generate_key()
+            session.unstored_sid = False
+            _debug.lifecycle(
+                "http.session.rekeyed",
+                issued=session[ISSUED_SID_KEY][:8],
+                sid=session.sid[:8],
+            )
+
     def save(self, session: Session) -> None:
+        if session.is_new and session.rotation is None:
+            self._settle_anonymous_identity(session)
         origin = session.rotation[0].sid if session.rotation else session.sid
         with self._lock(origin):
             if not session.is_new:
@@ -326,6 +358,11 @@ class SessionStore(ABC):
             return
         original = session.snapshot()
         next_sid = self.generate_key()
+        if session.unstored_sid:
+            soft = False
+            session.unstored_sid = False
+        if not soft:
+            session.pop(ISSUED_SID_KEY, None)
         if soft:
             next_sid = (
                 session.sid[:STORED_SESSION_BYTES] + next_sid[STORED_SESSION_BYTES:]

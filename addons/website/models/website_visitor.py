@@ -69,7 +69,7 @@ class WebsiteVisitor(models.Model):
             (
                 request.httprequest.remote_addr,
                 request.httprequest.environ.get("HTTP_USER_AGENT"),
-                request.session.sid,
+                request.session.issued_sid,
             )
         ).encode("utf-8")
         return hashlib.sha1(msg).hexdigest()[:32]

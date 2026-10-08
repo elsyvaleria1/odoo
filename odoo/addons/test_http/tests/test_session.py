@@ -20,6 +20,7 @@ from odoo.http import (
 from odoo.http._session_store import _session_identifier_re
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import get_db_name, tagged
+from odoo.tests.utils import HOST
 from odoo.tools import config, mute_logger, reset_cached_properties
 
 from .test_common import TestHttpBase
@@ -64,16 +65,136 @@ class TestHttpSession(TestHttpBase):
                 msg = f"save() was called with args: {mock_save.call_args}"
                 raise AssertionError(msg) from exc
 
-    def test_session02_csrf_token_persists_session(self):
-        self.assertEqual(len(odoo.http.root.session_store), 0)
+    def _set_session_cookie(self, sid):
+        self.opener.cookies.set("session_id", sid, domain=HOST)
+
+    def _post_csrf(self, token):
+        return self.db_url_open("/test_http/echo-http-csrf", data={"csrf_token": token})
+
+    def test_session02_csrf_token_stores_no_session(self):
         res = self.db_url_open("/test_http/csrf-token")
         res.raise_for_status()
         self.assertTrue(res.text.strip(), "the GET should issue a CSRF token")
-        self.assertGreater(
+        self.assertEqual(
             len(odoo.http.root.session_store),
             0,
-            "issuing a CSRF token should persist the anonymous session",
+            "issuing a CSRF token must not store the anonymous session",
         )
+        self.assertIn(
+            "session_id", res.cookies, "the sid the token binds must reach the browser"
+        )
+
+    def test_session02_csrf_unstored_sid_is_kept_across_requests(self):
+        first = self.db_url_open("/test_http/csrf-token")
+        issued = first.cookies["session_id"]
+        second = self.db_url_open("/test_http/csrf-token")
+        self.assertNotIn(
+            "session_id", second.cookies, "a browser holding the cookie keeps it"
+        )
+        self.assertEqual(self.opener.cookies["session_id"], issued)
+        self.assertEqual(len(odoo.http.root.session_store), 0)
+        self.assertEqual(self._post_csrf(first.text).status_code, 200)
+        self.assertEqual(self._post_csrf(second.text).status_code, 200)
+
+    def test_session02_csrf_token_survives_the_first_write(self):
+        token = self.db_url_open("/test_http/csrf-token").text
+        issued = self.opener.cookies["session_id"]
+        self.db_url_open("/test_http/save_session").raise_for_status()
+        stored_sid = self.opener.cookies["session_id"]
+        store = odoo.http.root.session_store
+        self.assertNotEqual(stored_sid, issued, "the first write re-keys the session")
+        self.assertNotIn(issued, store, "nothing is written under the cookie's sid")
+        self.assertIn(stored_sid, store)
+        self.assertEqual(store.get(stored_sid).issued_sid, issued)
+        self.assertEqual(
+            self._post_csrf(token).status_code,
+            200,
+            "a page rendered before the write must still post",
+        )
+        fresh = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(fresh).status_code, 200)
+
+    def test_session02_csrf_planted_sid_is_never_stored(self):
+        store = odoo.http.root.session_store
+        planted = store.generate_key()
+        self._set_session_cookie(planted)
+        token = self.db_url_open("/test_http/csrf-token").text
+        self.db_url_open("/test_http/save_session").raise_for_status()
+        stored_sid = self.opener.cookies["session_id"]
+        self.assertNotIn(planted, store)
+        self.assertNotEqual(
+            stored_sid[:STORED_SESSION_BYTES], planted[:STORED_SESSION_BYTES]
+        )
+        self.assertEqual(len(store), 1)
+        self.assertEqual(self._post_csrf(token).status_code, 200)
+
+    @mute_logger("odoo.http.dispatcher")
+    def test_session02_csrf_token_of_another_session_is_refused(self):
+        store = odoo.http.root.session_store
+        self._set_session_cookie(store.generate_key())
+        foreign = self.db_url_open("/test_http/csrf-token").text
+        self._set_session_cookie(store.generate_key())
+        own = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(foreign).status_code, 400)
+        self.assertEqual(self._post_csrf(own).status_code, 200)
+
+    @mute_logger("odoo.http.dispatcher")
+    def test_session02_csrf_token_refused_after_login(self):
+        token = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(token).status_code, 200)
+        self.db_url_open(
+            "/web/session/authenticate",
+            data=json_dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "method": "call",
+                    "params": {
+                        "db": get_db_name(),
+                        "login": "admin",
+                        "password": "admin",
+                    },
+                }
+            ),
+            headers=CT_JSON,
+        ).raise_for_status()
+        self.assertEqual(self._post_csrf(token).status_code, 400)
+        fresh = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(fresh).status_code, 200)
+
+    @mute_logger("odoo.http.dispatcher")
+    def test_session02_csrf_token_refused_after_logout(self):
+        logged_in = self.authenticate("admin", "admin").sid
+        token = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(token).status_code, 200)
+        self.db_url_open("/web/session/logout").raise_for_status()
+        self.assertNotEqual(self.opener.cookies["session_id"], logged_in)
+        self.assertEqual(self._post_csrf(token).status_code, 400)
+        self._set_session_cookie(logged_in)
+        self.assertEqual(
+            self._post_csrf(token).status_code,
+            400,
+            "the revoked cookie presented again does not revive its tokens",
+        )
+
+    @mute_logger("odoo.http.dispatcher")
+    def test_session02_csrf_stale_predecessor_cannot_mint_for_its_family(self):
+        store = odoo.http.root.session_store
+        session = self.authenticate("admin", "admin")
+        predecessor = session.sid
+        store.rotate(session, self.env, soft=True)
+        successor = session.sid
+        self.assertEqual(
+            successor[:STORED_SESSION_BYTES], predecessor[:STORED_SESSION_BYTES]
+        )
+        store.delete(store.get(predecessor))
+        self._set_session_cookie(predecessor)
+        minted = self.db_url_open("/test_http/csrf-token").text
+        self.assertNotIn(predecessor, store, "the stale cookie is not resurrected")
+        self._set_session_cookie(successor)
+        self.assertEqual(self._post_csrf(minted).status_code, 400)
+        own = self.db_url_open("/test_http/csrf-token").text
+        self.assertEqual(self._post_csrf(own).status_code, 200)
 
     def test_session02_csrf_anonymous_roundtrip(self):
         res = self.db_url_open("/test_http/csrf-token")

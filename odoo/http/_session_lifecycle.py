@@ -88,6 +88,11 @@ class _RequestSessionMixin(RequestState):
                 session = root.session_store.new()
             else:
                 session = root.session_store.get(sid)
+                if session.is_new:
+                    # The anonymous identity is the cookie, in memory only, so
+                    # the tokens a page carries stay valid across requests;
+                    # its first write re-keys it (SessionStore.save).
+                    session = root.session_store.new_unstored(sid)
             span.set(found=not session.is_new)
 
         for key, val in prepare_default_session().items():
@@ -374,6 +379,7 @@ class _RequestSessionMixin(RequestState):
         if written and self._session_snapshot is not None:
             self._session_written_in_transaction = True
         on_disk = written or not sess.is_new
+        published = on_disk or sess.sid_issued
         cookie_sid = self.httprequest.session_id
         _debug.logic(
             "http.session.saved",
@@ -385,10 +391,11 @@ class _RequestSessionMixin(RequestState):
             rotate=sess.should_rotate,
             can_rotate=can_rotate,
             on_disk=on_disk,
-            cookie_set=on_disk and (modified or cookie_sid != sess.sid),
+            sid_issued=sess.sid_issued,
+            cookie_set=published and (modified or cookie_sid != sess.sid),
         )
 
-        if on_disk and (modified or cookie_sid != sess.sid):
+        if published and (modified or cookie_sid != sess.sid):
             self.future_response.set_cookie(
                 "session_id",
                 sess.sid,

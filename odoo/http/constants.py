@@ -185,6 +185,8 @@ def register_session_rotation_excluded_paths(*paths: str) -> None:
 
 STORED_SESSION_BYTES = 42
 
+ISSUED_SID_KEY = "_issued_sid"
+
 STATIC_CACHE = 60 * 60 * 24 * 7
 
 REGISTRY_RETRY_AFTER = 5
