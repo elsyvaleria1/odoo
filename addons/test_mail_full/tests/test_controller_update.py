@@ -30,6 +30,7 @@ class TestPortalMessageUpdateController(MailControllerUpdateCommon):
             body=self.message_body,
             author_id=self.user_portal.partner_id.id,
             message_type="comment",
+            subtype_xmlid="mail.mt_comment",
         )
         self._execute_subtests(
             message,
@@ -53,5 +54,27 @@ class TestPortalMessageUpdateController(MailControllerUpdateCommon):
                 (self.user_admin, True, bad_sign),
                 (self.user_admin, True, token),
                 (self.user_admin, True, sign),
+            ),
+        )
+
+    def test_message_update_portal_author_internal_note(self):
+        """A token or hash opens the thread, not an internal note its author
+        cannot read: only an internal user edits it."""
+        record = self.env["mail.test.portal.no.partner"].create({"name": "Test"})
+        token, _bad_token, sign, _bad_sign, _ = self._get_sign_token_params(record)
+        message = record.message_post(
+            body=self.message_body,
+            author_id=self.user_portal.partner_id.id,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
+        self._execute_subtests(
+            message,
+            (
+                (self.user_public, False, token),
+                (self.user_public, False, sign),
+                (self.user_portal, False, token),
+                (self.user_portal, False, sign),
+                (self.user_admin, True, token),
             ),
         )
