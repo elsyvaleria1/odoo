@@ -1,9 +1,11 @@
 from odoo import exceptions
+from odoo.libs.debug_log import DebugLog
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.iap.tools import iap_tools
 
 _lt = LazyTranslate(__name__)
+_debug = DebugLog(__name__)
 
 ERROR_MESSAGES = {
     # Errors that could occur while updating sender name
@@ -73,7 +75,16 @@ class SmsApi(
 
     def __init__(self, env, account=None) -> None:
         super().__init__(env, account=account)
-        self.account = account or self.env["iap.account"].acquire_account("sms")
+        self._account = account
+
+    @property
+    def account(self):
+        return self._acquire_account()
+
+    def _acquire_account(self):
+        if not self._account:
+            self._account = self.env["iap.account"].acquire_account("sms")
+        return self._account
 
     def _contact_iap(self, local_endpoint, params, timeout=15):
         if (
@@ -121,6 +132,24 @@ class SmsApi(
               }, ...
           ]```
         """
+        try:
+            self._acquire_account()
+        except exceptions.UserError as error:
+            _debug.logic(
+                "send_refused",
+                reason="no_iap_account",
+                company=self.env.company.id,
+                count=sum(len(message["numbers"]) for message in messages),
+            )
+            return [
+                {
+                    "uuid": number["uuid"],
+                    "state": "unregistered",
+                    "failure_reason": str(error),
+                }
+                for message in messages
+                for number in message["numbers"]
+            ]
         return self._contact_iap(
             "/api/sms/3/send",
             {

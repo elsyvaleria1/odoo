@@ -1314,7 +1314,12 @@ class TestBinaryWireFormatCompat(TransactionCase):
         self.assertEqual(from_legacy, plaintext)
 
     def test_garbage_input_raises_validation_error(self):
-        with self.assertRaises(ValidationError):
+        with (
+            self.assertLogs(
+                "odoo.addons.mixin_encryption.models.mixin_encryption", "ERROR"
+            ),
+            self.assertRaises(ValidationError),
+        ):
             self.Model._decrypt_binary_value(b"\x00\x01\x02not-valid")
 
     def test_char_and_binary_paths_agree_on_canonical_shape(self):

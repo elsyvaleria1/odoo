@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urljoin as url_join
 from odoo.modules import module
 from odoo.tools import consteq, get_lang
@@ -13,6 +14,7 @@ from odoo.tools import consteq, get_lang
 from odoo.addons.iap.tools import iap_tools
 
 _logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
 
 
 class IapAccount(models.Model):
@@ -281,6 +283,23 @@ class IapAccount(models.Model):
             if not service:
                 raise UserError(
                     self.env._("No service exists with the provided technical name")
+                )
+            if not self.env["credential.credential"]._is_encryption_key_configured():
+                _debug.logic(
+                    "account_not_created",
+                    service=service_name,
+                    reason="no_vault_key",
+                    force_create=force_create,
+                )
+                if not force_create:
+                    return self.browse()
+                raise UserError(
+                    self.env._(
+                        "No IAP account exists for %(service)s, and none can be "
+                        "created: its token is kept in the credential vault, which "
+                        "needs ODOO_API_ENCRYPTION_KEY.",
+                        service=service.name,
+                    )
                 )
             if module.current_test:
                 # During testing, we don't want to commit the creation of a new IAP account to the database

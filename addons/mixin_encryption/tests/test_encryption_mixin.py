@@ -76,6 +76,64 @@ class TestEncryptionMixin(TransactionCase):
             self.assertFalse(self.mixin._decrypt_value_safe(token))
         self.mixin._invalidate_key_version_cache()
 
+    def _under_a_foreign_key(self):
+        self.addCleanup(self.mixin._invalidate_key_version_cache)
+        patcher = patch.dict(
+            os.environ, {"ODOO_API_ENCRYPTION_KEY": Fernet.generate_key().decode()}
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.mixin._invalidate_key_version_cache()
+
+    def test_a_handled_decrypt_failure_logs_no_error(self):
+        token = self.mixin._encrypt_value("mine")
+        self._under_a_foreign_key()
+        with self.assertNoLogs(mixin_module._logger, "ERROR"):
+            self.assertIsNone(self.mixin._decrypt_value_safe(token, default=None))
+            with patch.object(
+                type(self.mixin), "_allow_key_fallback", return_value=False
+            ):
+                self.assertIsNone(self.mixin._decrypt_value_safe(token, default=None))
+
+    def test_a_handled_binary_decrypt_failure_logs_no_error(self):
+        class FakeRecord:
+            _name = "fake.record"
+            id = 7
+
+            def __init__(self, mixin, token):
+                self.mixin = mixin
+                self.blob_encrypted = token
+                self.blob_clear = False
+                self.blob = None
+
+            def __iter__(self):
+                return iter([self])
+
+            def __getattr__(self, name):
+                return getattr(self.mixin, name)
+
+        token = self.mixin._encrypt_binary_value(base64.b64encode(b"mine"))
+        self._under_a_foreign_key()
+        fake = FakeRecord(self.mixin, token)
+        with self.assertNoLogs(mixin_module._logger, "ERROR"):
+            MixinEncryption._compute_optional_encrypted_field(
+                fake, "blob_encrypted", "blob_clear", "blob", True
+            )
+        self.assertFalse(fake.blob)
+
+    def test_an_unhandled_decrypt_failure_still_logs_its_error(self):
+        token = self.mixin._encrypt_value("mine")
+        binary_token = self.mixin._encrypt_binary_value(base64.b64encode(b"mine"))
+        self._under_a_foreign_key()
+        with self.assertLogs(mixin_module._logger, "ERROR") as logged:
+            with self.assertRaises(ValidationError):
+                self.mixin._decrypt_value(token)
+            with self.assertRaises(ValidationError):
+                self.mixin._decrypt_binary_value(binary_token)
+        self.assertEqual(
+            [record.levelname for record in logged.records], ["ERROR", "ERROR"]
+        )
+
     def test_the_key_version_resolves_on_a_bare_install(self):
         self.assertIsInstance(self.mixin._get_current_encryption_key_version(), int)
 
@@ -127,6 +185,22 @@ class TestEncryptionMixin(TransactionCase):
             self.mixin._invalidate_key_version_cache()
             self.assertFalse(self.mixin._decrypt_value(b"gAAAAA-anything"))
         self.mixin._invalidate_key_version_cache()
+
+    def test_an_absent_key_refuses_to_encrypt_without_logging_an_error(self):
+        with patch.dict(os.environ, clear=False) as env:
+            env.pop("ODOO_API_ENCRYPTION_KEY", None)
+            with self.assertNoLogs(mixin_module._logger, "ERROR"):
+                with self.assertRaises(ValidationError) as caught:
+                    self.mixin._encrypt_value("unsealable")
+                self.assertIn("Encryption key not configured", str(caught.exception))
+                with self.assertRaises(ValidationError):
+                    self.mixin._encrypt_binary_value(base64.b64encode(b"unsealable"))
+
+    def test_a_malformed_key_still_logs_its_encryption_failure(self):
+        with patch.dict(os.environ, {"ODOO_API_ENCRYPTION_KEY": "not-a-fernet-key"}):
+            with self.assertLogs(mixin_module._logger, "ERROR"):
+                with self.assertRaises(ValidationError):
+                    self.mixin._encrypt_value("unsealable")
 
     def test_a_test_run_without_a_key_is_given_the_fixed_one(self):
         with (

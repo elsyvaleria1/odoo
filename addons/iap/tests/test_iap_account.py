@@ -1,12 +1,14 @@
 import hashlib
+import os
 from unittest.mock import patch
 
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.iap.models import iap_account as iap_account_module
 from odoo.addons.iap.tools import iap_tools
+from odoo.addons.mixin_encryption.models import mixin_encryption as encryption_module
 
 
 @tagged("post_install", "-at_install")
@@ -166,6 +168,26 @@ class TestIapAccount(TransactionCase):
         """acquire_account() refuses a technical name that matches no service."""
         with self.assertRaises(UserError):
             self.env["iap.account"].acquire_account("no_such_service_technical_name")
+
+    def test_acquire_without_a_vault_key_creates_no_account_and_logs_no_error(self):
+        accounts = self.env["iap.account"]
+        credentials = self.env["credential.credential"].sudo()
+        credentials_before = credentials.search_count([])
+        with patch.dict(os.environ, clear=False) as env:
+            env.pop("ODOO_API_ENCRYPTION_KEY", None)
+            with self.assertNoLogs(encryption_module._logger, "ERROR"):
+                self.assertEqual(
+                    accounts.acquire_account(
+                        self.service.technical_name, force_create=False
+                    ),
+                    accounts,
+                )
+                with self.assertRaises(UserError) as caught:
+                    accounts.acquire_account(self.service.technical_name)
+        self.assertNotIsInstance(caught.exception, ValidationError)
+        self.assertIn("ODOO_API_ENCRYPTION_KEY", str(caught.exception))
+        self.assertFalse(accounts.search([("service_id", "=", self.service.id)]))
+        self.assertEqual(credentials.search_count([]), credentials_before)
 
     def test_acquisition_without_creation_keeps_service_unregistered(self):
         accounts = self.env["iap.account"]

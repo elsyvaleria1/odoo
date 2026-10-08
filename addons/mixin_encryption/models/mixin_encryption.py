@@ -10,9 +10,11 @@ from cryptography.fernet import Fernet, InvalidToken
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.libs import sealing
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import config
 
 _logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
 
 _ENCRYPTION_KEY_WARNING_COOLDOWN_SECONDS = 300
 
@@ -100,7 +102,7 @@ class MixinEncryption(models.AbstractModel):
                     setattr(
                         record,
                         target_field,
-                        record._decrypt_binary_value(encrypted_value),
+                        record._decrypt_with_fallback(encrypted_value, binary=True),
                     )
                 else:
                     setattr(
@@ -109,6 +111,7 @@ class MixinEncryption(models.AbstractModel):
                         record._decrypt_value_safe(encrypted_value, default=False),
                     )
             except Exception as e:
+                record._note_handled_decryption_failure(e, binary=binary)
                 _logger.warning(
                     "Safe decrypt failed for %s record %s: %s",
                     record._name,
@@ -173,11 +176,6 @@ class MixinEncryption(models.AbstractModel):
                     "Failed to decrypt binary with current key. Fallback disabled."
                 ),
             )
-        _logger.error(
-            "Current key failed for %s record %s. Fallback disabled (allow_key_fallback=False).",
-            self._name,
-            self.id,
-        )
         return ValidationError(
             self.env._(
                 "Failed to decrypt credential with current key.\n\n"
@@ -189,20 +187,11 @@ class MixinEncryption(models.AbstractModel):
             ),
         )
 
-    def _prepare_no_key_worked_error(
-        self, binary: bool, current_version: int | None
-    ) -> ValidationError:
+    def _prepare_no_key_worked_error(self, binary: bool) -> ValidationError:
         if binary:
             return ValidationError(
                 self.env._("Failed to decrypt binary value with any available key."),
             )
-        _logger.error(
-            "Failed to decrypt value for %s record %s: Invalid encryption key "
-            "(tried current + %d old versions)",
-            self._name,
-            self.id,
-            current_version - 1 if current_version else 0,
-        )
         return ValidationError(
             self.env._(
                 "Failed to decrypt value. Encryption key may have changed.\n\n"
@@ -253,9 +242,6 @@ class MixinEncryption(models.AbstractModel):
                 self.id,
             )
         except Exception as e:
-            _logger.error(
-                "Decryption failed for %s record %s: %s", self._name, self.id, e
-            )
             if binary:
                 raise ValidationError(
                     self.env._("Failed to decrypt binary value: %s") % str(e)
@@ -290,13 +276,39 @@ class MixinEncryption(models.AbstractModel):
                     )
                     continue
 
-        raise self._prepare_no_key_worked_error(binary, current_version)
+        raise self._prepare_no_key_worked_error(binary)
 
     def _decrypt_binary_value(self, encrypted_value: bytes) -> bytes | bool:
-        return self._decrypt_with_fallback(encrypted_value, binary=True)
+        try:
+            return self._decrypt_with_fallback(encrypted_value, binary=True)
+        except ValidationError as error:
+            self._log_decryption_failure(error, binary=True)
+            raise
 
     def _decrypt_value(self, encrypted_value: bytes) -> str | bool:
-        return self._decrypt_with_fallback(encrypted_value, binary=False)
+        try:
+            return self._decrypt_with_fallback(encrypted_value, binary=False)
+        except ValidationError as error:
+            self._log_decryption_failure(error, binary=False)
+            raise
+
+    def _log_decryption_failure(self, error: ValidationError, binary: bool) -> None:
+        _logger.error(
+            "Failed to decrypt %s for %s record %s: %s",
+            "binary value" if binary else "value",
+            self._name,
+            getattr(self, "id", "new"),
+            str(error).split("\n", 1)[0],
+        )
+
+    def _note_handled_decryption_failure(self, error: Exception, binary: bool) -> None:
+        _debug.logic(
+            "decrypt_failed_handled",
+            model=self._name,
+            record=getattr(self, "id", "new"),
+            binary=binary,
+            reason=str(error).split("\n", 1)[0],
+        )
 
     def _decrypt_value_safe(
         self,
@@ -307,8 +319,9 @@ class MixinEncryption(models.AbstractModel):
             return default
 
         try:
-            return self._decrypt_value(encrypted_value)
+            return self._decrypt_with_fallback(encrypted_value, binary=False)
         except Exception as e:
+            self._note_handled_decryption_failure(e, binary=False)
             _logger.warning(
                 "Safe decrypt failed for %s record %s: %s",
                 self._name,
@@ -348,7 +361,7 @@ class MixinEncryption(models.AbstractModel):
             cipher = Fernet(key)
             return cipher.encrypt(raw_bytes)
         except Exception as e:
-            _logger.error("Binary encryption failed: %s", e)
+            self._log_encryption_failure(e, binary=True)
             raise ValidationError(
                 self.env._("Failed to encrypt binary value: %s") % str(e)
             ) from e
@@ -366,10 +379,22 @@ class MixinEncryption(models.AbstractModel):
             cipher = Fernet(key)
             return cipher.encrypt(value.encode("utf-8"))
         except Exception as e:
-            _logger.error("Encryption failed: %s", e)
+            self._log_encryption_failure(e, binary=False)
             raise ValidationError(
                 self.env._("Failed to encrypt value: %s") % str(e)
             ) from e
+
+    def _log_encryption_failure(self, error: Exception, binary: bool) -> None:
+        if not self._is_encryption_available():
+            # The deliberate opt-out: the ValidationError raised next is the
+            # contract, and the caller decides what an unsealable value means.
+            _debug.logic(
+                "encrypt_refused", reason="no_key", model=self._name, binary=binary
+            )
+            return
+        _logger.error(
+            "Binary encryption failed: %s" if binary else "Encryption failed: %s", error
+        )
 
     def _get_current_encryption_key_version(self) -> int | None:
         with _KEY_STATE_LOCK:
