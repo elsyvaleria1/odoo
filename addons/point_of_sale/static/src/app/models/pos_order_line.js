@@ -28,9 +28,6 @@ export class PosOrderline extends PosOrderlineAccounting {
             return;
         }
         this.setFullProductName();
-        if (this.uiState) {
-            this.rememberComboShare();
-        }
     }
 
     initState() {
@@ -40,21 +37,6 @@ export class PosOrderline extends PosOrderlineAccounting {
             savedQuantity: 0,
             oldQty: this.qty,
         };
-        this.rememberComboShare();
-    }
-
-    restoreState(uiState) {
-        super.restoreState(uiState);
-        this.rememberComboShare();
-    }
-
-    /** A zero parent zeroes its children, and the server does not store their
-     * share: it is read whenever the parent's quantity still shows it. */
-    rememberComboShare() {
-        const parentQty = this.combo_parent_id?.qty;
-        if (parentQty) {
-            this.uiState.qtyPerParent = this.qty / parentQty;
-        }
     }
 
     setFullProductName() {
@@ -379,9 +361,9 @@ export class PosOrderline extends PosOrderlineAccounting {
         const oldQty = this.uiState.oldQty;
         for (const comboLine of this.combo_line_ids) {
             if (oldQty) {
-                comboLine.uiState.qtyPerParent = comboLine.qty / oldQty;
+                comboLine.combo_qty_per_parent = comboLine.qty / oldQty;
             }
-            comboLine.setQuantity((comboLine.uiState.qtyPerParent ?? 1) * quant, true);
+            comboLine.setQuantity((comboLine.combo_qty_per_parent || 1) * quant, true);
         }
         return true;
     }

@@ -27,6 +27,7 @@ export class PosOrderLine extends models.ServerModel {
             "combo_parent_id",
             "combo_line_ids",
             "combo_item_id",
+            "combo_qty_per_parent",
             "refund_orderline_ids",
             "extra_tax_data",
             "write_date",

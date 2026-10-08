@@ -179,6 +179,13 @@ class PosOrderLine(models.Model):
         inverse_name="combo_parent_id",
         string="Combo Lines",
     )
+    combo_qty_per_parent = fields.Float(
+        string="Quantity per Combo",
+        compute="_compute_combo_qty_per_parent",
+        store=True,
+        precompute=True,
+        help="Quantity of this combo item in one combo; kept while the combo is at zero.",
+    )
 
     combo_item_id = fields.Many2one(comodel_name="product.combo.item")
     is_edited = fields.Boolean(
@@ -223,10 +230,17 @@ class PosOrderLine(models.Model):
             "combo_parent_id",
             "combo_line_ids",
             "combo_item_id",
+            "combo_qty_per_parent",
             "refund_orderline_ids",
             "extra_tax_data",
             "write_date",
         ]
+
+    @api.depends("qty", "combo_parent_id.qty")
+    def _compute_combo_qty_per_parent(self) -> None:
+        for line in self:
+            if line.combo_parent_id.qty:
+                line.combo_qty_per_parent = line.qty / line.combo_parent_id.qty
 
     @api.depends(
         "refund_orderline_ids",

@@ -1,6 +1,6 @@
 {
     "name": "Point of Sale",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "oldest_upgradable_version": "1.0.12",
     "category": "Sales/Point of Sale",
     "sequence": 40,

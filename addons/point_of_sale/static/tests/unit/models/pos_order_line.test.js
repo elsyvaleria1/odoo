@@ -361,28 +361,21 @@ describe("Test taxes after fiscal position", () => {
     });
 });
 
-test("a combo another device zeroed keeps the share it had when this device loaded it", async () => {
+test("a combo this device first sees at zero scales by the share the server stored", async () => {
     const store = await setupPosEnv();
     const models = store.models;
-    const serverRows = () => {
-        const rows = getAllPricesData();
-        rows["pos.order"][1].state = "draft";
-        for (const row of [...rows["pos.order"], ...rows["pos.order.line"]]) {
-            row.uuid = `remote-${row.id}`;
-        }
-        return rows;
-    };
-    models.loadConnectedData(serverRows());
-    const parent = models["pos.order.line"].get(2);
-    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([2, 1]);
-
-    const zeroed = serverRows();
-    for (const line of zeroed["pos.order.line"].filter((l) =>
-        [2, 3, 4].includes(l.id),
-    )) {
-        line.qty = 0;
+    const rows = getAllPricesData();
+    rows["pos.order"][1].state = "draft";
+    for (const row of [...rows["pos.order"], ...rows["pos.order.line"]]) {
+        row.uuid = `remote-${row.id}`;
     }
-    models.loadConnectedData(zeroed);
+    const shares = { 3: 2, 4: 1 };
+    for (const line of rows["pos.order.line"].filter((l) => [2, 3, 4].includes(l.id))) {
+        line.qty = 0;
+        line.combo_qty_per_parent = shares[line.id] ?? 0;
+    }
+    models.loadConnectedData(rows);
+    const parent = models["pos.order.line"].get(2);
     expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([0, 0]);
 
     parent.setQuantity(3);

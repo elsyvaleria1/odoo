@@ -72,3 +72,5 @@ from . import test_receipt_links
 from . import test_pos_order_settlement
 from . import test_pos_order_concurrency
 from . import test_pos_config_data_load
+from . import test_pos_processed_operation
+from . import test_pos_order_line_combo_share
