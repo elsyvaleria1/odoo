@@ -3,6 +3,7 @@ from odoo.tests import tagged
 
 from odoo.addons.point_of_sale.tests.common import (
     PosCashRoundingSessionCommon,
+    PosOpenSessionCommon,
     TestPoSCommon,
 )
 
@@ -181,3 +182,33 @@ class TestPosOrderLineCostConversion(PosCashRoundingSessionCommon):
 
         self.assertEqual(line.price_cost, 10)
         self.assertEqual(line.total_cost, -30)
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderLineTotalCost(PosOpenSessionCommon):
+    def test_total_cost_survives_a_zero_quantity_refunded_line(self):
+        order = self._create_bare_order(shipping_date=fields.Date.today())
+        zero_line = self.env["pos.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": self.product.id,
+                "qty": 0,
+                "price_unit": 0,
+                "price_subtotal": 0,
+                "price_subtotal_incl": 0,
+                "total_cost": 0,
+            }
+        )
+        refund_line = self.env["pos.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": self.product.id,
+                "qty": -1,
+                "price_unit": 0,
+                "price_subtotal": 0,
+                "price_subtotal_incl": 0,
+                "refunded_orderline_id": zero_line.id,
+            }
+        )
+        refund_line._update_total_cost(self.env["stock.move"])
+        self.assertTrue(refund_line.is_total_cost_computed)

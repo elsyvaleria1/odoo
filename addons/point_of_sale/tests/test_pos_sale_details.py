@@ -1,14 +1,21 @@
 import logging
-from datetime import timedelta
+from datetime import UTC, date, datetime, timedelta
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from lxml import html as lxml_html
 
 import odoo
 from odoo import fields
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import AccessError
+from odoo.fields import Command
 from odoo.tests import new_test_user
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import (
+    CommonPosTest,
+    PosLazySessionCommon,
+    TestPoSCommon,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -199,76 +206,6 @@ class TestPosSaleDetails(TestPoSCommon):
             "grand total amount deduplicated identical rows "
             "(got %s, expected 60.0)" % totals["total"],
         )
-
-
-@odoo.tests.tagged("post_install", "-at_install")
-class TestPosCategoryGuards(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-
-    def test_check_hour_rejects_window_that_never_opens(self):
-        category = self.env["pos.category"].create({"name": "Snacks"})
-
-        with self.assertRaises(ValidationError):
-            category.write({"hour_after": 10.0, "hour_until": 0.0})
-
-        with self.assertRaises(ValidationError):
-            self.env["pos.category"].create(
-                {"name": "Drinks", "hour_after": 10.0, "hour_until": 0.0}
-            )
-
-        with self.assertRaises(ValidationError):
-            category.write({"hour_until": 25.0})
-
-        category.write({"hour_after": 0.0, "hour_until": 24.0})
-        self.assertEqual(category.hour_until, 24.0)
-
-    def test_unlink_ignores_session_that_cannot_show_the_category(self):
-        category = self.env["pos.category"].create({"name": "Snacks"})
-        other_category = self.env["pos.category"].create({"name": "Drinks"})
-        self.config.write(
-            {
-                "limit_categories": True,
-                "iface_available_categ_ids": [(6, 0, other_category.ids)],
-            }
-        )
-        self.config.open_ui()
-
-        category.unlink()
-        self.assertFalse(category.exists())
-
-    def test_unlink_blocked_by_session_that_shows_the_category(self):
-        category = self.env["pos.category"].create({"name": "Snacks"})
-        self.config.write(
-            {
-                "limit_categories": True,
-                "iface_available_categ_ids": [(6, 0, category.ids)],
-            }
-        )
-        self.config.open_ui()
-        session = self.config.current_session_id
-
-        with self.assertRaisesRegex(UserError, session.name):
-            category.unlink()
-
-    def test_unlink_blocked_by_session_restricted_to_no_category(self):
-        category = self.env["pos.category"].create({"name": "Snacks"})
-        self.config.write(
-            {"limit_categories": True, "iface_available_categ_ids": [(5, 0, 0)]}
-        )
-        self.config.open_ui()
-
-        with self.assertRaises(UserError):
-            category.unlink()
-
-    def test_unlink_ignores_session_of_another_company(self):
-        category = self.env["pos.category"].create({"name": "Snacks"})
-        self.config.open_ui()
-        other_company = self.setup_other_company()["company"]
-
-        category.with_context(allowed_company_ids=other_company.ids).unlink()
-        self.assertFalse(category.exists())
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -1747,3 +1684,291 @@ class TestPosSaleDetailsDirections(TestPoSCommon):
         self.assertEqual(invoices[0]["move_total"], 150)
         self.assertEqual(report["invoice_total"], 100)
         self.assertEqual(report["invoice_total"], report["currency"]["total_paid"])
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSaleDetailsCurrencies(PosLazySessionCommon):
+    def test_sessions_in_two_currencies_total_in_the_company_currency(self):
+        self._set_report_rates()
+        product = self.env["product.product"].create(
+            {
+                "name": "Challenge report service",
+                "type": "service",
+                "available_in_pos": True,
+                "taxes_id": [Command.clear()],
+            }
+        )
+        orders = self.env["pos.order"]
+        for config in [self.pos_config_usd, self.pos_config_eur]:
+            orders |= self._create_order_from_specs(
+                [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+                config,
+                paid=True,
+            )
+        report_model = self.env["report.point_of_sale.report_saledetails"]
+        single = report_model.get_sale_details(session_ids=orders[0].session_id.ids)
+        report = report_model.get_sale_details(session_ids=orders.session_id.ids)
+        _logger.debug(
+            "currencies=%s converted=%s product_total=%s payments=%s single=%s",
+            orders.currency_id.mapped("name"),
+            report["currency"]["total_paid"],
+            report["products_info"]["total"],
+            report["total_paid"],
+            single["currency"]["total_paid"],
+        )
+        self.assertEqual(
+            single["currency"]["total_paid"], single["products_info"]["total"]
+        )
+        self.assertEqual(report["currency"]["total_paid"], 300)
+        self.assertEqual(report["products_info"]["total"], 300)
+        self.assertEqual(report["total_paid"], 300)
+
+    def test_taxes_and_discounts_are_converted_to_the_company_currency(self):
+        self._set_report_rates()
+        tax = self.env["account.tax"].create(
+            {
+                "name": "Report ten percent",
+                "amount": 10,
+                "amount_type": "percent",
+            }
+        )
+        product = self.env["product.product"].create(
+            {
+                "name": "Discounted taxed service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        orders = self.env["pos.order"]
+        for config in [self.pos_config_usd, self.pos_config_eur]:
+            orders |= self._create_order_from_specs(
+                [
+                    {
+                        "product_id": product.id,
+                        "qty": 1,
+                        "price_unit": 100,
+                        "discount": 10,
+                        "tax_ids": [Command.set(tax.ids)],
+                    }
+                ],
+                config,
+                paid=True,
+            )
+        report = self.env["report.point_of_sale.report_saledetails"].get_sale_details(
+            session_ids=orders.session_id.ids,
+        )
+        _logger.debug(
+            "REPORT taxed currencies totals=%s taxes=%s discounts=%s payments=%s",
+            report["currency"],
+            report["taxes_info"],
+            report["discount_amount"],
+            report["payments"],
+        )
+        self.assertEqual(report["currency"]["total_paid"], 297)
+        self.assertEqual(report["products_info"]["total"], 270)
+        self.assertEqual(report["taxes_info"]["tax_amount"], 27)
+        self.assertEqual(report["discount_amount"], 30)
+        self.assertEqual(report["total_paid"], 297)
+
+    def test_report_payments_use_the_order_exchange_date(self):
+        self._set_report_rates()
+        later = fields.Date.today() + timedelta(days=1)
+        self.env["res.currency.rate"].create(
+            {
+                "company_id": self.env.company.id,
+                "currency_id": self.env.ref("base.EUR").id,
+                "name": later,
+                "rate": 0.25,
+            }
+        )
+        product = self.env["product.product"].create(
+            {
+                "name": "Dated service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        orders = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}], paid=True
+        )
+        for day in [fields.Date.today(), later]:
+            order = self._create_order_from_specs(
+                [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+                self.pos_config_eur,
+                paid=True,
+            )
+            order.date_order = fields.Datetime.to_datetime(day)
+            orders |= order
+        report = self.env["report.point_of_sale.report_saledetails"].get_sale_details(
+            session_ids=orders.session_id.ids
+        )
+        _logger.debug(
+            "REPORT date-sensitive sale=%s payments=%s",
+            report["currency"]["total_paid"],
+            report["total_paid"],
+        )
+        self.assertEqual(report["currency"]["total_paid"], 700)
+        self.assertEqual(report["products_info"]["total"], 700)
+        self.assertEqual(report["total_paid"], 700)
+
+    def test_foreign_session_counting_difference_uses_report_currency(self):
+        self._set_report_rates()
+        product = self.env["product.product"].create(
+            {
+                "name": "Counted foreign service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        usd_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}], paid=True
+        )
+        eur_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+            self.pos_config_eur,
+            paid=True,
+        )
+        eur_order.session_id.action_pos_session_closing_control(
+            bank_payment_method_diffs={self.bank_payment_method.id: -10}
+        )
+        payment = self.env["account.payment"].search(
+            [("pos_session_id", "=", eur_order.session_id.id)]
+        )
+        self.assertEqual(payment.currency_id, eur_order.currency_id)
+        self.assertEqual(payment.amount, 90)
+        outstanding = payment.move_id.line_ids.filtered(
+            lambda line: line.account_id == payment.outstanding_account_id
+        )
+        self.assertEqual(outstanding.amount_currency, 90)
+        self.assertEqual(outstanding.balance, 180)
+        report_model = self.env["report.point_of_sale.report_saledetails"]
+        for orders, total, counted, difference in [
+            (eur_order, 100, 90, -10),
+            (usd_order | eur_order, 200, 180, -20),
+        ]:
+            report = report_model.get_sale_details(session_ids=orders.session_id.ids)
+            row = next(
+                row
+                for row in report["payments"]
+                if row["session"] == eur_order.session_id.id
+                and row["id"] == self.bank_payment_method.id
+            )
+            _logger.debug("REPORT foreign closed count=%s", row)
+            self.assertEqual(row["total"], total)
+            self.assertEqual(row["money_counted"], counted)
+            self.assertEqual(row["money_difference"], difference)
+            self.assertEqual(
+                sum(move["amount"] for move in row["cash_moves"]), difference
+            )
+
+    def test_exchange_rate_change_is_not_a_cashier_counting_difference(self):
+        self._set_report_rates()
+        product = self.env["product.product"].create(
+            {
+                "name": "Currency count service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        usd_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}], paid=True
+        )
+        eur_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+            self.pos_config_eur,
+            paid=True,
+        )
+        eur_order.session_id.action_pos_session_closing_control()
+        later = fields.Date.today() + timedelta(days=1)
+        self.env["res.currency.rate"].create(
+            {
+                "company_id": self.env.company.id,
+                "currency_id": eur_order.currency_id.id,
+                "name": later,
+                "rate": 0.25,
+            }
+        )
+        eur_order.session_id.stop_at = fields.Datetime.to_datetime(later)
+        report = self.env["report.point_of_sale.report_saledetails"].get_sale_details(
+            session_ids=(usd_order | eur_order).session_id.ids
+        )
+        row = next(
+            row
+            for row in report["payments"]
+            if row["session"] == eur_order.session_id.id
+            and row["id"] == self.bank_payment_method.id
+        )
+        self.assertEqual(row["total"], 200)
+        self.assertEqual(row["money_counted"], 400)
+        self.assertEqual(row["final_count"], 400)
+        self.assertEqual(row["money_difference"], 0)
+        _logger.debug(
+            "REPORT sale rate and closing rate differ without shortage: %s", row
+        )
+
+    def test_foreign_invoice_rows_and_totals_use_report_currency(self):
+        self._set_report_rates()
+        product = self.env["product.product"].create(
+            {
+                "name": "Foreign invoice service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        usd_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}], paid=True
+        )
+        eur_order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+            self.pos_config_eur,
+            paid=True,
+        )
+        eur_order.action_pos_order_invoice()
+        report_model = self.env["report.point_of_sale.report_saledetails"]
+        for orders, expected in [(eur_order, 100), (eur_order | usd_order, 200)]:
+            report = report_model.get_sale_details(session_ids=orders.session_id.ids)
+            invoice_amount = sum(
+                invoice["total"]
+                for session in report["invoice_list"]
+                for invoice in session["invoices"]
+            )
+            self.assertEqual(invoice_amount, expected)
+            self.assertEqual(report["invoice_total"], expected)
+            _logger.debug(
+                "REPORT foreign invoice rows=%s total=%s",
+                invoice_amount,
+                report["invoice_total"],
+            )
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSaleDetailsDefaultWindow(CommonPosTest):
+    def test_the_default_day_ends_at_local_midnight_across_dst(self):
+        report = self.env["report.point_of_sale.report_saledetails"].with_context(
+            tz="America/New_York"
+        )
+        for day, expected_hour, next_day in [
+            (date(2026, 3, 8), 23, False),
+            (date(2026, 11, 1), 23, False),
+            (date(2026, 9, 13), 23, False),
+        ]:
+            with patch.object(fields.Date, "context_today", return_value=day):
+                start, stop = report._get_date_start_and_date_stop(False, False)
+            local_stop = stop.replace(tzinfo=UTC).astimezone(
+                ZoneInfo("America/New_York")
+            )
+            self.assertEqual(local_stop.hour, expected_hour)
+            self.assertEqual(local_stop.date() > day, next_day)
+            expected_stop = datetime.combine(
+                day + timedelta(days=1),
+                datetime.min.time(),
+                ZoneInfo("America/New_York"),
+            ).astimezone(UTC).replace(tzinfo=None) - timedelta(microseconds=1)
+            explicit = report._get_date_start_and_date_stop(start, expected_stop)
+            self.assertEqual(explicit, (start, expected_stop))
+            _logger.debug(
+                "DST day=%s implicit_stop=%s explicit_stop_utc=%s",
+                day,
+                local_stop,
+                explicit[1],
+            )

@@ -741,48 +741,6 @@ class TestPosSessionPaymentPayload(TestPoSCommon):
 
 
 @odoo.tests.tagged("post_install", "-at_install")
-class TestPosConfigPricelistPayload(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("PriceProd", self.categ_basic, 100, 50)
-
-    def test_the_config_answers_without_a_session(self):
-        self.assertFalse(self.config.current_session_id)
-
-        rows = self.env["product.template"]._get_pos_pricelist_data(
-            self.product.product_tmpl_id, self.product, self.config
-        )
-
-        self.assertEqual(sorted(rows), ["product.pricelist", "product.pricelist.item"])
-
-    def test_on_demand_items_include_preset_pricelists(self):
-        takeaway = self.env["product.pricelist"].create({"name": "Takeaway"})
-        item = self.env["product.pricelist.item"].create(
-            {
-                "pricelist_id": takeaway.id,
-                "product_tmpl_id": self.product.product_tmpl_id.id,
-                "applied_on": "1_product",
-                "compute_price": "fixed",
-                "fixed_price": 80,
-            }
-        )
-        preset = self.env["pos.preset"].create(
-            {"name": "Takeaway", "pricelist_id": takeaway.id}
-        )
-        self.config.write(
-            {"use_presets": True, "available_preset_ids": [(4, preset.id)]}
-        )
-
-        rows = self.env["product.template"]._get_pos_pricelist_data(
-            self.product.product_tmpl_id, self.product, self.config
-        )
-
-        self.assertIn(item.id, [row["id"] for row in rows["product.pricelist.item"]])
-        self.assertIn(takeaway.id, [row["id"] for row in rows["product.pricelist"]])
-
-
-@odoo.tests.tagged("post_install", "-at_install")
 class TestPosSessionCashMoveCurrency(TestPoSCommon):
     def setUp(self):
         super().setUp()

@@ -5,7 +5,7 @@ from odoo import Command
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import PosOpenSessionCommon, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
@@ -255,3 +255,24 @@ class TestPosConfigFieldConsistency(TestPoSCommon):
                     "payment_method_ids": [(3, methods.ids[0])],
                 }
             )
+
+
+@tagged("post_install", "-at_install")
+class TestPosConfigWriteVals(PosOpenSessionCommon):
+    def test_write_leaves_the_caller_dict_alone(self):
+        vals = {"is_order_printer": False}
+        self.pos_config_usd.write(vals)
+        self.assertEqual(vals, {"is_order_printer": False})
+
+    def test_write_does_not_carry_values_over_between_configs(self):
+        printer = self.env["pos.printer"].create(
+            {"name": "Kitchen", "proxy_ip": "10.0.0.1"}
+        )
+        for config in (self.pos_config_usd, self.pos_config_eur):
+            config.write(
+                {"is_order_printer": True, "printer_ids": [Command.link(printer.id)]}
+            )
+        vals = {"iface_big_scrollbars": True}
+        self.pos_config_usd.write(vals)
+        self.pos_config_eur.write(vals)
+        self.assertIn(printer, self.pos_config_eur.printer_ids)

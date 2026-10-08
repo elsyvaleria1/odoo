@@ -3,21 +3,13 @@ import logging
 from odoo import fields
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest, TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import PosOpenSessionCommon, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
-class TestPosOrderLookup(CommonPosTest):
-    def setUp(self):
-        super().setUp()
-        self.pos_config_usd.open_ui()
-        self.session = self.pos_config_usd.current_session_id
-        self.product = self.env["product.product"].search(
-            [("available_in_pos", "=", True)], limit=1
-        )
-
+class TestPosOrderLookup(PosOpenSessionCommon):
     def _create_order(self, *, with_line=True, state="paid"):
         order = self.env["pos.order"].create(
             {

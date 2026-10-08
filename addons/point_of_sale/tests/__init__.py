@@ -18,6 +18,7 @@ from . import test_pos_bus_token
 from . import test_pos_cash_in_out
 from . import test_pos_cash_payment_method
 from . import test_pos_cash_rounding
+from . import test_pos_category
 from . import test_pos_closing_rounding
 from . import test_pos_config_dashboard
 from . import test_pos_config_data_load
@@ -34,11 +35,12 @@ from . import test_pos_invoice_guards
 from . import test_pos_load_scoping
 from . import test_pos_lock_dates
 from . import test_pos_margin
-from . import test_pos_model_regressions
 from . import test_pos_multiple_receivable_accounts
 from . import test_pos_onboarding_scenarios
+from . import test_pos_order_batch
 from . import test_pos_order_concurrency
 from . import test_pos_order_costing
+from . import test_pos_order_create
 from . import test_pos_order_line_combo_share
 from . import test_pos_order_line_pricing
 from . import test_pos_order_lookup
@@ -49,13 +51,14 @@ from . import test_pos_order_settlement
 from . import test_pos_order_sync
 from . import test_pos_order_unit_cost
 from . import test_pos_other_currency_config
+from . import test_pos_payment_method
 from . import test_pos_picking
 from . import test_pos_preset
+from . import test_pos_printer
 from . import test_pos_processed_operation
 from . import test_pos_product_template
 from . import test_pos_product_variants
 from . import test_pos_products_with_tax
-from . import test_pos_robustness
 from . import test_pos_sale_details
 from . import test_pos_session_amounts
 from . import test_pos_session_closing_integrity

@@ -11,6 +11,7 @@ from odoo.tests import tagged
 
 from odoo.addons.point_of_sale.tests.common import (
     PosCashRoundingSessionCommon,
+    PosOpenSessionCommon,
     TestPoSCommon,
 )
 
@@ -280,4 +281,96 @@ class TestPosOrderSyncAccessToken(TestPoSCommon):
             self.env["pos.order"].search([("uuid", "=", uuid)]).access_token,
             minted,
             "client rotated the access_token through the update path",
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderReadPayload(PosOpenSessionCommon):
+    def test_the_payload_without_a_config_has_the_same_keys_and_no_rows(self):
+        order = self._create_bare_order()
+        with_config = order.read_pos_data([], self.pos_config_usd)
+        without_config = order.read_pos_data([], False)
+        self.assertEqual(set(with_config), set(without_config))
+        self.assertTrue(all(value == [] for value in without_config.values()))
+
+    def _spy_read_pos_data(self):
+        PosOrder = type(self.env["pos.order"])
+        read_pos_data = PosOrder.read_pos_data
+        reads = []
+
+        def spy(orders, data, config):
+            reads.append((orders.config_id, config))
+            return read_pos_data(orders, data, config)
+
+        return patch.object(PosOrder, "read_pos_data", spy), reads
+
+    def _line_vals(self, qty, **vals):
+        return {
+            "product_id": self.product.id,
+            "qty": qty,
+            "price_unit": 0,
+            "price_subtotal": 0,
+            "price_subtotal_incl": 0,
+            **vals,
+        }
+
+    def test_orders_of_two_configs_are_each_read_with_their_own_config(self):
+        self.pos_config_eur.open_ui()
+        eur_order = self._create_bare_order(
+            session_id=self.pos_config_eur.current_session_id.id
+        )
+        usd_order = self._create_bare_order()
+        spying, reads = self._spy_read_pos_data()
+        with spying:
+            result = self.env["pos.order"].read_pos_orders(
+                [("id", "in", (usd_order | eur_order).ids)]
+            )
+        self.assertCountEqual(
+            reads,
+            [
+                (self.pos_config_usd, self.pos_config_usd),
+                (self.pos_config_eur, self.pos_config_eur),
+            ],
+        )
+        self.assertCountEqual(
+            [row["id"] for row in result["pos.order"]], (usd_order | eur_order).ids
+        )
+
+    def test_a_refund_synced_on_another_config_reads_each_order_with_its_config(self):
+        sold = self._create_bare_order(lines=[Command.create(self._line_vals(1))])
+        self.pos_config_eur.open_ui()
+        refund_uuid = "11111111-2222-4333-8444-555555555555"
+        spying, reads = self._spy_read_pos_data()
+        with spying:
+            result = self.env["pos.order"].sync_from_ui(
+                [
+                    {
+                        "uuid": refund_uuid,
+                        "session_id": self.pos_config_eur.current_session_id.id,
+                        "state": "draft",
+                        "amount_tax": 0,
+                        "amount_total": 0,
+                        "amount_paid": 0,
+                        "amount_return": 0,
+                        "last_order_preparation_change": "{}",
+                        "lines": [
+                            Command.create(
+                                self._line_vals(-1, refunded_orderline_id=sold.lines.id)
+                            )
+                        ],
+                    }
+                ]
+            )
+        self.assertCountEqual(
+            reads,
+            [
+                (self.pos_config_usd, self.pos_config_usd),
+                (self.pos_config_eur, self.pos_config_eur),
+            ],
+        )
+        self.assertCountEqual(
+            [row["uuid"] for row in result["pos.order"]], [sold.uuid, refund_uuid]
+        )
+        self.assertEqual(
+            [row["id"] for row in result["pos.order.line"]].count(sold.lines.id), 1
         )

@@ -3,7 +3,7 @@ import logging
 from odoo.service.model import call_kw
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import PosOpenSessionCommon, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
@@ -126,3 +126,16 @@ class TestPosConfigSequences(TestPoSCommon):
         call_kw(self.env["pos.config"].with_user(manager), "unlink", [[config.id]], {})
         self.assertFalse(config.exists())
         self.assertFalse(sequences.exists())
+
+
+@tagged("post_install", "-at_install")
+class TestPosConfigSequenceCodes(PosOpenSessionCommon):
+    def test_the_four_config_sequences_have_distinct_codes(self):
+        config = self.pos_config_usd
+        codes = [
+            config.order_seq_id.code,
+            config.order_backend_seq_id.code,
+            config.order_line_seq_id.code,
+            config.device_seq_id.code,
+        ]
+        self.assertEqual(len(set(codes)), 4, codes)

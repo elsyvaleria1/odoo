@@ -4,9 +4,10 @@ from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import UserError
+from odoo.fields import Command
 from odoo.tests import new_test_user, tagged
 
-from .common import TestPoSCommon
+from .common import PosLazySessionCommon, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
@@ -748,3 +749,78 @@ class TestPosSessionCountedBankDifference(TestPoSCommon):
                 self.assertEqual(sum(lines.mapped("balance")), 20 * sign)
                 self.assertEqual(moves.state, "posted")
                 self.assertFalse(empty.bank_payment_ids)
+
+
+@tagged("post_install", "-at_install")
+class TestPosSessionClosingAccounting(PosLazySessionCommon):
+    def test_an_unbalanced_close_keeps_the_orders_and_a_retry_closes(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "Challenge unbalanced service",
+                "type": "service",
+                "available_in_pos": True,
+                "taxes_id": [Command.clear()],
+            }
+        )
+        order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 10}], paid=True
+        )
+        session = order.session_id
+        original = type(session)._create_account_move
+
+        def unbalanced(record, *args, **kwargs):
+            result = original(record, *args, **kwargs)
+            line = record.move_id.line_ids.filtered(lambda l: l.debit > 0)[:1]
+            line.with_context(check_move_validity=False).write(
+                {"debit": line.debit + 1}
+            )
+            _logger.debug(
+                "injected imbalance=%s into move=%s",
+                sum(record.move_id.line_ids.mapped("balance")),
+                record.move_id.id,
+            )
+            return result
+
+        with patch.object(type(session), "_create_account_move", unbalanced):
+            action = session.action_pos_session_closing_control()
+        self.assertEqual(action["res_model"], "wizard.pos.session.close.unbalanced")
+        self.assertTrue(order.exists())
+        self.assertEqual(order.state, "paid")
+        self.assertFalse(session.move_id)
+        session.action_pos_session_closing_control()
+        self.assertEqual(session.state, "closed")
+        _logger.debug(
+            "unbalanced close preserved order=%s and retry closed session=%s",
+            order.id,
+            session.id,
+        )
+
+    def test_a_split_foreign_bank_payment_keeps_the_session_currency(self):
+        self._set_report_rates()
+        self.bank_payment_method.split_transactions = True
+        product = self.env["product.product"].create(
+            {
+                "name": "Split foreign service",
+                "type": "service",
+                "available_in_pos": True,
+            }
+        )
+        order = self._create_order_from_specs(
+            [{"product_id": product.id, "qty": 1, "price_unit": 100}],
+            self.pos_config_eur,
+            paid=True,
+        )
+        order.session_id.action_pos_session_closing_control()
+        payment = self.env["account.payment"].search(
+            [("pos_session_id", "=", order.session_id.id)]
+        )
+        self.assertEqual(payment.currency_id, order.currency_id)
+        self.assertEqual(payment.amount, 100)
+        self.assertEqual(payment.amount_company_currency_signed, 200)
+        _logger.debug(
+            "ACCOUNT split foreign payment=%s currency=%s amount=%s company_amount=%s",
+            payment.id,
+            payment.currency_id.name,
+            payment.amount,
+            payment.amount_company_currency_signed,
+        )

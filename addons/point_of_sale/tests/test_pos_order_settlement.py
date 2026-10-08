@@ -7,6 +7,7 @@ from odoo.tests import tagged
 from odoo.addons.point_of_sale.tests.common import (
     PosCashRoundingCommon,
     PosCashRoundingSessionCommon,
+    PosOpenSessionCommon,
 )
 
 _logger = logging.getLogger(__name__)
@@ -500,3 +501,25 @@ class TestPosOrderCashOnlyRounding(PosCashRoundingSessionCommon):
 
         self.assertEqual(self.session.state, "closed")
         self.assertEqual(self.session.move_id.state, "posted")
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderPrintedPayments(PosOpenSessionCommon):
+    def test_a_printed_paid_order_refuses_a_new_payment(self):
+        cash_pm = self.session.payment_method_ids.filtered("is_cash_count")[:1]
+        order = self._create_bare_order(state="paid", nb_print=1)
+        with self.assertRaises(UserError):
+            order.write(
+                {
+                    "payment_ids": [
+                        Command.create(
+                            {
+                                "payment_method_id": cash_pm.id,
+                                "amount": 5,
+                                "payment_status": "done",
+                            }
+                        )
+                    ]
+                }
+            )
+        self.assertFalse(order.payment_ids)

@@ -8,7 +8,10 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import PosCashRoundingSessionCommon
+from odoo.addons.point_of_sale.tests.common import (
+    PosCashRoundingSessionCommon,
+    PosOpenSessionCommon,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -142,3 +145,28 @@ class TestPosOrderPreparationChange(PosCashRoundingSessionCommon):
                     {expected_key: 1},
                 )
                 self.assertEqual(values, expected)
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderPreparationChangeMerge(PosOpenSessionCommon):
+    def test_keeping_the_newest_change_needs_a_single_order(self):
+        first = self._create_bare_order()
+        second = self._create_bare_order()
+        with self.assertRaises(ValueError):
+            (first | second)._keep_newest_preparation_change({})
+
+    def test_an_older_dated_change_keeps_the_newer_server_payload(self):
+        order = self._create_bare_order()
+        order.last_order_preparation_change = json_dumps(
+            {"metadata": {"serverDate": "2030-01-01 00:00:00"}}
+        )
+        vals = {
+            "last_order_preparation_change": json_dumps(
+                {"metadata": {"serverDate": "2020-01-01 00:00:00"}}
+            )
+        }
+        order._keep_newest_preparation_change(vals)
+        self.assertEqual(
+            json_loads(vals["last_order_preparation_change"])["metadata"]["serverDate"],
+            "2030-01-01 00:00:00",
+        )

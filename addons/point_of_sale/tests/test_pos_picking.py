@@ -1,14 +1,18 @@
+import logging
+
 import odoo
 from odoo.exceptions import ValidationError
 from odoo.fields import Command
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest
+from odoo.addons.point_of_sale.tests.common import PosLazySessionCommon
+
+_logger = logging.getLogger(__name__)
 
 LOGGER = "odoo.addons.point_of_sale.models.stock_picking"
 
 
 @odoo.tests.tagged("post_install", "-at_install")
-class TestPosPicking(CommonPosTest):
+class TestPosPicking(PosLazySessionCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -229,3 +233,152 @@ class TestPosPicking(CommonPosTest):
         )
         with self.assertRaisesRegex(ValidationError, config.name):
             (unused_type | used_type).write({"active": False})
+
+    def test_a_lot_spread_over_two_bins_is_consumed_whether_split_or_single_line(self):
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        self.pos_config_usd.picking_type_id = warehouse.pos_type_id
+        warehouse.pos_type_id.use_existing_lots = True
+        root = warehouse.lot_stock_id
+        bins = self.env["stock.location"].create(
+            [
+                {
+                    "name": name,
+                    "location_id": root.id,
+                    "company_id": self.env.company.id,
+                }
+                for name in ["Challenge A", "Challenge B"]
+            ]
+        )
+        for split in [False, True]:
+            product = self.env["product.product"].create(
+                {
+                    "name": f"Challenge lot {split}",
+                    "is_storable": True,
+                    "tracking": "lot",
+                    "available_in_pos": True,
+                }
+            )
+            lot = self.env["product.trace"].create(
+                {
+                    "name": f"LOT-{split}",
+                    "product_id": product.id,
+                    "company_id": self.env.company.id,
+                }
+            )
+            for location in bins:
+                self.env["stock.quant"]._update_available_quantity(
+                    product, location, 1, trace_id=lot
+                )
+            quantities = [1, 1] if split else [2]
+            order = self._create_order_from_specs(
+                [
+                    {
+                        "product_id": product.id,
+                        "qty": qty,
+                        "price_unit": index + 1,
+                        "pack_lot_ids": [Command.create({"lot_name": lot.name})],
+                    }
+                    for index, qty in enumerate(quantities)
+                ]
+            )
+            order._create_order_picking()
+            quants = self.env["stock.quant"].search(
+                [("product_id", "=", product.id), ("location_id", "in", bins.ids)]
+            )
+            balances = sorted(quants.mapped("quantity"))
+            _logger.debug(
+                "stock persisted=%s split=%s states=%s balances=%s",
+                order.lines.ids,
+                split,
+                order.picking_ids.mapped("state"),
+                balances,
+            )
+            self.assertEqual(order.picking_ids.mapped("state"), ["done"])
+            self.assertEqual(balances, [0.0, 0.0])
+
+    def test_no_variant_lines_of_one_lot_are_moved_and_reserved_in_full(self):
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        self.pos_config_usd.picking_type_id = warehouse.pos_type_id
+        warehouse.pos_type_id.use_existing_lots = True
+        attribute = self.env["product.attribute"].create(
+            {"name": "Challenge inscription", "create_variant": "no_variant"}
+        )
+        values = self.env["product.attribute.value"].create(
+            [{"name": label, "attribute_id": attribute.id} for label in ["A", "B"]]
+        )
+        product = self.env["product.product"].create(
+            {
+                "name": "Challenge group",
+                "is_storable": True,
+                "tracking": "lot",
+                "available_in_pos": True,
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": attribute.id,
+                            "value_ids": [Command.set(values.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        ptavs = product.attribute_line_ids.product_template_value_ids
+        lot = self.env["product.trace"].create(
+            {
+                "name": "GROUP-LOT",
+                "product_id": product.id,
+                "company_id": self.env.company.id,
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            product, warehouse.lot_stock_id, 10, trace_id=lot
+        )
+        order = self._create_order_from_specs(
+            [
+                {
+                    "product_id": product.id,
+                    "qty": 1,
+                    "attribute_value_ids": [Command.set(ptav.ids)],
+                    "pack_lot_ids": [Command.create({"lot_name": lot.name})],
+                }
+                for ptav in ptavs
+            ]
+        )
+        order._create_order_picking()
+        moves = order.picking_ids.move_ids
+        _logger.debug(
+            "grouping ordered=%s demands=%s done_quantities=%s attrs=%s",
+            sum(order.lines.mapped("qty")),
+            moves.mapped("product_uom_qty"),
+            moves.mapped("quantity"),
+            [m.never_product_template_attribute_value_ids.ids for m in moves],
+        )
+        self.assertEqual(sum(order.lines.mapped("qty")), 2)
+        self.assertEqual(sum(moves.mapped("quantity")), 2)
+
+        reservation = order.picking_ids.copy({"move_ids": [Command.clear()]})
+        groups = order.lines.grouped(lambda line: tuple(line.attribute_value_ids.ids))
+        reserved_moves = (
+            self.env["stock.move"]
+            .create(
+                [
+                    reservation._prepare_stock_move_vals(lines)
+                    for lines in groups.values()
+                ]
+            )
+            ._action_confirm()
+        )
+        # Match the order procurement caller: replace the automatic reservation.
+        reserved_moves.move_line_ids.unlink()
+        reserved_moves._add_move_lines_from_pos_order_lines(
+            order.lines, are_quantities_done=False
+        )
+        self.assertEqual(reserved_moves.mapped("quantity"), [1, 1])
+        _logger.debug(
+            "STOCK attribute reservation quantities=%s",
+            reserved_moves.mapped("quantity"),
+        )

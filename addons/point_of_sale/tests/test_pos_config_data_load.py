@@ -8,7 +8,15 @@ from odoo.db.metrics import observing_statements
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import new_test_user
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+from odoo.addons.point_of_sale.models.pos_config import (
+    DEFAULT_LIMIT_LOAD_PARTNER,
+    DEFAULT_LIMIT_LOAD_PRODUCT,
+)
+from odoo.addons.point_of_sale.tests.common import (
+    PosLazySessionCommon,
+    PosOpenSessionCommon,
+    TestPoSCommon,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -426,3 +434,280 @@ class TestPosConfigDataLoad(TestPoSCommon):
             self.assertNotIn(excluded, fields)
         for required in ("id", "name", "company_id", "currency_id", "cash_control"):
             self.assertIn(required, fields)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosConfigPricelistPayload(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.product = self.create_product("PriceProd", self.categ_basic, 100, 50)
+
+    def test_on_demand_pricelist_data_needs_no_open_session(self):
+        self.assertFalse(self.config.current_session_id)
+
+        rows = self.env["product.template"]._get_pos_pricelist_data(
+            self.product.product_tmpl_id, self.product, self.config
+        )
+
+        self.assertEqual(sorted(rows), ["product.pricelist", "product.pricelist.item"])
+
+    def test_on_demand_items_include_preset_pricelists(self):
+        takeaway = self.env["product.pricelist"].create({"name": "Takeaway"})
+        item = self.env["product.pricelist.item"].create(
+            {
+                "pricelist_id": takeaway.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "applied_on": "1_product",
+                "compute_price": "fixed",
+                "fixed_price": 80,
+            }
+        )
+        preset = self.env["pos.preset"].create(
+            {"name": "Takeaway", "pricelist_id": takeaway.id}
+        )
+        self.config.write(
+            {"use_presets": True, "available_preset_ids": [(4, preset.id)]}
+        )
+
+        rows = self.env["product.template"]._get_pos_pricelist_data(
+            self.product.product_tmpl_id, self.product, self.config
+        )
+
+        self.assertIn(item.id, [row["id"] for row in rows["product.pricelist.item"]])
+        self.assertIn(takeaway.id, [row["id"] for row in rows["product.pricelist"]])
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosConfigLoadLimits(PosLazySessionCommon):
+    def test_limits_beyond_the_bigint_range_still_load(self):
+        parameters = self.env["ir.config_parameter"].sudo()
+        for name in ("limited_product_count", "limited_customer_count"):
+            parameters.set_param(f"point_of_sale.{name}", str(2**63))
+        _logger.debug("load with limits outside PostgreSQL bigint range")
+        data = self._ensure_session().load_data([])
+        self.assertTrue(data["product.template"])
+        self.assertTrue(data["res.partner"])
+
+    def test_negative_limits_fall_back_to_the_defaults(self):
+        parameters = self.env["ir.config_parameter"].sudo()
+        for name in ("limited_product_count", "limited_customer_count"):
+            parameters.set_param(f"point_of_sale.{name}", "-1")
+        _logger.debug(
+            "LOAD negative product and customer limits through complete session load"
+        )
+        data = self._ensure_session().load_data([])
+        self.assertTrue(data["product.template"])
+        self.assertTrue(data["res.partner"])
+
+    def test_limit_parsing_keeps_zero_and_positive_values(self):
+        parameters = self.env["ir.config_parameter"].sudo()
+        config = self.pos_config_usd
+        for name, getter, default in (
+            (
+                "limited_product_count",
+                config.get_limited_product_count,
+                DEFAULT_LIMIT_LOAD_PRODUCT,
+            ),
+            (
+                "limited_customer_count",
+                config._get_limited_partner_count,
+                DEFAULT_LIMIT_LOAD_PARTNER,
+            ),
+        ):
+            for value in ("0", "7", str(2**63 - 1), "-1", "invalid"):
+                with self.subTest(name=name, value=value):
+                    parameters.set_param(f"point_of_sale.{name}", value)
+                    count = getter()
+                    _logger.debug(
+                        "LOAD parameter=%s value=%r parsed=%s", name, value, count
+                    )
+                    if value in ("invalid", "-1"):
+                        self.assertEqual(count, default)
+                    else:
+                        self.assertEqual(count, int(value))
+
+    def test_manufacturers_are_preloaded_after_the_other_partners(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "1"
+        )
+        brand = self.env["res.partner"].create(
+            {"name": "000 Brand", "is_manufacturer": True}
+        )
+        customer = self.env["res.partner"].create({"name": "000 Brand Customer"})
+        ranked = [row[0] for row in self.pos_config_usd.get_limited_partners_loading()]
+        self.assertEqual(ranked, customer.ids)
+        searched = self.env["res.partner"].get_new_partner(
+            self.pos_config_usd.id, [("name", "ilike", "000 Brand%")], 0
+        )["res.partner"]
+        self.assertIn(brand.id, [row["id"] for row in searched])
+
+    def test_bank_parties_are_not_offered_as_customers(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "1"
+        )
+        bank = self.env["res.bank"].create(
+            {"name": "000 Bank Party", "bic": "BKPTXXXX"}
+        )
+        customer = self.env["res.partner"].create({"name": "000 Bank Party Customer"})
+        ranked = [row[0] for row in self.pos_config_usd.get_limited_partners_loading()]
+        self.assertEqual(ranked, customer.ids)
+        searched = self.env["res.partner"].get_new_partner(
+            self.pos_config_usd.id, [("name", "ilike", "000 Bank Party%")], 0
+        )["res.partner"]
+        self.assertEqual([row["id"] for row in searched], customer.ids)
+        self.assertNotIn(bank.partner_id.id, [row["id"] for row in searched])
+
+    def test_a_hidden_first_page_does_not_shift_the_next_one(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "3"
+        )
+        partners = self.env["res.partner"].create(
+            [{"name": f"000 Challenge Page {i}"} for i in range(6)]
+        )
+        ranked = [row[0] for row in self.pos_config_usd.get_limited_partners_loading()]
+        self.assertEqual(ranked, partners[:3].ids)
+        self.env["ir.access"].sudo().create(
+            {
+                "name": "Challenge hide first page",
+                "model_id": self.env["ir.model"]._get("res.partner").id,
+                "group_id": self.env.ref("base.group_everyone").id,
+                "kind": "guard",
+                "operation": "r",
+                "domain": repr([("id", "not in", partners[:3].ids)]),
+            }
+        )
+        first = self.env["res.partner"].get_new_partner(self.pos_config_usd.id, [], 0)[
+            "res.partner"
+        ]
+        client_offset = len(first) or 100
+        actual_next = self.env["res.partner"].get_new_partner(
+            self.pos_config_usd.id, [], client_offset
+        )["res.partner"]
+        correct_next = self.env["res.partner"].get_new_partner(
+            self.pos_config_usd.id, [], 3
+        )["res.partner"]
+        _logger.debug(
+            "pagination ranked=%s first=%s client_offset=%s next=%s correct_next=%s",
+            ranked,
+            [r["id"] for r in first],
+            client_offset,
+            [r["id"] for r in actual_next],
+            [r["id"] for r in correct_next],
+        )
+        self.assertEqual({r["id"] for r in first}, set(partners[3:].ids))
+        self.assertFalse(set(partners.ids) & {r["id"] for r in actual_next})
+        self.assertEqual(actual_next, correct_next)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosConfigPricelistDelta(PosLazySessionCommon):
+    def test_a_scheduled_rule_is_in_the_initial_load_the_delta_and_the_full_reload(
+        self,
+    ):
+        config = self.pos_config_usd
+        pricelist = self.env["product.pricelist"].create(
+            {"name": "Challenge future prices", "currency_id": config.currency_id.id}
+        )
+        config.write(
+            {
+                "use_pricelist": True,
+                "pricelist_id": pricelist.id,
+                "available_pricelist_ids": [Command.set(pricelist.ids)],
+            }
+        )
+        session = self._ensure_session(config)
+        cutoff = self.env.cr.now() + timedelta(hours=1)
+        starts = cutoff + timedelta(days=1)
+        item = self.env["product.pricelist.item"].create(
+            {
+                "pricelist_id": pricelist.id,
+                "applied_on": "3_global",
+                "compute_price": "fixed",
+                "fixed_price": 7,
+                "date_start": starts,
+            }
+        )
+        with patch.object(fields.Datetime, "now", return_value=cutoff):
+            initial = session.load_data([])
+        with patch.object(
+            fields.Datetime, "now", return_value=starts + timedelta(hours=1)
+        ):
+            delta = session.with_context(
+                pos_last_server_date=fields.Datetime.to_string(cutoff)
+            ).load_data([])
+            full = session.with_context(pos_limited_loading=False).load_data([])
+
+        def ids(data):
+            return [row["id"] for row in data["product.pricelist.item"]]
+
+        _logger.debug(
+            "scheduled initial=%s delta=%s full=%s item=%s config_change=%s cutoff=%s",
+            ids(initial),
+            ids(delta),
+            ids(full),
+            item.id,
+            config.last_data_change,
+            cutoff,
+        )
+        self.assertIn(item.id, ids(initial))
+        self.assertIn(item.id, ids(delta))
+        self.assertIn(item.id, ids(full))
+
+    def test_the_delta_and_on_demand_load_carry_rules_of_unchanged_products(self):
+        config = self.pos_config_usd
+        pricelist = self.env["product.pricelist"].create(
+            {"name": "Product scheduled prices"}
+        )
+        config.write(
+            {
+                "use_pricelist": True,
+                "pricelist_id": pricelist.id,
+                "available_pricelist_ids": [Command.set(pricelist.ids)],
+            }
+        )
+        product = self.env["product.product"].create(
+            {"name": "Unchanged priced product", "available_in_pos": True}
+        )
+        cutoff = self.env.cr.now() + timedelta(hours=1)
+        item = self.env["product.pricelist.item"].create(
+            {
+                "pricelist_id": pricelist.id,
+                "product_id": product.id,
+                "applied_on": "0_product_variant",
+                "compute_price": "fixed",
+                "fixed_price": 7,
+                "date_start": cutoff + timedelta(days=1),
+            }
+        )
+        session = self._ensure_session(config)
+        delta = session.with_context(
+            pos_last_server_date=fields.Datetime.to_string(cutoff)
+        ).load_data([])
+        self.assertNotIn(
+            product.product_tmpl_id.id, [row["id"] for row in delta["product.template"]]
+        )
+        self.assertIn(item.id, [row["id"] for row in delta["product.pricelist.item"]])
+        on_demand = self.env["product.template"]._get_pos_pricelist_data(
+            product.product_tmpl_id, product, config
+        )
+        self.assertIn(
+            item.id, [row["id"] for row in on_demand["product.pricelist.item"]]
+        )
+        _logger.debug(
+            "LOAD unchanged product=%s scheduled item=%s included in delta and on demand",
+            product.id,
+            item.id,
+        )
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosConfigCompanyPayload(PosOpenSessionCommon):
+    def test_is_vat_follows_the_config_company(self):
+        config = self.pos_config_usd
+        config.company_id.country_id = self.env.ref("base.be")
+        payload = config._load_pos_data_read(config, config)
+        self.assertTrue(payload[0]["_IS_VAT"])
+        config.company_id.country_id = self.env.ref("base.us")
+        payload = config._load_pos_data_read(config, config)
+        self.assertFalse(payload[0]["_IS_VAT"])

@@ -8,6 +8,7 @@ from unittest.mock import patch
 from odoo import fields, models, tools
 from odoo.fields import Command
 from odoo.tests import Form
+from odoo.tools import SQL
 
 from odoo.addons.stock_account.tests.test_anglo_saxon_valuation_reconciliation_common import (
     ValuationReconciliationTestCommon,
@@ -527,7 +528,122 @@ class CommonPosTest(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
         return untax, sum(tax.get("amount", 0.0) for tax in res["taxes"])
 
 
-class PosCashRoundingCommon(CommonPosTest):
+class PosBareOrderCommon(CommonPosTest):
+    def _create_bare_order(self, **values):
+        return self.env["pos.order"].create(
+            {
+                "session_id": self.session.id,
+                "amount_tax": 0,
+                "amount_total": 0,
+                "amount_paid": 0,
+                "amount_return": 0,
+                **values,
+            }
+        )
+
+
+class PosOpenSessionCommon(PosBareOrderCommon):
+    def setUp(self):
+        super().setUp()
+        self.pos_config_usd.open_ui()
+        self.session = self.pos_config_usd.current_session_id
+        self.product = self.env["product.product"].search(
+            [("available_in_pos", "=", True)], limit=1
+        )
+
+
+class PosLazySessionCommon(CommonPosTest):
+    def _ensure_session(self, config=None):
+        config = config or self.pos_config_usd
+        if not config.current_session_id:
+            config.open_ui()
+        return config.current_session_id
+
+    def _create_order_from_specs(self, specs, config=None, paid=False):
+        session = self._ensure_session(config)
+        total = sum(spec["qty"] * spec.get("price_unit", 1) for spec in specs)
+        order = self.env["pos.order"].create(
+            {
+                "session_id": session.id,
+                "partner_id": self.partner_mobt.id,
+                "pricelist_id": session.config_id.pricelist_id.id,
+                "amount_total": total,
+                "amount_paid": 0,
+                "amount_tax": 0,
+                "amount_return": 0,
+                "lines": [
+                    Command.create(
+                        {
+                            "price_unit": 1,
+                            "price_subtotal": spec["qty"] * spec.get("price_unit", 1),
+                            "price_subtotal_incl": spec["qty"]
+                            * spec.get("price_unit", 1),
+                            "tax_ids": [Command.clear()],
+                            **spec,
+                        }
+                    )
+                    for spec in specs
+                ],
+            }
+        )
+        if paid:
+            order._recompute_amounts()
+            self.env["pos.payment"].create(
+                {
+                    "pos_order_id": order.id,
+                    "payment_method_id": self.bank_payment_method.id,
+                    "amount": order.amount_total,
+                }
+            )
+            order._recompute_amounts()
+            order.action_pos_order_paid()
+        return order
+
+    def _stamp(self, records, when):
+        self.env.flush_all()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE %s SET write_date = %s WHERE id = ANY(%s)",
+                SQL.identifier(records._table),
+                when,
+                records.ids,
+            )
+        )
+        records.invalidate_recordset(["write_date"])
+        _logger.debug(
+            "stamp %s ids=%s dates=%s",
+            records._name,
+            records.ids,
+            records.mapped("write_date"),
+        )
+
+    def _set_report_rates(self):
+        company = self.env.company
+        usd, eur = self.env.ref("base.USD"), self.env.ref("base.EUR")
+        today = fields.Date.today()
+        rates = self.env["res.currency.rate"].search(
+            [("company_id", "=", company.id), ("currency_id", "in", (usd | eur).ids)]
+        )
+        rates.unlink()
+        self.env["res.currency.rate"].create(
+            [
+                {
+                    "company_id": company.id,
+                    "currency_id": usd.id,
+                    "name": today,
+                    "rate": 1,
+                },
+                {
+                    "company_id": company.id,
+                    "currency_id": eur.id,
+                    "name": today,
+                    "rate": 0.5,
+                },
+            ]
+        )
+
+
+class PosCashRoundingCommon(PosBareOrderCommon):
     def _open_session(self, rounding_method="HALF-UP"):
         self.rounding = self.env["account.cash.rounding"].create(
             {
@@ -547,18 +663,6 @@ class PosCashRoundingCommon(CommonPosTest):
         )
         self.pos_config_usd.open_ui()
         self.session = self.pos_config_usd.current_session_id
-
-    def _create_bare_order(self, **values):
-        return self.env["pos.order"].create(
-            {
-                "session_id": self.session.id,
-                "amount_tax": 0,
-                "amount_total": 0,
-                "amount_paid": 0,
-                "amount_return": 0,
-                **values,
-            }
-        )
 
     def _create_line(self, order):
         return self.env["pos.order.line"].create(

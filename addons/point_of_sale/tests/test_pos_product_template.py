@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 from datetime import timedelta
 
@@ -6,7 +7,9 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest
+from odoo.addons.point_of_sale.tests.common import CommonPosTest, PosLazySessionCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
@@ -552,3 +555,47 @@ class TestPosProductTemplate(CommonPosTest):
         template = self.env["product.template"].create({"name": "Not in the shop"})
         template.action_archive()
         self.assertFalse(template.active)
+
+
+@tagged("post_install", "-at_install")
+class TestPosProductVariantDelta(PosLazySessionCommon):
+    def test_a_template_made_available_brings_its_variant_into_the_delta(self):
+        product = self.env["product.product"].create(
+            {"name": "Challenge variant timestamp", "available_in_pos": False}
+        )
+        cutoff = self.env.cr.now() - timedelta(hours=1)
+        self._stamp(product, cutoff - timedelta(days=1))
+        self._stamp(product.product_tmpl_id, cutoff - timedelta(days=1))
+        product.product_tmpl_id.available_in_pos = True
+        self.env.flush_all()
+        product.invalidate_recordset(["write_date"])
+        rows = (
+            self.env["product.product"]
+            .with_context(pos_last_server_date=fields.Datetime.to_string(cutoff))
+            ._load_pos_data_search_read(
+                {"product.template": [{"id": product.product_tmpl_id.id}]},
+                self.pos_config_usd,
+            )
+        )
+        _logger.debug(
+            "variant cutoff=%s persisted_write=%s ids=%s",
+            cutoff,
+            product.write_date,
+            [r["id"] for r in rows],
+        )
+        self.assertGreater(product.write_date, cutoff)
+        self.assertIn(product.id, [r["id"] for r in rows])
+
+
+@tagged("post_install", "-at_install")
+class TestPosProductTag(CommonPosTest):
+    def test_has_image_follows_the_image(self):
+        tag = self.env["product.tag"].create({"name": "Imaged tag"})
+        self.assertFalse(tag.has_image)
+
+        tag.image = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+            "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+
+        self.assertTrue(tag.has_image)
