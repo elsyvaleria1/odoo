@@ -1613,9 +1613,15 @@ class TestProcurement(TestMrpCommon):
         )
         self.assertEqual(
             manufacturing_orders.mapped("product_qty"),
-            [200.0, 200.0],
-            "Each manufacturing order should have a quantity of 200.0, as defined by the BoM batch size.",
+            [200.0, 100.0],
+            "A batch size is the most one order makes: the last carries the rest.",
         )
+
+    def test_a_demand_below_the_batch_size_makes_one_order_of_the_demand(self):
+        product, _component = self._create_per_dozen_product()
+        product.bom_ids.write({"enable_batch_size": True, "batch_size": 2})
+        orders = self._run_batched_manufacture(product, 1.5, self.uom_dozen)
+        self.assertEqual(orders.mapped("product_qty"), [1.5])
 
     def test_update_mo_producing_qty_with_mtso_rule_and_some_available_stock(self):
         warehouse = self.env["stock.warehouse"].search([], limit=1)

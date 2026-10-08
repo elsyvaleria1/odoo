@@ -517,3 +517,43 @@ class TestMoOverviewReport(TestMrpCommon):
         )
 
         self.assertTrue(data["components"])
+
+    def test_the_bom_cost_of_a_manufactured_component_is_its_rolled_up_bom(self):
+        part, component, product = self.env["product.product"].create(
+            [
+                {"name": "Rolled part", "is_storable": True, "standard_price": 4},
+                {
+                    "name": "Rolled component",
+                    "is_storable": True,
+                    "standard_price": 100,
+                },
+                {"name": "Rolled product", "is_storable": True},
+            ]
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": component.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": part.id, "product_qty": 2})
+                ],
+            }
+        )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "bom_line_ids": [Command.create({"product_id": component.id})],
+            }
+        )
+        production = self.env["mrp.production"].create(
+            {"product_id": product.id, "bom_id": bom.id, "product_qty": 1}
+        )
+
+        data = self.env["report.mrp.report_mo_overview"]._get_report_data(production.id)
+        [line] = data["components"]
+        self.assertEqual(line["summary"]["bom_cost"], 8.0)
+        self.assertEqual(line["summary"]["mo_cost"], 100.0)
+        bom_overview = self.env["report.mrp.report_bom_structure"]._get_report_data(
+            bom.id
+        )
+        [overview_line] = bom_overview["lines"]["components"]
+        self.assertEqual(overview_line["bom_cost"], line["summary"]["bom_cost"])

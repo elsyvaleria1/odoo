@@ -5882,7 +5882,7 @@ class TestMrpOrder(TestMrpCommon):
             }
         )
         if bom_2:
-            self.env["mrp.bom"].create(
+            component_bom = self.env["mrp.bom"].create(
                 {
                     "product_id": product_to_use_2.id,
                     "product_tmpl_id": product_to_use_2.product_tmpl_id.id,
@@ -5905,6 +5905,9 @@ class TestMrpOrder(TestMrpCommon):
                         )
                     ],
                 }
+            )
+            product_to_use_2.standard_price = component_bom._get_rolled_up_cost(
+                product_to_use_2, 1.0, as_component=True
             )
         if mto:
             replenish_wizard = (
@@ -5998,9 +6001,7 @@ class TestMrpOrder(TestMrpCommon):
         mo = self._prepare_report_values(mto=True, bom_2=True)
         self._verify_report_main_decorators(mo)
         mo.action_confirm()
-        self._verify_report_main_decorators(
-            mo, sum_mo_cost="danger", comp_mo_cost="danger"
-        )
+        self._verify_report_main_decorators(mo)
         mo.action_start()
         self._verify_report_main_decorators(
             mo, sum_mo_cost="danger", comp_mo_cost="danger", op_real_cost="success"

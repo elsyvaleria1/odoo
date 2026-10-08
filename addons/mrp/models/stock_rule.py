@@ -319,6 +319,10 @@ class StockRule(models.Model):
         10 kg, so the orders come out twenty-five times the size the BoM asked
         for and the count explodes to match.
 
+        Every order is one batch but the last, which carries the remainder: a
+        batch size is the most one order makes, so 300 at a 200 batch is 200
+        and 100, never 400.
+
         The count is capped the way `wizard.mrp.production.split` caps its own, and
         for the same reason: a batch size small against the demand is a
         configuration mistake, and answering it with thousands of orders is
@@ -378,12 +382,15 @@ class StockRule(models.Model):
             batch_size=batch_size,
             batches=batches,
         )
-        for _batch in range(batches):
-            # `uom.round` is the 'Product Unit' decimal precision rounded
-            # HALF-UP; sizing a record wants the unit's own `rounding`, rounded
-            # UP, which is what `_get_quantity_in_unit` does and what the caller
-            # this replaced did.
+        # `uom.round` is the 'Product Unit' decimal precision rounded HALF-UP;
+        # sizing a record wants the unit's own `rounding`, rounded UP, which is
+        # what `_get_quantity_in_unit` does. A batch size is the largest order,
+        # not a quantity every order must reach: the last one carries what is
+        # left, as `wizard.mrp.production.split` does.
+        for _batch in range(int(whole)):
             yield uom._get_quantity_in_unit(batch_size, uom), uom
+        if not uom.is_zero(remainder):
+            yield uom._get_quantity_in_unit(remainder, uom), uom
 
     def _prepare_stock_move_vals(self, procurement):
         res = super()._prepare_stock_move_vals(procurement)

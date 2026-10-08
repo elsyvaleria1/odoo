@@ -195,8 +195,9 @@ class TestBomAndReports(TestMrpCommon):
                 sub_row.get("standard_cost"),
                 overview["summary"]["bom_cost"],
             ),
-            (60, 60, 15, 15),
-            "rolled up from the sub-assembly's BoM, standard at its standard price",
+            (60, 60, 15, 60),
+            "both overviews roll up from the sub-assembly's BoM; its standard price"
+            " is shown beside it",
         )
 
         sub_assembly.standard_price = 20

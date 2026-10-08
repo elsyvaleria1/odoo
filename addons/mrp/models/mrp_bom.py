@@ -905,7 +905,7 @@ class MrpBom(models.Model):
                 demands[operation] = (bom, product, quantity + previous)
         return demands
 
-    def _get_standard_cost_breakdown(
+    def _get_cost_breakdown(
         self, product, quantity, unit, company, never_attribute_values=False
     ) -> dict:
         self.check_singleton()
@@ -924,9 +924,7 @@ class MrpBom(models.Model):
         return {
             "demands": demands,
             "components": {
-                line: line.product_id._get_standard_cost(
-                    line_quantity, line.product_uom_id, company
-                )
+                line: line._get_rolled_up_cost(line_quantity, company)
                 for line, line_quantity in demands.items()
             },
             "operation_demands": operation_demands,
@@ -951,21 +949,7 @@ class MrpBom(models.Model):
         for line in self.bom_line_ids:
             if product and line._is_bom_line_skipped(product):
                 continue
-            line_quantity = factor * line.product_qty
-            child_bom = line.child_bom_id
-            if child_bom:
-                child_quantity = line.product_uom_id._get_quantity_estimate(
-                    line_quantity, child_bom.product_uom_id, round=False
-                )
-                cost += child_bom._get_rolled_up_cost(
-                    line.product_id, child_quantity, as_component=True
-                ) * child_bom._get_finished_cost_share(line.product_id)
-            else:
-                cost += currency.round(
-                    line.product_id._get_standard_cost(
-                        line_quantity, line.product_uom_id, company
-                    )
-                )
+            cost += line._get_rolled_up_cost(factor * line.product_qty, company)
         if product:
             operation_quantity, scale = self._get_costing_quantity(
                 quantity, as_component

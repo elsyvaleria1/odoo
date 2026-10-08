@@ -59,6 +59,22 @@ class MrpBomLine(models.Model):
         super()._check_parent_bom()
         self.bom_id._check_bom_cycle()
 
+    def _get_rolled_up_cost(self, quantity, company) -> float:
+        self.check_singleton()
+        child_bom = self.child_bom_id
+        if not child_bom:
+            return company.currency_id.round(
+                self.product_id._get_standard_cost(
+                    quantity, self.product_uom_id, company
+                )
+            )
+        child_quantity = self.product_uom_id._get_quantity_estimate(
+            quantity, child_bom.product_uom_id, round=False
+        )
+        return child_bom._get_rolled_up_cost(
+            self.product_id, child_quantity, as_component=True
+        ) * child_bom._get_finished_cost_share(self.product_id)
+
     @api.depends("product_id", "bom_id.company_id", "bom_id.picking_type_id")
     def _compute_child_bom_id(self) -> None:
         Bom = self.env["mrp.bom"]
