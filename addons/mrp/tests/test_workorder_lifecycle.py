@@ -24,6 +24,22 @@ class TestWorkorderLifecycle(TestMrpCommon):
         )
         cls.first, cls.second = cls.bom.operation_ids.sorted("sequence")
 
+    def test_the_expected_duration_follows_the_quantity_back_to_full(self):
+        production = self._confirmed_production(self.bom, qty=3)
+        workorder = production.workorder_ids[0]
+        self.assertEqual(workorder.duration_expected, 180)
+        production.qty_producing = 1
+        self.assertEqual(workorder.duration_expected, 60)
+        production.qty_producing = 3
+        self.assertEqual(workorder.duration_expected, 180)
+
+    def test_a_cancelled_operation_does_not_hold_back_the_quantity_produced(self):
+        production = self._confirmed_production(self.bom, qty=3)
+        first, second = production.workorder_ids.sorted("sequence")
+        second.action_cancel()
+        first.qty_produced = 2
+        self.assertEqual(production.qty_producing, 2)
+
     def test_overlapping_reasons_of_one_category_count_once(self):
         workorder = self._confirmed_production(self.bom).workorder_ids[0]
         zone = ZoneInfo(workorder.workcenter_id.resource_id.tz or "UTC")
@@ -102,6 +118,81 @@ class TestWorkorderLifecycle(TestMrpCommon):
         )
         self.assertFalse(first.blocked_by_workorder_ids)
         self.assertEqual(second.blocked_by_workorder_ids, first)
+
+    def test_replanning_a_longer_operation_ignores_its_siblings_old_slots(self):
+        self.full_availability()
+        production = self._confirmed_production(self.bom)
+        production.date_start = fields.Datetime.now().replace(
+            microsecond=0
+        ) + timedelta(days=7)
+        production.button_plan()
+        first, second = production.workorder_ids.sorted("sequence")
+        start = first.date_start
+        self.assertEqual(second.date_start, first.date_end)
+
+        first.duration_expected = 120
+        production.workorder_ids.action_replan()
+
+        self.assertEqual(first.date_start, start)
+        self.assertEqual(first.date_end, start + timedelta(minutes=120))
+        self.assertEqual(second.date_start, first.date_end)
+
+    def test_an_unplanned_order_ends_after_its_chained_operations(self):
+        self.full_availability()
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.finished.product_tmpl_id.id,
+                "bom_line_ids": [Command.create({"product_id": self.component.id})],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": name,
+                            "workcenter_id": workcenter.id,
+                            "time_cycle_manual": 120,
+                            "sequence": sequence,
+                        }
+                    )
+                    for sequence, (name, workcenter) in enumerate(
+                        (("cut", self.workcenter_2), ("paint", self.workcenter_3))
+                    )
+                ],
+            }
+        )
+        production = self._confirmed_production(bom)
+        first, second = production.workorder_ids.sorted("sequence")
+        self.assertEqual(second.blocked_by_workorder_ids, first)
+        start = fields.Datetime.now().replace(microsecond=0) + timedelta(days=7)
+        production.date_start = start
+
+        self.assertFalse(production.is_planned)
+        self.assertEqual(production.date_end, start + timedelta(minutes=240))
+
+    def test_a_bom_generated_from_an_order_plans_the_same_run(self):
+        workcenter = self.env["mrp.workcenter"].create(
+            {"name": "Set up", "time_start": 10, "time_stop": 5}
+        )
+        self.first.workcenter_id = workcenter
+        self.bom.operation_ids = [Command.unlink(self.second.id)]
+        production = self._confirmed_production(self.bom, qty=10)
+        self.assertEqual(production.workorder_ids.duration_expected, 615)
+
+        action = production.action_generate_bom()
+        generated = Form(self.env["mrp.bom"].with_context(**action["context"])).save()
+
+        self.assertEqual(
+            self._confirmed_production(
+                generated, qty=10
+            ).workorder_ids.duration_expected,
+            615,
+        )
+
+    def test_an_edited_work_center_reads_the_load_of_the_saved_one(self):
+        self._confirmed_production(self.bom)
+        workcenter = self.workcenter_2
+        edited = workcenter.new({"name": "Edited"}, origin=workcenter)
+        self.assertEqual(edited.workorder_count, workcenter.workorder_count)
+        self.assertEqual(edited.workcenter_load, workcenter.workcenter_load)
+        self.assertTrue(edited.workorder_count)
 
     def test_a_drawn_dependency_survives_replanning(self):
         production, _first, second = self._planned_pair()
@@ -241,6 +332,62 @@ class TestWorkorderLifecycle(TestMrpCommon):
         self.assertEqual(self.first.time_cycle, 60)
         self.assertEqual(
             self._confirmed_production(self.bom).workorder_ids.duration_expected, 120
+        )
+
+    def test_a_kit_operation_learns_its_cycle_in_kit_units(self):
+        workcenter = self.env["mrp.workcenter"].create(
+            {"name": "Leg line", "time_start": 0, "time_stop": 0}
+        )
+        table, leg_set, leg = self.env["product.product"].create(
+            [
+                {"name": "Table", "is_storable": True},
+                {"name": "Leg set", "is_storable": True},
+                {"name": "Leg", "is_storable": True},
+            ]
+        )
+        kit = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": leg_set.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": leg.id})],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": "Mount legs",
+                            "workcenter_id": workcenter.id,
+                            "time_mode": "auto",
+                            "time_mode_batch": 1,
+                            "time_cycle_manual": 1,
+                        }
+                    )
+                ],
+            }
+        )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": table.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": leg_set.id, "product_qty": 4})
+                ],
+            }
+        )
+        production = self._confirmed_production(bom, qty=10)
+        workorder = production.workorder_ids
+        self.assertEqual(workorder.duration_expected, 40)
+        workorder.button_start()
+        started = fields.Datetime.now() - timedelta(hours=3)
+        workorder.time_ids.write(
+            {"date_start": started, "date_end": started + timedelta(minutes=40)}
+        )
+        production.qty_producing = 10
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+
+        kit.operation_ids.invalidate_recordset()
+        self.assertEqual(kit.operation_ids.time_cycle, 1)
+        self.assertEqual(
+            self._confirmed_production(bom, qty=10).workorder_ids.duration_expected,
+            40,
         )
 
     def test_the_form_follows_the_history_window(self):

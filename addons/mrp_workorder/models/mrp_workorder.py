@@ -1099,9 +1099,7 @@ class MrpWorkorder(models.Model):
         total_workcenter_cost = super()._get_cost(date)
         for wo in self:
             if wo._is_cost_estimate_required():
-                total_workcenter_cost += (
-                    wo.duration_expected / 60 * wo._get_employee_costs_hour()
-                )
+                total_workcenter_cost += wo._get_expected_labour_cost()
             elif date:
                 total_workcenter_cost += sum(
                     wo.time_ids.filtered(
@@ -1158,12 +1156,15 @@ class MrpWorkorder(models.Model):
         expected_machine_cost = super()._get_expected_operation_cost()
         if without_employee_cost:
             return expected_machine_cost
-        expected_labour_cost = (
+        return expected_machine_cost + self._get_expected_labour_cost()
+
+    def _get_expected_labour_cost(self):
+        self.check_singleton()
+        return (
             (self.duration_expected / 60)
-            * self.workcenter_id.employee_costs_hour
+            * self._get_employee_costs_hour()
             * (self.operation_id.employee_ratio or 1)
         )
-        return expected_machine_cost + expected_labour_cost
 
     def _get_theoretical_operation_cost(self, without_employee_cost=False):
         current_machine_cost = super()._get_theoretical_operation_cost()

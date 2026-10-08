@@ -1,4 +1,5 @@
 import gc
+from unittest.mock import patch
 
 from psycopg.errors import CheckViolation
 
@@ -540,3 +541,46 @@ class TestStockMoveAudit(TestMrpCommon):
         production = self._confirmed_order(bom)
         with self.assertRaises(ValidationError):
             production.move_raw_ids.quantity = -1.0
+
+    def test_a_demand_reduction_is_capped_in_the_move_unit(self):
+        product = self.env["product.product"].create(
+            {"name": "Reduced", "is_storable": True}
+        )
+        shelf = self.env["stock.location"].create(
+            {"name": "Reduction shelf", "location_id": self.stock_location.id}
+        )
+        origin, move = self.env["stock.move"].create(
+            [
+                {
+                    "product_id": product.id,
+                    "product_uom_id": self.uom_dozen.id,
+                    "product_uom_qty": 2,
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                },
+                {
+                    "product_id": product.id,
+                    "product_uom_id": self.uom_unit.id,
+                    "product_uom_qty": 4,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": shelf.id,
+                    "procure_method": "make_to_order",
+                },
+            ]
+        )
+        origin._action_confirm()
+        move.move_orig_ids = origin
+        procured = []
+
+        def capture(rule_model, procurements, raise_user_error=True):
+            procured.extend(procurements)
+
+        with (
+            patch.object(type(self.env["stock.rule"]), "run", capture),
+            patch.object(
+                type(move), "_update_procure_method", lambda moves, *args: None
+            ),
+        ):
+            move._run_procurement({move.id: 24})
+
+        self.assertEqual([procurement.product_qty for procurement in procured], [-20])

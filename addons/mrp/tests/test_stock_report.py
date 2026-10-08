@@ -903,3 +903,92 @@ class TestMrpStockReports(TestReportsCommon):
         self.assertEqual(
             overview_values_no_bom["components"][0]["summary"]["mo_cost"], 120
         )
+
+    def test_allocating_an_order_to_another_links_them_as_parent_and_child(self):
+        component, part = self.env["product.product"].create(
+            [
+                {"name": "Allocated component", "is_storable": True},
+                {"name": "Allocated part", "is_storable": True},
+            ]
+        )
+        assembly = self.env["product.product"].create(
+            {"name": "Allocated assembly", "is_storable": True}
+        )
+        assembly_bom, component_bom = self.env["mrp.bom"].create(
+            [
+                {
+                    "product_tmpl_id": assembly.product_tmpl_id.id,
+                    "bom_line_ids": [Command.create({"product_id": component.id})],
+                },
+                {
+                    "product_tmpl_id": component.product_tmpl_id.id,
+                    "bom_line_ids": [Command.create({"product_id": part.id})],
+                },
+            ]
+        )
+        parent, child = self.env["mrp.production"].create(
+            [
+                {"product_id": assembly.id, "bom_id": assembly_bom.id},
+                {"product_id": component.id, "bom_id": component_bom.id},
+            ]
+        )
+        (parent | child).action_confirm()
+        report = self.env["report.stock.report_reception"]
+
+        report.action_assign(parent.move_raw_ids.ids, [1], child.move_finished_ids.ids)
+        self.assertEqual(
+            parent.production_group_id.child_ids, child.production_group_id
+        )
+
+        report.action_unassign(parent.move_raw_ids.id, 1, child.move_finished_ids.ids)
+        self.assertFalse(parent.production_group_id.child_ids)
+
+    def test_unallocating_one_of_two_allocations_keeps_the_orders_linked(self):
+        component, part, assembly = self.env["product.product"].create(
+            [
+                {"name": "Twice component", "is_storable": True},
+                {"name": "Twice part", "is_storable": True},
+                {"name": "Twice assembly", "is_storable": True},
+            ]
+        )
+        assembly_bom, component_bom = self.env["mrp.bom"].create(
+            [
+                {
+                    "product_tmpl_id": assembly.product_tmpl_id.id,
+                    "bom_line_ids": [
+                        Command.create({"product_id": component.id}),
+                        Command.create({"product_id": component.id}),
+                    ],
+                },
+                {
+                    "product_tmpl_id": component.product_tmpl_id.id,
+                    "bom_line_ids": [Command.create({"product_id": part.id})],
+                },
+            ]
+        )
+        parent, child = self.env["mrp.production"].create(
+            [
+                {"product_id": assembly.id, "bom_id": assembly_bom.id},
+                {
+                    "product_id": component.id,
+                    "bom_id": component_bom.id,
+                    "product_qty": 2,
+                },
+            ]
+        )
+        (parent | child).action_confirm()
+        first, second = parent.move_raw_ids
+        report = self.env["report.stock.report_reception"]
+        report.action_assign(
+            (first | second).ids, [1, 1], child.move_finished_ids.ids * 2
+        )
+        self.assertEqual(
+            parent.production_group_id.child_ids, child.production_group_id
+        )
+
+        report.action_unassign(first.id, 1, child.move_finished_ids.ids)
+        self.assertEqual(
+            parent.production_group_id.child_ids, child.production_group_id
+        )
+        report.action_unassign(second.id, 1, child.move_finished_ids.ids)
+        self.assertFalse(parent.production_group_id.child_ids)

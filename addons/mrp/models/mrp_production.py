@@ -1131,6 +1131,8 @@ class MrpProduction(models.Model):
             ):
                 by = "all_finished_cancelled"  # debuglog
                 production.state = "cancel"
+            elif production.state == "draft":
+                pass
             elif production.state == "done" or (
                 (
                     production.move_raw_ids
@@ -1490,6 +1492,7 @@ class MrpProduction(models.Model):
         "bom_id.produce_delay",
         "date_start",
         "is_planned",
+        "workorder_ids.blocked_by_workorder_ids",
         "workorder_ids.duration_expected",
     )
     def _compute_date_end(self) -> None:
@@ -1530,14 +1533,37 @@ class MrpProduction(models.Model):
             return False
 
         date_finished_per_workcenter = defaultdict(lambda: date_start)
-        for wo in self.workorder_ids:
-            wo_optimal_date_start = date_finished_per_workcenter[wo.workcenter_id.id]
+        date_finished_per_workorder = {}
+        pending = list(self.workorder_ids)
+        while pending:
+            wo = next(
+                (
+                    candidate
+                    for candidate in pending
+                    if all(
+                        blocker.id in date_finished_per_workorder
+                        for blocker in candidate.blocked_by_workorder_ids
+                        & self.workorder_ids
+                    )
+                ),
+                pending[0],
+            )
+            pending.remove(wo)
+            wo_optimal_date_start = max(
+                [date_finished_per_workcenter[wo.workcenter_id.id]]
+                + [
+                    date_finished_per_workorder[blocker.id]
+                    for blocker in wo.blocked_by_workorder_ids
+                    if blocker.id in date_finished_per_workorder
+                ]
+            )
             _dummy, to_date = wo.workcenter_id._get_first_available_slot(
                 wo_optimal_date_start, wo.duration_expected
             )
             if not isinstance(to_date, datetime.datetime):
                 return False
             date_finished_per_workcenter[wo.workcenter_id.id] = to_date
+            date_finished_per_workorder[wo.id] = to_date
         return max(date_finished_per_workcenter.values())
 
     @api.depends(
@@ -1555,9 +1581,7 @@ class MrpProduction(models.Model):
         )
         deferred_move_vals = []
         for production in batch:
-            if production.state != "draft" or self.env.context.get(
-                "skip_compute_move_raw_ids"
-            ):
+            if production.state != "draft":
                 continue
             list_move_raw = [
                 Command.link(move.id)
@@ -1724,8 +1748,8 @@ class MrpProduction(models.Model):
                 and (
                     record.date_deadline
                     and (
-                        record.date_deadline < datetime.datetime.now()
-                        or record.date_deadline < record.date_end
+                        record.date_deadline < fields.Datetime.now()
+                        or (record.date_end and record.date_deadline < record.date_end)
                     )
                 )
             )
@@ -1913,8 +1937,15 @@ class MrpProduction(models.Model):
         production_to_replan = self.filtered(lambda p: p.is_planned)
         self._update_move_warehouse_vals(vals, move_keys)
         moves_to_reassign = self._pre_write_picking_type(vals)
+        producing_partially = (
+            self.filtered(lambda production: production._is_producing_partially())
+            if "qty_producing" in vals
+            else self.browse()
+        )
 
-        res = super().write(vals)
+        with self.env.protecting(self._get_fields_kept_on_bom_change(vals), self):
+            res = super().write(vals)
+        producing_partially._replan_duration_once_whole()
 
         _debug.lifecycle(
             "write",
@@ -1924,6 +1955,10 @@ class MrpProduction(models.Model):
             to_reassign=len(moves_to_reassign),
         )
         self._post_write(vals, production_to_replan)
+        if vals.get("picking_type_id"):
+            (self.move_raw_ids | self.move_finished_ids).filtered(
+                lambda move: move.state not in ("done", "cancel")
+            )._sync_warehouse_from_locations()
         self._post_write_reassign(moves_to_reassign)
         return res
 
@@ -1944,6 +1979,29 @@ class MrpProduction(models.Model):
         return self._merge_byproduct_commands(
             vals, self._get_main_product_id_from_vals(vals)
         )
+
+    def _is_producing_partially(self) -> bool:
+        self.check_singleton()
+        return (
+            not self.product_uom_id.is_zero(self.qty_producing)
+            and self.product_uom_id.compare(self.qty_producing, self.product_qty) != 0
+        )
+
+    def _replan_duration_once_whole(self) -> None:
+        workorders = self.filtered(
+            lambda production: not production._is_producing_partially()
+        ).workorder_ids.filtered(lambda wo: wo.state not in ("done", "cancel"))
+        for workorder in workorders:
+            workorder.duration_expected = workorder._get_duration_expected()
+
+    def _get_fields_kept_on_bom_change(self, vals) -> list:
+        if "bom_id" not in vals or "product_id" in vals:
+            return []
+        return [
+            self._fields[name]
+            for name in ("product_uom_id", "product_qty")
+            if name not in vals
+        ]
 
     def _get_main_product_id_from_vals(self, vals):
         if vals.get("product_id"):
@@ -2015,7 +2073,7 @@ class MrpProduction(models.Model):
                 continue
             previous_name = production.name
             production.name = picking_type.sequence_id.next_by_id()
-            production.move_raw_ids.reference_ids.filtered_domain(
+            production.reference_ids.filtered_domain(
                 [("name", "=", previous_name)]
             ).name = production.name
             moves_to_reassign |= production.move_raw_ids
@@ -2305,7 +2363,8 @@ class MrpProduction(models.Model):
             }
             byproduct_values.append(Command.create(bom_byproduct_vals))
         operations_values = [
-            Command.create(wo._prepare_operation_vals()) for wo in self.workorder_ids
+            Command.create(wo._prepare_operation_vals(ratio))
+            for wo in self.workorder_ids
         ]
         return (bom_lines_values, byproduct_values, operations_values)
 
@@ -2915,14 +2974,19 @@ class MrpProduction(models.Model):
     def _convert_to_product_uom(self, round=True) -> None:
         self.check_singleton()
         unit = self.product_id.uom_id
-        self.write(
-            {
-                "product_qty": self.product_uom_id._get_quantity_in_unit(
-                    self.product_qty, unit, round=round
-                ),
-                "product_uom_id": unit.id,
-            }
-        )
+        same_quantity = [
+            self._fields[name]
+            for name in ("move_raw_ids", "move_finished_ids", "workorder_ids")
+        ]
+        with self.env.protecting(same_quantity, self):
+            self.write(
+                {
+                    "product_qty": self.product_uom_id._get_quantity_in_unit(
+                        self.product_qty, unit, round=round
+                    ),
+                    "product_uom_id": unit.id,
+                }
+            )
         for move in self._get_main_finished_moves():
             move.write(
                 {
@@ -3102,6 +3166,15 @@ class MrpProduction(models.Model):
             lambda wo: not wo.needed_by_workorder_ids
         )
         planned = set()
+        undated = (
+            set(
+                self.workorder_ids.filtered(
+                    lambda wo: wo.state in ("blocked", "ready") and wo.date_start
+                ).ids
+            )
+            if replan
+            else set()
+        )
         with _debug.perf(
             "workorders_planned",
             cr=self.env.cr,
@@ -3110,7 +3183,7 @@ class MrpProduction(models.Model):
             leaves=len(final_workorders),
         ) as span:
             for workorder in final_workorders:
-                workorder._plan_workorder(replan, planned)
+                workorder._plan_workorder(replan, planned, undated)
             span.set(planned=len(planned))
 
         workorders = self.workorder_ids.filtered(
@@ -3415,11 +3488,11 @@ class MrpProduction(models.Model):
                 )
             ],
         )
+        self.workorder_ids._settle_duration_for_posting()
         for order in self:
             finish_moves = order._get_main_finished_moves().filtered(
                 lambda m: m.state not in ("done", "cancel")
             )
-            extra_vals = order._prepare_finished_extra_vals()
             for move in finish_moves:
                 if move.has_tracking != "none" and not move.trace_ids:
                     move.trace_ids = order.trace_producing_ids.ids
@@ -3427,13 +3500,6 @@ class MrpProduction(models.Model):
                     (order.qty_producing - order.qty_produced) * move.unit_factor,
                     rounding_method="HALF-UP",
                 )
-                if extra_vals:
-                    move.move_line_ids.write(extra_vals)
-            for workorder in order.workorder_ids:
-                if workorder.state == "cancel":
-                    workorder.duration = 0.0
-                elif not workorder.duration:
-                    workorder.duration = workorder.duration_expected
             order.with_company(order.company_id)._update_finished_moves_price_unit(
                 moves_to_do_by_order[order.id]
             )
@@ -3586,9 +3652,8 @@ class MrpProduction(models.Model):
                 default=production._prepare_backorder_mo_vals()
             )[0]
             backorder_qtys = amounts[production][1:]
-            production.with_context(
-                skip_compute_move_raw_ids=True
-            ).product_qty = amounts[production][0]
+            with self.env.protecting([self._fields["move_raw_ids"]], production):
+                production.product_qty = amounts[production][0]
 
             group = production.production_group_id
             if group.id not in next_seq_by_group:
@@ -3821,6 +3886,13 @@ class MrpProduction(models.Model):
         self.workorder_ids._action_confirm()
 
     def button_mark_done(self):
+        if already_done := self.filtered(lambda production: production.state == "done"):
+            _debug.logic(
+                "mark_done_skipped", by="already_done", productions=already_done
+            )
+            if already_done == self:
+                return self._prepare_action_mark_done(self.env["mrp.production"])
+            return (self - already_done).button_mark_done()
         res = self.pre_button_mark_done()
         if res is not True:
             _debug.logic(
@@ -4927,18 +4999,17 @@ class MrpProduction(models.Model):
         return True
 
     def _prepare_merge_orig_links(self):
-        origs = defaultdict(dict)
+        orig_ids = defaultdict(set)
         for move in self.move_raw_ids:
-            if not move.move_orig_ids:
-                continue
-            origs[move.bom_line_id.id].setdefault("move_orig_ids", set()).update(
-                move.move_orig_ids.ids
-            )
-        for vals in origs.values():
-            if not vals.get("move_orig_ids"):
-                continue
-            vals["move_orig_ids"] = [Command.set(vals["move_orig_ids"])]
-        return origs
+            orig_ids[move.bom_line_id.id].update(move.move_orig_ids.ids)
+        return defaultdict(
+            dict,
+            {
+                bom_line_id: {"move_orig_ids": [Command.set(ids)]}
+                for bom_line_id, ids in orig_ids.items()
+                if ids
+            },
+        )
 
     def _update_quantities(self) -> None:
         for production in self.filtered(
@@ -5085,10 +5156,6 @@ class MrpProduction(models.Model):
             lambda productions: productions.trace_producing_ids.ids,
         )
         return actions
-
-    def _prepare_finished_extra_vals(self) -> dict:
-        self.check_singleton()
-        return {}
 
     def action_view_label_layout(self):
         view = self.env.ref("stock.product_label_layout_form_picking")

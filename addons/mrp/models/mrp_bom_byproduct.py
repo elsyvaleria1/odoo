@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class MrpBomByproduct(models.Model):
@@ -27,6 +27,17 @@ class MrpBomByproduct(models.Model):
         help="The percentage of the final production cost for this by-product line (divided between the quantity produced)."
         "The total of all by-products' cost share must be less than or equal to 100.",
     )
+
+    @api.constrains(
+        "bom_id",
+        "bom_product_template_attribute_value_ids",
+        "product_id",
+        "product_qty",
+        "product_uom_id",
+        "cost_share",
+    )
+    def _check_parent_bom(self) -> None:
+        super()._check_parent_bom()
 
     def _get_uom_mismatch_message(self):
         return self.env._(

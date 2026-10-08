@@ -13,8 +13,12 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
         for workorder in production.workorder_ids:
             if workorder._is_cost_estimate_required():
                 hourly_cost = workorder._get_employee_costs_hour()
-                duration = workorder.duration_expected
-                cost_estimated = duration / 60 * hourly_cost
+                labour_hours = (
+                    workorder.duration_expected
+                    / 60
+                    * (workorder.operation_id.employee_ratio or 1)
+                )
+                cost_estimated = workorder._get_expected_labour_cost()
                 res["summary"]["mo_cost"] += cost_estimated
                 res["summary"]["real_cost"] += cost_estimated
                 operations.append(
@@ -25,7 +29,7 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                             "Estimated employee cost: %(operation_name)s",
                             operation_name=workorder.display_name,
                         ),
-                        "quantity": duration / 60,
+                        "quantity": labour_hours,
                         "uom_name": done_operation_uom,
                         "uom_precision": 4,
                         "unit_cost": hourly_cost,

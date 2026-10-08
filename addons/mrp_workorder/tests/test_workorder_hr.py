@@ -154,6 +154,26 @@ class TestWorkorderDurationHr(common.TransactionCase):
         self.workcenter.employee_costs_hour = 99
         self.assertEqual(self.mo.workorder_ids._get_cost(), 93.0)
 
+    def test_estimated_labour_counts_every_operator_the_operation_needs(self):
+        operation = self.bom.operation_ids
+        operation.write({"cost_mode": "estimated", "employee_ratio": 2})
+        self.workcenter.costs_hour = 33
+        self.workcenter.employee_costs_hour = 60
+        self.mo.action_confirm()
+        self.mo.button_mark_done()
+        workorder = self.mo.workorder_ids
+
+        hours = workorder.duration_expected / 60
+        self.assertTrue(hours)
+        self.assertAlmostEqual(workorder._get_cost(), hours * (33 + 60 * 2))
+        overview = self.env[
+            "report.mrp.report_mo_overview"
+        ]._get_finished_operation_data(self.mo)
+        [labour] = [
+            line for line in overview["details"] if "employee" in str(line["name"])
+        ]
+        self.assertAlmostEqual(labour["mo_cost"], round(hours * 60 * 2, 2))
+
     @users("test_without_hr_right")
     def test_create_workorder_without_hr_right(self):
         self.env["mrp.workorder"].create(

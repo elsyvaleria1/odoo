@@ -9,6 +9,13 @@ from odoo.tools import DOMAIN_PREDICATES
 
 from odoo.addons.stock.const import QUANTITY_FIELDS
 
+MEASURED_KIT_REFERENCES = (
+    "uom.product_uom_gram",
+    "uom.product_uom_milliliter",
+    "uom.product_uom_millimeter",
+    "uom.product_uom_square_meter",
+)
+
 _debug = DebugLog(__name__)
 
 
@@ -227,7 +234,8 @@ class ProductProduct(models.Model):
         qties.update(res)
         Bom.union(*(bom_kits[product] for product in kits))._warm_kit_closures()
         exploded = {
-            product: bom_kits[product]._explode(product, 1)[1] for product in kits
+            product: bom_kits[product]._explode(product, 1, round_lines=False)[1]
+            for product in kits
         }
         components = self.browse(
             {
@@ -259,9 +267,7 @@ class ProductProduct(models.Model):
             component = component.with_env(self.env)
             qty_per_bom = 0
             for bom_line, bom_line_data in component_lines:
-                if not component.is_storable or bom_line.product_uom_id.is_zero(
-                    bom_line_data["qty"]
-                ):
+                if not component.is_storable or not bom_line_data["qty"]:
                     continue
                 qty_per_bom += bom_line.product_uom_id._get_quantity_estimate(
                     bom_line_data["qty"] / bom_line_data["original_qty"],
@@ -292,9 +298,30 @@ class ProductProduct(models.Model):
             bom_kit.product_qty, self.uom_id, round=False
         )
         return {
-            field: self.uom_id.round(min(values) * kit_qty, rounding_method="DOWN") // 1
+            field: self._floor_kit_quantity(min(values) * kit_qty)
             for field, values in ratios.items()
         }
+
+    def _floor_kit_quantity(self, quantity: float) -> float:
+        self.check_singleton()
+        unit = self.uom_id
+        reference = unit._get_reference_uom()
+        if reference not in self._get_measured_kit_references():
+            whole = (
+                round(unit._get_quantity_in_unit(quantity, reference, round=False), 6)
+                // 1
+            )
+            quantity = reference._get_quantity_in_unit(whole, unit, round=False)
+        return unit.round(quantity, rounding_method="DOWN")
+
+    def _get_measured_kit_references(self):
+        return self.env["uom.uom"].browse(
+            {
+                unit.id
+                for xmlid in MEASURED_KIT_REFERENCES
+                if (unit := self.env.ref(xmlid, raise_if_not_found=False))
+            }
+        )
 
     def get_forecast_bom_id(self):
         self.check_singleton()

@@ -24,17 +24,24 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
         ) or previous_options.get("bom_overview_bom_id")
         bom = self.env["mrp.bom"].browse(bom_id).exists()
         options["bom_overview_bom_id"] = bom.id
+        previous_bom_id = previous_options.get("bom_overview_bom_id")
+        kept = previous_options if previous_bom_id in (None, False, bom.id) else {}
 
         options["bom_overview_quantity"] = (
-            previous_options.get("bom_overview_quantity") or bom.product_qty or 1
+            kept.get("bom_overview_quantity") or bom.product_qty or 1
         )
-        options["bom_overview_variant_id"] = previous_options.get(
-            "bom_overview_variant_id"
+        variants = (
+            bom.product_tmpl_id.product_variant_ids
+            if not bom.product_id
+            else self.env["product.product"]
+        )
+        options["bom_overview_variant_id"] = (
+            kept.get("bom_overview_variant_id")
+            if kept.get("bom_overview_variant_id") in variants.ids
+            else None
         )
         options["bom_overview_variants"] = [
-            {"id": variant.id, "name": variant.display_name}
-            for variant in bom.product_tmpl_id.product_variant_ids
-            if not bom.product_id
+            {"id": variant.id, "name": variant.display_name} for variant in variants
         ]
         warehouses = self.env["stock.warehouse"].search(
             self.env["stock.warehouse"]._check_company_domain(
@@ -42,7 +49,9 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
             )
         )
         options["bom_overview_warehouse_id"] = (
-            previous_options.get("bom_overview_warehouse_id") or warehouses[:1].id
+            kept.get("bom_overview_warehouse_id")
+            if kept.get("bom_overview_warehouse_id") in warehouses.ids
+            else warehouses[:1].id
         )
         options["bom_overview_warehouses"] = [
             {"id": warehouse.id, "name": warehouse.display_name}

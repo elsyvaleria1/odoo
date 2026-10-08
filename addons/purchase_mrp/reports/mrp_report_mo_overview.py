@@ -51,6 +51,9 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
             partner=po.partner_id,
             rounding_method="round_globally",
         )["total_void"]
+        price = po.currency_id._convert(
+            price, po.company_id.currency_id, po.company_id, fields.Date.today()
+        )
         return {
             "_name": "purchase.order",
             "id": po.id,

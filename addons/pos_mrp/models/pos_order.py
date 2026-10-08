@@ -47,7 +47,7 @@ class PosOrder(models.Model):
         )[product]
         if not bom:
             return super()._get_pos_anglo_saxon_price_unit(product, quantity)
-        _dummy, components = bom._explode(product, quantity)
+        _dummy, components = bom._explode(product, quantity, round_lines=False)
         total_price_unit = 0
         for comp in components:
             price_unit = super()._get_pos_anglo_saxon_price_unit(

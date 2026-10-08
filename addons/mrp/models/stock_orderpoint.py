@@ -29,7 +29,6 @@ class StockWarehouseOrderpoint(models.Model):
         comodel_name="mrp.bom",
         string="Effective Bill of Materials",
         compute="_compute_effective_bom_id",
-        search="_search_effective_bom_id",
         store=False,
         help="Either the Bill of Materials set directly or the one computed to be used by this replenishment",
     )
@@ -178,21 +177,6 @@ class StockWarehouseOrderpoint(models.Model):
                 orderpoint, empty_bom
             )
 
-    def _search_effective_bom_id(self, operator, value):
-        if operator not in ("in", "not in"):
-            return NotImplemented
-        boms = self.env["mrp.bom"].search([("id", "in", value)])
-        candidates = self.env["stock.warehouse.orderpoint"].search(
-            [("bom_id", "=", False)]
-        )
-        resolved_ids = [
-            orderpoint.id
-            for orderpoint, bom in candidates._get_default_boms().items()
-            if bom in boms
-        ]
-        matching = Domain("bom_id", "in", boms.ids) | Domain("id", "in", resolved_ids)
-        return matching if operator == "in" else ~matching
-
     @api.depends(
         "rule_ids",
         "bom_id.days_to_prepare_mo",
@@ -328,15 +312,23 @@ class StockWarehouseOrderpoint(models.Model):
         ).action_confirm()
         return super()._post_process_scheduler()
 
-    @api.constrains("product_id")
+    @api.constrains("product_id", "company_id")
     def _check_product_is_not_kit(self) -> None:
         Bom = self.env["mrp.bom"]
-        domain = Bom._get_domain_kit(self.company_id) & (
-            Domain("product_id", "in", self.product_id.ids)
-            | (
-                Domain("product_id", "=", False)
-                & Domain("product_tmpl_id", "in", self.product_id.product_tmpl_id.ids)
+        domain = Domain.OR(
+            Bom._get_domain_kit(company)
+            & (
+                Domain("product_id", "in", orderpoints.product_id.ids)
+                | (
+                    Domain("product_id", "=", False)
+                    & Domain(
+                        "product_tmpl_id",
+                        "in",
+                        orderpoints.product_id.product_tmpl_id.ids,
+                    )
+                )
             )
+            for company, orderpoints in self.grouped("company_id").items()
         )
         if Bom.search_count(domain, limit=1):
             _debug.logic(

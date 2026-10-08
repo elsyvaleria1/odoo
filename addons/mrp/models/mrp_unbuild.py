@@ -191,6 +191,8 @@ class MrpUnbuild(models.Model):
     @api.depends("mo_id", "mo_id.qty_produced", "has_tracking")
     def _compute_product_qty(self):
         for order in self:
+            if order.state == "done":
+                continue
             if not order.mo_id or order.has_tracking == "serial":
                 order.product_qty = 1.0
                 continue
@@ -356,11 +358,7 @@ class MrpUnbuild(models.Model):
             self.env["stock.move.line"].create(finished_line_vals)
 
         qty_already_used = defaultdict(float)
-        returned_before = (
-            defaultdict(float)
-            if self.trace_id
-            else self._get_quantities_returned_before()
-        )
+        returned_before = self._get_quantities_returned_before()
         move_line_vals_list = []
         missing_by_move = {}
         for move in produce_moves | consume_moves:

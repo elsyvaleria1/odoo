@@ -584,11 +584,12 @@ class StockMove(models.Model):
                 )
                 if move.move_orig_ids:
                     possible_reduceable_qty = -sum(
-                        move.move_orig_ids.filtered(
-                            lambda m: (
-                                m.state not in ("done", "cancel") and m.product_uom_qty
-                            )
-                        ).mapped("product_uom_qty")
+                        origin.product_uom_id._get_quantity_in_unit(
+                            origin.product_uom_qty, move.product_uom_id, round=False
+                        )
+                        for origin in move.move_orig_ids
+                        if origin.state not in ("done", "cancel")
+                        and origin.product_uom_qty
                     )
                     procurement_qty = max(procurement_qty, possible_reduceable_qty)
                 values = move._prepare_procurement_vals()
@@ -960,14 +961,10 @@ class StockMove(models.Model):
         if not qty_ratios:
             return 0.0
         product_uom = product_id.uom_id
-        whole_kits = (
-            product_uom.round(
-                kit_bom.product_uom_id._get_quantity_in_unit(
-                    min(qty_ratios), product_uom, round=False
-                ),
-                rounding_method="DOWN",
+        whole_kits = product_id._floor_kit_quantity(
+            kit_bom.product_uom_id._get_quantity_in_unit(
+                min(qty_ratios), product_uom, round=False
             )
-            // 1
         )
         _debug.logic(
             "kit_quantity",

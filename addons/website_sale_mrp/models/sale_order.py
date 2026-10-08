@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from odoo import models
-from odoo.tools import float_is_zero
 
 
 class SaleOrder(models.Model):
@@ -18,16 +17,15 @@ class SaleOrder(models.Model):
                     product, company_id=self.company_id.id, bom_type="phantom"
                 )[product]
             )
-            _, bom_sub_lines = kit_bom._explode(product, quantity=1.0)
+            _, bom_sub_lines = kit_bom._explode(
+                product, quantity=1.0, round_lines=False
+            )
             unavailable_component_qties = {}
             qty_per_kit = defaultdict(float)
             for bom_line, bom_line_data in bom_sub_lines:
                 if not bom_line.product_id.is_storable:
                     continue
-                if float_is_zero(
-                    bom_line_data["qty"],
-                    precision_rounding=bom_line.product_uom_id.rounding,
-                ):
+                if not bom_line_data["qty"]:
                     continue
                 component = bom_line.product_id
                 unavailable_component_qties[component] = sum(

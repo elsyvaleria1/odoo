@@ -24,6 +24,9 @@ class StockScrap(models.Model):
     bom_id = fields.Many2one(
         comodel_name="mrp.bom",
         string="Kit",
+        compute="_compute_bom_id",
+        store=True,
+        readonly=False,
         domain="[('type', '=', 'phantom'), '|', ('product_id', '=', product_id), '&', ('product_id', '=', False), ('product_tmpl_id', '=', product_template)]",
         check_company=True,
     )
@@ -82,14 +85,14 @@ class StockScrap(models.Model):
                 return super()._onchange_serial_number()
         return None
 
-    @api.onchange("product_id")
-    def _onchange_product_id(self):
-        if self.product_is_kit:
-            self.bom_id = self.env["mrp.bom"]._get_bom_by_product(
-                self.product_id, company_id=self.company_id.id, bom_type="phantom"
-            )[self.product_id]
-        else:
-            self.bom_id = False
+    @api.depends("product_id", "company_id")
+    def _compute_bom_id(self) -> None:
+        for company, scraps in self.grouped("company_id").items():
+            kits = self.env["mrp.bom"]._get_bom_by_product(
+                scraps.product_id, company_id=company.id, bom_type="phantom"
+            )
+            for scrap in scraps:
+                scrap.bom_id = kits[scrap.product_id]
 
     @api.depends("product_id", "company_id")
     def _compute_product_is_kit(self) -> None:
@@ -117,6 +120,31 @@ class StockScrap(models.Model):
             scrap.scrap_qty = bom.product_uom_id._get_quantity_stored(
                 kits, scrap.product_uom_id
             )
+
+    def _action_done(self):
+        scrapped = {
+            (scrap.production_id.id, scrap.trace_id.id)
+            for scrap in self
+            if scrap.production_id and scrap.trace_id
+        }
+        if not scrapped:
+            return super()._action_done()
+        lines = self.production_id.move_raw_ids.move_line_ids.filtered(
+            lambda line: (
+                (
+                    line.move_id.raw_material_production_id.id,
+                    line.trace_id.id,
+                )
+                in scrapped
+            )
+        )
+        moves = lines.move_id
+        lines.picked = False
+        res = super()._action_done()
+        moves.filtered(
+            lambda move: move.picked and not move.move_line_ids
+        ).picked = False
+        return res
 
     def _is_available_qty_check_required(self) -> bool:
         return bool(super()._is_available_qty_check_required() or self.product_is_kit)

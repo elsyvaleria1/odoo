@@ -2,7 +2,7 @@ from itertools import product as cartesian_product
 from itertools import starmap
 from typing import Self
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class MixinBomVariantLine(models.AbstractModel):
@@ -26,6 +26,10 @@ class MixinBomVariantLine(models.AbstractModel):
         ondelete="restrict",
         help="BOM Product Variants needed to apply this line.",
     )
+
+    @api.constrains("bom_id", "bom_product_template_attribute_value_ids")
+    def _check_parent_bom(self) -> None:
+        self.bom_id._check_bom_lines()
 
     def _is_bom_line_skipped(self, product, never_attribute_values=False) -> bool:
         self.check_singleton()

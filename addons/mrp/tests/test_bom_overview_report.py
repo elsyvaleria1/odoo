@@ -51,6 +51,19 @@ class TestBomOverviewReport(TestMrpCommon):
             or len(lines) > 1
         )
 
+    def test_another_bom_does_not_inherit_the_previous_settings(self):
+        previous = self._options(bom_overview_quantity=50)
+        self.assertEqual(previous["bom_overview_quantity"], 50)
+        options = self.report.with_context(
+            active_model="mrp.bom", active_id=self.bom_2.id
+        ).get_options(previous)
+        self.assertEqual(options["bom_overview_bom_id"], self.bom_2.id)
+        self.assertEqual(options["bom_overview_quantity"], self.bom_2.product_qty)
+        self.assertIn(
+            options["bom_overview_variant_id"],
+            [None, *self.bom_2.product_tmpl_id.product_variant_ids.ids],
+        )
+
     def test_the_quantity_the_reader_asks_for_drives_the_components(self):
         one = self._options(bom_overview_quantity=1)
         ten = self._options(bom_overview_quantity=10)

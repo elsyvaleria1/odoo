@@ -48,6 +48,17 @@ class MrpBomLine(models.Model):
     attachments_count = fields.Integer(compute="_compute_attachments_count")
     tracking = fields.Selection(related="product_id.tracking")
 
+    @api.constrains(
+        "bom_id",
+        "bom_product_template_attribute_value_ids",
+        "product_id",
+        "product_qty",
+        "product_uom_id",
+    )
+    def _check_parent_bom(self) -> None:
+        super()._check_parent_bom()
+        self.bom_id._check_bom_cycle()
+
     @api.depends("product_id", "bom_id.company_id", "bom_id.picking_type_id")
     def _compute_child_bom_id(self) -> None:
         Bom = self.env["mrp.bom"]

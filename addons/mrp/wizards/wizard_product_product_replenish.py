@@ -17,11 +17,6 @@ class WizardProductProductReplenish(models.TransientModel):
     @api.depends("route_id", "product_id", "warehouse_id")
     def _compute_date_planned(self) -> None:
         super()._compute_date_planned()
-        for rec in self:
-            if "manufacture" in rec.route_id.rule_ids.mapped("action"):
-                rec.date_planned = rec._get_date_planned(
-                    rec.route_id, product=rec.product_id
-                )
 
     def _get_record_to_notify(self, date):
         order_line = self.env["mrp.production"].search(
@@ -45,9 +40,7 @@ class WizardProductProductReplenish(models.TransientModel):
         date = super()._get_date_planned(route, **kwargs)
         if "manufacture" not in route.rule_ids.mapped("action"):
             return date
-        product = (kwargs.get("product") or self.product_id).with_company(
-            self.warehouse_id.company_id
-        )
+        product = self.product_id.with_company(self.warehouse_id.company_id)
         rules = product._get_rules_from_location(
             self.warehouse_id.lot_stock_id, route_ids=route
         )

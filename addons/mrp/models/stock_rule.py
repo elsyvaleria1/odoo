@@ -418,13 +418,24 @@ class StockRule(models.Model):
             product_id, picking_type=False, bom_type="normal", company_id=company_id.id
         )[product_id]
 
+    def _get_mo_picking_type(self, procurement, bom):
+        warehouse = (
+            procurement.values.get("warehouse_id")
+            or procurement.location_id.warehouse_id
+        )
+        return bom.picking_type_id or self.picking_type_id or warehouse.manu_type_id
+
     def _get_domain_mo_for_procurement(self, procurement, bom):
         domain = (
             ("bom_id", "=", bom.id),
             ("product_id", "=", procurement.product_id.id),
             ("state", "in", ["draft", "confirmed"]),
             ("is_planned", "=", False),
-            ("picking_type_id", "=", self.picking_type_id.id),
+            (
+                "picking_type_id",
+                "=",
+                self._get_mo_picking_type(procurement, bom).id,
+            ),
             ("company_id", "=", procurement.company_id.id),
             ("user_id", "=", False),
             (
@@ -463,19 +474,16 @@ class StockRule(models.Model):
         date_deadline = values.get("date_deadline") or date_planned + relativedelta(
             days=bom.produce_delay
         )
-        picking_type = bom.picking_type_id or self.picking_type_id
+        picking_type = self._get_mo_picking_type(procurement, bom)
         if not picking_type:
-            warehouse = values.get("warehouse_id") or location_dest_id.warehouse_id
-            picking_type = warehouse.manu_type_id
-            if not picking_type:
-                raise UserError(
-                    self.env._(
-                        "No manufacturing operation type is configured for"
-                        " %(product)s. Set one on the bill of materials, on the"
-                        " manufacturing rule, or on the warehouse.",
-                        product=product_id.display_name,
-                    )
+            raise UserError(
+                self.env._(
+                    "No manufacturing operation type is configured for"
+                    " %(product)s. Set one on the bill of materials, on the"
+                    " manufacturing rule, or on the warehouse.",
+                    product=product_id.display_name,
                 )
+            )
         mo_values = {
             "origin": procurement.origin,
             "product_id": product_id.id,

@@ -196,7 +196,6 @@ class MrpBom(models.Model):
         "active",
         "product_id",
         "product_tmpl_id",
-        "bom_line_ids",
         "sequence",
         "company_id",
     )
@@ -332,13 +331,7 @@ class MrpBom(models.Model):
             grouped_by_components[components] |= finished
         return list(grouped_by_components.items())
 
-    @api.constrains(
-        "product_id",
-        "product_tmpl_id",
-        "bom_line_ids",
-        "byproduct_ids",
-        "operation_ids",
-    )
+    @api.constrains("product_id", "product_tmpl_id")
     def _check_bom_lines(self):
         for bom in self:
             apply_variants = (
@@ -611,23 +604,29 @@ class MrpBom(models.Model):
             },
         }
 
-    @api.constrains("product_tmpl_id", "product_id", "type")
+    @api.constrains("product_tmpl_id", "product_id", "type", "active", "company_id")
     def _check_kit_has_no_orderpoint(self) -> None:
-        product_ids = [
-            pid
-            for bom in self.filtered(lambda bom: bom.type == "phantom")
-            for pid in (
-                bom.product_id.ids or bom.product_tmpl_id.product_variant_ids.ids
+        kits = self.filtered(lambda bom: bom.active and bom.type == "phantom")
+        if not kits:
+            return
+        domain = Domain.OR(
+            Domain(
+                "product_id",
+                "in",
+                bom.product_id.ids or bom.product_tmpl_id.product_variant_ids.ids,
             )
-        ]
-        if self.env["stock.warehouse.orderpoint"].search_count(
-            [("product_id", "in", product_ids)], limit=1
-        ):
+            & (
+                Domain("company_id", "=", bom.company_id.id)
+                if bom.company_id
+                else Domain.TRUE
+            )
+            for bom in kits
+        )
+        if self.env["stock.warehouse.orderpoint"].search_count(domain, limit=1):
             _debug.logic(
                 "bom_refused",
                 reason="kit_has_orderpoint",
-                boms=self,
-                products=len(product_ids),
+                boms=kits,
             )
             raise ValidationError(
                 self.env._(
@@ -792,7 +791,12 @@ class MrpBom(models.Model):
         return ExplodeScratch() if scratch is None else scratch
 
     def _explode(
-        self, product, quantity, picking_type=False, never_attribute_values=False
+        self,
+        product,
+        quantity,
+        picking_type=False,
+        never_attribute_values=False,
+        round_lines=True,
     ) -> tuple:
         with _debug.perf(
             "bom_explode",
@@ -859,9 +863,10 @@ class MrpBom(models.Model):
                         )
                     )
                 else:
-                    line_quantity = current_line.product_uom_id.round(
-                        line_quantity, rounding_method="UP"
-                    )
+                    if round_lines:
+                        line_quantity = current_line.product_uom_id.round(
+                            line_quantity, rounding_method="UP"
+                        )
                     lines_done.append(
                         (
                             current_line,
@@ -895,9 +900,8 @@ class MrpBom(models.Model):
             for operation in bom.operation_ids:
                 if operation._is_bom_line_skipped(product, never_attribute_values):
                     continue
-                if operation in demands:
-                    quantity += demands[operation][2]
-                demands[operation] = (bom, product, quantity)
+                previous = demands[operation][2] if operation in demands else 0.0
+                demands[operation] = (bom, product, quantity + previous)
         return demands
 
     def _get_standard_cost_breakdown(
@@ -1006,7 +1010,7 @@ class MrpBom(models.Model):
         kit_qty = self.product_uom_id._get_quantity_in_unit(
             self.product_qty, product.uom_id, round=False
         )
-        _dummy, exploded_lines = self._explode(product, 1)
+        _dummy, exploded_lines = self._explode(product, 1, round_lines=False)
         component_qty = defaultdict(float)
         for line, line_data in exploded_lines:
             component_qty[line.product_id] += line.product_uom_id._get_quantity_in_unit(

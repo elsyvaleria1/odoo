@@ -765,6 +765,14 @@ class MrpWorkorder(models.Model):
         Productivity.create(added_timer_vals)
         timers_to_unlink.unlink()
 
+    def _settle_duration_for_posting(self) -> None:
+        self.filtered(lambda wo: wo.state == "cancel" and wo.duration).duration = 0.0
+        untimed = self.filtered(lambda wo: wo.state != "cancel" and not wo.duration)
+        for duration_expected, workorders in untimed.grouped(
+            "duration_expected"
+        ).items():
+            workorders.duration = duration_expected
+
     def _prepare_added_timeline_vals(self, old_duration, new_duration) -> list:
         self.check_singleton()
         added = new_duration - old_duration
@@ -1069,7 +1077,12 @@ class MrpWorkorder(models.Model):
         if not productions:
             return
         for production in productions:
-            min_workorder_qty = min(production.workorder_ids.mapped("qty_produced"))
+            min_workorder_qty = min(
+                production.workorder_ids.filtered(
+                    lambda wo: wo.state != "cancel"
+                ).mapped("qty_produced"),
+                default=0.0,
+            )
             if production.product_uom_id.compare(min_workorder_qty, 0) > 0:
                 production.workorder_ids.filtered(
                     lambda w: w.state != "done"
@@ -1119,8 +1132,10 @@ class MrpWorkorder(models.Model):
             lambda move: move.state not in ("done", "cancel")
         )
 
-    def _plan_workorder(self, replan=False, planned=None) -> None:
+    def _plan_workorder(self, replan=False, planned=None, undated=None) -> None:
         self.check_singleton()
+        if undated is None:
+            undated = set()
         if planned is None:
             planned = set()
         elif self.id in planned:
@@ -1130,7 +1145,7 @@ class MrpWorkorder(models.Model):
         if self.production_id.date_start and self.production_id.date_start > date_start:
             date_start = self.production_id.date_start
         for workorder in self.blocked_by_workorder_ids:
-            workorder._plan_workorder(replan, planned)
+            workorder._plan_workorder(replan, planned, undated)
             if workorder.date_end and workorder.date_end > date_start:
                 date_start = workorder.date_end
         if self.state not in ["blocked", "ready"]:
@@ -1157,7 +1172,8 @@ class MrpWorkorder(models.Model):
                 )
                 for workcenter in workcenters
             },
-            reservations_to_ignore=self.reservation_ids,
+            reservations_to_ignore=self.reservation_ids
+            | self.browse(undated).reservation_ids,
         )
         if best is None:
             _debug.logic(
@@ -1185,6 +1201,7 @@ class MrpWorkorder(models.Model):
                 "date_end": date_end,
             }
         )
+        undated.discard(self.id)
 
     def _get_costs_hour(self):
         self.check_singleton()
@@ -1470,8 +1487,10 @@ class MrpWorkorder(models.Model):
         )
         return duration
 
-    def _get_operation_demand(self) -> tuple:
+    def _get_operation_demand(self, quantity=None) -> tuple:
         self.check_singleton()
+        if quantity is None:
+            quantity = self.qty_producing or self.qty_production
         demand = self.production_id and self.production_id._get_operation_demands().get(
             self.operation_id
         )
@@ -1479,13 +1498,13 @@ class MrpWorkorder(models.Model):
             return (
                 self.product_id,
                 self.product_uom_id,
-                self.qty_producing or self.qty_production,
+                quantity,
                 self.production_bom_id,
             )
-        bom, product, quantity = demand
-        if self.qty_producing and self.qty_production:
-            quantity *= self.qty_producing / self.qty_production
-        return product, bom.product_uom_id, quantity, bom
+        bom, product, demand_quantity = demand
+        if self.qty_production:
+            demand_quantity *= quantity / self.qty_production
+        return product, bom.product_uom_id, demand_quantity, bom
 
     def _get_conflicted_workorder_ids(self):
         self.flush_model(["state", "date_start", "date_end", "workcenter_id"])
@@ -1507,17 +1526,26 @@ class MrpWorkorder(models.Model):
             res[wo1].append(wo2)
         return res
 
-    def _prepare_operation_vals(self) -> dict:
+    def _prepare_operation_vals(self, ratio=1.0) -> dict:
         self.check_singleton()
-        ratio = 1 / self.qty_production
-        if self.operation_id.bom_id:
-            ratio = self.production_id._get_ratio_between_mo_and_bom_quantities(
-                self.operation_id.bom_id
-            )
+        production = self.production_id
+        target_bom = self.env["mrp.bom"].new(
+            {
+                "product_qty": production.product_qty * ratio,
+                "product_uom_id": production.product_uom_id.id,
+            }
+        )
+        cycles, working_minutes = self.workcenter_id._get_cycles_and_working_minutes(
+            production.product_id,
+            production.product_uom_id,
+            production.product_qty,
+            self.duration_expected,
+            target_bom,
+        )
         return {
             "company_id": self.company_id.id,
             "name": self.name,
-            "time_cycle_manual": self.duration_expected * ratio,
+            "time_cycle_manual": working_minutes / cycles if cycles else 0.0,
             "workcenter_id": self.workcenter_id.id,
         }
 

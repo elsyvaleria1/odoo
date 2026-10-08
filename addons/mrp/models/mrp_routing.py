@@ -227,13 +227,20 @@ class MrpRoutingWorkcenter(models.Model):
             total_duration = 0
             cycle_number = 0
             for item in history[operation.id]:
-                cycles, working_minutes = (
-                    item.workcenter_id._get_cycles_and_working_minutes(
+                if operation.bom_id == item.production_bom_id:
+                    product, unit, quantity, bom = (
                         item.product_id,
                         item.product_uom_id,
                         item.qty_produced,
-                        item.duration,
                         operation.bom_id,
+                    )
+                else:
+                    product, unit, quantity, bom = item._get_operation_demand(
+                        item.qty_produced
+                    )
+                cycles, working_minutes = (
+                    item.workcenter_id._get_cycles_and_working_minutes(
+                        product, unit, quantity, item.duration, bom
                     )
                 )
                 total_duration += working_minutes

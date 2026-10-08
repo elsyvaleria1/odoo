@@ -763,3 +763,90 @@ class TestUnbuildAndWizards(TestMrpCommon):
             {"production_id": production.id}
         )
         self.assertEqual(wizard.production_capacity, 2.0)
+
+    def _unbuild(self, mo, qty, lot):
+        unbuild_form = Form(self.env["mrp.unbuild"])
+        unbuild_form.mo_id = mo
+        unbuild_form.trace_id = lot
+        if qty is not None:
+            unbuild_form.product_qty = qty
+        unbuild = unbuild_form.save()
+        unbuild.action_unbuild()
+        return unbuild
+
+    def _returned_by_lot(self, unbuilds, product):
+        returned = {}
+        for line in unbuilds.produce_line_ids.filtered(
+            lambda m: m.product_id == product
+        ).move_line_ids:
+            returned[line.trace_id.name] = (
+                returned.get(line.trace_id.name, 0) + line.quantity
+            )
+        return returned
+
+    def test_unbuilding_a_lot_twice_returns_each_component_lot_once(self):
+        mo, _bom, p_final, p1, p2 = self.generate_mo(
+            tracking_final="lot", tracking_base_1="lot"
+        )
+        final_lot, lot_a, lot_b = self.env["product.trace"].create(
+            [
+                {"name": "FIN", "product_id": p_final.id},
+                {"name": "PA", "product_id": p1.id},
+                {"name": "PB", "product_id": p1.id},
+            ]
+        )
+        self._stock(p1, 8, lot=lot_a)
+        self._stock(p1, 12, lot=lot_b)
+        self._stock(p2, 5)
+        self._produce(mo, lot=final_lot)
+
+        first = self._unbuild(mo, 2, final_lot)
+        second = self._unbuild(mo, 3, final_lot)
+
+        self.assertEqual(
+            self._returned_by_lot(first | second, p1), {"PA": 8.0, "PB": 12.0}
+        )
+
+    def test_serials_unbuilt_one_by_one_return_each_component_lot_once(self):
+        mo, _bom, p_final, p1, p2 = self.generate_mo(
+            tracking_final="serial", tracking_base_1="lot", qty_final=3
+        )
+        serials = self.env["product.trace"].create(
+            [{"name": f"SN{i}", "product_id": p_final.id} for i in range(3)]
+        )
+        lot_a, lot_b = self.env["product.trace"].create(
+            [
+                {"name": "PA", "product_id": p1.id},
+                {"name": "PB", "product_id": p1.id},
+            ]
+        )
+        self._stock(p1, 8, lot=lot_a)
+        self._stock(p1, 4, lot=lot_b)
+        self._stock(p2, 3)
+        mo.action_assign()
+        mo.trace_producing_ids = serials
+        mo.qty_producing = 3
+        mo.move_raw_ids.picked = True
+        mo.button_mark_done()
+        self.assertEqual(mo.state, "done")
+
+        unbuilds = self.env["mrp.unbuild"]
+        for serial in serials:
+            unbuilds |= self._unbuild(mo, None, serial)
+
+        self.assertEqual(self._returned_by_lot(unbuilds, p1), {"PA": 8.0, "PB": 4.0})
+
+    def test_a_done_unbuild_keeps_its_quantity_when_the_order_changes(self):
+        mo, _bom, p_final, p1, p2 = self.generate_mo(tracking_final="lot")
+        final_lot = self.env["product.trace"].create(
+            {"name": "FIN", "product_id": p_final.id}
+        )
+        self._stock(p1, 20)
+        self._stock(p2, 5)
+        self._produce(mo, lot=final_lot)
+        unbuild = self._unbuild(mo, 2, final_lot)
+        self.assertEqual(unbuild.state, "done")
+
+        p_final.tracking = "serial"
+
+        self.assertEqual(unbuild.product_qty, 2.0)

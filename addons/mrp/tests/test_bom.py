@@ -4,7 +4,7 @@ from datetime import timedelta
 from psycopg.errors import CheckViolation
 
 from odoo import exceptions, fields
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import Form, HttpCase, freeze_time, tagged
 from odoo.tools import float_compare, float_repr, float_round
@@ -2061,7 +2061,7 @@ class TestBoM(TestMrpCommon):
                 {
                     "name": "Kiss the Monster on its Forehead 😘",
                     "workcenter_id": self.workcenter_1.id,
-                    "time_cycle": 20,
+                    "time_cycle": 18,
                 },
                 {
                     "name": "Put the Monster in the Jar!",
@@ -2072,6 +2072,12 @@ class TestBoM(TestMrpCommon):
         )
         self.assertEqual(bom_from_mo_3.byproduct_ids.product_id, by_product)
         self.assertEqual(bom_from_mo_3.byproduct_ids.product_qty, 6)
+        replanned = create_mo(3)
+        replanned.bom_id = bom_from_mo_3
+        replanned.action_confirm()
+        self.assertEqual(
+            replanned.workorder_ids.mapped("duration_expected"), [60.0, 480.0]
+        )
 
     def test_bom_generated_from_mo_with_different_uom(self):
         self.env.user.group_ids += self.env.ref("uom.group_uom")
@@ -5085,3 +5091,229 @@ class TestBoMAuditFixes(TestMrpCommon):
         self.assertEqual(
             large, small, "neither the variants nor the operations cost a statement"
         )
+
+    def test_a_kit_used_twice_charges_each_operation_its_own_demand(self):
+        finished, kit, component = (
+            self._product("Two-kit table"),
+            self._product("Leg kit"),
+            self._product("Leg"),
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": kit.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": component.id})],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": name,
+                            "workcenter_id": self.workcenter_2.id,
+                            "time_cycle_manual": 10,
+                        }
+                    )
+                    for name in ("Cut", "Sand")
+                ],
+            }
+        )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": finished.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": kit.id, "product_qty": 1}),
+                    Command.create({"product_id": kit.id, "product_qty": 2}),
+                ],
+            }
+        )
+
+        production = self._confirmed_production(bom)
+
+        self.assertEqual(
+            sorted(production.workorder_ids.mapped("duration_expected")), [30.0, 30.0]
+        )
+
+    def test_a_kit_of_a_pack_counts_its_component_exactly(self):
+        kit, pack, piece = (
+            self._product("Single"),
+            self._product("Pack of three"),
+            self._product("Piece"),
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": pack.product_tmpl_id.id,
+                "type": "phantom",
+                "product_qty": 3,
+                "bom_line_ids": [Command.create({"product_id": piece.id})],
+            }
+        )
+        kit_bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": kit.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": pack.id})],
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            piece, self.stock_location, 10
+        )
+
+        self.assertEqual(kit.qty_available, 30)
+        component_qty, _kit_qty = kit_bom._get_kit_component_qty(kit)
+        self.assertAlmostEqual(component_qty[piece], 1 / 3)
+
+    def test_a_kit_sold_by_weight_keeps_its_fraction(self):
+        blend, oats, bran = (
+            self._product("Blend", self.kg),
+            self._product("Oats", self.kg),
+            self._product("Bran", self.kg),
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": blend.product_tmpl_id.id,
+                "product_uom_id": self.kg.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": oats.id, "product_qty": 0.5}),
+                    Command.create({"product_id": bran.id, "product_qty": 0.5}),
+                ],
+            }
+        )
+        for component in oats | bran:
+            self.env["stock.quant"]._update_available_quantity(
+                component, self.stock_location, 1.25
+            )
+        self.assertEqual(blend.qty_available, 2.5)
+
+        scrap = self.env["stock.scrap"].create(
+            {
+                "product_id": blend.id,
+                "product_uom_id": self.kg.id,
+                "scrap_qty": 2.5,
+                "location_id": self.stock_location.id,
+            }
+        )
+        scrap.action_validate()
+        self.assertEqual(scrap.scrap_qty, 2.5)
+
+    def test_a_kit_counted_in_units_stays_whole(self):
+        chair, leg = self._product("Chair"), self._product("Leg")
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": chair.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": leg.id, "product_qty": 4})
+                ],
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(leg, self.stock_location, 10)
+        self.assertEqual(chair.qty_available, 2)
+
+    def test_a_line_written_on_its_own_cannot_close_a_cycle(self):
+        top, middle = self._product("Top"), self._product("Middle")
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": top.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": middle.id})],
+            }
+        )
+        middle_bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": middle.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": self._product("Leaf").id})
+                ],
+            }
+        )
+        with self.assertRaises(ValidationError):
+            self.env["mrp.bom.line"].create(
+                {"bom_id": middle_bom.id, "product_id": top.id}
+            )
+        with self.assertRaises(ValidationError):
+            middle_bom.bom_line_ids.product_id = top
+
+    def test_a_byproduct_written_on_its_own_respects_the_cost_share_cap(self):
+        finished = self._product("Finished")
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": finished.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": self._product("Input").id})
+                ],
+                "byproduct_ids": [
+                    Command.create(
+                        {"product_id": self._product(name).id, "cost_share": 30}
+                    )
+                    for name in ("Shavings", "Dust")
+                ],
+            }
+        )
+        with self.assertRaises(ValidationError):
+            bom.byproduct_ids[0].cost_share = 80
+        with self.assertRaises(ValidationError):
+            self.env["mrp.bom.byproduct"].create(
+                {
+                    "bom_id": bom.id,
+                    "product_id": self._product("Chips").id,
+                    "cost_share": 50,
+                }
+            )
+
+    def test_unarchiving_a_kit_with_a_reordering_rule_is_refused(self):
+        kit = self._product("Archived kit")
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": kit.product_tmpl_id.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": self._product("Kit part").id})
+                ],
+            }
+        )
+        bom.action_archive()
+        self.env["stock.warehouse.orderpoint"].create(
+            {"product_id": kit.id, "location_id": self.stock_location.id}
+        )
+        with self.assertRaises(ValidationError):
+            bom.action_unarchive()
+
+    def test_a_kit_of_one_company_allows_rules_of_another(self):
+        other = self.env["res.company"].create({"name": "Kit-free company"})
+        product = self._product("Shared product")
+        product.company_id = False
+        self.env["stock.warehouse.orderpoint"].create(
+            {
+                "product_id": product.id,
+                "company_id": other.id,
+                "location_id": self.env["stock.warehouse"]
+                .search([("company_id", "=", other.id)], limit=1)
+                .lot_stock_id.id,
+            }
+        )
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": product.product_tmpl_id.id,
+                "company_id": self.env.company.id,
+                "type": "phantom",
+                "bom_line_ids": [
+                    Command.create({"product_id": self._product("Own part").id})
+                ],
+            }
+        )
+
+    def test_a_kit_sold_by_the_dozen_counts_whole_units_not_whole_dozens(self):
+        dozen = self.env.ref("uom.product_uom_dozen")
+        kit, part = self._product("Dozen kit", dozen), self._product("Dozen part")
+        self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": kit.product_tmpl_id.id,
+                "product_uom_id": self.unit.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": part.id})],
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            part, self.stock_location, 30
+        )
+        self.assertEqual(kit.qty_available, 2.5)

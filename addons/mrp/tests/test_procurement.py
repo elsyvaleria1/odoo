@@ -1486,6 +1486,19 @@ class TestProcurement(TestMrpCommon):
         self.assertEqual(order.product_uom_id, self.uom_unit)
         self.assertEqual(order.product_qty, 3.0)
 
+    def test_a_procurement_joins_an_order_of_its_boms_operation_type(self):
+        product, _component = self._create_per_dozen_product()
+        assembly = self.warehouse_1.manu_type_id.copy(
+            {"name": "Assembly", "sequence_code": "ASM"}
+        )
+        product.bom_ids.picking_type_id = assembly
+        reference = self.env["stock.reference"].create({"name": "Assembly"})
+        values = {"reference_ids": reference}
+        self._run_batched_manufacture(product, 1.0, self.uom_unit, values)
+        orders = self._run_batched_manufacture(product, 2.0, self.uom_unit, values)
+        self.assertEqual(orders.picking_type_id, assembly)
+        self.assertEqual(orders.mapped("product_qty"), [3.0])
+
     def test_orderpoint_replenishment_is_ordered_in_the_orderpoint_unit(self):
         product, component = self._create_per_dozen_product()
         orderpoint = self.env["stock.warehouse.orderpoint"].create(

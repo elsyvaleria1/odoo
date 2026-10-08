@@ -359,6 +359,174 @@ class TestOrderGuards(TestMrpCommon):
             production.button_mark_done()
         self.assertEqual(production.state, "cancel")
 
+    def test_a_draft_order_stays_draft_whatever_is_recorded_on_it(self):
+        production = self._production(2)
+        production.qty_producing = 2
+        self.assertEqual(production.state, "draft")
+        production.move_raw_ids.picked = True
+        self.assertEqual(production.state, "draft")
+        with self.assertRaises(UserError):
+            production.button_mark_done()
+        self.assertEqual(production.state, "draft")
+
+    def test_marking_a_done_order_done_again_changes_nothing(self):
+        self.finished.tracking = "serial"
+        self.env["stock.quant"]._update_available_quantity(
+            self.component, self.stock_location, 100
+        )
+        production = self._production(1)
+        production.action_confirm()
+        production.action_generate_serial()
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+        self.assertEqual(production.state, "done")
+        done_lines = production.move_finished_ids.move_line_ids
+
+        production.button_mark_done()
+
+        self.assertEqual(production.state, "done")
+        self.assertEqual(production.move_finished_ids.move_line_ids, done_lines)
+
+    def test_an_order_without_an_end_date_is_late_only_by_its_deadline(self):
+        production = self._production(2)
+        production.action_confirm()
+        production.write({"date_deadline": "2099-01-01 00:00:00", "date_end": False})
+        self.assertFalse(production.is_delayed)
+        production.date_deadline = "2000-01-01 00:00:00"
+        self.assertTrue(production.is_delayed)
+
+    def test_switching_the_bom_of_a_draft_order_keeps_its_quantity(self):
+        dozen = self.env.ref("uom.product_uom_dozen")
+        boms = self.env["mrp.bom"].create(
+            [
+                {
+                    "product_tmpl_id": self.finished.product_tmpl_id.id,
+                    "product_uom_id": dozen.id,
+                    "bom_line_ids": [
+                        Command.create(
+                            {"product_id": self.component.id, "product_qty": qty}
+                        )
+                    ],
+                }
+                for qty in (12, 24)
+            ]
+        )
+        production = self.env["mrp.production"].create(
+            {"product_id": self.finished.id, "bom_id": boms[0].id}
+        )
+        self.assertEqual(
+            (production.product_qty, production.product_uom_id), (1.0, dozen)
+        )
+        production.write({"bom_id": boms[1].id})
+        self.assertEqual(
+            (production.product_qty, production.product_uom_id), (1.0, dozen)
+        )
+        self.assertEqual(production.move_raw_ids.product_uom_qty, 24)
+
+    def test_a_scrapped_serial_picked_on_an_order_is_not_consumed_too(self):
+        engine = self.env["product.product"].create(
+            {"name": "Engine", "is_storable": True, "tracking": "serial"}
+        )
+        first, second = self.env["product.trace"].create(
+            [{"name": name, "product_id": engine.id} for name in ("SN1", "SN2")]
+        )
+        for serial in first | second:
+            self.env["stock.quant"]._update_available_quantity(
+                engine, self.stock_location, 1, trace_id=serial
+            )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.finished.product_tmpl_id.id,
+                "bom_line_ids": [Command.create({"product_id": engine.id})],
+            }
+        )
+        production = self._production(1, bom=bom)
+        production.action_confirm()
+        production.action_assign()
+        self.assertEqual(production.move_raw_ids.move_line_ids.trace_id, first)
+        production.move_raw_ids.picked = True
+
+        self.env["stock.scrap"].create(
+            {
+                "product_id": engine.id,
+                "trace_id": first.id,
+                "scrap_qty": 1,
+                "production_id": production.id,
+                "location_id": self.stock_location.id,
+            }
+        ).action_validate()
+        production.action_assign()
+        production.qty_producing = 1
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+
+        self.assertEqual(production.move_raw_ids.move_line_ids.trace_id, second)
+        quantities = {
+            quant.trace_id: quant.quantity
+            for quant in self.env["stock.quant"].search(
+                [
+                    ("product_id", "=", engine.id),
+                    ("location_id", "=", self.stock_location.id),
+                ]
+            )
+        }
+        self.assertFalse(any(quantity < 0 for quantity in quantities.values()))
+
+    def test_confirming_a_serial_order_in_dozens_keeps_edited_components(self):
+        dozen = self.env.ref("uom.product_uom_dozen")
+        self.finished.tracking = "serial"
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.finished.product_tmpl_id.id,
+                "product_uom_id": dozen.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": self.component.id, "product_qty": 12})
+                ],
+            }
+        )
+        production = self._production(1, bom=bom)
+        self.assertEqual(production.product_uom_id, dozen)
+        production.move_raw_ids.product_uom_qty = 20
+
+        production.action_confirm()
+
+        self.assertEqual(
+            (production.product_qty, production.product_uom_id),
+            (12.0, self.finished.uom_id),
+        )
+        self.assertEqual(production.move_raw_ids.product_uom_qty, 20)
+
+    def test_moving_an_order_to_another_warehouse_moves_its_moves_too(self):
+        other = self.env["stock.warehouse"].create(
+            {"name": "Second site", "code": "SND"}
+        )
+        production = self._production(2)
+        production.action_confirm()
+        reference = production.reference_ids
+
+        production.picking_type_id = other.manu_type_id
+
+        moves = production.move_raw_ids | production.move_finished_ids
+        self.assertEqual(moves.warehouse_id, other)
+        self.assertEqual(reference.name, production.name)
+
+    def test_an_order_without_components_moves_warehouse_too(self):
+        other = self.env["stock.warehouse"].create(
+            {"name": "Third site", "code": "TRD"}
+        )
+        bare = self.env["product.product"].create(
+            {"name": "No components", "is_storable": True}
+        )
+        production = self.env["mrp.production"].create(
+            {"product_id": bare.id, "product_qty": 1}
+        )
+        production.action_confirm()
+        self.assertFalse(production.move_raw_ids)
+
+        production.picking_type_id = other.manu_type_id
+
+        self.assertEqual(production.move_finished_ids.warehouse_id, other)
+
     def test_a_fractional_run_costs_its_expected_time_per_unit(self):
         self.bom.operation_ids = [
             Command.create(
@@ -496,6 +664,23 @@ class TestProductionStatementGuards(TransactionCase):
 
         plan(1)
         self.assertEqual(plan(2), plan(6))
+
+    def test_operations_add_no_statement_per_order_to_marking_done(self):
+        def marked(count, operations):
+            productions = self._orders(count, operations=operations)
+            productions.action_confirm()
+            productions.action_assign()
+            return self.statements(
+                productions,
+                lambda productions: productions.with_context(
+                    skip_consumption=True
+                ).button_mark_done(),
+            )
+
+        marked(1, 0)
+        without = marked(6, 0) - marked(2, 0)
+        with_operations = marked(6, 1) - marked(2, 1)
+        self.assertLessEqual(with_operations - without, 1)
 
     def test_backorder_split_grows_by_its_line_writes_only(self):
         def split(count):

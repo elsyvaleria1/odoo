@@ -360,13 +360,10 @@ class MrpWorkcenter(models.Model):
     )
     def _compute_workorder_counts_and_load(self) -> None:
         MrpWorkorder = self.env["mrp.workorder"]
-        counts = {wid: {} for wid in self._ids}
-        load = dict.fromkeys(self._ids, 0)
+        counts = defaultdict(dict)
+        load = defaultdict(float)
         for workcenter, state, duration_sum, count in MrpWorkorder._read_group(
-            [
-                ("workcenter_id", "in", self.ids),
-                ("state", "in", MrpWorkorder.OPEN_STATES),
-            ],
+            self._get_load_domain(),
             ["workcenter_id", "state"],
             ["duration_expected:sum", "__count"],
         ):
@@ -381,13 +378,12 @@ class MrpWorkcenter(models.Model):
             )
         )
         for workcenter in self:
-            workcenter.workorder_count = sum(counts[workcenter.id].values())
-            workcenter.workcenter_load = load[workcenter.id]
-            workcenter.workorder_ready_count = counts[workcenter.id].get("ready", 0)
-            workcenter.workorder_progress_count = counts[workcenter.id].get(
-                "progress", 0
-            )
-            workcenter.workorder_late_count = late.get(workcenter, 0)
+            origin = workcenter._origin
+            workcenter.workorder_count = sum(counts[origin.id].values())
+            workcenter.workcenter_load = load[origin.id]
+            workcenter.workorder_ready_count = counts[origin.id].get("ready", 0)
+            workcenter.workorder_progress_count = counts[origin.id].get("progress", 0)
+            workcenter.workorder_late_count = late.get(origin, 0)
 
     @api.depends("time_ids", "time_ids.date_end", "time_ids.loss_type")
     def _compute_working_state(self) -> None:
@@ -427,11 +423,7 @@ class MrpWorkcenter(models.Model):
         for workcenter, workorder, loss_type, starts, stops, durations in self.env[
             "mrp.workcenter.productivity"
         ]._read_group(
-            [
-                ("date_start", ">=", self._get_oee_window_start()),
-                ("workcenter_id", "in", self.ids),
-                ("date_end", "!=", False),
-            ],
+            self._get_oee_domain(),
             ["workcenter_id", "workorder_id", "loss_type"],
             ["date_start:array_agg", "date_end:array_agg", "duration:array_agg"],
         ):
@@ -484,11 +476,7 @@ class MrpWorkcenter(models.Model):
         by_workcenter = {
             workcenter.id: (expected, spent)
             for workcenter, expected, spent in self.env["mrp.workorder"]._read_group(
-                [
-                    ("date_start", ">=", self._get_oee_window_start()),
-                    ("workcenter_id", "in", self.ids),
-                    ("state", "=", "done"),
-                ],
+                self._get_performance_domain(),
                 ["workcenter_id"],
                 ["duration_expected:sum", "duration:sum"],
             )
@@ -1246,7 +1234,13 @@ class MrpWorkcenterProductivity(models.Model):
 
     def button_block(self) -> None:
         self.check_singleton()
-        self.workcenter_id.order_ids.end_all()
+        self.search(
+            [
+                ("workcenter_id", "=", self.workcenter_id.id),
+                ("workorder_id", "!=", False),
+                ("date_end", "=", False),
+            ]
+        ).workorder_id.end_all()
 
     def _close(self):
         now = fields.Datetime.now()

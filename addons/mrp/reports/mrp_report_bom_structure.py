@@ -77,12 +77,9 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
 
     @api.model
     def _get_report_data(self, bom_id, searchQty=0, searchVariant=False):
-        lines = {}
         self = self._with_bom_company(self.env["mrp.bom"].browse(bom_id))
         bom = self.env["mrp.bom"].browse(bom_id)
         bom_quantity = searchQty or bom.product_qty or 1
-        bom_product_variants = {}
-        bom_uom_name = ""
 
         if searchVariant:
             product = self.env["product.product"].browse(int(searchVariant))
@@ -94,13 +91,6 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                     active_test=False
                 ).product_variant_ids[:1]
             )
-
-        if bom:
-            bom_uom_name = bom.product_uom_id.name
-
-            if not bom.product_id:
-                for variant in bom.product_tmpl_id.product_variant_ids:
-                    bom_product_variants[variant.id] = variant.display_name
 
         warehouse = self._get_default_warehouse(bom)
 
@@ -115,18 +105,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
             lines = self._get_bom_data(
                 bom, warehouse, product=product, line_qty=bom_quantity, level=0
             )
-        return {
-            "lines": lines,
-            "variants": bom_product_variants,
-            "bom_uom_name": bom_uom_name,
-            "bom_qty": bom_quantity,
-            "is_variant_applied": self.env.user.has_group(
-                "product.group_product_variant"
-            )
-            and len(bom_product_variants) > 1,
-            "is_uom_applied": self.env.user.has_group("uom.group_uom"),
-            "precision": self.env["decimal.precision"].get_precision("Product Unit"),
-        }
+        return {"lines": lines}
 
     @api.model
     def _get_missing_qty_status(self, missing_qty, route_name) -> str:

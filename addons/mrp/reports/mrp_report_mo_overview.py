@@ -1,6 +1,6 @@
 import copy
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from math import log10
 from typing import Literal
 
@@ -12,7 +12,6 @@ from odoo.tools import (
     float_repr,
     float_round,
     format_date,
-    get_lang,
 )
 
 _debug = DebugLog(__name__)
@@ -674,6 +673,13 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
             "details": byproducts,
         }
 
+    def _get_child_production_share(self, child, quantity, unit) -> float:
+        produced = child.qty_produced if child.state == "done" else child.product_qty
+        produced = child.product_uom_id._get_quantity_report(produced, unit)
+        if unit.compare(produced, 0) <= 0:
+            return 1.0
+        return min(1.0, quantity / produced)
+
     def _get_cost_sums(self, components, operations=False) -> tuple:
         total_mo_cost = total_bom_cost = total_real_cost = 0
         if operations:
@@ -980,15 +986,14 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                     forecast_line["uom_id"]["rounding"]
                 ),
                 "unit_cost": self._get_unit_cost(move_raw),
-                "mo_cost": forecast_line.get(
-                    "cost",
-                    self._get_replenishment_mo_cost(
-                        product,
-                        line_quantity,
-                        move_raw.product_uom_id,
-                        currency,
-                        forecast_line.get("move_in"),
-                    ),
+                "mo_cost": forecast_line["cost"]
+                if "cost" in forecast_line
+                else self._get_replenishment_mo_cost(
+                    product,
+                    line_quantity,
+                    move_raw.product_uom_id,
+                    currency,
+                    forecast_line.get("move_in"),
                 ),
                 "bom_cost": currency.round(
                     self._get_component_standard_cost(
@@ -1025,15 +1030,12 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                     replenishment_index,
                 )
                 replenishment["byproducts"] = byproducts
-                replenishment["summary"]["mo_cost"] = (
-                    initial_mo_cost * remaining_cost_share
+                used_share = remaining_cost_share * self._get_child_production_share(
+                    doc_in, line_quantity, move_raw.product_uom_id
                 )
-                replenishment["summary"]["bom_cost"] = (
-                    initial_bom_cost * remaining_cost_share
-                )
-                replenishment["summary"]["real_cost"] = (
-                    initial_real_cost * remaining_cost_share
-                )
+                replenishment["summary"]["mo_cost"] = initial_mo_cost * used_share
+                replenishment["summary"]["bom_cost"] = initial_bom_cost * used_share
+                replenishment["summary"]["real_cost"] = initial_real_cost * used_share
 
             if self._is_doc_in_done(doc_in):
                 replenishment["summary"]["receipt"] = self._format_receipt_date(
@@ -1217,14 +1219,14 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
 
         product = move_raw.product_id
         currency = (production.company_id or self.env.company).currency_id
-        lg = self.env["res.lang"]._get_data(code=self.env.user.lang) or get_lang(
-            self.env
+        receipt_date = in_transit["move_out"].date
+        transit_qty = in_transit["uom_id"]._get_quantity_report(
+            in_transit["quantity"], move_raw.product_uom_id
         )
-        receipt_date = datetime.strptime(in_transit["delivery_date"], lg.date_format)
         full_bom_demand = self._get_full_bom_demand(production, move_raw, 0)
         bom_missing_qty = max(
             0,
-            full_bom_demand - (move_raw.product_uom_qty - in_transit["quantity"]),
+            full_bom_demand - (move_raw.product_uom_qty - transit_qty),
         )
         mo_cost = self._get_replenishment_mo_cost(
             product, in_transit["quantity"], in_transit["uom_id"], currency
@@ -1232,7 +1234,7 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
         bom_cost = (
             currency.round(
                 product._get_standard_cost(
-                    bom_missing_qty, in_transit["uom_id"], production.company_id
+                    bom_missing_qty, move_raw.product_uom_id, production.company_id
                 )
             )
             if production.bom_id
@@ -1257,12 +1259,7 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                 "model": "in_transit",
                 "product_model": product._name,
                 "product_id": product.id,
-                "quantity": min(
-                    move_raw.product_uom_qty,
-                    in_transit["uom_id"]._get_quantity_report(
-                        in_transit["quantity"], move_raw.product_uom_id
-                    ),
-                ),
+                "quantity": min(move_raw.product_uom_qty, transit_qty),
                 "uom_name": move_raw.product_uom_id.display_name,
                 "uom_precision": self._get_uom_precision(
                     move_raw.product_uom_id.rounding
@@ -1630,7 +1627,7 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                         replenish_data["qty_already_reserved"][move],
                         move_raw.product_uom_id,
                     ),
-                    move_raw.product_uom_qty,
+                    move_raw.product_uom_qty - total_reserved,
                 )
                 total_reserved += reserved
                 replenish_data["qty_already_reserved"][move] += (
@@ -1639,7 +1636,9 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                     )
                 )
                 if (
-                    move.product_id.uom_id.compare(total_reserved, move_raw.product_qty)
+                    move_raw.product_uom_id.compare(
+                        total_reserved, move_raw.product_uom_qty
+                    )
                     >= 0
                 ):
                     break

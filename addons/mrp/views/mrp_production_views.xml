@@ -554,6 +554,10 @@
                                     readonly="state != 'draft'"
                                     class="flex-grow-0"
                                     style="width:auto!important" />
+                                <field
+                                    name="product_uom_id"
+                                    groups="!uom.group_uom"
+                                    invisible="1" />
                                 <span name="to_produce" class="fw-bold text-nowrap">To Produce</span>
                                 <button
                                     name="action_product_forecast_report"

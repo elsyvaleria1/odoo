@@ -80,6 +80,16 @@ class MixinBomComponent(models.AbstractModel):
         for record in self:
             record.product_uom_id = record.product_id.uom_id
 
+    @api.constrains(
+        "bom_id",
+        "bom_product_template_attribute_value_ids",
+        "product_id",
+        "product_qty",
+        "product_uom_id",
+    )
+    def _check_parent_bom(self) -> None:
+        super()._check_parent_bom()
+
     @api.constrains("product_uom_id", "product_id")
     def _check_product_uom_id_category(self) -> None:
         for record in self:

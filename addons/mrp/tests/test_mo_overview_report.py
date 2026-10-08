@@ -457,3 +457,63 @@ class TestMoOverviewReport(TestMrpCommon):
             production.company_id.currency_id.round(workorder._get_cost()),
             "the overview and the valuation read the same minutes",
         )
+
+    def test_a_shared_child_order_is_charged_by_the_share_used(self):
+        panel, wood, table = self.env["product.product"].create(
+            [
+                {"name": "Shared panel", "is_storable": True},
+                {"name": "Shared wood", "is_storable": True, "standard_price": 4},
+                {"name": "Shared table", "is_storable": True},
+            ]
+        )
+        panel_bom, table_bom = self.env["mrp.bom"].create(
+            [
+                {
+                    "product_tmpl_id": panel.product_tmpl_id.id,
+                    "bom_line_ids": [Command.create({"product_id": wood.id})],
+                },
+                {
+                    "product_tmpl_id": table.product_tmpl_id.id,
+                    "bom_line_ids": [
+                        Command.create({"product_id": panel.id, "product_qty": 2})
+                    ],
+                },
+            ]
+        )
+        parent, child = self.env["mrp.production"].create(
+            [
+                {"product_id": table.id, "bom_id": table_bom.id, "product_qty": 1},
+                {"product_id": panel.id, "bom_id": panel_bom.id, "product_qty": 10},
+            ]
+        )
+        (parent | child).action_confirm()
+        child.move_finished_ids.move_dest_ids = parent.move_raw_ids
+
+        data = self.env["report.mrp.report_mo_overview"]._get_report_data(parent.id)
+        [replenishment] = [
+            line["summary"]
+            for component in data["components"]
+            for line in component["replenishments"]
+            if line["summary"]["model"] == "mrp.production"
+        ]
+        self.assertEqual(replenishment["id"], child.id)
+        self.assertAlmostEqual(replenishment["mo_cost"], 8.0)
+
+    def test_stock_held_outside_the_stock_location_does_not_break_the_overview(
+        self,
+    ):
+        component = self.bom_1.bom_line_ids[0].product_id
+        dock = self.env["stock.location"].create(
+            {
+                "name": "Dock",
+                "usage": "internal",
+                "location_id": self.warehouse_1.view_location_id.id,
+            }
+        )
+        self.env["stock.quant"]._update_available_quantity(component, dock, 3)
+
+        data = self.env["report.mrp.report_mo_overview"]._get_report_data(
+            self.production.id
+        )
+
+        self.assertTrue(data["components"])
