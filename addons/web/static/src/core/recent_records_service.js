@@ -4,6 +4,7 @@
 import { browser } from "@web/core/browser/browser";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
+import { user } from "@web/core/user";
 
 const log = makeLogger("web.recent_records");
 
@@ -41,7 +42,12 @@ export const recentRecordsService = {
              * @param {number} resId
              */
             note(resModel, resId) {
-                if (!resModel || !Number.isInteger(resId) || resId <= 0) {
+                if (
+                    !user.isInternalUser ||
+                    !resModel ||
+                    !Number.isInteger(resId) ||
+                    resId <= 0
+                ) {
                     return;
                 }
                 const key = `${resModel},${resId}`;

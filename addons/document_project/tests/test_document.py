@@ -91,6 +91,31 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         count_end = self.env["document.document"].search_count([("active", "=", True)])
         self.assertEqual(count_end, count_start - 2)
 
+    def test_unlink_keeps_the_folder_of_an_archived_project(self):
+        archived_folder, shared_folder, unlinked_folder = self.env[
+            "document.document"
+        ].create([{"name": f"F{i}", "type": "folder"} for i in range(3)])
+        archived, archived_sharing, unlinked, unlinked_sharing = self.env[
+            "project.project"
+        ].create(
+            [
+                {"name": name, "documents_folder_id": folder.id}
+                for name, folder in [
+                    ("archived", archived_folder),
+                    ("archived sharing", shared_folder),
+                    ("unlinked", unlinked_folder),
+                    ("unlinked sharing", shared_folder),
+                ]
+            ]
+        )
+        (archived | archived_sharing).action_archive()
+
+        (unlinked | unlinked_sharing).unlink()
+
+        self.assertTrue(archived_folder.active)
+        self.assertTrue(shared_folder.active)
+        self.assertFalse(unlinked_folder.active)
+
     def test_bridge_parent_folder(self):
         """
         Tests the "Parent Folder" setting

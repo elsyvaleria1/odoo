@@ -44,12 +44,12 @@ class ProjectProject(models.Model):
     @api.ondelete(at_uninstall=False)
     def _archive_folder_on_projects_unlinked(self) -> None:
         """Archives the project folder if all its related projects are unlinked."""
-        self.env["document.document"].sudo().search(
-            [
-                ("project_ids", "!=", False),
-                ("project_ids", "not any", [("id", "not in", self.ids)]),
-            ]
-        ).sudo(False)._filtered_access("unlink").action_archive()
+        # an archived project still owns its folder
+        folders = self.sudo().documents_folder_id.with_context(active_test=False)
+        orphaned = folders.filtered(
+            lambda folder: folder.active and not (folder.project_ids - self)
+        )
+        orphaned.with_env(self.env)._filtered_access("unlink").action_archive()
 
     @api.constrains("documents_folder_id")
     def _check_company_is_folders_company(self) -> None:

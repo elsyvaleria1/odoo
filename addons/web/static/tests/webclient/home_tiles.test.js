@@ -155,6 +155,20 @@ test("openings reach the server once per second, the latest last", async () => {
     ]);
 });
 
+test("a share user's openings never reach the server", async () => {
+    patchWithCleanup(user, { isInternalUser: false });
+    onRpc("note_opened", () => {
+        expect.step("note_opened");
+        return null;
+    });
+    const env = await makeMockEnv();
+    const recentRecords = recentRecordsService.start(env, { orm: getService("orm") });
+    recentRecords.note("project.task", 1);
+
+    await advanceTime(1000);
+    expect.verifySteps([]);
+});
+
 test("a metric shows its value and trend and opens what it counts", async () => {
     mockService("action", {
         async doAction(/** @type {any} */ action) {

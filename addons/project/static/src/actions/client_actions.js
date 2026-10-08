@@ -42,7 +42,7 @@ export function showTemplateUndoNotification(
                         const controller = env.services.action.currentController;
                         const restoreController = controller.config.breadcrumbs?.at(-2);
                         if (restoreController) {
-                            await restoreController.onSelected();
+                            await env.services.action.restore(restoreController.jsId);
                         } else {
                             controller.config.historyBack();
                         }
@@ -92,13 +92,21 @@ export async function showTemplateFormView(
     { model, recordId, method = "action_create_template_from_project" },
 ) {
     const action = await env.services.orm.call(model, method, [recordId]);
-    await env.services.action.doAction({
-        type: "ir.actions.act_window",
-        res_model: model,
-        views: [[false, "form"]],
-        res_id: action.params.project_id,
-    });
-    await env.services.action.doAction(action);
+    // returned rather than dispatched here: a client action that navigates by
+    // itself and returns nothing makes the executor run the caller's onClose,
+    // which reloads the form this navigation just destroyed
+    return {
+        ...action,
+        params: {
+            ...action.params,
+            next: {
+                type: "ir.actions.act_window",
+                res_model: model,
+                views: [[false, "form"]],
+                res_id: action.params.project_id,
+            },
+        },
+    };
 }
 
 registry
