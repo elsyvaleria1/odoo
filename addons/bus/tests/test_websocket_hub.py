@@ -3,9 +3,11 @@ import socket
 import struct
 import threading
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from odoo.libs.json import loads as json_loads
+from odoo.service.metrics import render_prometheus_exposition
+from odoo.service.server import WebsocketServer
 from odoo.tests import BaseCase, tagged
 
 try:
@@ -240,6 +242,72 @@ class TestWebsocketHub(BaseCase):
             self.assertEqual(opcode, Opcode.CLOSE)
             self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.GOING_AWAY)
 
+    def _dispatch_counter(self, ws):
+        dispatched = []
+
+        def dispatch_bus_notifications():
+            ws._waiting_for_dispatch = False
+            dispatched.append(time.monotonic())
+
+        ws._dispatch_bus_notifications = dispatch_bus_notifications
+        return dispatched
+
+    def _choke(self, ws, peer, size):
+        peer.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+        ws.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+        self.hub.call_soon(ws._write_data_frame, b"x" * size, MagicMock())
+        self.assertTrue(_wait_until(lambda: len(ws._outbuf) > size // 2))
+
+    def test_a_slow_reader_holds_back_only_its_own_dispatches(self):
+        slow, slow_peer, slow_gauge = self._connect()
+        fast, _fast_peer, _gauge = self._connect()
+        slow_dispatches = self._dispatch_counter(slow)
+        fast_dispatches = self._dispatch_counter(fast)
+        with patch.object(Websocket, "WRITE_STALL_TIMEOUT", 1.0):
+            self._choke(slow, slow_peer, 4 * Websocket.WRITE_BUFFER_LIMIT)
+            slow.trigger_notification_dispatching()
+            fast.trigger_notification_dispatching()
+            self.assertTrue(_wait_until(lambda: fast_dispatches))
+            time.sleep(0.1)
+            self.assertEqual(
+                slow_dispatches, [], "no dispatch while its buffer is full"
+            )
+            self.assertTrue(
+                _wait_until(lambda: slow.state is ConnectionState.CLOSED, timeout=5)
+            )
+        self.assertIs(fast.state, ConnectionState.OPEN)
+        self.assertEqual(slow_gauge.count, 0)
+        self.assertEqual(self.hub.write_stalls, 1)
+
+    def test_the_process_outbound_budget_holds_every_dispatch(self):
+        slow, slow_peer, _gauge = self._connect()
+        fast, _fast_peer, _gauge = self._connect()
+        fast_dispatches = self._dispatch_counter(fast)
+        with patch.object(WebsocketHub, "OUTBOUND_LIMIT", 64 * 1024):
+            self._choke(slow, slow_peer, 1024 * 1024)
+            fast.trigger_notification_dispatching()
+            time.sleep(0.2)
+            self.assertEqual(
+                fast_dispatches, [], "held while the process is over budget"
+            )
+            self.assertIn(fast, self.hub.deferred)
+            slow_peer.sock.setblocking(False)
+            deadline = time.monotonic() + 5
+            while not fast_dispatches and time.monotonic() < deadline:
+                try:
+                    slow_peer.sock.recv(1 << 20)
+                except BlockingIOError:
+                    time.sleep(0.005)
+            self.assertTrue(fast_dispatches, "resumed once the budget drained")
+
+    def test_the_loop_reports_its_lag_and_dispatch_latency(self):
+        ws, _peer, _gauge = self._connect()
+        self._dispatch_counter(ws)
+        ws.trigger_notification_dispatching()
+        self.assertTrue(_wait_until(lambda: self.hub.dispatch_latency.count == 1))
+        self.assertTrue(_wait_until(lambda: self.hub.loop_lag.count >= 1, timeout=3))
+        self.assertGreaterEqual(self.hub.dispatch_latency.recent_max, 0.0)
+
 
 @tagged("-at_install", "post_install")
 class TestDbExecutor(BaseCase):
@@ -340,3 +408,44 @@ class TestDrainOnStop(WebsocketCase):
         with self.assertRaises(WebSocketBadStatusException) as refused:
             self.websocket_connect()
         self.assertEqual(refused.exception.status_code, 503)
+
+
+@tagged("-at_install", "post_install")
+class TestWebsocketMetricsAndLimits(BaseCase):
+    def test_the_loop_metrics_are_exported(self):
+        exposition = render_prometheus_exposition()
+        for family in (
+            "odoo_websocket_db_threads",
+            "odoo_websocket_db_queue",
+            "odoo_websocket_outbound_bytes",
+            "odoo_websocket_write_stalls_total",
+            "odoo_websocket_dispatch_latency_seconds_max",
+            "odoo_websocket_loop_lag_seconds_max",
+        ):
+            self.assertIn(f"# TYPE {family} ", exposition)
+
+    def test_an_overrunning_job_has_its_queries_cancelled_and_nothing_more(self):
+        server = WebsocketServer.__new__(WebsocketServer)
+        server.logger = MagicMock()
+        server._cancelled_overruns = {}
+        server._overruns_cancelled = 0
+        release = threading.Event()
+        job = threading.Thread(target=release.wait, args=(5,), daemon=True)
+        job.type = "websocket_job"
+        job.start_time = time.monotonic() - 10_000
+        job.start()
+        self.addCleanup(release.set)
+        with (
+            patch(
+                "odoo.service._threaded._cancel_thread_queries", return_value=1
+            ) as cancel,
+            patch.object(
+                type(server), "settings", new_callable=PropertyMock
+            ) as settings,
+        ):
+            settings.return_value.get_real_time_budget.return_value = 120
+            server.cancel_overrunning_jobs()
+            server.cancel_overrunning_jobs()
+        cancel.assert_called_once()
+        self.assertIs(cancel.call_args.args[0], job)
+        self.assertEqual(server._overruns_cancelled, 1)

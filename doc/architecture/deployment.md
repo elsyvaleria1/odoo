@@ -351,7 +351,7 @@ request and response wrappers still are.
 
 | Server | Connection handling |
 |---|---|
-| threaded (`workers = 0`) and the evented websocket port | one selector thread holds the listening socket and every idle connection and reads request heads without blocking; a request reaches a worker thread only once its head is complete. Connections are kept alive; a worker serves up to 16 pipelined requests inline before handing the connection back, and a head already buffered at that point is re-queued at once rather than parked. Malformed bytes left after a served request are answered by the parser (`400`/`431`), never raised out of the worker. A websocket leaves the pool at its `101`: the application adopts the socket through `environ["odoo.upgrade.adopt"]`, with the bytes already read past the handshake. `bus` hands every websocket of the process to one loop thread (epoll) that owns their sockets, timers and write buffers, and runs each one's database work — at most one job at a time per connection, at most 8 queued frames before it stops reading that socket — on `ODOO_WEBSOCKET_DB_THREADS` threads, named like request threads while busy so the test harness waits for them |
+| threaded (`workers = 0`) and the evented websocket port | one selector thread holds the listening socket and every idle connection and reads request heads without blocking; a request reaches a worker thread only once its head is complete. Connections are kept alive; a worker serves up to 16 pipelined requests inline before handing the connection back, and a head already buffered at that point is re-queued at once rather than parked. Malformed bytes left after a served request are answered by the parser (`400`/`431`), never raised out of the worker. A websocket leaves the pool at its `101`: the application adopts the socket through `environ["odoo.upgrade.adopt"]`, with the bytes already read past the handshake. `bus` hands every websocket of the process to one loop thread (epoll) that owns their sockets, timers and write buffers, and runs each one's database work — at most one job at a time per connection, at most 8 queued frames before it stops reading that socket — on `ODOO_WEBSOCKET_DB_THREADS` threads, named like request threads while busy so the test harness waits for them. A connection holding more than 256 KiB its client has not read gets no new notification until it drains, nor does any connection while the process holds 256 MiB; one whose client takes nothing for 15 s is cut. A websocket job over `limit_time_real` has its queries cancelled, never the process recycled |
 | prefork (`workers > 0`) | one request per connection, answered `HTTP/1.1` with `Connection: close`. A single-threaded worker holding an idle connection would block its whole process. Workers never expose the socket, so a websocket handshake there gets the `503` that names the evented port |
 
 Knobs, read from the environment:
@@ -469,6 +469,12 @@ them on the process that holds the websockets — the evented port under
 | `odoo_websocket_connections` | gauge | websockets open or being opened, from the handshake's reservation to the end of the connection |
 | `odoo_websocket_connections_max` | gauge | `ODOO_WEBSOCKET_MAX_CONNECTIONS`; `0` is unbounded |
 | `odoo_websocket_refused_total` | counter | handshakes answered `503` at the cap |
+| `odoo_websocket_db_threads` / `_db_busy` / `_db_queue` | gauge | the websocket database threads; those running a job; jobs waiting for one |
+| `odoo_websocket_outbound_bytes` | gauge | bytes written to websockets the kernel has not taken yet |
+| `odoo_websocket_write_stalls_total` | counter | websockets cut for taking nothing for 15 s while bytes waited |
+| `odoo_websocket_dispatches_total` / `_dispatch_latency_seconds_total` | counter | notification dispatches, and their seconds from wake to end summed: the ratio of their rates is the mean latency |
+| `odoo_websocket_dispatch_latency_seconds_max` | gauge | longest dispatch over the last one to two minutes |
+| `odoo_websocket_loop_lag_seconds_max` | gauge | how late the websocket loop ran its 1 s tick, worst over the last one to two minutes: a loop over 0.1 s is saturated |
 
 **Prefork master** (absent on a threaded server)
 

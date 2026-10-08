@@ -72,6 +72,14 @@ work on a small pool of such threads, and recycling the server for one slow
 job would drop every connected client.
 """
 
+_CANCEL_ONLY_THREAD_TYPES = ("websocket_job",)
+"""Thread kinds whose overrun has its queries cancelled and nothing more.
+
+A websocket job past `limit_time_real` holds one of the few database threads
+every websocket of the process shares: cancelling its query frees the thread
+for the others, where recycling the process would drop them all.
+"""
+
 _REPORTED_THREAD_TYPES = (*_TIME_LIMITED_THREAD_TYPES, "websocket_job")
 """Thread kinds `get_metrics()` counts, which is a different question.
 
@@ -92,6 +100,17 @@ def _get_http_server_metrics(httpd: ThreadedHTTPServer | None) -> dict[str, Any]
         "threads": {k: by_type.get(k, 0) for k in _REPORTED_THREAD_TYPES},
         "http_threads_max": httpd.max_http_threads if httpd else 0,
     }
+
+
+def _cancel_thread_queries(thread: threading.Thread, logger: logging.Logger) -> int:
+    try:
+        return db.cancel_queries_of(thread.name)
+    except Exception as exc:
+        logger.warning("Could not cancel the queries of %s", thread.name, exc_info=True)
+        _debug.logic(
+            "server.cancel_failed", thread=thread.name, error=type(exc).__name__
+        )
+        return 0
 
 
 _CONSOLE_EVENT_SIGNALS = {
@@ -175,7 +194,10 @@ class ThreadedServer(CommonServer):
         longest_s = 0.0  # debuglog
         for thread in threading.enumerate():
             thread_type = getattr(thread, "type", None)
-            if thread_type not in _TIME_LIMITED_THREAD_TYPES:
+            if (
+                thread_type not in _TIME_LIMITED_THREAD_TYPES
+                and thread_type not in _CANCEL_ONLY_THREAD_TYPES
+            ):
                 continue
             start_time = getattr(thread, "start_time", None)
             if not start_time:
@@ -198,13 +220,16 @@ class ThreadedServer(CommonServer):
                 cancelled = self._cancel_thread_queries(thread)
                 self.logger.warning(
                     "Thread %s real time limit (%.1f/%ds) reached%s; cancelled "
-                    "%d running quer%s, reloading if it does not return",
+                    "%d running quer%s%s",
                     thread,
                     elapsed,
                     budget,
                     f" while {doing}" if doing else "",
                     cancelled,
                     "y" if cancelled == 1 else "ies",
+                    ""
+                    if thread_type in _CANCEL_ONLY_THREAD_TYPES
+                    else ", reloading if it does not return",
                 )
                 _debug.logic(
                     "server.thread_over_limit",
@@ -216,7 +241,10 @@ class ThreadedServer(CommonServer):
                     cancelled=cancelled,
                 )
                 continue
-            if thread in self.limits_reached_threads:
+            if (
+                thread in self.limits_reached_threads
+                or thread_type in _CANCEL_ONLY_THREAD_TYPES
+            ):
                 continue
             self.logger.warning(
                 "Thread %s is still on the same work %.1fs after its queries were "
@@ -278,16 +306,7 @@ class ThreadedServer(CommonServer):
         return getattr(thread, "start_time", None) != started
 
     def _cancel_thread_queries(self, thread: threading.Thread) -> int:
-        try:
-            return db.cancel_queries_of(thread.name)
-        except Exception as exc:
-            self.logger.warning(
-                "Could not cancel the queries of %s", thread.name, exc_info=True
-            )
-            _debug.logic(
-                "server.cancel_failed", thread=thread.name, error=type(exc).__name__
-            )
-            return 0
+        return _cancel_thread_queries(thread, self.logger)
 
     def run_listener_thread(self, kind: ListenerKind, number: int) -> None:
         settings = self.settings
@@ -763,6 +782,8 @@ class WebsocketServer(CommonServer):
         super().__init__(app)
         self.httpd: ThreadedHTTPServer | None = None
         self.ppid = os.getppid()
+        self._cancelled_overruns: dict[threading.Thread, float] = {}
+        self._overruns_cancelled = 0
 
     def get_memory_soft_limit(self) -> int:
         return self.settings.limit_memory_soft_gevent or self.settings.limit_memory_soft
@@ -772,12 +793,41 @@ class WebsocketServer(CommonServer):
         return f"websocket {self.interface}:{self.port} ({threads} threads)"
 
     def get_metrics(self) -> dict[str, Any]:
-        # The same pool as the threaded server, on the websocket port: an
-        # operator wants its long-lived websocket threads counted too.
-        return _get_http_server_metrics(self.httpd)
+        return {
+            **_get_http_server_metrics(self.httpd),
+            "overruns_cancelled": self._overruns_cancelled,
+        }
+
+    def cancel_overrunning_jobs(self) -> None:
+        now = time.monotonic()
+        budget = self.settings.get_real_time_budget("websocket_job")
+        for thread in threading.enumerate():
+            if getattr(thread, "type", None) not in _CANCEL_ONLY_THREAD_TYPES:
+                continue
+            start_time = getattr(thread, "start_time", None)
+            if not start_time or budget <= 0 or now - start_time <= budget:
+                continue
+            if self._cancelled_overruns.get(thread) == start_time:
+                continue
+            self._cancelled_overruns[thread] = start_time
+            self._overruns_cancelled += 1
+            cancelled = _cancel_thread_queries(thread, self.logger)
+            self.logger.warning(
+                "Thread %s real time limit (%.1f/%ds) reached; cancelled %d "
+                "running quer%s",
+                thread,
+                now - start_time,
+                budget,
+                cancelled,
+                "y" if cancelled == 1 else "ies",
+            )
+        for thread, started in list(self._cancelled_overruns.items()):
+            if not thread.is_alive() or getattr(thread, "start_time", None) != started:
+                del self._cancelled_overruns[thread]
 
     def check_limits(self) -> None:
         Registry._evict_idle_registries()
+        self.cancel_overrunning_jobs()
         should_restart = False
         new_ppid = os.getppid()
         if self.ppid != new_ppid:

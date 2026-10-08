@@ -230,8 +230,8 @@ The suites run this way: `base` (less the excluded `TestReportsRendering` and
 `integration_machine_learning`, `project_hr`, `exchange`, `date_range`, `team`, `account`'s chart-of-accounts
 classes (`TestAccountCoa`, `TestAccountRoot`, `TestAccountCodeMapping`,
 `TestAccountNameDuplication`, `TestAccountCopyAndName`, `TestSplitCodeName`),
-`test_performance_compare`, `mail`, `test_mail`, `mail_group` and `mail_speech`.
-`rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `test_orm`, `crm`,
+`test_performance_compare`, `mail`, `test_mail`, `mail_group`, `mail_speech` and
+`bus`. `rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `bus`, `test_orm`, `crm`,
 `data_recycle`, `test_access_rights`, `stock`, `mrp`, `test_trade`,
 `hr_holidays` and `approval` run **with** the HTTP server on a free port: each
 carries `HttpCase` classes, and under `--no-http` such a class is an error, not

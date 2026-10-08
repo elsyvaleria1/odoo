@@ -246,17 +246,17 @@ from odoo.service._transport import TransportLimits, get_http_socket_timeout
 MIB = 1024 * 1024
 deployment = (pages / "deployment.md").read_text()
 
-def bus_constant(name):
+def bus_constant(name, module="websocket.py"):
     # bus is an addon, outside the core this script imports: read its module
-    # source for the literal instead.
+    # source for the constant instead, class attributes included.
     import ast
 
-    tree = ast.parse((pages / "../../addons/bus/websocket.py").read_text())
-    for node in tree.body:
+    tree = ast.parse((pages / "../../addons/bus" / module).read_text())
+    for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and any(
             getattr(t, "id", None) == name for t in node.targets
         ):
-            return ast.literal_eval(node.value)
+            return eval(compile(ast.Expression(node.value), module, "eval"), {"__builtins__": {}})
     raise LookupError(name)
 
 
@@ -297,6 +297,11 @@ for label, text in {
     "websocket descriptors": f"`WEBSOCKET_DESCRIPTORS` ({_limits.WEBSOCKET_DESCRIPTORS}:",
     "websocket drain timeout": f"| `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `{bus_constant('DRAIN_TIMEOUT'):g} s` |",
     "websocket drain timeout in prose": f"`ODOO_WEBSOCKET_DRAIN_TIMEOUT`\n({bus_constant('DRAIN_TIMEOUT'):g} s)",
+    "websocket lane depth": f"at most {bus_constant('LANE_DEPTH')} queued frames",
+    "websocket write buffer limit": f"more than {bus_constant('WRITE_BUFFER_LIMIT') // 1024} KiB its client has not read",
+    "websocket outbound limit": f"while the process holds {bus_constant('OUTBOUND_LIMIT', 'tools/websocket_hub.py') // MIB} MiB",
+    "websocket write stall": f"whose client takes nothing for {bus_constant('WRITE_STALL_TIMEOUT')} s is cut",
+    "websocket write stall metric": f"for taking nothing for {bus_constant('WRITE_STALL_TIMEOUT')} s while bytes waited",
     "websocket db threads floor": f"| `ODOO_WEBSOCKET_DB_THREADS` | `max({_limits.WEBSOCKET_MIN_DB_THREADS}, ",
 }.items():
     contains(label, text)

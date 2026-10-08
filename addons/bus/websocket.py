@@ -208,6 +208,57 @@ def _collect_metrics(add) -> None:
         kind="counter",
         help="Websocket handshakes answered 503 at the connection cap.",
     )
+    hub = _hub
+    executor = hub.executor
+    add(
+        "odoo_websocket_db_threads",
+        executor.size if executor else 0,
+        help="Threads running websocket database jobs (ODOO_WEBSOCKET_DB_THREADS).",
+    )
+    add(
+        "odoo_websocket_db_busy",
+        executor.busy if executor else 0,
+        help="Websocket database threads running a job.",
+    )
+    add(
+        "odoo_websocket_db_queue",
+        executor.queued if executor else 0,
+        help="Websocket database jobs waiting for a thread.",
+    )
+    add(
+        "odoo_websocket_outbound_bytes",
+        hub.outbound,
+        help="Bytes written to websockets and not yet taken by the kernel.",
+    )
+    add(
+        "odoo_websocket_write_stalls_total",
+        hub.write_stalls,
+        kind="counter",
+        help="Websockets cut for taking nothing for WRITE_STALL_TIMEOUT.",
+    )
+    latency = hub.dispatch_latency
+    add(
+        "odoo_websocket_dispatches_total",
+        latency.count,
+        kind="counter",
+        help="Notification dispatches run.",
+    )
+    add(
+        "odoo_websocket_dispatch_latency_seconds_total",
+        latency.total,
+        kind="counter",
+        help="Seconds from a dispatch's wake to its end, summed.",
+    )
+    add(
+        "odoo_websocket_dispatch_latency_seconds_max",
+        latency.recent_max,
+        help="Longest dispatch over the last one to two minutes.",
+    )
+    add(
+        "odoo_websocket_loop_lag_seconds_max",
+        hub.loop_lag.recent_max,
+        help="Longest delay of the websocket loop's 1 s tick over the last one to two minutes.",
+    )
 
 
 metrics.register_collector(_collect_metrics)
@@ -270,6 +321,7 @@ class Websocket:
     LINGER_SECONDS = 5
     LINGER_READS = 16
     WRITE_STALL_TIMEOUT = 15
+    WRITE_BUFFER_LIMIT = 256 * 1024
 
     # The dispatch round a batched wake authorised this connection to share an
     # answer in, None otherwise. Declared on the class so a connection that
@@ -584,7 +636,18 @@ class Websocket:
         self._dispatch_pending = False
 
     def _dispatch_held(self) -> bool:
+        # A dispatch only adds to what the peer has not taken yet: a slow
+        # reader waits for its own buffer, every reader for the process's.
+        if len(self._outbuf) > self.WRITE_BUFFER_LIMIT:
+            return True
+        hub = self._hub
+        if hub.outbound > hub.OUTBOUND_LIMIT:
+            hub.deferred.add(self)
+            return True
         return False
+
+    def resume(self) -> None:
+        self._pump()
 
     def _run_job(self, job) -> None:
         try:
@@ -669,7 +732,7 @@ class Websocket:
         self._outbuf += data
         hub = self._hub
         if hub is not None:
-            hub.outbound += len(data)
+            hub.reserve_outbound(len(data))
         self._update_events()
         self._reschedule()
 
@@ -684,9 +747,11 @@ class Websocket:
         if sent:
             del self._outbuf[:sent]
             if self._hub is not None:
-                self._hub.outbound -= sent
+                self._hub.release_outbound(sent)
             self._write_progress_at = self._clock()
         if self._outbuf:
+            if self._dispatch_pending and len(self._outbuf) <= self.WRITE_BUFFER_LIMIT:
+                self._pump()
             return
         self._write_progress_at = None
         if self._finish_after_flush:
@@ -776,7 +841,7 @@ class Websocket:
             return
         if self._outbuf:
             if self._hub is not None:
-                self._hub.outbound -= len(self._outbuf)
+                self._hub.release_outbound(len(self._outbuf))
             self._outbuf.clear()
         if self._finish_after_flush:
             self._finish_terminate()
@@ -801,7 +866,7 @@ class Websocket:
         self._finish_after_flush = False
         hub = self._hub
         if hub is not None:
-            hub.outbound -= len(self._outbuf)
+            hub.release_outbound(len(self._outbuf))
         self._outbuf.clear()
         # Half-close, then read until the peer closes too: closing a socket
         # with unread input sends a reset, and a reset can make the peer drop

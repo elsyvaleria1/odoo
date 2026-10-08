@@ -155,6 +155,8 @@ class DbExecutor:
 
 
 class WebsocketHub:
+    OUTBOUND_LIMIT = 256 * 1024 * 1024
+
     def __init__(self, *, db_threads, clock=time.monotonic) -> None:
         self._db_threads = db_threads
         self._clock = clock
@@ -263,6 +265,16 @@ class WebsocketHub:
         else:
             self._selector.modify(conn.fd, events, conn)
         conn.events = events
+
+    def reserve_outbound(self, size: int) -> None:
+        self.outbound += size
+
+    def release_outbound(self, size: int) -> None:
+        self.outbound -= size
+        if self.deferred and self.outbound <= self.OUTBOUND_LIMIT:
+            deferred, self.deferred = self.deferred, set()
+            for conn in deferred:
+                conn.resume()
 
     def schedule(self, conn, when: float) -> None:
         conn.timer_at = when
