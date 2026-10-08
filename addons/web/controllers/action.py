@@ -44,7 +44,12 @@ def _views_request(
         views = [view for view in views if view[1] == "form"]
     else:
         search_view = action.get("search_view_id")
-        search_view_id = search_view[0] if search_view else False
+        # [id, name] as a read action carries it; a bare id as many a method
+        # returning an action dict writes it, which the web client accepts too
+        if isinstance(search_view, int):
+            search_view_id = search_view
+        else:
+            search_view_id = search_view[0] if search_view else False
         declared = [view for view in views if view[1] == "search"]
         if not declared:
             views.append([search_view_id, "search"])
