@@ -1146,21 +1146,6 @@ msgid ""
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,help:automation.field_automation_runtime__company_ids
-msgid ""
-"Every company this run works in. A run that creates documents in two "
-"companies belongs to both, and is listed in each of them."
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_ir_actions_server__approval_user_ids
-#: model:ir.model.fields,help:automation.field_ir_cron__approval_user_ids
-msgid ""
-"Everyone who must mark their activity done before an Approval step lets the "
-"workflow continue"
-msgstr ""
-
-#. module: automation
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form
 msgid "Execute"
 msgstr ""
@@ -1532,11 +1517,6 @@ msgid ""
 "Lower bound of the window the scheduler examines; it advances to the current time after every run.\n"
 "\n"
 "Leave empty and the first run reaches back over the entire history — every record that already satisfies the condition is processed at once, which on an existing database can mean thousands of records. Set it to scope that first run."
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_automation_runtime__partner_id
-msgid "Main partner for this operation (optional)"
 msgstr ""
 
 #. module: automation
@@ -1932,13 +1912,6 @@ msgid "Ratings"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,help:automation.field_workflow_edge__condition_expr
-msgid ""
-"Python expression evaluated against the runtime; required when the condition"
-" is Expression"
-msgstr ""
-
-#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__user_id
 msgid "Reader"
 msgstr ""
@@ -2166,12 +2139,6 @@ msgid ""
 "Shown on the activity each approver receives. May read the record the run is"
 " about as object, for example {{ object.name }}, with mail's inline template"
 " syntax"
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_ir_actions_server__approval_note
-#: model:ir.model.fields,help:automation.field_ir_cron__approval_note
-msgid "Shown on the activity each approver receives"
 msgstr ""
 
 #. module: automation
@@ -2627,14 +2594,6 @@ msgid ""
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,help:automation.field_automation_runtime__third_party_id
-msgid ""
-"The party a step issues a document to in place of the partner, when it "
-"cannot be issued to the partner himself. The partner stays the one the "
-"operation is about."
-msgstr ""
-
-#. module: automation
 #. odoo-python
 #: code:addons/automation/models/automation_rule.py:0
 msgid ""
@@ -2950,14 +2909,6 @@ msgstr ""
 msgid ""
 "What this step reads of other steps that the graph does not guarantee has "
 "run; no run starts while it is set"
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_ir_actions_server__node_type
-#: model:ir.model.fields,help:automation.field_ir_cron__node_type
-msgid ""
-"What this step does when the workflow reaches it. An Action runs the server "
-"action; a Wait pauses the run and resumes it later."
 msgstr ""
 
 #. module: automation

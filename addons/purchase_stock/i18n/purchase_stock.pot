@@ -900,11 +900,6 @@ msgid "Requests for quotation :"
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__move_ids
-msgid "Reservation"
-msgstr ""
-
-#. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_wizard_stock_picking_return
 msgid "Return Picking"
 msgstr ""
@@ -1340,11 +1335,6 @@ msgid "Line Uom"
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__trace_ids
-msgid "Lot"
-msgstr ""
-
-#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
 msgid "Match"
 msgstr ""
@@ -1492,11 +1482,6 @@ msgstr ""
 #. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_stock_move
 msgid "Stock Move"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_stock_move
-msgid "Stock Move Ewaybill"
 msgstr ""
 
 #. module: purchase_stock

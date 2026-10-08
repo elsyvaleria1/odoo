@@ -1130,11 +1130,6 @@ msgid ""
 msgstr ""
 
 #. module: project
-#: model:ir.model.fields,help:project.field_wizard_project_project_share__share_link
-msgid "Anyone with this link can access the project in read mode."
-msgstr ""
-
-#. module: project
 #: model:ir.model,name:project.model_home_menu_badge
 msgid "App Launcher Tile Counts"
 msgstr ""
@@ -1271,11 +1266,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project.project_sharing_project_task_view_tree
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_project_fsm_base
 msgid "Assignees"
-msgstr ""
-
-#. module: project
-#: model:ir.model.fields,field_description:project.field_project_task__user_ids
-msgid "Assignees (Users)"
 msgstr ""
 
 #. module: project
@@ -5340,11 +5330,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project.view_project
 #: model_terms:ir.ui.view,arch_db:project.view_project_project_filter
 msgid "Project Manager"
-msgstr ""
-
-#. module: project
-#: model:ir.model.fields,field_description:project.field_project_project__user_id
-msgid "Project Manager (User)"
 msgstr ""
 
 #. module: project

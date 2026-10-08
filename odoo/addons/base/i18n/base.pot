@@ -572,25 +572,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_account_speech_telegram
-msgid ""
-"\n"
-"Telegram Bot Financial - Speech\n"
-"===============================\n"
-"\n"
-"A sales representative asks for a customer's account statement by sending a\n"
-"voice note: \"estado de cuenta de Ferretería López al 27 de septiembre\". The\n"
-"note is transcribed by ``speech`` and interpreted by the company's chat model\n"
-"through ``integration_machine_learning`` into a customer and a period. The bot repeats what it\n"
-"understood and only generates the PDF after the requester confirms, because a\n"
-"dictated name or date transcribes wrong too easily to act on silently.\n"
-"\n"
-"The date is never assumed: a request without one is answered with a question,\n"
-"not with a default period. Access follows ``account_telegram``: a linked\n"
-"employee can name any customer, a linked customer gets their own statement.\n"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_l10n_mx_edi_stock
 msgid ""
 "\n"
@@ -2579,23 +2560,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_mail_telegram
-msgid ""
-"A user who connected Telegram (Preferences) receives their inbox "
-"notifications, direct and group chats and channel mentions in Telegram, each"
-" with a link back to Odoo and a Mark as Read button, according to "
-"preferences that say always, only while away, or never. Nothing already read"
-" in Odoo is sent: delivery waits a grace period and checks again. Replying "
-"to one of those messages in Telegram posts the reply on the same record or "
-"conversation as that user, under their access rights; a reply to an internal"
-" note stays a note, and a reply that would reach external followers asks "
-"first. Requires a bot with Deliver Odoo Notifications enabled. A Telegram "
-"group, connected with a link made in Odoo, is a Telegram channel of Discuss:"
-" its people's messages are posted there as their contacts, forum topics are "
-"sub-channels, and what Odoo users write goes to the group under their names."
-msgstr ""
-
-#. module: base
 #: model:ir.module.category,description:base.module_category_human_resources_appraisals
 msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
@@ -3821,14 +3785,6 @@ msgid "Add French company settings and partner identification fields"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_mail_google
-msgid ""
-"Add Gmail authorization callbacks and token handling to mail server "
-"configuration. Requires a configured Google client or the supported account-"
-"connection service."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_spreadsheet_dashboard_helpdesk
 msgid "Add Helpdesk spreadsheet dashboards"
 msgstr ""
@@ -3875,13 +3831,6 @@ msgstr ""
 msgid ""
 "Add Mexico's municipality and SEPOMEX postal code catalogues to contact "
 "addresses"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_mail_microsoft
-msgid ""
-"Add Microsoft authorization callbacks and token handling to mail server "
-"settings. Uses the configured Microsoft account connection for mail access."
 msgstr ""
 
 #. module: base
@@ -4790,16 +4739,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_asset_delivery_gps
-msgid ""
-"Adds Read from GPS actions to delivery trips and vehicle helpers for "
-"odometer and fuel readings. Requires a linked GPS tracker with recent data; "
-"the odometer action also requires a valid positive odometer reading within "
-"the configured look-back window. Missing or stale data requires manual "
-"entry."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_l10n_ro_edi
 msgid ""
 "Adds Romanian invoice XML handling, submission and status tracking. Requires"
@@ -5209,16 +5148,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_l10n_se_sie_import
-msgid ""
-"Adds a SIE 5 import wizard with company checks, signature verification "
-"against the company's trusted signer certificates, account and partner "
-"mapping, journal entry creation and balance adjustments. Embedded document "
-"import is optional; only the implemented XML record structures are handled, "
-"not arbitrary accounting exports."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_pos_iot_six
 msgid ""
 "Adds a SIX terminal choice and POS payment interface for the IoT "
@@ -5274,15 +5203,6 @@ msgid ""
 "incidents and the GPS alerts marked where they happened. The printed trip "
 "sheet carries the same as a route map, with each stop numbered as the sheet "
 "sequences it."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_stock_fleet_trace_gps_geoengine
-msgid ""
-"Adds a View GPS Track button to delivery trips: it draws the vehicle's GPS "
-"trail between departure and return on the trail map, with the trip's planned"
-" stops, what happened at each (arrival, delivery, not delivered), the "
-"incidents and the GPS alerts marked where they happened."
 msgstr ""
 
 #. module: base
@@ -5770,16 +5690,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_account_telegram
-msgid ""
-"Adds account-statement commands with period selection, PDF delivery and "
-"request logs. Self-service uses the linked partner; querying other customers"
-" requires a linked internal user; a linked customer gets their own statement"
-" only. Requires a configured bot and accounting report access; there is no "
-"separate manager-role field on the chat."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_account_base_import
 msgid ""
 "Adds accounting import entry points, setup views and import summaries. "
@@ -5803,13 +5713,6 @@ msgstr ""
 msgid ""
 "Adds accounting settings for inventory valuation and the associated "
 "valuation-report definitions."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_account_move_template_purchase
-msgid ""
-"Adds accounting templates to the bill-match query and loads their data and "
-"lines when a template is selected through purchase autocomplete."
 msgstr ""
 
 #. module: base
@@ -6115,16 +6018,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_document_physical
-msgid ""
-"Adds archive locations, document transfer records and a transfer wizard for "
-"intake, loans, returns and other movements. Tracks the current location and "
-"custodian and registers intake when a storage location is assigned. Document"
-" types can require an original and a storage location; users must record "
-"physical movements to keep these records current."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_approval_knowledge
 msgid ""
 "Adds article access-request pages and an approval adapter that invites the "
@@ -6141,16 +6034,6 @@ msgid ""
 "vehicle-stop reports and a scheduled critical-speed alert action. Uses the "
 "GPS geospatial and asset-operator dependencies and requires recorded "
 "positions and configured alert settings."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_asset_gps_geoengine
-msgid ""
-"Adds asset and operator selection to the GPS trail wizard, labels to map "
-"devices and links on client visits. Supplies speed-event and daily-speed "
-"reports and a scheduled critical-speed alert action. Uses the GPS geospatial"
-" and asset-operator dependencies and requires recorded positions and "
-"configured alert settings."
 msgstr ""
 
 #. module: base
@@ -6235,17 +6118,6 @@ msgid ""
 "task creation from email subject and body, plus project contact data and "
 "task logging support. Requires a compatible mail plugin, a bearer token with"
 " the declared Outlook scope and access to the target records."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_device_mobile
-msgid ""
-"Adds authenticated upload routes for mobile locations, call-log batches and "
-"audio recordings. Stores GPS points, matches phone numbers to contacts and "
-"reconciles recordings with call logs, including uploads arriving out of "
-"order. Requires a provisioned device and compatible companion client; "
-"recording capture and handset permissions belong to that client and its "
-"device environment."
 msgstr ""
 
 #. module: base
@@ -7448,15 +7320,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_room
-msgid ""
-"Adds meeting-room asset details and a tablet-oriented booking page. Reads "
-"availability from calendar booking records and sends updates when relevant "
-"bookings change. Requires configured room resources and access to the room "
-"booking page."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_pos_hr_mobile
 msgid ""
 "Adds mobile-client barcode handling to the POS employee login integration."
@@ -8376,17 +8239,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_project
-msgid ""
-"Adds task analysis and code-generation actions, codebase context selection, "
-"workflow states and GitHub pull-request synchronization. Code generation can"
-" create a branch, commit, push and pull request using configured credentials"
-" and local tooling. Requires suitable AI service access, GitHub permissions "
-"and workers; generated changes require review and deployment is not "
-"automated by the workflow state labels."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_project_map
 msgid ""
 "Adds task map views, assignee names and map navigation actions using the "
@@ -8843,16 +8695,6 @@ msgid ""
 "the photo of the signed delivery slip required to validate them. Requires "
 "stock batch and fleet configuration and recorded operational events; GPS "
 "readings are supplied by a separate integration."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_stock_fleet
-msgid ""
-"Adds vehicle capacity, dock and driver assignments to stock batches, with "
-"departure and return odometers and trip progress. Extends deliveries with "
-"dispatch requirements and delivery-failure handling. Requires stock batch "
-"and fleet configuration and recorded operational events; GPS readings are "
-"supplied by a separate integration."
 msgstr ""
 
 #. module: base
@@ -21519,16 +21361,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_mail_oauth2
-msgid ""
-"Defines a mail-provider mixin for authorization URLs, token exchange and "
-"refresh, state tokens and XOAUTH2 authentication strings. Concrete provider "
-"addons must supply endpoint settings, credential fields and integration "
-"hooks; installing this infrastructure alone does not configure a mail "
-"account."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_partner_group_restricted
 msgid ""
 "Defines a restricted contact-editing group, a base field allowlist and "
@@ -21701,13 +21533,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_mx_avoid_reversal_entry
 msgid "Delete eligible automatic entries when undoing Mexican reconciliations"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_l10n_mx_avoid_reversal_entry
-msgid ""
-"Delete linked exchange and cash-basis entries when undoing Mexican "
-"reconciliations"
 msgstr ""
 
 #. module: base
@@ -26119,16 +25944,6 @@ msgid ""
 "and the wizard that starts a workflow from a statement line previews what "
 "each declared step will create. Requires suitable templates; this addon "
 "supplies accounting operations to the shared automation runtime."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_automation_account
-msgid ""
-"Extends automation runs with bank statement context and helpers for creating"
-" documents from templates, registering payments and reconciling statement "
-"lines. Includes a wizard to start a configured workflow from a statement "
-"line. Requires suitable templates and workflow steps; this addon supplies "
-"accounting operations to the shared automation runtime."
 msgstr ""
 
 #. module: base
@@ -33832,13 +33647,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_resource_asset_mrp
-msgid ""
-"Links work centers and assets, checks asset availability and provisions "
-"their shared scheduling resource."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_asset_ledger_mrp
 msgid ""
 "Links work centers to machinery assets and displays theoretical and actual "
@@ -34573,11 +34381,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_mail_oauth2
 msgid "Mail OAuth2"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_mail_oauth2
-msgid "Mail OAuth2 Infrastructure"
 msgstr ""
 
 #. module: base
@@ -35901,11 +35704,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_device_mobile_speech
 msgid "Mobile Device Call Transcription"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_device_mobile
-msgid "Mobile Device Telemetry and Call Records"
 msgstr ""
 
 #. module: base
@@ -38015,16 +37813,6 @@ msgid ""
 "Overrides account-type mappings and swaps AccountID and StandardAccountID "
 "elements during account preparation for RO companies. The shared SAF-T "
 "importer handles file parsing and accounting record creation."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_l10n_mx_avoid_reversal_entry
-msgid ""
-"Overrides partial-reconciliation deletion for companies whose country code "
-"is MX. Removes associated exchange-difference and cash-basis entries reached"
-" from the removed partials instead of generating reversals. Other companies "
-"follow the inherited behavior; framework protections against deleting hashed"
-" entries still apply."
 msgstr ""
 
 #. module: base
@@ -40364,15 +40152,6 @@ msgid "Process transfer batches in the barcode interface"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_account_invoice_receipt_telegram
-msgid ""
-"Processes uploaded files to identify invoice folios and customers, requests "
-"confirmation when needed and attaches matched scans to Documents and receipt"
-" batches. Requires a configured Telegram bot; recognition can require user "
-"correction."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_product_catalog
 msgid "Product Catalog Authoring"
 msgstr ""
@@ -40865,11 +40644,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_integration_github
-msgid "Provide GitHub REST and GraphQL calls through integration services"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_google_account
 msgid ""
 "Provide Google authorization callbacks, access tokens and authenticated "
@@ -41075,12 +40849,6 @@ msgid ""
 "Provide rating records, feedback pages and links to the rated object. "
 "Applications use the rating mixin and templates to request and display "
 "feedback."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_mail_oauth2
-msgid ""
-"Provide reusable OAuth2 authorization and token handling for mail providers"
 msgstr ""
 
 #. module: base
@@ -41510,16 +41278,6 @@ msgid ""
 "chat. Adds chat-flow state, rate limiting and retry-response reuse. Requires"
 " a Telegram bot token, reachable webhook and configured commands; business "
 "operations such as attendance and approvals belong to extension addons."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_telegram
-msgid ""
-"Provides bot credentials, webhook registration and authentication, linked "
-"chats, command routing, message records and outbound API helpers. Adds chat-"
-"flow state, rate limiting and retry-response reuse. Requires a Telegram bot "
-"token, reachable webhook and configured commands; business operations such "
-"as attendance and approvals belong to extension addons."
 msgstr ""
 
 #. module: base
@@ -42296,11 +42054,6 @@ msgid "Purchase Agreements"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_account_move_template_purchase
-msgid "Purchase Bill Entry Templates"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_account_budget_purchase
 msgid "Purchase Budget Commitments"
 msgstr ""
@@ -42913,19 +42666,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_stock_fleet_trace_gps
-msgid ""
-"Reads the GPS history of each delivery vehicle. Leaving the warehouse "
-"geofence departs its loaded trip with the GPS odometer and fuel, and a "
-"delivery vehicle leaving without one raises an alert. Dwelling at a "
-"customer's location verifies the stop; an outcome the track never visited, "
-"an unplanned stop, harsh driving, refuelling and a silent GPS are recorded "
-"on the trip. Entering the warehouse geofence records the return readings and"
-" closes the trip once every stop has its outcome. Requires warehouse and "
-"customer coordinates and a GPS device linked to the vehicle."
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_unit_label:base.BRL
 msgid "Real"
 msgstr ""
@@ -42971,13 +42711,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_device_mobile
-msgid ""
-"Receive phone locations, call logs and recording uploads from a companion "
-"client"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_api_stock_scale
 msgid ""
 "Receive scale confirmations and expose station configuration and picking "
@@ -42989,12 +42722,6 @@ msgstr ""
 msgid ""
 "Receive signed invoice scans through Telegram and file each on the invoice "
 "its fiscal folio names"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_account_invoice_receipt_telegram
-msgid ""
-"Receive signed invoice scans through Telegram and match them to invoices"
 msgstr ""
 
 #. module: base
@@ -48054,11 +47781,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_asset_gps_geoengine
-msgid "Select GPS trails by asset or operator and report speed events"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_report_paperformat__format
 msgid "Select Proper Paper size"
 msgstr ""
@@ -50742,22 +50464,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_stock_fleet_route
-msgid ""
-"Suggests the order of a delivery trip's stops from TomTom's routing with "
-"live traffic, and stores the estimated arrival at each customer, with a "
-"service time per stop. Opens the route in Google Maps for the driver. When "
-"the trip departs, each seller gets a Telegram message with a WhatsApp link "
-"to tell the customer the estimated arrival. While the trip is on the road "
-"the arrival times are refreshed from the vehicle's GPS, and a delay above a "
-"threshold is reported to the supervisor, the driver and the seller. The scan"
-" wizard can read codes with the phone camera, and the trip sheet and "
-"delivery slip print a QR code. Requires a TomTom API key in the system "
-"parameter stock_fleet_route.tomtom_api_key, warehouse and customer "
-"coordinates, and linked Telegram chats."
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_module_module__summary
 msgid "Summary"
 msgstr ""
@@ -50894,16 +50600,6 @@ msgid ""
 "pull requests and the checks of their head commit current, for other modules"
 " to follow. Calling addons must provide credentials with permissions for the"
 " requested GitHub operation."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_integration_github
-msgid ""
-"Supplies client helpers for repositories, branches, commits, webhooks, "
-"issues, pull requests and reviews, plus a GraphQL query method. Seeds a "
-"GitHub integration service and uses the shared transport and credential "
-"records. Calling addons must provide credentials with permissions for the "
-"requested GitHub operation."
 msgstr ""
 
 #. module: base
@@ -53771,11 +53467,6 @@ msgid "This Window"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_res_partner_bank_account__allow_out_payment
-msgid "This account can be used for outgoing payments"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_occurrence__recurrence_update__subsequent
 msgid "This and the following ones"
 msgstr ""
@@ -54424,11 +54115,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
 msgid "Track original-document locations, containers, custody and transfers"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_document_physical
-msgid "Track original-document locations, custody and transfers"
 msgstr ""
 
 #. module: base

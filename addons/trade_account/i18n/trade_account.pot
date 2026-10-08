@@ -299,11 +299,6 @@ msgid "In Draft Invoices (Tax Incl.)"
 msgstr ""
 
 #. module: trade_account
-#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__move_id
-msgid "Invoice"
-msgstr ""
-
-#. module: trade_account
 #: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__invoice_count
 msgid "Invoice Count"
 msgstr ""

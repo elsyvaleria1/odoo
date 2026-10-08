@@ -214,11 +214,6 @@ msgstr ""
 
 #. module: calendar_google
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_event__google_id
-msgid "Google Calendar Event Id"
-msgstr ""
-
-#. module: calendar_google
-#: model:ir.model.fields,field_description:calendar_google.field_calendar_event__google_id
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_recurrence__google_id
 #: model:ir.model.fields,field_description:calendar_google.field_mixin_google_calendar_sync__google_id
 msgid "Google Calendar Id"
