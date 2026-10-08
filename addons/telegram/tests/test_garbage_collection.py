@@ -21,7 +21,7 @@ class TestExpiredFlowCollection(TelegramBotTestCase):
     def test_expired_flows_are_cleared(self):
         stale_chat = self._chat("stale", datetime.now() - timedelta(minutes=1))
 
-        count = self.env["telegram.chat"]._gc_expired_flows()
+        count, _remaining = self.env["telegram.chat"]._gc_expired_flows()
 
         stale_chat.invalidate_recordset()
         self.assertGreaterEqual(count, 1)
@@ -60,7 +60,7 @@ class TestChatAutoVacuum(TelegramBotTestCase):
 
         chat_id = old_chat.id
 
-        removed_count = self.env["telegram.chat"]._gc_telegram_chats()
+        removed_count, _remaining = self.env["telegram.chat"]._gc_telegram_chats()
 
         self.assertGreaterEqual(removed_count, 1)
         self.assertFalse(
@@ -174,3 +174,20 @@ class TestChatAutoVacuum(TelegramBotTestCase):
             chat_with_messages.exists(),
             "Chats with message history should not be removed",
         )
+
+
+class TestAutovacuumContract(TelegramBotTestCase):
+    def test_every_collection_reports_what_it_did_and_whether_more_remains(self):
+        # the autovacuum takes (done, remaining) or None, and warns about
+        # anything else on every run
+        Vacuum = self.env["ir.autovacuum"]
+        for model, method in (
+            ("telegram.chat", "_gc_expired_flows"),
+            ("telegram.chat", "_gc_telegram_chats"),
+            ("telegram.message", "_gc_telegram_messages"),
+        ):
+            with self.subTest(method=method):
+                result = getattr(self.env[model], method)()
+                with self.assertNoLogs("odoo.addons.base.models.ir_autovacuum"):
+                    Vacuum._get_remaining_work(self.env[model], method, result)
+                self.assertFalse(result[1])

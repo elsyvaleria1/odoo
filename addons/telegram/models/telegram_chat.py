@@ -537,15 +537,15 @@ class TelegramChat(models.Model):
         )
 
     @api.autovacuum
-    def _gc_expired_flows(self) -> int:
+    def _gc_expired_flows(self) -> tuple[int, bool]:
         expired = self.search(
             [("flow_expires_at", "<", fields.Datetime.now())], limit=GC_UNLINK_LIMIT
         )
         expired._flow_end()
-        return len(expired)
+        return len(expired), len(expired) == GC_UNLINK_LIMIT
 
     @api.autovacuum
-    def _gc_telegram_chats(self):
+    def _gc_telegram_chats(self) -> tuple[int, bool]:
         threshold_date = fields.Datetime.now() - timedelta(days=90)
 
         removable = self.search(
@@ -572,4 +572,4 @@ class TelegramChat(models.Model):
         else:
             _logger.debug("Auto-vacuum: No old chats to remove")
 
-        return count
+        return count, count == GC_UNLINK_LIMIT

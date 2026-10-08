@@ -183,7 +183,7 @@ class TelegramMessage(models.Model):
         ]
 
     @api.autovacuum
-    def _gc_telegram_messages(self):
+    def _gc_telegram_messages(self) -> tuple[int, bool]:
         old_messages = self.search(
             self._gc_removable_domain(fields.Datetime.now()),
             limit=GC_UNLINK_LIMIT,
@@ -199,7 +199,7 @@ class TelegramMessage(models.Model):
         else:
             _logger.debug("Auto-vacuum: No old messages to remove")
 
-        return count
+        return count, count == GC_UNLINK_LIMIT
 
     @api.job(channel="telegram_outbound", max_retries=8, max_defers=200)
     def _deliver(self):

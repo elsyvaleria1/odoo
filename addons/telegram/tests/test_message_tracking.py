@@ -225,7 +225,7 @@ class TestMessageRelationships(TelegramBotTestCase):
         old_message = self._create_old_message(days_old=16, state="sent")
         message_id = old_message.id
 
-        removed_count = self.env["telegram.message"]._gc_telegram_messages()
+        removed_count, _remaining = self.env["telegram.message"]._gc_telegram_messages()
 
         self.assertGreaterEqual(removed_count, 1)
         self.assertFalse(
@@ -237,7 +237,7 @@ class TestMessageRelationships(TelegramBotTestCase):
         old_message = self._create_old_message(days_old=16, state="received")
         message_id = old_message.id
 
-        removed_count = self.env["telegram.message"]._gc_telegram_messages()
+        removed_count, _remaining = self.env["telegram.message"]._gc_telegram_messages()
 
         self.assertGreaterEqual(removed_count, 1)
         self.assertFalse(
