@@ -14,24 +14,25 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosMargin(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
 
-        self.stock_location = (
-            self.env["stock.warehouse"]
+        cls.stock_location = (
+            cls.env["stock.warehouse"]
             .create(
                 {
-                    "partner_id": self.env.user.partner_id.id,
+                    "partner_id": cls.env.user.partner_id.id,
                     "name": "Stock location",
                     "code": "WH",
                 }
             )
             .lot_stock_id
         )
-        self.customer_location = self.env.ref("stock.stock_location_customers")
-        self.supplier_location = self.env.ref("stock.stock_location_suppliers")
-        self.uom_unit = self.env.ref("uom.product_uom_unit")
+        cls.customer_location = cls.env.ref("stock.stock_location_customers")
+        cls.supplier_location = cls.env.ref("stock.stock_location_suppliers")
+        cls.uom_unit = cls.env.ref("uom.product_uom_unit")
 
     def _synced_orders(self):
         return self.pos_session.order_ids.sorted("id")

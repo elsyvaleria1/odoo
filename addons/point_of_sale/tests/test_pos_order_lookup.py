@@ -146,10 +146,11 @@ class TestPosOrderLookup(PosOpenSessionCommon):
 
 @tagged("post_install", "-at_install")
 class TestPosOrderLookupSyncedOrders(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("Lookup product", self.categ_basic, 100, 50)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("Lookup product", cls.categ_basic, 100, 50)
 
     def test_the_count_matches_the_listed_orders_of_the_config_currency(self):
         self._start_pos_session(self.cash_pm1, 0)

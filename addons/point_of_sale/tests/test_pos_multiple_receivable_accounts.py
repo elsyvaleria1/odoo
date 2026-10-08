@@ -5,34 +5,33 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSMultipleReceivableAccounts(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product1 = self.create_product(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product1 = cls.create_product(
             "Product 1",
-            self.categ_basic,
+            cls.categ_basic,
             lst_price=10.99,
             standard_price=5.0,
-            tax_ids=self.taxes["tax7"].ids,
+            tax_ids=cls.taxes["tax7"].ids,
         )
-        self.product2 = self.create_product(
+        cls.product2 = cls.create_product(
             "Product 2",
-            self.categ_basic,
+            cls.categ_basic,
             lst_price=19.99,
             standard_price=10.0,
-            tax_ids=self.taxes["tax10"].ids,
-            sale_account=self.other_sale_account,
+            tax_ids=cls.taxes["tax10"].ids,
+            sale_account=cls.other_sale_account,
         )
-        self.product3 = self.create_product(
+        cls.product3 = cls.create_product(
             "Product 3",
-            self.categ_basic,
+            cls.categ_basic,
             lst_price=30.99,
             standard_price=15.0,
-            tax_ids=self.taxes["tax_group_7_10"].ids,
+            tax_ids=cls.taxes["tax_group_7_10"].ids,
         )
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [100, 50, 50]
-        )
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [100, 50, 50])
 
     def test_01_invoiced_order_from_other_customer(self):
 

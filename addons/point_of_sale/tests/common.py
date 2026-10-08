@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from odoo import fields, models, tools
 from odoo.fields import Command
-from odoo.tests import Form
 from odoo.tools import SQL
 
 from odoo.addons.stock_account.tests.test_anglo_saxon_valuation_reconciliation_common import (
@@ -119,316 +118,241 @@ class CommonPosTest(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
         )
 
     def create_res_partners(self):
-        self.partner_mobt = self.env["res.partner"].create(
-            {
-                "name": "MOBT",
-            }
-        )
-        self.partner_adgu = self.env["res.partner"].create(
-            {
-                "name": "ADGU",
-            }
-        )
-        self.partner_lowe = self.env["res.partner"].create(
-            {
-                "name": "LOWE",
-            }
-        )
-        self.partner_jcb = self.env["res.partner"].create(
-            {
-                "name": "JCB",
-            }
-        )
-        self.partner_moda = self.env["res.partner"].create(
-            {
-                "name": "MODA",
-            }
-        )
-        self.partner_stva = self.env["res.partner"].create(
-            {
-                "name": "STVA",
-            }
-        )
-        self.partner_manv = self.env["res.partner"].create(
-            {
-                "name": "MANV",
-            }
-        )
-        self.partner_vlst = self.env["res.partner"].create(
-            {
-                "name": "VLST",
-            }
+        (
+            self.partner_mobt,
+            self.partner_adgu,
+            self.partner_lowe,
+            self.partner_jcb,
+            self.partner_moda,
+            self.partner_stva,
+            self.partner_manv,
+            self.partner_vlst,
+        ) = self.env["res.partner"].create(
+            [
+                {"name": name}
+                for name in (
+                    "MOBT",
+                    "ADGU",
+                    "LOWE",
+                    "JCB",
+                    "MODA",
+                    "STVA",
+                    "MANV",
+                    "VLST",
+                )
+            ]
         )
 
     def create_account_cash_rounding(self):
-        self.account_cash_rounding_down = self.env["account.cash.rounding"].create(
-            {
-                "name": "Rounding down",
-                "rounding": 0.05,
-                "rounding_method": "DOWN",
-                "profit_account_id": self.company_data["default_account_revenue"].id,
-                "loss_account_id": self.company_data["default_account_expense"].id,
-            }
-        )
-        self.account_cash_rounding_up = self.env["account.cash.rounding"].create(
-            {
-                "name": "Rounding up",
-                "rounding": 0.05,
-                "rounding_method": "UP",
-                "profit_account_id": self.company_data["default_account_revenue"].id,
-                "loss_account_id": self.company_data["default_account_expense"].id,
-            }
-        )
-        self.account_cash_rounding_half = self.env["account.cash.rounding"].create(
-            {
-                "name": "Rounding half",
-                "rounding": 0.05,
-                "profit_account_id": self.company_data["default_account_revenue"].id,
-                "loss_account_id": self.company_data["default_account_expense"].id,
-            }
+        accounts = {
+            "rounding": 0.05,
+            "profit_account_id": self.company_data["default_account_revenue"].id,
+            "loss_account_id": self.company_data["default_account_expense"].id,
+        }
+        (
+            self.account_cash_rounding_down,
+            self.account_cash_rounding_up,
+            self.account_cash_rounding_half,
+        ) = self.env["account.cash.rounding"].create(
+            [
+                {"name": "Rounding down", "rounding_method": "DOWN", **accounts},
+                {"name": "Rounding up", "rounding_method": "UP", **accounts},
+                {"name": "Rounding half", **accounts},
+            ]
         )
 
     def create_payment_methods(self):
-        self.cash_payment_method = self.env["pos.payment.method"].create(
-            {
-                "name": "Cash",
-                "receivable_account_id": self.company_data[
-                    "default_account_receivable"
-                ].id,
-                "journal_id": self.company_data["default_journal_cash"].id,
-            }
-        )
-        self.bank_payment_method = self.env["pos.payment.method"].create(
-            {
-                "name": "Bank",
-                "journal_id": self.company_data["default_journal_bank"].id,
-                "receivable_account_id": self.company_data[
-                    "default_account_receivable"
-                ].id,
-            }
-        )
-        self.credit_payment_method = self.env["pos.payment.method"].create(
-            {
-                "name": "Credit",
-                "receivable_account_id": self.company_data[
-                    "default_account_receivable"
-                ].id,
-                "split_transactions": True,
-            }
+        receivable = self.company_data["default_account_receivable"].id
+        (
+            self.cash_payment_method,
+            self.bank_payment_method,
+            self.credit_payment_method,
+        ) = self.env["pos.payment.method"].create(
+            [
+                {
+                    "name": "Cash",
+                    "receivable_account_id": receivable,
+                    "journal_id": self.company_data["default_journal_cash"].id,
+                },
+                {
+                    "name": "Bank",
+                    "journal_id": self.company_data["default_journal_bank"].id,
+                    "receivable_account_id": receivable,
+                },
+                {
+                    "name": "Credit",
+                    "receivable_account_id": receivable,
+                    "split_transactions": True,
+                },
+            ]
         )
 
     def create_pos_categories(self):
-        self.cat_no_tax = self.env["pos.category"].create(
-            {
-                "name": "No tax",
-                "sequence": 0,
-            }
-        )
-        self.cat_tax_five_incl = self.env["pos.category"].create(
-            {
-                "name": "Tax five incl",
-                "sequence": 1,
-            }
-        )
-        self.cat_tax_ten_incl = self.env["pos.category"].create(
-            {
-                "name": "Tax ten incl",
-                "sequence": 2,
-            }
-        )
-        self.cat_tax_fiften_incl = self.env["pos.category"].create(
-            {
-                "name": "Tax fifteen incl",
-                "sequence": 3,
-            }
-        )
-        self.cat_tax_five_excl = self.env["pos.category"].create(
-            {
-                "name": "Tax five excl",
-                "sequence": 4,
-            }
-        )
-        self.cat_tax_ten_excl = self.env["pos.category"].create(
-            {
-                "name": "Tax ten excl",
-                "sequence": 5,
-            }
-        )
-        self.cat_tax_fiften_excl = self.env["pos.category"].create(
-            {
-                "name": "Tax fifteen excl",
-                "sequence": 6,
-            }
+        (
+            self.cat_no_tax,
+            self.cat_tax_five_incl,
+            self.cat_tax_ten_incl,
+            self.cat_tax_fiften_incl,
+            self.cat_tax_five_excl,
+            self.cat_tax_ten_excl,
+            self.cat_tax_fiften_excl,
+        ) = self.env["pos.category"].create(
+            [
+                {"name": name, "sequence": sequence}
+                for sequence, name in enumerate(
+                    (
+                        "No tax",
+                        "Tax five incl",
+                        "Tax ten incl",
+                        "Tax fifteen incl",
+                        "Tax five excl",
+                        "Tax ten excl",
+                        "Tax fifteen excl",
+                    )
+                )
+            ]
         )
 
     def create_account_taxes(self):
-        self.tax_five_incl = self.env["account.tax"].create(
-            {
-                "name": "Tax five incl",
-                "amount": 5,
-                "price_include_override": "tax_included",
-            }
-        )
-        self.tax_ten_incl = self.env["account.tax"].create(
-            {
-                "name": "Tax ten incl",
-                "amount": 10,
-                "price_include_override": "tax_included",
-            }
-        )
-        self.tax_fiften_incl = self.env["account.tax"].create(
-            {
-                "name": "Tax fifteen incl",
-                "amount": 15,
-                "price_include_override": "tax_included",
-            }
-        )
-        self.tax_five_excl = self.env["account.tax"].create(
-            {
-                "name": "Tax five excl",
-                "amount": 5,
-            }
-        )
-        self.tax_ten_excl = self.env["account.tax"].create(
-            {
-                "name": "Tax ten excl",
-                "amount": 10,
-            }
-        )
-        self.tax_fiften_excl = self.env["account.tax"].create(
-            {
-                "name": "Tax fifteen excl",
-                "amount": 15,
-            }
+        (
+            self.tax_five_incl,
+            self.tax_ten_incl,
+            self.tax_fiften_incl,
+            self.tax_five_excl,
+            self.tax_ten_excl,
+            self.tax_fiften_excl,
+        ) = self.env["account.tax"].create(
+            [
+                {
+                    "name": "Tax five incl",
+                    "amount": 5,
+                    "price_include_override": "tax_included",
+                },
+                {
+                    "name": "Tax ten incl",
+                    "amount": 10,
+                    "price_include_override": "tax_included",
+                },
+                {
+                    "name": "Tax fifteen incl",
+                    "amount": 15,
+                    "price_include_override": "tax_included",
+                },
+                {"name": "Tax five excl", "amount": 5},
+                {"name": "Tax ten excl", "amount": 10},
+                {"name": "Tax fifteen excl", "amount": 15},
+            ]
         )
 
     def create_product_templates(self):
-        self.ten_dollars_no_tax = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars no tax",
-                "list_price": 10.0,
-                "pos_categ_ids": [(6, 0, [self.cat_no_tax.id])],
-                "taxes_id": [(5, 0)],
-            }
+        rows = (
+            ("ten_dollars_no_tax", "Ten dollars no tax", 10.0, None, self.cat_no_tax),
+            (
+                "twenty_dollars_no_tax",
+                "Twenty dollars no tax",
+                20.0,
+                None,
+                self.cat_no_tax,
+            ),
+            (
+                "ten_dollars_with_5_incl",
+                "Ten dollars with 5 included",
+                10.0,
+                self.tax_five_incl,
+                self.cat_tax_five_incl,
+            ),
+            (
+                "twenty_dollars_with_5_incl",
+                "Twenty dollars with 5 included",
+                20.0,
+                self.tax_five_incl,
+                self.cat_tax_five_incl,
+            ),
+            (
+                "ten_dollars_with_10_incl",
+                "Ten dollars with 10 included",
+                10.0,
+                self.tax_ten_incl,
+                self.cat_tax_ten_incl,
+            ),
+            (
+                "twenty_dollars_with_10_incl",
+                "Twenty dollars with 10 included",
+                20.0,
+                self.tax_ten_incl,
+                self.cat_tax_ten_incl,
+            ),
+            (
+                "ten_dollars_with_15_incl",
+                "Ten dollars with 15 included",
+                10.0,
+                self.tax_fiften_incl,
+                self.cat_tax_fiften_incl,
+            ),
+            (
+                "twenty_dollars_with_15_incl",
+                "Twenty dollars with 15 included",
+                20.0,
+                self.tax_fiften_incl,
+                self.cat_tax_fiften_incl,
+            ),
+            (
+                "ten_dollars_with_5_excl",
+                "Ten dollars with 5 excluded",
+                10.0,
+                self.tax_five_excl,
+                self.cat_tax_five_excl,
+            ),
+            (
+                "twenty_dollars_with_5_excl",
+                "Twenty dollars with 5 excluded",
+                20.0,
+                self.tax_five_excl,
+                self.cat_tax_five_excl,
+            ),
+            (
+                "ten_dollars_with_10_excl",
+                "Ten dollars with 10 excluded",
+                10.0,
+                self.tax_ten_excl,
+                self.cat_tax_ten_excl,
+            ),
+            (
+                "twenty_dollars_with_10_excl",
+                "Twenty dollars with 10 excluded",
+                20.0,
+                self.tax_ten_excl,
+                self.cat_tax_ten_excl,
+            ),
+            (
+                "ten_dollars_with_15_excl",
+                "Ten dollars with 15 excluded",
+                10.0,
+                self.tax_fiften_excl,
+                self.cat_tax_fiften_excl,
+            ),
+            (
+                "twenty_dollars_with_15_excl",
+                "Twenty dollars with 15 excluded",
+                20.0,
+                self.tax_fiften_excl,
+                self.cat_tax_fiften_excl,
+            ),
         )
-        self.twenty_dollars_no_tax = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars no tax",
-                "list_price": 20.0,
-                "pos_categ_ids": [(6, 0, [self.cat_no_tax.id])],
-                "taxes_id": [(5, 0)],
-            }
+        templates = self.env["product.template"].create(
+            [
+                {
+                    "available_in_pos": True,
+                    "name": name,
+                    "list_price": price,
+                    "taxes_id": [(6, 0, tax.ids)] if tax else [(5, 0)],
+                    "pos_categ_ids": [(6, 0, [category.id])],
+                }
+                for _attr, name, price, tax, category in rows
+            ]
         )
-        self.ten_dollars_with_5_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 5 included",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_five_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_five_incl.id])],
-            }
-        )
-        self.twenty_dollars_with_5_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 5 included",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_five_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_five_incl.id])],
-            }
-        )
-        self.ten_dollars_with_10_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 10 included",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_ten_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_ten_incl.id])],
-            }
-        )
-        self.twenty_dollars_with_10_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 10 included",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_ten_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_ten_incl.id])],
-            }
-        )
-        self.ten_dollars_with_15_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 15 included",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_fiften_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_fiften_incl.id])],
-            }
-        )
-        self.twenty_dollars_with_15_incl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 15 included",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_fiften_incl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_fiften_incl.id])],
-            }
-        )
-        self.ten_dollars_with_5_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 5 excluded",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_five_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_five_excl.id])],
-            }
-        )
-        self.twenty_dollars_with_5_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 5 excluded",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_five_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_five_excl.id])],
-            }
-        )
-        self.ten_dollars_with_10_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 10 excluded",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_ten_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_ten_excl.id])],
-            }
-        )
-        self.twenty_dollars_with_10_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 10 excluded",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_ten_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_ten_excl.id])],
-            }
-        )
-        self.ten_dollars_with_15_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Ten dollars with 15 excluded",
-                "list_price": 10.0,
-                "taxes_id": [(6, 0, [self.tax_fiften_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_fiften_excl.id])],
-            }
-        )
-        self.twenty_dollars_with_15_excl = self.env["product.template"].create(
-            {
-                "available_in_pos": True,
-                "name": "Twenty dollars with 15 excluded",
-                "list_price": 20.0,
-                "taxes_id": [(6, 0, [self.tax_fiften_excl.id])],
-                "pos_categ_ids": [(6, 0, [self.cat_tax_fiften_excl.id])],
-            }
-        )
+        for (attr, *_values), template in zip(rows, templates, strict=True):
+            setattr(self, attr, template)
 
     def create_backend_pos_order(self, data):
         pos_config = data.get("pos_config", self.pos_config_usd)
@@ -784,17 +708,17 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
             limit=1,
         )
 
-        cls.customer = cls.env["res.partner"].create(
-            {
-                "name": "Customer 1",
-                "property_account_receivable_id": cls.c1_receivable.id,
-            }
-        )
-        cls.other_customer = cls.env["res.partner"].create(
-            {
-                "name": "Other Customer",
-                "property_account_receivable_id": cls.other_receivable_account.id,
-            }
+        cls.customer, cls.other_customer = cls.env["res.partner"].create(
+            [
+                {
+                    "name": "Customer 1",
+                    "property_account_receivable_id": cls.c1_receivable.id,
+                },
+                {
+                    "name": "Other Customer",
+                    "property_account_receivable_id": cls.other_receivable_account.id,
+                },
+            ]
         )
 
         cls.taxes = cls._create_taxes()
@@ -887,44 +811,45 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
                 "name": datetime.today().date(),
             }
         )
-        other_cash_journal = cls.env["account.journal"].create(
-            {
-                "name": "Cash Other",
-                "type": "cash",
-                "company_id": cls.company.id,
-                "code": "CSHO",
-                "sequence": 10,
-                "currency_id": cls.other_currency.id,
-            }
+        journal = {"company_id": cls.company.id, "currency_id": cls.other_currency.id}
+        (
+            other_cash_journal,
+            other_invoice_journal,
+            other_sales_journal,
+        ) = cls.env["account.journal"].create(
+            [
+                {
+                    "name": "Cash Other",
+                    "type": "cash",
+                    "code": "CSHO",
+                    "sequence": 10,
+                    **journal,
+                },
+                {
+                    "name": "Customer Invoice Other",
+                    "type": "sale",
+                    "code": "INVO",
+                    "sequence": 11,
+                    **journal,
+                },
+                {
+                    "name": "PoS Sale Other",
+                    "type": "sale",
+                    "code": "POSO",
+                    "sequence": 12,
+                    **journal,
+                },
+            ]
         )
-        other_invoice_journal = cls.env["account.journal"].create(
-            {
-                "name": "Customer Invoice Other",
-                "type": "sale",
-                "company_id": cls.company.id,
-                "code": "INVO",
-                "sequence": 11,
-                "currency_id": cls.other_currency.id,
-            }
-        )
-        other_sales_journal = cls.env["account.journal"].create(
-            {
-                "name": "PoS Sale Other",
-                "type": "sale",
-                "code": "POSO",
-                "company_id": cls.company.id,
-                "sequence": 12,
-                "currency_id": cls.other_currency.id,
-            }
-        )
+        # created on its own: in one batch with the cash journal, its inbound and
+        # outbound payment channels are numbered the other way round
         other_bank_journal = cls.env["account.journal"].create(
             {
                 "name": "Bank Other",
                 "type": "bank",
-                "company_id": cls.company.id,
                 "code": "BNKO",
                 "sequence": 13,
-                "currency_id": cls.other_currency.id,
+                **journal,
             }
         )
         other_pricelist = cls.env["product.pricelist"].create(
@@ -933,20 +858,20 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
                 "currency_id": cls.other_currency.id,
             }
         )
-        cls.cash_pm2 = cls.env["pos.payment.method"].create(
-            {
-                "name": "Cash Other",
-                "journal_id": other_cash_journal.id,
-                "receivable_account_id": cls.pos_receivable_cash.id,
-            }
-        )
-        cls.bank_pm2 = cls.env["pos.payment.method"].create(
-            {
-                "name": "Bank Other",
-                "journal_id": other_bank_journal.id,
-                "receivable_account_id": cls.pos_receivable_bank.id,
-                "outstanding_account_id": cls.outstanding_bank.id,
-            }
+        cls.cash_pm2, cls.bank_pm2 = cls.env["pos.payment.method"].create(
+            [
+                {
+                    "name": "Cash Other",
+                    "journal_id": other_cash_journal.id,
+                    "receivable_account_id": cls.pos_receivable_cash.id,
+                },
+                {
+                    "name": "Bank Other",
+                    "journal_id": other_bank_journal.id,
+                    "receivable_account_id": cls.pos_receivable_bank.id,
+                    "outstanding_account_id": cls.outstanding_bank.id,
+                },
+            ]
         )
 
         return cls.env["pos.config"].create(
@@ -979,141 +904,96 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
 
     @classmethod
     def _create_taxes(cls):
-
-        def create_tag(name):
-            return cls.env["account.account.tag"].create(
+        (
+            cls.tax_tag_invoice_base,
+            cls.tax_tag_invoice_tax,
+            cls.tax_tag_refund_base,
+            cls.tax_tag_refund_tax,
+        ) = cls.env["account.account.tag"].create(
+            [
                 {
                     "name": name,
                     "applicability": "taxes",
                     "country_id": cls.env.company.tax_config_id.account_fiscal_country_id.id,
                 }
-            )
-
-        cls.tax_tag_invoice_base = create_tag("Invoice Base tag")
-        cls.tax_tag_invoice_tax = create_tag("Invoice Tax tag")
-        cls.tax_tag_refund_base = create_tag("Refund Base tag")
-        cls.tax_tag_refund_tax = create_tag("Refund Tax tag")
-
-        def create_tax(
-            percentage, price_include_override="tax_excluded", include_base_amount=False
-        ):
-            return cls.env["account.tax"].create(
-                {
-                    "name": f"Tax {percentage}%",
-                    "amount": percentage,
-                    "price_include_override": price_include_override,
-                    "amount_type": "percent",
-                    "include_base_amount": include_base_amount,
-                    "invoice_repartition_line_ids": [
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "base",
-                                "tag_ids": [(6, 0, cls.tax_tag_invoice_base.ids)],
-                            },
-                        ),
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "tax",
-                                "account_id": cls.tax_received_account.id,
-                                "tag_ids": [(6, 0, cls.tax_tag_invoice_tax.ids)],
-                            },
-                        ),
-                    ],
-                    "refund_repartition_line_ids": [
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "base",
-                                "tag_ids": [(6, 0, cls.tax_tag_refund_base.ids)],
-                            },
-                        ),
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "tax",
-                                "account_id": cls.tax_received_account.id,
-                                "tag_ids": [(6, 0, cls.tax_tag_refund_tax.ids)],
-                            },
-                        ),
-                    ],
-                }
-            )
-
-        def create_tax_fixed(
-            amount, price_include_override="tax_excluded", include_base_amount=False
-        ):
-            return cls.env["account.tax"].create(
-                {
-                    "name": f"Tax fixed amount {amount}",
-                    "amount": amount,
-                    "price_include_override": price_include_override,
-                    "include_base_amount": include_base_amount,
-                    "amount_type": "fixed",
-                    "invoice_repartition_line_ids": [
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "base",
-                                "tag_ids": [(6, 0, cls.tax_tag_invoice_base.ids)],
-                            },
-                        ),
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "tax",
-                                "account_id": cls.tax_received_account.id,
-                                "tag_ids": [(6, 0, cls.tax_tag_invoice_tax.ids)],
-                            },
-                        ),
-                    ],
-                    "refund_repartition_line_ids": [
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "base",
-                                "tag_ids": [(6, 0, cls.tax_tag_refund_base.ids)],
-                            },
-                        ),
-                        (
-                            0,
-                            0,
-                            {
-                                "repartition_type": "tax",
-                                "account_id": cls.tax_received_account.id,
-                                "tag_ids": [(6, 0, cls.tax_tag_refund_tax.ids)],
-                            },
-                        ),
-                    ],
-                }
-            )
-
-        tax_fixed006 = create_tax_fixed(
-            0.06, price_include_override="tax_included", include_base_amount=True
+                for name in (
+                    "Invoice Base tag",
+                    "Invoice Tax tag",
+                    "Refund Base tag",
+                    "Refund Tax tag",
+                )
+            ]
         )
-        tax_fixed012 = create_tax_fixed(
-            0.12, price_include_override="tax_included", include_base_amount=True
+
+        def repartition(base_tags, tax_tags):
+            return [
+                Command.create({"repartition_type": "base", "tag_ids": base_tags.ids}),
+                Command.create(
+                    {
+                        "repartition_type": "tax",
+                        "account_id": cls.tax_received_account.id,
+                        "tag_ids": tax_tags.ids,
+                    }
+                ),
+            ]
+
+        def tax_vals(
+            name,
+            amount,
+            amount_type,
+            price_include_override="tax_excluded",
+            include_base_amount=False,
+        ):
+            return {
+                "name": name,
+                "amount": amount,
+                "price_include_override": price_include_override,
+                "amount_type": amount_type,
+                "include_base_amount": include_base_amount,
+                "invoice_repartition_line_ids": repartition(
+                    cls.tax_tag_invoice_base, cls.tax_tag_invoice_tax
+                ),
+                "refund_repartition_line_ids": repartition(
+                    cls.tax_tag_refund_base, cls.tax_tag_refund_tax
+                ),
+            }
+
+        def fixed(amount, **kwargs):
+            return tax_vals(f"Tax fixed amount {amount}", amount, "fixed", **kwargs)
+
+        def percent(percentage, **kwargs):
+            return tax_vals(f"Tax {percentage}%", percentage, "percent", **kwargs)
+
+        tax_fixed006, tax_fixed012, tax7, tax8, tax9, tax10, tax21 = cls.env[
+            "account.tax"
+        ].create(
+            [
+                fixed(
+                    0.06,
+                    price_include_override="tax_included",
+                    include_base_amount=True,
+                ),
+                fixed(
+                    0.12,
+                    price_include_override="tax_included",
+                    include_base_amount=True,
+                ),
+                percent(7, price_include_override="tax_excluded"),
+                percent(8, include_base_amount=True),
+                percent(9),
+                percent(10, price_include_override="tax_included"),
+                percent(21, price_include_override="tax_included"),
+            ]
         )
-        tax7 = create_tax(7, price_include_override="tax_excluded")
-        tax8 = create_tax(8, include_base_amount=True)
-        tax9 = create_tax(9)
-        tax10 = create_tax(10, price_include_override="tax_included")
-        tax21 = create_tax(21, price_include_override="tax_included")
 
         tax_group_7_10 = tax7.copy()
-        with Form(tax_group_7_10) as tax:
-            tax.name = "Tax 7+10%"
-            tax.amount_type = "group"
-            tax.children_tax_ids.add(tax7)
-            tax.children_tax_ids.add(tax10)
+        tax_group_7_10.write(
+            {
+                "name": "Tax 7+10%",
+                "amount_type": "group",
+                "children_tax_ids": [Command.link(tax7.id), Command.link(tax10.id)],
+            }
+        )
 
         return {
             "tax7": tax7,

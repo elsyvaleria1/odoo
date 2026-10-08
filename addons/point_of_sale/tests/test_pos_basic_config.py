@@ -16,26 +16,25 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSBasicConfig(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product0 = self.create_product("Product 0", self.categ_basic, 0.0, 0.0)
-        self.product1 = self.create_product("Product 1", self.categ_basic, 10.0, 5)
-        self.product2 = self.create_product("Product 2", self.categ_basic, 20.0, 10)
-        self.product3 = self.create_product("Product 3", self.categ_basic, 30.0, 15)
-        self.product4 = self.create_product("Product_4", self.categ_basic, 9.96, 4.98)
-        self.product99 = self.create_product("Product_99", self.categ_basic, 99, 50)
-        self.product_multi_tax = self.create_product(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product0 = cls.create_product("Product 0", cls.categ_basic, 0.0, 0.0)
+        cls.product1 = cls.create_product("Product 1", cls.categ_basic, 10.0, 5)
+        cls.product2 = cls.create_product("Product 2", cls.categ_basic, 20.0, 10)
+        cls.product3 = cls.create_product("Product 3", cls.categ_basic, 30.0, 15)
+        cls.product4 = cls.create_product("Product_4", cls.categ_basic, 9.96, 4.98)
+        cls.product99 = cls.create_product("Product_99", cls.categ_basic, 99, 50)
+        cls.product_multi_tax = cls.create_product(
             "Multi-tax product",
-            self.categ_basic,
+            cls.categ_basic,
             100,
             100,
-            (self.taxes["tax8"] | self.taxes["tax9"]).ids,
+            (cls.taxes["tax8"] | cls.taxes["tax9"]).ids,
         )
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [100, 50, 50]
-        )
-        self.company_data_2 = self.setup_other_company()
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [100, 50, 50])
+        cls.company_data_2 = cls.setup_other_company()
 
     def test_orders_no_invoiced(self):
         start_qty_available = {

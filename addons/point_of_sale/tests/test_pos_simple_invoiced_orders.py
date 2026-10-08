@@ -14,10 +14,11 @@ from odoo.addons.point_of_sale.tests.common import (
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSimpleInvoicedOrders(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product100 = self.create_product("Product_100", self.categ_basic, 100, 50)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product100 = cls.create_product("Product_100", cls.categ_basic, 100, 50)
 
     def test_01b(self):
         self._run_test(

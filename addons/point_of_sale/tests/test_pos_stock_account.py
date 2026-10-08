@@ -5,35 +5,30 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSStock(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        self.config = self.basic_config
-        self.product1 = self.create_product("Product 1", self.categ_anglo, 10.0, 5.0)
-        self.product2 = self.create_product("Product 2", self.categ_anglo, 20.0, 10.0)
-        self.product3 = self.create_product("Product 3", self.categ_basic, 30.0, 15.0)
-        self.product4 = self.create_product("Product 4", self.categ_anglo, 10.0, 5.0)
-        self.product4.type = "consu"
-        self.product4.is_storable = False
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [10, 10, 10]
-        )
+        cls.config = cls.basic_config
+        cls.product1 = cls.create_product("Product 1", cls.categ_anglo, 10.0, 5.0)
+        cls.product2 = cls.create_product("Product 2", cls.categ_anglo, 20.0, 10.0)
+        cls.product3 = cls.create_product("Product 3", cls.categ_basic, 30.0, 15.0)
+        cls.product4 = cls.create_product("Product 4", cls.categ_anglo, 10.0, 5.0)
+        cls.product4.type = "consu"
+        cls.product4.is_storable = False
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [10, 10, 10])
 
-        self.product1.write({"standard_price": 6.0})
-        self.product2.write({"standard_price": 6.0})
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [15, 15, 15]
-        )
+        cls.product1.write({"standard_price": 6.0})
+        cls.product2.write({"standard_price": 6.0})
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [15, 15, 15])
 
-        self.product1.write({"standard_price": 13.0})
-        self.product2.write({"standard_price": 13.0})
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [25, 25, 25]
-        )
+        cls.product1.write({"standard_price": 13.0})
+        cls.product2.write({"standard_price": 13.0})
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [25, 25, 25])
 
-        self.output_account = self.categ_anglo.property_stock_valuation_account_id
-        self.expense_account = self.categ_anglo.property_account_expense_categ_id
-        self.valuation_account = self.categ_anglo.property_stock_valuation_account_id
+        cls.output_account = cls.categ_anglo.property_stock_valuation_account_id
+        cls.expense_account = cls.categ_anglo.property_account_expense_categ_id
+        cls.valuation_account = cls.categ_anglo.property_stock_valuation_account_id
 
     def test_01_orders_no_invoiced(self):
 

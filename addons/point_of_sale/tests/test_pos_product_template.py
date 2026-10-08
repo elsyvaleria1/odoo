@@ -14,11 +14,12 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestPosProductTemplate(CommonPosTest):
-    def setUp(self):
-        super().setUp()
-        self.config = self.pos_config_usd
-        self.config.open_ui()
-        self.session = self.config.current_session_id
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.pos_config_usd
+        cls.config.open_ui()
+        cls.session = cls.config.current_session_id
 
     def test_pos_sequence_is_unique_across_a_batch_create(self):
         templates = self.env["product.template"].create(

@@ -10,10 +10,11 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosInvoiceGuards(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("Guarded", self.categ_basic, 100.0, 50.0)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("Guarded", cls.categ_basic, 100.0, 50.0)
 
     def _make_order(self, state):
         order = self.env["pos.order"].create(

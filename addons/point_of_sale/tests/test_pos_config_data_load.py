@@ -438,10 +438,11 @@ class TestPosConfigDataLoad(TestPoSCommon):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosConfigPricelistPayload(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("PriceProd", self.categ_basic, 100, 50)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("PriceProd", cls.categ_basic, 100, 50)
 
     def test_on_demand_pricelist_data_needs_no_open_session(self):
         self.assertFalse(self.config.current_session_id)

@@ -13,10 +13,11 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSessionComputeDependencies(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("SessionProd", self.categ_basic, 100, 50)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("SessionProd", cls.categ_basic, 100, 50)
 
     def _paid_order(self, uuid):
         return self._create_orders(
@@ -536,11 +537,12 @@ class TestPosSessionCashDetailsMessage(TestPoSCommon):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSessionClosingPicking(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("PickingProd", self.categ_basic, 100, 50)
-        self.adjust_inventory([self.product], [100])
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("PickingProd", cls.categ_basic, 100, 50)
+        cls.adjust_inventory([cls.product], [100])
 
     def test_a_closing_picking_is_linked_to_its_session(self):
         session = self._start_pos_session(self.cash_pm1, 0)

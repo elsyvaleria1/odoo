@@ -8,44 +8,43 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSProductsWithTax(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        self.config = self.basic_config
-        self.product1 = self.create_product(
+        cls.config = cls.basic_config
+        cls.product1 = cls.create_product(
             "Product 1",
-            self.categ_basic,
+            cls.categ_basic,
             10.0,
             5.0,
-            tax_ids=self.taxes["tax7"].ids,
+            tax_ids=cls.taxes["tax7"].ids,
         )
-        self.product2 = self.create_product(
+        cls.product2 = cls.create_product(
             "Product 2",
-            self.categ_basic,
+            cls.categ_basic,
             20.0,
             10.0,
-            tax_ids=self.taxes["tax10"].ids,
+            tax_ids=cls.taxes["tax10"].ids,
         )
-        self.product3 = self.create_product(
+        cls.product3 = cls.create_product(
             "Product 3",
-            self.categ_basic,
+            cls.categ_basic,
             30.0,
             15.0,
-            tax_ids=self.taxes["tax_group_7_10"].ids,
+            tax_ids=cls.taxes["tax_group_7_10"].ids,
         )
-        self.product4 = self.create_product(
+        cls.product4 = cls.create_product(
             "Product 4",
-            self.categ_basic,
+            cls.categ_basic,
             54.99,
             tax_ids=[
-                self.taxes["tax_fixed006"].id,
-                self.taxes["tax_fixed012"].id,
-                self.taxes["tax21"].id,
+                cls.taxes["tax_fixed006"].id,
+                cls.taxes["tax_fixed012"].id,
+                cls.taxes["tax21"].id,
             ],
         )
-        self.adjust_inventory(
-            [self.product1, self.product2, self.product3], [100, 50, 50]
-        )
+        cls.adjust_inventory([cls.product1, cls.product2, cls.product3], [100, 50, 50])
 
     def test_orders_no_invoiced(self):
 

@@ -13,11 +13,12 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestPosOrderBatchWrite(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product(
-            "Batch write product", self.categ_basic, 100, 50
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product(
+            "Batch write product", cls.categ_basic, 100, 50
         )
 
     def test_a_batch_write_sets_has_deleted_line_on_every_order(self):

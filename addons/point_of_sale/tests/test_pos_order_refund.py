@@ -158,11 +158,12 @@ class TestPosOrderRefundOrigin(PosCashRoundingSessionCommon):
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosOrderIsRefund(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product(
-            "Refund detection product", self.categ_basic, 100, 50
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product(
+            "Refund detection product", cls.categ_basic, 100, 50
         )
 
     def test_an_order_is_a_refund_by_its_flag_or_its_negative_total(self):

@@ -8,46 +8,47 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSOtherCurrencyConfig(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        self.config = self.other_currency_config
-        self.product1 = self.create_product("Product 1", self.categ_basic, 10.0, 5)
-        self.product2 = self.create_product("Product 2", self.categ_basic, 20.0, 10)
-        self.product3 = self.create_product("Product 3", self.categ_basic, 30.0, 15)
-        self.product4 = self.create_product("Product 4", self.categ_anglo, 100, 50)
-        self.product5 = self.create_product("Product 5", self.categ_anglo, 200, 70)
-        self.product6 = self.create_product("Product 6", self.categ_anglo, 45.3, 10.73)
-        self.product7 = self.create_product(
-            "Product 7", self.categ_basic, 7, 7, tax_ids=self.taxes["tax7"].ids
+        cls.config = cls.other_currency_config
+        cls.product1 = cls.create_product("Product 1", cls.categ_basic, 10.0, 5)
+        cls.product2 = cls.create_product("Product 2", cls.categ_basic, 20.0, 10)
+        cls.product3 = cls.create_product("Product 3", cls.categ_basic, 30.0, 15)
+        cls.product4 = cls.create_product("Product 4", cls.categ_anglo, 100, 50)
+        cls.product5 = cls.create_product("Product 5", cls.categ_anglo, 200, 70)
+        cls.product6 = cls.create_product("Product 6", cls.categ_anglo, 45.3, 10.73)
+        cls.product7 = cls.create_product(
+            "Product 7", cls.categ_basic, 7, 7, tax_ids=cls.taxes["tax7"].ids
         )
-        self.adjust_inventory(
+        cls.adjust_inventory(
             [
-                self.product1,
-                self.product2,
-                self.product3,
-                self.product4,
-                self.product5,
-                self.product6,
-                self.product7,
+                cls.product1,
+                cls.product2,
+                cls.product3,
+                cls.product4,
+                cls.product5,
+                cls.product6,
+                cls.product7,
             ],
             [100, 50, 50, 100, 100, 100, 100],
         )
-        pricelist_item = self.env["product.pricelist.item"].create(
+        pricelist_item = cls.env["product.pricelist.item"].create(
             {
-                "product_tmpl_id": self.product2.product_tmpl_id.id,
+                "product_tmpl_id": cls.product2.product_tmpl_id.id,
                 "fixed_price": 12.99,
             }
         )
-        self.config.pricelist_id.write(
+        cls.config.pricelist_id.write(
             {
                 "item_ids": [
-                    (6, 0, (self.config.pricelist_id.item_ids | pricelist_item).ids)
+                    (6, 0, (cls.config.pricelist_id.item_ids | pricelist_item).ids)
                 ]
             }
         )
 
-        self.expense_account = self.categ_anglo.property_account_expense_categ_id
+        cls.expense_account = cls.categ_anglo.property_account_expense_categ_id
 
     def test_01_check_product_cost(self):
 

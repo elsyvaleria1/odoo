@@ -6,19 +6,20 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSSetup(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        self.config = self.basic_config
-        self.products = [
-            self.create_product(
-                "Product 1", self.categ_basic, lst_price=10.0, standard_price=5
+        cls.config = cls.basic_config
+        cls.products = [
+            cls.create_product(
+                "Product 1", cls.categ_basic, lst_price=10.0, standard_price=5
             ),
-            self.create_product(
-                "Product 2", self.categ_basic, lst_price=20.0, standard_price=10
+            cls.create_product(
+                "Product 2", cls.categ_basic, lst_price=20.0, standard_price=10
             ),
-            self.create_product(
-                "Product 3", self.categ_basic, lst_price=30.0, standard_price=15
+            cls.create_product(
+                "Product 3", cls.categ_basic, lst_price=30.0, standard_price=15
             ),
         ]
 

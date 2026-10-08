@@ -6,10 +6,11 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosCashPaymentMethod(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("Cash Probe", self.categ_basic, 10.0, 5)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("Cash Probe", cls.categ_basic, 10.0, 5)
 
     def _sync_with_change(self, change):
         order_data = self.create_ui_order_data(

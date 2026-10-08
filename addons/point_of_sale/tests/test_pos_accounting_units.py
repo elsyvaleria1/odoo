@@ -11,10 +11,11 @@ _logger = logging.getLogger(__name__)
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosAccountingUnits(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("AcctProd", self.categ_basic, 100, 50)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+        cls.product = cls.create_product("AcctProd", cls.categ_basic, 100, 50)
 
     def test_create_payment_moves_idempotent_on_reinvoke(self):
         self._start_pos_session(self.cash_pm1 | self.bank_pm1, 0)
