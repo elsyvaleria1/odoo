@@ -26,7 +26,7 @@ class PaymentApprovalTelegramTestCase(TelegramBotTestCase):
             }
         )
 
-        cls.test_bot.payment_approval_category_id = cls.approval_category
+        cls.approval_category.telegram_intake = "payment"
 
         cls.pago_command = cls.env["telegram.command"]._for_name("/pago")
         cls.test_bot.write({"command_ids": [(4, cls.pago_command.id)]})
@@ -47,7 +47,7 @@ class PaymentApprovalTelegramTestCase(TelegramBotTestCase):
             }
         )
 
-        cls.test_bot.especie_approval_category_id = cls.especie_approval_category
+        cls.especie_approval_category.telegram_intake = "especie"
 
         cls.especie_command = cls.env["telegram.command"]._for_name("/especie")
         cls.test_bot.write({"command_ids": [(4, cls.especie_command.id)]})

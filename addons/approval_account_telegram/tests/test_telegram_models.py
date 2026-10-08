@@ -1,31 +1,42 @@
+from psycopg import IntegrityError
+
+from odoo.tools import mute_logger
+
 from .common import PaymentApprovalTelegramTestCase
 
 
-class TestTelegramBotPaymentFields(PaymentApprovalTelegramTestCase):
-    def test_payment_approval_category_field_exists(self):
-        self.assertTrue(hasattr(self.test_bot, "payment_approval_category_id"))
-
-    def test_payment_approval_category_assigned(self):
+class TestTelegramIntakeCategory(PaymentApprovalTelegramTestCase):
+    def test_a_company_s_own_category_comes_before_one_of_no_company(self):
+        shared = self.env["approval.category"].create(
+            {
+                "name": "Shared Payments",
+                "sequence_code": "TGSHARED",
+                "company_id": False,
+            }
+        )
+        categories = self.env["approval.category"]
+        self.approval_category.telegram_intake = False
+        shared.telegram_intake = "payment"
         self.assertEqual(
-            self.test_bot.payment_approval_category_id, self.approval_category
+            categories._get_telegram_intake_category("payment", self.company), shared
         )
 
-    def test_has_pago_command_true_when_enabled(self):
-        self.assertTrue(self.test_bot.has_pago_command)
+        self.approval_category.telegram_intake = "payment"
+        self.assertEqual(
+            categories._get_telegram_intake_category("payment", self.company),
+            self.approval_category,
+        )
 
-    def test_has_pago_command_false_when_disabled(self):
-        self.test_bot.write({"command_ids": [(3, self.pago_command.id)]})
-
-        self.assertFalse(self.test_bot.has_pago_command)
-
-    def test_has_pago_command_recomputes_on_change(self):
-        self.assertTrue(self.test_bot.has_pago_command)
-
-        self.test_bot.write({"command_ids": [(3, self.pago_command.id)]})
-        self.assertFalse(self.test_bot.has_pago_command)
-
-        self.test_bot.write({"command_ids": [(4, self.pago_command.id)]})
-        self.assertTrue(self.test_bot.has_pago_command)
+    def test_a_company_has_one_category_per_command(self):
+        with self.assertRaises(IntegrityError), mute_logger("odoo.db.cursor"):
+            self.env["approval.category"].create(
+                {
+                    "name": "Second Payments",
+                    "sequence_code": "TGSECOND",
+                    "company_id": self.company.id,
+                    "telegram_intake": "payment",
+                }
+            )
 
 
 class TestPaymentFlow(PaymentApprovalTelegramTestCase):

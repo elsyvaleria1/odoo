@@ -149,6 +149,13 @@ msgid "8. %(label)s: Numeric amount (e.g. %(example)s)."
 msgstr "8. %(label)s: Importe numérico (ej. %(example)s)."
 
 #. module: approval_account_telegram
+#: model:ir.model.constraint,message:approval_account_telegram.constraint_approval_category_one_telegram_intake_per_company
+msgid "A company files the requests of each Telegram command in one category."
+msgstr ""
+"Una compañía registra las solicitudes de cada comando de Telegram en una "
+"sola categoría."
+
+#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid ""
@@ -203,6 +210,11 @@ msgid ""
 msgstr ""
 "Ocurrió un error al crear la solicitud en Odoo. Revisa el comprobante y "
 "vuelve a intentarlo."
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
 
 #. module: approval_account_telegram
 #: model:ir.model,name:approval_account_telegram.model_approval_request
@@ -374,6 +386,26 @@ msgstr ""
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid "Error downloading the file. Please try again."
 msgstr "Error al descargar el archivo. Por favor, inténtalo de nuevo."
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: %(company)s has no approval category for payments in kind recorded "
+"with /especie."
+msgstr ""
+"Error: %(company)s no tiene una categoría de aprobación para los pagos en "
+"especie registrados con /especie."
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: %(company)s has no approval category for payments recorded with "
+"/pago."
+msgstr ""
+"Error: %(company)s no tiene una categoría de aprobación para los pagos "
+"registrados con /pago."
 
 #. module: approval_account_telegram
 #. odoo-python
@@ -612,6 +644,16 @@ msgid "Payment method"
 msgstr "Método de pago"
 
 #. module: approval_account_telegram
+#: model:ir.model.fields.selection,name:approval_account_telegram.selection__approval_category__telegram_intake__especie
+msgid "Payments in kind recorded with /especie"
+msgstr "Pagos en especie registrados con /especie"
+
+#. module: approval_account_telegram
+#: model:ir.model.fields.selection,name:approval_account_telegram.selection__approval_category__telegram_intake__payment
+msgid "Payments recorded with /pago"
+msgstr "Pagos registrados con /pago"
+
+#. module: approval_account_telegram
 #: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
 msgid "Pending"
 msgstr "Pendiente"
@@ -746,6 +788,11 @@ msgstr ""
 "Campo técnico para saber si el comando /pago está habilitado en este bot."
 
 #. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_approval_category_form_telegram_intake
+msgid "Telegram"
+msgstr "Telegram"
+
+#. module: approval_account_telegram
 #: model:ir.model,name:approval_account_telegram.model_telegram_bot
 msgid "Telegram Bot Configuration"
 msgstr "Configuración del bot de Telegram"
@@ -759,6 +806,11 @@ msgstr "Chat de Telegram"
 #: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
 msgid "Telegram Details"
 msgstr "Detalles de Telegram"
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__telegram_intake
+msgid "Telegram Intake"
+msgstr "Captura por Telegram"
 
 #. module: approval_account_telegram
 #: model:ir.model,name:approval_account_telegram.model_telegram_payment_report_log
@@ -814,6 +866,17 @@ msgstr ""
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid "The product reference cannot be empty."
 msgstr "La referencia de producto no puede estar vacía."
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_approval_category__telegram_intake
+msgid ""
+"The Telegram command whose requests are filed in this category. A company "
+"has one category per command; one without a company takes the requests of "
+"every company that has none of its own."
+msgstr ""
+"El comando de Telegram cuyas solicitudes se registran en esta categoría. Una"
+" compañía tiene una categoría por comando; una sin compañía recibe las "
+"solicitudes de cada compañía que no tenga la suya."
 
 #. module: approval_account_telegram
 #: model_terms:ir.actions.act_window,help:approval_account_telegram.action_telegram_payment_report_log

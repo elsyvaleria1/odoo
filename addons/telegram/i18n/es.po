@@ -270,6 +270,11 @@ msgid "Authentication Type"
 msgstr "Tipo de autenticación"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__company_ids
+msgid "Available In"
+msgstr "Disponible en"
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__binding_ref
 msgid "Binding Ref"
 msgstr "Ref. del vínculo"
@@ -1740,6 +1745,17 @@ msgstr ""
 "El menú de comandos que se envió por última vez a Telegram para este chat "
 "privado: lo que su persona puede ejecutar aquí, en el idioma del chat. Se "
 "vuelve a enviar solo cuando eso cambia."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_command__company_ids
+msgid ""
+"The companies this command acts for: a person offered it only where they "
+"belong to one of them, and choosing among those alone. Empty, it acts for "
+"every company a bot serves."
+msgstr ""
+"Las compañías para las que actúa este comando: solo se le ofrece a una "
+"persona donde pertenece a alguna de ellas, y solo entre esas elige. Vacío, "
+"actúa para todas las compañías que atiende un bot."
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_bot__company_ids

@@ -204,3 +204,39 @@ class TestBotCompanies(TelegramBotTestCase):
         self.assertEqual(pinned._acting_company(), self.other)
         partners = in_bot_company(pinned.env["res.partner"], pinned)
         self.assertEqual(partners.env.context["allowed_company_ids"], self.other.ids)
+
+    def test_a_command_available_in_one_company_acts_there_without_asking(self):
+        command = self.env["telegram.command"]._for_name("/empezar")
+        command.company_ids = self.other
+        with self.started() as runs:
+            send = self._dispatch("/empezar")
+        self.assertFalse(send.called)
+        self.assertEqual(runs, [(self.other, self.other, [])])
+
+    def test_a_command_of_no_company_of_theirs_is_refused_and_not_offered(self):
+        third = self.env["res.company"].create({"name": "TG Third Company"})
+        self.test_bot.company_ids = [Command.link(third.id)]
+        command = self.env["telegram.command"]._for_name("/empezar")
+        command.company_ids = third
+        with self.started() as runs:
+            send = self._dispatch("/empezar")
+            menu = [
+                entry
+                for entry, _spec in self.router._available_commands(
+                    self.test_bot, self.test_chat, self.test_partner, self.test_user
+                )
+            ]
+        self.assertFalse(runs)
+        self.assertIn("permission", send.call_args.args[1])
+        self.assertNotIn("/empezar", menu)
+
+        # available again everywhere, it is offered again
+        command.company_ids = False
+        with self.started():
+            menu = [
+                entry
+                for entry, _spec in self.router._available_commands(
+                    self.test_bot, self.test_chat, self.test_partner, self.test_user
+                )
+            ]
+        self.assertIn("/empezar", menu)

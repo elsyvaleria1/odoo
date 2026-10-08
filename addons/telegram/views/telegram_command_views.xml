@@ -7,6 +7,11 @@
         <field name="arch" type="xml">
             <list string="Telegram Commands" editable="bottom">
                 <field name="name" placeholder="/comando" />
+                <field
+                    name="company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                    optional="show" />
             </list>
         </field>
     </record>
@@ -19,6 +24,10 @@
                 <sheet>
                     <group>
                         <field name="name" placeholder="/comando" />
+                        <field
+                            name="company_ids"
+                            widget="many2many_tags"
+                            groups="base.group_multi_company" />
                     </group>
                 </sheet>
             </form>

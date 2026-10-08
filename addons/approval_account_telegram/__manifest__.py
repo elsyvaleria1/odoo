@@ -1,6 +1,6 @@
 {
     "name": "Telegram Payment Approval Intake",
-    "version": "19.0.3.3.1",
+    "version": "19.0.3.4.0",
     "oldest_upgradable_version": "19.0.3.3.0",
     "category": "Human Resources/Approvals",
     "summary": "Create payment approval requests and start configured accounting workflows",
@@ -19,7 +19,7 @@
         "security/res_groups.xml",
         "security/ir.access.csv",
         "data/telegram_command_data.xml",
-        "views/telegram_bot_views.xml",
+        "views/approval_category_views.xml",
         "views/telegram_payment_report_log_views.xml",
         "views/approval_account_telegram_menus.xml",
     ],

@@ -820,9 +820,29 @@ class TelegramRouter(models.AbstractModel):
             return False
         if spec.tier == "internal" and not self._grants_allow(spec, internal_user):
             return False
+        if not self._companies_for_command(
+            bot, chat, handler, command, partner, internal_user
+        ):
+            return False
         return bool(
             handler._command_allowed(bot, chat, command, partner, internal_user)
         )
+
+    @api.model
+    def _companies_for_command(
+        self, bot, chat, handler, command, partner, internal_user
+    ):
+        """The companies `command` may act in for this person: those its
+        handler offers them, among those the command is available in."""
+        companies = handler._command_companies(
+            bot, chat, command, partner, internal_user
+        )
+        available = self.env["telegram.command"]._get_company_availability()
+        if command in available:
+            companies = companies.filtered(
+                lambda company: company.id in available[command]
+            )
+        return companies
 
     @api.model
     def _available_commands(self, bot, chat, partner, internal_user) -> list:
@@ -885,8 +905,8 @@ class TelegramRouter(models.AbstractModel):
                 self._send_flow_busy_notice(bot, chat, owner, command)
                 return
         if spec.company == "choose" and not self.env.context.get("telegram_company_id"):
-            companies = handler._command_companies(
-                bot, chat, command, partner, internal_user
+            companies = self._companies_for_command(
+                bot, chat, handler, command, partner, internal_user
             )
             if len(companies) > 1:
                 self._ask_company(bot, chat, command, args, companies)
@@ -1175,8 +1195,8 @@ class TelegramRouter(models.AbstractModel):
         handler, _spec = self._command_owner(bot, command)
         chosen = (callback_query.get("data") or "")[len(COMPANY_CALLBACK_PREFIX) :]
         company = (
-            handler._command_companies(
-                bot, chat, command, partner, internal_user
+            self._companies_for_command(
+                bot, chat, handler, command, partner, internal_user
             ).filtered(lambda company: str(company.id) == chosen)
             if handler is not None
             else self.env["res.company"]

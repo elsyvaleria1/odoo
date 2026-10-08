@@ -590,13 +590,24 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             ),
         )
 
+    @staticmethod
+    def _intake_category(bot, intake):
+        """The category `intake` requests are filed in, in the company the bot
+        acts in."""
+        return bot.env["approval.category"]._get_telegram_intake_category(
+            intake, bot._acting_company()
+        )
+
     def _confirm_payment_approval(self, bot, chat, internal_user) -> None:
-        if not bot.payment_approval_category_id:
+        category = self._intake_category(bot, "payment")
+        if not category:
             bot.send_message(
                 chat.chat_id,
                 translation_env(bot, chat)._(
-                    "Error: the bot has no category configured for payment approvals."
-                ),
+                    "Error: %(company)s has no approval category for payments "
+                    "recorded with /pago."
+                )
+                % {"company": bot._acting_company().name},
             )
             self._flow_end(chat)
             return
@@ -630,7 +641,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             )
 
             approval_vals = {
-                "category_id": bot.payment_approval_category_id.id,
+                "category_id": category.id,
                 "request_owner_id": internal_user.id,
                 "company_id": bot._acting_company().id,
                 "partner_id": data["partner_fx_id"],
@@ -895,12 +906,15 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
         )
 
     def _confirm_especie_approval(self, bot, chat, internal_user) -> None:
-        if not bot.especie_approval_category_id:
+        category = self._intake_category(bot, "especie")
+        if not category:
             bot.send_message(
                 chat.chat_id,
                 translation_env(bot, chat)._(
-                    "Error: the bot has no category configured for payments in kind."
-                ),
+                    "Error: %(company)s has no approval category for payments "
+                    "in kind recorded with /especie."
+                )
+                % {"company": bot._acting_company().name},
             )
             self._flow_end(chat)
             return
@@ -934,7 +948,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             )
 
             approval_vals = {
-                "category_id": bot.especie_approval_category_id.id,
+                "category_id": category.id,
                 "request_owner_id": internal_user.id,
                 "company_id": bot._acting_company().id,
                 "partner_id": data["partner_fx_id"],

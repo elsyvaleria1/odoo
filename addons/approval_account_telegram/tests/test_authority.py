@@ -1,4 +1,4 @@
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError
 from odoo.tests import tagged
 
 from .common import PaymentApprovalTelegramTestCase
@@ -59,19 +59,27 @@ class TestPaymentRequestAuthority(PaymentApprovalTelegramTestCase):
         )
         self.assertEqual(log.create_uid, self.test_user)
 
-    def test_a_bot_takes_no_category_of_another_company(self):
-        # a bot files in its own company only: another company's category is
-        # refused where the bot is configured, before anyone can confirm
+    def test_a_company_files_in_its_own_category_only(self):
+        # another company's category for /pago is that company's: requests of
+        # this one never land in it
         other_company = self.env["res.company"].create({"name": "TG Other Company"})
-        category = self.env["approval.category"].create(
+        self.env["approval.category"].create(
             {
                 "name": "Other Company Payments",
                 "sequence_code": "TGOTHER",
                 "company_id": other_company.id,
+                "telegram_intake": "payment",
             }
         )
-        with self.assertRaises(UserError):
-            self.test_bot.payment_approval_category_id = category
+        categories = self.env["approval.category"]
+        self.assertEqual(
+            categories._get_telegram_intake_category("payment", self.company),
+            self.approval_category,
+        )
+        self.approval_category.telegram_intake = False
+        self.assertFalse(
+            categories._get_telegram_intake_category("payment", self.company)
+        )
 
     def test_the_log_privilege_files_a_log_row_and_nothing_else(self):
         logs = self.env["telegram.payment.report.log"].with_user(self.test_user)

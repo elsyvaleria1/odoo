@@ -250,6 +250,11 @@ msgid "Authentication Type"
 msgstr ""
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_command__company_ids
+msgid "Available In"
+msgstr ""
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_binding_event__binding_ref
 msgid "Binding Ref"
 msgstr ""
@@ -1647,6 +1652,14 @@ msgid ""
 "The command menu last sent to Telegram for this private chat: what its "
 "person may run here, in the chat's language. It is sent again only when that"
 " changes."
+msgstr ""
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_command__company_ids
+msgid ""
+"The companies this command acts for: a person offered it only where they "
+"belong to one of them, and choosing among those alone. Empty, it acts for "
+"every company a bot serves."
 msgstr ""
 
 #. module: telegram

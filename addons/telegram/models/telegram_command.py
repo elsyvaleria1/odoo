@@ -1,6 +1,8 @@
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
+
+from ..tools.authority import operating
 
 _logger = logging.getLogger(__name__)
 
@@ -14,6 +16,15 @@ class TelegramCommand(models.Model):
         string="Command",
         required=True,
         help="Command name including the '/' prefix (e.g., /start)",
+    )
+
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="telegram_command_res_company_rel",
+        string="Available In",
+        help="The companies this command acts for: a person offered it only "
+        "where they belong to one of them, and choosing among those alone. "
+        "Empty, it acts for every company a bot serves.",
     )
 
     _name_uniq = models.Constraint(
@@ -39,9 +50,34 @@ class TelegramCommand(models.Model):
         for vals in vals_list:
             if vals.get("name"):
                 vals["name"] = self._normalize(vals["name"])
+        self.env.registry.clear_cache()
         return super().create(vals_list)
 
     def write(self, vals):
         if vals.get("name"):
             vals["name"] = self._normalize(vals["name"])
-        return super().write(vals)
+        if vals.keys() & {"name", "company_ids"}:
+            self.env.registry.clear_cache()
+        result = super().write(vals)
+        if "company_ids" in vals:
+            # who is offered the command changed: every connected menu may
+            operating(self.env["telegram.chat"]).search(
+                [("chat_type", "=", "private"), ("account_id", "!=", False)]
+            )._sync_command_menu()
+        return result
+
+    def unlink(self):
+        self.env.registry.clear_cache()
+        return super().unlink()
+
+    @api.model
+    @tools.ormcache()
+    def _get_company_availability(self) -> dict:
+        """{"/command": frozenset(company ids)} of the commands restricted to
+        some companies; a command left out acts for every company. Every
+        update asks it, so it is read once, past the readers' rights: which
+        companies a command acts for is the bots' configuration."""
+        commands = self.sudo().search([("company_ids", "!=", False)])
+        return {
+            command.name: frozenset(command.company_ids.ids) for command in commands
+        }

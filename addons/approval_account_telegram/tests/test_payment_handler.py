@@ -762,13 +762,8 @@ class TestConfirmationCallbacks(PaymentApprovalTelegramTestCase):
                 ),
             }
         )
-        self.test_bot.write(
-            {
-                "company_id": other_company.id,
-                "payment_approval_category_id": category.id,
-                "especie_approval_category_id": False,
-            }
-        )
+        category.telegram_intake = "payment"
+        self.test_bot.company_id = other_company
 
         with self.mock_api_gateway_post():
             self.handler._confirm_payment_approval(
@@ -836,7 +831,7 @@ class TestConfirmationCallbacks(PaymentApprovalTelegramTestCase):
         self.assertEqual(log.amount, 1500.50)
 
     def test_confirm_without_category_shows_error(self):
-        self.test_bot.payment_approval_category_id = False
+        self.approval_category.telegram_intake = False
 
         mock_response = self.mock_telegram_response(
             success=True, result={"message_id": 1}
@@ -851,7 +846,7 @@ class TestConfirmationCallbacks(PaymentApprovalTelegramTestCase):
 
             payload = mock_post.call_args.kwargs.get("json", {})
             text = payload.get("text", "")
-            self.assertIn("no category configured", text.lower())
+            self.assertIn("has no approval category for payments", text)
 
     def test_pago_chatter_author_is_internal_user(self):
         mock_response = self.mock_telegram_response(

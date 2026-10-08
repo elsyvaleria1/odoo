@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form_telegram_intake" model="ir.ui.view">
+        <field name="name">approval.category.form.telegram.intake</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='settings_group']" position="inside">
+                <group name="telegram_intake_group" string="Telegram">
+                    <field name="telegram_intake" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
