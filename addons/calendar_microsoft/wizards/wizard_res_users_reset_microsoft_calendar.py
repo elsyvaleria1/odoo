@@ -32,32 +32,40 @@ class WizardResUsersResetMicrosoftCalendar(models.TransientModel):
     )
 
     def reset_account(self) -> None:
-        # We don't update recurring events to prevent spam
-        events = self.env["calendar.event"].search(
-            [("user_id", "=", self.user_id.id), ("ms_universal_event_id", "!=", False)]
+        """The user may come back with another Outlook account: their calendar
+        forgets what it held, and keeps or deletes the events they organize."""
+        self.check_singleton()
+        account = self.user_id._calendar_sync_account("microsoft")._as_engine()
+        Link = self.env["calendar.sync.link"]._engine()
+        links = Link.search([("account_id", "=", account.id)])
+        organized = links.event_id.with_env(self.env).filtered(
+            lambda event: event.user_id == self.user_id
         )
-
         if self.delete_policy in ("delete_microsoft", "delete_both"):
-            for event in events.filtered(lambda event: not event.recurrence_id):
-                event._microsoft_delete(
-                    event._get_organizer(), event.microsoft_id, timeout=3
+            adapter = account._adapter().with_context(calendar_sync_interactive=True)
+            # a series is left to Outlook, where one delete would remove it all
+            for link in links.filtered(
+                lambda link: (
+                    link.remote_id
+                    and link.event_id in organized
+                    and not link.event_id.recurrence_id
                 )
-
-        events = events.with_context(dont_notify=True, microsoft_calendar_syncing=True)
-        if self.delete_policy != "dont_delete" or self.sync_policy == "all":
-            # Both ids go: `_filtered_synced` reads the universal one, so a record
-            # keeping it was still patched or deleted, at `/events/False`.
-            events.write({"microsoft_id": False, "ms_universal_event_id": False})
+            ):
+                account._call(adapter._delete, account, link.remote_id)
+        links.unlink()
         if self.delete_policy in ("delete_odoo", "delete_both"):
-            events.unlink()
-        else:
-            events.need_sync_m = self.sync_policy == "all"
-
-        # We commit to make sure the _microsoft_delete are called when we still have a token on the user.
-        self.env["ir.cron"]._commit_progress()
+            organized.with_context(
+                dont_notify=True, calendar_sync_applying="microsoft"
+            ).unlink()
         self.env["integration.connection"]._find_personal(
             self.env.ref("integration_microsoft.service_microsoft"), self.user_id
         )._forget_oauth_authorization()
-        self.user_id._calendar_sync_account("microsoft").write(
-            {"sync_token": False, "last_sync_date": False}
+        account.write(
+            {
+                "sync_token": False,
+                "last_sync_date": False,
+                "insert_since": fields.Datetime.now()
+                if self.sync_policy == "new"
+                else account.insert_since,
+            }
         )

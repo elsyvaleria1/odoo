@@ -31,6 +31,8 @@ class FakeCalendars:
         self.failing: dict[str, tuple[ErrorKind, bool]] = {}
         # an insert that lands, then loses its answer
         self.lose_insert_answers = 0
+        # {record id: why}: what the provider would refuse before any request
+        self.refusals: dict[int, str] = {}
         self._ids = itertools.count(1)
         self._tokens = itertools.count(1)
 
@@ -157,6 +159,16 @@ class FakeAdapter:
             raise CalendarSyncError(ErrorKind.GONE)
         server.sent.append(("delete", account.id, remote_id))
 
+    def _answer(self, account, remote_id, state):
+        server = self.server
+        server._check("answer")
+        if remote_id not in server.calendar(account):
+            raise CalendarSyncError(ErrorKind.GONE)
+        server.sent.append(("answer", account.id, remote_id, state))
+
+    def _check_record(self, record):
+        return self.server.refusals.get(record.id)
+
     def _after_insert(self, account, record, remote):
         self.server.inserted.append((account.id, record.id))
 
@@ -176,6 +188,16 @@ class FakeAdapter:
 
     def _apply_series(self, account, master, occurrences, recurrence):
         occurrences = sorted(occurrences, key=lambda remote: remote.payload["start"])
+        if not master:
+            # occurrences alone, each found in the series by its start
+            events = {}
+            for remote in occurrences:
+                event = recurrence.calendar_event_ids.filtered(
+                    lambda event, remote=remote: event.start == remote.payload["start"]
+                )
+                event.write(dict(remote.payload))
+                events[remote.remote_id] = event
+            return recurrence, events
         if not recurrence:
             event = account.env["calendar.event"].create(
                 {**master.payload, "recurrency": True}

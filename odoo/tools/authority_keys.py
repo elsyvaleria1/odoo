@@ -51,6 +51,7 @@ declare_authority_keys(
 
 declare_authority_keys("account", "hash_version")
 declare_authority_keys("calendar_google", "google_calendar_syncing")
+declare_authority_keys("calendar_sync", "calendar_sync_applying")
 declare_authority_keys("calendar_microsoft", "microsoft_calendar_syncing")
 
 # keys only the server sets, each deciding whether a check or a refusal runs

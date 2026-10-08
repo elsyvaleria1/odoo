@@ -5,33 +5,25 @@ class CalendarAttendee(models.Model):
     _inherit = "calendar.attendee"
 
     def do_tentative(self):
-        # Synchronize event after state change
-        res = super().do_tentative()
-        self._microsoft_sync_event("tentativelyAccept")
-        return res
+        self._microsoft_check_answer()
+        return super().do_tentative()
 
     def do_accept(self):
-        # Synchronize event after state change
-        res = super().do_accept()
-        self._microsoft_sync_event("accept")
-        return res
+        self._microsoft_check_answer()
+        return super().do_accept()
 
     def do_decline(self):
-        # Synchronize event after state change
-        res = super().do_decline()
-        self._microsoft_sync_event("decline")
-        return res
+        self._microsoft_check_answer()
+        return super().do_decline()
 
-    def _microsoft_sync_event(self, answer) -> None:
-        params = {"comment": "", "sendResponse": True}
-        # Microsoft prevent user to answer the meeting when they are the organizer
-        linked_events = self.event_id._filtered_synced()
-        for event in linked_events:
+    def _microsoft_check_answer(self) -> None:
+        """Outlook takes an answer to a series from Outlook alone."""
+        user = self.env.user
+        for event in self.event_id._microsoft_held():
             if (
-                event._check_microsoft_sync_status()
-                and self.env.user != event.user_id
-                and self.env.user.partner_id in event.partner_ids
+                event.recurrency
+                and event._check_microsoft_sync_status()
+                and user != event.user_id
+                and user.partner_id in event.partner_ids
             ):
-                if event.recurrency:
-                    event._forbid_recurrence_update()
-                event._microsoft_attendee_answer(answer, params)
+                event._forbid_recurrence_update()

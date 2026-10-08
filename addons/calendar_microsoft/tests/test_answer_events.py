@@ -10,7 +10,6 @@ from odoo.addons.calendar_microsoft.tests.common import (
     _modified_date_in_the_future,
     authorize_microsoft_calendar,
     mock_get_connection,
-    patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
@@ -21,7 +20,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 
 @patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestAnswerEvents(TestCommon):
-    @patch_api
     def setUp(self):
         super().setUp()
 
@@ -54,20 +52,24 @@ class TestAnswerEvents(TestCommon):
             ]
         )
 
+        # the attendee's copy has an id of its own, found by its iCalendar UID
         mock_get_single_event.return_value = (
             True,
-            {"value": [{"id": attendee.event_id.microsoft_id}]},
+            {"value": [{"id": "attendee_123", "iCalUId": "456"}]},
         )
         attendee.with_user(self.attendee_user).do_accept()
         self.call_post_commit_hooks()
         self.simple_event.invalidate_recordset()
 
         mock_answer.assert_called_once_with(
-            self.simple_event.microsoft_id,
+            "attendee_123",
             "accept",
             {"comment": "", "sendResponse": True},
             connection=mock_get_connection(self.attendee_user),
-            timeout=20,
+            timeout=5,
+        )
+        self.assertEqual(
+            self.microsoft_id(self.simple_event, self.attendee_user), "attendee_123"
         )
 
     @patch.object(MicrosoftCalendarService, "_get_single_event")
@@ -81,19 +83,23 @@ class TestAnswerEvents(TestCommon):
                 ("partner_id", "=", self.attendee_user.partner_id.id),
             ]
         )
+        # the attendee's copy has an id of its own, found by its iCalendar UID
         mock_get_single_event.return_value = (
             True,
-            {"value": [{"id": attendee.event_id.microsoft_id}]},
+            {"value": [{"id": "attendee_123", "iCalUId": "456"}]},
         )
         attendee.with_user(self.attendee_user).do_decline()
         self.call_post_commit_hooks()
         self.simple_event.invalidate_recordset()
         mock_answer.assert_called_once_with(
-            self.simple_event.microsoft_id,
+            "attendee_123",
             "decline",
             {"comment": "", "sendResponse": True},
             connection=mock_get_connection(self.attendee_user),
-            timeout=20,
+            timeout=5,
+        )
+        self.assertEqual(
+            self.microsoft_id(self.simple_event, self.attendee_user), "attendee_123"
         )
 
     @freeze_time("2021-09-22")
@@ -128,9 +134,9 @@ class TestAnswerEvents(TestCommon):
             ),
             None,
         )
-        self.attendee_user.with_user(
-            self.attendee_user
-        ).sudo()._sync_microsoft_calendar()
+        self.attendee_user.with_user(self.attendee_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         attendee = self.env["calendar.attendee"].search(
             [
@@ -174,9 +180,9 @@ class TestAnswerEvents(TestCommon):
             ),
             None,
         )
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         attendee = self.env["calendar.attendee"].search(
             [
@@ -232,9 +238,9 @@ class TestAnswerEvents(TestCommon):
             ),
             None,
         )
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         attendee = self.env["calendar.attendee"].search(
             [
@@ -264,41 +270,38 @@ class TestAnswerEvents(TestCommon):
         # the status must be sync_stopped
         self.assertEqual(response["result"]["status"], "sync_stopped")
 
+    @patch.object(MicrosoftCalendarService, "patch")
     @patch.object(MicrosoftCalendarService, "_get_single_event")
     @patch.object(MicrosoftCalendarService, "answer")
     def test_answer_event_with_external_organizer(
-        self, mock_answer, mock_get_single_event
+        self, mock_answer, mock_get_single_event, mock_patch
     ):
-        """Answer an event invitation from an outsider user and check if it was patched on Outlook side."""
-        # Simulate an event that came from an external provider: the organizer isn't registered in Odoo.
+        """An invitation from someone outside Odoo is answered from the
+        answering user's own calendar, under its own id there."""
         self.simple_event.write({"user_id": False, "partner_id": False})
-        self.simple_event.attendee_ids.state = "needsAction"
-
-        # Accept the event using the admin account and ensure that answer request is called.
-        attendee_ms_organizer_event_id = 100
-        mock_get_single_event.return_value = (
-            True,
-            {"value": [{"id": attendee_ms_organizer_event_id}]},
+        attendee = self.simple_event.attendee_ids.filtered(
+            lambda attendee: attendee.partner_id == self.organizer_user.partner_id
         )
-        self.simple_event.attendee_ids[0].with_user(
-            self.organizer_user
-        )._microsoft_sync_event("accept")
+        attendee.state = "needsAction"
+        self.call_post_commit_hooks()
+
+        attendee.with_user(self.organizer_user).do_accept()
+        self.call_post_commit_hooks()
         mock_answer.assert_called_once_with(
-            attendee_ms_organizer_event_id,
+            "123",
             "accept",
             {"comment": "", "sendResponse": True},
             connection=mock_get_connection(self.organizer_user),
-            timeout=20,
+            timeout=5,
         )
 
-        # Decline the event using the admin account and ensure that answer request is called.
-        self.simple_event.attendee_ids[0].with_user(
-            self.organizer_user
-        )._microsoft_sync_event("decline")
+        attendee.with_user(self.organizer_user).do_decline()
+        self.call_post_commit_hooks()
         mock_answer.assert_called_with(
-            attendee_ms_organizer_event_id,
+            "123",
             "decline",
             {"comment": "", "sendResponse": True},
             connection=mock_get_connection(self.organizer_user),
-            timeout=20,
+            timeout=5,
         )
+        mock_get_single_event.assert_not_called()

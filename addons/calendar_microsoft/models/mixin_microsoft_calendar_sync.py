@@ -1,59 +1,7 @@
-import logging
-from contextlib import contextmanager
-from datetime import UTC, timedelta
-from functools import wraps
-from typing import Self
+from odoo import api, fields, models
+from odoo.fields import NEGATIVE_CONDITION_OPERATORS, Domain
 
-from dateutil.parser import parse
-
-from odoo import Command, api, fields, models
-from odoo.db import BaseCursor
-from odoo.fields import Domain
-from odoo.modules.registry import Registry
-
-from odoo.addons.base.models.mixin_recurrence_rrule import (
-    MAX_RECURRENT_OCCURRENCES,
-)
-from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
-    TIMEOUT,
-    MicrosoftCalendarService,
-)
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
-
-_logger = logging.getLogger(__name__)
-
-
-# API requests are sent to Microsoft Calendar after the current transaction ends.
-# This ensures changes are sent to Microsoft only if they really happened in the Odoo database.
-# It is particularly important for event creation , otherwise the event might be created
-# twice in Microsoft if the first creation crashed in Odoo.
-def after_commit(func):
-    @wraps(func)
-    def wrapped(self, *args, **kwargs):
-        assert isinstance(self.env.cr, BaseCursor)
-        dbname = self.env.cr.dbname
-        context = self.env.context
-        uid = self.env.uid
-
-        if self.env.context.get("no_calendar_sync"):
-            return
-
-        @self.env.cr.postcommit.add
-        def called_after():
-            db_registry = Registry(dbname)
-            with db_registry.cursor() as cr:
-                env = api.Environment(cr, uid, context)
-                try:
-                    func(self.with_env(env), *args, **kwargs)
-                except Exception:
-                    _logger.exception("Could not sync record now: %s", self)
-
-    return wrapped
-
-
-@contextmanager
-def microsoft_calendar_connection(user):
-    yield user._calendar_sync_connection("microsoft")
 
 
 class MixinMicrosoftCalendarSync(models.AbstractModel):
@@ -62,558 +10,175 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
 
     microsoft_id = fields.Char(
         string="Organizer event Id",
-        index=True,
+        compute="_compute_microsoft_ids",
+        inverse="_inverse_microsoft_ids",
+        search="_search_microsoft_id",
         copy=False,
     )
     ms_universal_event_id = fields.Char(
         string="Universal event Id",
-        index=True,
-        copy=False,
-    )
-
-    # This field helps to know when a microsoft event need to be resynced
-    need_sync_m = fields.Boolean(
-        default=True,
+        compute="_compute_microsoft_ids",
+        inverse="_inverse_microsoft_ids",
+        search="_search_ms_universal_event_id",
         copy=False,
     )
     active = fields.Boolean(default=True)
 
-    def write(self, vals):
-        fields_to_sync = [x for x in vals if x in self._get_fields_microsoft_synced()]
-        if (
-            fields_to_sync
-            and "need_sync_m" not in vals
-            and not self.env.user._calendar_sync_stopped("microsoft")
-        ):
-            vals["need_sync_m"] = True
-
-        result = super().write(vals)
-
-        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
-            timeout = self._get_microsoft_graph_timeout()
-
-            for record in self:
-                if record.need_sync_m and record.microsoft_id:
-                    if not vals.get("active", True):
-                        # We need to delete the event. Cancel is not sufficient. Errors may occur.
-                        record._microsoft_delete(
-                            record._get_organizer(),
-                            record.microsoft_id,
-                            timeout=timeout,
-                        )
-                    elif fields_to_sync:
-                        values = record._microsoft_values(fields_to_sync)
-                        if not values:
-                            continue
-                        record._microsoft_patch(
-                            record._get_organizer(),
-                            record.microsoft_id,
-                            values,
-                            timeout=timeout,
-                        )
-
-        return result
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        if self.env.user._calendar_sync_stopped("microsoft"):
-            for vals in vals_list:
-                vals.update({"need_sync_m": False})
-        records = super().create(vals_list)
-
-        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
-            timeout = self._get_microsoft_graph_timeout()
-
-            for record in records:
-                if record.need_sync_m and record.active:
-                    record._microsoft_insert(
-                        record._microsoft_values(self._get_fields_microsoft_synced()),
-                        timeout=timeout,
-                    )
-        return records
-
     @api.model
-    def _get_microsoft_service(self):
-        return MicrosoftCalendarService(self.env)
+    def _microsoft_id_fields(self) -> dict[str, str]:
+        """{link field: field of this model} of the ids Outlook gave a record."""
+        return {"remote_id": "microsoft_id", "universal_id": "ms_universal_event_id"}
 
-    def _filtered_synced(self) -> Self:
-        """
-        Get events already synced with Microsoft Outlook.
-        """
-        return self.filtered(lambda e: e.ms_universal_event_id)
+    def _microsoft_links(self):
+        """The Microsoft links of these records, elevated: one per calendar
+        holding a record."""
+        Link = self.env["calendar.sync.link"]._engine()
+        fk = Link._field_of(self)
+        return Link.search_fetch(
+            [(fk, "in", self.ids), ("account_id.provider", "=", "microsoft")],
+            [fk, "account_id", *self._microsoft_id_fields()],
+        )
 
-    def unlink(self):
-        synced = self._filtered_synced()
-        if self.env.user._calendar_sync_status("microsoft") != "sync_paused":
-            for ev in synced:
-                ev._microsoft_delete(ev._get_organizer(), ev.microsoft_id)
-        return super().unlink()
+    def _microsoft_organizer(self):
+        """The user organizing this record."""
+        raise NotImplementedError
 
-    def _write_from_microsoft(self, microsoft_event, vals) -> None:
-        self.with_context(dont_notify=True, microsoft_calendar_syncing=True).write(vals)
+    @api.depends_context("uid")
+    @api.depends(
+        "calendar_sync_link_ids.remote_id",
+        "calendar_sync_link_ids.universal_id",
+        "calendar_sync_link_ids.remote_master_id",
+    )
+    def _compute_microsoft_ids(self) -> None:
+        fk = self.env["calendar.sync.link"]._field_of(self)
+        links = self._microsoft_links().grouped(fk)
+        for record in self:
+            # the ids of the current user's calendar, else of the organizer's
+            rows = links.get(record, self.env["calendar.sync.link"])
+            by_user = {row.account_id.user_id: row for row in rows}
+            link = by_user.get(self.env.user) or by_user.get(
+                record._microsoft_organizer(), rows[:1]
+            )
+            for link_field, field in self._microsoft_id_fields().items():
+                record[field] = link[link_field] if link else False
 
-    @api.model
-    def _create_from_microsoft(self, microsoft_event, vals_list) -> Self:
-        return self.with_context(
-            dont_notify=True,
-            microsoft_calendar_syncing=True,
-            skip_contact_description=True,
-        ).create(vals_list)
+    def _inverse_microsoft_ids(self) -> None:
+        Link = self.env["calendar.sync.link"]._engine()
+        links = self._microsoft_links().filtered(
+            lambda link: link.account_id.user_id == self.env.user
+        )
+        own = links.grouped(Link._field_of(self))
+        for record in self:
+            record._microsoft_link(
+                self.env.user,
+                {
+                    link_field: record[field] or False
+                    for link_field, field in self._microsoft_id_fields().items()
+                },
+                own.get(record, Link),
+            )
 
-    def _sync_odoo2microsoft(self) -> None:
-        if not self:
-            return
-        if self._active_name:
-            records_to_sync = self.filtered(self._active_name)
+    def _microsoft_link(self, user, ids, link) -> None:
+        """Keep the ids `user`'s calendar gave this record, as {link field:
+        id}, in `link`, else in a new one; without an id Outlook knows the
+        item by, it has none there."""
+        self.check_singleton()
+        Link = self.env["calendar.sync.link"]._engine()
+        if not (ids.get("remote_id") or ids.get("universal_id")):
+            link.unlink()
+        elif link:
+            link.write(
+                {field: value for field, value in ids.items() if link[field] != value}
+            )
         else:
-            records_to_sync = self
-        cancelled_records = self - records_to_sync
-
-        records_to_sync._check_attendees_have_email()
-        updated_records = records_to_sync._filtered_synced()
-        new_records = records_to_sync - updated_records
-
-        for record in cancelled_records._filtered_synced():
-            record._microsoft_delete(record._get_organizer(), record.microsoft_id)
-        for record in new_records:
-            values = record._microsoft_values(self._get_fields_microsoft_synced())
-            sender_user = record._get_event_user_m()
-            if record._is_microsoft_insertion_blocked(sender_user):
-                continue
-            if isinstance(values, dict):
-                record._microsoft_insert(values)
-            else:
-                for value in values:
-                    record._microsoft_insert(value)
-        for record in updated_records.filtered("need_sync_m"):
-            values = record._microsoft_values(self._get_fields_microsoft_synced())
-            if not values:
-                continue
-            record._microsoft_patch(
-                record._get_organizer(), record.microsoft_id, values
+            Link.create(
+                {
+                    **ids,
+                    "account_id": self.env["calendar.sync.account"]
+                    ._for(user, "microsoft")
+                    .id,
+                    Link._field_of(self): self.id,
+                }
             )
 
-    def _cancel_microsoft(self) -> None:
-        self.microsoft_id = False
-        self.ms_universal_event_id = False
-        self.unlink()
-
-    def _sync_recurrence_microsoft2odoo(
-        self, microsoft_events, new_events=None
-    ) -> tuple:
-        recurrent_masters = (
-            new_events.filter(lambda e: e.is_recurrence()) if new_events else []
+    def _microsoft_applying(self) -> bool:
+        """Whether this change comes from Outlook."""
+        return bool(
+            self.env.context.get("microsoft_calendar_syncing")
+            or self.env.context.get("calendar_sync_applying") == "microsoft"
         )
-        recurrents = (
-            new_events.filter(lambda e: e.is_recurrent_not_master())
-            if new_events
-            else []
-        )
-        default_values = {"need_sync_m": False}
 
-        new_recurrence = self.env["calendar.recurrence"]
-        updated_events = self.env["calendar.event"]
+    def _microsoft_held(self):
+        """These records but those no Outlook calendar holds."""
+        Link = self.env["calendar.sync.link"]
+        return self.browse(Link._of(self, "microsoft")[Link._field_of(self)].ids)
 
-        # --- create new recurrences and associated events ---
-        for recurrent_master in recurrent_masters:
-            new_calendar_recurrence = dict(
-                self.env["calendar.recurrence"]._microsoft_to_odoo_values(
-                    recurrent_master, default_values, with_ids=True
+    def _microsoft_tombstone(self) -> None:
+        """These records leave Outlook, though they stay in Odoo: each calendar
+        holding one deletes it."""
+        links = self._microsoft_links()
+        accounts = links.account_id
+        links.write({self.env["calendar.sync.link"]._field_of(self): False})
+        accounts._as_engine()._queue_push(self.browse())
+
+    def _microsoft_forget(self) -> None:
+        """These records forget the ids Outlook gave them."""
+        self._microsoft_links().unlink()
+
+    def _search_microsoft_id(self, operator, value):
+        return self._search_microsoft_link("remote_id", operator, value)
+
+    def _search_ms_universal_event_id(self, operator, value):
+        return self._search_microsoft_link("universal_id", operator, value)
+
+    def _search_microsoft_link(self, link_field, operator, value):
+        Link = self.env["calendar.sync.link"]._engine()
+        fk = Link._field_of(self)
+        microsoft = Domain("account_id.provider", "=", "microsoft")
+        if operator == "=":
+            operator, value = "in", [value]
+        if operator in NEGATIVE_CONDITION_OPERATORS:
+            return NotImplemented
+        if operator != "in":
+            return Domain(
+                "id",
+                "in",
+                Link._search(microsoft & Domain(link_field, operator, value)).subselect(
+                    fk
                 ),
-                need_sync_m=False,
             )
-            to_create = recurrents._filtered_series(
-                new_calendar_recurrence["microsoft_id"]
-            )
-            recurrents -= to_create
-            base_values = dict(
-                self.env["calendar.event"]._microsoft_to_odoo_values(
-                    recurrent_master, default_values, with_ids=True
+        values = [v for v in value if v]
+        domain = Domain.FALSE
+        if values:
+            domain |= Domain(
+                "id",
+                "in",
+                Link._search(microsoft & Domain(link_field, "in", values)).subselect(
+                    fk
                 ),
-                need_sync_m=False,
             )
-            to_create_values = []
-            if new_calendar_recurrence.get("repeat_type", False) in [
-                "count",
-                "forever",
-            ]:
-                to_create = list(to_create)[:MAX_RECURRENT_OCCURRENCES]
-            for recurrent_event in to_create:
-                if recurrent_event.type == "occurrence":
-                    value = self.env[
-                        "calendar.event"
-                    ]._microsoft_to_odoo_recurrence_values(recurrent_event, base_values)
-                else:
-                    value = self.env["calendar.event"]._microsoft_to_odoo_values(
-                        recurrent_event, default_values
-                    )
-
-                to_create_values += [dict(value, need_sync_m=False)]
-
-            new_calendar_recurrence["calendar_event_ids"] = [
-                Command.create(to_create_value) for to_create_value in to_create_values
-            ]
-            new_recurrence_odoo = (
-                self.env["calendar.recurrence"]
-                .with_context(dont_notify=True, microsoft_calendar_syncing=True)
-                .create(new_calendar_recurrence)
+        if len(values) < len(value):
+            domain |= Domain(
+                "id",
+                "not in",
+                Link._search(
+                    microsoft
+                    & Domain(fk, "!=", False)
+                    & Domain(link_field, "!=", False)
+                ).subselect(fk),
             )
-            new_recurrence_odoo.base_event_id = (
-                new_recurrence_odoo.calendar_event_ids[0]
-                if new_recurrence_odoo.calendar_event_ids
-                else False
-            )
-            new_recurrence |= new_recurrence_odoo
-
-        # --- update events in existing recurrences ---
-        # Important note:
-        # To map existing recurrences with events to update, we must use the universal id
-        # (also known as ICalUId in the Microsoft API), as 'seriesMasterId' attribute of events
-        # is specific to the Microsoft user calendar.
-        ms_recurrence_ids = list({x.seriesMasterId for x in recurrents})
-        ms_recurrence_uids = {
-            r.id: r.iCalUId for r in microsoft_events if r.id in ms_recurrence_ids
-        }
-        recurrences = self.env["calendar.recurrence"].search(
-            [("ms_universal_event_id", "in", microsoft_events.uids)]
-        )
-        recurrences_by_uid = recurrences.grouped("ms_universal_event_id")
-        for recurrent_master_id in ms_recurrence_ids:
-            recurrence_id = recurrences_by_uid.get(
-                ms_recurrence_uids[recurrent_master_id], recurrences.browse()
-            )
-            to_update = recurrents._filtered_series(recurrent_master_id)
-            for recurrent_event in to_update:
-                if recurrent_event.type == "occurrence":
-                    value = self.env[
-                        "calendar.event"
-                    ]._microsoft_to_odoo_recurrence_values(
-                        recurrent_event, {"need_sync_m": False}
-                    )
-                else:
-                    value = self.env["calendar.event"]._microsoft_to_odoo_values(
-                        recurrent_event, default_values
-                    )
-                existing_event = (
-                    recurrence_id.calendar_event_ids._filtered_matching_timeslot(
-                        value["start"], value["stop"], recurrent_event.isAllDay
-                    )
-                )
-                if not existing_event:
-                    continue
-                value.pop("start")
-                value.pop("stop")
-                existing_event._write_from_microsoft(recurrent_event, value)
-                updated_events |= existing_event
-            new_recurrence |= recurrence_id
-        return new_recurrence, updated_events
-
-    def _update_microsoft_recurrence(self, recurrence, events):
-        """
-        Update Odoo events from Outlook recurrence and events.
-        """
-        # get the list of events to update ...
-        events_to_update = events.filter(
-            lambda e: e.seriesMasterId == self.microsoft_id
-        )
-        if self.repeat_type in ["count", "forever"]:
-            events_to_update = list(events_to_update)[:MAX_RECURRENT_OCCURRENCES]
-
-        # ... and update them
-        rec_values = {}
-        update_events = self.env["calendar.event"]
-        for e in events_to_update:
-            if e.type == "exception":
-                event_values = self.env["calendar.event"]._microsoft_to_odoo_values(e)
-            elif e.type == "occurrence":
-                event_values = self.env[
-                    "calendar.event"
-                ]._microsoft_to_odoo_recurrence_values(e)
-            else:
-                event_values = None
-
-            if event_values:
-                # keep event values to update the recurrence later
-                if any(f for f in ("start", "stop") if f in event_values):
-                    rec_values[
-                        (self.id, event_values.get("start"), event_values.get("stop"))
-                    ] = dict(event_values, need_sync_m=False)
-
-                odoo_event = (
-                    self.env["calendar.event"]
-                    .browse(e.odoo_id(self.env))
-                    .exists()
-                    .with_context(no_mail_to_attendees=True, mail_create_nolog=True)
-                )
-                odoo_event.with_context(
-                    dont_notify=True, microsoft_calendar_syncing=True
-                ).write(dict(event_values, need_sync_m=False))
-                update_events |= odoo_event
-
-        # update the recurrence
-        detached_events = self.with_context(
-            dont_notify=True, microsoft_calendar_syncing=True
-        )._apply_recurrence(rec_values)
-        detached_events._cancel_microsoft()
-
-        return update_events
+        return domain
 
     @api.model
-    def _sync_microsoft2odoo(self, microsoft_events: MicrosoftEvent) -> tuple:
-        """
-        Synchronize Microsoft recurrences in Odoo.
-        Creates new recurrences, updates existing ones.
-        :return: synchronized odoo
-        """
-        existing = microsoft_events.match_with_odoo_events(self.env)
-        cancelled = microsoft_events.cancelled()
-        new = microsoft_events - existing - cancelled
-        new_recurrence = new.filter(lambda e: e.is_recurrent())
-
-        # create new events and reccurrences
-        odoo_values = [
-            dict(self._microsoft_to_odoo_values(e, with_ids=True), need_sync_m=False)
-            for e in (new - new_recurrence)
-        ]
-        synced_events = self.with_context(
-            dont_notify=True,
-            microsoft_calendar_syncing=True,
-            skip_contact_description=True,
-        )._create_from_microsoft(new, odoo_values)
-        synced_recurrences, updated_events = self._sync_recurrence_microsoft2odoo(
-            existing, new_recurrence
-        )
-        synced_events |= updated_events
-
-        # remove cancelled events and recurrences
-        cancelled_recurrences = self.env["calendar.recurrence"].search(
-            [
-                "|",
-                ("ms_universal_event_id", "in", cancelled.uids),
-                ("microsoft_id", "in", cancelled.ids),
-            ]
-        )
-        cancelled_events = self.browse(
-            [
-                e.odoo_id(self.env)
-                for e in cancelled
-                if e.id not in [r.microsoft_id for r in cancelled_recurrences]
-            ]
-        )
-        cancelled_recurrences._cancel_microsoft()
-        cancelled_events = cancelled_events.exists()
-        cancelled_events._cancel_microsoft()
-
-        synced_recurrences |= cancelled_recurrences
-        synced_events |= cancelled_events | cancelled_recurrences.calendar_event_ids
-
-        # Get sync lower bound days range for checking if old events must be updated in Odoo.
-        ICP = self.env["ir.config_parameter"].sudo()
-        lower_bound_day_range = ICP.get_param(
-            "calendar_microsoft.sync.lower_bound_range"
-        )
-
-        # update other events
-        for mevent in (existing - cancelled).filter(lambda e: e.lastModifiedDateTime):
-            # Last updated wins.
-            # This could be dangerous if microsoft server time and odoo server time are different
-            if mevent.is_recurrence():
-                odoo_event = (
-                    self.env["calendar.recurrence"]
-                    .browse(mevent.odoo_id(self.env))
-                    .exists()
-                )
-            else:
-                odoo_event = self.browse(mevent.odoo_id(self.env)).exists()
-
-            if odoo_event:
-                odoo_event_updated_time = odoo_event.write_date.replace(tzinfo=UTC)
-                ms_event_updated_time = parse(mevent.lastModifiedDateTime)
-
-                # If the update comes from an old event/recurrence, check if time diff between updates is reasonable.
-                old_event_update_condition = True
-                if lower_bound_day_range:
-                    update_time_diff = ms_event_updated_time - odoo_event_updated_time
-                    old_event_update_condition = (
-                        odoo_event._is_old_event_update_required(
-                            int(lower_bound_day_range), update_time_diff
-                        )
-                    )
-
-                if (
-                    ms_event_updated_time >= odoo_event_updated_time
-                    and old_event_update_condition
-                ):
-                    vals = dict(
-                        odoo_event._microsoft_to_odoo_values(mevent), need_sync_m=False
-                    )
-                    odoo_event.with_context(
-                        dont_notify=True, microsoft_calendar_syncing=True
-                    )._write_from_microsoft(mevent, vals)
-
-                    if odoo_event._name == "calendar.recurrence":
-                        update_events = odoo_event._update_microsoft_recurrence(
-                            mevent, microsoft_events
-                        )
-                        synced_recurrences |= odoo_event
-                        synced_events |= update_events
-                    else:
-                        synced_events |= odoo_event
-
-        return synced_events, synced_recurrences
-
-    def _is_old_event_update_required(
-        self, lower_bound_day_range, update_time_diff
-    ) -> bool:
-        """
-        Checks if an old event in Odoo should be updated locally. This verification is necessary because
-        sometimes events in Odoo have the same state in Microsoft and even so they trigger updates locally
-        due to a second or less of update time difference, thus spamming unwanted emails on Microsoft side.
-        """
-        # Event can be updated locally if its stop date is bigger than lower bound and the update time difference is reasonable (1 hour).
-        # For recurrences, if any of the occurrences surpass the lower bound range, we update the recurrence.
-        lower_bound = fields.Datetime.subtract(
-            fields.Datetime.now(), days=lower_bound_day_range
-        )
-        stop_date_condition = True
-        if self._name == "calendar.event":
-            stop_date_condition = self.stop >= lower_bound
-        elif self._name == "calendar.recurrence":
-            stop_date_condition = any(
-                event.stop >= lower_bound for event in self.calendar_event_ids
-            )
-        return stop_date_condition or update_time_diff >= timedelta(hours=1)
-
-    @after_commit
-    def _microsoft_delete(self, user_id, event_id, timeout=TIMEOUT) -> None:
-        """
-        Once the event has been really removed from the Odoo database, remove it from the Outlook calendar.
-
-        Note that all self attributes to use in this method must be provided as method parameters because
-        'self' won't exist when this method will be really called due to @after_commit decorator.
-        """
-        microsoft_service = self._get_microsoft_service()
-        sender_user = self._get_event_user_m(user_id).sudo()
-        with microsoft_calendar_connection(sender_user) as connection:
-            if connection and not sender_user._calendar_sync_stopped("microsoft"):
-                microsoft_service.delete(
-                    event_id, connection=connection, timeout=timeout
-                )
-
-    @after_commit
-    def _microsoft_patch(self, user_id, event_id, values, timeout=TIMEOUT) -> None:
-        """
-        Once the event has been really modified in the Odoo database, modify it in the Outlook calendar.
-
-        Note that all self attributes to use in this method must be provided as method parameters because
-        'self' may have been modified between the call of '_microsoft_patch' and its execution,
-        due to @after_commit decorator.
-        """
-        microsoft_service = self._get_microsoft_service()
-        sender_user = self._get_event_user_m(user_id)
-        with microsoft_calendar_connection(sender_user.sudo()) as connection:
-            if connection:
-                self._check_attendees_have_email()
-                res = microsoft_service.patch(
-                    event_id, values, connection=connection, timeout=timeout
-                )
-                self.with_context(
-                    dont_notify=True, microsoft_calendar_syncing=True
-                ).write(
-                    {
-                        "need_sync_m": not res,
-                    }
-                )
-
-    @after_commit
-    def _microsoft_insert(self, values, timeout=TIMEOUT) -> None:
-        """
-        Once the event has been really added in the Odoo database, add it in the Outlook calendar.
-
-        Note that all self attributes to use in this method must be provided as method parameters because
-        'self' may have been modified between the call of '_microsoft_insert' and its execution,
-        due to @after_commit decorator.
-        """
-        if not values:
-            return
-        microsoft_service = self._get_microsoft_service()
-        sender_user = self._get_event_user_m()
-        with microsoft_calendar_connection(sender_user.sudo()) as connection:
-            if connection:
-                self._check_attendees_have_email()
-                event_id, uid = microsoft_service.insert(
-                    values, connection=connection, timeout=timeout
-                )
-                self.with_context(
-                    dont_notify=True, microsoft_calendar_syncing=True
-                ).write(
-                    {
-                        "microsoft_id": event_id,
-                        "ms_universal_event_id": uid,
-                        "need_sync_m": False,
-                    }
-                )
-
-    def _microsoft_attendee_answer(self, answer, params, timeout=TIMEOUT) -> None:
-        if not answer:
-            return
-        microsoft_service = self._get_microsoft_service()
-        with microsoft_calendar_connection(self.env.user.sudo()) as connection:
-            if connection:
-                self._check_attendees_have_email()
-                # Fetch the event's id (ms_organizer_event_id) using its iCalUId (ms_universal_event_id) since the
-                # former differs for each attendee. This info is required for sending the event answer and Odoo currently
-                # saves the event's id of the last user who synced the event (who might be or not the current user).
-                status, event = microsoft_service._get_single_event(
-                    self.ms_universal_event_id, connection=connection
-                )
-                if (
-                    status
-                    and event
-                    and event.get("value")
-                    and len(event.get("value")) == 1
-                ):
-                    # Send the attendee answer with its own ms_organizer_event_id.
-                    res = microsoft_service.answer(
-                        event.get("value")[0].get("id"),
-                        answer,
-                        params,
-                        connection=connection,
-                        timeout=timeout,
-                    )
-                    self.need_sync_m = not res
-
-    def _get_microsoft_records_to_sync(self, full_sync=False) -> Self:
-        """
-        Return records that should be synced from Odoo to Microsoft
-        :param full_sync: If True, all events attended by the user are returned
-        :return: events
-        """
-        domain = self.with_context(full_sync_m=full_sync)._get_domain_microsoft_sync()
-        return self.with_context(active_test=False).search(domain)
-
-    @api.model
-    def _microsoft_to_odoo_values(
-        self,
-        microsoft_event: MicrosoftEvent,
-        default_reminders=(),
-        default_values=None,
-        with_ids=False,
-    ):
-        """
-        Implements this method to return a dict of Odoo values corresponding
-        to the Microsoft event given as parameter
-        :return: dict of Odoo formatted values
-        """
+    def _microsoft_to_odoo_values(self, microsoft_event: MicrosoftEvent, event=None):
+        """`microsoft_event` as values of this model; `event` is the record it
+        updates, empty on creation."""
         raise NotImplementedError
 
     @api.model
-    def _get_microsoft_graph_timeout(self):
-        """Return Microsoft Graph request timeout (seconds).
-
-        Keep current behavior by default (5s), but allow admins to increase it
-        through a system parameter.
-        """
+    def _get_microsoft_graph_timeout(self) -> int:
+        """How long an edit in the interface waits for Outlook, in seconds:
+        five unless the system parameter says otherwise."""
         timeout = self.env.registry.settings.get(
             self.env, "calendar_microsoft.graph_timeout", False
         )
@@ -622,83 +187,17 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         return max(1, int(timeout))
 
     def _microsoft_values(self, fields_to_sync, initial_values=()):
-        """
-        Implements this method to return a dict with values formatted
-        according to the Microsoft Calendar API
-        :return: dict of Microsoft formatted values
-        """
+        """This record as Outlook's API takes it, of `fields_to_sync`."""
         raise NotImplementedError
 
-    def _check_attendees_have_email(self):
-        raise NotImplementedError
-
-    def _get_domain_microsoft_sync(self):
-        """
-        Return a domain used to search records to synchronize.
-        e.g. return a domain to synchronize records owned by the current user.
-        """
+    def _microsoft_refusal(self) -> str | None:
+        """Why Outlook would refuse this record; None when it would not."""
         raise NotImplementedError
 
     def _get_fields_microsoft_synced(self):
-        """
-        Return a set of field names. Changing one of these fields
-        marks the record to be re-synchronized.
-        """
-        raise NotImplementedError
-
-    @api.model
-    def _restart_microsoft_sync(self):
-        """Turns on the microsoft synchronization for all the events of
-        a given user.
-        """
-        raise NotImplementedError
-
-    def _extend_microsoft_domain(self, domain: Domain):
-        """Extends the sync domain based on the full_sync_m context parameter.
-        In case of full sync it shouldn't include already synced events.
-        """
-        if self.env.context.get("full_sync_m", True):
-            domain &= Domain("ms_universal_event_id", "=", False)
-        else:
-            is_active_clause = (
-                Domain(self._active_name, "=", True)
-                if self._active_name
-                else Domain.TRUE
-            )
-            domain &= (
-                Domain("ms_universal_event_id", "=", False) & is_active_clause
-            ) | Domain("need_sync_m", "=", True)
-        # Sync only events created/updated after last sync date (with 5 min of time acceptance).
-        last_sync_date = self.env.user._calendar_sync_existing_account(
-            "microsoft"
-        ).last_sync_date
-        if last_sync_date:
-            time_offset = timedelta(minutes=5)
-            domain &= Domain("write_date", ">=", last_sync_date - time_offset)
-        return domain
-
-    def _get_event_user_m(self, user_id=None):
-        """Return the correct user to send the request to Microsoft.
-        It's possible that a user creates an event and sets another user as the organizer. Using self.env.user will
-        cause some issues, and it might not be possible to use this user for sending the request, so this method gets
-        the appropriate user accordingly.
-        """
+        """The fields of this model Outlook holds a copy of."""
         raise NotImplementedError
 
     def _is_video_call_required(self) -> bool:
-        """
-        Implement this method to return True if the event needs a video call
-        :return: bool
-        """
         self.check_singleton()
         return True
-
-    def _is_microsoft_insertion_blocked(self, sender_user) -> bool:
-        """
-        Returns True if the record insertion to Microsoft should be blocked.
-        This is a necessary step for ensuring data match between Odoo and Microsoft,
-        as it prevents attendees to synchronize new records on behalf of the owners,
-        otherwise the event ownership would be lost in Outlook and it would block the
-        future record synchronization for the original owner.
-        """
-        raise NotImplementedError

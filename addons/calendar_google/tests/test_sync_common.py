@@ -149,7 +149,7 @@ class TestSyncGoogle(HttpCase):
 
     def find_google(self, model, value, operator="="):
         """The records of `model` Google holds under ids matching `value`."""
-        field = model._google_link_field()
+        field = self.env["calendar.sync.link"]._field_of(model)
         links = (
             self.env["calendar.sync.link"]
             ._engine()

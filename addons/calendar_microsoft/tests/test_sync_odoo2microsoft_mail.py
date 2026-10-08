@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from odoo import Command
 
-from odoo.addons.calendar_microsoft.tests.common import TestCommon
+from odoo.addons.calendar_microsoft.tests.common import TestCommon, distinct_inserts
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
@@ -48,7 +48,6 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
         )
         event_values = {
             "name": "Event",
-            "need_sync_m": True,
             "start": datetime(2020, 1, 15, 8, 0),
             "stop": datetime(2020, 1, 15, 18, 0),
         }
@@ -61,25 +60,18 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
             }
         )
         paused_sync_user._calendar_sync_account("microsoft").stopped = True
+        inserts = distinct_inserts("created")
         for create_user, organizer, mail_notified_partners, attendee in [
-            (
-                user_root,
-                self.users[0],
-                partner + self.users[0].partner_id,
-                partner,
-            ),  # emulates online appointment with user 0
+            # an online appointment with user 0 goes out through user 0's
+            # calendar, which invites the attendees
+            (user_root, self.users[0], False, partner),
             (user_root, None, partner, partner),  # emulates online resource appointment
             (self.users[0], None, False, partner),
             (self.users[0], self.users[0], False, partner),
             (self.users[0], self.users[1], False, partner),
-            # create user has paused sync and organizer can sync -> will not sync because of bug
-            # only the organizer is notified as we don't notify the author (= create_user.partner_id) on creation
-            (
-                paused_sync_user,
-                self.users[0],
-                self.users[0].partner_id,
-                paused_sync_user.partner_id,
-            ),
+            # whoever creates it, an event goes out through its synchronized
+            # organizer
+            (paused_sync_user, self.users[0], False, paused_sync_user.partner_id),
         ]:
             with self.subTest(
                 create_uid=create_user.name if create_user else None,
@@ -90,7 +82,7 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
                     self.mock_mail_gateway(),
                     patch.object(MicrosoftCalendarService, "insert") as mock_insert,
                 ):
-                    mock_insert.return_value = ("1", "1")
+                    mock_insert.side_effect = inserts
                     self.env["calendar.event"].with_user(create_user).create(
                         {
                             **event_values,

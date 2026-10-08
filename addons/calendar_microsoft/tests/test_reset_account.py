@@ -4,7 +4,6 @@ from odoo.addons.base.models.ir_cron import IrCron
 from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     mock_get_connection,
-    patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
@@ -15,11 +14,9 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 @patch.object(IrCron, "_commit_progress", lambda self, *a, **kw: None)
 @patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestResetAccount(TestCommon):
-    """The wizard cleared `microsoft_id` but kept `ms_universal_event_id`, the
-    id `_filtered_synced` reads, so a reset event still counted as synced and
-    was patched or deleted at `/events/False`."""
+    """A reset forgets what the user's Outlook calendar held: the user may
+    come back with another account."""
 
-    @patch_api
     def setUp(self):
         super().setUp()
         self.create_events_for_tests()
@@ -36,17 +33,18 @@ class TestResetAccount(TestCommon):
     def test_synchronizing_all_again_inserts_instead_of_patching(self):
         self._reset("dont_delete", "all")
 
-        self.assertFalse(self.simple_event.microsoft_id)
-        self.assertFalse(self.simple_event.ms_universal_event_id)
-        self.assertTrue(self.simple_event.need_sync_m)
-        self.assertFalse(self.simple_event._filtered_synced())
+        self.assertFalse(self.microsoft_link(self.simple_event, self.organizer_user))
+        self.assertTrue(self.awaits_push(self.simple_event))
+        self.assertFalse(
+            self.organizer_user._calendar_sync_account("microsoft").insert_since
+        )
 
     def test_synchronizing_only_new_events_leaves_existing_ones(self):
-        self.simple_event.need_sync_m = True
-
         self._reset("dont_delete", "new")
 
-        self.assertFalse(self.simple_event.need_sync_m)
+        account = self.organizer_user._calendar_sync_account("microsoft")
+        self.assertGreaterEqual(account.insert_since, self.simple_event.create_date)
+        self.assertFalse(self.microsoft_link(self.simple_event, self.organizer_user))
 
     @patch.object(MicrosoftCalendarService, "delete")
     def test_deleting_from_odoo_only_calls_nothing_in_outlook(self, mock_delete):
@@ -63,5 +61,4 @@ class TestResetAccount(TestCommon):
 
         mock_delete.assert_any_call("123", connection=ANY, timeout=ANY)
         self.assertTrue(self.simple_event.exists())
-        self.assertFalse(self.simple_event.microsoft_id)
-        self.assertFalse(self.simple_event.ms_universal_event_id)
+        self.assertFalse(self.microsoft_link(self.simple_event, self.organizer_user))

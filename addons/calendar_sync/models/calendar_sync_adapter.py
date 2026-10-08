@@ -47,6 +47,13 @@ class CalendarSyncAdapter(models.AbstractModel):
         raise NotImplementedError
 
     @api.model
+    def _answer(self, account, remote_id: str, state: str) -> None:
+        """Answer the invitation `remote_id` of `account`'s calendar with
+        `state`, an attendee's state in Odoo; for a provider with an answer
+        endpoint."""
+        raise NotImplementedError
+
+    @api.model
     def _after_insert(self, account, record, remote: RemoteEvent) -> None:
         """What `record` learns from its insert in `account`'s calendar."""
 
@@ -63,6 +70,12 @@ class CalendarSyncAdapter(models.AbstractModel):
         raise NotImplementedError
 
     @api.model
+    def _check_record(self, record) -> str | None:
+        """Why the provider would refuse `record` as it stands; None when it
+        would not."""
+        return None
+
+    @api.model
     def _remote_values(self, record, account) -> dict:
         """`record` as the provider stores it."""
         raise NotImplementedError
@@ -73,7 +86,10 @@ class CalendarSyncAdapter(models.AbstractModel):
         raise NotImplementedError
 
     @api.model
-    def _apply_series(self, account, master: RemoteEvent, occurrences, recurrence):
+    def _apply_series(
+        self, account, master: RemoteEvent | None, occurrences, recurrence
+    ):
         """Create or update the recurrence of `master` and its events from
-        `occurrences`; (recurrence, {remote id: event})."""
+        `occurrences`; (recurrence, {remote id: event}). Without `master`,
+        `occurrences` changed alone in the known `recurrence`."""
         raise NotImplementedError

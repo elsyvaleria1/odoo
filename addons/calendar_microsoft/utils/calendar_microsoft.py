@@ -153,8 +153,7 @@ class MicrosoftCalendarService:
         except requests.HTTPError as e:
             full_sync_needed = self._check_full_sync_required(e.response)
             if e.response.status_code == 410 and full_sync_needed and sync_token:
-                # retry with a full sync
-                return self._get_events_delta(connection=connection, timeout=timeout)
+                raise InvalidSyncToken from e
             raise
 
         # event occurrences (from a recurrence) are retrieved separately to get all their info,
@@ -208,14 +207,9 @@ class MicrosoftCalendarService:
     @requires_connection
     def patch(self, event_id, values, connection=None, timeout=TIMEOUT):
         url = "/v1.0/me/calendar/events/%s" % event_id
-        try:
-            status, _dummy = self._request(
-                connection, "PATCH", url, json=values, timeout=timeout
-            )
-        except requests.HTTPError:
-            _logger.info("Microsoft event %s has not been updated", event_id)
-            return False
-
+        status, _dummy = self._request(
+            connection, "PATCH", url, json=values, timeout=timeout
+        )
         return status not in RESOURCE_NOT_FOUND_STATUSES
 
     @requires_connection

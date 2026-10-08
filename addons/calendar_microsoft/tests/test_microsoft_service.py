@@ -8,9 +8,11 @@ from odoo.tests import TransactionCase
 
 from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_calendar
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
+    InvalidSyncToken,
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
 
 DEFAULT_TIMEOUT = 20
 
@@ -84,29 +86,22 @@ class TestMicrosoftService(TransactionCase):
     def test_get_events_delta_token_error(
         self, mock_do_request, mock_check_full_sync_required
     ):
-        """
-        When the provided sync token is invalid, an exception should be raised and then
-        a full sync should be done.
-        """
+        """A token Outlook no longer knows is said, for the caller to start a
+        full synchronization."""
         mock_do_request.side_effect = [
             requests.HTTPError(
                 response=MagicMock(status_code=410, content="fullSyncRequired")
             ),
-            self._do_request_result({"value": []}),
         ]
         mock_check_full_sync_required.return_value = True
 
-        events, next_token = self.service._get_events_delta(
-            connection=self.fake_connection,
-            sync_token=self.fake_sync_token,
-            timeout=DEFAULT_TIMEOUT,
-        )
-
-        self.assertEqual(next_token, None)
-        self.assertFalse(events)
-        mock_do_request.assert_has_calls(
-            [self.call_with_sync_token, self.call_without_sync_token]
-        )
+        with self.assertRaises(InvalidSyncToken):
+            self.service._get_events_delta(
+                connection=self.fake_connection,
+                sync_token=self.fake_sync_token,
+                timeout=DEFAULT_TIMEOUT,
+            )
+        mock_do_request.assert_has_calls([self.call_with_sync_token])
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_without_sync_token(self, mock_do_request):
@@ -420,6 +415,18 @@ class TestMicrosoftService(TransactionCase):
             self.service.patch(123, {})
 
     @patch.object(MicrosoftCalendarService, "_request")
+    def test_a_refused_patch_raises(self, mock_do_request):
+        """A patch Outlook refuses is said: answering False took a refusal for
+        an item that is gone."""
+        mock_do_request.side_effect = requests.HTTPError(
+            response=MagicMock(status_code=400)
+        )
+        with self.assertRaises(requests.HTTPError):
+            self.service.patch(
+                "123", {}, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
+            )
+
+    @patch.object(MicrosoftCalendarService, "_request")
     def test_patch_returns_false_if_event_does_not_exist(self, mock_do_request):
         event_id = 123
         values = {"subject": "ev2"}
@@ -578,12 +585,16 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_check_full_sync_required")
     @patch.object(MicrosoftCalendarService, "_request")
+    @patch.object(
+        CalendarSyncUsers,
+        "_calendar_sync_connection",
+        lambda user, code: "MY_CONNECTION",
+    )
     def test_get_events_delta_with_outdated_sync_token(
         self, mock_do_request, mock_check_full_sync_required
     ):
-        """When an outdated sync token is provided, we must fetch all events again for updating the old token."""
-        # Throw a 'HTTPError' when the token is outdated, thus triggering the fetching of all events.
-        # Simulate a scenario which the full sync is required, such as when getting the 'SyncStateNotFound' error code.
+        """A synchronization whose token is outdated reads the whole calendar
+        again in the same run."""
         mock_do_request.side_effect = [
             requests.HTTPError(
                 response=MagicMock(status_code=410, error={"code": "SyncStateNotFound"})
@@ -591,18 +602,12 @@ class TestMicrosoftService(TransactionCase):
             self._do_request_result({"value": []}),
         ]
         mock_check_full_sync_required.return_value = True
+        account = self.env.user._calendar_sync_account("microsoft")
+        account.sync_token = self.fake_sync_token
 
-        # Call the regular 'delta' get events with an outdated token for triggering the all events fetching.
-        self.env.user._calendar_sync_account(
-            "microsoft"
-        ).sync_token = self.fake_sync_token
-        self.service._get_events_delta(
-            connection=self.fake_connection,
-            sync_token=self.fake_sync_token,
-            timeout=DEFAULT_TIMEOUT,
-        )
+        changes, __ = account._as_engine()._read()
 
-        # Two calls must have been made: one call with the outdated sync token and another one with no sync token.
+        self.assertTrue(changes.full)
         mock_do_request.assert_has_calls(
             [self.call_with_sync_token, self.call_without_sync_token]
         )

@@ -200,6 +200,8 @@ class CalendarSyncAccount(models.Model):
                 return False
             organizer = record.user_id
         else:
+            if not self._provider(code).capabilities.series_inserts:
+                return False
             organizer = record.base_event_id.user_id
         return not organizer or (active or _Actives(self, code))(organizer)
 
@@ -297,7 +299,35 @@ class CalendarSyncAccount(models.Model):
             links |= Link._match(
                 self, [remote for remote in rest if remote.remote_id not in links]
             )
+        # an occurrence changed alone, of a series this calendar holds: the
+        # series knows where it goes
+        alone = {}
+        for remote in rest:
+            if remote.kind == RemoteKind.OCCURRENCE and remote.remote_id not in links:
+                alone.setdefault(remote.master_id, []).append(remote)
+        rest = [
+            remote
+            for remote in rest
+            if not (
+                remote.kind == RemoteKind.OCCURRENCE and remote.remote_id not in links
+            )
+        ]
         applied += [record for remote in rest if (record := pull(remote))]
+        if alone:
+            series = {
+                link.remote_id: link.recurrence_id
+                for link in Link.search(
+                    [
+                        ("account_id", "=", self.id),
+                        ("remote_id", "in", list(alone)),
+                        ("recurrence_id", "!=", False),
+                    ]
+                )
+            }
+            for master_id, remotes in alone.items():
+                if recurrence := series.get(master_id):
+                    applying._apply_series(None, remotes, recurrence)
+                    applied.append(recurrence)
         return applied
 
     def _pull_one(self, applying, adapter, remote, links, written, occurrences):
@@ -398,44 +428,7 @@ class CalendarSyncAccount(models.Model):
         is committed, an insert's id being committed before it is sent:
         `records` alone, as an edit in the interface waits for them, or all
         of it, as a run does. `quiet` sends no invitation or update mails."""
-        data = self.env.cr.postcommit.data
-        if "calendar_sync.push" not in data:
-            data.setdefault_set("calendar_sync.push")
-            data.setdefault_set("calendar_sync.push.records")
-            data.setdefault_set("calendar_sync.push.quiet")
-            data.setdefault_set("calendar_sync.push.deletes")
-            cr, dbname, uid = self.env.cr, self.env.cr.dbname, self.env.uid
-
-            @cr.postcommit.add
-            def push():
-                everything = cr.postcommit.data.pop("calendar_sync.push")
-                records = cr.postcommit.data.pop("calendar_sync.push.records")
-                quiet = cr.postcommit.data.pop("calendar_sync.push.quiet")
-                deletes = cr.postcommit.data.pop("calendar_sync.push.deletes")
-                only = dict.fromkeys(deletes, ())
-                for account_id, model, record_id in records:
-                    only[account_id] = (*only.get(account_id, ()), (model, record_id))
-                with Registry(dbname).cursor() as push_cr:
-                    env = api.Environment(push_cr, uid, {})
-                    for account in (
-                        env["calendar.sync.account"]
-                        ._as_engine()
-                        .browse(sorted({*everything, *only}))
-                        .exists()
-                    ):
-                        owner = account.user_id._calendar_sync_as_owner()
-                        try:
-                            account.with_env(owner.env).with_context(
-                                calendar_sync_quiet=account.id in quiet,
-                                calendar_sync_interactive=account.id not in everything,
-                            )._push(
-                                None if account.id in everything else only[account.id]
-                            )
-                            push_cr.commit()
-                        except Exception:
-                            _logger.exception("calendar push of %s failed", account)
-                            push_cr.rollback()
-
+        data = self._push_queue()
         if records is None:
             data["calendar_sync.push"].update(self.ids)
         elif not records:
@@ -449,6 +442,68 @@ class CalendarSyncAccount(models.Model):
             )
         if quiet:
             data["calendar_sync.push.quiet"].update(self.ids)
+
+    def _queue_answer(self, event, state: str) -> None:
+        """Answer `event`'s invitation with `state` in this attendee's account
+        once this transaction is committed."""
+        self.check_singleton()
+        self._push_queue()["calendar_sync.push.answers"].add((self.id, event.id, state))
+
+    def _push_queue(self):
+        """What the push after this transaction's commit sends, started on
+        first use."""
+        data = self.env.cr.postcommit.data
+        if "calendar_sync.push" in data:
+            return data
+        for key in (
+            "calendar_sync.push",
+            "calendar_sync.push.records",
+            "calendar_sync.push.quiet",
+            "calendar_sync.push.deletes",
+            "calendar_sync.push.answers",
+        ):
+            data.setdefault_set(key)
+        cr, dbname, uid = self.env.cr, self.env.cr.dbname, self.env.uid
+
+        @cr.postcommit.add
+        def push():
+            everything = cr.postcommit.data.pop("calendar_sync.push")
+            records = cr.postcommit.data.pop("calendar_sync.push.records")
+            quiet = cr.postcommit.data.pop("calendar_sync.push.quiet")
+            deletes = cr.postcommit.data.pop("calendar_sync.push.deletes")
+            answers = {}
+            for account_id, event_id, state in cr.postcommit.data.pop(
+                "calendar_sync.push.answers"
+            ):
+                answers.setdefault(account_id, []).append((event_id, state))
+            only = dict.fromkeys(deletes, ())
+            for account_id, model, record_id in records:
+                only[account_id] = (*only.get(account_id, ()), (model, record_id))
+            with Registry(dbname).cursor() as push_cr:
+                env = api.Environment(push_cr, uid, {})
+                for account in (
+                    env["calendar.sync.account"]
+                    ._as_engine()
+                    .browse(sorted({*everything, *only, *answers}))
+                    .exists()
+                ):
+                    owner = account.user_id._calendar_sync_as_owner()
+                    account = account.with_env(owner.env).with_context(
+                        calendar_sync_quiet=account.id in quiet,
+                        calendar_sync_interactive=account.id not in everything,
+                    )
+                    try:
+                        account._send_answers(answers.get(account.id, ()))
+                        if account.id in everything or account.id in only:
+                            account._push(
+                                None if account.id in everything else only[account.id]
+                            )
+                        push_cr.commit()
+                    except Exception:
+                        _logger.exception("calendar push of %s failed", account)
+                        push_cr.rollback()
+
+        return data
 
     def _as_engine(self):
         """These accounts as the engine reads them, whoever it runs as."""
@@ -587,19 +642,20 @@ class CalendarSyncAccount(models.Model):
         own = Link.search(
             [
                 ("account_id", "=", self.id),
-                (
-                    "recurrence_id"
-                    if record._name == "calendar.recurrence"
-                    else "event_id",
-                    "=",
-                    record.id,
-                ),
+                (Link._field_of(record), "=", record.id),
             ]
         )
         if not own.remote_id and Link._of(record, self.provider) - own:
             own = self._resolve(record, own)
             if not own:
                 return True
+        if record.active and (refusal := adapter._check_record(record)):
+            own = own or Link.create(
+                {"account_id": self.id, Link._field_of(record): record.id}
+            )
+            return self._failed(
+                own, record, CalendarSyncError(ErrorKind.INVALID, refusal)
+            )
         if not record.active:
             if own.remote_id:
                 __, error = self._call(adapter._delete, self, own.remote_id)
@@ -623,11 +679,7 @@ class CalendarSyncAccount(models.Model):
             own = own or Link.create(
                 {
                     "account_id": self.id,
-                    (
-                        "recurrence_id"
-                        if record._name == "calendar.recurrence"
-                        else "event_id"
-                    ): record.id,
+                    Link._field_of(record): record.id,
                     "insert_id": uuid.uuid4().hex,
                     "pending": True,
                 }
@@ -657,6 +709,35 @@ class CalendarSyncAccount(models.Model):
                 adapter._after_insert(self, record, remote)
         self.env.cr.commit()
         return True
+
+    def _send_answers(self, answers) -> None:
+        """Answer the invitations of `answers`, [(event id, state)], in this
+        account's calendar."""
+        if not answers or not self.user_id._calendar_sync_active(self.provider):
+            return
+        Link = self.env["calendar.sync.link"]._engine()
+        adapter = self._adapter()
+        events = (
+            self.env["calendar.event"]
+            .browse([event_id for event_id, __ in answers])
+            .exists()
+        )
+        links = Link.search(
+            [("account_id", "=", self.id), ("event_id", "in", events.ids)]
+        ).grouped("event_id")
+        for event_id, state in answers:
+            event = events.browse(event_id)
+            if event not in events:
+                continue
+            own = links.get(event, Link)
+            if not own.remote_id:
+                own = self._resolve(event, own)
+            if not own.remote_id:
+                continue
+            __, error = self._call(adapter._answer, self, own.remote_id, state)
+            if error and error.kind in (ErrorKind.AUTH, ErrorKind.THROTTLED):
+                return
+            self.env.cr.commit()
 
     def _resolve(self, record, own):
         """This account's link of a `record` another account's calendar holds:

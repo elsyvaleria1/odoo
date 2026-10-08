@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
@@ -160,6 +161,18 @@ class TestCalendarSyncEngine(TransactionCase):
             )
         )
 
+    def _capabilities(self, code="fake_outlook", **capabilities):
+        """`code`'s provider with `capabilities` changed, for this test."""
+        service, provider = self.providers[code]
+        self.providers[code] = (
+            service,
+            dataclasses.replace(
+                provider,
+                capabilities=dataclasses.replace(provider.capabilities, **capabilities),
+            ),
+        )
+        self.addCleanup(self.providers.__setitem__, code, (service, provider))
+
     def _linked_event(self, code="fake_outlook", **values):
         """An event the organizer's calendar holds, in sync."""
         account = self._authorize(self.organizer, code)
@@ -319,6 +332,40 @@ class TestCalendarSyncEngine(TransactionCase):
         )
         self.assertEqual(server.sent, [], "a series read from Outlook is not sent back")
 
+    def test_an_occurrence_changed_alone_goes_to_its_series(self):
+        """An item of a series this calendar holds, listed without its series,
+        changes that series' event; it is never an event of its own."""
+        account = self._authorize(self.organizer)
+        server = self.servers["fake_outlook"]
+        master = server.add(
+            account, kind=RemoteKind.SERIES, name="Daily", start=START, stop=STOP
+        )
+        occurrences = [
+            server.add(
+                account,
+                kind=RemoteKind.OCCURRENCE,
+                master=master,
+                name="Daily",
+                start=START + timedelta(days=day),
+                stop=STOP + timedelta(days=day),
+            )
+            for day in range(2)
+        ]
+        self._sync(self.organizer)
+        Link = self.env["calendar.sync.link"]._engine()
+        Link.search([("remote_id", "in", occurrences)]).unlink()
+        events = self.env["calendar.event"].search_count([])
+
+        server.change(account, occurrences[1], name="Moved in Outlook", updated=LATER)
+        self._sync(self.organizer)
+
+        self.assertEqual(self.env["calendar.event"].search_count([]), events)
+        event = Link.search([("remote_id", "=", occurrences[1])]).event_id
+        self.assertEqual(event.name, "Moved in Outlook")
+        self.assertEqual(
+            event.recurrence_id, Link.search([("remote_id", "=", master)]).recurrence_id
+        )
+
     def test_a_stale_token_reads_the_whole_calendar(self):
         account = self._authorize(self.organizer)
         self.servers["fake_outlook"].add(account, name="Kept", start=START, stop=STOP)
@@ -423,6 +470,69 @@ class TestCalendarSyncEngine(TransactionCase):
         self.assertEqual(
             self.servers["fake_outlook"].sent,
             [("patch", account.id, self._links(event).remote_id)],
+        )
+
+    def test_an_answer_goes_out_from_the_attendees_own_calendar(self):
+        """With an answer endpoint, an attendee answers in their own calendar,
+        under the id their copy has there: the organizer's copy is not sent."""
+        self._capabilities(answer_endpoint=True)
+        __, event = self._linked_event()
+        server = self.servers["fake_outlook"]
+        attendee_account = self._authorize(self.attendee)
+        copy = server.add(attendee_account, uid=self._links(event).universal_id)
+        attendee = event.attendee_ids.filtered(
+            lambda a: a.partner_id == self.attendee.partner_id
+        )
+        attendee.with_user(self.attendee).do_accept()
+        self._push()
+        self.assertEqual(
+            server.sent, [("answer", attendee_account.id, copy, "accepted")]
+        )
+        self.assertEqual(
+            self._links(event)
+            .filtered(lambda link: link.account_id == attendee_account)
+            .remote_id,
+            copy,
+            "the attendee's calendar is linked: the next answer needs no lookup",
+        )
+        self.assertFalse(self._links(event).filtered("pending"))
+
+    def test_a_series_is_not_inserted_where_odoo_makes_none(self):
+        self._capabilities(series_inserts=False)
+        self._authorize(self.organizer)
+        event = self._event(recurrency=True)
+        event._apply_recurrence_values(
+            {
+                "repeat_unit": "day",
+                "repeat_interval": 1,
+                "repeat_number": 2,
+                "event_tz": "UTC",
+            }
+        )
+        self._push()
+        self._sync(self.organizer)
+        self.assertFalse(self.servers["fake_outlook"].sent)
+
+    def test_a_record_the_provider_would_refuse_is_refused_alone(self):
+        """A record the adapter knows the provider refuses is not sent and is
+        noted once; the others go on."""
+        self._authorize(self.organizer)
+        server = self.servers["fake_outlook"]
+        refused, sent = self._event(name="Refused"), self._event(name="Sent")
+        server.refusals[refused.id] = "an attendee has no email address"
+        self._push()
+        self._sync(self.organizer)
+
+        self.assertEqual(self._links(refused).error, "an attendee has no email address")
+        self.assertFalse(self._links(refused).remote_id)
+        self.assertTrue(self._links(sent).remote_id)
+        self.assertEqual(
+            len(
+                refused.message_ids.filtered(
+                    lambda m: "refused this event" in (m.body or "")
+                )
+            ),
+            1,
         )
 
     def test_an_insert_tells_the_adapter_what_it_inserted(self):

@@ -8,6 +8,7 @@ from odoo.tests import tagged, users
 from odoo.addons.calendar.tests.booking.common import AppointmentCommon
 from odoo.addons.calendar_google.tests.test_sync_common import TestSyncGoogle
 from odoo.addons.calendar_microsoft.tests.common import TestCommon as MsftTestCommon
+from odoo.addons.calendar_microsoft.tests.common import distinct_inserts
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
 )
@@ -123,7 +124,8 @@ class TestAppointmentNotificationsMicrosoftCalendar(
     )
     def test_appointment_cancel_notification_msftcalendar(self):
         appointment = self.calendar_event
-        appointment.microsoft_id = "test_msft_id"
+        # the organizer's calendar holds it
+        appointment.with_user(appointment.user_id).sudo().microsoft_id = "test_msft_id"
         with (
             self.mock_mail_gateway(),
             patch.object(MicrosoftCalendarService, "delete") as mock_delete,
@@ -152,6 +154,7 @@ class TestAppointmentNotificationsMicrosoftCalendar(
     )
     def test_sync_or_email_resource_appointment(self):
         """Check that resource appointments are synced even if there is no organizer, unless the attendee is not syncing."""
+        inserts = distinct_inserts(f"booked_by_{self.env.user.id}")
         for with_organizer in [True, False]:
             with self.subTest(with_organizer=with_organizer):
                 is_public = self.env.user == self.user_public
@@ -169,8 +172,8 @@ class TestAppointmentNotificationsMicrosoftCalendar(
                     self.mock_mail_gateway(mail_unlink_sent=False),
                     patch.object(MicrosoftCalendarService, "insert") as mock_insert,
                 ):
-                    mock_insert.return_value = ("1", "1")
-                    meeting = (
+                    mock_insert.side_effect = inserts
+                    (
                         self.env["calendar.event"]
                         .with_context(mail_notify_author=True)
                         .sudo(is_public)
@@ -188,12 +191,9 @@ class TestAppointmentNotificationsMicrosoftCalendar(
                     self.env.flush_all()
                     self.cr.precommit.run()
                     self.cr.postcommit.run()
-                # synced with the organizer (who can always sync in this test), but checked against the create user
-                if (
-                    meeting._check_microsoft_sync_status()
-                    and self.env.user._calendar_sync_status("microsoft")
-                    == "sync_active"
-                ):
+                # sent through its organizer, or the booking user without one
+                sender = self.organizer_user if with_organizer else self.env.user
+                if sender._calendar_sync_active("microsoft"):
                     mock_insert.assert_called_once()
                     self.assertNotSentEmail()
                 else:

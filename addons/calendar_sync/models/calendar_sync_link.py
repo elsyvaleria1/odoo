@@ -109,11 +109,14 @@ class CalendarSyncLink(models.Model):
         return self.event_id or self.recurrence_id
 
     @api.model
+    def _field_of(self, records) -> str:
+        """The field of a link holding one of `records`, events or recurrences."""
+        return "recurrence_id" if records._name == "calendar.recurrence" else "event_id"
+
+    @api.model
     def _of(self, records, code: str):
         """The links of `records` (events or recurrences) with provider `code`."""
-        field = (
-            "recurrence_id" if records._name == "calendar.recurrence" else "event_id"
-        )
+        field = self._field_of(records)
         return self._engine().search(
             [(field, "in", records.ids), ("account_id.provider", "=", code)]
         )
@@ -202,7 +205,7 @@ class CalendarSyncLink(models.Model):
     @api.model
     def _adopt(self, account, record, remote, source=None):
         """`account`'s link of `record` to `remote`, created or corrected."""
-        field = "recurrence_id" if record._name == "calendar.recurrence" else "event_id"
+        field = self._field_of(record)
         Link = self._engine()
         values = {
             "remote_id": remote.remote_id,

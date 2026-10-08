@@ -15,13 +15,10 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
     active = fields.Boolean(default=True)
 
-    def _google_link_field(self) -> str:
-        return "event_id" if self._name == "calendar.event" else "recurrence_id"
-
     def _google_links(self):
         """The Google links of these records, elevated: one per calendar holding
         a record, each under the record's one Google id."""
-        fk = self._google_link_field()
+        fk = self.env["calendar.sync.link"]._field_of(self)
         return (
             self.env["calendar.sync.link"]
             ._engine()
@@ -45,7 +42,7 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     @api.model
     def _google_records(self, google_ids):
         """The records of this model Google holds under `google_ids`."""
-        fk = self._google_link_field()
+        fk = self.env["calendar.sync.link"]._field_of(self)
         links = (
             self.env["calendar.sync.link"]
             ._engine()
@@ -63,7 +60,7 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     def _google_link(self, account, google_ids) -> None:
         """Link records to their Google id in `account`'s calendar, given as
         {record id: Google id}."""
-        fk = self._google_link_field()
+        fk = self.env["calendar.sync.link"]._field_of(self)
         self.env["calendar.sync.link"]._engine().create(
             [
                 {"account_id": account.id, fk: record_id, "remote_id": google_id}

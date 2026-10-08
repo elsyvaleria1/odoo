@@ -2,364 +2,113 @@ from datetime import UTC, datetime
 
 from dateutil.relativedelta import relativedelta
 
-from odoo.addons.calendar_microsoft.tests.common import TestCommon, patch_api
+from odoo.addons.calendar_microsoft.tests.common import TestCommon
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
 
 
 class TestMicrosoftEvent(TestCommon):
-    @patch_api
+    """How the items of an Outlook calendar find their Odoo records: by this
+    calendar's id, else by the iCalendar UID another calendar's link holds,
+    whereupon this calendar gets a link of its own."""
+
     def setUp(self):
         super().setUp()
         self.create_events_for_tests()
 
-    def test_already_mapped_events(self):
+    def match(self, user, items):
+        """{remote id: link} of `items`, Graph dicts, in `user`'s calendar."""
+        account = self.env["calendar.sync.account"]._for(user, "microsoft")
+        changes = self.env["calendar.sync.adapter.microsoft"]._changes(
+            MicrosoftEvent(items)
+        )
+        return self.env["calendar.sync.link"]._engine()._match(account, changes.events)
 
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        events = MicrosoftEvent(
+    def test_an_item_is_found_by_this_calendars_id(self):
+        found = self.match(
+            self.organizer_user, [{"type": "singleInstance", "id": "123"}]
+        )
+        self.assertEqual(found["123"].event_id, self.simple_event)
+
+    def test_another_calendars_copy_is_found_by_its_universal_id(self):
+        found = self.match(
+            self.attendee_user,
+            [{"type": "singleInstance", "id": "attendee_123", "iCalUId": "456"}],
+        )
+        self.assertEqual(found["attendee_123"].event_id, self.simple_event)
+        self.assertEqual(
+            self.microsoft_id(self.simple_event, self.attendee_user), "attendee_123"
+        )
+        self.assertEqual(
+            self.microsoft_id(self.simple_event, self.organizer_user),
+            "123",
+            "the organizer's calendar keeps its own id",
+        )
+
+    def test_a_link_found_by_universal_id_takes_this_calendars_id(self):
+        self.link_microsoft(self.simple_event, self.attendee_user, "stale", "456")
+        self.match(
+            self.attendee_user,
+            [{"type": "singleInstance", "id": "attendee_123", "iCalUId": "456"}],
+        )
+        self.assertEqual(
+            self.microsoft_id(self.simple_event, self.attendee_user), "attendee_123"
+        )
+
+    def test_another_calendars_id_alone_finds_nothing(self):
+        """Outlook's ids are per calendar: the organizer's id in an attendee's
+        calendar is another item."""
+        self.assertFalse(
+            self.match(self.attendee_user, [{"type": "singleInstance", "id": "123"}])
+        )
+
+    def test_a_series_is_found_as_a_recurrence(self):
+        found = self.match(
+            self.organizer_user,
+            [{"type": "seriesMaster", "id": "REC123", "iCalUId": "REC456"}],
+        )
+        self.assertEqual(found["REC123"].recurrence_id, self.recurrence)
+
+    def test_a_deleted_series_is_found_though_untyped(self):
+        """A deleted item carries no type: its link knows it was a series."""
+        found = self.match(
+            self.organizer_user, [{"@removed": {"reason": "deleted"}, "id": "REC123"}]
+        )
+        self.assertEqual(found["REC123"].recurrence_id, self.recurrence)
+
+    def test_events_and_series_are_found_together(self):
+        found = self.match(
+            self.organizer_user,
             [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": self.simple_event.id,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                }
-            ]
+                {"type": "singleInstance", "id": "123", "iCalUId": "456"},
+                {"@removed": {"reason": "deleted"}, "id": "REC123"},
+            ],
+        )
+        self.assertEqual(found["123"].event_id, self.simple_event)
+        self.assertEqual(found["REC123"].recurrence_id, self.recurrence)
+
+    def test_an_unknown_item_is_not_found(self):
+        self.assertFalse(
+            self.match(
+                self.organizer_user,
+                [{"type": "singleInstance", "id": "UNKNOWN", "iCalUId": "UNKNOWN"}],
+            )
         )
 
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[event_id]["_odoo_id"], self.simple_event.id)
-
-    def test_map_an_event_using_global_id(self):
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[event_id]["_odoo_id"], self.simple_event.id)
-
-    def test_map_an_event_using_instance_id(self):
-        """
-        Here, the Odoo event has an uid but the Outlook event has not.
-        """
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": False,
-                    "id": event_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[event_id]["_odoo_id"], self.simple_event.id)
-
-    def test_map_an_event_without_uid_using_instance_id(self):
-        """
-        Here, the Odoo event has no uid but the Outlook event has one.
-        """
-
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        self.simple_event.ms_universal_event_id = False
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[event_id]["_odoo_id"], self.simple_event.id)
-        self.assertEqual(self.simple_event.ms_universal_event_id, event_uid)
-
-    def test_map_an_event_without_uid_using_instance_id_2(self):
-        """
-        Here, both Odoo event and Outlook event have no uid.
-        """
-
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        self.simple_event.ms_universal_event_id = False
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": False,
-                    "id": event_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[event_id]["_odoo_id"], self.simple_event.id)
-        self.assertEqual(self.simple_event.ms_universal_event_id, False)
-
-    def test_map_a_recurrence_using_global_id(self):
-
-        # arrange
-        rec_id = self.recurrence.microsoft_id
-        rec_uid = self.recurrence.ms_universal_event_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "seriesMaster",
-                    "_odoo_id": False,
-                    "iCalUId": rec_uid,
-                    "id": rec_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[rec_id]["_odoo_id"], self.recurrence.id)
-
-    def test_map_a_recurrence_using_instance_id(self):
-
-        # arrange
-        rec_id = self.recurrence.microsoft_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "seriesMaster",
-                    "_odoo_id": False,
-                    "iCalUId": False,
-                    "id": rec_id,
-                }
-            ]
-        )
-
-        # act
-        mapped = events._load_odoo_ids_from_db(self.env)
-
-        # assert
-        self.assertEqual(len(mapped._events), 1)
-        self.assertEqual(mapped._events[rec_id]["_odoo_id"], self.recurrence.id)
-
-    def test_try_to_map_mixed_of_single_events_and_recurrences(self):
-
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        rec_id = self.recurrence.microsoft_id
-        rec_uid = self.recurrence.ms_universal_event_id
-
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "seriesMaster",
-                    "_odoo_id": False,
-                    "iCalUId": rec_uid,
-                    "id": rec_id,
-                },
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                },
-            ]
-        )
-
-        # act & assert
-        with self.assertRaises(TypeError):
-            events._load_odoo_ids_from_db(self.env)
-
-    def test_match_event_only(self):
-
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                }
-            ]
-        )
-
-        # act
-        matched = events.match_with_odoo_events(self.env)
-
-        # assert
-        self.assertEqual(len(matched._events), 1)
-        self.assertEqual(matched._events[event_id]["_odoo_id"], self.simple_event.id)
-
-    def test_match_recurrence_only(self):
-
-        # arrange
-        rec_id = self.recurrence.microsoft_id
-        rec_uid = self.recurrence.ms_universal_event_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "seriesMaster",
-                    "_odoo_id": False,
-                    "iCalUId": rec_uid,
-                    "id": rec_id,
-                }
-            ]
-        )
-
-        # act
-        matched = events.match_with_odoo_events(self.env)
-
-        # assert
-        self.assertEqual(len(matched._events), 1)
-        self.assertEqual(matched._events[rec_id]["_odoo_id"], self.recurrence.id)
-
-    def test_match_not_typed_recurrence(self):
-        """
-        When a recurrence is deleted, Outlook returns the id of the deleted recurrence
-        without the type of event, so it's not directly possible to know that it's a
-        recurrence.
-        """
-        # arrange
-        rec_id = self.recurrence.microsoft_id
-        rec_uid = self.recurrence.ms_universal_event_id
-        events = MicrosoftEvent(
-            [
-                {
-                    "@removed": {
-                        "reason": "deleted",
-                    },
-                    "_odoo_id": False,
-                    "iCalUId": rec_uid,
-                    "id": rec_id,
-                }
-            ]
-        )
-
-        # act
-        matched = events.match_with_odoo_events(self.env)
-
-        # assert
-        self.assertEqual(len(matched._events), 1)
-        self.assertEqual(matched._events[rec_id]["_odoo_id"], self.recurrence.id)
-
-    def test_match_mix_of_events_and_recurrences(self):
-
-        # arrange
-        event_id = self.simple_event.microsoft_id
-        event_uid = self.simple_event.ms_universal_event_id
-        rec_id = self.recurrence.microsoft_id
-        rec_uid = self.recurrence.ms_universal_event_id
-
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": event_uid,
-                    "id": event_id,
-                },
-                {
-                    "@removed": {
-                        "reason": "deleted",
-                    },
-                    "_odoo_id": False,
-                    "iCalUId": rec_uid,
-                    "id": rec_id,
-                },
-            ]
-        )
-
-        # act
-        matched = events.match_with_odoo_events(self.env)
-
-        # assert
-        self.assertEqual(len(matched._events), 2)
-        self.assertEqual(matched._events[event_id]["_odoo_id"], self.simple_event.id)
-        self.assertEqual(matched._events[rec_id]["_odoo_id"], self.recurrence.id)
-
-    def test_ignore_not_found_items(self):
-
-        # arrange
-        events = MicrosoftEvent(
-            [
-                {
-                    "type": "singleInstance",
-                    "_odoo_id": False,
-                    "iCalUId": "UNKNOWN_EVENT",
-                    "id": "UNKNOWN_EVENT",
-                }
-            ]
-        )
-
-        # act
-        matched = events.match_with_odoo_events(self.env)
-
-        # assert
-        self.assertEqual(len(matched._events), 0)
-
-    def test_search_set_ms_universal_event_id(self):
-        not_synced_events = self.env["calendar.event"].search(
-            [("ms_universal_event_id", "=", False)]
-        )
-        synced_events = self.env["calendar.event"].search(
+    def test_searching_by_universal_id_reads_the_links(self):
+        synced = self.env["calendar.event"].search(
             [("ms_universal_event_id", "!=", False)]
         )
-        self.assertIn(self.simple_event, synced_events)
-        self.assertNotIn(self.simple_event, not_synced_events)
+        self.assertIn(self.simple_event, synced)
 
-        self.simple_event.ms_universal_event_id = False
-        not_synced_events = self.env["calendar.event"].search(
-            [("ms_universal_event_id", "=", False)]
+        self.simple_event._microsoft_forget()
+        self.assertNotIn(
+            self.simple_event,
+            self.env["calendar.event"].search([("ms_universal_event_id", "!=", False)]),
         )
-        synced_events = self.env["calendar.event"].search(
-            [("ms_universal_event_id", "!=", False)]
+        self.assertIn(
+            self.simple_event,
+            self.env["calendar.event"].search([("ms_universal_event_id", "=", False)]),
         )
-
-        self.assertNotIn(self.simple_event, synced_events)
-        self.assertIn(self.simple_event, not_synced_events)
 
     def test_microsoft_event_readonly(self):
         event = MicrosoftEvent()
@@ -370,7 +119,7 @@ class TestMicrosoftEvent(TestCommon):
         with self.assertRaises(TypeError):
             dict.update(event._events, {"foo": "bar"})
 
-    def test_performance_check(self):
+    def test_matching_many_items(self):
         # Test what happens when microsoft returns a lot of data
         # This test does not aim to check what we do with the data but it ensure that we are able to process it.
         # Other tests take care of how we update odoo records with the api result.
@@ -412,10 +161,9 @@ class TestMicrosoftEvent(TestCommon):
             for x in range(record_count)
         ]
 
-        events = MicrosoftEvent(single_event_data)
-        mapped = events._load_odoo_ids_from_db(self.env)
         self.assertFalse(
-            mapped, "No odoo record should correspond to the microsoft values"
+            self.match(self.organizer_user, single_event_data),
+            "No odoo record should correspond to the microsoft values",
         )
 
         recurring_event_data = [
@@ -499,8 +247,7 @@ class TestMicrosoftEvent(TestCommon):
             for x in range(record_count)
         ]
 
-        recurrences = MicrosoftEvent(recurring_event_data)
-        mapped = recurrences._load_odoo_ids_from_db(self.env)
         self.assertFalse(
-            mapped, "No odoo record should correspond to the microsoft values"
+            self.match(self.organizer_user, recurring_event_data),
+            "No odoo record should correspond to the microsoft values",
         )

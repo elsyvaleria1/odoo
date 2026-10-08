@@ -1,6 +1,7 @@
+import itertools
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from freezegun import freeze_time
 from markupsafe import Markup
@@ -8,10 +9,20 @@ from markupsafe import Markup
 from odoo import fields
 from odoo.tests.common import HttpCase
 
-from odoo.addons.calendar_microsoft.models.mixin_microsoft_calendar_sync import (
-    MixinMicrosoftCalendarSync,
-)
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import CALENDAR_SCOPE
+from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+
+
+def distinct_inserts(prefix):
+    """Outlook's answers to successive inserts: a new id and universal id
+    each time, as no calendar holds two items under one id."""
+    numbers = itertools.count(1)
+
+    def insert(*args, **kwargs):
+        number = next(numbers)
+        return f"{prefix}_{number}", f"{prefix}_uid_{number}"
+
+    return insert
 
 
 def mock_get_connection(user, code=None):
@@ -45,22 +56,9 @@ def _modified_date_in_the_future(event):
     return (event.write_date + timedelta(seconds=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def patch_api(func):
-    @patch.object(MixinMicrosoftCalendarSync, "_microsoft_insert", MagicMock())
-    @patch.object(MixinMicrosoftCalendarSync, "_microsoft_delete", MagicMock())
-    @patch.object(MixinMicrosoftCalendarSync, "_microsoft_patch", MagicMock())
-    def patched(self, *args, **kwargs):
-        return func(self, *args, **kwargs)
-
-    return patched
-
-
-# By inheriting from TransactionCase, postcommit hooks (so methods tagged with `@after_commit` in MixinMicrosoftCalendarSync),
-# are not called because no commit is done.
-# To be able to manually call these postcommit hooks, we need to inherit from HttpCase.
-# Note: as postcommit hooks are called separately, do not forget to invalidate cache for records read during the test.
+# What Odoo sends Outlook goes after the commit: an HttpCase runs it by hand,
+# see `call_post_commit_hooks`.
 class TestCommon(HttpCase):
-    @patch_api
     def setUp(self):
         super().setUp()
         self.env["calendar.sync.account"]._set_paused("microsoft", False)
@@ -340,7 +338,6 @@ class TestCommon(HttpCase):
                 self.recurrent_event_interval,
                 self.recurrence_end_date.strftime("%Y-%m-%d"),
             ),
-            "need_sync_m": False,
             # The stored rule is the RRULE payload alone: `_rrule_value` drops the
             # DTSTART line dateutil renders, because `_rrule_serialize` builds the
             # rule with no dtstart and that line therefore carried the moment the
@@ -623,7 +620,7 @@ class TestCommon(HttpCase):
         if not already_created:
             self.recurrent_base_event = (
                 self.env["calendar.event"]
-                .with_context(dont_notify=True, microsoft_calendar_syncing=True)
+                .with_context(dont_notify=True, calendar_sync_applying="microsoft")
                 .with_user(self.organizer_user)
                 .create(self.recurrent_event_values)
             )
@@ -633,18 +630,21 @@ class TestCommon(HttpCase):
 
         # set ids set by Outlook
         if not already_created:
-            self.recurrence.with_context(
-                dont_notify=True, microsoft_calendar_syncing=True
-            ).write({"microsoft_id": "REC123", "ms_universal_event_id": "REC456"})
+            # the series computes its rule before Outlook gives it ids, as a
+            # series read from Outlook does
+            self.env.flush_all()
+            self.link_microsoft(
+                self.recurrence, self.organizer_user, "REC123", "REC456"
+            )
             for i, e in enumerate(
                 self.recurrence.calendar_event_ids.sorted(key=lambda r: r.start)
             ):
-                e.with_context(dont_notify=True, microsoft_calendar_syncing=True).write(
-                    {
-                        "microsoft_id": f"REC123_EVENT_{i + 1}",
-                        "ms_universal_event_id": f"REC456_EVENT_{i + 1}",
-                        "microsoft_recurrence_master_id": "REC123",
-                    }
+                self.link_microsoft(
+                    e,
+                    self.organizer_user,
+                    f"REC123_EVENT_{i + 1}",
+                    f"REC456_EVENT_{i + 1}",
+                    master_id="REC123",
                 )
             self.recurrence.invalidate_recordset()
             self.recurrence.calendar_event_ids.invalidate_recordset()
@@ -699,13 +699,73 @@ class TestCommon(HttpCase):
             self.assertEqual(v, dict2.get(k), f"'{k}' mismatch")
 
     def call_post_commit_hooks(self):
-        """
-        manually calls postcommit hooks defined with the decorator @after_commit
-        """
-
-        # need to manually handle post-commit hooks calls as `self.env.cr.postcommit.run()` clean
-        # the queue at the end of the first post-commit hook call ...
-        funcs = self.env.cr.postcommit._funcs.copy()
+        """What a commit does next: flush, then send what waits for it."""
+        self.env.flush_all()
+        funcs = self.env.cr.postcommit._funcs
         while funcs:
-            func = funcs.popleft()
-            func()
+            funcs.popleft()()
+        self.env.invalidate_all()
+
+    def apply_microsoft(self, items, user):
+        """What a synchronization of `user` reads of `items`, Graph dicts,
+        applied; the records it changed."""
+        user = user._calendar_sync_as_owner()
+        account = user._calendar_sync_account("microsoft")._as_engine()
+        changes = self.env["calendar.sync.adapter.microsoft"]._changes(
+            MicrosoftEvent(items)
+        )
+        return account._pull(changes)
+
+    def sync_microsoft(self, user):
+        """A run of `user`'s synchronization, and what it sends."""
+        user.with_user(user).sudo()._calendar_sync_run("microsoft")
+        self.call_post_commit_hooks()
+
+    def link_microsoft(
+        self, record, user, remote_id, universal_id=None, master_id=None
+    ):
+        """Link `record` to the item `remote_id` of `user`'s calendar."""
+        Link = self.env["calendar.sync.link"]._engine()
+        account = self.env["calendar.sync.account"]._for(user, "microsoft")
+        field = Link._field_of(record)
+        Link.search([("account_id", "=", account.id), (field, "=", record.id)]).unlink()
+        Link.create(
+            {
+                "account_id": account.id,
+                field: record.id,
+                "remote_id": remote_id,
+                "universal_id": universal_id,
+                "remote_master_id": master_id,
+            }
+        )
+        record.invalidate_recordset()
+        return record
+
+    def microsoft_id(self, record, user):
+        """`record`'s id in `user`'s calendar."""
+        return self.microsoft_link(record, user).remote_id
+
+    def microsoft_link(self, record, user):
+        Link = self.env["calendar.sync.link"]._engine()
+        return Link.search(
+            [
+                ("account_id.user_id", "=", user.id),
+                ("account_id.provider", "=", "microsoft"),
+                (Link._field_of(record), "=", record.id),
+            ]
+        )
+
+    def assert_patched(self, mock_patch, remote_id, values, user):
+        """`mock_patch` sent `values` among the item's once, to `remote_id` of
+        `user`'s calendar."""
+        mock_patch.assert_called_once()
+        (sent_id, sent), kwargs = mock_patch.call_args
+        self.assertEqual(sent_id, remote_id)
+        self.assertEqual({key: sent.get(key) for key in values}, values)
+        self.assertEqual(kwargs["connection"], mock_get_connection(user))
+
+    def awaits_push(self, record):
+        """Whether Outlook has yet to hear of `record`: a link of it waits to be
+        sent, or it has none and is active."""
+        links = self.env["calendar.sync.link"]._of(record, "microsoft")
+        return bool(links.filtered("pending")) or (not links and record.active)

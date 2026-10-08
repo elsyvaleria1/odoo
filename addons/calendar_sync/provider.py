@@ -10,6 +10,11 @@ class CalendarSyncCapabilities:
     # the insert id is the item's id, so a repeated insert is refused as a
     # conflict; otherwise the provider deduplicates on it
     client_insert_id: bool = False
+    # Odoo may create a series in the provider's calendars
+    series_inserts: bool = True
+    # an attendee answers in their own calendar, which tells the organizer;
+    # otherwise the organizer's copy is sent again with the answers
+    answer_endpoint: bool = False
 
 
 @dataclasses.dataclass(frozen=True)

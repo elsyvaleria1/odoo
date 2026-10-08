@@ -55,94 +55,12 @@ class MicrosoftEvent(abc.Set):
         """
         return tuple(e.id for e in self)
 
-    def microsoft_ids(self):
-        return tuple(e.id for e in self)
-
     @property
     def uids(self):
         """
         Use 'iCalUid' to return an identifier which is unique accross all calendars
         """
         return tuple(e.iCalUId for e in self)
-
-    def odoo_id(self, env):
-        return self._odoo_id
-
-    def _meta_odoo_id(self, microsoft_guid):
-        """Returns the Odoo id stored in the Microsoft Event metadata.
-        This id might not actually exists in the database.
-        """
-        return
-
-    @property
-    def odoo_ids(self):
-        """
-        Get the list of Odoo event ids already mapped with Outlook events (self)
-        """
-        return tuple(e._odoo_id for e in self if e._odoo_id)
-
-    def _load_odoo_ids_from_db(self, env, force_model=None):
-        """
-        Map Microsoft events to existing Odoo events:
-        1) extract unmapped events only,
-        2) match Odoo events and Outlook events which have both a ICalUId set,
-        3) match remaining events,
-        Returns the list of mapped events
-        """
-        mapped_events = [e.id for e in self if e._odoo_id]
-
-        # avoid mapping events if they are already all mapped
-        if len(self) == len(mapped_events):
-            return self
-
-        unmapped_events = self.filter(lambda e: e.id not in mapped_events)
-
-        # Query events OR recurrences, get organizer_id and universal_id values by splitting microsoft_id.
-        model_env = force_model if force_model is not None else self._get_model(env)
-        odoo_events = (
-            model_env.with_context(active_test=False)
-            .search(
-                [
-                    "|",
-                    ("ms_universal_event_id", "in", unmapped_events.uids),
-                    ("microsoft_id", "in", unmapped_events.ids),
-                ]
-            )
-            .with_env(env)
-        )
-
-        # 1. try to match unmapped events with Odoo events using their iCalUId
-        unmapped_events_with_uids = unmapped_events.filter(lambda e: e.iCalUId)
-        odoo_events_with_uids = odoo_events.filtered(lambda e: e.ms_universal_event_id)
-        mapping = {e.ms_universal_event_id: e.id for e in odoo_events_with_uids}
-
-        for ms_event in unmapped_events_with_uids:
-            odoo_id = mapping.get(ms_event.iCalUId)
-            if odoo_id:
-                ms_event._events[ms_event.id]["_odoo_id"] = odoo_id
-                mapped_events.append(ms_event.id)
-
-        # 2. try to match unmapped events with Odoo events using their id
-        unmapped_events = self.filter(lambda e: e.id not in mapped_events)
-        mapping = {e.microsoft_id: e for e in odoo_events}
-
-        for ms_event in unmapped_events:
-            odoo_event = mapping.get(ms_event.id)
-            if odoo_event:
-                ms_event._events[ms_event.id]["_odoo_id"] = odoo_event.id
-                mapped_events.append(ms_event.id)
-
-                # don't forget to also set the global event ID on the Odoo event to ease
-                # and improve reliability of future mappings
-                odoo_event.write(
-                    {
-                        "microsoft_id": ms_event.id,
-                        "ms_universal_event_id": ms_event.iCalUId,
-                        "need_sync_m": False,
-                    }
-                )
-
-        return self.filter(lambda e: e.id in mapped_events)
 
     def owner_id(self, env):
         """
@@ -263,32 +181,3 @@ class MicrosoftEvent(abc.Set):
 
     def cancelled(self):
         return self.filter(lambda e: e.is_cancelled())
-
-    def match_with_odoo_events(self, env) -> MicrosoftEvent:
-        """
-        Match Outlook events (self) with existing Odoo events, and return the list of matched events
-        """
-        # first, try to match recurrences
-        # Note that when a recurrence is removed, there is no field in Outlook data to identify
-        # the item as a recurrence, so select all deleted items by default.
-        recurrence_candidates = self.filter(
-            lambda x: x.is_recurrence() or x.is_removed()
-        )
-        mapped_recurrences = recurrence_candidates._load_odoo_ids_from_db(
-            env, force_model=env["calendar.recurrence"]
-        )
-
-        # then, try to match events
-        events_candidates = (self - mapped_recurrences).filter(
-            lambda x: not x.is_recurrence()
-        )
-        mapped_events = events_candidates._load_odoo_ids_from_db(env)
-
-        return mapped_recurrences | mapped_events
-
-    def _get_model(self, env):
-        if all(e.is_recurrence() for e in self):
-            return env["calendar.recurrence"]
-        if all(not e.is_recurrence() for e in self):
-            return env["calendar.event"]
-        raise TypeError("Mixing Microsoft events and Microsoft recurrences")

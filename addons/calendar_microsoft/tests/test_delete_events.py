@@ -7,7 +7,6 @@ from odoo.addons.calendar_microsoft.tests.common import (
     TestCommon,
     _modified_date_in_the_future,
     mock_get_connection,
-    patch_api,
 )
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     MicrosoftCalendarService,
@@ -18,7 +17,6 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 
 @patch.object(CalendarSyncUsers, "_calendar_sync_connection", mock_get_connection)
 class TestDeleteEvents(TestCommon):
-    @patch_api
     def setUp(self):
         super().setUp()
         self.create_events_for_tests()
@@ -49,22 +47,20 @@ class TestDeleteEvents(TestCommon):
             event_id, connection=mock_get_connection(self.organizer_user), timeout=ANY
         )
 
-    @patch.object(MicrosoftCalendarService, "_get_single_event")
-    @patch.object(MicrosoftCalendarService, "answer")
-    def test_an_attendee_removing_the_event_in_outlook_declines_it(
-        self, mock_answer, mock_get_single_event
-    ):
+    def test_an_attendee_removing_the_event_in_outlook_declines_it(self):
         """The organizer is an Odoo user, so only the organizer deletes.
 
         The cancel filter also matched any user among `partner_ids`, so an
         attendee whose Outlook reported the event gone unlinked the shared Odoo
         event for the organizer and every other attendee.
         """
-        mock_get_single_event.return_value = (
-            True,
-            {"value": [{"id": self.simple_event.microsoft_id}]},
+        self.link_microsoft(
+            self.simple_event, self.attendee_user, "attendee_123", "456"
         )
-        self.simple_event.with_user(self.attendee_user)._cancel_microsoft()
+        self.apply_microsoft(
+            [{"id": "attendee_123", "@removed": {"reason": "deleted"}}],
+            self.attendee_user,
+        )
 
         self.assertTrue(self.simple_event.exists())
         attendee = self.simple_event.attendee_ids.filtered(
@@ -109,6 +105,7 @@ class TestDeleteEvents(TestCommon):
         several_simple_events = self.several_events.filtered(
             lambda ev: not ev.recurrency and ev.microsoft_id
         )
+        remote_ids = several_simple_events.mapped("microsoft_id")
         # act
         several_simple_events.action_archive()
         self.call_post_commit_hooks()
@@ -118,10 +115,7 @@ class TestDeleteEvents(TestCommon):
         self.assertFalse(all(e.active for e in several_simple_events))
 
         mock_delete.assert_has_calls(
-            [
-                call(e.microsoft_id, connection=ANY, timeout=ANY)
-                for e in several_simple_events
-            ]
+            [call(remote_id, connection=ANY, timeout=ANY) for remote_id in remote_ids]
         )
 
     @patch.object(MicrosoftCalendarService, "get_events")
@@ -134,9 +128,9 @@ class TestDeleteEvents(TestCommon):
             MicrosoftEvent([{"id": event_id, "@removed": {"reason": "deleted"}}]),
             None,
         )
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
         self.assertFalse(self.simple_event.exists())
 
     def test_delete_simple_event_from_outlook_attendee_calendar(self):
@@ -222,9 +216,9 @@ class TestDeleteEvents(TestCommon):
         mock_get_events.return_value = (MicrosoftEvent(rec_values), None)
 
         # act
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         # assert
         self.assertFalse(event_to_remove.exists())
@@ -250,9 +244,9 @@ class TestDeleteEvents(TestCommon):
         mock_get_events.return_value = (MicrosoftEvent(rec_values), None)
 
         # act
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         # assert
         self.assertFalse(event_to_remove.exists())
@@ -281,9 +275,9 @@ class TestDeleteEvents(TestCommon):
         mock_get_events.return_value = (MicrosoftEvent(rec_values), None)
 
         # act
-        self.organizer_user.with_user(
-            self.organizer_user
-        ).sudo()._sync_microsoft_calendar()
+        self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
+            "microsoft"
+        )
 
         # assert
         for e in event_to_remove:
@@ -316,7 +310,7 @@ class TestDeleteEvents(TestCommon):
         # act
         self.organizer_user.with_context(
             dont_notify=True, microsoft_calendar_syncing=True
-        ).with_user(self.organizer_user).sudo()._sync_microsoft_calendar()
+        ).with_user(self.organizer_user).sudo()._calendar_sync_run("microsoft")
 
         # assert
         self.assertFalse(self.recurrence.exists())
