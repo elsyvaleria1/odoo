@@ -134,9 +134,13 @@ read-only cursor, or a read/write one. Without a replica the cursor handed out
 for the signaling check is already read/write and is kept: a readonly route
 goes on in the check's transaction, since a read-only transaction never fails
 to serialize and a fresh one would cost a ROLLBACK and, once the handler runs
-SQL, a second BEGIN for nothing (a handler that runs none ends the check's
-transaction with a COMMIT instead of the ROLLBACK, the same one message), while
-a writing route rolls it back first so its snapshot starts with the handler.
+SQL, a second BEGIN for nothing, while a writing route rolls it back first so
+its snapshot starts with the handler. Every route's transaction, a readonly
+one included, ends in `retrying` with `flush()` and COMMIT, whether or not the
+handler wrote: on a transaction that wrote nothing the COMMIT is the same one
+round trip a ROLLBACK would be, and on a replica cursor that flush is what
+raises `ReadOnlySqlTransaction` for a readonly route that wrote after all,
+which `_serve_db` turns into the read/write replay -- so it stays a COMMIT.
 
 **`Request._serve_aborted`** — handles explicit response control flow;
 it does not appear in the graph above. An exception carrying
