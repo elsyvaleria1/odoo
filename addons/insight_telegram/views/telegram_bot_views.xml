@@ -31,11 +31,11 @@
                         role="alert"
                         invisible="not insight_ai_enabled">
                         Members of <strong>Ask Odoo through Telegram</strong>
-                        get answers read from every company, on a read-only
-                        transaction: any message or voice note they send
-                        is a question. Give the company's policy for the
-                        purpose <code>telegram.insight</code> the Anthropic
-                        provider.
+                        get answers from read-only reports over every company:
+                        any message or voice note they send is a question. The
+                        model only picks the report; give the company's policy
+                        for the purpose <code>telegram.insight</code> the
+                        provider chosen above.
                     </div>
                 </page>
             </xpath>
