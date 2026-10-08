@@ -101,4 +101,9 @@ class TestFirstContactRace(TransactionCase):
                     ).unlink()
                     env["mail.inbox"].browse(ids["inbox"]).unlink()
                     env["res.partner"].browse(ids["partner"]).unlink()
+                    # on a database with no alias domain yet, the test's domain
+                    # became the default and adopted every alias that had none
+                    env["mail.alias"].search(
+                        [("alias_domain_id", "=", ids["domain"])]
+                    ).alias_domain_id = False
                     env["mail.alias.domain"].browse(ids["domain"]).unlink()

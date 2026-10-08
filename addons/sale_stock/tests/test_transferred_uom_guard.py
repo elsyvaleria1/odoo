@@ -29,6 +29,7 @@ class TestTransferredUomGuard(TestSaleStockCommon):
         self.assertEqual(line.qty_transferred, 5)
 
         done_move = so.picking_ids.move_ids.filtered(lambda m: m.state == "done")
+        self.env.flush_all()
         self.env.cr.execute(
             "UPDATE stock_move SET product_uom_id = %s WHERE id = %s",
             (self.uom_incompatible.id, done_move.id),

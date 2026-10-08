@@ -31,7 +31,7 @@ class TestImLivechatPortal(TestLivechatChatbotUI):
             [
                 {
                     "name": "Go to the portal page",
-                    "redirect_link": f"/my/tasks/{task.id}?access_token={task.access_token}",
+                    "redirect_link": f"/my/tasks/{task.id}?access_token={task._portal_get_or_create_token()}",
                     "script_step_id": question_step.id,
                 },
             ]

@@ -3,6 +3,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from odoo import Command
+from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 
 from odoo.addons.project.tests.test_project_base import TestProjectCommon
@@ -435,7 +436,7 @@ class TestProject(TestProjectCommon):
                         "action": {
                             "name": "action_view_budget_lines",
                             "type": "object",
-                            "args": f'[[["id", "in", {budgets[0].budget_line_ids.ids}]]]',
+                            "args": f'[[["id","in",{json_dumps(budgets[0].budget_line_ids.ids)}]]]',
                         },
                     },
                     {
@@ -447,7 +448,7 @@ class TestProject(TestProjectCommon):
                         "action": {
                             "name": "action_view_budget_lines",
                             "type": "object",
-                            "args": f'[[["id", "in", {budgets[1].budget_line_ids.ids}]]]',
+                            "args": f'[[["id","in",{json_dumps(budgets[1].budget_line_ids.ids)}]]]',
                         },
                     },
                 ],
