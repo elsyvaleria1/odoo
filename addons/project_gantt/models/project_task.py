@@ -455,10 +455,12 @@ class ProjectTask(models.Model):
         search_forward,
         start_date_field_name,
         stop_date_field_name,
+        movable=None,
     ) -> dict:
         # forward: the earliest start and end each candidate's predecessors
         # outside the cascade allow; backward: the latest end and start its
         # successors outside the cascade allow
+        movable = self if movable is None else movable
         dates_per_field = {start_date_field_name: {}, stop_date_field_name: {}}
         for candidate in self:
             neighbours = (
@@ -467,7 +469,7 @@ class ProjectTask(models.Model):
                 else candidate[dependency_inverted_field_name]
             ).filtered(
                 lambda pill: pill[start_date_field_name] and pill[stop_date_field_name]
-            ) - self
+            ) - movable
             for neighbour in neighbours:
                 if search_forward:
                     dependency_type, lag = links.get(
@@ -803,6 +805,11 @@ class ProjectTask(models.Model):
         )
         cascade = {
             "links": links,
+            "dependency_fields": (
+                dependency_field_name,
+                dependency_inverted_field_name,
+            ),
+            "moved_ids": {self.id},
             "window": (start_date, end_date),
             "users": users,
             "candidates": candidates,
@@ -976,6 +983,57 @@ class ProjectTask(models.Model):
             gap & cascade["calendar_intervals_per_user"].get(users_ids, Intervals())
         )
 
+    def _web_gantt_add_bounds_of_tasks_left_in_place(
+        self, cascade, search_forward, start_date_field_name, stop_date_field_name
+    ) -> None:
+        # A candidate the cascade found in no conflict stays where it is and
+        # still bounds the tasks after it, like a task outside the cascade.
+        dependency_field_name, dependency_inverted_field_name = cascade[
+            "dependency_fields"
+        ]
+        neighbours = self[
+            dependency_field_name if search_forward else dependency_inverted_field_name
+        ]
+        left_in_place = (neighbours & cascade["candidates"]).filtered(
+            lambda task: task.id not in cascade["moved_ids"]
+        )
+        if not left_in_place:
+            return
+        possible_dates = self._web_gantt_get_possible_dates_per_candidate(
+            cascade["links"],
+            dependency_field_name,
+            dependency_inverted_field_name,
+            search_forward,
+            start_date_field_name,
+            stop_date_field_name,
+            movable=self | (neighbours - left_in_place),
+        )
+        if search_forward:
+            bounds_per_field = {
+                start_date_field_name: "first_possible_start_date_per_candidate",
+                stop_date_field_name: "first_possible_end_date_per_candidate",
+            }
+            tighter = max
+        else:
+            bounds_per_field = {
+                start_date_field_name: "last_possible_start_date_per_candidate",
+                stop_date_field_name: "last_possible_end_date_per_candidate",
+            }
+            tighter = min
+        for field, key in bounds_per_field.items():
+            date = possible_dates[field].get(self.id)
+            if date is None:
+                continue
+            bounds = cascade[key]
+            bounds[self.id] = tighter(bounds.get(self.id, date), date)
+            _debug.logic(
+                "bound_from_task_left_in_place",
+                task=self,
+                left_in_place=left_in_place,
+                field=field,
+                bound=bounds[self.id],
+            )
+
     def _web_gantt_cascade_dates(
         self, cascade, search_forward, start_date_field_name, stop_date_field_name
     ) -> str | tuple:
@@ -984,6 +1042,9 @@ class ProjectTask(models.Model):
         users_ids = tuple(self.user_ids.ids) if self.user_ids else False
         if users_ids not in valid_intervals_per_user:
             return "no_intervals_error"
+        self._web_gantt_add_bounds_of_tasks_left_in_place(
+            cascade, search_forward, start_date_field_name, stop_date_field_name
+        )
 
         (
             used_intervals,
@@ -1089,6 +1150,7 @@ class ProjectTask(models.Model):
         ):
             return "no_intervals_error"
 
+        cascade["moved_ids"].add(self.id)
         users_ids, used_intervals = cascade["used_intervals"].pop(self.id)
         used_intervals = Intervals(used_intervals)
         if not users_ids:

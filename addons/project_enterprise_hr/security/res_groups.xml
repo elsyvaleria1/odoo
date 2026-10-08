@@ -5,7 +5,7 @@
         <field
             name="name">Privilege: a user's dated tasks are booked on the employee they are given</field>
         <field
-            name="comment">A task assigned to a user who holds no employee books nobody's time. Once the user is given an employee, whoever creates it or links it rebooks that user's dated tasks on its resource, and reads nothing else of project.</field>
+            name="comment">A task assigned to a user who holds no employee books nobody's time. Once the user is given an employee, whoever creates it or links it rebooks that user's dated tasks on its resource. It reads the active dated tasks that have an assignee, and nothing else of project: a row's domain is evaluated for whoever holds the privilege, never for the user being booked, so it cannot name that user.</field>
         <field name="is_privilege" eval="True" />
     </record>
 

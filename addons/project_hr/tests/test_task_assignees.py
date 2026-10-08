@@ -239,3 +239,302 @@ class TestTaskAssigneesWrittenAsUsers(TransactionCase):
         self.assertEqual(task.employee_ids, employee)
         self.assertFalse(task.direct_user_ids)
         self.assertEqual(task.user_ids, newcomer)
+
+
+@tagged("post_install", "-at_install")
+class TestUserWritesKeepEmployeesWithoutUser(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = new_test_user(cls.env, login="keeper.user", groups="base.group_user")
+        cls.employee = cls.env["hr.employee"].create(
+            {"name": "Keeper", "user_id": cls.user.id}
+        )
+        cls.other_user = new_test_user(
+            cls.env, login="keeper.other", groups="base.group_user"
+        )
+        cls.other_employee = cls.env["hr.employee"].create(
+            {"name": "Other keeper", "user_id": cls.other_user.id}
+        )
+        cls.stranger = new_test_user(
+            cls.env, login="keeper.stranger", groups="base.group_user"
+        )
+        cls.worker = cls.env["hr.employee"].create({"name": "Field worker"})
+        cls.project = cls.env["project.project"].create({"name": "Crew"})
+
+    def _create_task(self, employees, users=None):
+        return self.env["project.task"].create(
+            {
+                "name": "Crew task",
+                "project_id": self.project.id,
+                "employee_ids": employees.ids,
+                "direct_user_ids": (users or self.env["res.users"]).ids,
+            }
+        )
+
+    def test_setting_users_keeps_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.write({"user_ids": [Command.set(self.other_user.ids)]})
+
+        self.assertEqual(task.employee_ids, self.worker | self.other_employee)
+        self.assertEqual(task.user_ids, self.other_user)
+
+    def test_assigning_a_user_recordset_keeps_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.user_ids = self.stranger
+
+        self.assertEqual(task.employee_ids, self.worker)
+        self.assertEqual(task.direct_user_ids, self.stranger)
+        self.assertEqual(task.user_ids, self.stranger)
+
+    def test_a_bare_id_list_keeps_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.write({"user_ids": self.employee.user_id.ids})
+
+        self.assertEqual(task.employee_ids, self.employee | self.worker)
+
+    def test_unlinking_a_user_keeps_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker, self.stranger)
+
+        task.write(
+            {
+                "user_ids": [
+                    Command.unlink(self.user.id),
+                    Command.unlink(self.stranger.id),
+                ]
+            }
+        )
+
+        self.assertEqual(task.employee_ids, self.worker)
+        self.assertFalse(task.direct_user_ids)
+
+    def test_clearing_users_keeps_an_employee_without_a_user(self):
+        for clearing in ([Command.clear()], [Command.set([])], False):
+            with self.subTest(clearing=clearing):
+                task = self._create_task(self.employee | self.worker, self.stranger)
+
+                task.write({"user_ids": clearing})
+
+                self.assertFalse(task.user_ids)
+                self.assertFalse(task.direct_user_ids)
+                self.assertEqual(task.employee_ids, self.worker)
+                self.assertTrue(task.date_assign, "the task is still assigned")
+
+    def test_clearing_then_linking_keeps_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.write({"user_ids": [Command.clear(), Command.link(self.other_user.id)]})
+
+        self.assertEqual(task.employee_ids, self.worker | self.other_employee)
+
+    def test_setting_users_keeps_the_employee_already_standing_for_a_user(self):
+        branch = self.env["res.company"].create({"name": "Keeper branch"})
+        self.user.company_ids |= branch
+        branch_employee = self.env["hr.employee"].create(
+            {
+                "name": "Keeper at branch",
+                "user_id": self.user.id,
+                "company_id": branch.id,
+            }
+        )
+        task = self._create_task(branch_employee)
+
+        task.write({"user_ids": [Command.set((self.user | self.other_user).ids)]})
+
+        self.assertEqual(task.employee_ids, branch_employee | self.other_employee)
+
+    def test_each_task_keeps_its_own_employees_without_a_user(self):
+        second_worker = self.env["hr.employee"].create({"name": "Second worker"})
+        first = self._create_task(self.employee | self.worker)
+        second = self._create_task(second_worker, self.stranger)
+
+        (first | second).write({"user_ids": [Command.set(self.other_user.ids)]})
+
+        self.assertEqual(first.employee_ids, self.worker | self.other_employee)
+        self.assertEqual(second.employee_ids, second_worker | self.other_employee)
+        self.assertFalse(second.direct_user_ids)
+
+    def test_a_form_clearing_users_keeps_an_employee_without_a_user(self):
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "Clear users",
+                "model": "project.task",
+                "type": "form",
+                "arch": '<form><field name="name"/><field name="user_ids"/></form>',
+            }
+        )
+        task = self._create_task(self.employee | self.worker)
+
+        with Form(task, view=view) as task_form:
+            task_form.user_ids.clear()
+
+        self.assertEqual(task.employee_ids, self.worker)
+
+    def test_writing_employees_removes_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.write({"employee_ids": [Command.unlink(self.worker.id)]})
+        self.assertEqual(task.employee_ids, self.employee)
+
+        task.write({"employee_ids": [Command.link(self.worker.id)]})
+        task.write({"employee_ids": [Command.set(self.other_employee.ids)]})
+        self.assertEqual(task.employee_ids, self.other_employee)
+
+    def test_employees_written_with_users_may_remove_an_employee_without_a_user(self):
+        task = self._create_task(self.employee | self.worker)
+
+        task.write(
+            {
+                "user_ids": [Command.set(self.user.ids)],
+                "employee_ids": [Command.set(self.employee.ids)],
+            }
+        )
+
+        self.assertEqual(task.employee_ids, self.employee)
+
+
+@tagged("post_install", "-at_install")
+class TestAssigneesStayInTheTaskCompany(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company_a = cls.env.company
+        cls.company_b = cls.env["res.company"].create({"name": "Assignee company B"})
+        cls.writer = new_test_user(
+            cls.env,
+            login="company.a.writer",
+            groups="base.group_user,project.group_project_user",
+            company_id=cls.company_a.id,
+        )
+        cls.writer_employee = cls.env["hr.employee"].create(
+            {"name": "Writer", "user_id": cls.writer.id, "company_id": cls.company_a.id}
+        )
+        cls.user_b = new_test_user(
+            cls.env,
+            login="company.b.user",
+            groups="base.group_user",
+            company_id=cls.company_b.id,
+            company_ids=[cls.company_b.id],
+        )
+        cls.employee_b = cls.env["hr.employee"].create(
+            {
+                "name": "Only in B",
+                "user_id": cls.user_b.id,
+                "company_id": cls.company_b.id,
+            }
+        )
+        cls.shared_project = cls.env["project.project"].create(
+            {"name": "No company", "company_id": False}
+        )
+        cls.project_a = cls.env["project.project"].create(
+            {"name": "Company A", "company_id": cls.company_a.id}
+        )
+
+    def _assert_assigned_directly(self, task):
+        self.assertFalse(task.employee_ids)
+        self.assertEqual(task.direct_user_ids, self.user_b)
+        self.assertEqual(task.user_ids, self.user_b)
+
+    def test_a_write_on_a_task_without_company_borrows_no_employee(self):
+        task = self.env["project.task"].create(
+            {"name": "Shared", "project_id": self.shared_project.id}
+        )
+        self.assertFalse(task.company_id)
+
+        task.with_user(self.writer).write({"user_ids": self.user_b.ids})
+        self._assert_assigned_directly(task)
+
+        task.with_user(self.writer).write({"user_ids": [Command.clear()]})
+        task.with_user(self.writer).write({"user_ids": [Command.link(self.user_b.id)]})
+        self._assert_assigned_directly(task)
+
+    def test_a_task_of_another_company_borrows_no_employee(self):
+        for values in (
+            {"user_ids": self.user_b.ids},
+            {"user_ids": [Command.link(self.user_b.id)]},
+        ):
+            with self.subTest(values=values):
+                task = self.env["project.task"].create(
+                    {"name": "In A", "project_id": self.project_a.id, **values}
+                )
+                self._assert_assigned_directly(task)
+
+    def test_creating_on_a_task_without_company_borrows_no_employee(self):
+        task = (
+            self.env["project.task"]
+            .with_user(self.writer)
+            .create(
+                {
+                    "name": "Shared",
+                    "project_id": self.shared_project.id,
+                    "user_ids": (self.writer | self.user_b).ids,
+                }
+            )
+        )
+        self.assertEqual(task.employee_ids, self.writer_employee)
+        self.assertEqual(task.direct_user_ids, self.user_b)
+
+    def test_an_employee_of_another_company_does_not_adopt_a_direct_assignment(self):
+        newcomer = new_test_user(
+            self.env,
+            login="company.b.newcomer",
+            groups="base.group_user",
+            company_id=self.company_b.id,
+            company_ids=[self.company_a.id, self.company_b.id],
+        )
+        task = self.env["project.task"].create(
+            {"name": "In A", "project_id": self.project_a.id, "user_ids": newcomer.ids}
+        )
+        self.assertEqual(task.direct_user_ids, newcomer)
+
+        self.env["hr.employee"].create(
+            {
+                "name": "Newcomer in B",
+                "user_id": newcomer.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        self.assertFalse(task.employee_ids)
+        self.assertEqual(task.direct_user_ids, newcomer)
+
+        employee_a = self.env["hr.employee"].create(
+            {
+                "name": "Newcomer in A",
+                "user_id": newcomer.id,
+                "company_id": self.company_a.id,
+            }
+        )
+        self.assertEqual(task.employee_ids, employee_a)
+        self.assertFalse(task.direct_user_ids)
+
+    def test_a_task_without_company_is_adopted_in_the_acting_company(self):
+        newcomer = new_test_user(
+            self.env,
+            login="shared.newcomer",
+            groups="base.group_user",
+            company_ids=[self.company_a.id, self.company_b.id],
+        )
+        task = self.env["project.task"].create(
+            {
+                "name": "Shared",
+                "project_id": self.shared_project.id,
+                "user_ids": newcomer.ids,
+            }
+        )
+
+        self.env["hr.employee"].with_company(self.company_a).create(
+            {
+                "name": "Newcomer in B",
+                "user_id": newcomer.id,
+                "company_id": self.company_b.id,
+            }
+        )
+        self.assertEqual(task.direct_user_ids, newcomer, "acting in A borrows no B")
+
+        employee_b = self.env["hr.employee"].search([("user_id", "=", newcomer.id)])
+        employee_b.with_company(self.company_b).write({"user_id": newcomer.id})
+        self.assertEqual(task.employee_ids, employee_b)
+        self.assertFalse(task.direct_user_ids)

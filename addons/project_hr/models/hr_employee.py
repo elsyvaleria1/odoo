@@ -35,8 +35,8 @@ class HrEmployee(models.Model):
         return self.env["project.task"].sudo()
 
     def _adopt_direct_assignments(self) -> None:
-        # a user is assigned directly only while they hold no employee: the
-        # employee they are given takes those assignments over
+        # a user is assigned directly only while they hold no employee in the
+        # task's company: the employee they are given there takes over
         tasks_sudo = self._get_tasks_sudo().with_context(
             active_test=False, tracking_disable=True
         )
@@ -50,7 +50,20 @@ class HrEmployee(models.Model):
             )
             by_company = employees.grouped("company_id")
             for company, company_tasks in tasks.grouped("company_id").items():
-                employee = by_company.get(company, employees)[:1]
+                # a task without a company is matched in the acting one, as
+                # its assignees are when written
+                employee = by_company.get(
+                    company or self.env.company, employees.browse()
+                )[:1]
+                if not employee:
+                    _debug.logic(
+                        "direct_assignments_kept",
+                        reason="no_employee_in_task_company",
+                        user=user,
+                        company=company or self.env.company,
+                        tasks=company_tasks,
+                    )
+                    continue
                 company_tasks.write(
                     {
                         "direct_user_ids": [Command.unlink(user.id)],

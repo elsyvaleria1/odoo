@@ -31,7 +31,6 @@ class HrEmployee(models.Model):
                 "project_enterprise_hr.privilege_book_employee_tasks",
                 reason="a user's dated tasks are booked on the employee they are given",
             )
-            .with_context(active_test=False)
             .search(
                 [
                     ("user_ids", "in", users.ids),

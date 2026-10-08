@@ -327,6 +327,140 @@ class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
             "Monday 9h-10h is booked, so the predecessor ends before 9h instead",
         )
 
+    def _forward_through_a_task_left_in_place(self, dependency_type):
+        """A Mon 8-10 -> B Tue 8-10 -[type]-> C Wed 8-10 -> D Wed 9-11, C and D
+        overlapping before A is dragged to Mon 13-15: B stays where it is, C
+        is in conflict with D and is placed again, bounded by B."""
+        moved = self._create_task(
+            "A", self.user1, datetime(2021, 6, 7, 8), datetime(2021, 6, 7, 10)
+        )
+        kept = self._create_task(
+            "B", self.user2, datetime(2021, 6, 8, 8), datetime(2021, 6, 8, 10)
+        )
+        bounded = self._create_task(
+            "C", self.user1, datetime(2021, 6, 9, 8), datetime(2021, 6, 9, 10)
+        )
+        overlapped = self._create_task(
+            "D", self.user2, datetime(2021, 6, 9, 9), datetime(2021, 6, 9, 11)
+        )
+        self._link(moved, kept, "fs")
+        self._link(kept, bounded, dependency_type)
+        self._link(bounded, overlapped, "fs")
+        res = self.gantt_reschedule_consume_buffer(
+            moved, self._vals(datetime(2021, 6, 7, 13), datetime(2021, 6, 7, 15))
+        )
+        self.assertEqual(res["type"], "success", res["message"])
+        self.assert_new_dates(kept, datetime(2021, 6, 8, 8), datetime(2021, 6, 8, 10))
+        self.assertFalse(
+            bounded._web_gantt_is_candidate_in_conflict(
+                "date_start", "date_end", "predecessor_ids", "successor_ids"
+            ),
+            "every link around the task placed again holds",
+        )
+        return bounded
+
+    def test_forward_finish_to_start_through_a_task_left_in_place(self):
+        bounded = self._forward_through_a_task_left_in_place("fs")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 8, 10),
+            datetime(2021, 6, 8, 12),
+            "the task starts when the task left in place ends",
+        )
+
+    def test_forward_start_to_start_through_a_task_left_in_place(self):
+        bounded = self._forward_through_a_task_left_in_place("ss")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 8, 8),
+            datetime(2021, 6, 8, 10),
+            "the task starts with the task left in place",
+        )
+
+    def test_forward_finish_to_finish_through_a_task_left_in_place(self):
+        bounded = self._forward_through_a_task_left_in_place("ff")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 9, 8),
+            datetime(2021, 6, 9, 10),
+            "ending with the task left in place would start it before its "
+            "own start, so it stays",
+        )
+
+    def test_forward_start_to_finish_through_a_task_left_in_place(self):
+        bounded = self._forward_through_a_task_left_in_place("sf")
+        self.assert_new_dates(
+            bounded, datetime(2021, 6, 9, 8), datetime(2021, 6, 9, 10)
+        )
+
+    def _backward_through_a_task_left_in_place(self, dependency_type):
+        """W Wed 14-16 -> X Wed 15-17 -[type]-> Y Thu 15-17 -> Z Fri 15-17, W
+        and X overlapping before Z is dragged to Fri 10-12: Y stays where it
+        is, X is in conflict with W and is placed again, bounded by Y."""
+        overlapped = self._create_task(
+            "W", self.user2, datetime(2021, 6, 9, 14), datetime(2021, 6, 9, 16)
+        )
+        bounded = self._create_task(
+            "X", self.user1, datetime(2021, 6, 9, 15), datetime(2021, 6, 9, 17)
+        )
+        kept = self._create_task(
+            "Y", self.user2, datetime(2021, 6, 10, 15), datetime(2021, 6, 10, 17)
+        )
+        moved = self._create_task(
+            "Z", self.user1, datetime(2021, 6, 11, 15), datetime(2021, 6, 11, 17)
+        )
+        self._link(overlapped, bounded, "fs")
+        self._link(bounded, kept, dependency_type)
+        self._link(kept, moved, "fs")
+        res = self.gantt_reschedule_consume_buffer(
+            moved, self._vals(datetime(2021, 6, 11, 10), datetime(2021, 6, 11, 12))
+        )
+        self.assertEqual(res["type"], "success", res["message"])
+        self.assert_new_dates(
+            kept, datetime(2021, 6, 10, 15), datetime(2021, 6, 10, 17)
+        )
+        self.assertFalse(
+            bounded._web_gantt_is_candidate_in_conflict(
+                "date_start", "date_end", "predecessor_ids", "successor_ids"
+            ),
+            "every link around the task placed again holds",
+        )
+        return bounded
+
+    def test_backward_finish_to_start_through_a_task_left_in_place(self):
+        bounded = self._backward_through_a_task_left_in_place("fs")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 10, 13),
+            datetime(2021, 6, 10, 15),
+            "the task ends when the task left in place starts",
+        )
+
+    def test_backward_finish_to_finish_through_a_task_left_in_place(self):
+        bounded = self._backward_through_a_task_left_in_place("ff")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 10, 15),
+            datetime(2021, 6, 10, 17),
+            "the task ends with the task left in place",
+        )
+
+    def test_backward_start_to_start_through_a_task_left_in_place(self):
+        bounded = self._backward_through_a_task_left_in_place("ss")
+        self.assert_new_dates(
+            bounded,
+            datetime(2021, 6, 9, 15),
+            datetime(2021, 6, 9, 17),
+            "starting with the task left in place would end it after its own "
+            "end, so it stays",
+        )
+
+    def test_backward_start_to_finish_through_a_task_left_in_place(self):
+        bounded = self._backward_through_a_task_left_in_place("sf")
+        self.assert_new_dates(
+            bounded, datetime(2021, 6, 9, 15), datetime(2021, 6, 9, 17)
+        )
+
     def test_gantt_dependency_types(self):
         predecessor = self._create_task(
             "P", self.user1, datetime(2021, 6, 7, 8), datetime(2021, 6, 7, 10)

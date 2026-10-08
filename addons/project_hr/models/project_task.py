@@ -108,19 +108,44 @@ class ProjectTask(models.Model):
             )
             task.user_ids = task.employee_ids.user_id | task.direct_user_ids
 
-    def _assignee_commands_for_users(self, value, company) -> dict:
+    @api.model
+    def _get_user_commands(self, value) -> list:
         if isinstance(value, models.BaseModel):
-            commands = [Command.set(value.ids)]
-        elif value is False or value is None:
-            commands = [Command.clear()]
-        elif not value:
+            return [Command.set(value.ids)]
+        if value is False or value is None:
+            return [Command.clear()]
+        if not value:
             # an empty command list, as the ORM reads it: nothing changes
-            commands = []
-        elif all(isinstance(item, int) for item in value):
+            return []
+        if all(isinstance(item, int) for item in value):
             # a bare id list, as the ORM reads it: a falsy id names nobody
-            commands = [Command.set([item for item in value if item])]
-        else:
-            commands = list(value)
+            return [Command.set([item for item in value if item])]
+        return list(value)
+
+    @api.model
+    def _get_user_commands_against(self, commands, users) -> list:
+        # Employees without a user never show in user_ids, so replacing the
+        # users must not replace them: a set or a clear becomes the users it
+        # removes and adds, which leaves every other assignee where it is.
+        current = dict.fromkeys(users.ids)
+        result = dict(current)
+        for command in commands:
+            match command[0]:
+                case Command.SET:
+                    result = dict.fromkeys(command[2])
+                case Command.CLEAR:
+                    result = {}
+                case Command.LINK:
+                    result[command[1]] = None
+                case Command.UNLINK:
+                    result.pop(command[1], None)
+        return [
+            *(Command.unlink(user_id) for user_id in current if user_id not in result),
+            *(Command.link(user_id) for user_id in result if user_id not in current),
+        ]
+
+    def _assignee_commands_for_users(self, value, company) -> dict:
+        commands = self._get_user_commands(value)
         user_ids = {
             user_id
             for command in commands
@@ -145,11 +170,11 @@ class ProjectTask(models.Model):
             )
 
         def assignee(user_id):
-            candidates = employees_of(user_id)
-            return (
-                candidates.filtered(lambda employee: employee.company_id == company)[:1]
-                or candidates[:1]
-            )
+            # another company's employee is never borrowed: without one in
+            # the task's company the user is assigned directly
+            return employees_of(user_id).filtered(
+                lambda employee: employee.company_id == company
+            )[:1]
 
         _debug.pipeline(
             "task_assignees_mapped",
@@ -174,11 +199,7 @@ class ProjectTask(models.Model):
                     )
                     direct_commands.append(
                         Command.set(
-                            [
-                                user_id
-                                for user_id in command[2]
-                                if not employees_of(user_id)
-                            ]
+                            [user_id for user_id in command[2] if not assignee(user_id)]
                         )
                     )
                 case Command.LINK:
@@ -359,51 +380,70 @@ class ProjectTask(models.Model):
             vals = dict(vals)
             user_value = vals.pop("user_ids")
             if not vals.keys() & ASSIGNEE_FIELDS:
-                if len(self.company_id) > 1:
+                commands = self._get_user_commands(user_value)
+                replaces = any(
+                    command[0] in (Command.SET, Command.CLEAR) for command in commands
+                )
+                groups = self.grouped(
+                    (lambda task: (task.company_id, task.user_ids))
+                    if replaces
+                    else "company_id"
+                )
+                if len(groups) > 1:
                     _debug.logic(
-                        "task_assignees_split_by_company",
+                        "task_assignees_split",
                         tasks=self,
                         companies=self.company_id,
+                        by_current_users=replaces,
+                        groups=len(groups),
                     )
-                    for company, tasks in self.grouped("company_id").items():
-                        tasks.write(
-                            {
-                                **vals,
-                                **self._assignee_commands_for_users(
-                                    user_value, company
-                                ),
-                            }
-                        )
+                    for tasks in groups.values():
+                        tasks.write({**vals, "user_ids": commands})
                     return True
+                if replaces:
+                    commands = self._get_user_commands_against(commands, self.user_ids)
+                    _debug.logic(
+                        "task_user_replacement_rebased",
+                        tasks=self,
+                        users=self.user_ids,
+                        commands=len(commands),
+                    )
                 vals.update(
-                    self._assignee_commands_for_users(user_value, self.company_id)
+                    self._assignee_commands_for_users(
+                        commands, self.company_id or self.env.company
+                    )
                 )
         now = fields.Datetime.now()
-        task_ids_without_employee: set[int] = set()
+        dates_assign = {}
         if "employee_ids" in vals and "date_assign" not in vals:
-            task_ids_without_employee = {
-                task.id for task in self if not task.employee_ids
-            }
+            dates_assign = {task.id: task.date_assign for task in self}
 
         result = super().write(vals)
 
         if "employee_ids" in vals:
             self._create_missing_triages()
             for task in self.sudo():
-                if not task.employee_ids and task.date_assign:
-                    _debug.lifecycle(
-                        "task_date_assign_cleared",
-                        trigger="last_assignee_removed",
-                        task=task,
-                    )
-                    task.date_assign = False
-                elif task.id in task_ids_without_employee:
+                if not (task.employee_ids or task.direct_user_ids):
+                    if task.date_assign:
+                        _debug.lifecycle(
+                            "task_date_assign_cleared",
+                            trigger="last_assignee_removed",
+                            task=task,
+                        )
+                        task.date_assign = False
+                elif task.id in dates_assign and not task.date_assign:
+                    # project clears the date once no user is left, which an
+                    # employee without a user does not count as
                     _debug.lifecycle(
                         "task_date_assign_set",
-                        trigger="first_assignee_added",
+                        trigger=(
+                            "assignee_without_user_kept"
+                            if dates_assign[task.id]
+                            else "first_assignee_added"
+                        ),
                         task=task,
                         employees=task.employee_ids,
                     )
-                    task.date_assign = now
+                    task.date_assign = dates_assign[task.id] or now
 
         return result

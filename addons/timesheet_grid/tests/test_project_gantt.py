@@ -7,6 +7,7 @@ class TestProjectGanttProgressBarFlow(TestProjectCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls._employ(cls.user_projectuser)
         cls.project_goats.write(
             {
                 "user_id": cls.user_projectuser.id,

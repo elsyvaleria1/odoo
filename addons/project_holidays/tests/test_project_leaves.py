@@ -256,7 +256,10 @@ class TestProjectLeaves(common.TransactionCase):
 
         with Form(self.env["project.task"]) as task_form:
             task_form.name = "Test Task"
-            task_form.user_ids = self.employee_hruser.user_id
+            if "employee_ids" in task_form._view["fields"]:
+                task_form.employee_ids = self.employee_hruser
+            else:
+                task_form.user_ids = self.employee_hruser.user_id
             task_form.project_id = self.project
             task_form.date_end = datetime.datetime(2020, 1, 2)
             task_form.date_start = datetime.datetime(2020, 1, 1)

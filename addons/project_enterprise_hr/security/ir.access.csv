@@ -1,2 +1,2 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
-privilege_book_employee_tasks_task,project.task: a user's dated tasks are rebooked on their new employee,project.model_project_task,privilege_book_employee_tasks,permission,r,,,,,
+privilege_book_employee_tasks_task,project.task: a user's dated tasks are rebooked on their new employee,project.model_project_task,privilege_book_employee_tasks,permission,r,,,,,"[('user_ids', '!=', False), ('date_start', '!=', False), ('date_end', '!=', False), ('active', '=', True)]"

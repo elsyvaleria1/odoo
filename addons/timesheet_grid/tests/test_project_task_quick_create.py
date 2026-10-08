@@ -20,5 +20,8 @@ class TestProjectTaskQuickCreate(TestCommonTimesheet):
             view="project.quick_create_task_form",
         )
         task_form.display_name = "hello"
-        task_form.user_ids.set(self.user_employee)
+        if "employee_ids" in task_form._view["fields"]:
+            task_form.employee_ids.set(self.empl_employee)
+        else:
+            task_form.user_ids.set(self.user_employee)
         self.assertEqual(task_form.display_name, "hello")
