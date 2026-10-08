@@ -235,3 +235,51 @@ class TestCallVoices(TransactionCase):
         self.assertEqual(
             call.conversation_id.attendee_ids, self.seller.partner_id | self.customer
         )
+
+
+@tagged("post_install", "-at_install")
+class TestCallConversationIsQuiet(TransactionCase):
+    def setUp(self):
+        super().setUp()
+        self.seller = new_test_user(
+            self.env, login="quiet_call_seller", groups="base.group_user"
+        )
+        self.other = new_test_user(
+            self.env, login="quiet_call_other", groups="base.group_user"
+        )
+
+    def _assignments(self, user):
+        return self.env["mail.notification"].search(
+            [
+                ("res_partner_id", "=", user.partner_id.id),
+                ("mail_message_id.model", "=", "conversation.conversation"),
+            ]
+        )
+
+    def test_a_recorded_call_does_not_tell_the_phones_user_it_was_assigned(self):
+        call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "channel": "mobile",
+                "user_id": self.seller.id,
+            }
+        )
+        conversation = call._recording_timeline()
+        self.assertEqual(conversation.user_id, self.seller)
+        self.assertFalse(self._assignments(self.seller))
+
+    def test_the_line_naming_who_answered_does_not_tell_them_either(self):
+        call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "channel": "mobile",
+                "user_id": self.seller.id,
+            }
+        )
+        conversation = call._recording_timeline()
+        call.user_id = self.other
+        call._on_call_details_completed()
+        # a write's subscriptions and their notices wait for the commit
+        self.env.cr.precommit.run()
+        self.assertEqual(conversation.user_id, self.other)
+        self.assertFalse(self._assignments(self.other))

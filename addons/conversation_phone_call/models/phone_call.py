@@ -28,9 +28,12 @@ class PhoneCall(models.Model):
         self.check_singleton()
         partner = self.partner_id
         user = self.user_id
+        # the phone's user is its responsible on every call it records: told
+        # so once per recording, a phone's history flooded its inbox
         return (
             self.env["conversation.conversation"]
             .sudo()
+            .with_context(mail_auto_subscribe_no_notify=True)
             .create(
                 {
                     "name": self._conversation_name(),
@@ -67,7 +70,7 @@ class PhoneCall(models.Model):
                 vals["partner_id"] = call.partner_id.id
             if call.user_id and call.user_id != conversation.user_id:
                 vals["user_id"] = call.user_id.id
-            conversation.write(vals)
+            conversation.with_context(mail_auto_subscribe_no_notify=True).write(vals)
             # a recording heard before the call's entry came had no one to
             # name its voices after
             for attachment in conversation.segment_ids.attachment_id.filtered(
