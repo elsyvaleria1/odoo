@@ -69,12 +69,11 @@ def _convert(obj: object) -> object:
 
 
 def json_default(obj: object) -> object:
-    kind = type(obj)
-    if kind is datetime:
+    if type(obj) is datetime:
         if obj.tzinfo is not None:
             obj = obj.astimezone(UTC).replace(tzinfo=None)
         return obj.isoformat(" ", "seconds")
-    if kind is date:
+    if type(obj) is date:
         return obj.isoformat()
     if isinstance(obj, _lazy):
         return obj._value
