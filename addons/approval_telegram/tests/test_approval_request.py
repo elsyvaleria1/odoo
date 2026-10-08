@@ -22,7 +22,7 @@ from odoo.addons.telegram.models.telegram_bot import TelegramBot
 from odoo.addons.telegram.models.telegram_bot_receiver import (
     MINI_APP_SESSION_TTL_HOURS,
 )
-from odoo.addons.telegram.tests.common import TelegramBotTestCase
+from odoo.addons.telegram.tests.common import NOT_A_MENU, TelegramBotTestCase
 from odoo.addons.telegram.tools.telegram_client import TelegramClient
 
 
@@ -91,6 +91,7 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
                 ("chat_id", "=", self.test_chat.id),
                 ("message_type", "=", "outbound"),
                 ("state", "=", "outgoing"),
+                NOT_A_MENU,
             ]
         )
 
@@ -129,6 +130,7 @@ class TestApprovalNotifier(ApprovalRequestTestBase):
         outbound = [
             ("chat_id", "=", other_chat.id),
             ("message_type", "=", "outbound"),
+            NOT_A_MENU,
         ]
 
         self.env["telegram.approval.notifier"]._notify_approver(self.approver)

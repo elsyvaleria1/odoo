@@ -5,7 +5,7 @@ from odoo.tests import tagged
 
 from odoo.addons.approval.tests.common import pool_step
 from odoo.addons.telegram.models.telegram_bot import TelegramBot
-from odoo.addons.telegram.tests.common import TelegramBotTestCase
+from odoo.addons.telegram.tests.common import NOT_A_MENU, TelegramBotTestCase
 
 
 @tagged("post_install", "-at_install")
@@ -85,6 +85,7 @@ class SaleConfirmTestBase(TelegramBotTestCase):
                 ("chat_id", "=", self.test_chat.id),
                 ("message_type", "=", "outbound"),
                 ("state", "=", "outgoing"),
+                NOT_A_MENU,
             ]
         )
 
