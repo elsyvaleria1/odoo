@@ -116,10 +116,11 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
 
         self.assertTrue(self.task.task_to_invoice)
         self.assertTrue(self.task.display_create_invoice_primary)
-        # Posting is what makes an invoice count here, so the flow validates each
-        # one: a draft leaves the order still to invoice and the button still
-        # offering to create one, which is the state before invoicing, not after.
-        self.task.sale_order_id._create_invoices().action_post()
+        invoice = self.task.sale_order_id._create_invoices()
+        self.assertEqual(self.task.invoice_state, "draft")
+        self.assertFalse(self.task.display_create_invoice_primary)
+        self.assertFalse(self.task.display_create_invoice_secondary)
+        invoice.action_post()
         self.assertEqual(self.task.invoice_count, 1)
         self.assertFalse(self.task.display_create_invoice_primary)
 

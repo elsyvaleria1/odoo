@@ -375,16 +375,78 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
                 "product_qty": 1,
             }
         )
-        self.task.sale_order_id._create_invoices()
-        self.assertEqual(self.task.sale_order_id.invoice_state, "partial")
+        invoice = self.task.sale_order_id._create_invoices()
+        # the order still owes the undelivered line, so it reads "to do"; nothing
+        # can be invoiced now (the material sits on the draft), so no button
+        self.assertEqual(self.task.sale_order_id.invoice_state, "to do")
+        self.assertEqual(self.task.sale_order_id.amount_taxexc_to_invoice, 0.0)
+        self.assertFalse(self.task.display_create_invoice_primary)
+        self.assertFalse(self.task.display_create_invoice_secondary)
+
+        new_line.product_qty = 0
+        self.assertEqual(self.task.sale_order_id.invoice_state, "draft")
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
 
         # Should not be visible after the order is fully invoiced
-        new_line.product_qty = 0
+        invoice.action_post()
         self.assertEqual(self.task.sale_order_id.invoice_state, "done")
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
+
+    def test_create_invoice_waits_for_something_to_invoice_after_a_down_payment(self):
+        product_on_delivery = self.env["product.product"].create(
+            {
+                "name": "Invoice on delivery product",
+                "sale_ok": True,
+                "invoice_policy": "transferred",
+                "service_type": "manual",
+                "list_price": 90.0,
+            }
+        )
+        self.task._fsm_get_or_create_sale_order()
+        order = self.task.sale_order_id
+        line = self.env["sale.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": product_on_delivery.id,
+                "price_unit": 90.0,
+                "product_qty": 1,
+            }
+        )
+        if order.state != "done":
+            order.action_confirm()
+        self.task.fsm_done = True
+        down_payment_wizard = (
+            self.env["wizard.sale.order.invoice"]
+            .with_context(active_model="sale.order", active_ids=order.ids)
+            .create({"advance_payment_method": "fixed", "fixed_amount": 30.0})
+        )
+        down_payment_wizard.create_invoices()
+        order.invoice_ids.action_post()
+        down_payment_line = order.line_ids.filtered(
+            lambda sol: sol.is_downpayment and not sol.display_type
+        )
+
+        self.assertEqual(order.invoice_state, "to do")
+        self.assertEqual(down_payment_line.invoice_state, "to do")
+        self.assertEqual(line.invoice_state, "no")
+        self.assertFalse(self.task.display_create_invoice_primary)
+        self.assertFalse(self.task.display_create_invoice_secondary)
+
+        line.qty_transferred = 1
+
+        self.assertTrue(self.task.display_create_invoice_primary)
+        self.assertFalse(self.task.display_create_invoice_secondary)
+        action = self.task.action_create_invoice()
+        self.assertNotEqual(
+            action["context"].get("default_advance_payment_method"), "percentage"
+        )
+        invoice = order._create_invoices(final=True)
+        self.assertEqual(invoice.move_type, "out_invoice")
+        self.assertEqual(
+            invoice.invoice_line_ids.sale_line_ids, line | down_payment_line
+        )
 
     def test_customer_preview_report_signed(self):
         self.assertFalse(self.task.show_customer_preview)

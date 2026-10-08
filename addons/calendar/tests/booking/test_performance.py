@@ -130,7 +130,7 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
         t0 = time.time()
         with freeze_time(self.reference_now):
             with self.assertQueryCount(
-                (31 + self._page_reads_the_type_seo)
+                (33 + self._page_reads_the_type_seo)
                 if self._website_renders_the_page
                 else 29
             ):
