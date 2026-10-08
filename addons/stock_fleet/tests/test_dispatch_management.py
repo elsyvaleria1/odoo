@@ -179,9 +179,9 @@ class TestDispatchManagement(TransactionCase):
         near = self._picking(zip_code="1000")
         middle = self._picking(zip_code="5000")
         self._batch(far | near | middle)
-        self.assertEqual(near.batch_sequence, 0)
-        self.assertEqual(middle.batch_sequence, 1)
-        self.assertEqual(far.batch_sequence, 2)
+        self.assertEqual(near.batch_sequence, 1)
+        self.assertEqual(middle.batch_sequence, 2)
+        self.assertEqual(far.batch_sequence, 3)
 
     def test_the_load_is_measured_against_the_vehicle_model(self):
         picking = self._picking(quantity=5)
@@ -329,7 +329,7 @@ class TestDispatchManagement(TransactionCase):
         batch.picking_ids = [Command.link(far.id), Command.link(middle.id)]
         self.assertEqual(
             [near.batch_sequence, middle.batch_sequence, far.batch_sequence],
-            [0, 1, 2],
+            [1, 2, 3],
             "order_on_zip ran in create only, so a transfer joining an existing "
             "batch kept sequence 0 and the route order the map view and the "
             "report read was absent.",

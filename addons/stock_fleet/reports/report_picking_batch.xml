@@ -93,8 +93,39 @@
             <th>Sequence</th>
         </xpath>
         <xpath expr="//table[hasclass('table')]//tbody//tr//td" position="before">
-            <td>
+            <td style="vertical-align: middle;">
                 <span t-field="pick.batch_sequence" />
+            </td>
+        </xpath>
+        <xpath
+            expr="//td[span[@t-field='pick.name'][not(@t-options)]]"
+            position="attributes">
+            <attribute name="style">vertical-align: middle;</attribute>
+        </xpath>
+        <!-- The operator scans each transfer off the sheet with a phone camera,
+            which could not read the office barcode: 56 mm wide, 0.25 mm bars,
+            rows touching. The trip sheet draws the bars across 100 mm (0.45 mm
+            each) and leaves the quiet zone to the cell's 5 mm padding, since the
+            image's own would take a quarter of the width; the rows are spaced
+            and a row never splits from its barcode across a page break. -->
+        <xpath expr="//tr[@t-as='pick']" position="attributes">
+            <attribute name="style">break-inside: avoid;</attribute>
+        </xpath>
+        <xpath
+            expr="//td[span[@t-field='pick.name'][@t-options]]"
+            position="attributes">
+            <attribute name="t-if">not o.has_dispatch_management</attribute>
+        </xpath>
+        <xpath
+            expr="//td[span[@t-field='pick.name'][@t-options]]"
+            position="after">
+            <td
+                t-if="o.has_dispatch_management"
+                name="td_trip_barcode"
+                style="vertical-align: middle; padding: 4mm 5mm;">
+                <span
+                    t-field="pick.name"
+                    t-options="{'widget': 'barcode', 'quiet': 0, 'width': 1200, 'height': 180, 'img_style': 'width: 100mm; height: 15mm;'}" />
             </td>
         </xpath>
         <!-- The trip sheet rides with the load, where only the transfer and the

@@ -462,6 +462,34 @@ class TestTrip(TransactionCase):
         batch = self.env["stock.picking.batch"].create({"picking_type_id": in_type.id})
         self.assertIn('<th name="th_state">Status</th>', self._sheet(batch))
 
+    def test_the_trip_sheet_barcodes_are_wide_enough_for_a_phone(self):
+        sheet = self._sheet(self._trip(self._picking() | self._picking()))
+        self.assertEqual(sheet.count('name="td_trip_barcode"'), 2)
+        self.assertEqual(sheet.count("width: 100mm; height: 15mm;"), 2)
+        self.assertEqual(
+            sheet.count("padding: 4mm 5mm;"),
+            2,
+            "The image is drawn without a quiet zone: the cell's padding is it.",
+        )
+        self.assertNotIn(
+            "width:200px;height:50px;",
+            sheet,
+            "The office barcode prints 0.25 mm bars with no quiet zone: the "
+            "operators' phones could not read one apart from the next.",
+        )
+
+    def test_a_batch_that_does_not_dispatch_keeps_the_office_barcode(self):
+        self.out_type.dispatch_management = False
+        batch = self.env["stock.picking.batch"].create(
+            {
+                "picking_type_id": self.out_type.id,
+                "picking_ids": [Command.set(self._picking().ids)],
+            }
+        )
+        sheet = self._sheet(batch)
+        self.assertIn("width:200px;height:50px;", sheet)
+        self.assertNotIn('name="td_trip_barcode"', sheet)
+
     def test_a_transfer_opened_from_its_batch_can_be_validated_or_sent_back(self):
         view = self.env.ref("stock_picking_batch.view_stock_picking_form_inherited")
         arch = self.env["stock.picking"].get_view(view.id, "form")["arch"]

@@ -183,7 +183,7 @@ class StockPickingBatch(models.Model):
     def order_on_zip(self) -> None:
         _debug.pipeline("batch_order_on_zip", batches=self)
         sorted_records = self.picking_ids.sorted(lambda p: p.zip or "")
-        for idx, record in enumerate(sorted_records):
+        for idx, record in enumerate(sorted_records, start=1):
             record.batch_sequence = idx
 
     def _set_moves_destination_to_dock(self) -> None:
