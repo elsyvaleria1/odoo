@@ -44,6 +44,24 @@ msgid "Display Name"
 msgstr "Nombre mostrado"
 
 #. module: im_livechat_telegram
+#: model:res.groups,comment:im_livechat_telegram.privilege_serve_customers
+msgid ""
+"Held by the updates of a bot's customers and by what the session sends them "
+"back: read and keep the Telegram sessions (live chat channels of a Telegram "
+"chat), post and edit their comments, follow their chatbot's questions and "
+"answers, and read who answered them. A customer is no Odoo user and no "
+"member the session's own rules know; the session itself opens on "
+"im_livechat's privilege to open one, as the web route opens a visitor's."
+msgstr ""
+"Lo tienen las actualizaciones de los clientes de un bot y lo que la sesión "
+"les responde: leer y conservar las sesiones de Telegram (canales de chat en "
+"vivo de un chat de Telegram), publicar y editar sus comentarios, seguir las "
+"preguntas y respuestas de su chatbot y leer quién les respondió. Un cliente "
+"no es usuario de Odoo ni un miembro que conozcan las reglas propias de la "
+"sesión; la sesión misma se abre con el privilegio de im_livechat para abrir "
+"una, como la ruta web abre la de un visitante."
+
+#. module: im_livechat_telegram
 #. odoo-python
 #: code:addons/im_livechat_telegram/models/discuss_channel.py:0
 msgid "How did we do?"
@@ -91,6 +109,13 @@ msgid ""
 msgstr ""
 "Antepone el nombre del operador a sus mensajes. Desactivado, los clientes "
 "ven al bot hablando por la empresa."
+
+#. module: im_livechat_telegram
+#: model:res.groups,name:im_livechat_telegram.privilege_serve_customers
+msgid "Privilege: a Telegram customer is answered in their live chat session"
+msgstr ""
+"Privilegio: a un cliente de Telegram se le responde en su sesión de chat en "
+"vivo"
 
 #. module: im_livechat_telegram
 #: model:ir.model.fields,help:im_livechat_telegram.field_telegram_bot__livechat_waiting_message

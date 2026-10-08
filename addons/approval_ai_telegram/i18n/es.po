@@ -111,14 +111,14 @@ msgstr "Proveedor de IA para aprobaciones"
 #. module: approval_ai_telegram
 #. odoo-python
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
-msgid "Approval request"
-msgstr "Solicitud de aprobación"
+msgid "Approval Request Commands"
+msgstr "Comandos de Solicitudes de Aprobación"
 
 #. module: approval_ai_telegram
 #. odoo-python
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
-msgid "Approval Request Commands"
-msgstr "Comandos de Solicitudes de Aprobación"
+msgid "Approval request"
+msgstr "Solicitud de aprobación"
 
 #. module: approval_ai_telegram
 #. odoo-python
@@ -194,7 +194,6 @@ msgstr "Detalle"
 
 #. module: approval_ai_telegram
 #: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__display_name
-#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_chat__display_name
 #: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_handler_approval_ai__display_name
 msgid "Display Name"
 msgstr "Nombre mostrado"
@@ -254,7 +253,6 @@ msgstr "No pude transcribir el audio. Por favor escribe la descripción como tex
 
 #. module: approval_ai_telegram
 #: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_bot__id
-#: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_chat__id
 #: model:ir.model.fields,field_description:approval_ai_telegram.field_telegram_handler_approval_ai__id
 msgid "ID"
 msgstr "ID"
@@ -319,6 +317,14 @@ msgstr "Fecha planeada"
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
 msgid "Please send the description as text or a voice note."
 msgstr "Por favor envía la descripción como texto o una nota de voz."
+
+#. module: approval_ai_telegram
+#: model:res.groups,name:approval_ai_telegram.privilege_read_confidence_threshold
+msgid ""
+"Privilege: the request intake reads how sure a suggested category must be"
+msgstr ""
+"Privilegio: la captura de solicitudes lee qué tan segura debe ser una "
+"categoría sugerida"
 
 #. module: approval_ai_telegram
 #. odoo-python
@@ -435,6 +441,18 @@ msgid "Tell me what you need approved. You can write it in one message (example:
 msgstr "Cuéntame qué necesitas aprobar. Puedes escribirlo en un mensaje (ejemplo: \"compra de 3 llantas para el camión, ~12 mil con Llantera del Bajío\"). Para salir escribe /cancelar."
 
 #. module: approval_ai_telegram
+#: model:res.groups,comment:approval_ai_telegram.privilege_read_confidence_threshold
+msgid ""
+"The Telegram request intake runs as its sender, who reads no system "
+"parameter: the confidence a model's category suggestion needs before the "
+"intake offers it is the intake's own setting."
+msgstr ""
+"La captura de solicitudes de Telegram corre como su remitente, que no lee "
+"parámetros del sistema: la confianza que necesita la categoría sugerida por "
+"un modelo antes de que la captura la ofrezca es un ajuste propio de la "
+"captura."
+
+#. module: approval_ai_telegram
 #. odoo-python
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
 msgid "The bot classifies your request, shows you a summary to confirm and, depending on the category, asks for the date, whether the purchase has an invoice (CFDI) and extra evidence (receipt, note or photo)."
@@ -505,6 +523,11 @@ msgid "Total:"
 msgstr "Total:"
 
 #. module: approval_ai_telegram
+#: model:integration.ml.purpose,name:approval_ai_telegram.purpose_speech_transcription_approval
+msgid "Transcribing approval requests"
+msgstr "Transcripción de solicitudes de aprobación"
+
+#. module: approval_ai_telegram
 #: model_terms:ir.ui.view,arch_db:approval_ai_telegram.telegram_bot_view_form_smart_approval
 msgid ""
 "Used by the /solicitar wizard to classify the request and extract fields."
@@ -566,7 +589,7 @@ msgstr "Tu cuenta de Telegram no está vinculada a un usuario interno. Contacta 
 
 #. module: approval_ai_telegram
 #. odoo-python
-#: code:addons/approval_ai_telegram/models/telegram_chat.py:0
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
 msgid "an approval request"
 msgstr "una solicitud de aprobación"
 

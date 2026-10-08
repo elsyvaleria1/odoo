@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 14:39+0000\n"
-"PO-Revision-Date: 2026-09-29 14:39+0000\n"
+"POT-Creation-Date: 2026-10-08 03:40+0000\n"
+"PO-Revision-Date: 2026-10-08 03:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -37,6 +37,17 @@ msgstr ""
 #: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_bot__display_name
 #: model:ir.model.fields,field_description:im_livechat_telegram.field_telegram_handler_livechat__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: im_livechat_telegram
+#: model:res.groups,comment:im_livechat_telegram.privilege_serve_customers
+msgid ""
+"Held by the updates of a bot's customers and by what the session sends them "
+"back: read and keep the Telegram sessions (live chat channels of a Telegram "
+"chat), post and edit their comments, follow their chatbot's questions and "
+"answers, and read who answered them. A customer is no Odoo user and no "
+"member the session's own rules know; the session itself opens on "
+"im_livechat's privilege to open one, as the web route opens a visitor's."
 msgstr ""
 
 #. module: im_livechat_telegram
@@ -84,6 +95,11 @@ msgstr ""
 msgid ""
 "Prefix operators' messages with their name. Off, customers see the bot "
 "speaking for the company."
+msgstr ""
+
+#. module: im_livechat_telegram
+#: model:res.groups,name:im_livechat_telegram.privilege_serve_customers
+msgid "Privilege: a Telegram customer is answered in their live chat session"
 msgstr ""
 
 #. module: im_livechat_telegram

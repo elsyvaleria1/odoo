@@ -243,11 +243,6 @@ msgid "Field to correct:"
 msgstr "Campo a corregir:"
 
 #. module: approval_telegram
-#: model:ir.model.fields,field_description:approval_telegram.field_telegram_bot__has_approval_command
-msgid "Has Approval Command"
-msgstr "Tiene comando de aprobación"
-
-#. module: approval_telegram
 #. odoo-python
 #: code:addons/approval_telegram/services/approval_notifier.py:0
 msgid "High"
@@ -536,16 +531,6 @@ msgstr "Inicio"
 #: code:addons/approval_telegram/services/approval_notifier.py:0
 msgid "Submitted"
 msgstr "Enviada"
-
-#. module: approval_telegram
-#: model:ir.model.fields,help:approval_telegram.field_telegram_bot__has_approval_command
-msgid ""
-"Technical: True when the bot runs an approval command (/solicitar or /pago)."
-" Used to surface the approval-notification settings only on approval bots."
-msgstr ""
-"Técnico: verdadero cuando el bot ejecuta un comando de aprobación "
-"(/solicitar o /pago). Sirve para mostrar los ajustes de notificación de "
-"aprobaciones solo en los bots de aprobación."
 
 #. module: approval_telegram
 #: model:ir.model,name:approval_telegram.model_telegram_approval_notifier
@@ -873,3 +858,14 @@ msgstr "🔄 Solicitud corregida y reenviada"
 #: code:addons/approval_telegram/services/approval_notifier.py:0
 msgid "🔔 New approval request"
 msgstr "🔔 Nueva solicitud de aprobación"
+
+#~ msgid "Has Approval Command"
+#~ msgstr "Tiene comando de aprobación"
+
+#~ msgid ""
+#~ "Technical: True when the bot runs an approval command (/solicitar or /pago)."
+#~ " Used to surface the approval-notification settings only on approval bots."
+#~ msgstr ""
+#~ "Técnico: verdadero cuando el bot ejecuta un comando de aprobación "
+#~ "(/solicitar o /pago). Sirve para mostrar los ajustes de notificación de "
+#~ "aprobaciones solo en los bots de aprobación."

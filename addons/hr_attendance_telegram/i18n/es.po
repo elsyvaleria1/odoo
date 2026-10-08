@@ -103,7 +103,8 @@ msgstr "Regresar de comer"
 
 #. module: hr_attendance_telegram
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__display_name
-#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_chat__display_name
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_employee__display_name
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_binding__display_name
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_handler_attendance__display_name
 msgid "Display Name"
 msgstr "Nombre mostrado"
@@ -121,6 +122,24 @@ msgid "Error: %(error)s"
 msgstr "Error: %(error)s"
 
 #. module: hr_attendance_telegram
+#: model:res.groups,comment:hr_attendance_telegram.privilege_record_own_attendance
+msgid ""
+"Held by the attendance commands of a Telegram chat: find the sender's "
+"employee, and read, start and close that employee's attendances at the time "
+"they type, lunch break included. A linked user reaches only the employee "
+"they are; a contact with no user only an employee without one whose contact "
+"a Telegram account was ever bound to. Odoo's own check-in takes the current "
+"time only, so the typed time is this privilege's."
+msgstr ""
+"Lo tienen los comandos de asistencia de un chat de Telegram: encontrar al "
+"empleado del remitente y leer, iniciar y cerrar sus asistencias a la hora "
+"que escribe, incluida la comida. Un usuario vinculado solo llega al empleado"
+" que es; un contacto sin usuario, solo a un empleado sin usuario cuyo "
+"contacto alguna vez estuvo vinculado a una cuenta de Telegram. El registro "
+"de entrada de Odoo solo toma la hora actual, así que la hora escrita "
+"corresponde a este privilegio."
+
+#. module: hr_attendance_telegram
 #. odoo-python
 #: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 #, python-format
@@ -129,7 +148,8 @@ msgstr "¡Hola %(name)s! Se ha registrado tu entrada a las %(time)s. ¡Que tenga
 
 #. module: hr_attendance_telegram
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_attendance__id
-#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_chat__id
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_hr_employee__id
+#: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_binding__id
 #: model:ir.model.fields,field_description:hr_attendance_telegram.field_telegram_handler_attendance__id
 msgid "ID"
 msgstr "ID"
@@ -154,6 +174,11 @@ msgstr "Salida a comer"
 #: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 msgid "Only employees can use attendance commands."
 msgstr "Solo los empleados pueden usar comandos de asistencia."
+
+#. module: hr_attendance_telegram
+#: model:res.groups,name:hr_attendance_telegram.privilege_record_own_attendance
+msgid "Privilege: an employee records their own attendance from Telegram"
+msgstr "Privilegio: un empleado registra su propia asistencia desde Telegram"
 
 #. module: hr_attendance_telegram
 #. odoo-python
@@ -292,7 +317,7 @@ msgstr "Se ha registrado tu regreso de la comida a las %(time)s."
 
 #. module: hr_attendance_telegram
 #. odoo-python
-#: code:addons/hr_attendance_telegram/models/telegram_chat.py:0
+#: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 msgid "an attendance record"
 msgstr "un registro de asistencia"
 

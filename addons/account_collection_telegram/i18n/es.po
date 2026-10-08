@@ -105,6 +105,12 @@ msgstr "Cheque"
 #. module: account_collection_telegram
 #. odoo-python
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Check date"
+msgstr "Fecha del cheque"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid ""
 "Collection %(name)s recorded: %(amount)s. You now hold %(held)s in %(count)s"
 " collections; hand them in with /rendir."
@@ -256,10 +262,28 @@ msgstr "Facturas"
 #. module: account_collection_telegram
 #. odoo-python
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Location"
+msgstr "Ubicación"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Location received."
+msgstr "Ubicación recibida."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "No customer matching %(query)s owes anything. Try another name."
 msgstr ""
 "Ningún cliente que coincida con %(query)s tiene saldo pendiente. Prueba con "
 "otro nombre."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "No location."
+msgstr "Sin ubicación."
 
 #. module: account_collection_telegram
 #. odoo-python
@@ -282,6 +306,12 @@ msgstr "Forma de pago"
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "Paid on"
 msgstr "Fecha de pago"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Press the button to share your location, or Skip."
+msgstr "Presiona el botón para compartir tu ubicación, u Omitir."
 
 #. module: account_collection_telegram
 #. odoo-python
@@ -316,6 +346,12 @@ msgid ""
 msgstr ""
 "Rendición %(name)s enviada a tesorería para validación. Tus cobros siguen "
 "bajo tu custodia hasta que se valide."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Same day"
+msgstr "El mismo día"
 
 #. module: account_collection_telegram
 #. odoo-python
@@ -370,6 +406,22 @@ msgstr "Envía el importe como número, por ejemplo 1500.50."
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "Send the date as dd/mm/yyyy."
 msgstr "Envía la fecha como dd/mm/aaaa."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Share my location"
+msgstr "Compartir mi ubicación"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Share where you are with the button below, so the collection records where "
+"it was made, or skip it."
+msgstr ""
+"Comparte dónde estás con el botón de abajo, para que el cobro registre dónde"
+" se hizo, u omítelo."
 
 #. module: account_collection_telegram
 #. odoo-python
@@ -460,6 +512,16 @@ msgstr "Hoy"
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "Use the buttons above, please."
 msgstr "Usa los botones de arriba, por favor."
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"What date is written on the check? Press the button if it is the day they "
+"paid you, or send the date as dd/mm/yyyy."
+msgstr ""
+"¿Qué fecha tiene escrita el cheque? Presiona el botón si es el día en que te"
+" pagaron, o envía la fecha como dd/mm/aaaa."
 
 #. module: account_collection_telegram
 #. odoo-python
@@ -570,73 +632,11 @@ msgstr "vencido"
 #. module: account_collection_telegram
 #. odoo-python
 #: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "your receipt"
-msgstr "tu recibo"
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Check date"
-msgstr "Fecha del cheque"
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Same day"
-msgstr "El mismo día"
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid ""
-"What date is written on the check? Press the button if it is the day they "
-"paid you, or send the date as dd/mm/yyyy."
-msgstr ""
-"¿Qué fecha tiene escrita el cheque? Presiona el botón si es el día en que te"
-" pagaron, o envía la fecha como dd/mm/aaaa."
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Location"
-msgstr "Ubicación"
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Location received."
-msgstr "Ubicación recibida."
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "No location."
-msgstr "Sin ubicación."
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Press the button to share your location, or Skip."
-msgstr "Presiona el botón para compartir tu ubicación, u Omitir."
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid "Share my location"
-msgstr "Compartir mi ubicación"
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
-msgid ""
-"Share where you are with the button below, so the collection records where "
-"it was made, or skip it."
-msgstr ""
-"Comparte dónde estás con el botón de abajo, para que el cobro registre dónde"
-" se hizo, u omítelo."
-
-#. module: account_collection_telegram
-#. odoo-python
-#: code:addons/account_collection_telegram/models/telegram_handler.py:0
 msgid "shared"
 msgstr "compartida"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "your receipt"
+msgstr "tu recibo"

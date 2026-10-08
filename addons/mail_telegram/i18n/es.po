@@ -375,6 +375,11 @@ msgid "Log note"
 msgstr "Registrar nota"
 
 #. module: mail_telegram
+#: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__mail_company_id
+msgid "Mail Company"
+msgstr "Compañía del mensaje"
+
+#. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_telegram_message__mail_message_id
 msgid "Mail Message"
 msgstr "Mensaje de correo"
@@ -808,6 +813,13 @@ msgid ""
 msgstr "El bot fue retirado del grupo de Telegram %(title)s: los mensajes ya no le llegan."
 
 #. module: mail_telegram
+#: model:ir.model.fields,help:mail_telegram.field_telegram_message__mail_company_id
+msgid ""
+"The company of the record the notification is about, whose bot carries it."
+msgstr ""
+"La compañía del registro del que trata la notificación, cuyo bot la entrega."
+
+#. module: mail_telegram
 #: model:ir.model.fields,help:mail_telegram.field_telegram_mirror__thread_uid
 msgid ""
 "The forum topic mirrored, empty for the group itself (in a forum, its "
@@ -847,21 +859,14 @@ msgstr ""
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_bot.py:0
-msgid "This bot serves %(companies)s, none of them a company you belong to."
-msgstr "Este bot atiende a %(companies)s, y no perteneces a ninguna de ellas."
-
-#. module: mail_telegram
-#. odoo-python
-#: code:addons/mail_telegram/models/telegram_bot.py:0
 msgid "This Telegram account is not connected to you."
 msgstr "Esta cuenta de Telegram no está conectada a ti."
 
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_bot.py:0
-msgid "This bot speaks for %(company)s, a company you do not belong to."
-msgstr ""
-"Este bot habla en nombre de %(company)s, una empresa a la que no perteneces."
+msgid "This bot serves %(companies)s, none of them a company you belong to."
+msgstr "Este bot atiende a %(companies)s, y no perteneces a ninguna de ellas."
 
 #. module: mail_telegram
 #: model:ir.model.fields,field_description:mail_telegram.field_telegram_mirror__thread_uid
@@ -1088,3 +1093,7 @@ msgstr "📝 Nota interna"
 #: code:addons/mail_telegram/models/telegram_handler_mail.py:0
 msgid "📥 Inbox"
 msgstr "📥 Bandeja"
+
+#~ msgid "This bot speaks for %(company)s, a company you do not belong to."
+#~ msgstr ""
+#~ "Este bot habla en nombre de %(company)s, una empresa a la que no perteneces."

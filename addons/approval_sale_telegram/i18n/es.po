@@ -11,6 +11,23 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Amount: %(amount)s"
+msgstr "Monto: %(amount)s"
+
+#. module: approval_sale_telegram
+#: model:ir.model,name:approval_sale_telegram.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Approval: %(request)s"
+msgstr "Aprobación: %(request)s"
+
+#. module: approval_sale_telegram
 #: model:ir.model.fields,field_description:approval_sale_telegram.field_approval_category__telegram_confirm_user_ids
 msgid "Confirm by Telegram"
 msgstr "Confirman por Telegram"
@@ -18,8 +35,102 @@ msgstr "Confirman por Telegram"
 #. module: approval_sale_telegram
 #. odoo-python
 #: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Confirm the order?"
+msgstr "¿Confirmas la orden?"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid "Could not confirm %(order)s: %(error)s"
+msgstr "No se pudo confirmar %(order)s: %(error)s"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Customer: %(customer)s"
+msgstr "Cliente: %(customer)s"
+
+#. module: approval_sale_telegram
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_sale_order__display_name
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_telegram_handler_sale_confirm__display_name
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_telegram_sale_confirm_notifier__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: approval_sale_telegram
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_sale_order__id
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_telegram_handler_sale_confirm__id
+#: model:ir.model.fields,field_description:approval_sale_telegram.field_telegram_sale_confirm_notifier__id
+msgid "ID"
+msgstr "ID"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order %(order)s could not be confirmed."
+msgstr "No se pudo confirmar la orden %(order)s."
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order %(order)s is no longer a quotation."
+msgstr "La orden %(order)s ya no es una cotización."
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Order: %(order)s"
+msgstr "Orden: %(order)s"
+
+#. module: approval_sale_telegram
+#: model:ir.model,name:approval_sale_telegram.model_sale_order
+msgid "Sale Order"
+msgstr "Orden de venta"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "Salesperson: %(user)s"
+msgstr "Vendedor: %(user)s"
+
+#. module: approval_sale_telegram
+#: model_terms:ir.ui.view,arch_db:approval_sale_telegram.view_approval_category_form_telegram_sale_confirm
+msgid "Telegram"
+msgstr "Telegram"
+
+#. module: approval_sale_telegram
+#: model:ir.model,name:approval_sale_telegram.model_telegram_sale_confirm_notifier
+msgid "Telegram Sale Order Confirmation Notifier"
+msgstr "Notificador de confirmación de órdenes de venta por Telegram"
+
+#. module: approval_sale_telegram
+#: model:ir.model,name:approval_sale_telegram.model_telegram_handler_sale_confirm
+msgid "Telegram: Sale Order Confirmation"
+msgstr "Telegram: confirmación de órdenes de venta"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
 msgid "This bot does not act for %(company)s."
 msgstr "Este bot no actúa para %(company)s."
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid "This order no longer exists."
+msgstr "Esta orden ya no existe."
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
+msgid ""
+"To confirm orders your Odoo account must be linked to this chat. Ask IT to "
+"link your Telegram user."
+msgstr ""
+"Para confirmar órdenes tu cuenta de Odoo debe estar ligada a este chat. Pide "
+"a Sistemas que ligue tu usuario de Telegram."
 
 #. module: approval_sale_telegram
 #: model:ir.model.fields,help:approval_sale_telegram.field_approval_category__telegram_confirm_user_ids
@@ -37,91 +148,31 @@ msgstr ""
 "confirma automáticamente las órdenes aprobadas."
 
 #. module: approval_sale_telegram
-#: model_terms:ir.ui.view,arch_db:approval_sale_telegram.view_approval_category_form_telegram_sale_confirm
-msgid "Telegram"
-msgstr "Telegram"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "📦 Sale order approved, ready to confirm"
-msgstr "📦 Orden de venta aprobada, lista para confirmar"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Order: %(order)s"
-msgstr "Orden: %(order)s"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Customer: %(customer)s"
-msgstr "Cliente: %(customer)s"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Salesperson: %(user)s"
-msgstr "Vendedor: %(user)s"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Amount: %(amount)s"
-msgstr "Monto: %(amount)s"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Approval: %(request)s"
-msgstr "Aprobación: %(request)s"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Confirm the order?"
-msgstr "¿Confirmas la orden?"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "✅ Confirm order"
-msgstr "✅ Confirmar orden"
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "📄 Open in Odoo"
-msgstr "📄 Abrir en Odoo"
-
-#. module: approval_sale_telegram
+#. odoo-python
 #: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
 msgid "You are not set up to confirm this order."
 msgstr "No tienes permiso para confirmar esta orden."
 
 #. module: approval_sale_telegram
+#. odoo-python
 #: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Order %(order)s is no longer a quotation."
-msgstr "La orden %(order)s ya no es una cotización."
+msgid "✅ Confirm order"
+msgstr "✅ Confirmar orden"
 
 #. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
-msgid "Order %(order)s could not be confirmed."
-msgstr "No se pudo confirmar la orden %(order)s."
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
-msgid ""
-"To confirm orders your Odoo account must be linked to this chat. Ask IT to "
-"link your Telegram user."
-msgstr ""
-"Para confirmar órdenes tu cuenta de Odoo debe estar ligada a este chat. Pide "
-"a Sistemas que ligue tu usuario de Telegram."
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
-msgid "This order no longer exists."
-msgstr "Esta orden ya no existe."
-
-#. module: approval_sale_telegram
-#: code:addons/approval_sale_telegram/models/telegram_handler.py:0
-msgid "Could not confirm %(order)s: %(error)s"
-msgstr "No se pudo confirmar %(order)s: %(error)s"
-
-#. module: approval_sale_telegram
+#. odoo-python
 #: code:addons/approval_sale_telegram/models/telegram_handler.py:0
 msgid "✅ You confirmed order %(order)s."
 msgstr "✅ Confirmaste la orden %(order)s."
 
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "📄 Open in Odoo"
+msgstr "📄 Abrir en Odoo"
+
+#. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "📦 Sale order approved, ready to confirm"
+msgstr "📦 Orden de venta aprobada, lista para confirmar"

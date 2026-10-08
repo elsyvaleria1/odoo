@@ -156,6 +156,18 @@ msgstr ""
 "sola categoría."
 
 #. module: approval_account_telegram
+#: model:res.groups,comment:approval_account_telegram.privilege_log_payment_request
+msgid ""
+"A payment or payment-in-kind request filed over Telegram is created by its "
+"sender, who reads no payment log: writing the log row of what the bot filed "
+"is the bot's record, never the sender's own right."
+msgstr ""
+"Una solicitud de pago o de pago en especie presentada por Telegram la crea "
+"su remitente, que no lee ningún registro de pagos: escribir la fila del "
+"registro de lo que presentó el bot es el registro del bot, nunca un derecho "
+"propio del remitente."
+
+#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid ""
@@ -268,21 +280,6 @@ msgid "CFDI use"
 msgstr "Uso CFDI"
 
 #. module: approval_account_telegram
-#: model:ir.model.fields,help:approval_account_telegram.field_telegram_bot__especie_approval_category_id
-msgid "Category for payment-in-kind approval requests created from Telegram."
-msgstr ""
-"Categoría para las solicitudes de aprobación de cobro en especie creadas "
-"desde Telegram."
-
-#. module: approval_account_telegram
-#: model:ir.model.fields,help:approval_account_telegram.field_telegram_bot__payment_approval_category_id
-msgid ""
-"Category to be used for payment approval requests created from Telegram."
-msgstr ""
-"Categoría que se usará para las solicitudes de aprobación de pago creadas "
-"desde Telegram."
-
-#. module: approval_account_telegram
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__chat_id
 msgid "Chat"
 msgstr "Chat"
@@ -340,8 +337,9 @@ msgid "Date"
 msgstr "Fecha"
 
 #. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__display_name
 #: model:ir.model.fields,field_description:approval_account_telegram.field_approval_request__display_name
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_approval_notifier__display_name
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_handler_approval_account__display_name
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__display_name
 #: model:ir.model.fields,field_description:approval_account_telegram.field_wizard_account_bank_statement_line_start_automation__display_name
@@ -436,25 +434,6 @@ msgstr ""
 #. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
-msgid "Error: the bot has no category configured for payment approvals."
-msgstr ""
-"Error: El bot no tiene configurada una categoría para aprobaciones de pago."
-
-#. module: approval_account_telegram
-#. odoo-python
-#: code:addons/approval_account_telegram/models/telegram_handler.py:0
-msgid "Error: the bot has no category configured for payments in kind."
-msgstr ""
-"Error: El bot no tiene configurada una categoría para cobro en especie."
-
-#. module: approval_account_telegram
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__especie_approval_category_id
-msgid "Especie Approval Category"
-msgstr "Categoría de aprobación de cobro en especie"
-
-#. module: approval_account_telegram
-#. odoo-python
-#: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid "Evidence"
 msgstr "Evidencia"
 
@@ -464,18 +443,9 @@ msgid "Formatted payment details for display"
 msgstr "Detalles del pago con formato para mostrar"
 
 #. module: approval_account_telegram
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__has_especie_command
-msgid "Has Especie Command"
-msgstr "Tiene el comando /especie"
-
-#. module: approval_account_telegram
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__has_pago_command
-msgid "Has Pago Command"
-msgstr "Tiene el comando /pago"
-
-#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__id
 #: model:ir.model.fields,field_description:approval_account_telegram.field_approval_request__id
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_approval_notifier__id
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_handler_approval_account__id
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__id
 #: model:ir.model.fields,field_description:approval_account_telegram.field_wizard_account_bank_statement_line_start_automation__id
@@ -593,11 +563,6 @@ msgid "Pay Approval Bot Reports"
 msgstr "Reportes del bot de aprobación de pagos"
 
 #. module: approval_account_telegram
-#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_bot__payment_approval_category_id
-msgid "Payment Approval Category"
-msgstr "Categoría de aprobación de pagos"
-
-#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid "Payment Commands"
@@ -708,6 +673,20 @@ msgstr ""
 "Puedes usar /cancelar en cualquier momento para detener esta operación."
 
 #. module: approval_account_telegram
+#: model:res.groups,name:approval_account_telegram.privilege_start_approved_workflow
+msgid "Privilege: an approved payment starts the workflow its category names"
+msgstr ""
+"Privilegio: un pago aprobado inicia el flujo de trabajo que nombra su "
+"categoría"
+
+#. module: approval_account_telegram
+#: model:res.groups,name:approval_account_telegram.privilege_log_payment_request
+msgid "Privilege: the bot logs the payment request it filed for its sender"
+msgstr ""
+"Privilegio: el bot registra la solicitud de pago que presentó por su "
+"remitente"
+
+#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 msgid "Product category"
@@ -775,27 +754,14 @@ msgid "Status"
 msgstr "Estado"
 
 #. module: approval_account_telegram
-#: model:ir.model.fields,help:approval_account_telegram.field_telegram_bot__has_especie_command
-msgid ""
-"Technical field to check if the /especie command is enabled for this bot."
-msgstr ""
-"Campo técnico para saber si el comando /especie está habilitado en este bot."
-
-#. module: approval_account_telegram
-#: model:ir.model.fields,help:approval_account_telegram.field_telegram_bot__has_pago_command
-msgid "Technical field to check if the /pago command is enabled for this bot."
-msgstr ""
-"Campo técnico para saber si el comando /pago está habilitado en este bot."
-
-#. module: approval_account_telegram
 #: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_approval_category_form_telegram_intake
 msgid "Telegram"
 msgstr "Telegram"
 
 #. module: approval_account_telegram
-#: model:ir.model,name:approval_account_telegram.model_telegram_bot
-msgid "Telegram Bot Configuration"
-msgstr "Configuración del bot de Telegram"
+#: model:ir.model,name:approval_account_telegram.model_telegram_approval_notifier
+msgid "Telegram Approval Notifier"
+msgstr "Notificador de aprobaciones de Telegram"
 
 #. module: approval_account_telegram
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__telegram_chat_id
@@ -828,6 +794,17 @@ msgid "The Telegram chat ID where the payment was registered"
 msgstr "ID del chat de Telegram donde se registró el pago"
 
 #. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_approval_category__telegram_intake
+msgid ""
+"The Telegram command whose requests are filed in this category. A company "
+"has one category per command; one without a company takes the requests of "
+"every company that has none of its own."
+msgstr ""
+"El comando de Telegram cuyas solicitudes se registran en esta categoría. Una"
+" compañía tiene una categoría por comando; una sin compañía recibe las "
+"solicitudes de cada compañía que no tenga la suya."
+
+#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 #, python-format
@@ -842,11 +819,35 @@ msgid "The amount '%(value)s' must be greater than zero."
 msgstr "El monto '%(value)s' debe ser mayor que cero."
 
 #. module: approval_account_telegram
+#: model:res.groups,comment:approval_account_telegram.privilege_start_approved_workflow
+msgid ""
+"The approver who gives the last approval of a payment request starts the "
+"automation workflow of its category: creating the run, its steps and their "
+"links, and reading the rule and the server actions those steps copy; reading"
+" the bank statement line the request claims and naming the request's partner"
+" on it, its entry and their items. The approver holds no right on "
+"automations or on the bank statement of their own."
+msgstr ""
+"El aprobador que da la última aprobación de una solicitud de pago inicia el "
+"flujo de automatización de su categoría: crea la ejecución, sus pasos y sus "
+"vínculos, y lee la regla y las acciones de servidor que esos pasos copian; "
+"lee la línea de extracto bancario que la solicitud reclama y nombra en ella "
+"al contacto de la solicitud, en su asiento y en sus apuntes. El aprobador no"
+" tiene por sí mismo ningún derecho sobre las automatizaciones ni sobre el "
+"extracto bancario."
+
+#. module: approval_account_telegram
 #. odoo-python
 #: code:addons/approval_account_telegram/models/telegram_handler.py:0
 #, python-format
 msgid "The date format is wrong ('%(value)s'). Use AAAA-MM-DD."
 msgstr "El formato de fecha es incorrecto ('%(value)s'). Usa AAAA-MM-DD."
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The file is larger than 20 MB. Send a smaller photo or PDF."
+msgstr "El archivo pesa más de 20 MB. Envía una foto o un PDF más pequeño."
 
 #. module: approval_account_telegram
 #. odoo-python
@@ -868,17 +869,6 @@ msgid "The product reference cannot be empty."
 msgstr "La referencia de producto no puede estar vacía."
 
 #. module: approval_account_telegram
-#: model:ir.model.fields,help:approval_account_telegram.field_approval_category__telegram_intake
-msgid ""
-"The Telegram command whose requests are filed in this category. A company "
-"has one category per command; one without a company takes the requests of "
-"every company that has none of its own."
-msgstr ""
-"El comando de Telegram cuyas solicitudes se registran en esta categoría. Una"
-" compañía tiene una categoría por comando; una sin compañía recibe las "
-"solicitudes de cada compañía que no tenga la suya."
-
-#. module: approval_account_telegram
 #: model_terms:ir.actions.act_window,help:approval_account_telegram.action_telegram_payment_report_log
 msgid ""
 "This view shows all payment approval requests created via the Telegram Pay "
@@ -886,6 +876,16 @@ msgid ""
 msgstr ""
 "Esta vista muestra todas las solicitudes de aprobación de pago creadas con "
 "el bot de aprobación de pagos de Telegram."
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/services/approval_notifier.py:0
+msgid ""
+"To approve it, link the bank transaction that shows the payment, in Odoo: it"
+" cannot be approved from here without it."
+msgstr ""
+"Para aprobarla, vincula en Odoo el movimiento bancario que muestra el pago: "
+"sin él no puede aprobarse desde aquí."
 
 #. module: approval_account_telegram
 #: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__user_id
@@ -940,67 +940,45 @@ msgstr "un cobro en especie"
 msgid "a payment record"
 msgstr "un registro de pago"
 
-#. module: approval_account_telegram
-#: model:res.groups,comment:approval_account_telegram.privilege_log_payment_request
-msgid ""
-"A payment or payment-in-kind request filed over Telegram is created by its "
-"sender, who reads no payment log: writing the log row of what the bot filed "
-"is the bot's record, never the sender's own right."
-msgstr ""
-"Una solicitud de pago o de pago en especie presentada por Telegram la crea "
-"su remitente, que no lee ningún registro de pagos: escribir la fila del "
-"registro de lo que presentó el bot es el registro del bot, nunca un derecho "
-"propio del remitente."
+#~ msgid "Category for payment-in-kind approval requests created from Telegram."
+#~ msgstr ""
+#~ "Categoría para las solicitudes de aprobación de cobro en especie creadas "
+#~ "desde Telegram."
 
-#. module: approval_account_telegram
-#: model:res.groups,name:approval_account_telegram.privilege_start_approved_workflow
-msgid "Privilege: an approved payment starts the workflow its category names"
-msgstr ""
-"Privilegio: un pago aprobado inicia el flujo de trabajo que nombra su "
-"categoría"
+#~ msgid ""
+#~ "Category to be used for payment approval requests created from Telegram."
+#~ msgstr ""
+#~ "Categoría que se usará para las solicitudes de aprobación de pago creadas "
+#~ "desde Telegram."
 
-#. module: approval_account_telegram
-#: model:res.groups,name:approval_account_telegram.privilege_log_payment_request
-msgid "Privilege: the bot logs the payment request it filed for its sender"
-msgstr ""
-"Privilegio: el bot registra la solicitud de pago que presentó por su "
-"remitente"
+#~ msgid "Error: the bot has no category configured for payment approvals."
+#~ msgstr ""
+#~ "Error: El bot no tiene configurada una categoría para aprobaciones de pago."
 
-#. module: approval_account_telegram
-#: model:ir.model,name:approval_account_telegram.model_telegram_approval_notifier
-msgid "Telegram Approval Notifier"
-msgstr "Notificador de aprobaciones de Telegram"
+#~ msgid "Error: the bot has no category configured for payments in kind."
+#~ msgstr ""
+#~ "Error: El bot no tiene configurada una categoría para cobro en especie."
 
-#. module: approval_account_telegram
-#: model:res.groups,comment:approval_account_telegram.privilege_start_approved_workflow
-msgid ""
-"The approver who gives the last approval of a payment request starts the "
-"automation workflow of its category: creating the run, its steps and their "
-"links, and reading the rule and the server actions those steps copy; reading"
-" the bank statement line the request claims and naming the request's partner"
-" on it, its entry and their items. The approver holds no right on "
-"automations or on the bank statement of their own."
-msgstr ""
-"El aprobador que da la última aprobación de una solicitud de pago inicia el "
-"flujo de automatización de su categoría: crea la ejecución, sus pasos y sus "
-"vínculos, y lee la regla y las acciones de servidor que esos pasos copian; "
-"lee la línea de extracto bancario que la solicitud reclama y nombra en ella "
-"al contacto de la solicitud, en su asiento y en sus apuntes. El aprobador no"
-" tiene por sí mismo ningún derecho sobre las automatizaciones ni sobre el "
-"extracto bancario."
+#~ msgid "Especie Approval Category"
+#~ msgstr "Categoría de aprobación de cobro en especie"
 
-#. module: approval_account_telegram
-#. odoo-python
-#: code:addons/approval_account_telegram/models/telegram_handler.py:0
-msgid "The file is larger than 20 MB. Send a smaller photo or PDF."
-msgstr "El archivo pesa más de 20 MB. Envía una foto o un PDF más pequeño."
+#~ msgid "Has Especie Command"
+#~ msgstr "Tiene el comando /especie"
 
-#. module: approval_account_telegram
-#. odoo-python
-#: code:addons/approval_account_telegram/services/approval_notifier.py:0
-msgid ""
-"To approve it, link the bank transaction that shows the payment, in Odoo: it"
-" cannot be approved from here without it."
-msgstr ""
-"Para aprobarla, vincula en Odoo el movimiento bancario que muestra el pago: "
-"sin él no puede aprobarse desde aquí."
+#~ msgid "Has Pago Command"
+#~ msgstr "Tiene el comando /pago"
+
+#~ msgid "Payment Approval Category"
+#~ msgstr "Categoría de aprobación de pagos"
+
+#~ msgid ""
+#~ "Technical field to check if the /especie command is enabled for this bot."
+#~ msgstr ""
+#~ "Campo técnico para saber si el comando /especie está habilitado en este bot."
+
+#~ msgid "Technical field to check if the /pago command is enabled for this bot."
+#~ msgstr ""
+#~ "Campo técnico para saber si el comando /pago está habilitado en este bot."
+
+#~ msgid "Telegram Bot Configuration"
+#~ msgstr "Configuración del bot de Telegram"
