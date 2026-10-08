@@ -169,8 +169,9 @@ elevation, a write and a guard. The enterprise and agromarin floors are read
 only where those repositories are on the addons path (`lint_full_scope.sh`).
 
 One database-free pytest suite, `tests/transport` (the HTTP/1.1 parser, the
-threaded server and the prefork worker over real sockets; each test must give
-back every thread and descriptor it took), and four real-dependency suites run
+threaded server and the prefork worker over real sockets, and a seeded fuzz
+that differs against h11 outside a named allowlist; each test must give back
+every thread and descriptor it took), and four real-dependency suites run
 only when named: `tests/contract` (`ODOO_CONTRACT_REQUIRE_DEPS=1`; PostgreSQL + psql +
 pg_dump), `tests/process` (boots real `odoo-bin` processes), `tests/loading`
 (installs `base` into a scratch database; pins the loader phase order, the

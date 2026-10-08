@@ -13,6 +13,7 @@
 
 aiosmtpd==1.4.6
 freezegun==1.5.5
+h11==0.16.0  # tests/transport: the reference HTTP/1.1 parser the fuzz differs against
 Jinja2==3.1.6
 jsonschema==4.26.0  # rpc: the OpenAPI document's schemas are JSON Schema 2020-12
 pytest==9.1.1
