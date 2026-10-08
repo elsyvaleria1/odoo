@@ -20,17 +20,30 @@ class PosProcessedOperation(models.Model):
     _log_access = False
     _access_anchors = frozendict({"company": ""})
 
-    operation_uuid = fields.Char(required=True, readonly=True)
+    operation_uuid = fields.Char(
+        readonly=True,
+        required=True,
+    )
     user_id = fields.Many2one(
         comodel_name="res.users",
-        required=True,
         readonly=True,
+        required=True,
         ondelete="cascade",
     )
-    res_model = fields.Char(required=True, readonly=True)
-    method = fields.Char(required=True, readonly=True)
+    res_model = fields.Char(
+        readonly=True,
+        required=True,
+    )
+    method = fields.Char(
+        readonly=True,
+        required=True,
+    )
     result = fields.Json(readonly=True)
-    processed_at = fields.Datetime(required=True, readonly=True, index=True)
+    processed_at = fields.Datetime(
+        index=True,
+        readonly=True,
+        required=True,
+    )
 
     _operation_uuid_unique = models.Constraint(
         "unique (operation_uuid)", "An operation with this uuid was already processed"

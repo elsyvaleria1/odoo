@@ -182,8 +182,8 @@ class PosOrderLine(models.Model):
     combo_qty_per_parent = fields.Float(
         string="Quantity per Combo",
         compute="_compute_combo_qty_per_parent",
-        store=True,
         precompute=True,
+        store=True,
         help="Quantity of this combo item in one combo; kept while the combo is at zero.",
     )
 
