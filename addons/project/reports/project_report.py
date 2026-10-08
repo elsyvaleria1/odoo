@@ -194,7 +194,7 @@ class ReportProjectTaskUser(models.Model):
     message_is_follower = fields.Boolean(related="task_id.message_is_follower")
     successor_ids = fields.Many2many(
         comodel_name="project.task",
-        relation="project_task_dependency_rel",
+        relation="project_task_dependency",
         column1="depends_on_id",
         column2="task_id",
         string="Block",

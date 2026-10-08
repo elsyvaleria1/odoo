@@ -38,9 +38,9 @@ class ProjectTaskRecurrence(models.Model):
     def _compute_company_id(self) -> None:
         for recurrence in self:
             companies = recurrence.task_ids.company_id
-            if len(companies) > 1:
-                companies = companies.root_id
-            recurrence.company_id = companies if len(companies) <= 1 else False
+            recurrence.company_id = (
+                companies.root_id if len(companies) > 1 else companies
+            )
 
     @api.constrains("repeat_type", "repeat_until")
     def _check_repeat_until_date(self) -> None:

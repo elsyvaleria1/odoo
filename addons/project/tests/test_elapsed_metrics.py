@@ -22,16 +22,17 @@ class TestElapsedWithoutCalendar(TestProjectCommon):
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE project_task SET create_date = %s, date_assign = %s, "
-            "date_closed = %s WHERE id = %s",
+            "date_first_assign = %s, date_closed = %s WHERE id = %s",
             (
                 "2026-08-03 08:00:00",
+                "2026-08-03 12:00:00",
                 "2026-08-03 12:00:00",
                 "2026-08-04 08:00:00",
                 task.id,
             ),
         )
         self.env.invalidate_all()
-        task.modified(["create_date", "date_assign", "date_closed"])
+        task.modified(["create_date", "date_first_assign", "date_closed"])
         self.env.flush_all()
 
         self.assertEqual(task.lead_time_hours, 24.0)

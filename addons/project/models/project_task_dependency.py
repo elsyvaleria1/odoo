@@ -1,10 +1,16 @@
-from collections import defaultdict
+from datetime import datetime, timedelta
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
-from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, frozendict
+from odoo.tools import frozendict
+
+from .project_task import (
+    CLOSED_STATES,
+    FINISH_ANCHORED_TYPES,
+    START_CONSTRAINED_TYPES,
+    UNSTARTED_STATES,
+)
 
 _debug = DebugLog(__name__)
 
@@ -42,15 +48,21 @@ class ProjectTaskDependency(models.Model):
         string="Type",
         default="fs",
         required=True,
-        help="FS: B waits for A to finish (default). "
-        "SS: B waits for A to start. "
-        "FF: B cannot finish until A finishes. "
-        "SF: B cannot finish until A starts.",
+        help="FS: B cannot start until A is closed, nor be planned to start before "
+        "A ends. "
+        "SS: B cannot start until A has started, nor be planned to start before A "
+        "starts. "
+        "FF: B cannot be done until A is closed, nor be planned to end before A "
+        "ends. "
+        "SF: B cannot be done until A has started, nor be planned to end before A "
+        "starts.",
     )
     lag_hours = fields.Float(
         string="Lag (hours)",
         default=0.0,
-        help="Delay after the dependency condition is met. Negative = lead time.",
+        required=True,
+        help="Calendar hours added to the predecessor date the dependency reads. "
+        "Negative = lead time.",
     )
     project_id = fields.Many2one(
         related="task_id.project_id",
@@ -75,38 +87,46 @@ class ProjectTaskDependency(models.Model):
                 f"({type_labels.get(dep.dependency_type, 'FS')})"
             )
 
-    @_debug.perf.timed
     @api.constrains("task_id", "depends_on_id")
     def _check_no_cyclic_dependencies(self) -> None:
-        self.flush_model(["task_id", "depends_on_id"])
-        starts = [dep.task_id.id for dep in self]
-        targets = [dep.depends_on_id.id for dep in self]
-        if not starts:
-            return
-        self.env.cr.execute(
-            """
-            WITH RECURSIVE reachable(source, id) AS (
-                    SELECT d.depends_on_id, d.task_id
-                      FROM project_task_dependency d
-                     WHERE d.depends_on_id = ANY(%(starts)s)
-                 UNION
-                    SELECT r.source, d.task_id
-                      FROM project_task_dependency d
-                      JOIN reachable r ON d.depends_on_id = r.id
-            )
-            SELECT 1
-              FROM reachable r
-              JOIN unnest(%(starts)s::integer[], %(targets)s::integer[])
-                     AS edge(start_id, target_id)
-                ON r.source = edge.start_id AND r.id = edge.target_id
-             LIMIT 1
-            """,
-            {"starts": starts, "targets": targets},
+        self.flush_recordset(["task_id", "depends_on_id"])
+        self.task_id._check_no_cyclic_dependencies()
+
+    def _is_start_blocking(self) -> bool:
+        self.check_singleton()
+        state = self.depends_on_id.state
+        if self.dependency_type == "fs":
+            return state not in CLOSED_STATES
+        if self.dependency_type == "ss":
+            return state in UNSTARTED_STATES
+        return False
+
+    def _is_finish_blocking(self) -> bool:
+        self.check_singleton()
+        state = self.depends_on_id.state
+        if self.dependency_type == "ff":
+            return state not in CLOSED_STATES
+        if self.dependency_type == "sf":
+            return state in UNSTARTED_STATES
+        return False
+
+    def _get_constrained_date_field(self) -> str:
+        self.check_singleton()
+        if self.dependency_type in START_CONSTRAINED_TYPES:
+            return "date_start"
+        return "date_end"
+
+    def _get_date_bound(self) -> datetime | None:
+        self.check_singleton()
+        predecessor = self.depends_on_id
+        anchor = (
+            predecessor.date_end
+            if self.dependency_type in FINISH_ANCHORED_TYPES
+            else predecessor.date_start
         )
-        if self.env.cr.fetchone():
-            raise ValidationError(
-                self.env._("Adding this dependency would create a circular reference.")
-            )
+        if not anchor:
+            return None
+        return anchor + timedelta(hours=self.lag_hours)
 
     @_debug.perf.timed
     @api.model_create_multi
@@ -118,75 +138,33 @@ class ProjectTaskDependency(models.Model):
                 keys=sorted({k for vals in vals_list for k in vals}),
             )
         records = super().create(vals_list)
-        _debug.pipeline("m2m_sync_requested", dependencies=records)
-        records._sync_to_m2m()
+        records.task_id._invalidate_dependency_links(records.depends_on_id)
         return records
 
     @_debug.perf.timed
     def write(self, vals: dict) -> bool:
         remap = "task_id" in vals or "depends_on_id" in vals
         _debug.lifecycle("write", dependencies=self, keys=sorted(vals), remap=remap)
-        old_pairs = [(dep.task_id, dep.depends_on_id) for dep in self] if remap else []
+        if not remap:
+            return super().write(vals)
+        old_tasks, old_predecessors = self.task_id, self.depends_on_id
         res = super().write(vals)
-        if remap:
-            for (old_task, old_pred), dep in zip(old_pairs, self, strict=True):
-                if dep.task_id == old_task and dep.depends_on_id == old_pred:
-                    continue
-                _debug.logic(
-                    "dependency_remapped",
-                    dependency=dep,
-                    old_task=old_task.id,
-                    old_predecessor=old_pred.id,
-                    task=dep.task_id.id,
-                    predecessor=dep.depends_on_id.id,
-                )
-                if old_pred in old_task.predecessor_ids:
-                    old_task.with_context(skip_dependency_sync=True).write(
-                        {"predecessor_ids": [fields.Command.unlink(old_pred.id)]}
-                    )
-                dep._sync_to_m2m()
+        self.flush_recordset(["task_id", "depends_on_id"])
+        _debug.logic(
+            "dependency_remapped",
+            dependencies=self,
+            tasks=self.task_id,
+            predecessors=self.depends_on_id,
+        )
+        (old_tasks | self.task_id)._invalidate_dependency_links(
+            old_predecessors | self.depends_on_id
+        )
         return res
 
     @_debug.perf.timed
     def unlink(self) -> bool:
-        preds_by_task = defaultdict(lambda: self.env["project.task"])
-        for dep in self:
-            preds_by_task[dep.task_id] |= dep.depends_on_id
-        _debug.lifecycle("unlink", dependencies=self, tasks=len(preds_by_task))
-        for task, preds in preds_by_task.items():
-            task.with_context(skip_dependency_sync=True).write(
-                {"predecessor_ids": [fields.Command.unlink(p.id) for p in preds]}
-            )
-        return super().unlink()
-
-    def _sync_to_m2m(self) -> None:
-        new_pairs = set()
-        for dep in self:
-            if dep.depends_on_id not in dep.task_id.predecessor_ids:
-                new_pairs.add((dep.task_id.id, dep.depends_on_id.id))
-        _debug.logic("m2m_pairs_missing", dependencies=self, pairs=len(new_pairs))
-        if not new_pairs:
-            return
-
-        Task = self.env["project.task"]
-        field = Task._fields["predecessor_ids"]
-        pairs = sorted(new_pairs)
-        self.env.cr.execute(
-            SQL(
-                "INSERT INTO %s (%s, %s) "
-                "SELECT * FROM unnest(%s::integer[], %s::integer[]) "
-                "ON CONFLICT DO NOTHING",
-                SQL.identifier(field.relation),
-                SQL.identifier(field.column1),
-                SQL.identifier(field.column2),
-                [task_id for task_id, _pred in pairs],
-                [pred for _task, pred in pairs],
-            )
-        )
-        tasks = Task.browse({task_id for task_id, _pred in new_pairs})
-        predecessors = Task.browse({pred for _task, pred in new_pairs})
-        tasks.invalidate_recordset(["predecessor_ids"])
-        (tasks | predecessors).invalidate_recordset(["successor_ids"])
-        tasks.modified(["predecessor_ids"])
-        predecessors.modified(["successor_ids"])
-        tasks._check_no_cyclic_dependencies()
+        tasks, predecessors = self.task_id, self.depends_on_id
+        _debug.lifecycle("unlink", dependencies=self, tasks=tasks)
+        res = super().unlink()
+        tasks._invalidate_dependency_links(predecessors)
+        return res

@@ -41,7 +41,7 @@ class TestFsmTaskAnalysis(TestIndustryFsmCommon):
         self.task.write(
             {
                 "date_closed": datetime.today() + relativedelta(months=1),
-                "date_assign": datetime.today() + relativedelta(months=2, days=3),
+                "date_first_assign": datetime.today() + relativedelta(months=2, days=3),
             }
         )
 

@@ -1090,6 +1090,19 @@
                                 <field name="is_overallocated" optional="hide" />
                             </list>
                         </field>
+                        <field
+                            name="dependency_ids"
+                            groups="project.group_project_user"
+                            invisible="not dependency_ids">
+                            <list editable="bottom" create="0" delete="0">
+                                <field
+                                    name="depends_on_id"
+                                    string="Predecessor"
+                                    readonly="1" />
+                                <field name="dependency_type" />
+                                <field name="lag_hours" widget="float_time" />
+                            </list>
+                        </field>
                     </page>
                     <page
                         name="extra_info"

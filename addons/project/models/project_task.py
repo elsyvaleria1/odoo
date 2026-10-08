@@ -117,6 +117,12 @@ DELIVERED_STATES = ("done",)
 
 STATES_RESET_ON_STEP_CHANGE = ("approved", "changes_requested")
 
+UNSTARTED_STATES = ("todo", "blocked")
+
+START_CONSTRAINED_TYPES = ("fs", "ss")
+
+FINISH_ANCHORED_TYPES = ("fs", "ff")
+
 
 class ProjectTask(models.Model):
     _name = "project.task"
@@ -276,6 +282,10 @@ class ProjectTask(models.Model):
         copy=False,
         readonly=False,
     )
+    partner_phones_editable = fields.Boolean(
+        export_string_translation=False,
+        compute="_compute_partner_phones_editable",
+    )
     name = fields.Char(
         string="Title",
         index="trigram",
@@ -318,7 +328,17 @@ class ProjectTask(models.Model):
         string="Assigning Date",
         copy=False,
         readonly=True,
-        help="Date on which this task was last assigned (or unassigned). Based on this, you can get statistics on the time it usually takes to assign tasks.",
+        help="When the task went from no assignee to some; cleared when its last "
+        "assignee is removed and stamped again on the next assignment.",
+    )
+    date_first_assign = fields.Datetime(
+        string="First Assigning Date",
+        compute="_compute_date_first_assign",
+        store=True,
+        copy=False,
+        readonly=True,
+        help="When the task first got an assignee. Written once, never cleared: "
+        "queue and cycle time are measured from it.",
     )
     date_start = fields.Datetime(
         string="Start date",
@@ -609,7 +629,7 @@ class ProjectTask(models.Model):
     )
     predecessor_ids = fields.Many2many(
         comodel_name="project.task",
-        relation="project_task_dependency_rel",
+        relation="project_task_dependency",
         column1="task_id",
         column2="depends_on_id",
         string="Blocked By",
@@ -629,7 +649,7 @@ class ProjectTask(models.Model):
     )
     successor_ids = fields.Many2many(
         comodel_name="project.task",
-        relation="project_task_dependency_rel",
+        relation="project_task_dependency",
         column1="depends_on_id",
         column2="task_id",
         string="Block",
@@ -1000,7 +1020,7 @@ class ProjectTask(models.Model):
             ):
                 task.display_in_project = False
 
-    @api.depends("predecessor_ids.state", "step_id")
+    @api.depends("predecessor_ids.state", "dependency_ids.dependency_type", "step_id")
     def _compute_state(self) -> None:
         for task in self:
             previous = task.state
@@ -1030,6 +1050,16 @@ class ProjectTask(models.Model):
     def _compute_is_closed(self) -> None:
         for task in self:
             task.is_closed = task.state in CLOSED_STATES
+
+    @api.depends("user_ids", "date_assign")
+    def _compute_date_first_assign(self) -> None:
+        now = fields.Datetime.now()
+        for task in self:
+            if task.user_ids and not task.date_first_assign:
+                # an assignee given by default at create stamps no date_assign
+                task.date_first_assign = task.date_assign or task.create_date or now
+            else:
+                task.date_first_assign = task.date_first_assign
 
     @api.depends("state")
     def _compute_date_closed(self) -> None:
@@ -1074,9 +1104,46 @@ class ProjectTask(models.Model):
 
     def is_blocked_by_predecessors(self) -> bool:
         return any(
-            blocking_task.state not in CLOSED_STATES
-            for blocking_task in self.predecessor_ids
+            dependency._is_start_blocking()
+            for dependency in self._get_predecessor_dependencies()
         )
+
+    def _get_predecessor_dependencies(self):
+        # one row per linked predecessor; a link made in a form and not saved
+        # yet has no row, and reads as the finish-to-start default
+        self.check_singleton()
+        Dependency = self.env["project.task.dependency"]
+        rows = {dep.depends_on_id._origin: dep for dep in self.dependency_ids}
+        return Dependency.union(
+            *(
+                rows.get(predecessor._origin)
+                or Dependency.new({"depends_on_id": predecessor._origin.id})
+                for predecessor in self.predecessor_ids
+            )
+        )
+
+    @api.constrains("state")
+    def _check_finish_dependencies(self) -> None:
+        for task in self:
+            if task.state not in DELIVERED_STATES or not task.allow_dependencies:
+                continue
+            blocking = task._get_predecessor_dependencies().filtered(
+                lambda dep: dep._is_finish_blocking()
+            )
+            if blocking:
+                _debug.logic(
+                    "finish_refused", task=task, predecessors=blocking.depends_on_id
+                )
+                raise ValidationError(
+                    self.env._(
+                        "%(task)s cannot be done before these tasks finish (or "
+                        "start, for start-to-finish): %(tasks)s",
+                        task=task.display_name,
+                        tasks=format_list(
+                            self.env, blocking.depends_on_id.mapped("display_name")
+                        ),
+                    )
+                )
 
     def _update_state_from_predecessors(self) -> None:
         blocked = self.sudo().filtered(
@@ -1306,38 +1373,18 @@ class ProjectTask(models.Model):
         if self._has_cycle("predecessor_ids"):
             raise ValidationError(self.env._("Two tasks cannot depend on each other."))
 
-    @_debug.perf.timed
-    def _sync_dependency_rows(self) -> None:
-        Dependency = self.env["project.task.dependency"].sudo()
-        existing_per_task = defaultdict(dict)
-        for dependency in Dependency.search([("task_id", "in", self.ids)]):
-            existing_per_task[dependency.task_id.id][dependency.depends_on_id.id] = (
-                dependency
-            )
+    def _invalidate_dependency_links(self, predecessors: Self) -> None:
+        # project.task.dependency is the table both many2many read: a row
+        # written through the model leaves their cache behind
+        self.invalidate_recordset(["predecessor_ids"])
+        predecessors.invalidate_recordset(["successor_ids"])
+        self.modified(["predecessor_ids"])
+        predecessors.modified(["successor_ids"])
 
-        vals_list = []
-        stale = Dependency
-        for task in self:
-            wanted = set(task.predecessor_ids.ids)
-            current = existing_per_task.get(task.id, {})
-            vals_list += [
-                {"task_id": task.id, "depends_on_id": predecessor_id}
-                for predecessor_id in wanted - current.keys()
-            ]
-            stale = stale.union(
-                *(current[predecessor_id] for predecessor_id in current.keys() - wanted)
-            )
-
-        _debug.pipeline(
-            "dependency_rows_synced",
-            tasks=self,
-            to_create=len(vals_list),
-            stale=len(stale),
-        )
-        if stale:
-            stale.with_context(skip_dependency_sync=True).unlink()
-        if vals_list:
-            Dependency.create(vals_list)
+    def _invalidate_dependency_rows(self) -> None:
+        # and a link written through either many2many leaves the rows' cache
+        self.env["project.task.dependency"].invalidate_model()
+        self.invalidate_model(["dependency_ids", "dependent_on_me_ids"])
 
     @api.model
     def _get_fields_recurrence(self) -> list[str]:
@@ -1450,7 +1497,7 @@ class ProjectTask(models.Model):
     @api.depends(
         "create_date",
         "date_closed",
-        "date_assign",
+        "date_first_assign",
         "project_id.resource_calendar_id",
     )
     def _compute_elapsed(self) -> None:
@@ -1485,7 +1532,11 @@ class ProjectTask(models.Model):
             bounds = [
                 value
                 for task in tasks
-                for value in (task.create_date, task.date_assign, task.date_closed)
+                for value in (
+                    task.create_date,
+                    task.date_first_assign,
+                    task.date_closed,
+                )
                 if value
             ]
             with _debug.perf(
@@ -1516,9 +1567,9 @@ class ProjectTask(models.Model):
             return elapsed.total_seconds() / 3600, elapsed.days
 
         return {
-            "queue": get_span_hours_and_days(self.create_date, self.date_assign),
+            "queue": get_span_hours_and_days(self.create_date, self.date_first_assign),
             "lead": get_span_hours_and_days(self.create_date, self.date_closed),
-            "cycle": get_span_hours_and_days(self.date_assign, self.date_closed),
+            "cycle": get_span_hours_and_days(self.date_first_assign, self.date_closed),
         }
 
     def _get_elapsed_spans_calendar(
@@ -1542,9 +1593,9 @@ class ProjectTask(models.Model):
             return data["hours"], data["days"]
 
         return {
-            "queue": get_span_hours_and_days(self.create_date, self.date_assign),
+            "queue": get_span_hours_and_days(self.create_date, self.date_first_assign),
             "lead": get_span_hours_and_days(self.create_date, self.date_closed),
-            "cycle": get_span_hours_and_days(self.date_assign, self.date_closed),
+            "cycle": get_span_hours_and_days(self.date_first_assign, self.date_closed),
         }
 
     def _update_elapsed_times(
@@ -1593,6 +1644,9 @@ class ProjectTask(models.Model):
         "date_start",
         "date_end",
         "company_id.resource_calendar_id",
+        "project_id.company_id.resource_calendar_id",
+        "user_ids.company_id.resource_calendar_id",
+        "create_uid.company_id.resource_calendar_id",
     )
     def _compute_scheduled_hours(self) -> None:
         fixed_per_calendar = defaultdict(self.browse)
@@ -1634,6 +1688,26 @@ class ProjectTask(models.Model):
                     task.scheduled_hours = round(
                         get_intervals_hours(work_intervals & task_interval), 2
                     )
+
+    def _scheduling_resolve_calendar(self):
+        # never the company of whoever triggers the recompute: a task with no
+        # company of its own reads its assignees' one company, else its
+        # creator's; a company without a calendar counts elapsed hours
+        self.check_singleton()
+        company = self.company_id or self.project_id.company_id
+        if not company:
+            companies = self.user_ids.company_id
+            if len(companies) == 1:
+                company = companies
+            else:
+                company = (self.create_uid or self.env.user).company_id
+        _debug.logic(
+            "scheduling_calendar_resolved",
+            task=self,
+            company=company.id,
+            calendar=company.resource_calendar_id.id,
+        )
+        return company.resource_calendar_id
 
     def _split_scheduling_windows(
         self, max_gap=timedelta(days=7), max_span=timedelta(days=366)
@@ -1763,6 +1837,15 @@ class ProjectTask(models.Model):
     def _compute_phone_ids(self) -> None:
         for task in self:
             task.phone_ids = task.partner_id.phone_ids
+
+    @api.depends_context("uid")
+    @api.depends("partner_id")
+    def _compute_partner_phones_editable(self) -> None:
+        writable = self.partner_id._filtered_access("write")
+        for task in self:
+            task.partner_phones_editable = (
+                not task.partner_id or task.partner_id in writable
+            )
 
     def _inverse_phone_ids(self) -> None:
         for task in self.filtered("partner_id"):
@@ -2111,11 +2194,14 @@ class ProjectTask(models.Model):
     def _portal_verify_parent_hash(
         self, signature: str, pid: int, token: str | None = None
     ) -> bool:
-        # a project's link, and the hash signed over it, reach its tasks
+        # a project's link, and the hash signed over it, reach its tasks; posting
+        # wants a link that may comment, a view link only reads
         project = self.project_id
         if not project:
             return False
-        opens = bool(token) and project._portal_token_opens(token, action=None)
+        opens = bool(token) and project._portal_token_opens(
+            token, role="comment", action=None
+        )
         return project._verify_sign_token(
             signature, pid, token=token if opens else None
         )
@@ -2131,66 +2217,45 @@ class ProjectTask(models.Model):
             mapped=len(task_mapping),
             with_dependencies=len(task_dependencies),
         )
-
-        def mapped_ids(task_ids):
-            return [
-                task_mapping[task_id].id if task_id in task_mapping else task_id
-                for task_id in task_ids
+        if not task_dependencies:
+            return
+        original_ids = list(task_dependencies)
+        Dependency = self.env["project.task.dependency"]
+        originals = Dependency.search(
+            [
+                "|",
+                ("task_id", "in", original_ids),
+                ("depends_on_id", "in", original_ids),
             ]
-
-        for original_task_id, (
-            predecessor_ids,
-            successor_ids,
-        ) in task_dependencies.items():
-            task_mapping[original_task_id].write(
-                {
-                    "predecessor_ids": [Command.set(mapped_ids(predecessor_ids))],
-                    "successor_ids": [Command.set(mapped_ids(successor_ids))],
-                }
-            )
-        self._copy_dependency_metadata(task_mapping)
-
-    def _copy_dependency_metadata(self, task_mapping: dict) -> None:
-        if not task_mapping:
-            return
-        Dependency = self.env["project.task.dependency"].sudo()
-        originals = Dependency.search([("task_id", "in", list(task_mapping))])
-        if not originals:
-            return
+        )
 
         def get_copied_id(task_id):
             copied = task_mapping.get(task_id)
             return copied.id if copied else task_id
 
-        wanted = {}
+        vals_per_pair = {}
         for dependency in originals:
-            if dependency.dependency_type == "fs" and not dependency.lag_hours:
+            if not (dependency.task_id.active and dependency.depends_on_id.active):
                 continue
-            key = (
+            pair = (
                 get_copied_id(dependency.task_id.id),
                 get_copied_id(dependency.depends_on_id.id),
             )
-            wanted[key] = (dependency.dependency_type, dependency.lag_hours)
-        if not wanted:
-            return
-
-        copies = Dependency.search(
-            [("task_id", "in", [task_id for task_id, _pred in wanted])]
-        )
-        per_value = defaultdict(Dependency.browse)
-        for copy_row in copies:
-            value = wanted.get((copy_row.task_id.id, copy_row.depends_on_id.id))
-            if value:
-                per_value[value] |= copy_row
+            if pair == (dependency.task_id.id, dependency.depends_on_id.id):
+                continue
+            vals_per_pair.setdefault(
+                pair,
+                {
+                    "task_id": pair[0],
+                    "depends_on_id": pair[1],
+                    "dependency_type": dependency.dependency_type,
+                    "lag_hours": dependency.lag_hours,
+                },
+            )
         _debug.logic(
-            "dependency_metadata_copied",
-            originals=len(originals),
-            wanted=len(wanted),
-            copies=len(copies),
-            value_groups=len(per_value),
+            "dependencies_copied", originals=len(originals), copied=len(vals_per_pair)
         )
-        for (dependency_type, lag_hours), rows in per_value.items():
-            rows.write({"dependency_type": dependency_type, "lag_hours": lag_hours})
+        Dependency.create(list(vals_per_pair.values()))
 
     @_debug.perf.timed
     def copy(self, default=None) -> Self:
@@ -2489,6 +2554,17 @@ class ProjectTask(models.Model):
         self_ctx = self.with_context(new_context)
 
         self_ctx.browse().check_access("create")
+        if self.env.su or not self.env.user._is_portal():
+            # a project derived from the parent goes in the row itself, so the
+            # batch is one create; a portal user may not write project_id
+            for vals, derived_project_id in zip(
+                vals_list, default_project_ids, strict=True
+            ):
+                if derived_project_id != default_project_id:
+                    self_ctx._update_create_vals_derived_project(
+                        vals, derived_project_id
+                    )
+            default_project_ids = [default_project_id] * len(vals_list)
         default_stage = {}
         for vals, additional_vals, vals_default_project_id in zip(
             vals_list, additional_vals_list, default_project_ids, strict=True
@@ -2552,11 +2628,10 @@ class ProjectTask(models.Model):
             group_tasks.write(vals_by_key[key])
         _debug.pipeline("create_step", tasks=tasks, step="triages")
         tasks.sudo()._create_missing_triages()
-        if not self_ctx.env.context.get("skip_dependency_sync"):
-            _debug.pipeline("create_step", tasks=tasks, step="dependency_sync")
-            (
-                tasks.filtered("predecessor_ids") | tasks.successor_ids
-            )._sync_dependency_rows()
+        if any(
+            "predecessor_ids" in vals or "successor_ids" in vals for vals in vals_list
+        ):
+            tasks._invalidate_dependency_rows()
         _debug.pipeline("create_step", tasks=tasks, step="state_from_predecessors")
         tasks._update_state_from_predecessors()
         _debug.pipeline("create_step", tasks=tasks, step="assignment_notify")
@@ -2572,6 +2647,30 @@ class ProjectTask(models.Model):
         _debug.pipeline("create_step", tasks=tasks, step="followers")
         self_ctx._subscribe_followers(tasks, current_partner)
         return tasks
+
+    def _update_create_vals_derived_project(
+        self, vals: dict[str, Any], project_id: int
+    ) -> None:
+        # what default_get gives a row whose project it knows: the parent's or
+        # project's customer, and no assignee forced on a task that is not private
+        project = self.env["project.project"].browse(project_id)
+        vals["project_id"] = project_id
+        if "partner_id" not in vals and "default_partner_id" not in self.env.context:
+            partner_id = self._get_default_partner_id(
+                project, self.browse(vals["parent_id"])
+            )
+            if partner_id:
+                vals["partner_id"] = partner_id
+        if "default_user_ids" not in self.env.context and (
+            self._get_fields_assignment().isdisjoint(vals)
+        ):
+            vals["user_ids"] = [Command.set(self._default_user_ids())]
+        _debug.logic(
+            "create_project_derived",
+            project=project_id,
+            parent=vals["parent_id"],
+            keys=sorted(vals),
+        )
 
     def _get_default_project_ids(
         self, vals_list: list[ValuesType], default_project_id: int | bool
@@ -2766,9 +2865,6 @@ class ProjectTask(models.Model):
         elif additional_vals:
             _debug.logic("portal_sudo_write", tasks=self, keys=sorted(additional_vals))
             super(ProjectTask, self.sudo()).write(additional_vals)
-        former_successors = (
-            self.successor_ids if "successor_ids" in vals else self.browse()
-        )
         step_tracked = self.browse()
         if "state" not in vals and ("step_id" in vals or "project_id" in vals):
             step_tracked = self
@@ -2783,17 +2879,8 @@ class ProjectTask(models.Model):
         with _debug.perf("super_write", cr=self.env.cr):
             result = super().write(vals)
 
-        if not self.env.context.get("skip_dependency_sync"):
-            to_sync = self.browse()
-            if "predecessor_ids" in vals:
-                to_sync |= self
-            if "successor_ids" in vals:
-                to_sync |= former_successors | self.successor_ids
-            if to_sync:
-                _debug.pipeline(
-                    "write_step", tasks=self, step="dependency_sync", to_sync=to_sync
-                )
-                to_sync._sync_dependency_rows()
+        if "predecessor_ids" in vals or "successor_ids" in vals:
+            self._invalidate_dependency_rows()
 
         self._write_propagate_recurrence(recurrence_scope, vals)
 
@@ -4722,6 +4809,9 @@ class ProjectTask(models.Model):
 
     @_debug.perf.timed
     def _get_planning_overlap_rows(self, additional_domain=None):
+        # each task is compared with its values in memory, so that a form shows
+        # the overlap of the dates being edited; the tasks it overlaps are read
+        # from the database
         domain = Domain(
             [
                 ("active", "=", True),
@@ -4734,72 +4824,89 @@ class ProjectTask(models.Model):
         )
         if additional_domain:
             domain &= Domain(additional_domain)
-        domain = domain.optimize_full(self)
+        candidates = list(self.filtered_domain(domain))
+        slots = [
+            (index, task._origin.id or 0, task.date_start, task.date_end, user_id)
+            for index, task in enumerate(candidates)
+            for user_id in task.user_ids._origin.ids
+        ]
+        _debug.logic(
+            "planning_overlap_slots",
+            tasks=len(self),
+            candidates=len(candidates),
+            slots=len(slots),
+        )
+        if not slots:
+            return []
 
-        task1 = self._table
-        query = self._search(domain & Domain("id", "in", self.ids), bypass_access=True)
-
-        task2 = query.get_table_alias(task1, "T2")
+        query = self._search(domain.optimize_full(self), bypass_access=True)
+        other = self._table
+        slot = "slot"
         query.add_join(
             "JOIN",
-            task2,
-            self._table_sql,
+            slot,
             SQL(
-                "%s != %s AND (%s::TIMESTAMP, %s::TIMESTAMP) OVERLAPS (%s::TIMESTAMP, %s::TIMESTAMP)",
-                SQL.identifier(task1, "id"),
-                SQL.identifier(task2, "id"),
-                SQL.identifier(task1, "date_start"),
-                SQL.identifier(task1, "date_end"),
-                SQL.identifier(task2, "date_start"),
-                SQL.identifier(task2, "date_end"),
+                "(SELECT * FROM unnest(%s::int[], %s::int[], %s::timestamp[], "
+                "%s::timestamp[], %s::int[]) AS u(idx, origin_id, date_start, "
+                "date_end, user_id))",
+                *(list(column) for column in zip(*slots, strict=True)),
+            ),
+            SQL(
+                "%s != %s AND (%s, %s) OVERLAPS (%s::TIMESTAMP, %s::TIMESTAMP)",
+                SQL.identifier(slot, "origin_id"),
+                SQL.identifier(other, "id"),
+                SQL.identifier(slot, "date_start"),
+                SQL.identifier(slot, "date_end"),
+                SQL.identifier(other, "date_start"),
+                SQL.identifier(other, "date_end"),
             ),
         )
-        query.add_where(domain._to_sql(self, task2, query))
-
-        task1_user_rel = query.join(
-            task1, "id", "project_task_user_rel", "task_id", "TU1"
-        )
-        task2_user_rel = query.join(
-            task2, "id", "project_task_user_rel", "task_id", "TU2"
+        other_user_rel = query.join(
+            other, "id", "project_task_user_rel", "task_id", "TU2"
         )
         query.add_where(
             SQL(
                 "%s = %s",
-                SQL.identifier(task1_user_rel, "user_id"),
-                SQL.identifier(task2_user_rel, "user_id"),
+                SQL.identifier(other_user_rel, "user_id"),
+                SQL.identifier(slot, "user_id"),
             )
         )
-
-        task1_user = query.join(task1_user_rel, "user_id", "res_users", "id", "U")
-        task1_partner = query.join(task1_user, "partner_id", "res_partner", "id", "P")
-        task1_partner_name = self.env["res.partner"]._field_to_sql(
-            task1_partner, "name", query
+        slot_user = query.join(slot, "user_id", "res_users", "id", "U")
+        slot_partner = query.join(slot_user, "partner_id", "res_partner", "id", "P")
+        slot_partner_name = self.env["res.partner"]._field_to_sql(
+            slot_partner, "name", query
         )
         query.groupby = SQL(", ").join(
             [
-                SQL.identifier(task1, "id"),
-                SQL.identifier(task1_user, "id"),
-                task1_partner_name,
+                SQL.identifier(slot, "idx"),
+                SQL.identifier(slot, "user_id"),
+                slot_partner_name,
             ]
         )
-        query.order = task1_partner_name
+        query.order = slot_partner_name
 
         sql = query.select(
-            SQL.identifier(task1, "id"),
-            SQL.identifier(task1, "date_start"),
-            SQL.identifier(task1, "date_end"),
-            SQL("ARRAY_AGG(%s) AS task_ids", SQL.identifier(task2, "id")),
-            SQL("MIN(%s)", SQL.identifier(task2, "date_start")),
-            SQL("MAX(%s)", SQL.identifier(task2, "date_end")),
-            SQL("%s AS user_id", SQL.identifier(task1_user, "id")),
-            SQL("%s AS partner_name", task1_partner_name),
-            SQL("%s", self._field_to_sql(task1, "planned_hours", query)),
-            SQL("SUM(%s)", self._field_to_sql(task2, "planned_hours", query)),
+            SQL("%s AS idx", SQL.identifier(slot, "idx")),
+            SQL("ARRAY_AGG(%s) AS task_ids", SQL.identifier(other, "id")),
+            SQL("MIN(%s)", SQL.identifier(other, "date_start")),
+            SQL("MAX(%s)", SQL.identifier(other, "date_end")),
+            SQL("%s AS user_id", SQL.identifier(slot, "user_id")),
+            SQL("%s AS partner_name", slot_partner_name),
+            SQL("SUM(%s)", self._field_to_sql(other, "planned_hours", query)),
         )
-        return self.env.execute_query_dict(sql)
+        rows = self.env.execute_query_dict(sql)
+        for row in rows:
+            task = candidates[row.pop("idx")]
+            row.update(
+                id=task.id,
+                date_start=task.date_start,
+                date_end=task.date_end,
+                planned_hours=task.planned_hours,
+            )
+        return rows
 
     def _get_planning_overlap_per_task(self):
-        if not self.ids:
+        if not self:
             return {}
         self.flush_model(
             [
@@ -4809,6 +4916,7 @@ class ProjectTask(models.Model):
                 "user_ids",
                 "project_id",
                 "is_closed",
+                "planned_hours",
             ]
         )
 
@@ -4826,7 +4934,7 @@ class ProjectTask(models.Model):
     @_debug.perf.timed
     @api.depends("date_start", "date_end", "user_ids", "planned_hours")
     def _compute_planning_overlap(self):
-        overlap_mapping = self._origin._get_planning_overlap_per_task()
+        overlap_mapping = self._get_planning_overlap_per_task()
         _debug.logic(
             "planning_overlap_computed", tasks=self, overlapping=len(overlap_mapping)
         )
@@ -4845,9 +4953,7 @@ class ProjectTask(models.Model):
             else datetime.now(UTC)
         )
         for task in self:
-            for user_id, task_mapping in overlap_mapping.get(
-                task._origin.id, {}
-            ).items():
+            for user_id, task_mapping in overlap_mapping.get(task.id, {}).items():
                 absolute_min_start = min(
                     absolute_min_start,
                     task_mapping["min_date_start"].replace(tzinfo=UTC),
@@ -4896,9 +5002,7 @@ class ProjectTask(models.Model):
         res = {}
         for task in self:
             overlap_messages = []
-            for user_id, task_mapping in overlap_mapping.get(
-                task._origin.id, {}
-            ).items():
+            for user_id, task_mapping in overlap_mapping.get(task.id, {}).items():
                 task_intervals_start = task_mapping["min_date_start"].replace(
                     tzinfo=UTC
                 )
@@ -4991,15 +5095,27 @@ class ProjectTask(models.Model):
         return tasks_by_resource_calendar_dict
 
     @_debug.perf.timed
-    @api.depends("allow_dependencies", "date_start", "predecessor_ids.date_end")
+    @api.depends(
+        "allow_dependencies",
+        "date_start",
+        "date_end",
+        "predecessor_ids.date_start",
+        "predecessor_ids.date_end",
+        "dependency_ids.dependency_type",
+        "dependency_ids.lag_hours",
+    )
     def _compute_dependency_warning(self) -> None:
         for task in self:
-            if not (task.allow_dependencies and task.date_start):
+            if not task.allow_dependencies:
                 task.dependency_warning = False
                 continue
             # the same predecessors the search counts, named only when readable
-            late = task.predecessor_ids.filtered(
-                lambda p, start=task.date_start: p.date_end and p.date_end > start
+            late = task.browse().union(
+                *(
+                    dependency.depends_on_id
+                    for dependency in task._get_predecessor_dependencies()
+                    if task._is_dependency_date_violated(dependency)
+                )
             )
             if not late:
                 task.dependency_warning = False
@@ -5013,26 +5129,40 @@ class ProjectTask(models.Model):
                 task_list=format_list(self.env, names),
             )
 
+    def _is_dependency_date_violated(self, dependency) -> bool:
+        self.check_singleton()
+        planned = self[dependency._get_constrained_date_field()]
+        bound = dependency._get_date_bound()
+        return bool(planned and bound and planned < bound)
+
     def _search_dependency_warning(self, operator, value):
         if operator != "in":
             return NotImplemented
         if not all(isinstance(v, bool) for v in value):
             return NotImplemented
 
+        self.flush_model(["active", "date_start", "date_end", "project_id"])
+        self.env["project.project"].flush_model(["allow_dependencies"])
+        self.env["project.task.dependency"].flush_model()
         sql = SQL("""
             SELECT t1.id
               FROM project_task t1
               JOIN project_project p
                 ON p.id = t1.project_id
-              JOIN project_task_dependency_rel d
+              JOIN project_task_dependency d
                 ON d.task_id = t1.id
               JOIN project_task t2
                 ON d.depends_on_id = t2.id
              WHERE p.allow_dependencies
-               AND t1.date_start IS NOT NULL
                AND t2.active
-               AND t2.date_end IS NOT NULL
-               AND t2.date_end > t1.date_start
+               AND CASE WHEN d.dependency_type IN ('fs', 'ss')
+                        THEN t1.date_start
+                        ELSE t1.date_end
+                   END
+                   < CASE WHEN d.dependency_type IN ('fs', 'ff')
+                          THEN t2.date_end
+                          ELSE t2.date_start
+                     END + make_interval(secs => d.lag_hours * 3600)
         """)
         if True in value and False in value:
             return Domain.TRUE
@@ -5162,15 +5292,29 @@ class ProjectTask(models.Model):
         ) = self._scheduling_get_valid_intervals(
             date_start, fetch_date_end, users, [], True
         )
-        dependent_tasks_end_dates = self._get_last_predecessor_date_end_per_task()
+        dependency_rows = self._get_dependency_rows()
+        dependency_bounds = self._get_dependency_bounds_per_task()
+        start_bounds = {
+            task_id: bounds["date_start"]
+            for task_id, bounds in dependency_bounds.items()
+            if "date_start" in bounds
+        }
+        end_bound_per_task = {
+            task_id: bounds["date_end"].astimezone(timezone(tz_info))
+            for task_id, bounds in dependency_bounds.items()
+            if "date_end" in bounds
+        }
+        successor_rows_per_task = defaultdict(list)
+        for row in dependency_rows:
+            if row["depends_on_id"] in self._ids:
+                successor_rows_per_task[row["depends_on_id"]].append(row)
 
         first_possible_date_per_task = {
             key: max(
                 first_possible_date_per_task.get(key, datetime.min),  # noqa: DTZ901  sentinel, not an instant
-                dependent_tasks_end_dates.get(key, datetime.min),  # noqa: DTZ901  sentinel, not an instant
+                start_bounds.get(key, datetime.min),  # noqa: DTZ901  sentinel, not an instant
             ).astimezone(timezone(tz_info))
-            for key in first_possible_date_per_task.keys()
-            | dependent_tasks_end_dates.keys()
+            for key in first_possible_date_per_task.keys() | start_bounds.keys()
         }
 
         scale = self.env.context.get("gantt_scale", "week")
@@ -5357,6 +5501,15 @@ class ProjectTask(models.Model):
                 )
                 continue
 
+            end_bound = end_bound_per_task.get(task.id)
+            if end_bound and compute_date_end < end_bound:
+                _debug.logic(
+                    "task_end_held_by_dependency",
+                    task=task,
+                    date_end=compute_date_end,
+                    held_until=end_bound,
+                )
+                compute_date_end = end_bound
             start_no_utc = compute_date_start.astimezone(UTC).replace(tzinfo=None)
             end_no_utc = compute_date_end.astimezone(UTC).replace(tzinfo=None)
             tasks_to_write[task] = {"start": start_no_utc, "end": end_no_utc}
@@ -5368,11 +5521,19 @@ class ProjectTask(models.Model):
                 users=user_ids,
             )
 
-            for next_task in task.successor_ids:
-                first_possible_date_per_task[next_task.id] = max(
-                    first_possible_date_per_task.get(next_task.id, compute_date_end),
-                    compute_date_end,
+            for row in successor_rows_per_task[task.id]:
+                anchor = (
+                    compute_date_end
+                    if row["dependency_type"] in FINISH_ANCHORED_TYPES
+                    else compute_date_start
                 )
+                bound = anchor + timedelta(hours=row["lag_hours"])
+                bounds = (
+                    first_possible_date_per_task
+                    if row["constrained_field"] == "date_start"
+                    else end_bound_per_task
+                )
+                bounds[row["task_id"]] = max(bounds.get(row["task_id"], bound), bound)
 
             update_used_intervals(valid_intervals_per_user, used_intervals, user_ids)
 
@@ -5403,24 +5564,49 @@ class ProjectTask(models.Model):
         # task not booked yet plans its estimate.
         return self.allocated_hours or self.planned_hours
 
-    @api.model
     @_debug.perf.timed
-    def _get_last_predecessor_date_end_per_task(self) -> dict:
-        query = """
-                    SELECT task.id as id,
-                           MAX(depends_on.date_end) as date
-                      FROM project_task task
-                      JOIN project_task_dependency_rel rel
-                        ON rel.task_id = task.id
-                      JOIN project_task depends_on
-                        ON depends_on.id != all(%s)
-                       AND depends_on.id = rel.depends_on_id
-                       AND depends_on.date_end is not null
-                     WHERE task.id = any(%s)
-                  GROUP BY task.id
+    def _get_dependency_rows(self) -> list[dict]:
+        # every dependency of these tasks on an active predecessor, with the
+        # predecessor date it reads already shifted by the lag
+        if not self.ids:
+            return []
+        self.flush_model(["active", "date_start", "date_end"])
+        self.env["project.task.dependency"].flush_model()
+        self.env.cr.execute(
+            SQL(
                 """
-        self.env.cr.execute(query, [self.ids, self.ids])
-        return {res["id"]: res["date"] for res in self.env.cr.dictfetchall()}
+                SELECT d.task_id,
+                       d.depends_on_id,
+                       d.dependency_type,
+                       CASE WHEN d.dependency_type IN ('fs', 'ss')
+                            THEN 'date_start'
+                            ELSE 'date_end'
+                       END AS constrained_field,
+                       CASE WHEN d.dependency_type IN ('fs', 'ff')
+                            THEN p.date_end
+                            ELSE p.date_start
+                       END + make_interval(secs => d.lag_hours * 3600) AS bound,
+                       d.lag_hours
+                  FROM project_task_dependency d
+                  JOIN project_task p
+                    ON p.id = d.depends_on_id
+                 WHERE d.task_id = ANY(%s)
+                   AND p.active
+                """,
+                self.ids,
+            )
+        )
+        return self.env.cr.dictfetchall()
+
+    def _get_dependency_bounds_per_task(self) -> dict[int, dict[str, datetime]]:
+        bounds = defaultdict(dict)
+        for row in self._get_dependency_rows():
+            if row["depends_on_id"] in self._ids or not row["bound"]:
+                continue
+            task_bounds = bounds[row["task_id"]]
+            field = row["constrained_field"]
+            task_bounds[field] = max(task_bounds.get(field, row["bound"]), row["bound"])
+        return dict(bounds)
 
     @_debug.perf.timed
     def _scheduling_get_users_unavailable_intervals(
