@@ -278,6 +278,15 @@ class Application:
             )
 
     @_locked_cached_property
+    def db_free_paths(self) -> frozenset[str]:
+        return frozenset(
+            rule.rule
+            for rule in self.nodb_routing_map.iter_rules()
+            if rule.endpoint.routing.get("database", True) is False
+            and not rule.arguments
+        )
+
+    @_locked_cached_property
     def session_store(self) -> SessionStore:
         settings = current_settings()
         return _SESSION_STORE_OPENERS[settings.session_store](settings)
@@ -589,7 +598,10 @@ class Application:
                     # before the session's database is selected, and reads the
                     # session only for its debug mode.
                     static_file = self.resolve_static_file(httprequest.path)
-                    if not static_file:
+                    db_free = not static_file and httprequest.path in self.db_free_paths
+                    if db_free:
+                        request._post_init_db_free()
+                    elif not static_file:
                         request._post_init()
                     _debug.pipeline(
                         "http.request.begin",
@@ -600,11 +612,17 @@ class Application:
                         static=bool(static_file),
                     )
                     span.set(
-                        kind="static" if static_file else "db" if request.db else "nodb"
+                        kind="static"
+                        if static_file
+                        else "db_free"
+                        if db_free
+                        else "db"
+                        if request.db
+                        else "nodb"
                     )
                     if static_file:
                         response = self._serve_static_file(request, static_file)
-                    elif request.db:
+                    elif request.db and not db_free:
                         try:
                             with request._profile_request():
                                 response = request._serve_db()

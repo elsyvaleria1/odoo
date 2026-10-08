@@ -3,7 +3,12 @@ from unittest.mock import patch
 
 import psycopg
 
-from odoo.tests import HttpCase, tagged
+from odoo import http
+from odoo.http import Request, root
+from odoo.http.routing import RouteDefinitionError, _merge_route
+from odoo.tests import BaseCase, HttpCase, tagged
+
+PROBES = ("/web/health", "/web/healthz", "/web/readyz", "/web/metrics")
 
 
 @tagged("web_http", "web_health")
@@ -82,6 +87,53 @@ class TestWebController(HttpCase):
             payload = response.json()
             self.assertEqual(payload["status"], "fail")
             self.assertEqual(payload["checks"]["data_dir"], "fail")
+
+
+@tagged("web_http", "web_health")
+class TestProbesAreDatabaseFree(HttpCase):
+    def test_probes_are_served_before_a_session_or_database(self):
+        self.assertTrue(set(PROBES) <= root.db_free_paths)
+        with (
+            patch.object(Request, "_load_session", side_effect=AssertionError),
+            patch.object(Request, "_serve_db", side_effect=AssertionError),
+            patch.object(root.session_store, "get", side_effect=AssertionError),
+            patch.dict(os.environ, {"ODOO_METRICS_TOKEN": "right"}),
+        ):
+            for path in PROBES:
+                response = self.url_open(
+                    path, headers={"Authorization": "Bearer right"}
+                )
+                self.assertEqual(response.status_code, 200, path)
+                self.assertNotIn("session_id", response.cookies, path)
+
+    def test_health_names_no_database_even_with_a_session(self):
+        self.authenticate("admin", "admin")
+        with patch.object(Request, "_serve_db", side_effect=AssertionError):
+            response = self.url_open("/web/health")
+        self.assertEqual(response.json(), {"status": "pass"})
+
+    def test_readyz_fails_when_postgres_is_down(self):
+        def _raise_psycopg_error(*args):
+            raise psycopg.OperationalError("connection refused")
+
+        with (
+            patch("odoo.db.db_connect", new=_raise_psycopg_error),
+            patch.object(Request, "_serve_db", side_effect=AssertionError),
+        ):
+            response = self.url_open("/web/readyz")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["checks"]["db"], "fail")
+
+
+class TestDatabaseFreeRouteDeclaration(BaseCase):
+    def test_a_database_free_route_must_be_auth_none(self):
+        class Probe:
+            @http.route("/probe", type="http", auth="public", database=False)
+            def probe(self):
+                return ""
+
+        with self.assertRaises(RouteDefinitionError):
+            _merge_route(Probe(), "probe", [(Probe, Probe.probe)])
 
 
 @tagged("web_http", "web_metrics")

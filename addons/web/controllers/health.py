@@ -32,7 +32,9 @@ def _is_db_server_reachable(probe: str) -> bool:
 
 
 class Health(http.Controller):
-    @http.route("/web/health", type="http", auth="none", save_session=False)
+    @http.route(
+        "/web/health", type="http", auth="none", save_session=False, database=False
+    )
     def health(self, db_server_status: bool | str = False) -> Response:
         health_info: dict[str, Any] = {"status": "pass"}
         status = 200
@@ -45,12 +47,16 @@ class Health(http.Controller):
         _debug.lifecycle("health", status=status, info=health_info)
         return self._get_health_response(health_info, status)
 
-    @http.route("/web/healthz", type="http", auth="none", save_session=False)
+    @http.route(
+        "/web/healthz", type="http", auth="none", save_session=False, database=False
+    )
     def healthz(self) -> Response:
         _debug.lifecycle("healthz")
         return self._get_health_response({"status": "pass"}, 200)
 
-    @http.route("/web/readyz", type="http", auth="none", save_session=False)
+    @http.route(
+        "/web/readyz", type="http", auth="none", save_session=False, database=False
+    )
     def readyz(self) -> Response:
         checks: dict[str, str] = {}
         status = 200
@@ -79,7 +85,9 @@ class Health(http.Controller):
             status,
         )
 
-    @http.route("/web/metrics", type="http", auth="none", save_session=False)
+    @http.route(
+        "/web/metrics", type="http", auth="none", save_session=False, database=False
+    )
     def metrics(self) -> Response:
         token = get_metrics_token()
         _debug.lifecycle("metrics", token_configured=bool(token))

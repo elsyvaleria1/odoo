@@ -252,7 +252,12 @@ is writable and no registry preload is in progress in the answering process
 (`odoo.service.server.is_ready()`, fed by `_process_state.preloading` from
 `preload_registries`); 503 with `checks.registries = "loading"` otherwise. A
 request for a database still loading waits on the registry lock, which is what
-the 503 keeps a balancer from sending. `/web/healthz` is liveness only.
+the 503 keeps a balancer from sending. `/web/healthz` is liveness only. All
+four probes (`/web/health`, `/web/healthz`, `/web/readyz`, `/web/metrics`) are
+`@route(database=False)`: served before a session is read or a database
+selected, so a probe costs the request database nothing and `/web/health`
+stays green through a PostgreSQL outage; the uptime check that must alarm on
+one reads `/web/readyz`.
 
 Socket activation (`LISTEN_FDS`/`LISTEN_PID`, `settings.py`) takes the
 unit's sockets in the order its `[Socket]` section lists them: the first is

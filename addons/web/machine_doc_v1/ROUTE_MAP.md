@@ -82,7 +82,7 @@ These are the primary backend APIs consumed by the JS ORM service (`core/network
 
 ### controllers/health.py — Health
 
-Process probes and the metrics scrape. No session, no database: every route is `auth="none"` with `save_session=False`, and `/web/readyz` opens its own cursor on `postgres` instead of the request's.
+Process probes and the metrics scrape. No session, no database: every route is `auth="none"` with `save_session=False` and `database=False`, so `Application.__call__` serves it from the no-database map before any session is read or database selected (`Application.db_free_paths`), and `/web/readyz` opens its own cursor on `postgres`. An uptime check that must alarm on PostgreSQL reads `/web/readyz`; `/web/health` touches it only with `?db_server_status=1`.
 
 | Method | Route | Auth | Handler | Purpose |
 |--------|-------|------|---------|---------|

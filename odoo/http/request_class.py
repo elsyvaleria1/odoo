@@ -139,6 +139,16 @@ class Request(
             session_new=self.session.is_new,
         )
 
+    def _post_init_db_free(self) -> None:
+        # a route that declares database=False reads no session and opens no
+        # cursor: a throwaway session carries what dispatch reads, and is
+        # never saved
+        self.session = self.app.session_store.new()
+        self.session.can_save = False
+        self.db = None
+        self._post_init_done = True
+        _debug.lifecycle("http.request.db_free", path=self.httprequest.path)
+
     @property
     def params(self) -> dict[str, Any]:
         source = self._params_source

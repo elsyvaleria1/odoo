@@ -25,6 +25,9 @@ Application.__call__
     if path is like '/<module>/static/<path>':
         Request._serve_static
 
+    elif path in Application.db_free_paths:
+        Request._serve_nodb
+
     elif not request.db:
         Request._serve_nodb
             App.nodb_routing_map.match
@@ -95,6 +98,15 @@ as a path — already decoded, so never re-parsed as a URL, where a decoded `?`,
 URL form `ir.attachment` asks with: it strips scheme, host, query and fragment,
 then delegates. There is one resolver on
 purpose — a second one lived in this method until it was found to be unreachable.
+
+**`Application.db_free_paths`** — the exact paths of the no-database routing
+map whose route declares `@route(database=False)` (the process probes
+`/web/health`, `/web/healthz`, `/web/readyz`, `/web/metrics`). `__call__` serves
+them through `_serve_nodb` before `_post_init`: no session is read, no database
+selected, no cursor opened, whatever cookie or `X-Odoo-Database` the request
+carries; the request holds a throwaway session that is never saved. Such a route
+must be `auth='none'` (`RouteDefinitionError` otherwise), and a check it needs
+opens its own connection (`/web/readyz` asks the `postgres` database).
 
 **`Request._serve_nodb`** — handles `@route(auth='none')` endpoints when there is
 no database connection. It matches the `auth='none'` endpoint from the request

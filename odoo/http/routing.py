@@ -38,6 +38,7 @@ _KNOWN_ROUTING_PARAMETERS: set[str] = {
     "cors_allow_headers",
     "cors_expose_headers",
     "csrf",
+    "database",
     "handle_params_access_error",
     "link",
     "link_param",
@@ -419,6 +420,16 @@ def _merge_route(
         return None
 
     _check_cors(f"{type(ctrl).__name__}.{method_name}", merged_routing)
+    if (
+        merged_routing.get("database", True) is False
+        and merged_routing["auth"] != "none"
+    ):
+        e = (
+            f"{owner.__module__}.{owner.__name__}.{method_name}: "
+            f"@route(database=False) is served before any database is selected, "
+            f"so it needs auth='none', not auth={merged_routing['auth']!r}."
+        )
+        raise RouteDefinitionError(e)
     merged_routing.setdefault("save_session", merged_routing["auth"] != "bearer")
 
     specs: dict[str, ParamSpec] | None = None
