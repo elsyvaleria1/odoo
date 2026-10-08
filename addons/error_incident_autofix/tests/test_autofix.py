@@ -1,8 +1,13 @@
+from unittest.mock import patch
+
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 from odoo.addons.agent_runner.tests.common import RunnerFixtures
 from odoo.addons.error_incident.models.error_incident import capture_payload
+from odoo.addons.error_incident_autofix.models import (
+    error_incident_autofix_repository as repository,
+)
 
 DIFF = "--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-broken\n+fixed\n"
 
@@ -270,3 +275,11 @@ class TestAutofix(RunnerFixtures, TransactionCase):
             {"input_tokens": 0, "output_tokens": 0, "cost": 0.0},
         )
         self.assertEqual(incident.fix_state, "diagnosing")
+
+    def test_an_occurrence_refused_on_policy_does_not_ask_git(self):
+        with patch.object(
+            repository, "origin_url", wraps=repository.origin_url
+        ) as origin_url:
+            for fingerprint in ("rare-a", "rare-b", "rare-c"):
+                self._occur(1, fingerprint=fingerprint)
+        origin_url.assert_not_called()

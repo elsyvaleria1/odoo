@@ -1,12 +1,18 @@
+import logging
 from typing import Any
 
+import requests
+
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
 from ..tools import create_once, get_github_client, repository_domain, same_repository
+from odoo.addons.integration.tools.exceptions import CommError
 
+_logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
@@ -131,7 +137,7 @@ class IntegrationGithubPull(models.Model):
 
     @api.model
     def _upsert_from_github(
-        self, repository: str, pr: dict[str, Any]
+        self, repository: str, pr: dict[str, Any], *, authoritative: bool = False
     ) -> IntegrationGithubPull:
         merged = bool(pr.get("merged") or pr.get("merged_at"))
         updated = _github_datetime(pr.get("updated_at"))
@@ -177,6 +183,28 @@ class IntegrationGithubPull(models.Model):
         ):
             _debug.logic("pull.stale_delivery", pull=pull.id, number=pr["number"])
             return pull
+        if (
+            not authoritative
+            and updated
+            and updated == pull.date_github_updated
+            and vals["pull_state"] == pull.pull_state == "open"
+            and vals["head_sha"] != pull.head_sha
+        ):
+            # two heads in one second: which is the pull request's now, only
+            # GitHub can say -- a late one would roll the head back
+            _debug.logic("pull.same_second_heads", pull=pull.id, number=pr["number"])
+            try:
+                with self.env.cr.savepoint():
+                    pull.action_refresh()
+                return pull
+            except UserError, ValueError, CommError, requests.RequestException:
+                _logger.warning(
+                    "Pull request %s#%s: two heads in one second, and GitHub "
+                    "could not be asked which is current; the later delivery wins",
+                    repository,
+                    pr["number"],
+                    exc_info=True,
+                )
         pull.write(vals)
         pull._refresh_checks_state()
         pull._github_updated()
@@ -226,7 +254,9 @@ class IntegrationGithubPull(models.Model):
             client = get_github_client(self.env)
             owner, name = _split_repository(pull.repository)
             pull._upsert_from_github(
-                pull.repository, client.get_pull_request(owner, name, pull.number)
+                pull.repository,
+                client.get_pull_request(owner, name, pull.number),
+                authoritative=True,
             )
             for run in client.list_check_runs(owner, name, pull.head_sha):
                 Check._record(

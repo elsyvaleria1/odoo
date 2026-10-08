@@ -66,7 +66,7 @@ def test_the_incident_is_fenced_off_as_data(world):
     world.behave(verdict={"verdict": "unclear"})
     incident.diagnose(_lease(), StubReporter())
     incident.diagnose(_lease(), StubReporter())
-    prompts = [call["argv"][call["argv"].index("-p") + 1] for call in world.calls()]
+    prompts = [call["argv"][-1] for call in world.calls()]
     fences = []
     for prompt in prompts:
         fence = prompt.split("Everything between two ", 1)[1].split(" ", 1)[0]

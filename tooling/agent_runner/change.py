@@ -34,10 +34,7 @@ import json
 import os
 import re
 import secrets
-import signal
-import subprocess
 import tempfile
-import time
 import urllib.request
 from collections.abc import Iterable, Iterator
 from pathlib import Path
@@ -45,10 +42,10 @@ from typing import Any
 
 try:
     from .gitops import GITHUB, git
-    from .runner import Outcome, Permanent, Reporter, Stopped
+    from .runner import Outcome, Permanent, Reporter, Stopped, run_in_session
 except ImportError:  # run as a script beside runner.py
     from gitops import GITHUB, git
-    from runner import Outcome, Permanent, Reporter, Stopped
+    from runner import Outcome, Permanent, Reporter, Stopped, run_in_session
 
 READ_TOOLS = "Read,Grep,Glob"
 EDIT_TOOLS = "Read,Grep,Glob,Edit,Write"
@@ -147,52 +144,40 @@ def _agent(
     command = [
         os.environ.get("AGENT_RUNNER_CLAUDE", "claude"),
         "-p",
-        prompt,
         "--model",
         payload["model"],
         "--output-format",
         "json",
+        # the session -- every file the agent read -- is not kept in its home
+        "--no-session-persistence",
         *_confinement(tools),
+        # the prompt is never an option, whatever it starts with
+        "--",
+        prompt,
     ]
-    # a session of its own: the agent is ended with everything it started, so
-    # nothing of it is alive when git next runs with the repository's token
-    process = subprocess.Popen(
+    # the agent is ended with everything it started, so nothing of it is
+    # alive when git next runs with the repository's token
+    finished = run_in_session(
         command,
         cwd=cwd,
         env=env,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        start_new_session=True,
+        timeout=float(payload.get("timeout", 1800)),
+        stop=reporter.stop,
+        end_on_exit=True,
     )
-    deadline = time.monotonic() + float(payload.get("timeout", 1800))
-    while True:
-        # communicate drains both pipes while it waits: a chatty agent never
-        # blocks on a full one
-        try:
-            stdout, stderr = process.communicate(timeout=1)
-            _end_session(process)
-            break
-        except subprocess.TimeoutExpired:
-            if process.poll() is not None:
-                # the agent answered: what it left running holds its pipes open
-                _end_session(process)
-                continue
-            if reporter.stop.is_set() or time.monotonic() > deadline:
-                _end_session(process)
-                process.communicate()
-                if reporter.stop.is_set():
-                    raise Stopped("stopped") from None
-                raise Permanent("the agent timed out") from None
-    if process.returncode:
-        raise RuntimeError(
-            f"the agent exited {process.returncode}: {stderr.strip()[-500:]}"
-        )
+    if finished.ended == "stopped":
+        raise Stopped("stopped")
+    if finished.ended:
+        raise Permanent("the agent timed out")
     try:
-        answer = _result_of(json.loads(stdout))
+        answer = _result_of(json.loads(finished.stdout))
     except ValueError as error:
-        raise RuntimeError("the agent's output is not JSON") from error
+        said = (finished.stderr.strip() or finished.stdout.strip())[-500:]
+        if finished.returncode:
+            raise RuntimeError(
+                f"the agent exited {finished.returncode}: {said}"
+            ) from error
+        raise RuntimeError(f"the agent's output is not JSON: {said}") from error
     usage = answer.get("usage") or {}
     spend = {
         "input_tokens": int(usage.get("input_tokens", 0))
@@ -202,7 +187,8 @@ def _agent(
         "cost": float(answer.get("total_cost_usd", 0)),
     }
     with spent(spend):
-        if answer.get("is_error"):
+        # a failed answer exits non-zero and still says what it spent
+        if answer.get("is_error") or finished.returncode:
             raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
         return _verdict(answer.get("result", "")), spend
 
@@ -248,11 +234,6 @@ def _result_of(output: object) -> dict[str, Any]:
     if not isinstance(output, dict):
         raise ValueError("no result message")
     return output
-
-
-def _end_session(process: subprocess.Popen) -> None:
-    with contextlib.suppress(ProcessLookupError):
-        os.killpg(process.pid, signal.SIGKILL)
 
 
 @contextlib.contextmanager
@@ -446,9 +427,10 @@ def _pushed_already(
     checkout: Path, url: str, branch: str, token: str | None, run_id: object
 ) -> str | None:
     """The commit an earlier attempt of this run pushed to ``branch``, or
-    ``None`` when the branch is not on the remote. A branch there that this run
-    did not push -- its tip has no `Agent-Run: <this run>` trailer -- is
-    refused, never taken for this run's work."""
+    ``None`` when the branch is not on the remote. A branch there that holds
+    no commit of this run -- none with an `Agent-Run: <this run>` trailer
+    beyond the base -- is refused, never taken for this run's work; one a
+    person pushed to after it is this run's still."""
     auth = token if url.startswith(GITHUB) else None
     listed = git(
         checkout, "ls-remote", "--heads", url, f"refs/heads/{branch}", token=auth
@@ -456,10 +438,12 @@ def _pushed_already(
     if not listed.strip():
         return None
     git(checkout, "fetch", "--quiet", url, f"refs/heads/{branch}", token=auth)
-    message = git(checkout, "log", "-1", "--format=%B", "FETCH_HEAD")
-    if f"Agent-Run: {run_id}" not in message.splitlines():
-        raise Permanent(f"{branch} is on the remote already, and not by this run")
-    return listed.split()[0]
+    log = git(checkout, "log", "--format=%H%x1f%B%x1e", "FETCH_HEAD", "--not", "HEAD")
+    for entry in log.split("\x1e"):
+        sha, _, message = entry.strip().partition("\x1f")
+        if f"Agent-Run: {run_id}" in message.splitlines():
+            return sha
+    raise Permanent(f"{branch} is on the remote already, and not by this run")
 
 
 def change(lease: dict[str, Any], reporter: Reporter) -> Outcome:

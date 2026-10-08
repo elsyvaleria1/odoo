@@ -380,3 +380,25 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         incident.action_resolve()
         self._occur()
         self.assertEqual(incident.fix_state, "hotfixing", "a hotfix at work is live")
+
+    def test_a_merge_while_a_hotfix_ran_is_followed_when_the_hotfix_fails(self):
+        incident, _pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        incident.approval_request_id.with_user(self.approver).action_approve()
+        self._pull_merged()
+        self.assertEqual(incident.fix_state, "hotfixing", "the hotfix answers first")
+        run, token = self.env["agent.run"]._claim(self.deployer)
+        run._fail(token, "the fix does not apply", retryable=False)
+        self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
+        self.assertTrue(incident.date_fix_merged)
+
+    def test_a_regression_releases_the_approval_asked_about_the_fix(self):
+        incident, _pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_merge()
+        request = incident.approval_request_id
+        self.assertEqual(request.state, "pending")
+        incident.action_resolve()
+        self._occur()
+        self.assertEqual(incident.incident_state, "regressed")
+        self.assertFalse(incident.approval_request_id)
+        self.assertEqual(request.state, "refused")

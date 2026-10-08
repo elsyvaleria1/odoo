@@ -48,8 +48,10 @@ hold in the payload.
   **Autofix > Repositories** (`odoo`, `agromarin`, `l10n`), with its base branch. A checkout
   is known by the GitHub repository its `origin` fetches from -- wherever and under whatever
   directory it is cloned, a worktree included -- and by its directory's name only when it
-  has no GitHub remote; a GitHub origin no record maps, a fork, is no repository's. An
-  incident of no module is never dispatched.
+  has no remote at all; a GitHub origin no record maps, a fork, another host, or an origin
+  git cannot read -- git missing, the tree refused -- is no repository's. An incident of no
+  module is never dispatched. The repository is asked of git last, once every other
+  condition holds.
 - **One run counts.** Only the incident's newest diagnosis or fix, while the incident waits
   for it, moves it: a run overtaken by a regression or a person's dispatch changes nothing.
 - **Regression.** An incident that reopens is the agents' again once, with its attempts
@@ -102,9 +104,10 @@ pushed ─► testing ─► test_failed
     cancel one before asking the other.
 - **Production.** A *deploy* runner (`runner.py --role deploy`) runs on the production host and
   never runs an agent.
-  - **Hotfix.** It merges the fix commit into the running checkout, upgrades the modules it
-    touches, restarts and checks health. When the server does not come back healthy, it
-    reverts all of that, and the incident returns to **Tests Passed**.
+  - **Hotfix.** It applies what the fix's branch adds to the running checkout, upgrades the
+    modules it touches, restarts and checks health. When the server does not come back
+    healthy, it reverts all of that, and the incident returns to where its pull request
+    stands: **Tests Passed**, or **Merged** or **Closed** if that happened meanwhile.
   - **Merge.** A merged fix waits for production's own deploy. Every ten minutes Odoo asks the
     deploy runner which awaited commits the running checkouts contain -- for the policy's
     **Production Wait** (30 days); a fix production has not run by then is marked **Not
@@ -115,4 +118,6 @@ pushed ─► testing ─► test_failed
     health commands are the host's own configuration (`tooling/agent_runner/deploy.py`). A
     lease names a checkout and a commit, nothing to execute.
 - **Regression.** A recurrence after production reopens the incident as regressed, and it is
-  diagnosed again with the fix that did not hold.
+  diagnosed again with the fix that did not hold; a merge or hotfix still asked about that fix
+  is refused. A person reopening a resolved incident resets it the same way, but leaves it in
+  their hands: it is dispatched again only by hand.

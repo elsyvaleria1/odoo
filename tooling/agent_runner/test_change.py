@@ -1,11 +1,13 @@
 import json
+import os
+import threading
 import time
 from pathlib import Path
 from unittest import mock
 
 import pytest
 
-from . import change, gitops
+from . import change, fakes, gitops
 from . import runner as agent
 from .fakes import StubReporter, make_world
 
@@ -83,7 +85,7 @@ def test_the_agent_reaches_its_clone_alone(world):
 def test_every_section_reaches_the_agent_fenced_off_as_data(world):
     world.behave(verdict={"verdict": "declined", "note": "unclear"})
     change.change(_lease(), StubReporter())
-    prompt = world.calls()[0]["argv"][world.calls()[0]["argv"].index("-p") + 1]
+    prompt = world.calls()[0]["argv"][-1]
     fence = prompt.split("Everything between two ", 1)[1].split(" ", 1)[0]
     assert prompt.startswith("Implement the task.")
     assert prompt.count(fence) == 5, "named once, then around each of two sections"
@@ -203,14 +205,85 @@ def test_a_push_to_github_without_a_token_is_refused_before_the_agent(
     assert not (world.fake / "calls.json").exists()
 
 
-def test_a_run_stopped_while_its_agent_worked_commits_nothing(world):
+def test_a_run_stopped_while_its_agent_works_ends_it_and_commits_nothing(world):
+    world.behave(linger="hang", verdict={"verdict": "changed"})
+    reporter = StubReporter()
+    threading.Timer(1, reporter.stop.set).start()
+    started = time.monotonic()
+    with pytest.raises(agent.Stopped):
+        change.change(_lease(timeout=60), reporter)
+    assert time.monotonic() - started < 10
+    assert world.branches() == ["19.0-marin"]
+
+
+def test_a_run_stopped_once_its_agent_answered_commits_nothing_and_counts_it(
+    world, monkeypatch
+):
     world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
     reporter = StubReporter()
-    reporter.stop.set()
+    answered = change.run_in_session
+
+    def then_stopped(*args, **kwargs):
+        finished = answered(*args, **kwargs)
+        reporter.stop.set()
+        return finished
+
+    monkeypatch.setattr(change, "run_in_session", then_stopped)
     with pytest.raises(agent.Stopped) as stopped:
         change.change(_lease(), reporter)
     assert world.branches() == ["19.0-marin"]
     assert stopped.value.usage["cost"] == pytest.approx(0.25)
+
+
+def test_an_agent_that_left_its_session_does_not_hold_the_run(world):
+    # a process the agent started in a session of its own keeps its output
+    # open: the deadline still holds
+    world.behave(linger="detach", verdict={"verdict": "changed"})
+    started = time.monotonic()
+    with pytest.raises(agent.Permanent, match="timed out"):
+        change.change(_lease(timeout=2), StubReporter())
+    assert time.monotonic() - started < 2 + agent.OUTPUT_GRACE + 3
+    os.kill(int((world.fake / "child.pid").read_text()), 9)
+
+
+def test_a_failed_answer_says_why_and_counts_what_it_spent(world):
+    world.behave(fail="Credit balance is too low")
+    with pytest.raises(RuntimeError, match="Credit balance is too low") as failed:
+        change.change(_lease(), StubReporter())
+    assert failed.value.usage == {"input_tokens": 7, "output_tokens": 3, "cost": 0.5}
+
+
+def test_a_prompt_is_never_taken_for_an_option(world):
+    world.behave(verdict={"verdict": "declined"})
+    change.change(_lease(prompt="- Keep changes small."), StubReporter())
+    argv = world.calls()[0]["argv"]
+    assert argv[-2:] == ["--", argv[-1]]
+    assert argv[-1].startswith("- Keep changes small.")
+    assert "--no-session-persistence" in argv
+
+
+def test_a_branch_a_person_pushed_to_after_this_run_is_still_this_runs(world):
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    first = change.change(_lease(), StubReporter()).result["commit"]
+    reviewer = world.root / "reviewer"
+    fakes._git(
+        world.root, "clone", "-q", "--branch", BRANCH, str(world.origin), str(reviewer)
+    )
+    (reviewer / "x.py").write_text("fixed better\n")
+    fakes._git(
+        reviewer,
+        "-c",
+        "user.name=r",
+        "-c",
+        "user.email=r@x",
+        "commit",
+        "-qam",
+        "review",
+    )
+    fakes._git(reviewer, "push", "-q", "origin", BRANCH)
+    outcome = change.change(_lease(), StubReporter())
+    assert outcome.result["commit"] == first
+    assert outcome.result["note"] == "pushed by an earlier attempt"
 
 
 def test_a_verbose_agent_is_read_by_its_result_message(world):

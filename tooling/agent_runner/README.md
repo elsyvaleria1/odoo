@@ -32,14 +32,17 @@ capability: a sandbox token cannot claim a hotfix.
 Its token, in `AGENT_RUNNER_TOKEN`, never on its command line; the runner makes itself
 undumpable, so a process of the same user -- the agent -- cannot read it from
 `/proc/<runner>/environ`. Everything else arrives with each lease and is gone with the run: a
-GitHub App installation token for the run's repository alone, and the company's Anthropic
-key when the company's data policy lets the run's purpose reach Anthropic. The agent's
-process gets `PATH`, `LANG`, `HOME` and that key, nothing of the runner's environment. Git
-gets the repository token in its environment, never on its command line, where every user of
-the machine reads it. The agent runs in a session of its own and is ended with everything it
-started -- when it answers, times out or is stopped -- so no process of it is alive when git
-next runs with that token. A runner process holds one run at a time; more at once are more
-services, each of which systemd gives a user of its own (`DynamicUser=`).
+GitHub App installation token for the run's repository alone, and the company's Anthropic key
+when the company's data policy lets the run's purpose reach Anthropic. The agent's process
+gets `PATH`, `LANG`, `HOME` and that key, nothing of the runner's environment. Git gets the
+repository token in its environment, never on its command line, where every user of the
+machine reads it. The agent runs in a session of its own and is ended with everything it
+started in it -- when it answers, times out or is stopped -- so no process of it is alive when
+git next runs with that token; it has no tool that starts a process, let alone one that leaves
+the session, and the runner reads its output as it comes, so even such a process could hold
+the run only a moment past its deadline. Its session is not saved in its home. A runner
+process holds one run at a time; more at once are more services, each of which systemd gives a
+user of its own (`DynamicUser=`).
 
 The agent writes files. Over the tree it wrote, git runs without hooks or fsmonitor and
 reads no configuration but the clone's own -- not a `.gitconfig` the agent left in the tree
@@ -117,19 +120,21 @@ token fails before the agent runs. Every failure after the agent ran reports wha
 
 ## A hotfix
 
-A hotfix applies the fix's own commits -- what its branch adds to the base it was cut from --
-onto the revision production runs, as one commit with a `Hotfix-Of: <sha>` trailer; never the
-base branch's commits production does not run yet. A fix that does not apply cleanly is
-refused, the checkout left as it was. After the upgrade and restart the server must come back
-healthy; the revision that did is recorded as `refs/agent-runner/healthy`, so an attempt that
-finds the fix applied but never confirmed running activates it again rather than report it
-deployed, and one that finds the fix's change gone -- a person reverted it -- applies it
-again. A fix whose change production already holds, by another way, is reported running
-without a commit. When the server does not come back, the code is reverted, the modules
-upgraded and the server restarted again; the database is not restored, so a fix whose upgrade
-migrated data is undone in code only. A revert that itself fails, or leaves the server
-unhealthy, says that production needs a person. A host command that runs out of time is killed
-with every process it started, so no upgrade goes on under the revert. With
+A hotfix applies what the fix's branch adds to its base -- one change, so a merge of the base
+into the branch, GitHub's "Update branch", brings nothing more -- onto the revision production
+runs, as one commit with a `Hotfix-Of: <sha>` trailer; never the base branch's commits
+production does not run yet. A fix that does not apply cleanly is refused, the checkout left
+as it was. After the upgrade and restart the server must come back healthy; the revision that
+did is recorded as `refs/agent-runner/healthy`, so an attempt that finds the fix applied but
+never confirmed running activates it again rather than report it deployed, and one that finds
+the hotfix commit's own change gone -- a person reverted it -- applies it again. A fix whose
+change production already holds, by another way, is reported running without a commit. When
+the server does not come back, the code is reverted, the modules upgraded and the server
+restarted again; the database is not restored, so a fix whose upgrade migrated data is undone
+in code only. A revert that itself fails, or leaves the server unhealthy, says that production
+needs a person. A host command that runs out of time is killed with every process it started
+in its session, so no upgrade goes on under the revert; one that exited is not waited for past
+a moment, whatever it left holding its output -- a server it started runs on. With
 `AGENT_RUNNER_DEPLOY_STOP` and `_START` set, the server is stopped for the upgrade instead of
 upgraded while it serves.
 

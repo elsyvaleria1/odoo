@@ -20,13 +20,16 @@ fake agent, for exercising the protocol end to end.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import dataclasses
 import http.client
 import json
 import logging
 import os
+import selectors
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -65,6 +68,97 @@ class TransportError(Exception):
 class Outcome:
     result: dict[str, Any]
     usage: dict[str, float] = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass
+class Finished:
+    returncode: int | None
+    stdout: str
+    stderr: str
+    # "timeout" or "stopped" when it was ended before it exited
+    ended: str | None = None
+
+
+# how long the output of an exited command is waited for, once it is held
+# only by a process that left the command's session
+OUTPUT_GRACE = 5.0
+
+
+def run_in_session(
+    command: list[str],
+    *,
+    env: dict[str, str],
+    timeout: float,
+    cwd: Path | None = None,
+    stop: threading.Event | None = None,
+    end_on_exit: bool = False,
+) -> Finished:
+    """Run ``command`` in a session of its own. Run out of time or stopped,
+    it is ended with everything it started; exited, so is what it left when
+    ``end_on_exit``. Its output is read as it comes, and no longer waited for
+    than a moment once the command is gone: a process that left the session
+    and holds it cannot hold the caller."""
+    process = subprocess.Popen(
+        command,
+        cwd=cwd,
+        env=env,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    chunks: dict[Any, list[bytes]] = {process.stdout: [], process.stderr: []}
+    deadline = time.monotonic() + timeout
+    ended: str | None = None
+    grace: float | None = None
+    with selectors.DefaultSelector() as selector:
+        for pipe in chunks:
+            selector.register(pipe, selectors.EVENT_READ)
+        while True:
+            if selector.get_map():
+                for key, _events in selector.select(timeout=0.2):
+                    data = os.read(key.fd, 65536)
+                    if data:
+                        chunks[key.fileobj].append(data)
+                    else:
+                        selector.unregister(key.fileobj)
+            else:
+                with contextlib.suppress(subprocess.TimeoutExpired):
+                    process.wait(timeout=0.2)
+            exited = process.poll() is not None
+            if exited and not selector.get_map():
+                break
+            now = time.monotonic()
+            if grace is None:
+                if not exited:
+                    if stop is not None and stop.is_set():
+                        ended = "stopped"
+                    elif now > deadline:
+                        ended = "timeout"
+                    else:
+                        continue
+                if ended or end_on_exit:
+                    end_session(process)
+                grace = now + OUTPUT_GRACE
+            elif now > grace:
+                break
+    for pipe in chunks:
+        pipe.close()
+    if ended or end_on_exit:
+        end_session(process)
+    process.wait()
+    return Finished(
+        None if ended else process.returncode,
+        b"".join(chunks[process.stdout]).decode(errors="replace"),
+        b"".join(chunks[process.stderr]).decode(errors="replace"),
+        ended,
+    )
+
+
+def end_session(process: subprocess.Popen) -> None:
+    # the session's leader cannot leave its process group: this reaches it
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 class Client:

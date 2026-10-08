@@ -115,6 +115,9 @@ class ErrorIncident(models.Model):
         for incident in self:
             if incident.fix_state not in LIVE_FIX_STATES:
                 incident.write({"fix_state": "none", "count_fix_attempt": 0})
+                # a merge or hotfix asked about the fix that did not hold is
+                # no decision left to take
+                incident._autofix_release_approval()
 
     def _autofix_refusal(
         self, policy: models.BaseModel, *, by_hand: bool = False
@@ -129,10 +132,15 @@ class ErrorIncident(models.Model):
             return "attempts_spent"
         if not policy._under_daily_cap():
             return "daily_cap"
+        if not by_hand:
+            if refusal := self._autofix_refusal_by_policy(policy):
+                return refusal
+        # last: it asks git, which the refusals above spare most captures
         if not self._autofix_repository():
             return "unmapped"
-        if by_hand:
-            return None
+        return None
+
+    def _autofix_refusal_by_policy(self, policy: models.BaseModel) -> str | None:
         if self.incident_state not in ("new", "regressed"):
             return "with_a_person"
         if self.fix_state != "none":

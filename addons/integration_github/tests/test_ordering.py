@@ -1,5 +1,9 @@
+from unittest.mock import patch
+
+from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.integration_github.models import integration_github_pull as pull_module
 from odoo.addons.integration_github.tools import repository_domain
 
 REPOSITORY = "Agro-Marin/odoo"
@@ -93,3 +97,47 @@ class TestDeliveryOrder(TransactionCase):
         )
         self._pull("2026-10-07T11:00:00Z")
         self.assertEqual(merged.pull_state, "merged")
+
+    def _github_says(self, head):
+        current = {
+            "number": 3,
+            "title": "t",
+            "state": "open",
+            "updated_at": "2026-10-07T10:00:00Z",
+            "head": {"ref": "b", "sha": head, "repo": {"full_name": REPOSITORY}},
+        }
+
+        class Client:
+            def get_pull_request(self, owner, repo, number):
+                return current
+
+            def list_check_runs(self, owner, repo, ref):
+                return []
+
+            def get_combined_status(self, owner, repo, ref):
+                return {"statuses": []}
+
+        return patch.object(pull_module, "get_github_client", return_value=Client())
+
+    def _head(self, sha):
+        return self._pull(
+            "2026-10-07T10:00:00Z",
+            head={"ref": "b", "sha": sha, "repo": {"full_name": REPOSITORY}},
+        )
+
+    def test_two_heads_of_one_second_are_settled_by_github(self):
+        pull = self._head(SHA)
+        with self._github_says(SHA):
+            self._head("c" * 40)
+        self.assertEqual(pull.head_sha, SHA, "GitHub says the first is current")
+        with self._github_says("c" * 40):
+            self._head("d" * 40)
+        self.assertEqual(pull.head_sha, "c" * 40)
+
+    def test_two_heads_of_one_second_without_github_take_the_later(self):
+        pull = self._head(SHA)
+        with patch.object(
+            pull_module, "get_github_client", side_effect=UserError("no credential")
+        ):
+            self._head("c" * 40)
+        self.assertEqual(pull.head_sha, "c" * 40)

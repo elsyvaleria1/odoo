@@ -352,3 +352,71 @@ def test_a_command_that_times_out_is_killed_with_what_it_started(
         deploy._run([str(wrapper)], "the upgrade", timeout=0.5)
     time.sleep(3)
     assert not marker.exists()
+
+
+def _lines(**changed):
+    lines = [f"line{i}\n" for i in range(1, 11)]
+    for index, text in changed.items():
+        lines[int(index[1:]) - 1] = f"{text}\n"
+    return "".join(lines)
+
+
+def test_a_fix_applied_where_production_differs_from_base_is_found_applied(host):
+    # production runs behind the base: the text around the fix differs there,
+    # and the hotfix commit -- made on production's files -- is what is checked
+    _push_base(host, "addons/stock_x/models.py", _lines(), "ten lines")
+    _git(host.production, "pull", "-q", "--ff-only")
+    _push_base(host, "addons/stock_x/models.py", _lines(l3="line3 newer"), "unreleased")
+    fix = _new_fix(
+        host,
+        "19.0-marin-fix-z-i5-a1",
+        "addons/stock_x/models.py",
+        _lines(l3="line3 newer", l5="line5 fixed"),
+    )
+    lease = _hotfix_lease(host, branch="19.0-marin-fix-z-i5-a1", commit=fix)
+    deploy.hotfix(lease, StubReporter())
+    assert host.file() == _lines(l5="line5 fixed")
+    _git(host.production, "update-ref", "-d", deploy.HEALTHY)
+    deploy.hotfix(lease, StubReporter())
+    assert host.calls()[-2:] == ["upgrade stock_x", "restart"]
+    assert len(host.calls()) == 4, "activated again, not taken for contained"
+
+
+def test_a_fix_branch_updated_by_merging_its_base_is_hotfixed(host):
+    branch = "19.0-marin-fix-m-i6-a1"
+    _new_fix(host, branch, "addons/stock_x/models.py", "fixed\n")
+    _push_base(host, "addons/other_mod/m.py", "UNRELEASED\n", "unreleased")
+    _git(host.dev, "checkout", "-q", branch)
+    _git(
+        host.dev,
+        "-c",
+        "user.name=d",
+        "-c",
+        "user.email=d@x",
+        "merge",
+        "-q",
+        "--no-ff",
+        "-m",
+        "Merge branch '19.0-marin' into the fix",
+        "19.0-marin",
+    )
+    _git(host.dev, "push", "-q", str(host.origin), branch)
+    merged = _git(host.dev, "rev-parse", "HEAD")
+    outcome = deploy.hotfix(
+        _hotfix_lease(host, branch=branch, commit=merged), StubReporter()
+    )
+    assert outcome.result["contained"] == [merged]
+    assert host.file() == "fixed\n"
+    assert not (host.production / "addons/other_mod/m.py").exists()
+
+
+def test_a_command_whose_detached_child_holds_its_output_is_bounded():
+    started = time.monotonic()
+    with pytest.raises(RuntimeError, match="timed out"):
+        deploy._run(
+            ["sh", "-c", "setsid sleep 15 & sleep 60"], "the upgrade", timeout=1
+        )
+    assert time.monotonic() - started < 1 + agent.OUTPUT_GRACE + 3
+    started = time.monotonic()
+    deploy._run(["sh", "-c", "setsid sleep 15 &"], "the restart", timeout=30)
+    assert time.monotonic() - started < agent.OUTPUT_GRACE + 3

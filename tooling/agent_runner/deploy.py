@@ -32,12 +32,10 @@ again instead of reporting it deployed.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
 import re
 import shlex
-import signal
 import subprocess
 import time
 from pathlib import Path
@@ -45,10 +43,10 @@ from typing import Any
 
 try:
     from .gitops import GITHUB, git, is_ancestor
-    from .runner import Outcome, Permanent, Reporter
+    from .runner import Outcome, Permanent, Reporter, run_in_session
 except ImportError:  # run as a script beside runner.py
     from gitops import GITHUB, git, is_ancestor
-    from runner import Outcome, Permanent, Reporter
+    from runner import Outcome, Permanent, Reporter, run_in_session
 
 _SHA = re.compile(r"\A[0-9a-f]{7,40}\Z")
 _REF = re.compile(r"\A(?!-)[A-Za-z0-9._/-]{1,250}\Z")
@@ -123,25 +121,15 @@ def _run(
 ) -> None:
     if command is None:
         return
-    # a session of its own: a command that runs out of time is killed with
-    # everything it started, not left upgrading under the revert
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        env=_host_env(),
-        start_new_session=True,
-    )
-    try:
-        stdout, stderr = process.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired as error:
-        with contextlib.suppress(ProcessLookupError):
-            os.killpg(process.pid, signal.SIGKILL)
-        process.communicate()
-        raise RuntimeError(f"{what} timed out after {timeout:.0f}s") from error
-    if process.returncode:
-        raise RuntimeError(f"{what} failed: {(stderr or stdout).strip()[-500:]}")
+    # run out of time, it is killed with everything it started, not left
+    # upgrading under the revert; exited, what it started -- a server it
+    # restarted -- runs on, and is not waited for
+    finished = run_in_session(command, env=_host_env(), timeout=timeout)
+    if finished.ended:
+        raise RuntimeError(f"{what} timed out after {timeout:.0f}s")
+    if finished.returncode:
+        said = (finished.stderr or finished.stdout).strip()[-500:]
+        raise RuntimeError(f"{what} failed: {said}")
 
 
 def _healthy() -> bool:
@@ -256,14 +244,20 @@ def _confirmed_running(checkout: Path, applied: str) -> bool:
     )
 
 
-def _change_present(checkout: Path, base: str, commit: str) -> bool:
-    """Whether the running tree holds what the fix changed: its diff, reversed,
-    applies cleanly -- false once a person reverted it."""
-    diff = _git(checkout, "diff", "--binary", base, commit)
+def _change_present(checkout: Path, applied: str) -> bool:
+    """Whether the running tree still holds the hotfix commit ``applied``: its
+    own diff, made against production's files, reverses cleanly -- false once
+    a person reverted it."""
+    return _applies(
+        checkout, _git(checkout, "show", "--binary", "--format=", applied), "--reverse"
+    )
+
+
+def _applies(checkout: Path, diff: str, *options: str) -> bool:
     if not diff.strip():
         return True
     check = subprocess.run(
-        ["git", "apply", "--reverse", "--check", "-"],
+        ["git", "apply", "--check", *options, "-"],
         cwd=checkout,
         input=diff,
         capture_output=True,
@@ -302,7 +296,7 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
         # production's own deploy brought it: activating it is that deploy's
         return Outcome(result={"revision": head, "contained": [commit], "modules": []})
     applied = _hotfix_of(checkout, commit)
-    if applied and not _change_present(checkout, base, commit):
+    if applied and not _change_present(checkout, applied):
         # a person reverted the hotfix since: it is applied no more
         applied = None
     if applied:
@@ -324,9 +318,17 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
         return _activate_or_revert(checkout, before, head, modules, commit, reporter)
 
     try:
-        _git(checkout, "cherry-pick", "--no-commit", f"{base}..{commit}")
+        # what the branch adds to its base, as one change: a merge of the base
+        # into the branch -- GitHub's "Update branch" -- brings nothing more
+        _git(
+            checkout,
+            "apply",
+            "--3way",
+            "--index",
+            "-",
+            input=_git(checkout, "diff", "--binary", base, commit),
+        )
     except RuntimeError as error:
-        _git(checkout, "cherry-pick", "--abort", check=False)
         _git(checkout, "reset", "--quiet", "--hard", head)
         raise Permanent(
             f"the fix does not apply to production's revision {head[:12]}: {error}"

@@ -72,11 +72,13 @@ def git(
     trusted: bool = False,
     check: bool = True,
     timeout: float = TIMEOUT,
+    input: str | None = None,
 ) -> str:
     try:
         completed = subprocess.run(
             ["git", *_SAFE, *args],
             cwd=cwd,
+            input=input,
             capture_output=True,
             text=True,
             env=git_env(token, trusted=trusted),

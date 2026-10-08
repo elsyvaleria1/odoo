@@ -26,10 +26,16 @@ FAKE_CLAUDE = textwrap.dedent(
         sys.stderr.flush()
     if behaviour.get("linger"):
         import subprocess, time
-        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"],
+                                 start_new_session=behaviour["linger"] == "detach")
         (here / "child.pid").write_text(str(child.pid))
-        if behaviour["linger"] == "hang":
+        if behaviour["linger"] in ("hang", "detach"):
             time.sleep(120)
+    if behaviour.get("fail"):
+        # Claude Code's failed answer: the result says why and what it spent
+        print(json.dumps({{"type": "result", "is_error": True, "result": behaviour["fail"],
+                          "total_cost_usd": 0.5, "usage": {{"input_tokens": 7, "output_tokens": 3}}}}))
+        sys.exit(1)
     if behaviour.get("exit"):
         sys.exit(behaviour["exit"])
     verdict = behaviour.get("verdict")
@@ -78,6 +84,10 @@ def make_world(tmp_path, monkeypatch):
 
     class World:
         fake = tmp_path / "fake"
+        root = tmp_path
+
+        def __init__(self):
+            self.origin = origin
 
         def behave(self, **behaviour):
             (fake / "behaviour.json").write_text(json.dumps(behaviour))

@@ -248,6 +248,9 @@ class ErrorIncident(models.Model):
             return
         if run.run_state != "succeeded":
             self.write({"fix_state": "test_passed"})
+            # the pull request is read again: merged or closed while the
+            # hotfix ran, the incident follows that, not the hotfix
+            self._autofix_pull_changed(self._autofix_pull())
             self.message_post(
                 body=self.env._(
                     "The hotfix was not applied, or was reverted: %(error)s",
