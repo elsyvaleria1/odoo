@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import SQL, frozendict
 
-from ..tools.authority import operating
+from ..tools.authority import counting_presence, operating
 
 _METHODS = [
     ("session", "Proven from an Odoo session"),
@@ -155,12 +155,10 @@ class TelegramBinding(models.Model):
     def _is_present(self, partner) -> bool:
         """Whether `partner` is still someone the bots act for: an active user
         of theirs remains. An extension counts more (an active employee)."""
-        # whoever archives a user may not read every user of the contact: who
-        # remains is the bindings' bookkeeping, not business data
         return bool(
-            self.env["res.users"]
-            .sudo()
-            .search_count([("partner_id", "=", partner.id), ("active", "=", True)])
+            counting_presence(self.env["res.users"]).search_count(
+                [("partner_id", "=", partner.id), ("active", "=", True)]
+            )
         )
 
     def _journal(self, event, *, reason=None) -> None:

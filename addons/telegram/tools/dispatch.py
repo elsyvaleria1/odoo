@@ -25,8 +25,8 @@ class TelegramCommand:
 
     Who may use it is declared, so that running it, /ayuda and the command
     menu Telegram shows each person ask the same question: the tier, then for
-    an internal user any of `groups` (xml ids) and the `access` (model,
-    operation) the user has in Odoo, then the handler's `_command_allowed`.
+    an internal user the `access` (model, operation) they have in Odoo -- the
+    ir.access rows, not a group test -- then the handler's `_command_allowed`.
     `description` is the menu's line for it; a command without one is not in
     the menu, and still runs. `company` says which company it acts in
     (COMPANY_MODES)."""
@@ -35,7 +35,6 @@ class TelegramCommand:
     tier: str = "internal"
     starts_flow: bool = False
     builtin: bool = False
-    groups: tuple[str, ...] = ()
     access: tuple[str, str] | None = None
     description: LazyGettext | None = None
     company: str = "any"
@@ -45,10 +44,8 @@ class TelegramCommand:
             raise ValueError(f"unknown tier {self.tier!r}")
         if self.company not in COMPANY_MODES:
             raise ValueError(f"unknown company mode {self.company!r}")
-        if isinstance(self.groups, str):
-            raise TypeError("groups is a tuple of xml ids")
-        if (self.groups or self.access) and self.tier != "internal":
-            raise ValueError("groups and access are an internal user's, tier internal")
+        if self.access and self.tier != "internal":
+            raise ValueError("access is an internal user's, tier internal")
 
 
 def translation_env(bot, chat=None):

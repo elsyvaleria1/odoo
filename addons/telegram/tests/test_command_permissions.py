@@ -53,17 +53,6 @@ class TestCommandPermissions(TelegramBotTestCase):
             )
         return [call.args[1] for call in send.call_args_list]
 
-    def test_a_group_the_user_lacks_refuses_the_command(self):
-        with self.guarded(groups=("base.group_system",)) as ran:
-            sent = self._dispatch("/guardada")
-        self.assertFalse(ran)
-        self.assertIn("permission", sent[0])
-
-    def test_any_group_the_user_holds_runs_it(self):
-        with self.guarded(groups=("base.group_system", "base.group_user")) as ran:
-            self._dispatch("/guardada")
-        self.assertEqual(ran, [self.test_user])
-
     def test_an_access_the_user_lacks_refuses_the_command(self):
         with self.guarded(access=("res.users", "unlink")) as ran:
             sent = self._dispatch("/guardada")
@@ -77,9 +66,7 @@ class TestCommandPermissions(TelegramBotTestCase):
 
     def test_grants_are_an_internal_users(self):
         with self.assertRaises(ValueError):
-            TelegramCommand("_m", "partner", groups=("base.group_user",))
-        with self.assertRaises(TypeError):
-            TelegramCommand("_m", groups="base.group_user")
+            TelegramCommand("_m", "partner", access=("res.partner", "read"))
 
     def test_a_builtin_of_a_feature_the_bot_does_not_run_is_unknown(self):
         with (
@@ -161,7 +148,7 @@ class TestCommandMenu(TelegramBotTestCase):
                     "_m",
                     "internal",
                     builtin=True,
-                    groups=("base.group_system",),
+                    access=("res.users", "unlink"),
                     description=_lt("Administer"),
                 ),
             }

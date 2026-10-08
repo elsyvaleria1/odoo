@@ -928,10 +928,8 @@ class TelegramRouter(models.AbstractModel):
 
     @staticmethod
     def _grants_allow(spec, internal_user) -> bool:
-        """Whether `internal_user` holds what `spec` declares: any of its
-        groups, and its access as themself."""
-        if spec.groups and not any(internal_user.has_group(g) for g in spec.groups):
-            return False
+        """Whether `internal_user` holds the access `spec` declares, as
+        themself."""
         if spec.access:
             model, operation = spec.access
             return (

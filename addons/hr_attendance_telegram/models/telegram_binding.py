@@ -1,5 +1,7 @@
 from odoo import api, models
 
+from odoo.addons.telegram.tools.authority import counting_presence
+
 
 class TelegramBinding(models.Model):
     _inherit = "telegram.binding"
@@ -11,8 +13,7 @@ class TelegramBinding(models.Model):
         # an employee keeps being found through their user once it is
         # archived: only the employee's own active flag decides
         return super()._is_present(partner) or bool(
-            self.env["hr.employee"]
-            .sudo()
+            counting_presence(self.env["hr.employee"])
             .with_context(active_test=False)
             .search_count(
                 [

@@ -2,7 +2,7 @@ import logging
 
 from odoo import api, fields, models, tools
 
-from ..tools.authority import operating
+from ..tools.authority import keeping, operating
 
 _logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class TelegramCommand(models.Model):
         some companies; a command left out acts for every company. Every
         update asks it, so it is read once, past the readers' rights: which
         companies a command acts for is the bots' configuration."""
-        commands = self.sudo().search([("company_ids", "!=", False)])
+        commands = keeping(self).search([("company_ids", "!=", False)])
         return {
             command.name: frozenset(command.company_ids.ids) for command in commands
         }

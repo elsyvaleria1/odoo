@@ -11,12 +11,22 @@ def operating(records):
     )
 
 
-def keeping(bots):
-    # the bot's receivers, its webhook secret and its token credential live in
-    # the bot's company behind company guards, which no privilege passes: an
-    # update's public user, and an administrator with another company active,
-    # keep them only elevated. Bot-owned records only, never business data.
-    return bots.sudo()
+def keeping(records):
+    # the bots' own configuration -- a bot's receivers, its webhook secret and
+    # token credential, the companies its commands act for -- lives behind
+    # company guards, which no privilege passes: an update's public user, and
+    # an administrator with another company active, keep it only elevated.
+    # Bot-owned configuration only, never business data.
+    return records.sudo()
+
+
+def counting_presence(records):
+    # whether someone is still there for the bots to act for -- an active user
+    # of the contact, an active employee -- is the bindings' bookkeeping, read
+    # past company guards, which no privilege passes: whoever archives a user
+    # may see none of the contact's other users or employees. Counted only,
+    # never handed on.
+    return records.sudo()
 
 
 def in_bot_company(records, bot):
