@@ -1498,6 +1498,7 @@ class MrpProduction(models.Model):
         "bom_id.produce_delay",
         "date_start",
         "is_planned",
+        "bom_id.allow_operation_dependencies",
         "workorder_ids.blocked_by_workorder_ids",
         "workorder_ids.duration_expected",
     )
@@ -1538,6 +1539,7 @@ class MrpProduction(models.Model):
         if not isinstance(date_start, datetime.datetime) or not self.workorder_ids:
             return False
 
+        blockers = self._get_planning_dependencies()
         date_finished_per_workcenter = defaultdict(lambda: date_start)
         date_finished_per_workorder = {}
         pending = list(self.workorder_ids)
@@ -1547,9 +1549,8 @@ class MrpProduction(models.Model):
                     candidate
                     for candidate in pending
                     if all(
-                        blocker.id in date_finished_per_workorder
-                        for blocker in candidate.blocked_by_workorder_ids
-                        & self.workorder_ids
+                        blocker in date_finished_per_workorder
+                        for blocker in blockers[candidate]
                     )
                 ),
                 pending[0],
@@ -1558,9 +1559,9 @@ class MrpProduction(models.Model):
             wo_optimal_date_start = max(
                 [date_finished_per_workcenter[wo.workcenter_id.id]]
                 + [
-                    date_finished_per_workorder[blocker.id]
-                    for blocker in wo.blocked_by_workorder_ids
-                    if blocker.id in date_finished_per_workorder
+                    date_finished_per_workorder[blocker]
+                    for blocker in blockers[wo]
+                    if blocker in date_finished_per_workorder
                 ]
             )
             _dummy, to_date = wo.workcenter_id._get_first_available_slot(
@@ -1569,7 +1570,7 @@ class MrpProduction(models.Model):
             if not isinstance(to_date, datetime.datetime):
                 return False
             date_finished_per_workcenter[wo.workcenter_id.id] = to_date
-            date_finished_per_workorder[wo.id] = to_date
+            date_finished_per_workorder[wo] = to_date
         return max(date_finished_per_workcenter.values())
 
     @api.depends(
@@ -3130,12 +3131,21 @@ class MrpProduction(models.Model):
                     ]
         self._link_moves_to_workorders()
 
-    def _get_derived_workorder_dependencies(self):
+    def _get_planning_dependencies(self) -> dict:
+        self.check_singleton()
+        workorders = self.workorder_ids
+        if self.state != "draft" or any(workorders.blocked_by_workorder_ids):
+            return {wo: wo.blocked_by_workorder_ids & workorders for wo in workorders}
+        return self._get_derived_workorder_dependencies(
+            allow=self.bom_id.allow_operation_dependencies
+        )
+
+    def _get_derived_workorder_dependencies(self, allow=None):
         self.check_singleton()
         Workorder = self.env["mrp.workorder"]
         derived = dict.fromkeys(self.workorder_ids, Workorder)
         routing = self.workorder_ids._sorted_by_routing()
-        if self.allow_workorder_dependencies:
+        if self.allow_workorder_dependencies if allow is None else allow:
             workorder_per_operation = {
                 workorder.operation_id: workorder for workorder in routing
             }

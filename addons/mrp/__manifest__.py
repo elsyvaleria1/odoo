@@ -1,6 +1,6 @@
 {
     "name": "Manufacturing",
-    "version": "2.16",
+    "version": "2.17",
     "oldest_upgradable_version": "2.13",
     "category": "Supply Chain/Manufacturing",
     "sequence": 55,

@@ -137,6 +137,12 @@ class MrpWorkorder(models.Model):
         " from the quantity produced, and later changes to the kit do not"
         " rewrite it.",
     )
+    operation_demand_product_id = fields.Many2one(
+        comodel_name="product.product",
+        string="Operation Product Done",
+        copy=False,
+        readonly=True,
+    )
     company_id = fields.Many2one(related="production_id.company_id")
     qty_producing = fields.Float(
         string="Currently Produced Quantity",
@@ -210,7 +216,10 @@ class MrpWorkorder(models.Model):
         readonly=False,
         help="Time logged against this work order, in minutes. A timer that is"
         " still running counts for nothing until it is stopped, so this is a"
-        " function of the timer lines alone and does not move with the clock.",
+        " function of the timer lines alone and does not move with the clock."
+        " Overlapping timers on one work center count once. Lowering it ends"
+        " the logged time earlier: every closed timer, on every work center,"
+        " stops at the moment the total reaches the new value.",
     )
     duration_live = fields.Float(
         string="Live Duration",
@@ -1406,9 +1415,9 @@ class MrpWorkorder(models.Model):
                 workorder.production_bom_id,
                 self.env["mrp.bom"],
             ):
-                vals["operation_demand_qty"] = workorder._get_operation_demand(
-                    vals["qty_produced"]
-                )[2]
+                vals.update(
+                    workorder._prepare_operation_demand_vals(vals["qty_produced"])
+                )
             all_vals_dict[frozenset(vals.items())] |= workorder
         _debug.lifecycle(
             "workorder_done", workorders=workorders_to_end, groups=len(all_vals_dict)
@@ -1564,6 +1573,14 @@ class MrpWorkorder(models.Model):
             product, unit, quantity, time_cycle, bom
         )
         return duration
+
+    def _prepare_operation_demand_vals(self, quantity) -> dict:
+        self.check_singleton()
+        product, _unit, demand_quantity, _bom = self._get_operation_demand(quantity)
+        return {
+            "operation_demand_qty": demand_quantity,
+            "operation_demand_product_id": product.id,
+        }
 
     def _get_operation_demand(self, quantity=None) -> tuple:
         self.check_singleton()

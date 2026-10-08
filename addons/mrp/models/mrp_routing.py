@@ -207,6 +207,7 @@ class MrpRoutingWorkcenter(models.Model):
         "workorder_ids.duration",
         "workorder_ids.qty_produced",
         "workorder_ids.operation_demand_qty",
+        "workorder_ids.operation_demand_product_id",
         "workorder_ids.state",
         "bom_id.product_id",
         "bom_id.product_qty",
@@ -237,7 +238,8 @@ class MrpRoutingWorkcenter(models.Model):
                     )
                 elif item.operation_demand_qty:
                     product, unit, quantity, bom = (
-                        operation._get_capacity_product(),
+                        item.operation_demand_product_id
+                        or operation._get_capacity_product(),
                         operation.bom_id.product_uom_id,
                         item.operation_demand_qty,
                         operation.bom_id,

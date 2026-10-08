@@ -123,6 +123,30 @@ class TestWorkorderLifecycle(TestMrpCommon):
         self.assertTrue(productive.exists())
         self.assertTrue(blocked.exists())
 
+    def test_lowering_the_duration_ends_every_work_centers_time_at_one_moment(self):
+        workorder = self._confirmed_production(self.bom).workorder_ids[0]
+        start = fields.Datetime.now().replace(microsecond=0) - timedelta(hours=3)
+        first = self._timers(
+            workorder, ("mrp.block_reason7", start, start + timedelta(minutes=60))
+        )
+        second = self.env["mrp.workcenter.productivity"].create(
+            {
+                "workorder_id": workorder.id,
+                "workcenter_id": self.workcenter_3.id,
+                "loss_id": self.env.ref("mrp.block_reason7").id,
+                "date_start": start,
+                "date_end": start + timedelta(minutes=60),
+            }
+        )
+        self.assertEqual(workorder.duration, 120)
+
+        workorder.duration = 60
+
+        self.assertEqual(workorder.duration, 60)
+        self.assertEqual(
+            (first | second).mapped("date_end"), [start + timedelta(minutes=30)] * 2
+        )
+
     def test_lowering_the_duration_to_nothing_removes_every_closed_timer(self):
         workorder = self._confirmed_production(self.bom).workorder_ids[0]
         start = fields.Datetime.now().replace(microsecond=0) - timedelta(hours=3)
@@ -274,6 +298,39 @@ class TestWorkorderLifecycle(TestMrpCommon):
         self.assertEqual(edited.workorder_count, workcenter.workorder_count)
         self.assertEqual(edited.workcenter_load, workcenter.workcenter_load)
         self.assertTrue(edited.workorder_count)
+
+    def test_a_draft_made_in_code_ends_where_its_confirmed_order_will(self):
+        self.full_availability()
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.finished.product_tmpl_id.id,
+                "bom_line_ids": [Command.create({"product_id": self.component.id})],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": name,
+                            "workcenter_id": workcenter.id,
+                            "time_cycle_manual": 120,
+                            "sequence": sequence,
+                        }
+                    )
+                    for sequence, (name, workcenter) in enumerate(
+                        (("cut", self.workcenter_2), ("paint", self.workcenter_3))
+                    )
+                ],
+            }
+        )
+        start = fields.Datetime.now().replace(microsecond=0) + timedelta(days=7)
+        draft = self.env["mrp.production"].create(
+            {
+                "product_id": self.finished.id,
+                "bom_id": bom.id,
+                "product_qty": 1,
+                "date_start": start,
+            }
+        )
+        self.assertEqual(draft.state, "draft")
+        self.assertEqual(draft.date_end, start + timedelta(minutes=240))
 
     def test_a_drawn_dependency_survives_replanning(self):
         production, _first, second = self._planned_pair()
@@ -472,6 +529,84 @@ class TestWorkorderLifecycle(TestMrpCommon):
         )
 
         bom.bom_line_ids.product_qty = 2
+        kit.operation_ids._compute_operation_times()
+        self.assertEqual(kit.operation_ids.time_cycle, 1)
+
+    def test_a_variant_kit_operation_learns_with_its_variants_capacity(self):
+        workcenter = self.env["mrp.workcenter"].create(
+            {"name": "Paired legs", "time_start": 0, "time_stop": 0}
+        )
+        size = self.env["product.attribute"].create(
+            {
+                "name": "Leg size",
+                "value_ids": [Command.create({"name": n}) for n in ("Short", "Tall")],
+            }
+        )
+        leg_set_tmpl = self.env["product.template"].create(
+            {
+                "name": "Variant leg set",
+                "is_storable": True,
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": size.id,
+                            "value_ids": [Command.set(size.value_ids.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        short = leg_set_tmpl.product_variant_ids[0]
+        self.env["mrp.workcenter.capacity"].create(
+            {
+                "workcenter_id": workcenter.id,
+                "product_id": short.id,
+                "product_uom_id": short.uom_id.id,
+                "capacity": 2,
+            }
+        )
+        kit = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": leg_set_tmpl.id,
+                "type": "phantom",
+                "bom_line_ids": [Command.create({"product_id": self.component.id})],
+                "operation_ids": [
+                    Command.create(
+                        {
+                            "name": "Pair legs",
+                            "workcenter_id": workcenter.id,
+                            "time_mode": "auto",
+                            "time_mode_batch": 1,
+                            "time_cycle_manual": 1,
+                        }
+                    )
+                ],
+            }
+        )
+        table = self.env["product.product"].create(
+            {"name": "Short table", "is_storable": True}
+        )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": table.product_tmpl_id.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": short.id, "product_qty": 4})
+                ],
+            }
+        )
+        production = self._confirmed_production(bom, qty=10)
+        workorder = production.workorder_ids
+        self.assertEqual(workorder.duration_expected, 20)
+        workorder.button_start()
+        started = fields.Datetime.now() - timedelta(hours=3)
+        workorder.time_ids.write(
+            {"date_start": started, "date_end": started + timedelta(minutes=20)}
+        )
+        production.qty_producing = 10
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+
+        self.assertEqual(workorder.operation_demand_product_id, short)
         kit.operation_ids._compute_operation_times()
         self.assertEqual(kit.operation_ids.time_cycle, 1)
 
