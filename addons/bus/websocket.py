@@ -38,7 +38,11 @@ from odoo.http import (
 from odoo.modules.registry import Registry
 from odoo.service import get_websocket_max_connections, metrics
 from odoo.service.security import is_session_valid
-from odoo.service.server import CommonServer
+from odoo.service.server import (
+    REQUEST_THREAD_PREFIX,
+    UPGRADE_ADOPT_KEY,
+    CommonServer,
+)
 from odoo.service.transaction import retrying
 from odoo.tools import config
 
@@ -147,6 +151,14 @@ class PollablePriorityQueue(PriorityQueue):
     def close(self):
         self._putsocket.close()
         self._getsocket.close()
+
+
+class _ServerClock:
+    # freezegun answers time.monotonic() with frozen or real time depending on
+    # how deep the caller sits under a threading frame, so a connection served
+    # by its own thread would mix both clocks; a reference held on a class is
+    # one it does not rewrite.
+    monotonic = staticmethod(time.monotonic)
 
 
 class LifecycleEvent(IntEnum):
@@ -299,8 +311,8 @@ class Websocket:
     # never went through a wake reads None rather than raising.
     _poll_round = None
 
-    def __init__(self, sock, session, cookies, *, clock=None) -> None:
-        self._clock = clock if clock is not None else time.monotonic
+    def __init__(self, sock, session, cookies, *, clock=None, buffered=b"") -> None:
+        self._clock = clock if clock is not None else _ServerClock.monotonic
         self._session = session
         self._cookies = cookies
         self._db = session.db
@@ -317,13 +329,14 @@ class Websocket:
         self._fragments = None
         self._fragments_opcode = None
         self._frame_started_at = None
+        self._buffered = buffered
         self.__cmd_queue = PollablePriorityQueue()
         self._waiting_for_dispatch = False
         self._channels = set()
         self._session_validated_until = 0.0
         self._validated_session_sid = None
         self._dispatch_state = NotificationDispatchState(
-            self.MAX_NOTIFICATION_HISTORY_SEC
+            self.MAX_NOTIFICATION_HISTORY_SEC, clock=self._clock
         )
         self.__selector = selectors.DefaultSelector()
         self.__selector.register(self.__socket, selectors.EVENT_READ)
@@ -334,6 +347,14 @@ class Websocket:
         self._trigger_lifecycle_event(LifecycleEvent.OPEN)
 
     def get_messages(self):
+        buffered, self._buffered = self._buffered, b""
+        if buffered:
+            try:
+                for message in self._receive(buffered):
+                    if self.state is ConnectionState.OPEN:
+                        yield message
+            except Exception as exc:
+                self._handle_transport_error(exc)
         while self.state is not ConnectionState.CLOSED:
             try:
                 readables = {
@@ -844,7 +865,7 @@ class WebsocketConnectionHandler:
             raise ServiceUnavailable("Websocket is disabled in test mode")
         try:
             response = cls._get_handshake_response(request.httprequest.headers)
-            socket = request.httprequest.raw_environ["odoo.socket"]
+            request.httprequest.raw_environ["odoo.socket"]
         except KeyError as err:
             raise ServiceUnavailable(
                 "Websocket unavailable on this port. Use the evented service port."
@@ -860,24 +881,16 @@ class WebsocketConnectionHandler:
             )
         try:
             public_session = cls._handle_public_configuration(request)
-            session, db, httprequest = (
-                (public_session or request.session),
+            adoption = _ThreadAdoption(
+                cls,
+                public_session or request.session,
                 request.db,
                 request.httprequest,
+                version,
+                gauge,
             )
-
-            def serve():
-                try:
-                    cls._serve_forever(
-                        Websocket(socket, session, httprequest.cookies),
-                        db,
-                        httprequest,
-                        version,
-                    )
-                finally:
-                    gauge.release()
-
-            response.call_on_close(serve)
+            request.httprequest.raw_environ[UPGRADE_ADOPT_KEY] = adoption.adopt
+            response.call_on_close(adoption.abandon)
             if public_session is None and request.session.can_save:
                 # The websocket authenticates from the stored session; marking
                 # it dirty instead would resend its session_id cookie, which a
@@ -1023,6 +1036,51 @@ class WebsocketConnectionHandler:
                 _logger.exception(
                     "Exception occurred during websocket request handling"
                 )
+
+
+class _ThreadAdoption:
+    __slots__ = (
+        "adopted",
+        "db",
+        "gauge",
+        "handler",
+        "httprequest",
+        "session",
+        "version",
+    )
+
+    def __init__(self, handler, session, db, httprequest, version, gauge) -> None:
+        self.handler = handler
+        self.session = session
+        self.db = db
+        self.httprequest = httprequest
+        self.version = version
+        self.gauge = gauge
+        self.adopted = False
+
+    def adopt(self, sock, buffered, addr) -> None:
+        self.adopted = True
+        threading.Thread(target=self._serve, args=(sock, buffered), daemon=True).start()
+
+    def abandon(self) -> None:
+        if not self.adopted:
+            self.adopted = True
+            self.gauge.release()
+
+    def _serve(self, sock, buffered) -> None:
+        me = threading.current_thread()
+        me.name = f"{REQUEST_THREAD_PREFIX}{me.ident}"
+        try:
+            websocket = Websocket(
+                sock, self.session, self.httprequest.cookies, buffered=buffered
+            )
+            self.handler._serve_forever(
+                websocket, self.db, self.httprequest, self.version
+            )
+        finally:
+            self.gauge.release()
+            with suppress(OSError):
+                sock.close()
 
 
 def _kick_all(code=CloseCode.GOING_AWAY) -> None:

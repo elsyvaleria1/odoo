@@ -1,12 +1,9 @@
 import gc
 import os
 from collections import defaultdict
-from datetime import timedelta
 from threading import Event
 from unittest.mock import patch
 from weakref import WeakSet
-
-from freezegun import freeze_time
 
 from odoo import http
 from odoo.api import Environment
@@ -553,9 +550,9 @@ class TestWebsocketCaryall(WebsocketCase):
 
         with (
             patch("odoo.addons.bus.websocket.TimeoutManager.KEEP_ALIVE_TIMEOUT", 0),
+            patch("odoo.addons.bus.websocket.TimeoutManager.TIMEOUT", 0.5),
             patch.object(Websocket, "_disconnect", disconnect_wrapper),
             patch.object(Websocket, "_terminate", terminate_wrapper),
-            freeze_time("2022-08-19") as frozen_time,
         ):
             ws = self.websocket_connect(ping_after_connect=False)
             ws.send(b"\x00")
@@ -563,7 +560,10 @@ class TestWebsocketCaryall(WebsocketCase):
                 disconnect_done_event.wait(timeout=5),
                 "Server should have initiated the closing handshake as the keep alive timeout is exceeded.",
             )
-            frozen_time.tick(delta=timedelta(seconds=TimeoutManager.TIMEOUT + 1))
+            self.assertFalse(
+                terminate_done_event.is_set(),
+                "The closing handshake gets its own timeout before the connection is cut.",
+            )
             ws.send(b"\x00")
             self.assertTrue(
                 terminate_done_event.wait(timeout=5),

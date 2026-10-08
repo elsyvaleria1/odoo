@@ -3,7 +3,11 @@ from ._factory import start
 from ._prefork import PreforkServer
 from ._process_state import get_server, is_ready
 from ._threaded import ThreadedServer, WebsocketServer
-from ._transport import serve_prefork_connection
+from ._transport import (
+    REQUEST_THREAD_PREFIX,
+    UPGRADE_ADOPT_KEY,
+    serve_prefork_connection,
+)
 from ._worker import (
     CpuTimeLimitExceeded,
     Worker,
@@ -19,6 +23,8 @@ from .lifecycle import (
 )
 
 __all__ = (
+    "REQUEST_THREAD_PREFIX",
+    "UPGRADE_ADOPT_KEY",
     "CommonServer",
     "CpuTimeLimitExceeded",
     "PreforkServer",

@@ -1,5 +1,6 @@
 import base64
 import os
+import socket
 import struct
 import time
 from contextlib import contextmanager
@@ -10,7 +11,7 @@ from werkzeug.exceptions import BadRequest, ServiceUnavailable
 from odoo.db import PoolError
 from odoo.http import MemorySessionStore, Session, SessionExpiredException
 from odoo.libs.json import dumps as json_dumps
-from odoo.tests.common import BaseCase, tagged
+from odoo.tests.common import HOST, TEST_CURSOR_COOKIE_NAME, BaseCase, tagged
 
 try:
     from websocket import ABNF, WebSocketConnectionClosedException
@@ -1029,3 +1030,49 @@ class TestCloseCodesOverWire(WebsocketCase):
         ws = self.websocket_connect(ping_after_connect=False)
         opcode, _ = ws.recv_data_frame(control_frame=True)
         self.assertEqual(opcode, ABNF.OPCODE_PING)
+
+
+@tagged("post_install", "-at_install")
+class TestUpgradeAdoption(WebsocketCase):
+    def _handshake(self):
+        self.session = self.authenticate(None, None)
+        key = base64.b64encode(os.urandom(16)).decode()
+        origin = f"http://{HOST}:{self.http_port()}"
+        cookie = (
+            f"session_id={self.session.sid};"
+            f"{TEST_CURSOR_COOKIE_NAME}={self.http_request_key}"
+        )
+        return (
+            f"GET /websocket?version={WebsocketConnectionHandler._VERSION} HTTP/1.1\r\n"
+            f"Host: {HOST}:{self.http_port()}\r\nOrigin: {origin}\r\n"
+            "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n"
+            f"Cookie: {cookie}\r\n\r\n"
+        ).encode()
+
+    def _read_frame(self, sock, buffer):
+        while True:
+            if len(buffer) >= 2 and len(buffer) >= 2 + (buffer[1] & 0x7F):
+                opcode, payload = _parse_server_frame(buffer)
+                return opcode, payload, buffer[2 + len(payload) :]
+            buffer += sock.recv(4096)
+
+    def test_frames_sent_behind_the_handshake_are_served(self):
+        early_ping = _masked_client_frame(Opcode.PING, b"early")
+        with socket.create_connection((HOST, self.http_port()), timeout=10) as sock:
+            sock.sendall(self._handshake() + early_ping)
+            received = b""
+            while b"\r\n\r\n" not in received:
+                received += sock.recv(4096)
+            head, _, rest = received.partition(b"\r\n\r\n")
+            self.assertTrue(head.startswith(b"HTTP/1.1 101"), head)
+            opcode, payload, rest = self._read_frame(sock, rest)
+            self.assertEqual(opcode, Opcode.PONG)
+            self.assertEqual(payload, b"early")
+            sock.sendall(
+                _masked_client_frame(Opcode.CLOSE, struct.pack("!H", CloseCode.CLEAN))
+            )
+            opcode, payload, rest = self._read_frame(sock, rest)
+            self.assertEqual(opcode, Opcode.CLOSE)
+            self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.CLEAN)
+        self.wait_remaining_websocket_connections()

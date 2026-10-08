@@ -687,7 +687,7 @@ def _run_exchange(
                 bytes=len(conn.source.buffer),
                 path=head.path,
             )
-        _hand_off_upgrade(conn, iterable)
+        _hand_off_upgrade(conn, iterable, environ)
         return Outcome.UPGRADED
     _close_iterable(iterable)
     return _settle(exchange, limits, allow_keep_alive=allow_keep_alive)
@@ -750,7 +750,34 @@ def _close_iterable(iterable: Iterable[bytes] | None) -> None:
             _logger.exception("error while closing the response iterable")
 
 
-def _hand_off_upgrade(conn: Connection, iterable: Iterable[bytes] | None) -> None:
+UPGRADE_ADOPT_KEY = "odoo.upgrade.adopt"
+"""Set by an application to take an upgraded socket over: called inline as
+`adopt(sock, buffered, addr)` once the `101` is written, with the bytes already
+read past the request.  Without it the socket gets a thread of its own that
+closes the response iterable."""
+
+
+def _hand_off_upgrade(
+    conn: Connection, iterable: Iterable[bytes] | None, environ: dict[str, Any]
+) -> None:
+    adopt = environ.get(UPGRADE_ADOPT_KEY)
+    if adopt is not None:
+        buffered = bytes(conn.source.buffer)
+        conn.source.buffer.clear()
+        _debug.lifecycle(
+            "httpd.upgrade_adopted", peer=conn.addr[0], buffered=len(buffered)
+        )
+        try:
+            adopt(conn.sock, buffered, conn.addr)
+        except Exception:
+            _logger.exception(
+                "the upgraded connection from %s was not adopted", conn.addr
+            )
+            conn.close()
+        finally:
+            _close_iterable(iterable)
+        return
+
     def run() -> None:
         me = threading.current_thread()
         me.name = f"{REQUEST_THREAD_PREFIX}{me.ident}"
@@ -830,6 +857,7 @@ def serve_prefork_connection(
 
 __all__ = (
     "REQUEST_THREAD_PREFIX",
+    "UPGRADE_ADOPT_KEY",
     "Connection",
     "Exchange",
     "Outcome",
