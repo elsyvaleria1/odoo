@@ -6,6 +6,10 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
+# anyone holding it reads the project and its tasks and speaks as nobody: it is
+# not the customer's link, which posts as the customer and rides their e-mails
+PUBLIC_LINK = {"role": "view", "cause": "share"}
+
 
 class WizardProjectProjectShare(models.TransientModel):
     _name = "wizard.project.project.share"
@@ -67,7 +71,8 @@ class WizardProjectProjectShare(models.TransientModel):
 
     share_link = fields.Char(
         string="Public Link",
-        help="Anyone with this link can access the project in read mode.",
+        help="Anyone with this link can view the project and its tasks, without "
+        "commenting, for 30 days.",
     )
     collaborator_ids = fields.One2many(
         comodel_name="wizard.project.project.share.collaborator",
@@ -100,7 +105,12 @@ class WizardProjectProjectShare(models.TransientModel):
     def _compute_share_link(self) -> None:
         for wizard in self:
             project = wizard._get_portal_record()
-            token = project.access_token if project else False
+            link, token = (
+                self.env["access.link"]._find_reusable(project, **PUBLIC_LINK)
+                if project and project.has_access("read")
+                else (self.env["access.link"], None)
+            )
+            _debug.logic("public_link_shown", project=project.id, link=link.id or None)
             wizard.share_link = token and (
                 project.get_base_url()
                 + project._get_share_url(redirect=True, token=token)
@@ -109,8 +119,8 @@ class WizardProjectProjectShare(models.TransientModel):
     def action_issue_share_link(self) -> dict[str, Any]:
         self.check_singleton()
         project = self._get_shared_record()
-        project._portal_get_or_create_token()
-        _debug.lifecycle("share_link_issued", project=project.id)
+        link, __ = self.env["access.link"]._issue(project, **PUBLIC_LINK)
+        _debug.lifecycle("share_link_issued", project=project.id, link=link.id)
         self.invalidate_recordset(["share_link"])
         return {
             "type": "ir.actions.act_window",

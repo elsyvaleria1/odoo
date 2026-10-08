@@ -366,6 +366,70 @@ class AccessLink(models.Model):
     # ------------------------------------------------------------------
 
     @api.model
+    def _find_reusable(
+        self,
+        record: models.BaseModel,
+        *,
+        partner: models.BaseModel | None = None,
+        role: str = "view",
+        audience: str = "anyone",
+        audience_partners: models.BaseModel | None = None,
+        cause: str = "share",
+        cause_record: models.BaseModel | None = None,
+        date_to: datetime | None = None,
+    ) -> tuple[Self, str | None]:
+        """The live link to ``record`` that ``_issue`` would hand out again for
+        the same arguments, and its token; nothing is issued. ``(empty, None)``
+        when there is none, or when the server can no longer show its token."""
+        record.check_singleton()
+        self._check_may_issue(record, role)
+        partner = partner or self.env["res.partner"]
+        # a link is reused only when it is the one asked for: an expiry named
+        # by the caller, and the very people a link for some people names
+        people = set((audience_partners or partner).ids)
+        found = (
+            self.with_privilege(
+                "base.privilege_manage_links",
+                reason=f"find a link to {record._name} to hand out again",
+            )
+            .search(
+                Domain("res_model", "=", record._name)
+                & Domain("res_id", "=", record.id)
+                & Domain("partner_id", "=", partner.id or False)
+                & Domain("role", "=", role)
+                & Domain("audience", "=", audience)
+                & Domain("cause", "=", cause)
+                & Domain(
+                    "cause_model", "=", cause_record._name if cause_record else False
+                )
+                & Domain(
+                    "cause_res_id", "=", cause_record.id if cause_record else False
+                )
+                & Domain("token_nonce", "!=", False)
+                & (Domain("date_to", "=", date_to) if date_to else Domain.TRUE)
+                & self._live_domain(),
+                order="id desc",
+            )
+            .filtered(
+                lambda link: (
+                    audience != "partners"
+                    or set(link.audience_partner_ids.ids) == people
+                )
+            )[:1]
+        )
+        token = found._token() if found else None
+        _debug.logic(
+            "link.reusable",
+            model=record._name,
+            role=role,
+            cause=cause,
+            link=found.id if token else None,
+        )
+        if not token:
+            return self.browse(), None
+        return found.with_env(self.env), token
+
+    @api.model
     def _issue(
         self,
         record: models.BaseModel,
@@ -382,43 +446,25 @@ class AccessLink(models.Model):
         """A live link to ``record`` and its token, reusing the one already
         issued for the same person, role, audience and cause (and the same
         cause record, when one is named)."""
-        record.check_singleton()
-        self._check_may_issue(record, role)
+        reusable, token = self._find_reusable(
+            record,
+            partner=partner,
+            role=role,
+            audience=audience,
+            audience_partners=audience_partners,
+            cause=cause,
+            cause_record=cause_record,
+            date_to=date_to,
+        )
+        if token:
+            _debug.logic("link.reused", link=reusable.id, model=record._name)
+            return reusable, token
         partner = partner or self.env["res.partner"]
-        # a link is reused only when it is the one asked for: an expiry named
-        # by the caller, and the very people a link for some people names
-        requested_date_to = date_to
-        people = set((audience_partners or partner).ids)
         if audience == "anyone" and not date_to and not waive_expiry:
             date_to = fields.Datetime.now() + DEFAULT_LIFETIME[cause]
         issuer = self.with_privilege(
             "base.privilege_manage_links", reason=f"issue a link to {record._name}"
         )
-        reusable = issuer.search(
-            Domain("res_model", "=", record._name)
-            & Domain("res_id", "=", record.id)
-            & Domain("partner_id", "=", partner.id or False)
-            & Domain("role", "=", role)
-            & Domain("audience", "=", audience)
-            & Domain("cause", "=", cause)
-            & Domain("cause_model", "=", cause_record._name if cause_record else False)
-            & Domain("cause_res_id", "=", cause_record.id if cause_record else False)
-            & Domain("token_nonce", "!=", False)
-            & (
-                Domain("date_to", "=", requested_date_to)
-                if requested_date_to
-                else Domain.TRUE
-            )
-            & self._live_domain(),
-            order="id desc",
-        ).filtered(
-            lambda link: (
-                audience != "partners" or set(link.audience_partner_ids.ids) == people
-            )
-        )[:1]
-        if reusable and (token := reusable._token()):
-            _debug.logic("link.reused", link=reusable.id, model=record._name)
-            return reusable.with_env(self.env), token
         nonce = secrets.token_hex(16)
         token = self._derive_token(nonce)
         link = issuer.create(
