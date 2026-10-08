@@ -26,13 +26,11 @@ from ..websocket import (
     CloseFrame,
     ConnectionClosedError,
     ConnectionState,
-    ControlCommand,
     Frame,
     InvalidCloseCodeError,
     NotificationDispatchState,
     Opcode,
     PayloadTooLargeError,
-    PollablePriorityQueue,
     ProtocolError,
     TimeoutManager,
     UpgradeRequired,
@@ -72,6 +70,10 @@ class _FakeSocket:
 
     def sendall(self, data):
         self.sent.extend(data)
+
+    def send(self, data):
+        self.sent.extend(data)
+        return len(data)
 
 
 class _StallingSocket:
@@ -558,19 +560,9 @@ class TestSessionValidityCache(BaseCase):
 
 
 def _make_receiving_ws(chunks=(), *, clock=None):
-    ws = Websocket.__new__(Websocket)
-    ws._clock = clock or time.monotonic
     sock = _FakeSocket(chunks)
-    ws._Websocket__socket = sock
-    ws._timeout_manager = TimeoutManager()
-    ws.state = ConnectionState.OPEN
-    ws._close_sent = False
-    ws._close_received = False
-    ws._limit_rate = lambda opcode: None
+    ws = Websocket(sock, MagicMock(db="db"), {}, clock=clock or time.monotonic)
     ws._parser = FrameParser(ws.MESSAGE_MAX_SIZE, lambda opcode: None)
-    ws._fragments = None
-    ws._fragments_opcode = None
-    ws._frame_started_at = None
     return ws, sock
 
 
@@ -736,9 +728,8 @@ class TestFrameCodec(BaseCase):
         header = struct.pack("!BBH", 0x81, 0x80 | 126, 1000) + b"\x00\x00\x00\x00"
         sock = _StallingSocket(header)
         clock = _ManualClock()
-        ws, _ = _make_receiving_ws(clock=clock)
-        ws._Websocket__socket = sock
-        ws._timeout_manager = TimeoutManager(clock=clock)
+        ws = Websocket(sock, MagicMock(db="db"), {}, clock=clock)
+        ws._parser = FrameParser(ws.MESSAGE_MAX_SIZE, lambda opcode: None)
 
         original_recv = sock.recv
 
@@ -940,17 +931,22 @@ class TestTrustedOrigin(BaseCase):
 @tagged("-at_install", "post_install")
 class TestControlCommandPriority(BaseCase):
     def test_queued_close_beats_pending_dispatch(self):
-        queue = PollablePriorityQueue()
-        try:
-            queue.put((ControlCommand.DISPATCH, 1, None))
-            queue.put((ControlCommand.CLOSE, 2, {"code": CloseCode.CLEAN}))
-            command, _, data = queue.get()
-            self.assertIs(command, ControlCommand.CLOSE)
-            self.assertEqual(data["code"], CloseCode.CLEAN)
-            command, _, _data = queue.get()
-            self.assertIs(command, ControlCommand.DISPATCH)
-        finally:
-            queue.close()
+        sock = _FakeSocket()
+        ws = Websocket(sock, MagicMock(db="db"), {})
+        hub = MagicMock()
+        hub.in_loop.return_value = True
+        submitted = []
+        hub.submit.side_effect = lambda job: submitted.append(job) or True
+        ws._hub = hub
+        ws._job = object()
+        ws.trigger_notification_dispatching()
+        self.assertTrue(ws._dispatch_pending, "the dispatch waits behind the job")
+        ws.close(CloseCode.CLEAN)
+        opcode, payload = _parse_server_frame(sock.sent)
+        self.assertIs(opcode, Opcode.CLOSE)
+        self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.CLEAN)
+        ws._job_done()
+        self.assertEqual(submitted, [], "the pending dispatch must not run after it")
 
 
 @tagged("post_install", "-at_install")
@@ -1012,7 +1008,7 @@ class TestCloseCodesOverWire(WebsocketCase):
         ws = self.websocket_connect()
         server_ws = next(
             websocket
-            for websocket in list(websocket_module._websocket_instances)
+            for websocket in websocket_module._open_websockets()
             if websocket.state is ConnectionState.OPEN
         )
         server_ws.close(CloseCode.KILL_NOW)

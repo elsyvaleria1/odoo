@@ -281,6 +281,7 @@ for label, text in {
     "body min rate": f"| `ODOO_HTTP_BODY_MIN_RATE` | `{int(lim.body.min_rate)} B/s` |",
     "websocket cap": f"| `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `{_limits.WEBSOCKET_MAX_CONNECTIONS}` |",
     "websocket descriptors": f"`WEBSOCKET_DESCRIPTORS` ({_limits.WEBSOCKET_DESCRIPTORS}:",
+    "websocket db threads floor": f"| `ODOO_WEBSOCKET_DB_THREADS` | `max({_limits.WEBSOCKET_MIN_DB_THREADS}, ",
 }.items():
     contains(label, text)
 

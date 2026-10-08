@@ -67,18 +67,16 @@ and so could not be tuned apart.
 _TIME_LIMITED_THREAD_TYPES = ("http", "cron", "job", "stream")
 """Thread kinds `check_limits` may recycle the server for.
 
-"websocket" is deliberately absent.  `bus/websocket.py` re-labels the request
-thread the moment it starts serving frames, and a websocket is long-lived by
-design -- left in this list it would trip `limit_time_real` and reload the
-server under every connected client.
+"websocket_job" is deliberately absent: `bus` runs every websocket's database
+work on a small pool of such threads, and recycling the server for one slow
+job would drop every connected client.
 """
 
-_REPORTED_THREAD_TYPES = (*_TIME_LIMITED_THREAD_TYPES, "websocket")
+_REPORTED_THREAD_TYPES = (*_TIME_LIMITED_THREAD_TYPES, "websocket_job")
 """Thread kinds `get_metrics()` counts, which is a different question.
 
-An operator running --workers 0 wants to see the websocket threads precisely
-because they are long-lived: they hold a thread and a connection each, and
-they were invisible while the two lists were one.
+An operator wants the websocket database threads counted: they hold the
+connections the websockets' work runs on.
 """
 
 _SIGXCPU_EXIT_CODE = 128 + getattr(signal, "SIGXCPU", 24)

@@ -356,6 +356,19 @@ class ImDispatch(threading.Thread):
         self._poll_round = 0
         self._poll_memo = {}
         self._poll_memo_lock = threading.Lock()
+        self._waker = None
+
+    def set_waker(self, waker) -> None:
+        # One call per wake for a whole set of websockets, rather than one
+        # cross-thread hand-off per websocket.
+        self._waker = waker
+
+    def _wake(self, websockets, poll_round) -> None:
+        if self._waker is not None:
+            self._waker(websockets, poll_round)
+            return
+        for websocket in websockets:
+            websocket.trigger_notification_dispatching(poll_round)
 
     def open_poll_round(self):
         with self._poll_memo_lock:
@@ -432,8 +445,7 @@ class ImDispatch(threading.Thread):
                     for notif in conn.notifies(timeout=0):
                         channels.extend(self._parse_imbus_payload(notif.payload))
                     poll_round = self.open_poll_round()
-                    for websocket in self._collect_websockets(channels):
-                        websocket.trigger_notification_dispatching(poll_round)
+                    self._wake(self._collect_websockets(channels), poll_round)
 
     @staticmethod
     def _parse_imbus_payload(payload):
@@ -460,12 +472,13 @@ class ImDispatch(threading.Thread):
     def _dispatch_to_all(self) -> None:
         poll_round = self.open_poll_round()
         with self._lock:
-            websockets = set().union(*self._channels_to_ws.values())
-        for count, websocket in enumerate(websockets):
-            if count and count % DISPATCH_CATCHUP_CHUNK_SIZE == 0:
-                if stop_event.wait(DISPATCH_CATCHUP_CHUNK_DELAY):
-                    return
-            websocket.trigger_notification_dispatching(poll_round)
+            websockets = list(set().union(*self._channels_to_ws.values()))
+        for start in range(0, len(websockets), DISPATCH_CATCHUP_CHUNK_SIZE):
+            if start and stop_event.wait(DISPATCH_CATCHUP_CHUNK_DELAY):
+                return
+            self._wake(
+                websockets[start : start + DISPATCH_CATCHUP_CHUNK_SIZE], poll_round
+            )
 
     def run(self):
         attempt = 0

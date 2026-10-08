@@ -51,7 +51,7 @@ The other runtime floor is enforced later and by a different subsystem:
 |---|---|---|
 | `workers = 0` (default) | `ThreadedServer` | Python threads, one process, debugger-friendly |
 | `workers > 0` | `PreforkServer` | forked OS processes, no shared memory |
-| `odoo.evented` | `WebsocketServer` | Python threads on the websocket port, one process; no gevent anywhere in the fork |
+| `odoo.evented` | `WebsocketServer` | Python threads on the websocket port, one process; no gevent anywhere in the fork. Every websocket of the process is served by one loop thread and a bounded pool of database threads (`bus`'s `WebsocketHub`), not a thread each |
 
 All three end in the same `preload_registries` → `Registry.new` path. The choice
 is not a deployment knob: a large part of the ORM's runtime design exists

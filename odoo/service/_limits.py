@@ -52,9 +52,11 @@ base, and `base=2` is what reproduces this curve exactly.
 
 WEBSOCKET_MAX_CONNECTIONS = 10000
 
-WEBSOCKET_DESCRIPTORS = 4
-"""Descriptors one websocket holds: its socket, and the selector and the
-socketpair of the thread that serves it."""
+WEBSOCKET_DESCRIPTORS = 1
+"""Descriptors one websocket holds: its socket.  The loop that serves every
+websocket of the process owns one selector and one socketpair between them."""
+
+WEBSOCKET_MIN_DB_THREADS = 2
 
 
 def get_websocket_max_connections() -> int:
@@ -62,6 +64,33 @@ def get_websocket_max_connections() -> int:
         "ODOO_WEBSOCKET_MAX_CONNECTIONS",
         WEBSOCKET_MAX_CONNECTIONS,
         minimum=0,
+        logger=logging.getLogger("odoo.service.server"),
+    )
+
+
+def get_websocket_db_threads() -> int:
+    # What the pool has left once every HTTP thread holds two connections
+    # and every listener its session: websocket jobs queue for these threads
+    # rather than racing the requests for a connection.
+    import odoo
+
+    from .httpd import (
+        compute_http_thread_limit,
+        count_listener_permits,
+        get_http_pool_size,
+    )
+
+    settings = current()
+    evented = bool(odoo.evented)
+    pool = get_http_pool_size(settings, evented=evented)
+    http_threads, _ = compute_http_thread_limit(
+        settings, listeners_spawned=not evented, evented=evented
+    )
+    listeners = count_listener_permits(settings, listeners_spawned=not evented)
+    return get_env_int(
+        "ODOO_WEBSOCKET_DB_THREADS",
+        max(WEBSOCKET_MIN_DB_THREADS, pool - 2 * http_threads - listeners),
+        minimum=1,
         logger=logging.getLogger("odoo.service.server"),
     )
 
@@ -102,10 +131,12 @@ __all__ = (
     "INHERIT_FROM_CRON",
     "WEBSOCKET_DESCRIPTORS",
     "WEBSOCKET_MAX_CONNECTIONS",
+    "WEBSOCKET_MIN_DB_THREADS",
     "empty_pipe",
     "get_cron_real_time_budget",
     "get_graceful_stop_timeout",
     "get_job_real_time_budget",
     "get_memory_over_soft_limit",
+    "get_websocket_db_threads",
     "get_websocket_max_connections",
 )

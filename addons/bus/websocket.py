@@ -11,14 +11,10 @@ import sys
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from enum import IntEnum
-from itertools import count
-from queue import PriorityQueue
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
-from weakref import WeakSet
 
 import psycopg
 from werkzeug.datastructures import ImmutableMultiDict, MultiDict
@@ -36,13 +32,13 @@ from odoo.http import (
     root,
 )
 from odoo.modules.registry import Registry
-from odoo.service import get_websocket_max_connections, metrics
-from odoo.service.security import is_session_valid
-from odoo.service.server import (
-    REQUEST_THREAD_PREFIX,
-    UPGRADE_ADOPT_KEY,
-    CommonServer,
+from odoo.service import (
+    get_websocket_db_threads,
+    get_websocket_max_connections,
+    metrics,
 )
+from odoo.service.security import is_session_valid
+from odoo.service.server import UPGRADE_ADOPT_KEY, CommonServer
 from odoo.service.transaction import retrying
 from odoo.tools import config
 
@@ -63,6 +59,7 @@ from .tools.websocket_codec import (
     encode_frame,
     parse_close_payload,
 )
+from .tools.websocket_hub import WebsocketHub
 
 if TYPE_CHECKING:
     from odoo.http.session import Session
@@ -120,10 +117,6 @@ class InvalidDatabaseError(WebsocketError):
     pass
 
 
-class InvalidStateError(WebsocketError):
-    pass
-
-
 class InvalidWebsocketRequestError(WebsocketError):
     pass
 
@@ -132,32 +125,11 @@ class RateLimitExceededError(Exception):
     pass
 
 
-class PollablePriorityQueue(PriorityQueue):
-    def __init__(self, maxsize=0) -> None:
-        super().__init__(maxsize)
-        self._putsocket, self._getsocket = socket.socketpair()
-
-    def fileno(self):
-        return self._getsocket.fileno()
-
-    def put(self, item, *args, **kwargs):
-        super().put(item, *args, **kwargs)
-        self._putsocket.send(b".")
-
-    def get(self, *args, **kwargs):
-        self._getsocket.recv(1)
-        return super().get(*args, **kwargs)
-
-    def close(self):
-        self._putsocket.close()
-        self._getsocket.close()
-
-
 class _ServerClock:
     # freezegun answers time.monotonic() with frozen or real time depending on
-    # how deep the caller sits under a threading frame, so a connection served
-    # by its own thread would mix both clocks; a reference held on a class is
-    # one it does not rewrite.
+    # how deep the caller sits under a threading frame, so the loop and job
+    # threads would mix both clocks for one connection; a reference held on a
+    # class is one it does not rewrite.
     monotonic = staticmethod(time.monotonic)
 
 
@@ -172,20 +144,8 @@ class ConnectionState(IntEnum):
     CLOSED = 2
 
 
-_command_uid = count(0)
-
-
-class ControlCommand(IntEnum):
-    CLOSE = 0
-    DISPATCH = 1
-
-
 _public_session_lock = threading.Lock()
 _public_session_sid_by_db = {}
-
-
-_websocket_instances = WeakSet()
-_websocket_instances_lock = threading.Lock()
 
 
 class ConnectionGauge:
@@ -305,19 +265,42 @@ class Websocket:
     SESSION_VALIDITY_TTL = 60
     FRAME_RECEIVE_TIMEOUT = 15
     RECEIVE_SIZE = 65536
+    LANE_DEPTH = 8
+    LINGER_SECONDS = 5
+    LINGER_READS = 16
+    WRITE_STALL_TIMEOUT = 15
 
     # The dispatch round a batched wake authorised this connection to share an
     # answer in, None otherwise. Declared on the class so a connection that
     # never went through a wake reads None rather than raising.
     _poll_round = None
+    _hub = None
+    _gauge = None
+    fd = -1
+    events = 0
+    timer_at = None
 
-    def __init__(self, sock, session, cookies, *, clock=None, buffered=b"") -> None:
+    def __init__(
+        self,
+        sock,
+        session,
+        cookies,
+        *,
+        clock=None,
+        request_db=None,
+        httprequest=None,
+        outdated=False,
+        gauge=None,
+    ) -> None:
         self._clock = clock if clock is not None else _ServerClock.monotonic
         self._session = session
         self._cookies = cookies
         self._db = session.db
+        self._request_db = request_db if request_db is not None else session.db
+        self._httprequest = httprequest
+        self._outdated = outdated
+        self._gauge = gauge
         self.__socket = sock
-        sock.settimeout(self.FRAME_RECEIVE_TIMEOUT)
         self._close_sent = False
         self._close_received = False
         self._timeout_manager = TimeoutManager(clock=self._clock)
@@ -329,8 +312,6 @@ class Websocket:
         self._fragments = None
         self._fragments_opcode = None
         self._frame_started_at = None
-        self._buffered = buffered
-        self.__cmd_queue = PollablePriorityQueue()
         self._waiting_for_dispatch = False
         self._channels = set()
         self._session_validated_until = 0.0
@@ -338,59 +319,27 @@ class Websocket:
         self._dispatch_state = NotificationDispatchState(
             self.MAX_NOTIFICATION_HISTORY_SEC, clock=self._clock
         )
-        self.__selector = selectors.DefaultSelector()
-        self.__selector.register(self.__socket, selectors.EVENT_READ)
-        self.__selector.register(self.__cmd_queue, selectors.EVENT_READ)
+        self._adopted = False
+        self._reading = True
+        self._lane = deque()
+        self._job = None
+        self._job_serves_message = False
+        self._opening = bool(self.__event_callbacks[LifecycleEvent.OPEN])
+        self._dispatch_pending = False
+        self._dispatch_wanted_at = None
+        self._last_job_was_dispatch = False
+        self._teardown_pending = False
+        self._outbuf = bytearray()
+        self._write_progress_at = None
+        self._finish_after_flush = False
         self.state = ConnectionState.OPEN
-        with _websocket_instances_lock:
-            _websocket_instances.add(self)
-        self._trigger_lifecycle_event(LifecycleEvent.OPEN)
 
-    def get_messages(self):
-        buffered, self._buffered = self._buffered, b""
-        if buffered:
-            try:
-                for message in self._receive(buffered):
-                    if self.state is ConnectionState.OPEN:
-                        yield message
-            except Exception as exc:
-                self._handle_transport_error(exc)
-        while self.state is not ConnectionState.CLOSED:
-            try:
-                readables = {
-                    selector_key[0].fileobj
-                    for selector_key in self.__selector.select(TimeoutManager.TIMEOUT)
-                }
-                if (
-                    self._timeout_manager.has_keep_alive_timed_out()
-                    and self.state is ConnectionState.OPEN
-                ):
-                    self._disconnect(CloseCode.KEEP_ALIVE_TIMEOUT)
-                    continue
-                if self._timeout_manager.has_frame_response_timed_out():
-                    self._terminate()
-                    continue
-                if not readables and self._timeout_manager.is_ping_frame_required():
-                    self._send_ping_frame()
-                    continue
-                if self.__cmd_queue in readables:
-                    cmd, _, data = self.__cmd_queue.get_nowait()
-                    self._process_control_command(cmd, data)
-                    if self.state is ConnectionState.CLOSED:
-                        continue
-                if self.__socket in readables:
-                    for message in self._read_messages():
-                        if self.state is ConnectionState.OPEN:
-                            yield message
-                self._check_frame_deadline()
-            except Exception as exc:
-                self._handle_transport_error(exc)
+    @property
+    def sock(self):
+        return self.__socket
 
     def close(self, code, reason=None):
-        with suppress(OSError):
-            self._send_control_command(
-                ControlCommand.CLOSE, {"code": code, "reason": reason}
-            )
+        self._on_loop(self._close_if_open, code, reason)
 
     @classmethod
     def onopen(cls, func):
@@ -416,32 +365,128 @@ class Websocket:
         # lets this connection share another's answer. A lone trigger -- a
         # re-arm, a test, anything outside the dispatcher -- shares nothing.
         self._poll_round = poll_round
-        with suppress(OSError):
-            self._send_control_command(ControlCommand.DISPATCH)
+        self._on_loop(self._dispatch_requested)
 
-    def _read_messages(self) -> Iterator:
+    def _adopt(self, sock, buffered, addr) -> None:
+        self._adopted = True
+        self._hub = _hub
+        _hub.adopt(self, buffered)
+
+    def _abandon(self) -> None:
+        if not self._adopted:
+            self._adopted = True
+            self._release_slot()
+
+    def _release_slot(self) -> None:
+        gauge, self._gauge = self._gauge, None
+        if gauge is not None:
+            gauge.release()
+
+    def _on_loop(self, func, *args) -> None:
+        hub = self._hub
+        if hub is None or hub.in_loop():
+            func(*args)
+        else:
+            hub.call_soon(func, *args)
+
+    def on_attached(self, buffered) -> None:
+        try:
+            if self._hub.stopping:
+                self._disconnect(CloseCode.GOING_AWAY)
+                return
+            if self._outdated:
+                self._disconnect(CloseCode.CLEAN, "OUTDATED_VERSION")
+            if buffered:
+                self._deliver(self._receive(buffered))
+        except Exception as exc:
+            self.on_loop_error(exc)
+        self._reschedule()
+        self._pump()
+
+    def on_readable(self) -> None:
+        try:
+            messages = self._read_messages()
+        except BlockingIOError:
+            return
+        self._deliver(messages)
+        self._check_deadlines()
+        self._reschedule()
+
+    def on_writable(self) -> None:
+        self._flush()
+
+    def on_timer(self) -> None:
+        if self.state is ConnectionState.CLOSED:
+            if self._write_stalled():
+                self._abort()
+            else:
+                self._reschedule()
+            return
+        self._check_deadlines()
+        if (
+            self.state is ConnectionState.OPEN
+            and self._timeout_manager.is_ping_frame_required()
+        ):
+            self._send_ping_frame()
+        self._reschedule()
+
+    def on_loop_error(self, exc) -> None:
+        self._handle_transport_error(exc)
+
+    def close_now(self, code) -> None:
+        self._close_if_open(code)
+
+    def abort(self) -> None:
+        self._abort()
+
+    def _close_if_open(self, code, reason=None) -> None:
+        if self.state is ConnectionState.OPEN:
+            self._disconnect(code, reason)
+
+    def _dispatch_requested(self) -> None:
+        if self.state is not ConnectionState.OPEN:
+            return
+        self._dispatch_pending = True
+        if self._dispatch_wanted_at is None:
+            self._dispatch_wanted_at = self._clock()
+        self._pump()
+
+    def _read_messages(self) -> list:
         data = self.__socket.recv(self.RECEIVE_SIZE)
         if not data:
             raise ConnectionClosedError
         return self._receive(data)
 
-    def _receive(self, data) -> Iterator:
-        # A generator, so that a message is served before the control frames
-        # behind it are answered: a client may send a message, then a ping, and
-        # read the pong as proof the message was handled.
+    def _receive(self, data) -> list:
+        # A control frame behind a message waits for that message to be served,
+        # in the lane: a client may send a message, then a ping, and read the
+        # pong as proof the message was handled.
+        items = []
         for frame in self._parser.feed(data):
             self._timeout_manager.acknowledge_frame_receipt(frame)
+            if frame.opcode in CTRL_OP and (
+                items or self._lane or self._job_serves_message
+            ):
+                items.append(frame)
+                continue
             message = self._on_frame(frame)
             if message is not None:
-                yield message
+                items.append(message)
         if not self._parser.mid_frame:
             self._frame_started_at = None
         elif self._frame_started_at is None:
             self._frame_started_at = self._clock()
+        return items
 
     def _check_frame_deadline(self) -> None:
         started = self._frame_started_at
         if started is not None and self._clock() > started + self.FRAME_RECEIVE_TIMEOUT:
+            _logger.warning(
+                "Websocket peer did not complete a frame within %ss; it will "
+                "reconnect. Channels: %.200s",
+                self.FRAME_RECEIVE_TIMEOUT,
+                self._channels,
+            )
             raise ConnectionClosedError(
                 f"Peer did not complete the frame within {self.FRAME_RECEIVE_TIMEOUT}s"
             )
@@ -472,28 +517,124 @@ class Websocket:
             message, opcode = frame.payload, frame.opcode
         return message.decode("utf-8") if opcode is Opcode.TEXT else message
 
+    def _deliver(self, items) -> None:
+        for item in items:
+            if isinstance(item, Frame) or (
+                self.state is ConnectionState.OPEN and item != b"\x00"
+            ):
+                self._lane.append(item)
+        if len(self._lane) >= self.LANE_DEPTH and self._reading:
+            self._reading = False
+            self._update_events()
+        self._pump()
+
+    def _pump(self) -> None:
+        hub = self._hub
+        if hub is None:
+            return
+        if self._job is None:
+            lane = self._lane
+            while lane and isinstance(lane[0], Frame):
+                self._handle_control_frame(lane.popleft())
+            if self.state is ConnectionState.OPEN:
+                self._start_next_job(hub)
+        if not self._reading and len(self._lane) < self.LANE_DEPTH:
+            self._reading = True
+            self._update_events()
+
+    def _start_next_job(self, hub) -> None:
+        if self._opening:
+            self._opening = False
+            job = self._open_job
+        elif (
+            self._dispatch_pending
+            and not (self._lane and self._last_job_was_dispatch)
+            and not self._dispatch_held()
+        ):
+            self._dispatch_pending = False
+            self._last_job_was_dispatch = True
+            job = self._dispatch_job
+        elif self._lane:
+            job = functools.partial(self._message_job, self._lane.popleft())
+            self._job_serves_message = True
+            self._last_job_was_dispatch = False
+        else:
+            return
+        self._job = job
+        if not hub.submit(functools.partial(self._run_job, job)):
+            self._job = None
+            self._job_serves_message = False
+
+    def _drop_messages(self) -> None:
+        self._lane = deque(item for item in self._lane if isinstance(item, Frame))
+        self._dispatch_pending = False
+
+    def _dispatch_held(self) -> bool:
+        return False
+
+    def _run_job(self, job) -> None:
+        try:
+            job()
+        except Exception as exc:
+            self._handle_transport_error(exc)
+        finally:
+            self._hub.call_soon(self._job_done)
+
+    def _job_done(self) -> None:
+        self._job = None
+        self._job_serves_message = False
+        if self._teardown_pending:
+            self._teardown_pending = False
+            self._hub.submit(self._teardown)
+            return
+        self._pump()
+
+    def _open_job(self) -> None:
+        self._trigger_lifecycle_event(LifecycleEvent.OPEN)
+
+    def _message_job(self, message) -> None:
+        WebsocketConnectionHandler._serve_message(
+            self._request_db, self._httprequest, self, message
+        )
+
+    def _dispatch_job(self) -> None:
+        wanted_at, self._dispatch_wanted_at = self._dispatch_wanted_at, None
+        self._dispatch_bus_notifications()
+        if wanted_at is not None:
+            self._hub.dispatch_latency.observe(self._clock() - wanted_at)
+
     def _send(self, message):
         if self.state is not ConnectionState.OPEN:
-            raise InvalidStateError("Trying to send a frame on a closed socket")
+            return
         opcode = Opcode.BINARY
         if not isinstance(message, (bytes, bytearray)):
             opcode = Opcode.TEXT
-        self._send_frame(Frame(opcode, message))
+        frame = Frame(opcode, message)
+        self._on_loop(self._write_data_frame, encode_frame(frame), frame)
+
+    def _write_data_frame(self, data, frame) -> None:
+        if self.state is not ConnectionState.OPEN:
+            return
+        self._write(data)
+        self._timeout_manager.acknowledge_frame_sent(frame)
 
     def _send_frame(self, frame) -> None:
-        self.__socket.sendall(encode_frame(frame))
+        self._write(encode_frame(frame))
         self._timeout_manager.acknowledge_frame_sent(frame)
+        if frame.opcode is Opcode.PING:
+            self._reschedule()
         if not isinstance(frame, CloseFrame):
             return
         self.state = ConnectionState.CLOSING
         self._close_sent = True
+        self._drop_messages()
         if (
             frame.code in (CloseCode.ABNORMAL_CLOSURE, CloseCode.KILL_NOW)
             or self._close_received
         ):
             self._terminate()
             return
-        self.__selector.unregister(self.__cmd_queue)
+        self._reschedule()
 
     def _send_close_frame(self, code, reason=None) -> None:
         self._send_frame(CloseFrame(code, reason))
@@ -504,32 +645,156 @@ class Websocket:
     def _send_pong_frame(self, payload) -> None:
         self._send_frame(Frame(Opcode.PONG, payload))
 
+    def _write(self, data) -> None:
+        if not self._outbuf:
+            sent = self._send_some(data)
+            if sent == len(data):
+                return
+            data = data[sent:]
+            self._write_progress_at = self._clock()
+        self._outbuf += data
+        hub = self._hub
+        if hub is not None:
+            hub.outbound += len(data)
+        self._update_events()
+        self._reschedule()
+
+    def _send_some(self, data) -> int:
+        try:
+            return self.__socket.send(data)
+        except BlockingIOError:
+            return 0
+
+    def _flush(self) -> None:
+        sent = self._send_some(self._outbuf)
+        if sent:
+            del self._outbuf[:sent]
+            if self._hub is not None:
+                self._hub.outbound -= sent
+            self._write_progress_at = self._clock()
+        if self._outbuf:
+            return
+        self._write_progress_at = None
+        if self._finish_after_flush:
+            self._finish_terminate()
+            return
+        self._update_events()
+        self._pump()
+
+    def _write_stalled(self) -> bool:
+        return (
+            bool(self._outbuf)
+            and self._write_progress_at is not None
+            and self._clock() - self._write_progress_at > self.WRITE_STALL_TIMEOUT
+        )
+
+    def _update_events(self) -> None:
+        hub = self._hub
+        if hub is None or hub.connections.get(self.fd) is not self:
+            return
+        events = 0
+        if self._reading and not self._finish_after_flush:
+            events |= selectors.EVENT_READ
+        if self._outbuf:
+            events |= selectors.EVENT_WRITE
+        hub.set_events(self, events)
+
+    def _check_deadlines(self) -> None:
+        if self._write_stalled():
+            self._hub.write_stalls += 1
+            _logger.info(
+                "Websocket peer read nothing for %ss; closing it. Channels: %.200s",
+                self.WRITE_STALL_TIMEOUT,
+                self._channels,
+            )
+            self._abort()
+            return
+        manager = self._timeout_manager
+        if manager.has_keep_alive_timed_out() and self.state is ConnectionState.OPEN:
+            self._disconnect(CloseCode.KEEP_ALIVE_TIMEOUT)
+            return
+        if manager.has_frame_response_timed_out():
+            self._terminate()
+            return
+        self._check_frame_deadline()
+
+    def _reschedule(self) -> None:
+        hub = self._hub
+        if hub is None or hub.connections.get(self.fd) is not self:
+            return
+        deadlines = []
+        if self.state is not ConnectionState.CLOSED:
+            deadlines.append(
+                self._timeout_manager.next_deadline(
+                    pinging=self.state is ConnectionState.OPEN
+                )
+            )
+        if self._frame_started_at is not None:
+            deadlines.append(self._frame_started_at + self.FRAME_RECEIVE_TIMEOUT)
+        if self._outbuf and self._write_progress_at is not None:
+            deadlines.append(self._write_progress_at + self.WRITE_STALL_TIMEOUT)
+        if not deadlines:
+            return
+        delay = max(min(deadlines) - self._clock(), 0.0) + 0.01
+        when = hub.now() + delay
+        if self.timer_at is not None and self.timer_at <= when:
+            return
+        hub.schedule(self, when)
+
     def _disconnect(self, code, reason=None) -> None:
         if code in (CloseCode.ABNORMAL_CLOSURE, CloseCode.KILL_NOW):
-            self._terminate()
+            self._abort()
         else:
             self._send_close_frame(code, reason)
+
+    def _abort(self) -> None:
+        if self._outbuf:
+            if self._hub is not None:
+                self._hub.outbound -= len(self._outbuf)
+            self._outbuf.clear()
+        if self._finish_after_flush:
+            self._finish_terminate()
+        else:
+            self._terminate()
 
     def _terminate(self) -> None:
         if self.state == ConnectionState.CLOSED:
             return
         self.state = ConnectionState.CLOSED
         dispatch.unsubscribe(self)
+        self._lane.clear()
+        self._dispatch_pending = False
+        if self._outbuf:
+            self._finish_after_flush = True
+            self._update_events()
+            self._reschedule()
+            return
+        self._finish_terminate()
+
+    def _finish_terminate(self) -> None:
+        self._finish_after_flush = False
+        hub = self._hub
+        if hub is not None:
+            hub.detach(self)
+            hub.outbound -= len(self._outbuf)
+        self._outbuf.clear()
         with suppress(OSError, TimeoutError):
             self.__socket.shutdown(socket.SHUT_WR)
-            self.__socket.settimeout(1)
-            drain_deadline = self._clock() + 5
-            while self.__socket.recv(4096):
-                if self._clock() > drain_deadline:
+            linger_deadline = self._clock() + self.LINGER_SECONDS
+            for _ in range(self.LINGER_READS):
+                if not self.__socket.recv(4096) or self._clock() > linger_deadline:
                     break
-        with suppress(KeyError):
-            self.__selector.unregister(self.__socket)
-        with suppress(OSError):
-            self.__selector.close()
         with suppress(OSError):
             self.__socket.close()
-        with suppress(OSError):
-            self.__cmd_queue.close()
+        self._release_slot()
+        if hub is None:
+            return
+        if self._job is not None:
+            self._teardown_pending = True
+        else:
+            hub.submit(self._teardown)
+
+    def _teardown(self) -> None:
         try:
             self._trigger_lifecycle_event(LifecycleEvent.CLOSE)
             with acquire_cursor(self._db) as cr:
@@ -559,14 +824,6 @@ class Websocket:
         code, reason = CloseCode.SERVER_ERROR, str(exc)
         if isinstance(exc, (ConnectionClosedError, OSError)):
             code = CloseCode.ABNORMAL_CLOSURE
-            if isinstance(exc, TimeoutError):
-                _logger.warning(
-                    "Websocket timed out after %ss mid-frame; the peer is too "
-                    "slow for the frame being written and will reconnect. "
-                    "Channels: %.200s",
-                    self.FRAME_RECEIVE_TIMEOUT,
-                    self._channels,
-                )
         elif isinstance(exc, (ProtocolError, InvalidCloseCodeError)):
             code = CloseCode.PROTOCOL_ERROR
         elif isinstance(exc, UnicodeDecodeError):
@@ -595,12 +852,17 @@ class Websocket:
                 _logger.warning("Bus operation aborted; registry has been reloaded")
             else:
                 _logger.error("Unhandled exception in websocket handler", exc_info=exc)
+        self._on_loop(self._close_after_error, code, reason)
+
+    def _close_after_error(self, code, reason) -> None:
         if self.state is ConnectionState.OPEN:
             try:
                 self._disconnect(code, reason)
             except Exception:
                 _logger.debug("Failed to emit close frame, terminating", exc_info=True)
-                self._terminate()
+                self._abort()
+        elif code is CloseCode.ABNORMAL_CLOSURE:
+            self._abort()
         else:
             self._terminate()
 
@@ -633,16 +895,6 @@ class Websocket:
                         LifecycleEvent(event_type).name,
                         exc_info=True,
                     )
-
-    def _send_control_command(self, command, data=None) -> None:
-        self.__cmd_queue.put((command, next(_command_uid), data))
-
-    def _process_control_command(self, command, data) -> None:
-        match command:
-            case ControlCommand.DISPATCH:
-                self._dispatch_bus_notifications()
-            case ControlCommand.CLOSE:
-                self._disconnect(data["code"], data.get("reason"))
 
     def _dispatch_bus_notifications(self) -> None:
         now = self._clock()
@@ -716,6 +968,7 @@ class TimeoutManager:
     KEEP_ALIVE_TIMEOUT = int(config["websocket_keep_alive_timeout"])
     CONNECTION_TIMEOUT = 60
     INACTIVITY_TIMEOUT = CONNECTION_TIMEOUT - 20
+    PING_JITTER = 0.1
 
     def __init__(self, clock=None) -> None:
         super().__init__()
@@ -726,15 +979,20 @@ class TimeoutManager:
         )
         now = self._clock()
         self._keep_alive_expiration_time = now + self._keep_alive_timeout
-        self._next_ping_time = now + self.INACTIVITY_TIMEOUT
+        self._next_ping_time = now + self._inactivity_timeout()
+
+    def _inactivity_timeout(self) -> float:
+        # Connections opened together would otherwise ping together, forever.
+        jitter = self.PING_JITTER
+        return self.INACTIVITY_TIMEOUT * random.uniform(1 - jitter, 1 + jitter)
 
     def acknowledge_frame_receipt(self, frame) -> None:
-        self._next_ping_time = self._clock() + self.INACTIVITY_TIMEOUT
+        self._next_ping_time = self._clock() + self._inactivity_timeout()
         self._expiration_time_by_opcode.pop(frame.opcode, None)
 
     def acknowledge_frame_sent(self, frame) -> None:
         now = self._clock()
-        self._next_ping_time = now + self.INACTIVITY_TIMEOUT
+        self._next_ping_time = now + self._inactivity_timeout()
         if frame.opcode in (Opcode.PING, Opcode.CLOSE):
             self._expiration_time_by_opcode[
                 Opcode.PONG if frame.opcode is Opcode.PING else Opcode.CLOSE
@@ -755,6 +1013,12 @@ class TimeoutManager:
             and not self.has_keep_alive_timed_out()
             and self._clock() >= self._next_ping_time
         )
+
+    def next_deadline(self, *, pinging: bool) -> float:
+        deadlines = list(self._expiration_time_by_opcode.values())
+        if pinging:
+            deadlines += (self._keep_alive_expiration_time, self._next_ping_time)
+        return min(deadlines, default=float("inf"))
 
 
 def _follow_session_chain(initial_session: Session) -> Session:
@@ -873,6 +1137,10 @@ class WebsocketConnectionHandler:
         except HTTPException as exc:
             _logger.error(exc)
             raise
+        if _hub.stopping:
+            raise ServiceUnavailable(
+                "The server is stopping.", retry_after=cls.RETRY_AFTER_AT_CAPACITY
+            )
         gauge = _connection_gauge
         if not gauge.reserve():
             raise ServiceUnavailable(
@@ -881,16 +1149,18 @@ class WebsocketConnectionHandler:
             )
         try:
             public_session = cls._handle_public_configuration(request)
-            adoption = _ThreadAdoption(
-                cls,
+            httprequest = request.httprequest
+            websocket = Websocket(
+                httprequest.raw_environ["odoo.socket"],
                 public_session or request.session,
-                request.db,
-                request.httprequest,
-                version,
-                gauge,
+                httprequest.cookies,
+                request_db=request.db,
+                httprequest=httprequest,
+                outdated=bool(httprequest.user_agent) and version != cls._VERSION,
+                gauge=gauge,
             )
-            request.httprequest.raw_environ[UPGRADE_ADOPT_KEY] = adoption.adopt
-            response.call_on_close(adoption.abandon)
+            httprequest.raw_environ[UPGRADE_ADOPT_KEY] = websocket._adopt
+            response.call_on_close(websocket._abandon)
             if public_session is None and request.session.can_save:
                 # The websocket authenticates from the stored session; marking
                 # it dirty instead would resend its session_id cookie, which a
@@ -1000,17 +1270,6 @@ class WebsocketConnectionHandler:
             raise BadRequest("Sec-WebSocket-Key should be of length 16 once decoded")
 
     @classmethod
-    def _serve_forever(cls, websocket, db, httprequest, version) -> None:
-        current_thread = threading.current_thread()
-        current_thread.type = "websocket"
-        if httprequest.user_agent and version != cls._VERSION:
-            websocket.close(CloseCode.CLEAN, "OUTDATED_VERSION")
-        for message in websocket.get_messages():
-            if message == b"\x00":
-                continue
-            cls._serve_message(db, httprequest, websocket, message)
-
-    @classmethod
     def _serve_message(cls, db, httprequest, websocket, message) -> None:
         with WebsocketRequest(db, httprequest, websocket) as req:
             try:
@@ -1038,57 +1297,26 @@ class WebsocketConnectionHandler:
                 )
 
 
-class _ThreadAdoption:
-    __slots__ = (
-        "adopted",
-        "db",
-        "gauge",
-        "handler",
-        "httprequest",
-        "session",
-        "version",
-    )
+def _open_websockets() -> list:
+    return list(_hub.connections.values())
 
-    def __init__(self, handler, session, db, httprequest, version, gauge) -> None:
-        self.handler = handler
-        self.session = session
-        self.db = db
-        self.httprequest = httprequest
-        self.version = version
-        self.gauge = gauge
-        self.adopted = False
 
-    def adopt(self, sock, buffered, addr) -> None:
-        self.adopted = True
-        threading.Thread(target=self._serve, args=(sock, buffered), daemon=True).start()
+def _trigger_dispatch(websockets, poll_round) -> None:
+    for websocket in websockets:
+        websocket.trigger_notification_dispatching(poll_round)
 
-    def abandon(self) -> None:
-        if not self.adopted:
-            self.adopted = True
-            self.gauge.release()
 
-    def _serve(self, sock, buffered) -> None:
-        me = threading.current_thread()
-        me.name = f"{REQUEST_THREAD_PREFIX}{me.ident}"
-        try:
-            websocket = Websocket(
-                sock, self.session, self.httprequest.cookies, buffered=buffered
-            )
-            self.handler._serve_forever(
-                websocket, self.db, self.httprequest, self.version
-            )
-        finally:
-            self.gauge.release()
-            with suppress(OSError):
-                sock.close()
+def _wake_websockets(websockets, poll_round) -> None:
+    if _hub.running:
+        _hub.call_soon(_trigger_dispatch, list(websockets), poll_round)
+    else:
+        _trigger_dispatch(websockets, poll_round)
 
 
 def _kick_all(code=CloseCode.GOING_AWAY) -> None:
-    with _websocket_instances_lock:
-        websockets = list(_websocket_instances)
-    for websocket in websockets:
-        if websocket.state is ConnectionState.OPEN:
-            websocket.close(code)
+    _hub.close_all(code)
 
 
+_hub = WebsocketHub(db_threads=get_websocket_db_threads)
+dispatch.set_waker(_wake_websockets)
 CommonServer.register_on_stop_hook(_kick_all)

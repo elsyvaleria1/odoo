@@ -72,25 +72,28 @@ class WebsocketCase(HttpCase):
                 WebsocketConnectionHandler, "open_connection", _mocked_open_connection
             )
         )
-        original_serve_forever = WebsocketConnectionHandler._serve_forever
+        original_adopt = Websocket._adopt
+        original_teardown = Websocket._teardown
 
-        def _mocked_serve_forever(*args):
+        def _mocked_adopt(websocket, *args):
             try:
-                websocket_closed_event = (
+                websocket._test_closed_event = (
                     self._pending_websocket_close_events.get_nowait()
                 )
             except Empty:
-                websocket_closed_event = None
-            try:
-                original_serve_forever(*args)
-            finally:
-                if websocket_closed_event is not None:
-                    websocket_closed_event.set()
+                websocket._test_closed_event = None
+            original_adopt(websocket, *args)
 
-        self._serve_forever_patch = patch.object(
-            WebsocketConnectionHandler, "_serve_forever", wraps=_mocked_serve_forever
-        )
-        self.startPatcher(self._serve_forever_patch)
+        def _mocked_teardown(websocket):
+            try:
+                original_teardown(websocket)
+            finally:
+                event = getattr(websocket, "_test_closed_event", None)
+                if event is not None:
+                    event.set()
+
+        self.startPatcher(patch.object(Websocket, "_adopt", _mocked_adopt))
+        self.startPatcher(patch.object(Websocket, "_teardown", _mocked_teardown))
         self.enterContext(release_test_lock())
         self.http_request_key = "websocket"
 

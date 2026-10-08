@@ -221,9 +221,9 @@ the websocket child (`db_maxconn_gevent` or `db_maxconn`, plus its threads,
 idle connections and websockets) — adds
 `DESCRIPTOR_HEADROOM` (128), and raises the soft `RLIMIT_NOFILE` to the hard
 one when that demand exceeds it. Websockets count
-`ODOO_WEBSOCKET_MAX_CONNECTIONS` × `WEBSOCKET_DESCRIPTORS` (4: the socket, and
-the selector and socketpair of the thread serving it); an unbounded cap counts
-none. When even the hard limit is short it warns
+`ODOO_WEBSOCKET_MAX_CONNECTIONS` × `WEBSOCKET_DESCRIPTORS` (1: the socket; the
+loop serving them all holds one selector and one socketpair); an unbounded cap
+counts none. When even the hard limit is short it warns
 naming `LimitNOFILE=`, the unit-file key that lifts it; nothing lowers a
 configured value.
 
@@ -343,7 +343,7 @@ request and response wrappers still are.
 
 | Server | Connection handling |
 |---|---|
-| threaded (`workers = 0`) and the evented websocket port | one selector thread holds the listening socket and every idle connection and reads request heads without blocking; a request reaches a worker thread only once its head is complete. Connections are kept alive; a worker serves up to 16 pipelined requests inline before handing the connection back, and a head already buffered at that point is re-queued at once rather than parked. Malformed bytes left after a served request are answered by the parser (`400`/`431`), never raised out of the worker. A websocket leaves the pool at its `101` and runs on its own thread, named like a request thread so the test harness still waits for it |
+| threaded (`workers = 0`) and the evented websocket port | one selector thread holds the listening socket and every idle connection and reads request heads without blocking; a request reaches a worker thread only once its head is complete. Connections are kept alive; a worker serves up to 16 pipelined requests inline before handing the connection back, and a head already buffered at that point is re-queued at once rather than parked. Malformed bytes left after a served request are answered by the parser (`400`/`431`), never raised out of the worker. A websocket leaves the pool at its `101`: the application adopts the socket through `environ["odoo.upgrade.adopt"]`, with the bytes already read past the handshake. `bus` hands every websocket of the process to one loop thread (epoll) that owns their sockets, timers and write buffers, and runs each one's database work — at most one job at a time per connection, at most 8 queued frames before it stops reading that socket — on `ODOO_WEBSOCKET_DB_THREADS` threads, named like request threads while busy so the test harness waits for them |
 | prefork (`workers > 0`) | one request per connection, answered `HTTP/1.1` with `Connection: close`. A single-threaded worker holding an idle connection would block its whole process. Workers never expose the socket, so a websocket handshake there gets the `503` that names the evented port |
 
 Knobs, read from the environment:
@@ -359,6 +359,7 @@ Knobs, read from the environment:
 | `ODOO_HTTP_BODY_TIMEOUT` | `20 s` | a request body must arrive within this plus one second per `ODOO_HTTP_BODY_MIN_RATE` bytes received, counted from the application's first read that waits on the network; past it, or past one silent `ODOO_HTTP_SOCKET_TIMEOUT` mid-body, the answer is `408` |
 | `ODOO_HTTP_BODY_MIN_RATE` | `500 B/s` | the pace that earns a body more time: 4 MiB at 1 MiB/s passes a 2 s budget, one byte per 1.5 s does not; `0` gives no credit, so the timeout bounds the whole body |
 | `ODOO_HTTP_DRAIN_BYTES` | `1 MiB` | unread request body discarded, within one second, to keep a connection alive; beyond it the connection closes after a two-second lingering close |
+| `ODOO_WEBSOCKET_DB_THREADS` | `max(2, pool - 2 x HTTP threads - listeners)`, the pool being `db_maxconn_gevent` or `db_maxconn` | threads running websocket database work (messages, notification dispatch, open and close hooks); a job waits for one rather than racing the HTTP threads for a connection |
 | `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `10000` | websockets one process holds, counted from the handshake; past it the handshake is answered `503` with `Retry-After: 5` before any `101`. `0` is unbounded |
 
 **What the parser refuses**, each with the connection closed: conflicting
@@ -444,7 +445,7 @@ by `doc/architecture/factcheck.sh`.
 | `odoo_up` | gauge | 1 when the endpoint is serving |
 | `odoo_server_info` | gauge | constant 1 with the `flavor` label (`threaded`, `prefork`, `evented`) |
 | `odoo_registries` | gauge | registries held in memory |
-| `odoo_threads` | gauge | live service threads by `type` (`http`, `cron`, `job`, `websocket`) — threaded and evented |
+| `odoo_threads` | gauge | live service threads by `type` (`http`, `cron`, `job`, `websocket_job`: the websocket database threads, busy or idle) — threaded and evented |
 | `odoo_http_threads_max` | gauge | the bounded HTTP handler slots — threaded and evented |
 | `odoo_limits_reached_threads` | gauge | threads over their time limit whose cancel did not free them, pending the reload — threaded |
 | `odoo_overruns_cancelled_total` | counter | requests, sweeps and jobs over `limit_time_real` whose queries were cancelled — threaded |

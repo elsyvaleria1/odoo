@@ -1,9 +1,9 @@
 import gc
 import os
+import weakref
 from collections import defaultdict
 from threading import Event
 from unittest.mock import patch
-from weakref import WeakSet
 
 from odoo import http
 from odoo.api import Environment
@@ -75,17 +75,17 @@ class TestWebsocketCaryall(WebsocketCase):
             self.wait_remaining_websocket_connections()
         self.assertIn("_on_websocket_closed", seen)
 
-    def test_instances_weak_set(self):
-        with patch.object(websocket_module, "_websocket_instances", WeakSet()):
-            first_ws = self.websocket_connect()
-            second_ws = self.websocket_connect()
-            self.assertEqual(len(websocket_module._websocket_instances), 2)
-            first_ws.close(CloseCode.CLEAN)
-            second_ws.close(CloseCode.CLEAN)
-            self.wait_remaining_websocket_connections()
-            self._serve_forever_patch.stop()
-            gc.collect()
-            self.assertEqual(len(websocket_module._websocket_instances), 0)
+    def test_closed_websockets_are_released(self):
+        first_ws = self.websocket_connect()
+        second_ws = self.websocket_connect()
+        served = [weakref.ref(ws) for ws in websocket_module._open_websockets()]
+        self.assertEqual(len(served), 2)
+        first_ws.close(CloseCode.CLEAN)
+        second_ws.close(CloseCode.CLEAN)
+        self.wait_remaining_websocket_connections()
+        self.assertEqual(len(websocket_module._open_websockets()), 0)
+        gc.collect()
+        self.assertEqual([ref() for ref in served], [None, None])
 
     def test_timeout_manager_no_response_timeout(self):
         clock = ManualClock()
@@ -316,20 +316,18 @@ class TestWebsocketCaryall(WebsocketCase):
 
     def _connect_and_capture_server_session(self, cookie, **connect_kwargs):
         captured_sessions = []
-        serve_forever_called_event = Event()
-        original_serve_forever = WebsocketConnectionHandler._serve_forever
+        adopted_event = Event()
+        original_adopt = Websocket._adopt
 
-        def serve_forever(websocket, *args):
+        def adopt(websocket, *args):
             captured_sessions.append(websocket._session)
-            serve_forever_called_event.set()
-            original_serve_forever(websocket, *args)
+            adopted_event.set()
+            original_adopt(websocket, *args)
 
-        with patch.object(
-            WebsocketConnectionHandler, "_serve_forever", side_effect=serve_forever
-        ):
+        with patch.object(Websocket, "_adopt", adopt):
             ws = self.websocket_connect(cookie=cookie, **connect_kwargs)
             self.assertTrue(
-                serve_forever_called_event.wait(timeout=5),
+                adopted_event.wait(timeout=5),
                 "The websocket should have been served",
             )
         return ws, captured_sessions[0]

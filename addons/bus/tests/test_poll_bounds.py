@@ -207,7 +207,7 @@ class TestDispatchRoundSharesOnePoll(BaseCase):
         return ws
 
     def _wake(self, sockets, poll_round=None):
-        with patch.object(Websocket, "_send_control_command"):
+        with patch.object(Websocket, "_dispatch_requested"):
             for ws in sockets:
                 ws.trigger_notification_dispatching(poll_round)
 

@@ -20,3 +20,4 @@ from . import test_probe_teardown
 from . import test_transport_error_teardown
 from . import test_serve_message_lifetime
 from . import test_websocket_capacity
+from . import test_websocket_hub

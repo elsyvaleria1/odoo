@@ -11,20 +11,11 @@ from ..websocket import ConnectionState, Websocket
 @tagged("-at_install", "post_install")
 class TestTerminateTeardownRobustness(BaseCase):
     def _make_ws(self):
-        ws = Websocket.__new__(Websocket)
-        ws._clock = time.monotonic
-        ws.state = ConnectionState.OPEN
-        ws._db = "somedb"
-        ws._session = MagicMock()
-        ws._cookies = {}
-        ws._channels = set()
-        ws._close_sent = False
-        ws._close_received = False
         sock = MagicMock()
         sock.recv.return_value = b""
-        ws._Websocket__socket = sock
-        ws._Websocket__selector = MagicMock()
-        ws._Websocket__cmd_queue = MagicMock()
+        sock.send.side_effect = len
+        ws = Websocket(sock, MagicMock(db="somedb"), {})
+        ws._clock = time.monotonic
         return ws
 
     def test_pool_error_during_teardown_is_swallowed(self):
@@ -38,7 +29,8 @@ class TestTerminateTeardownRobustness(BaseCase):
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._terminate()
-        ws._Websocket__socket.close.assert_called_once()
+            ws._teardown()
+        ws.sock.close.assert_called_once()
         self.assertEqual(ws.state, ConnectionState.CLOSED)
 
     def test_transport_error_path_does_not_escape(self):
@@ -52,6 +44,7 @@ class TestTerminateTeardownRobustness(BaseCase):
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._handle_transport_error(OSError("connection reset"))
+            ws._teardown()
         self.assertEqual(ws.state, ConnectionState.CLOSED)
 
     def test_drain_deadline_bounds_peer_streaming_after_shutdown(self):
@@ -65,7 +58,7 @@ class TestTerminateTeardownRobustness(BaseCase):
             now[0] += 1.0
             return b"x" * 16
 
-        ws._Websocket__socket.recv = endless_recv
+        ws.sock.recv = endless_recv
         with (
             patch(
                 "odoo.addons.bus.websocket.acquire_cursor",
@@ -76,7 +69,7 @@ class TestTerminateTeardownRobustness(BaseCase):
         ):
             ws._terminate()
         self.assertLessEqual(recv_calls[0], 7)
-        ws._Websocket__socket.close.assert_called_once()
+        ws.sock.close.assert_called_once()
         self.assertEqual(ws.state, ConnectionState.CLOSED)
 
     def test_on_websocket_closed_invoked_on_happy_path(self):
@@ -94,5 +87,6 @@ class TestTerminateTeardownRobustness(BaseCase):
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._terminate()
+            ws._teardown()
         env["ir.websocket"]._on_websocket_closed.assert_called_once_with(ws._cookies)
         self.assertEqual(ws.state, ConnectionState.CLOSED)
