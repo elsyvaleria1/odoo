@@ -14,6 +14,7 @@ from typing import Any
 import psycopg.errors
 
 from odoo import api, db, fields, models
+from odoo.api import SUPERUSER_ID
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import (
     ConcurrencyError,
@@ -118,8 +119,8 @@ DEAD_DEPENDENCY_STATES = (JobState.FAILED, JobState.CANCELLED)
 
 CLAIMED_COLUMNS = SQL(
     "id, uuid, channel, priority, model_name, method_name, record_ids, args,"
-    " kwargs, user_id, company_id, context, retry, max_retries, defer_count,"
-    " max_defers"
+    " kwargs, user_id, company_id, context, elevated, privileges, retry,"
+    " max_retries, defer_count, max_defers"
 )
 
 
@@ -369,6 +370,15 @@ class IrJob(models.Model):
         readonly=True,
     )
     context = fields.Json(readonly=True)
+    elevated = fields.Boolean(
+        readonly=True,
+        help="The job runs in superuser mode, as its caller did when it queued it.",
+    )
+    privileges = fields.Json(
+        readonly=True,
+        help="The privileges (res.groups ids) its caller held when it queued it, "
+        "which the job holds too.",
+    )
 
     retry = fields.Integer(
         default=0,
@@ -485,6 +495,8 @@ class IrJob(models.Model):
                 env.uid,
                 env.company.id,
                 json_dumps(context),
+                env.su,
+                json_dumps(sorted(env.privileges)),
                 max_retries if max_retries is not None else job_config["max_retries"],
                 job_config["max_defers"],
                 env.uid,
@@ -644,13 +656,13 @@ class IrJob(models.Model):
                 INSERT INTO ir_job (
                     name, uuid, channel, state, priority, eta, identity_key,
                     model_name, method_name, record_ids, args, kwargs,
-                    user_id, company_id, context, retry, max_retries,
-                    defer_count, max_defers,
+                    user_id, company_id, context, elevated, privileges,
+                    retry, max_retries, defer_count, max_defers,
                     create_uid, create_date, write_uid, write_date
                 ) VALUES (
                     %s, gen_random_uuid()::varchar, %s, %s, %s, %s, %s,
                     %s, %s, %s::jsonb, %s::jsonb, %s::jsonb,
-                    %s, %s, %s::jsonb, 0, %s,
+                    %s, %s, %s::jsonb, %s, %s::jsonb, 0, %s,
                     0, %s,
                     %s, %s, %s, %s
                 )
@@ -1128,7 +1140,24 @@ class IrJob(models.Model):
     def _get_claimed_target(
         cr, job: dict[str, Any]
     ) -> tuple[api.Environment, models.BaseModel]:
-        env = api.Environment(cr, job["user_id"], dict(job["context"] or {}))
+        # a job holds the authority its caller held: superuser mode and the
+        # privileges that still are privileges
+        privileges = frozenset()
+        if job["privileges"]:
+            privileges = frozenset(
+                api.Environment(cr, SUPERUSER_ID, {})["res.groups"]
+                .browse(job["privileges"])
+                .exists()
+                .filtered("is_privilege")
+                .ids
+            )
+        env = api.Environment(
+            cr,
+            job["user_id"],
+            dict(job["context"] or {}),
+            su=bool(job["elevated"]),
+            privileges=privileges,
+        )
         if is_user_archived(env):
             _debug.logic("job.terminal", job=job["id"], reason="user_archived")
             raise TerminalJobError(

@@ -141,6 +141,11 @@
                             <field name="eta" />
                             <field name="identity_key" />
                             <field name="user_id" />
+                            <field name="elevated" />
+                            <field
+                                name="privileges"
+                                widget="json"
+                                invisible="not privileges" />
                             <field name="company_id" />
                             <field name="uuid" />
                         </group>

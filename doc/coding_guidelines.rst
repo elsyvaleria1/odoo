@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.63
-:Date: 2026-10-07
+:Version: 7.64
+:Date: 2026-10-08
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -3544,6 +3544,14 @@ line** ``[review]``:
 
 * Job methods are **private**; ``@api.job`` rejects a public name and the worker
   runs only decorated methods.
+* **A job holds its caller's authority**: the user, the company, the
+  allowlisted context, superuser mode and the named privileges in force when
+  ``delayed()`` was called. The row records the last two (``elevated``,
+  ``privileges``) and the worker restores them, dropping a privilege deleted
+  since. ``records.sudo().delayed()`` therefore runs elevated, and
+  ``records.with_privilege(...).delayed()`` holds that privilege; queue from the
+  environment whose authority the work needs. A job whose user has been
+  archived still fails terminally.
 * Arguments are **JSON-serialisable**: pass ids, not recordsets or datetimes.
   Target records ride on ``delayed()``'s recordset.
 * Bodies are **idempotent**. The job's writes commit atomically with its
@@ -6172,6 +6180,11 @@ collisions, so an eighth fails and so does a renumbering.
    * - Version
      - Date
      - Summary
+   * - 7.64
+     - 2026-10-08
+     - §2.9.14: a job holds its caller's authority, superuser mode and named
+       privileges included, recorded on the job; it used to keep only the user,
+       so a ``sudo()`` caller's job silently ran unelevated.
    * - 7.63
      - 2026-10-07
      - §6.0: ``tests/transport`` returns as the one database-free pytest suite;

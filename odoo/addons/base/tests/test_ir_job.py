@@ -17,7 +17,7 @@ from odoo.libs import backoff
 from odoo.modules.registry import Registry
 from odoo.service import get_job_real_time_budget
 from odoo.tests import common
-from odoo.tests.common import BaseCase, TransactionCase
+from odoo.tests.common import BaseCase, TransactionCase, new_test_user
 from odoo.tools import SQL, mute_logger
 
 from odoo.addons.base.models import ir_job
@@ -284,6 +284,54 @@ class TestIrJob(TransactionCase):
         record = self.env["ir.job"].browse(job["id"])
         self.assertEqual(record.state, "done")
         self.assertTrue(record.done_at)
+
+    def _claimed_env(self):
+        env, _records = IrJob._get_claimed_target(self.env.cr, self._claim())
+        return env
+
+    def _privilege(self):
+        privilege = self.env["res.groups"].search(
+            [("is_privilege", "=", True)], limit=1
+        )
+        self.assertTrue(privilege, "base declares at least one privilege")
+        return privilege
+
+    def test_a_plain_caller_queues_a_plain_job(self):
+        user = new_test_user(self.env, login="job_plain", groups="base.group_user")
+        job = self.partner.with_user(user).delayed()._ir_job_test_append()
+        self.assertFalse(job.sudo().elevated)
+        self.assertFalse(job.sudo().privileges)
+        env = self._claimed_env()
+        self.assertEqual(env.uid, user.id)
+        self.assertFalse(env.su)
+        self.assertFalse(env.privileges)
+
+    def test_a_job_holds_its_callers_elevation(self):
+        user = new_test_user(self.env, login="job_elevated", groups="base.group_user")
+        job = self.partner.with_user(user).sudo().delayed()._ir_job_test_append()
+        self.assertTrue(job.elevated)
+        env = self._claimed_env()
+        self.assertEqual(env.uid, user.id, "still as its caller")
+        self.assertTrue(env.su, "and as elevated as its caller was")
+
+    def test_a_job_holds_its_callers_privileges(self):
+        privilege = self._privilege()
+        user = new_test_user(self.env, login="job_privileged", groups="base.group_user")
+        caller = self.partner.with_user(user).with_privilege(
+            privilege.get_external_id()[privilege.id], reason="test"
+        )
+        job = caller.delayed()._ir_job_test_append()
+        self.assertEqual(job.sudo().privileges, privilege.ids)
+        env = self._claimed_env()
+        self.assertFalse(env.su)
+        self.assertEqual(env.privileges, frozenset(privilege.ids))
+
+    def test_a_privilege_gone_since_is_not_held(self):
+        self.partner.delayed()._ir_job_test_append()
+        job = self._claim()
+        job["privileges"] = [self._privilege().id, 2**31 - 1]
+        env, _records = IrJob._get_claimed_target(self.env.cr, job)
+        self.assertEqual(env.privileges, frozenset(self._privilege().ids))
 
     def test_a_job_that_waits_outside_gets_its_own_idle_budget(self):
         self.env.cr.execute("SHOW idle_in_transaction_session_timeout")
