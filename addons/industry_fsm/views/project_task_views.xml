@@ -33,6 +33,7 @@
                     name="action_preview_worksheet"
                     type="object"
                     string="Sign Report"
+                    groups="base.group_user"
                     invisible="not display_sign_report_primary or has_template_ancestor or has_project_template"
                     class="btn-primary"
                     data-hotkey="y" />
@@ -40,6 +41,7 @@
                     name="action_send_report"
                     type="object"
                     string="Send Report"
+                    groups="base.group_user"
                     invisible="not display_send_report_primary or has_template_ancestor or has_project_template"
                     class="btn-primary"
                     data-hotkey="g" />
@@ -47,6 +49,7 @@
                     name="action_fsm_validate"
                     type="object"
                     string="Mark as done"
+                    groups="base.group_user"
                     invisible="not display_mark_as_done_primary or has_template_ancestor or has_project_template"
                     class="btn-primary"
                     data-hotkey="v" />
@@ -54,6 +57,7 @@
                     name="action_preview_worksheet"
                     type="object"
                     string="Sign Report"
+                    groups="base.group_user"
                     invisible="not display_sign_report_secondary or has_template_ancestor or has_project_template"
                     class="btn-secondary"
                     data-hotkey="y" />
@@ -61,6 +65,7 @@
                     name="action_send_report"
                     type="object"
                     string="Send Report"
+                    groups="base.group_user"
                     invisible="not display_send_report_secondary or has_template_ancestor or has_project_template"
                     class="btn-secondary"
                     data-hotkey="g" />
@@ -68,6 +73,7 @@
                     name="action_fsm_validate"
                     type="object"
                     string="Mark as done"
+                    groups="base.group_user"
                     invisible="not display_mark_as_done_secondary or has_template_ancestor or has_project_template"
                     class="btn-secondary"
                     data-hotkey="v" />
@@ -144,9 +150,11 @@
                 <field name="is_task_phone_update" invisible="1" />
                 <label
                     for="phone_ids"
+                    groups="base.group_user"
                     invisible="not is_fsm or has_template_ancestor or has_project_template" />
                 <div
                     name="phone_ids"
+                    groups="base.group_user"
                     class="o_row o_row_readonly"
                     invisible="not is_fsm or has_template_ancestor or has_project_template">
                     <field

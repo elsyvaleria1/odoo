@@ -168,6 +168,7 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project_gantt.project_task_view_gantt" />
         <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
         <field name="arch" type="xml">
             <xpath expr="//gantt" position="attributes">
                 <attribute name="default_group_by">worksheet_template_id,user_ids</attribute>

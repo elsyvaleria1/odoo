@@ -374,6 +374,7 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project_gantt.project_task_view_gantt" />
         <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
         <field name="arch" type="xml">
             <xpath expr="//gantt" position="attributes">
                 <attribute name="default_group_by">project_id,user_ids</attribute>
@@ -400,6 +401,7 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project_gantt.project_task_view_gantt" />
         <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
         <field name="arch" type="xml">
             <xpath expr="//gantt" position="attributes">
                 <attribute name="default_group_by">partner_zip,user_ids</attribute>
@@ -459,6 +461,7 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project_gantt.project_task_view_gantt" />
         <field name="mode">primary</field>
+        <field name="group_ids" eval="[Command.link(ref('base.group_user'))]" />
         <field name="arch" type="xml">
             <gantt position="attributes">
                 <attribute name="js_class">fsm_task_gantt</attribute>
