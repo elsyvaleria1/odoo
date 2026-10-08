@@ -246,6 +246,20 @@ from odoo.service._transport import TransportLimits, get_http_socket_timeout
 MIB = 1024 * 1024
 deployment = (pages / "deployment.md").read_text()
 
+def bus_constant(name):
+    # bus is an addon, outside the core this script imports: read its module
+    # source for the literal instead.
+    import ast
+
+    tree = ast.parse((pages / "../../addons/bus/websocket.py").read_text())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            getattr(t, "id", None) == name for t in node.targets
+        ):
+            return ast.literal_eval(node.value)
+    raise LookupError(name)
+
+
 def contains(label, text):
     print(f"OK|{label}" if text in deployment else f"BAD|deployment.md does not state {label} ({text!r})")
 
@@ -281,6 +295,8 @@ for label, text in {
     "body min rate": f"| `ODOO_HTTP_BODY_MIN_RATE` | `{int(lim.body.min_rate)} B/s` |",
     "websocket cap": f"| `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `{_limits.WEBSOCKET_MAX_CONNECTIONS}` |",
     "websocket descriptors": f"`WEBSOCKET_DESCRIPTORS` ({_limits.WEBSOCKET_DESCRIPTORS}:",
+    "websocket drain timeout": f"| `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `{bus_constant('DRAIN_TIMEOUT'):g} s` |",
+    "websocket drain timeout in prose": f"`ODOO_WEBSOCKET_DRAIN_TIMEOUT`\n({bus_constant('DRAIN_TIMEOUT'):g} s)",
     "websocket db threads floor": f"| `ODOO_WEBSOCKET_DB_THREADS` | `max({_limits.WEBSOCKET_MIN_DB_THREADS}, ",
 }.items():
     contains(label, text)

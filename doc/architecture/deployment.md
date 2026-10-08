@@ -110,12 +110,20 @@ A first SIGINT/SIGTERM (or a SIGHUP, which re-execs afterwards) runs
 stops accepting and closes idle connections (`shutdown()`), then **waits for
 the busy request threads** (`ThreadedHTTPServer.drain()`, bounded by
 `ODOO_GRACEFUL_STOP_TIMEOUT`, 60 s; a request already over `limit_time_real`
-is not waited for), closes the listening socket, runs the stop hooks, joins
+is not waited for), closes the listening socket, runs the stop hooks (among
+them `bus`'s websocket drain, below), joins
 the listener threads for whatever is left of that same bound (at least 1 s)
 so each finishes its job and closes its own PostgreSQL session, and closes
 the pools. A second signal forces an immediate exit. The evented
 process drains the same way. Before 2026-09-15 the socket closed under every
 in-flight request and the listener sessions were left to the kernel.
+
+The websocket drain refuses new handshakes (`503`), sends every websocket a
+close frame `1001` (going away), waits up to `ODOO_WEBSOCKET_DRAIN_TIMEOUT`
+(3 s) for the clients to answer it, then cuts the rest. It runs before the
+pools close. The close hooks (`_on_websocket_closed`: presence set offline,
+session inactivity) are not run for these connections: a stop is not every
+user leaving, and each client reconnects to the next server.
 
 On a SIGHUP the listening socket is not closed at all: after the drain,
 `ThreadedHTTPServer.bequeath_listener()` marks it inheritable and names its
@@ -359,6 +367,7 @@ Knobs, read from the environment:
 | `ODOO_HTTP_BODY_TIMEOUT` | `20 s` | a request body must arrive within this plus one second per `ODOO_HTTP_BODY_MIN_RATE` bytes received, counted from the application's first read that waits on the network; past it, or past one silent `ODOO_HTTP_SOCKET_TIMEOUT` mid-body, the answer is `408` |
 | `ODOO_HTTP_BODY_MIN_RATE` | `500 B/s` | the pace that earns a body more time: 4 MiB at 1 MiB/s passes a 2 s budget, one byte per 1.5 s does not; `0` gives no credit, so the timeout bounds the whole body |
 | `ODOO_HTTP_DRAIN_BYTES` | `1 MiB` | unread request body discarded, within one second, to keep a connection alive; beyond it the connection closes after a two-second lingering close |
+| `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `3 s` | how long a stopping process waits for its websockets to answer the `1001` it sent each before it cuts them |
 | `ODOO_WEBSOCKET_DB_THREADS` | `max(2, pool - 2 x HTTP threads - listeners)`, the pool being `db_maxconn_gevent` or `db_maxconn` | threads running websocket database work (messages, notification dispatch, open and close hooks); a job waits for one rather than racing the HTTP threads for a connection |
 | `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `10000` | websockets one process holds, counted from the handshake; past it the handshake is answered `503` with `Retry-After: 5` before any `101`. `0` is unbounded |
 

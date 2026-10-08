@@ -1,5 +1,5 @@
-import gc
 import os
+import time
 import weakref
 from collections import defaultdict
 from threading import Event
@@ -83,9 +83,11 @@ class TestWebsocketCaryall(WebsocketCase):
         first_ws.close(CloseCode.CLEAN)
         second_ws.close(CloseCode.CLEAN)
         self.wait_remaining_websocket_connections()
+        deadline = time.monotonic() + 5
+        while websocket_module._open_websockets() and time.monotonic() < deadline:
+            time.sleep(0.01)
         self.assertEqual(len(websocket_module._open_websockets()), 0)
-        gc.collect()
-        self.assertEqual([ref() for ref in served], [None, None])
+        self.assert_released(served)
 
     def test_timeout_manager_no_response_timeout(self):
         clock = ManualClock()

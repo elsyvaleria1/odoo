@@ -338,10 +338,16 @@ class WebsocketHub:
             except Exception as exc:
                 conn.on_loop_error(exc)
 
+    def _for_each_connection(self, action) -> None:
+        for conn in list(self.connections.values()):
+            try:
+                action(conn)
+            except Exception as exc:
+                conn.on_loop_error(exc)
+
     def close_all(self, code, *, timeout: float = 5.0) -> bool:
         def close():
-            for conn in list(self.connections.values()):
-                conn.close_now(code)
+            self._for_each_connection(lambda conn: conn.close_now(code))
 
         return self.call_and_wait(close, timeout=timeout)
 
@@ -353,17 +359,18 @@ class WebsocketHub:
 
         def begin():
             self.stopping = True
-            for conn in list(self.connections.values()):
-                conn.close_now(code)
+            self._for_each_connection(lambda conn: conn.close_now(code))
+
+        def answering():
+            return [c for c in list(self.connections.values()) if not c.lingering]
 
         self.call_and_wait(begin, timeout=drain_timeout)
-        while self.connections and self._clock() < deadline:
+        while answering() and self._clock() < deadline:
             time.sleep(0.02)
-        remaining = len(self.connections)
+        remaining = len(answering())
 
         def finish():
-            for conn in list(self.connections.values()):
-                conn.abort()
+            self._for_each_connection(lambda conn: conn.abort())
             self._exit = True
 
         self.call_and_wait(finish, timeout=1.0)

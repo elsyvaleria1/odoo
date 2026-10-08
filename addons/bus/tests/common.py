@@ -1,6 +1,8 @@
 import contextlib
+import gc
 import inspect
 import struct
+import time
 import unittest
 from queue import Empty, SimpleQueue
 from threading import Event
@@ -185,6 +187,18 @@ class WebsocketCase(HttpCase):
                 event.wait(5),
                 "A websocket connection did not terminate within 5 seconds",
             )
+
+    def assert_released(self, refs, timeout=10.0):
+        # The job thread that ran a connection's last job lets go of it a
+        # moment after the job returned, which is when the test is woken.
+        deadline = time.monotonic() + timeout
+        while True:
+            gc.collect()
+            alive = [ref() for ref in refs]
+            if not any(alive) or time.monotonic() > deadline:
+                break
+            time.sleep(0.02)
+        self.assertEqual(alive, [None] * len(refs))
 
     def assert_close_with_code(self, websocket, expected_code, expected_reason=None):
         opcode, payload = websocket.recv_data()

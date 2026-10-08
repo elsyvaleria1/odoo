@@ -1,3 +1,4 @@
+import os
 import socket
 import struct
 import threading
@@ -6,6 +7,11 @@ from unittest.mock import MagicMock, patch
 
 from odoo.libs.json import loads as json_loads
 from odoo.tests import BaseCase, tagged
+
+try:
+    from websocket import WebSocketBadStatusException
+except ImportError:
+    WebSocketBadStatusException = None
 
 from .. import websocket as websocket_module
 from ..tools.websocket_hub import DbExecutor, WebsocketHub
@@ -121,10 +127,27 @@ class TestWebsocketHub(BaseCase):
         opcode, payload = peer.frame()
         self.assertEqual(opcode, Opcode.CLOSE)
         self.assertEqual(payload, struct.pack("!H", CloseCode.CLEAN) + b"bye")
-        self.assertTrue(_wait_until(lambda: ws.fd not in self.hub.connections))
+        self.assertTrue(_wait_until(lambda: ws.lingering), "half-closed, reading")
+        self.assertEqual(peer.sock.recv(1), b"", "the server's side is shut")
+        peer.sock.close()
+        self.assertTrue(_wait_until(lambda: gauge.count == 0))
+        self.assertNotIn(ws.fd, self.hub.connections)
         self.assertIs(ws.state, ConnectionState.CLOSED)
         self.assertTrue(self.torn_down.wait(5), "the close hooks run after the close")
-        self.assertEqual(gauge.count, 0)
+
+    def test_a_client_still_sending_after_the_close_is_read_out(self):
+        ws, peer, gauge = self._connect()
+        self.hub.call_soon(ws.close_now, CloseCode.GOING_AWAY)
+        self.assertEqual(peer.frame()[0], Opcode.CLOSE)
+        peer.send(Opcode.CLOSE, struct.pack("!H", CloseCode.GOING_AWAY))
+        self.assertTrue(_wait_until(lambda: ws.lingering))
+        for _ in range(50):
+            peer.sock.sendall(b"sent before the client read the close" * 10)
+        time.sleep(0.05)
+        self.assertEqual(gauge.count, 1, "the socket stays open while it talks")
+        peer.sock.close()
+        self.assertTrue(_wait_until(lambda: gauge.count == 0))
+        self.assertNotIn(ws.fd, self.hub.connections)
 
     def test_messages_are_served_in_order_one_job_at_a_time(self):
         _ws, peer, _gauge = self._connect()
@@ -189,10 +212,10 @@ class TestWebsocketHub(BaseCase):
             self.assertTrue(
                 _wait_until(lambda: ws.state is ConnectionState.CLOSED, timeout=5)
             )
-        self.assertTrue(_wait_until(lambda: ws.fd not in self.hub.connections))
+        self.assertTrue(_wait_until(lambda: gauge.count == 0))
+        self.assertNotIn(ws.fd, self.hub.connections)
         self.assertEqual(self.hub.outbound, 0)
         self.assertEqual(self.hub.write_stalls, 1)
-        self.assertEqual(gauge.count, 0)
 
     def test_idle_connections_are_pinged_with_jitter(self):
         with (
@@ -278,3 +301,42 @@ class TestWebsocketHubOverHttp(WebsocketCase):
             websocket.recv_data_frame(control_frame=True)
         self.assertEqual(len(websocket_module._open_websockets()), 500)
         self.assertLess(threading.active_count() - before, 64)
+
+
+@tagged("-at_install", "post_install")
+class TestDrainOnStop(WebsocketCase):
+    def test_a_stop_asks_every_websocket_to_reconnect_and_skips_close_hooks(self):
+        hub = WebsocketHub(db_threads=lambda: 2)
+        self.startPatcher(patch.object(websocket_module, "_hub", hub))
+        self.startPatcher(
+            patch.dict(os.environ, {"ODOO_WEBSOCKET_DRAIN_TIMEOUT": "1.5"})
+        )
+        cookie = f"session_id={self.authenticate(None, None).sid}"
+        websockets = [self.websocket_connect(cookie=cookie) for _ in range(50)]
+        self.assertEqual(len(hub.connections), 50)
+        silent = websockets.pop()
+        drained = threading.Event()
+        elapsed = []
+
+        def drain():
+            started = time.monotonic()
+            websocket_module._drain_on_stop()
+            elapsed.append(time.monotonic() - started)
+            drained.set()
+
+        with patch(
+            "odoo.addons.bus.models.ir_websocket.IrWebsocket._on_websocket_closed"
+        ) as close_hook:
+            threading.Thread(target=drain, daemon=True).start()
+            for websocket in websockets:
+                self.assert_close_with_code(websocket, CloseCode.GOING_AWAY)
+            self.assertTrue(drained.wait(5))
+            self.wait_remaining_websocket_connections()
+        self.assert_close_with_code(silent, CloseCode.GOING_AWAY)
+        close_hook.assert_not_called()
+        self.assertEqual(hub.connections, {})
+        self.assertGreaterEqual(elapsed[0], 1.5, "the silent client is waited for")
+        self.assertLess(elapsed[0], 3.0, "then cut at the drain timeout")
+        with self.assertRaises(WebSocketBadStatusException) as refused:
+            self.websocket_connect()
+        self.assertEqual(refused.exception.status_code, 503)

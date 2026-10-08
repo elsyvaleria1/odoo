@@ -33,6 +33,7 @@ from odoo.http import (
 )
 from odoo.modules.registry import Registry
 from odoo.service import (
+    get_env_float,
     get_websocket_db_threads,
     get_websocket_max_connections,
     metrics,
@@ -274,6 +275,8 @@ class Websocket:
     # answer in, None otherwise. Declared on the class so a connection that
     # never went through a wake reads None rather than raising.
     _poll_round = None
+    _linger_until = None
+    _linger_allowed = True
     _hub = None
     _gauge = None
     fd = -1
@@ -332,6 +335,7 @@ class Websocket:
         self._outbuf = bytearray()
         self._write_progress_at = None
         self._finish_after_flush = False
+        self._linger_until = None
         self.state = ConnectionState.OPEN
 
     @property
@@ -404,6 +408,10 @@ class Websocket:
         self._pump()
 
     def on_readable(self) -> None:
+        if self._linger_until is not None:
+            if self._linger():
+                self._close_socket()
+            return
         try:
             messages = self._read_messages()
         except BlockingIOError:
@@ -416,6 +424,12 @@ class Websocket:
         self._flush()
 
     def on_timer(self) -> None:
+        if self._linger_until is not None:
+            if self._clock() > self._linger_until:
+                self._close_socket()
+            else:
+                self._reschedule()
+            return
         if self.state is ConnectionState.CLOSED:
             if self._write_stalled():
                 self._abort()
@@ -693,7 +707,9 @@ class Websocket:
         if hub is None or hub.connections.get(self.fd) is not self:
             return
         events = 0
-        if self._reading and not self._finish_after_flush:
+        if self._linger_until is not None or (
+            self._reading and not self._finish_after_flush
+        ):
             events |= selectors.EVENT_READ
         if self._outbuf:
             events |= selectors.EVENT_WRITE
@@ -723,7 +739,9 @@ class Websocket:
         if hub is None or hub.connections.get(self.fd) is not self:
             return
         deadlines = []
-        if self.state is not ConnectionState.CLOSED:
+        if self._linger_until is not None:
+            deadlines.append(self._linger_until)
+        elif self.state is not ConnectionState.CLOSED:
             deadlines.append(
                 self._timeout_manager.next_deadline(
                     pinging=self.state is ConnectionState.OPEN
@@ -747,7 +765,15 @@ class Websocket:
         else:
             self._send_close_frame(code, reason)
 
+    @property
+    def lingering(self) -> bool:
+        return self._linger_until is not None
+
     def _abort(self) -> None:
+        self._linger_allowed = False
+        if self._linger_until is not None:
+            self._close_socket()
+            return
         if self._outbuf:
             if self._hub is not None:
                 self._hub.outbound -= len(self._outbuf)
@@ -775,18 +801,20 @@ class Websocket:
         self._finish_after_flush = False
         hub = self._hub
         if hub is not None:
-            hub.detach(self)
             hub.outbound -= len(self._outbuf)
         self._outbuf.clear()
-        with suppress(OSError, TimeoutError):
-            self.__socket.shutdown(socket.SHUT_WR)
-            linger_deadline = self._clock() + self.LINGER_SECONDS
-            for _ in range(self.LINGER_READS):
-                if not self.__socket.recv(4096) or self._clock() > linger_deadline:
-                    break
+        # Half-close, then read until the peer closes too: closing a socket
+        # with unread input sends a reset, and a reset can make the peer drop
+        # the close frame it has not read yet. The loop only reads what is
+        # there; the rest of the wait is the linger timer's.
+        self._linger_until = self._clock() + self.LINGER_SECONDS
         with suppress(OSError):
-            self.__socket.close()
-        self._release_slot()
+            self.__socket.shutdown(socket.SHUT_WR)
+        if hub is None or not self._linger_allowed or self._linger():
+            self._close_socket()
+        else:
+            self._update_events()
+            self._reschedule()
         if hub is None:
             return
         if self._job is not None:
@@ -794,7 +822,29 @@ class Websocket:
         else:
             hub.submit(self._teardown)
 
+    def _linger(self) -> bool:
+        try:
+            for _ in range(self.LINGER_READS):
+                if not self.__socket.recv(4096) or self._clock() > self._linger_until:
+                    return True
+        except BlockingIOError:
+            return self._clock() > self._linger_until
+        except OSError:
+            return True
+        return self._clock() > self._linger_until
+
+    def _close_socket(self) -> None:
+        self._linger_until = None
+        hub = self._hub
+        if hub is not None:
+            hub.detach(self)
+        with suppress(OSError):
+            self.__socket.close()
+        self._release_slot()
+
     def _teardown(self) -> None:
+        if self._hub is not None and self._hub.stopping:
+            return
         try:
             self._trigger_lifecycle_event(LifecycleEvent.CLOSE)
             with acquire_cursor(self._db) as cr:
@@ -1317,6 +1367,32 @@ def _kick_all(code=CloseCode.GOING_AWAY) -> None:
     _hub.close_all(code)
 
 
+DRAIN_TIMEOUT = 3.0
+
+
+def get_drain_timeout() -> float:
+    return get_env_float(
+        "ODOO_WEBSOCKET_DRAIN_TIMEOUT", DRAIN_TIMEOUT, minimum=0.0, logger=_logger
+    )
+
+
+def _drain_on_stop() -> None:
+    # A stop is not every user leaving: the close hooks (presence going
+    # offline, a row per connection) are skipped, the clients reconnect to the
+    # next server and carry on.
+    open_count = len(_hub.connections)
+    started = time.monotonic()
+    cut = _hub.stop(get_drain_timeout(), CloseCode.GOING_AWAY)
+    if open_count:
+        _logger.info(
+            "Stopping: asked %d websocket(s) to reconnect elsewhere (1001), "
+            "cut %d unanswered after %.1fs",
+            open_count,
+            cut,
+            time.monotonic() - started,
+        )
+
+
 _hub = WebsocketHub(db_threads=get_websocket_db_threads)
 dispatch.set_waker(_wake_websockets)
-CommonServer.register_on_stop_hook(_kick_all)
+CommonServer.register_on_stop_hook(_drain_on_stop)

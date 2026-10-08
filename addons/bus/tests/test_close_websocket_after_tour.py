@@ -1,4 +1,3 @@
-import gc
 import weakref
 from unittest.mock import patch
 
@@ -28,5 +27,4 @@ class TestCloseWebsocketAfterTour(WebsocketCase):
         self.assertTrue(served)
         self.assertEqual(len(websocket_module._open_websockets()), 0)
         self.wait_remaining_websocket_connections()
-        gc.collect()
-        self.assertEqual([ref() for ref in served], [None])
+        self.assert_released(served)
