@@ -255,11 +255,7 @@ class ProductTemplate(models.Model):
         )
 
     def _get_pos_pricelist_info(self, config, product, quantity) -> list:
-        pricelists = (
-            config.available_pricelist_ids
-            if config.use_pricelist
-            else config.pricelist_id
-        )
+        pricelists = config._get_available_pricelists()
         if not pricelists:
             return []
         price_by_pricelist_id = pricelists._price_get(product, quantity)

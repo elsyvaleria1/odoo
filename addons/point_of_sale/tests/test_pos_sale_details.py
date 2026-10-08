@@ -217,6 +217,16 @@ class TestPosCategoryGuards(TestPoSCommon):
         with self.assertRaisesRegex(UserError, session.name):
             category.unlink()
 
+    def test_unlink_blocked_by_session_restricted_to_no_category(self):
+        category = self.env["pos.category"].create({"name": "Snacks"})
+        self.config.write(
+            {"limit_categories": True, "iface_available_categ_ids": [(5, 0, 0)]}
+        )
+        self.config.open_ui()
+
+        with self.assertRaises(UserError):
+            category.unlink()
+
     def test_unlink_ignores_session_of_another_company(self):
         category = self.env["pos.category"].create({"name": "Snacks"})
         self.config.open_ui()
@@ -780,6 +790,62 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         _logger.debug("Window invoices=%s total=%s", invoices, report["invoice_total"])
         self.assertEqual([row["name"] for row in invoices], [inside.account_move.name])
         self.assertEqual(report["invoice_total"], 100)
+
+    def test_consolidated_invoice_is_listed_once(self):
+        product = self.create_product("Consolidated service", self.categ_basic, 100)
+        product.type = "service"
+        session = self._open_session()
+        orders = self._order(session, product, 100) | self._order(session, product, 50)
+        for order in orders:
+            self.make_payment(order, self.bank_pm1, order.amount_total)
+        self.env["wizard.pos.order.invoice"].create(
+            {"consolidated_billing": True}
+        ).with_context(active_ids=orders.ids).action_create_invoices()
+        self.assertEqual(len(orders.account_move), 1)
+
+        report = self.report.get_sale_details(session_ids=session.ids)
+
+        invoices = [
+            row for group in report["invoice_list"] for row in group["invoices"]
+        ]
+        _logger.debug(
+            "Consolidated invoices=%s total=%s", invoices, report["invoice_total"]
+        )
+        self.assertEqual([row["name"] for row in invoices], [orders.account_move.name])
+        self.assertEqual(
+            invoices[0]["order_ref"],
+            ", ".join(orders.sorted("id").mapped("pos_reference")),
+        )
+        self.assertEqual(report["invoice_total"], 150)
+
+    def test_invoice_spanning_two_sessions_names_both_orders(self):
+        product = self.create_product("Two-session service", self.categ_basic, 100)
+        product.type = "service"
+        first_session = self._open_session()
+        first = self._order(first_session, product, 100)
+        self.make_payment(first, self.bank_pm1, first.amount_total)
+        first_session.action_pos_session_closing_control()
+        second_session = self._open_session()
+        second = self._order(second_session, product, 50)
+        self.make_payment(second, self.bank_pm1, second.amount_total)
+        orders = first | second
+        self.env["wizard.pos.order.invoice"].create(
+            {"consolidated_billing": True}
+        ).with_context(active_ids=orders.ids).action_create_invoices()
+        self.assertEqual(len(orders.account_move), 1)
+
+        report = self.report.get_sale_details(
+            session_ids=(first_session | second_session).ids
+        )
+
+        invoices = [
+            row for group in report["invoice_list"] for row in group["invoices"]
+        ]
+        _logger.debug("Two-session invoices=%s", invoices)
+        self.assertEqual(len(invoices), 1)
+        self.assertEqual(
+            invoices[0]["order_ref"], ", ".join(orders.mapped("pos_reference"))
+        )
 
     def test_product_totals_use_currency_rounding(self):
         self.env.company.currency_id.rounding = 0.001

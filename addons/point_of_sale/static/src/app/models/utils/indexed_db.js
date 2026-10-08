@@ -486,6 +486,36 @@ export default class IndexedDB {
         });
     }
 
+    clear(storeNames) {
+        log.lifecycle("clear", () => ({ db: this.dbName, stores: storeNames.length }));
+        if (!storeNames.length) {
+            return Promise.resolve(true);
+        }
+        const transaction = this.getNewTransaction(storeNames, "readwrite");
+        if (!transaction) {
+            return Promise.resolve(false);
+        }
+        return new Promise((resolve) => {
+            const settle = (cleared) => {
+                this.activeTransactions.delete(transaction);
+                resolve(cleared);
+            };
+            transaction.oncomplete = () => settle(true);
+            transaction.onerror = transaction.onabort = (event) => {
+                logPosMessage(
+                    "IndexedDB",
+                    "clear",
+                    `Error clearing stores: ${event.target.error}`,
+                    CONSOLE_COLOR,
+                );
+                settle(false);
+            };
+            for (const storeName of storeNames) {
+                transaction.objectStore(storeName).clear();
+            }
+        });
+    }
+
     createOrdered(storeName, data) {
         const row = JSON.parse(JSON.stringify(data));
         const transaction = this.getNewTransaction([storeName], "readwrite");

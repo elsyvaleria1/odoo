@@ -11,7 +11,9 @@ patch(PosData.prototype, {
                 sequence: row.sequence ?? Date.now() * 1000,
             }),
             reset: async () => ({}),
+            clear: async () => true,
             readAll: async () => ({}),
+            dbStores: [],
         };
         return super.setup(...arguments);
     },

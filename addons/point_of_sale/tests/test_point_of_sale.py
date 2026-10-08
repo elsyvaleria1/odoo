@@ -135,9 +135,10 @@ class TestPointOfSale(TransactionCase):
         self.assertEqual(pos_config.warehouse_id.code, "SHO")
 
     def test_session_filter_local_data(self):
+        listed = {"available_in_pos": True}
         product1 = self.env["product.template"].create({"name": "product1"})
         product2 = self.env["product.template"].create({"name": "product2"})
-        product3 = self.env["product.template"].create({"name": "product3"})
+        product3 = self.env["product.template"].create({"name": "product3", **listed})
         config = self.env["pos.config"].create({"name": "shop"})
         session = self.env["pos.session"].create(
             {"name": "Test Session", "config_id": config.id}
@@ -153,7 +154,7 @@ class TestPointOfSale(TransactionCase):
         )
         self.assertEqual(products_to_display, [product3.id])
 
-        product4 = self.env["product.template"].create({"name": "product4"})
+        product4 = self.env["product.template"].create({"name": "product4", **listed})
         products_to_display = [product3.id, product4.id]
         models_to_filter = {"product.template": products_to_display}
         products_to_display = list(
@@ -165,6 +166,8 @@ class TestPointOfSale(TransactionCase):
         )
 
         products_to_display = [product3.id, product4.id]
+        # an open session refuses to lose a listed product
+        (product3 | product4).available_in_pos = False
         product3.unlink()
         product4.unlink()
         models_to_filter = {"product.template": products_to_display}

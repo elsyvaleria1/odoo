@@ -88,7 +88,7 @@ class PosPrinter(models.Model):
         use_lna = self.env.registry.settings.get_bool(self.env, "point_of_sale.use_lna")
         return {"use_lna": use_lna}
 
-    @api.constrains("epson_printer_ip")
+    @api.constrains("printer_type", "epson_printer_ip")
     def _check_epson_printer_ip(self) -> None:
         for record in self:
             if record.printer_type == "epson_epos" and not record.epson_printer_ip:

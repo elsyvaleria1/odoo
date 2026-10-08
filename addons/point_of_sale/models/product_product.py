@@ -9,6 +9,19 @@ class ProductProduct(models.Model):
     _name = "product.product"
     _inherit = ["product.product", "mixin.pos.load"]
 
+    def _get_inactive_ids(self, config):
+        removed = super()._get_inactive_ids(config)
+        # what is left is readable and active
+        kept = self - self.browse(removed)
+        templates = kept.product_tmpl_id
+        removed_templates = templates.browse(templates._get_inactive_ids(config))
+        return (
+            removed
+            + kept.filtered(
+                lambda product: product.product_tmpl_id in removed_templates
+            ).ids
+        )
+
     @api.model
     def _load_pos_data_domain(self, data, config):
         return [("product_tmpl_id", "in", [p["id"] for p in data["product.template"]])]

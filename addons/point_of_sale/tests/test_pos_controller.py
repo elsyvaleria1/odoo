@@ -498,6 +498,25 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
             )
         )
 
+    def test_pos_ui_background_fetch_does_not_open_a_session(self):
+        self.assertFalse(self.main_pos_config.current_session_id)
+        self.authenticate("pos_user", "pos_user")
+        url = f"/pos/ui/{self.main_pos_config.id}"
+
+        res = self.url_open(
+            url, headers={"Sec-Fetch-Mode": "cors"}, allow_redirects=False
+        )
+
+        self.assertEqual(res.status_code, 409)
+        self.assertFalse(self.main_pos_config.session_ids)
+
+        res = self.url_open(
+            url, headers={"Sec-Fetch-Mode": "navigate"}, allow_redirects=False
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(self.main_pos_config.session_ids), 1)
+
     def test_pos_ui_refuses_rescue_only_config(self):
         self.main_pos_config.open_ui()
         self.main_pos_config.current_session_id.rescue = True

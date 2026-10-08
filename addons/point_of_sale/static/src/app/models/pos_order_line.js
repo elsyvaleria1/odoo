@@ -358,11 +358,15 @@ export class PosOrderline extends PosOrderlineAccounting {
                 );
             }
         }
+        const oldQty = this.uiState.oldQty;
         for (const comboLine of this.combo_line_ids) {
-            comboLine.setQuantity(
-                (comboLine.qty / (this.uiState.oldQty || 1)) * quant,
-                true,
-            );
+            // a zero parent zeroes its children, so their share is kept aside
+            if (oldQty) {
+                comboLine.uiState.qtyPerParent = comboLine.qty / oldQty;
+            }
+            const qtyPerParent =
+                comboLine.uiState.qtyPerParent ?? (oldQty ? comboLine.qty / oldQty : 1);
+            comboLine.setQuantity(qtyPerParent * quant, true);
         }
         return true;
     }
@@ -614,13 +618,16 @@ export class PosOrderline extends PosOrderlineAccounting {
     }
 
     get refundedQty() {
-        return (
-            this.refund_orderline_ids?.reduce(
-                (acc, line) =>
-                    line.order_id.state !== "cancel" ? acc - line.qty : acc,
-                0,
-            ) || 0
+        const refunds = (this.refund_orderline_ids || []).filter(
+            (line) => line.order_id.state !== "cancel",
         );
+        const loaded = refunds.reduce((acc, line) => acc - line.qty, 0);
+        // refunds from other sessions are only known through the server's count;
+        // a synced line edited since is counted again in full, never short
+        const unknownToServer = refunds
+            .filter((line) => !line.isSynced || line._dirtyFields?.has("qty"))
+            .reduce((acc, line) => acc - line.qty, 0);
+        return Math.max(loaded, (this.refunded_qty || 0) + unknownToServer);
     }
 }
 

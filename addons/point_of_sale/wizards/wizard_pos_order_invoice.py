@@ -74,7 +74,9 @@ class WizardPosOrderInvoice(models.TransientModel):
             )
         invoices = self.env["account.move"]
         for orders in groups:
-            invoices |= orders._generate_pos_order_invoice()
+            invoices |= orders.with_company(
+                orders.company_id
+            )._generate_pos_order_invoice()
 
         _debug.pipeline("make_invoice_done", invoices=invoices, orders=selected_orders)
         if invoices:

@@ -26,12 +26,7 @@ class WizardPosOrderPay(models.TransientModel):
     def _default_amount(self):
         order = self._get_order()
         if order:
-            amount_total = order.amount_total
-            if order.currency_id.is_zero(
-                order.refunded_order_id.amount_total + order.amount_total
-            ):
-                amount_total = -order.refunded_order_id.amount_paid
-            return amount_total - order.amount_paid
+            return order._get_amounts_due()[0] - order.amount_paid
         return False
 
     def _default_payment_method_id(self):
@@ -111,8 +106,9 @@ class WizardPosOrderPay(models.TransientModel):
                 }
             )
 
-        if order.state == "draft" and order._is_pos_order_paid():
+        if order.state == "draft" and order._is_payment_amount_valid():
             _debug.pipeline("make_payment_fully_paid", order=order.uuid)
+            order._check_refund_quantities()
             order._process_saved_order(False)
             if order.state in {"paid", "done"}:
                 order._send_order()

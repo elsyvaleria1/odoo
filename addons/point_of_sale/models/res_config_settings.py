@@ -719,18 +719,6 @@ class ResConfigSettings(models.TransientModel):
                     res_config.pos_config_id.iface_electronic_scale
                 )
 
-    @api.onchange("pos_trusted_config_ids")
-    def _onchange_trusted_config_ids(self) -> None:
-        for config in self:
-            removed_trusted_configs = set(
-                config.pos_config_id.trusted_config_ids.ids
-            ) - set(config.pos_trusted_config_ids.ids)
-            for old in config.pos_config_id.trusted_config_ids:
-                if config.pos_config_id.id not in old.trusted_config_ids.ids:
-                    old._add_trusted_config_id(config.pos_config_id)
-                if old.id in removed_trusted_configs:
-                    old._remove_trusted_config_id(config.pos_config_id)
-
     @api.onchange("pos_epson_printer_ip")
     def _onchange_epson_printer_ip(self) -> None:
         for rec in self:

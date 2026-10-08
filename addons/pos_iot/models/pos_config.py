@@ -56,9 +56,6 @@ class PosConfig(models.Model):
         compute="_compute_payment_terminal_device_ids",
     )
 
-    def _get_urls_to_cache(self, debug):
-        return super()._get_urls_to_cache(debug)
-
     @api.depends("iface_printer_id")
     def _compute_print_via_proxy(self) -> None:
         for config in self:

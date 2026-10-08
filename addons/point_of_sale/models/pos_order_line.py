@@ -228,13 +228,6 @@ class PosOrderLine(models.Model):
             "write_date",
         ]
 
-    @api.model
-    def _is_field_accepted(self, field_name) -> bool:
-        return field_name in self._fields and field_name not in [
-            "combo_parent_id",
-            "combo_line_ids",
-        ]
-
     @api.depends(
         "refund_orderline_ids",
         "refund_orderline_ids.qty",
@@ -246,6 +239,39 @@ class PosOrderLine(models.Model):
                 lambda l: l.order_id.state != "cancel"
             )
             orderline.refunded_qty = -sum(refund_order_line.mapped("qty"))
+
+    def _get_over_refunded_lines(self, refund_order) -> Self:
+        # a draft refund elsewhere has returned nothing yet, so only settled
+        # refunds and this one count
+        digits = self.env["decimal.precision"].get_precision("Product Unit")
+
+        def settled_refund_qty(line):
+            refunds = line.refund_orderline_ids.filtered(
+                lambda refund: (
+                    refund.order_id == refund_order
+                    or refund.order_id.state in ("paid", "done")
+                )
+            )
+            return -sum(refunds.mapped("qty"))
+
+        over_refunded = self.filtered(
+            lambda line: (
+                line.qty > 0
+                and float_compare(
+                    settled_refund_qty(line), line.qty, precision_digits=digits
+                )
+                > 0
+            )
+        )
+        _debug.logic("refunded_qty_check", lines=self, over_refunded=over_refunded)
+        return over_refunded
+
+    def _describe_for_refund(self) -> str:
+        return ", ".join(
+            f"{line.full_product_name or line.product_id.display_name}"
+            f" ({line.order_id.name})"
+            for line in self
+        )
 
     def _get_refundable_lines(self) -> Self:
         digits = self.env["decimal.precision"].get_precision("Product Unit")

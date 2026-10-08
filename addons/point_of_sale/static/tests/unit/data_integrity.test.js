@@ -2,6 +2,7 @@ import { expect, test } from "@odoo/hoot";
 import { mockDate } from "@odoo/hoot-mock";
 import { groupOrderlines } from "@point_of_sale/app/components/order_display/orderline_groups";
 import IndexedDB from "@point_of_sale/app/models/utils/indexed_db";
+import { PosData } from "@point_of_sale/app/services/data_service";
 import OrderPaymentValidation from "@point_of_sale/app/utils/order_payment_validation";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { toISO, toISODate } from "@web/core/l10n/dates";
@@ -520,4 +521,34 @@ test("a partial read fetches complete data before loading an unknown record", as
     expect(calls[1]).toEqual(store.data.fields["res.partner"]);
     expect(records[0].name).toBe(originalName);
     expect(store.models["res.partner"].get(id)).toBe(records[0]);
+});
+
+test("a stale server cache is cleared without losing unsynced orders", async () => {
+    const name = `cache-clear-${crypto.randomUUID()}`;
+    const db = await openDatabase(name, [
+        ["uuid", "pos.order"],
+        ["id", "product.product"],
+        ["uuid", "pos.unsync.queue"],
+    ]);
+    try {
+        await db.create("pos.order", [{ uuid: "unsynced", state: "draft" }]);
+        await db.create("product.product", [{ id: 1, name: "Stale" }]);
+        await db.create("pos.unsync.queue", [{ uuid: "queued", sequence: 1 }]);
+        const data = Object.create(PosData.prototype);
+        Object.assign(data, {
+            indexedDB: db,
+            opts: { databaseTable: { "pos.order": { key: "uuid" } } },
+        });
+
+        expect(data.serverCacheStores).toEqual(["product.product"]);
+        expect(await data.clearServerCacheInIndexedDB()).toBe(true);
+
+        const rows = await db.readAll();
+        expect(rows["product.product"]).toEqual([]);
+        expect(rows["pos.order"]).toEqual([{ uuid: "unsynced", state: "draft" }]);
+        expect(rows["pos.unsync.queue"]).toHaveLength(1);
+    } finally {
+        db.db.close();
+        window.indexedDB.deleteDatabase(name);
+    }
 });

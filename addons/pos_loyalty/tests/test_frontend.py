@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from unittest.mock import patch
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from odoo.addons.point_of_sale.tests.common import archive_products
@@ -4504,7 +4504,11 @@ class TestUi(TestPointOfSaleHttpCommon):
                 "program_id": gift_card_program.id,
                 "code": "gift_card_expired",
                 "points": 60.0,
-                "expiration_date": date.today() - timedelta(days=1),
+                # expiry is judged on the cashier's date, not the server's UTC one
+                "expiration_date": fields.Date.context_today(
+                    self.pos_user.with_context(tz=self.pos_user.tz)
+                )
+                - timedelta(days=1),
             }
         )
         gift_card_sold = self.env["loyalty.card"].create(

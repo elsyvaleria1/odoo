@@ -21,4 +21,13 @@
         <field name="active" eval="False" />
     </record>
 
+    <record id="access_pos_session_choose_balancing_account" model="ir.access">
+        <field
+            name="name">pos.session: an accounting reader picks the account that balances a session closed by force</field>
+        <field name="model_id" ref="model_pos_session" />
+        <field name="group_id" ref="account.group_account_readonly" />
+        <field name="kind">permission</field>
+        <field name="verbs">choose_balancing_account</field>
+    </record>
+
 </odoo>

@@ -1,7 +1,12 @@
+import logging
+
 import odoo
+from odoo import Command
 from odoo.tests import new_test_user
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -138,3 +143,63 @@ class TestPosLoadScoping(TestPoSCommon):
                 if cached:
                     (here | there).sudo().mapped("active")
                 self.assertEqual(partners._get_inactive_ids(self.config), [there.id])
+
+    def _removed(self, model, records):
+        removed = self.session.filter_local_data({model: records.ids})[model]
+        _logger.debug("filter_local_data %s %s -> %s", model, records.ids, removed)
+        return set(removed)
+
+    def test_a_template_taken_out_of_the_pos_leaves_the_cache(self):
+        product = self.create_product("Delisted", self.categ_basic, 10)
+        template = product.product_tmpl_id
+        self.assertFalse(self._removed("product.template", template))
+
+        template.available_in_pos = False
+
+        self.assertEqual(self._removed("product.template", template), {template.id})
+        self.assertEqual(self._removed("product.product", product), {product.id})
+
+    def test_a_combo_item_outside_the_pos_stays_cached(self):
+        item = self.create_product("Combo side", self.categ_basic, 0)
+        item.available_in_pos = False
+        combo = self.env["product.combo"].create(
+            {
+                "name": "Sides",
+                "company_id": self.env.company.id,
+                "combo_item_ids": [Command.create({"product_id": item.id})],
+            }
+        )
+        menu = self.env["product.product"].create(
+            {
+                "name": "Menu",
+                "company_id": self.env.company.id,
+                "type": "combo",
+                "available_in_pos": True,
+                "combo_ids": [Command.set(combo.ids)],
+            }
+        )
+
+        self.assertFalse(self._removed("product.template", item.product_tmpl_id))
+
+        menu.available_in_pos = False
+
+        self.assertEqual(
+            self._removed("product.template", item.product_tmpl_id),
+            {item.product_tmpl_id.id},
+        )
+
+    def test_an_empty_category_restriction_restricts_nothing(self):
+        product = self.create_product("Uncategorized", self.categ_basic, 10)
+        self.config.write(
+            {"limit_categories": True, "iface_available_categ_ids": [Command.clear()]}
+        )
+
+        data = self._load(["pos.printer", "pos.category", "product.template"])
+
+        self.assertIn(
+            product.product_tmpl_id.id, [t["id"] for t in data["product.template"]]
+        )
+        self.assertEqual(
+            len(data["pos.category"]),
+            self.env["pos.category"].search_count([]),
+        )

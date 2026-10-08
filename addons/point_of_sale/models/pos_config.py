@@ -585,35 +585,6 @@ class PosConfig(models.Model):
     def _load_pos_data_domain(self, data, config):
         return [("id", "=", config.id)]
 
-    @_debug.perf.timed
-    def get_pos_ui_product_pricelist_item_by_product(
-        self, product_tmpl_ids, product_ids
-    ):
-        self.check_singleton()
-        items = self.env["product.pricelist.item"].search(
-            [
-                "&",
-                ("pricelist_id", "in", self._get_available_pricelists().ids),
-                *self.env["product.pricelist.item"]._check_company_domain(
-                    self.company_id
-                ),
-                "|",
-                "&",
-                ("product_id", "=", False),
-                ("product_tmpl_id", "in", product_tmpl_ids),
-                ("product_id", "in", product_ids),
-            ]
-        )
-        return {
-            "product.pricelist.item": items.read(
-                self.env["product.pricelist.item"]._load_pos_data_fields(self),
-                load=False,
-            ),
-            "product.pricelist": items.pricelist_id.read(
-                self.env["product.pricelist"]._load_pos_data_fields(self), load=False
-            ),
-        }
-
     @api.model
     def _get_pos_client_computed_fields(self):
         return {"cash_control", "current_session_id", "display_name"}
@@ -1220,6 +1191,7 @@ class PosConfig(models.Model):
                     payment_methods
                 )
         pos_configs._create_sequences()
+        pos_configs._sync_trusted_config_ids(dict.fromkeys(pos_configs, self.browse()))
         pos_configs.sudo()._install_missing_modules()
         pos_configs._update_preparation_printers_menuitem_visibility()
         _debug.lifecycle("created", configs=pos_configs)
@@ -1385,7 +1357,14 @@ class PosConfig(models.Model):
 
         for configs, product in tip_updates:
             configs.write({"tip_product_id": product.id})
+        trusted_before = (
+            {config: config.trusted_config_ids for config in self}
+            if "trusted_config_ids" in vals
+            else {}
+        )
         result = super().write(vals)
+        if trusted_before:
+            self._sync_trusted_config_ids(trusted_before)
 
         if "payment_method_ids" in vals:
             self.env["pos.session"].search(
@@ -1742,17 +1721,32 @@ class PosConfig(models.Model):
             "context": {"pos_config_open_modal": True},
         }
 
-    def _add_trusted_config_id(self, config_id) -> None:
-        self.trusted_config_ids += config_id
-
-    def _remove_trusted_config_id(self, config_id) -> None:
-        self.trusted_config_ids -= config_id
+    def _sync_trusted_config_ids(self, trusted_before) -> None:
+        # sharing open orders is mutual; the write on the other side ends the recursion
+        for config in self:
+            before = trusted_before[config]
+            added = config.trusted_config_ids - before
+            removed = before - config.trusted_config_ids
+            _debug.logic(
+                "trusted_configs_synced", config=config, added=added, removed=removed
+            )
+            for other in added:
+                if config not in other.trusted_config_ids:
+                    other.trusted_config_ids |= config
+            for other in removed:
+                if config in other.trusted_config_ids:
+                    other.trusted_config_ids -= config
 
     def _get_payment_method(self, payment_type):
         for pm in self.payment_method_ids:
             if pm.type == payment_type:
                 return pm
         return False
+
+    def _has_category_limit(self) -> bool:
+        self.check_singleton()
+        # the client reads an empty selection as no restriction
+        return bool(self.limit_categories and self.iface_available_categ_ids)
 
     def _get_special_products(self):
         if self:
@@ -2005,10 +1999,15 @@ class PosConfig(models.Model):
     def _get_available_pricelists(self):
         self.check_singleton()
         return (
-            self.available_pricelist_ids + self.pricelist_id
+            self.available_pricelist_ids | self.pricelist_id
             if self.use_pricelist
             else self.pricelist_id
         )
+
+    def _get_pos_pricelists(self):
+        # an order takes its preset's pricelist, offered or not
+        presets = self.available_preset_ids | self.default_preset_id
+        return self._get_available_pricelists() | presets.pricelist_id
 
     @api.model
     def _set_default_pos_load_limit(self) -> None:

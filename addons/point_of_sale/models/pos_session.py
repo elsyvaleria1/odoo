@@ -21,6 +21,7 @@ _debug = DebugLog(__name__)
 class PosSession(models.Model):
     _name = "pos.session"
     _access_anchors = frozendict({"company": "config_id.company_id"})
+    _access_verbs = {"choose_balancing_account": models.Verb()}
     _order = "id desc"
     _description = "Point of Sale Session"
     _inherit = [
@@ -425,15 +426,6 @@ class PosSession(models.Model):
         return {
             "status": "success",
         }
-
-    def get_pos_ui_product_pricelist_item_by_product(
-        self, product_tmpl_ids, product_ids, config_id
-    ):
-        return (
-            self.env["pos.config"]
-            .browse(config_id)
-            .get_pos_ui_product_pricelist_item_by_product(product_tmpl_ids, product_ids)
-        )
 
     @api.depends("currency_id", "company_id.currency_id")
     def _compute_is_in_company_currency(self) -> None:
@@ -852,8 +844,9 @@ class PosSession(models.Model):
         if self.state == "closed":
             raise UserError(self.env._("This session is already closed."))
         data = {}
+        # future-dated orders are excluded from get_session_orders, not from the entry
         has_activity = bool(
-            record.get_session_orders().filtered(lambda o: o.state != "cancel")
+            record.order_ids.filtered(lambda o: o.state != "cancel")
             or record.statement_line_ids
         )
         _debug.pipeline(
@@ -1078,9 +1071,7 @@ class PosSession(models.Model):
             {
                 "amount_to_balance": amount_to_balance,
                 "account_id": default_account.id,
-                "account_readonly": not self.env.user.has_group(
-                    "account.group_account_readonly"
-                ),
+                "account_readonly": not self.has_access("choose_balancing_account"),
                 "message": self.env._(
                     "There is a difference between the amounts to post and the amounts of the orders, it is probably caused by taxes or accounting configurations changes."
                 ),
@@ -1105,25 +1096,20 @@ class PosSession(models.Model):
     def close_session_from_ui(self, bank_payment_method_diff_pairs=None):
         bank_payment_method_diffs = dict(bank_payment_method_diff_pairs or [])
         self.check_singleton()
-        open_order_ids = (
-            self.get_session_orders().filtered(lambda o: o.state == "draft").ids
-        )
         _debug.pipeline(
             "close_session_from_ui",
             session=self,
             state=self.state,
-            open_orders=open_order_ids,
             bank_diffs=bank_payment_method_diffs,
         )
-        check_closing_session = self._resolve_close_refusal(bank_payment_method_diffs)
-        if check_closing_session:
+        if refusal := self._resolve_close_refusal(bank_payment_method_diffs):
             _debug.logic(
                 "close_refused",
                 session=self,
-                message=check_closing_session.get("message"),
+                message=refusal["message"],
+                open_orders=refusal.get("open_order_ids"),
             )
-            check_closing_session["open_order_ids"] = open_order_ids
-            return check_closing_session
+            return refusal
 
         future_orders = self.env["pos.order"].search(
             [
@@ -1150,7 +1136,6 @@ class PosSession(models.Model):
                 action=validate_result.get("name"),
             )
             return {
-                "open_order_ids": open_order_ids,
                 "successful": False,
                 "message": validate_result.get("name"),
                 "redirect": True,
@@ -1163,13 +1148,19 @@ class PosSession(models.Model):
     def post_close_register_message(self):
         self.message_post(body=self.env._("Closed Register"))
 
-    def update_closing_control_state_session(self, notes) -> None:
+    def update_closing_control_state_session(self, notes) -> dict | None:
         self.check_singleton()
         self._lock_sessions(
             self.env._("Another user is currently updating this session.")
         )
-        if self.state == "closed":
-            raise UserError(self.env._("This session is already closed."))
+        if refusal := self._resolve_close_refusal():
+            _debug.logic(
+                "closing_control_refused",
+                session=self,
+                state=self.state,
+                message=refusal["message"],
+            )
+            return refusal
         _debug.lifecycle(
             "state_closing_control_from_ui",
             session=self,
@@ -1189,19 +1180,15 @@ class PosSession(models.Model):
             self.cash_register_difference,
             notes,
         )
+        return None
 
     def update_closing_cash_details(self, counted_cash):
         self.check_singleton()
         self._lock_sessions(
             self.env._("Another user is currently updating this session.")
         )
-        check_closing_session = self._resolve_close_refusal()
-        if check_closing_session:
-            open_order_ids = (
-                self.get_session_orders().filtered(lambda o: o.state == "draft").ids
-            )
-            check_closing_session["open_order_ids"] = open_order_ids
-            return check_closing_session
+        if refusal := self._resolve_close_refusal():
+            return refusal
 
         self._check_amount_is_finite(counted_cash)
         if not self.cash_journal_id:
@@ -1331,24 +1318,23 @@ class PosSession(models.Model):
     def _resolve_close_refusal(self, bank_payment_method_diffs=None) -> dict | None:
         bank_payment_method_diffs = bank_payment_method_diffs or {}
         self._check_bank_payment_method_diffs(bank_payment_method_diffs)
-        if any(order.state == "draft" for order in self.get_session_orders()):
+        draft_orders = self.get_session_orders().filtered(lambda o: o.state == "draft")
+        if draft_orders:
             return {
                 "successful": False,
                 "message": self.env._(
                     "You cannot close the POS while there are still draft orders for the day."
                 ),
                 "redirect": False,
+                "open_order_ids": draft_orders.ids,
             }
         if self.state == "closed":
             return {
                 "successful": False,
                 "type": "alert",
-                "title": "Session already closed",
+                "title": self.env._("Session already closed"),
                 "message": self.env._(
-                    "The session has been already closed by another User. "
-                    "All sales completed in the meantime have been saved in a "
-                    "Rescue Session, which can be reviewed anytime and posted "
-                    "to Accounting from Point of Sale's dashboard."
+                    "The session has already been closed by another user."
                 ),
                 "redirect": True,
             }
@@ -2031,34 +2017,41 @@ class PosSession(models.Model):
             destination=payment.destination_account_id,
         )
 
-    def _create_combine_account_payment(self, payment_method, amounts, diff_amount):
-        outstanding_account = payment_method.outstanding_account_id
-        destination_account = self._get_receivable_account(payment_method)
-
+    def _create_pos_account_payment(
+        self, payment_method, amount, destination_account, memo, partner=None
+    ):
+        vals = {
+            "amount": abs(amount),
+            "currency_id": self.currency_id.id,
+            "journal_id": payment_method.journal_id.id,
+            "force_outstanding_account_id": payment_method.outstanding_account_id.id,
+            "destination_account_id": destination_account.id,
+            "memo": memo,
+            "pos_payment_method_id": payment_method.id,
+            "pos_session_id": self.id,
+            "company_id": self.company_id.id,
+        }
+        if partner:
+            vals["partner_id"] = partner.id
         account_payment = (
-            self.env["account.payment"]
-            .with_context(pos_payment=True)
-            .create(
-                {
-                    "amount": abs(amounts["amount"]),
-                    "currency_id": self.currency_id.id,
-                    "journal_id": payment_method.journal_id.id,
-                    "force_outstanding_account_id": outstanding_account.id,
-                    "destination_account_id": destination_account.id,
-                    "memo": self.env._(
-                        "Combine %(payment_method)s POS payments from %(session)s",
-                        payment_method=payment_method.name,
-                        session=self.name,
-                    ),
-                    "pos_payment_method_id": payment_method.id,
-                    "pos_session_id": self.id,
-                    "company_id": self.company_id.id,
-                }
-            )
+            self.env["account.payment"].with_context(pos_payment=True).create(vals)
         )
-
-        self._update_payment_outstanding_account(account_payment, amounts["amount"])
+        self._update_payment_outstanding_account(account_payment, amount)
         account_payment.action_post()
+        return account_payment
+
+    def _create_combine_account_payment(self, payment_method, amounts, diff_amount):
+        destination_account = self._get_receivable_account(payment_method)
+        account_payment = self._create_pos_account_payment(
+            payment_method,
+            amounts["amount"],
+            destination_account,
+            self.env._(
+                "Combine %(payment_method)s POS payments from %(session)s",
+                payment_method=payment_method.name,
+                session=self.name,
+            ),
+        )
         _debug.pipeline(
             "combined_payment_created",
             session=self,
@@ -2146,42 +2139,22 @@ class PosSession(models.Model):
 
     def _create_split_account_payment(self, payment, amounts):
         payment_method = payment.payment_method_id
-        if not payment_method.journal_id:
-            _debug.logic(
-                "split_payment_without_journal_skipped",
-                session=self,
-                payment=payment,
-            )
-            return self.env["account.move.line"]
-        outstanding_account = payment_method.outstanding_account_id
         accounting_partner = payment.partner_id.commercial_partner_id
         destination_account = accounting_partner.property_account_receivable_id
-
-        account_payment = self.env["account.payment"].create(
-            {
-                "amount": abs(amounts["amount"]),
-                "currency_id": self.currency_id.id,
-                "partner_id": accounting_partner.id,
-                "journal_id": payment_method.journal_id.id,
-                "force_outstanding_account_id": outstanding_account.id,
-                "destination_account_id": destination_account.id,
-                "memo": self.env._(
-                    "%(payment_method)s POS payment of %(partner)s in %(session)s",
-                    payment_method=payment_method.name,
-                    partner=payment.partner_id.display_name,
-                    session=self.name,
-                ),
-                "pos_payment_method_id": payment_method.id,
-                "pos_session_id": self.id,
-            }
+        account_payment = self._create_pos_account_payment(
+            payment_method,
+            amounts["amount"],
+            destination_account,
+            self.env._(
+                "%(payment_method)s POS payment of %(partner)s in %(session)s",
+                payment_method=payment_method.name,
+                partner=payment.partner_id.display_name,
+                session=self.name,
+            ),
+            partner=accounting_partner,
         )
-
-        self._update_payment_outstanding_account(account_payment, amounts["amount"])
-        account_payment.action_post()
         return account_payment.move_id.line_ids.filtered(
-            lambda line: (
-                line.account_id == accounting_partner.property_account_receivable_id
-            )
+            lambda line: line.account_id == destination_account
         )
 
     def _create_cash_statement_lines_and_cash_move_lines(self, data):

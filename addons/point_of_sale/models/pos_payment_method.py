@@ -384,8 +384,8 @@ class PosPaymentMethod(models.Model):
                             "You must select a QR-code method to generate QR-codes for this payment method."
                         )
                     )
-                error_msg = self.journal_id.bank_account_id._get_error_messages_for_qr(
-                    self.qr_code_method, False, rec.company_id.currency_id
+                error_msg = rec.journal_id.bank_account_id._get_error_messages_for_qr(
+                    rec.qr_code_method, False, rec.company_id.currency_id
                 )
                 if error_msg:
                     raise ValidationError(error_msg)

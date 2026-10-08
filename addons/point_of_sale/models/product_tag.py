@@ -19,7 +19,7 @@ class ProductTag(models.Model):
     def _load_pos_data_fields(self, config):
         return ["name", "pos_description", "color", "has_image", "write_date"]
 
-    @api.depends("has_image")
+    @api.depends("image")
     def _compute_has_image(self) -> None:
         for record in self:
             record.has_image = bool(record.image)

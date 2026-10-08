@@ -447,3 +447,24 @@ test("Rouding sale HALF-UP 0.05 with two payment method", async () => {
     expect(order.appliedRounding).toBe(0);
     expect(order.change).toBe(0);
 });
+
+test("DOWN cash rounding does not forgive a whole rounding step", async () => {
+    const store = await setupPosEnv();
+    const { cashPm } = prepareRoundingVals(store, 0.05, "DOWN");
+    for (const [id, price] of [
+        [15, 10],
+        [16, 0.1],
+    ]) {
+        const product = store.models["product.template"].get(id);
+        product.taxes_id = [];
+        product.list_price = price;
+        product.product_variant_ids[0].lst_price = price;
+    }
+    const order = await getFilledOrderForPriceCheck(store);
+    expect(order.priceIncl).toBe(10.1);
+
+    order.addPaymentline(cashPm).data.setAmount(10.05);
+
+    expect(order.remainingDue).toBe(0.05);
+    expect(order.canBeValidated()).toBe(false);
+});

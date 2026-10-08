@@ -86,6 +86,20 @@ class PosController(PortalAccount):
             return request.redirect(_POS_MENU_URL)
 
         if not pos_config.has_active_session:
+            # the service worker refetches this page to cache it; only a cashier
+            # navigating here may open a session
+            fetch_mode = request.httprequest.headers.get("Sec-Fetch-Mode", "navigate")
+            if fetch_mode != "navigate":
+                _debug.logic(
+                    "pos_ui_background_fetch_without_session",
+                    config=pos_config.id,
+                    mode=fetch_mode,
+                )
+                return request.prepare_response(
+                    "No open session",
+                    headers=[("Cache-Control", "no-store")],
+                    status=409,
+                )
             try:
                 with request.env.cr.savepoint():
                     pos_config.lock_for_update()

@@ -595,7 +595,10 @@ class PosOrder(models.Model):
 
         pos_order = pos_order.with_company(pos_order.company_id)
         self._process_payment_lines(order, pos_order, draft)
-        return pos_order._process_saved_order(draft)
+        result = pos_order._process_saved_order(draft)
+        if not draft:
+            pos_order._flag_over_refund()
+        return result
 
     def _link_uuid_relations(self, record_uuid_mapping) -> None:
         """Resolve deferred relations in batches, then write each owner once."""
@@ -962,12 +965,11 @@ class PosOrder(models.Model):
         """A view link per order for its customer's receipt QR code and online
         payment, for as long as a receipt's link lives (decision B1: a year),
         reused while it lives."""
-        Link = self.env["access.link"]
+        tokens = self.env["access.link"]._issue_each(
+            self, partner_field="partner_id", role="view", cause="notification"
+        )
         for order in self:
-            __, token = Link._issue(
-                order, partner=order.partner_id, role="view", cause="notification"
-            )
-            order._update_cache({"receipt_token": token}, validate=False)
+            order._update_cache({"receipt_token": tokens[order.id]}, validate=False)
 
     def _receipt_token(self) -> str:
         self.check_singleton()
@@ -1096,11 +1098,6 @@ class PosOrder(models.Model):
                         "You can't: create a pos order from the backend interface, or unset the pricelist, or create a pos.order in a python test with Form tool, or edit the form view in studio if no PoS order exist"
                     )
                 )
-            amount_paid = order._get_amount_paid()
-            amount_return = -sum(
-                min(payment.amount, 0.0) for payment in order.payment_ids
-            )
-
             base_lines = order.lines._prepare_tax_base_line_values()
             AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
             AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
@@ -1121,11 +1118,12 @@ class PosOrder(models.Model):
             )
             refund_factor = -1 if order._is_refund_order() else 1
             amount_total = refund_factor * tax_totals["total_amount_currency"]
+            payment_amounts = order._get_payment_amounts(amount_total)
             _debug.logic(
                 "order_amounts",
                 order=order.uuid,
-                paid=amount_paid,
-                amount_return=amount_return,
+                paid=payment_amounts["amount_paid"],
+                amount_return=payment_amounts["amount_return"],
                 tax=refund_factor * tax_totals["tax_amount_currency"],
                 total=amount_total,
                 cash_rounding=cash_rounding or None,
@@ -1133,13 +1131,22 @@ class PosOrder(models.Model):
             )
             order.write(
                 {
-                    "amount_paid": amount_paid,
-                    "amount_return": amount_return,
                     "amount_tax": refund_factor * tax_totals["tax_amount_currency"],
                     "amount_total": amount_total,
-                    "amount_difference": amount_paid - amount_total,
+                    **payment_amounts,
                 }
             )
+
+    def _get_payment_amounts(self, amount_total) -> dict:
+        self.check_singleton()
+        amount_paid = self._get_amount_paid()
+        return {
+            "amount_paid": amount_paid,
+            "amount_return": -sum(
+                min(payment.amount, 0.0) for payment in self.payment_ids
+            ),
+            "amount_difference": amount_paid - amount_total,
+        }
 
     @api.depends("lines.is_edited", "has_deleted_line")
     def _compute_is_edited(self) -> None:
@@ -1512,15 +1519,17 @@ class PosOrder(models.Model):
             lambda o: o.state != "cancel"
         )
 
-    def _is_pos_order_paid(self) -> bool:
-        amount_total = self.amount_total
-        if self.currency_id.is_zero(self.refunded_order_id.amount_total + amount_total):
-            amount_total = -self.refunded_order_id.amount_paid
-        return bool(
-            self.currency_id.is_zero(
-                self._get_rounded_amount(amount_total) - self.amount_paid
-            )
-        )
+    def _get_amounts_due(self) -> tuple[float, ...]:
+        """The amounts that settle the order, the one to propose first."""
+        self.check_singleton()
+        refunded = self.refunded_order_id
+        if refunded and self.currency_id.is_zero(
+            refunded.amount_total + self.amount_total
+        ):
+            # a full refund may give back what the customer paid, rounding included,
+            # or the refund's own total, as the POS does
+            return (-refunded.amount_paid, self.amount_total)
+        return (self.amount_total,)
 
     def _is_refund_order(self):
         self.check_singleton()
@@ -1683,13 +1692,19 @@ class PosOrder(models.Model):
     def _is_payment_amount_valid(self) -> bool:
         """Use the same rounding tolerance for settlement and subsequent edits."""
         self.check_singleton()
+        return any(
+            self._is_settled_at(amount_due) for amount_due in self._get_amounts_due()
+        )
+
+    def _is_settled_at(self, amount_due) -> bool:
         cash_rounding = self._is_cash_rounding_applicable()
-        total = self._get_rounded_amount(self.amount_total)
+        total = self._get_rounded_amount(amount_due)
         is_paid = self.currency_id.is_zero(total - self.amount_paid)
         _debug.logic(
             "payment_amount_check",
             order=self.uuid,
             total=self.amount_total,
+            due=amount_due,
             rounded=total,
             paid=self.amount_paid,
             is_paid=is_paid,
@@ -1700,23 +1715,54 @@ class PosOrder(models.Model):
             return False
         if not is_paid and cash_rounding:
             currency = self.currency_id
-            if self.config_id.rounding_method.rounding_method == "HALF-UP":
-                max_difference = currency.round(
-                    self.config_id.rounding_method.rounding / 2
-                )
+            rounding = self.config_id.rounding_method
+            diff = currency.round(amount_due - self.amount_paid)
+            if rounding.rounding_method == "HALF-UP":
+                max_difference = currency.round(rounding.rounding / 2)
+                is_within = currency.compare_amounts(abs(diff), max_difference) <= 0
             else:
-                max_difference = currency.round(self.config_id.rounding_method.rounding)
-
-            diff = currency.round(self.amount_total - self.amount_paid)
+                # UP and DOWN round off strictly less than one whole step
+                max_difference = currency.round(rounding.rounding)
+                is_within = currency.compare_amounts(abs(diff), max_difference) < 0
             _debug.logic(
                 "rounding_tolerance",
                 order=self.uuid,
                 diff=diff,
                 max_difference=max_difference,
+                is_within=is_within,
             )
-            if currency.compare_amounts(abs(diff), max_difference) > 0:
-                return False
+            return is_within
         return True
+
+    def _check_refund_quantities(self) -> None:
+        self.check_singleton()
+        if over_refunded := self.lines.refunded_orderline_id._get_over_refunded_lines(
+            self
+        ):
+            raise ValidationError(
+                self.env._(
+                    "You cannot refund more than was sold: %(lines)s",
+                    lines=over_refunded._describe_for_refund(),
+                )
+            )
+
+    def _flag_over_refund(self) -> None:
+        # the till has already handed the money back: record the refund and say so
+        self.check_singleton()
+        if over_refunded := self.lines.refunded_orderline_id._get_over_refunded_lines(
+            self
+        ):
+            _logger.warning(
+                "PoS order %s refunds more than was sold: %s",
+                self.name,
+                over_refunded.ids,
+            )
+            self.message_post(
+                body=self.env._(
+                    "This refund returns more than was sold: %(lines)s",
+                    lines=over_refunded._describe_for_refund(),
+                )
+            )
 
     def action_pos_order_paid(self):
         self.check_singleton()
@@ -2158,7 +2204,8 @@ class PosOrder(models.Model):
                 and self.session_id.state != "closed"
             ):
                 self._create_order_picking()
-            move = self._generate_pos_order_invoice()
+            # product and partner accounts are company-dependent fields
+            move = self.with_company(self.company_id)._generate_pos_order_invoice()
         return {
             "name": self.env._("Customer Invoice"),
             "view_mode": "form",
@@ -2291,7 +2338,13 @@ class PosOrder(models.Model):
                 )
 
         draft_orders = self._cancel_draft_orders()
-        return {"pos.order": self._load_pos_data_read(draft_orders, self.config_id)}
+        return {
+            "pos.order": [
+                row
+                for config, orders in draft_orders.grouped("config_id").items()
+                for row in self._load_pos_data_read(orders, config)
+            ]
+        }
 
     def _cancel_draft_orders(self):
         draft_orders = self.filtered(lambda order: order.state == "draft")
@@ -2417,10 +2470,6 @@ class PosOrder(models.Model):
         orders = self.search(domain)
         config_id = orders[0].config_id if orders else False
         return orders.read_pos_data([], config_id) if config_id else {"pos.order": []}
-
-    @api.model
-    def read_pos_data_uuid(self, uuid):
-        return self.read_pos_orders([("uuid", "=", uuid)])
 
     _READ_POS_DATA_MODELS = (
         "pos.order",
@@ -2567,7 +2616,7 @@ class PosOrder(models.Model):
             change=data.get("is_change", False),
         )
         self.env["pos.payment"].create(data)
-        self.amount_paid = self._get_amount_paid()
+        self.write(self._get_payment_amounts(self.amount_total))
 
     def _prepare_refund_values(self, current_session) -> dict:
         self.check_singleton()

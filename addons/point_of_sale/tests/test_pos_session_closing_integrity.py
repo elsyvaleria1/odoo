@@ -1,5 +1,7 @@
 import logging
+from datetime import timedelta
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
 
@@ -186,3 +188,124 @@ class TestPosSessionClosingIntegrity(TestPoSCommon):
 
         _logger.debug("Reconfigured open session journal=%s", session.cash_journal_id)
         self.assertEqual(session.cash_journal_id, self.cash_split_pm1.journal_id)
+
+    def test_closing_with_draft_orders_leaves_the_session_open_for_payment(self):
+        session = self._start_pos_session(self.bank_pm1, 0)
+        self.assertFalse(self.config.cash_control)
+        product = self.create_product("Draft sale", self.categ_basic, 100, 50)
+        draft = self.create_ui_order_data(
+            [(product, 1)],
+            pos_order_ui_args={"state": "draft"},
+            payments=[],
+            uuid="draft-before-close",
+        )
+        self.env["pos.order"].sync_from_ui([draft])
+
+        refusal = session.update_closing_control_state_session("closing notes")
+
+        _logger.debug("Close refusal for %s: %s", session.id, refusal)
+        self.assertEqual(refusal["successful"], False)
+        self.assertFalse(refusal["redirect"])
+        self.assertEqual(session.state, "opened")
+        paid = self.create_ui_order_data(
+            [],
+            payments=[(self.bank_pm1, draft["amount_total"])],
+            uuid="draft-before-close",
+        )
+        self.env["pos.order"].sync_from_ui([paid])
+        order = session.order_ids.filtered(lambda o: o.uuid == "draft-before-close")
+        self.assertEqual(order.state, "paid")
+
+    def test_closing_an_already_closed_session_reports_without_raising(self):
+        session = self._start_pos_session(self.bank_pm1, 0)
+        session.action_pos_session_closing_control()
+        self.assertEqual(session.state, "closed")
+
+        refusal = session.update_closing_control_state_session("late notes")
+
+        _logger.debug("Already closed refusal for %s: %s", session.id, refusal)
+        self.assertEqual(refusal["successful"], False)
+        self.assertTrue(refusal["redirect"])
+        self.assertNotIn("Rescue", refusal["message"])
+
+    def test_session_of_only_future_paid_orders_posts_its_entry(self):
+        session = self._start_pos_session(self.bank_pm1, 0)
+        product = self.create_product("Pickup", self.categ_basic, 100, 50)
+        self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(product, 1)],
+                    "payments": [(self.bank_pm1, 100)],
+                    "pos_order_ui_args": {
+                        "preset_time": fields.Datetime.to_string(
+                            fields.Datetime.now() + timedelta(days=1)
+                        )
+                    },
+                    "uuid": "paid-pickup-tomorrow",
+                }
+            ]
+        )
+
+        session.action_pos_session_closing_control()
+
+        _logger.debug(
+            "Closed %s: move=%s orders=%s",
+            session.id,
+            session.move_id,
+            session.order_ids.mapped("state"),
+        )
+        self.assertEqual(session.state, "closed")
+        self.assertEqual(session.move_id.state, "posted")
+        self.assertEqual(session.order_ids.mapped("state"), ["done"])
+
+    def test_every_closing_payment_is_marked_as_a_pos_payment(self):
+        session = self._start_pos_session(self.bank_pm1 | self.bank_split_pm1, 0)
+        product = self.create_product("Split sale", self.categ_basic, 100, 50)
+        self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(product, 1)],
+                    "payments": [(self.bank_pm1, 100)],
+                    "uuid": "combined-bank",
+                },
+                {
+                    "pos_order_lines_ui_args": [(product, 1)],
+                    "payments": [(self.bank_split_pm1, 100)],
+                    "customer": self.customer,
+                    "uuid": "split-bank",
+                },
+            ]
+        )
+        Payment = type(self.env["account.payment"])
+        original_create = Payment.create
+        contexts = []
+
+        def create(records, vals_list):
+            contexts.append(records.env.context.get("pos_payment"))
+            return original_create(records, vals_list)
+
+        self.patch(Payment, "create", create)
+
+        session.action_pos_session_closing_control()
+
+        _logger.debug("Closing payment contexts: %s", contexts)
+        self.assertEqual(session.state, "closed")
+        self.assertEqual(contexts, [True, True])
+
+    def test_session_holding_only_a_future_draft_closes_without_entry(self):
+        session = self._start_pos_session(self.bank_pm1, 0)
+        product = self.create_product("Later", self.categ_basic, 100, 50)
+        future = fields.Datetime.to_string(fields.Datetime.now() + timedelta(days=1))
+        draft = self.create_ui_order_data(
+            [(product, 1)],
+            pos_order_ui_args={"state": "draft", "preset_time": future},
+            payments=[],
+            uuid="draft-pickup-tomorrow",
+        )
+        self.env["pos.order"].sync_from_ui([draft])
+
+        session.action_pos_session_closing_control()
+
+        _logger.debug("Closed %s: move=%s", session.id, session.move_id)
+        self.assertEqual(session.state, "closed")
+        self.assertFalse(session.move_id)

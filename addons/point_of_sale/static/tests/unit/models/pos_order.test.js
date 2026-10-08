@@ -358,3 +358,38 @@ test("priceDoesntChangeWhenChangingPreset", async () => {
     order4.setOrderPrices();
     expect(order4.amount_total).toBe(total);
 });
+
+test("combo children keep their share when the combo passes through zero", async () => {
+    const store = await setupPosEnv();
+    const comboItem1 = store.models["product.combo.item"].get(1);
+    const comboItem2 = store.models["product.combo.item"].get(3);
+    const addCombo = async () => {
+        const order = store.addNewOrder();
+        await store.addLineToOrder(
+            {
+                product_tmpl_id: store.models["product.template"].get(7),
+                payload: [
+                    [{ combo_item_id: comboItem1, qty: 2 }],
+                    [{ combo_item_id: comboItem2, qty: 1 }],
+                ],
+                qty: 1,
+            },
+            order,
+        );
+        return [order, order.lines.find((line) => line.combo_line_ids.length)];
+    };
+    const [direct, directParent] = await addCombo();
+    directParent.setQuantity(3);
+    const [order, parent] = await addCombo();
+
+    parent.setQuantity("");
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual(
+        directParent.combo_line_ids.map(() => 0),
+    );
+    parent.setQuantity(3);
+
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual(
+        directParent.combo_line_ids.map((line) => line.qty),
+    );
+    expect(order.priceIncl).toBe(direct.priceIncl);
+});

@@ -1,3 +1,4 @@
+import logging
 import unittest.mock
 from datetime import datetime, timedelta
 
@@ -9,6 +10,8 @@ from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -2469,3 +2472,70 @@ class TestPoSBasicConfig(TestPoSCommon):
             "You cannot archive or delete .*: it is set as a special product in a Point of Sale configuration. Please change the configuration first.",
         ):
             special_product.product_variant_ids[0].unlink()
+
+    def test_invoicing_closed_session_order_from_another_active_company(self):
+        session = self._start_pos_session(self.bank_pm1 | self.bank_split_pm1, 0)
+        orders = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product1, 1)],
+                    "payments": [(self.bank_split_pm1, 10)],
+                    "customer": self.customer,
+                    "uuid": "invoice-from-other-company",
+                }
+            ]
+        )
+        order = orders["invoice-from-other-company"]
+        session.action_pos_session_closing_control()
+        self.assertEqual(session.state, "closed")
+        company = self.env.company
+        company2 = self.company_data_2["company"]
+
+        order.with_context(
+            allowed_company_ids=[company2.id, company.id]
+        ).action_pos_order_invoice()
+
+        reversal = self.env["account.move"].search(
+            [("reversed_pos_order_id", "=", order.id)]
+        )
+        _logger.debug(
+            "Reversal %s accounts=%s",
+            reversal,
+            [
+                (line.account_id.code, line.account_id.company_ids.ids)
+                for line in reversal.line_ids
+            ],
+        )
+        self.assertEqual(reversal.state, "posted")
+        self.assertEqual(reversal.line_ids.account_id.company_ids, company)
+        self.assertEqual(order.account_move.company_id, company)
+
+    def test_invoice_wizard_on_a_closed_session_order_from_another_active_company(self):
+        session = self._start_pos_session(self.bank_pm1 | self.bank_split_pm1, 0)
+        orders = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product1, 1)],
+                    "payments": [(self.bank_split_pm1, 10)],
+                    "customer": self.customer,
+                    "uuid": "wizard-invoice-from-other-company",
+                }
+            ]
+        )
+        order = orders["wizard-invoice-from-other-company"]
+        session.action_pos_session_closing_control()
+        company = self.env.company
+        company2 = self.company_data_2["company"]
+
+        self.env["wizard.pos.order.invoice"].with_context(
+            allowed_company_ids=[company2.id, company.id],
+            active_model="pos.order",
+            active_ids=order.ids,
+            generate_pdf=False,
+        ).create({"consolidated_billing": True}).action_create_invoices()
+
+        reversal = self.env["account.move"].search(
+            [("reversed_pos_order_id", "=", order.id)]
+        )
+        self.assertEqual(reversal.state, "posted")
+        self.assertEqual(reversal.line_ids.account_id.company_ids, company)

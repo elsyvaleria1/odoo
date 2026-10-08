@@ -140,15 +140,35 @@ export function cancelOrder() {
     ];
 }
 
-export function checkSlotUnavailable(slotValue) {
+let takenSlot = null;
+
+export function takeFirstAvailableSlot() {
     return {
-        content: `Check that the first available slot is not ${slotValue}`,
+        content: "Take the first available slot",
         trigger: ".slot-select",
-        run: () => {
-            const select = document.querySelector(".slot-select");
-            // select[0] and select[1] are header values
-            if (select[2].innerText === slotValue) {
-                throw new Error(`${slotValue} should not be available`);
+        run: (helpers) => {
+            const option = [...helpers.anchor.options].find(
+                (option) => !option.disabled && option.value,
+            );
+            takenSlot = option.value;
+            helpers.anchor.value = takenSlot;
+            helpers.anchor.dispatchEvent(new Event("change"));
+        },
+    };
+}
+
+export function checkTakenSlotUnavailable() {
+    return {
+        content: "Check that the slot taken before is no longer offered",
+        trigger: ".slot-select",
+        run: (helpers) => {
+            if (!takenSlot) {
+                throw new Error("No slot was taken before this check");
+            }
+            if (
+                [...helpers.anchor.options].some((option) => option.value === takenSlot)
+            ) {
+                throw new Error(`${takenSlot} should not be available`);
             }
         },
     };

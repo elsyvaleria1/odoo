@@ -19,9 +19,47 @@ class ProductTemplatePosLoad(models.Model):
             ("available_in_pos", "=", True),
             ("sale_ok", "=", True),
         ]
-        if config.limit_categories:
+        if config._has_category_limit():
             domain += [("pos_categ_ids", "in", config.iface_available_categ_ids.ids)]
         return domain
+
+    def _get_inactive_ids(self, config):
+        removed = self.browse(super()._get_inactive_ids(config))
+        kept = self - removed
+        listed_domain = Domain(self._load_pos_data_domain({}, config))
+        unlisted = kept - kept.filtered_domain(listed_domain)
+        referenced = self._get_pos_referenced_templates(unlisted, listed_domain)
+        _debug.logic(
+            "cached_templates_unlisted",
+            asked=len(self),
+            inactive=len(removed),
+            unlisted=unlisted,
+            referenced=referenced,
+        )
+        return (removed | (unlisted - referenced)).ids
+
+    def _get_pos_referenced_templates(self, templates, listed_domain) -> Self:
+        # an incremental load resends neither of these for an unchanged listed template
+        if not templates:
+            return self.browse()
+        items = self.env["product.combo.item"].search(
+            [("product_id.product_tmpl_id", "in", templates.ids)]
+        )
+        listed_combos = (
+            self.search(
+                listed_domain & Domain("combo_ids", "in", items.combo_id.ids)
+            ).combo_ids
+            if items
+            else self.env["product.combo"]
+        )
+        combo_items = items.filtered(lambda item: item.combo_id in listed_combos)
+        optional_of = self.search(
+            listed_domain & Domain("pos_optional_product_ids", "in", templates.ids)
+        )
+        return templates & (
+            combo_items.product_id.product_tmpl_id
+            | optional_of.pos_optional_product_ids
+        )
 
     @api.model
     def _load_pos_data_fields(self, config):
@@ -205,10 +243,25 @@ class ProductTemplatePosLoad(models.Model):
         )
 
     @api.model
-    def _get_pos_pricelist_data(self, product_tmpls, products, config):
-        return config.get_pos_ui_product_pricelist_item_by_product(
-            product_tmpls.ids, products.ids
+    def _get_pos_pricelist_data(self, product_tmpls, products, config) -> dict:
+        Item = self.env["product.pricelist.item"]
+        items = Item.search(
+            Domain("pricelist_id", "in", config._get_pos_pricelists().ids)
+            & Domain(Item._check_company_domain(config.company_id))
+            & (
+                (
+                    Domain("product_id", "=", False)
+                    & Domain("product_tmpl_id", "in", product_tmpls.ids)
+                )
+                | Domain("product_id", "in", products.ids)
+            )
         )
+        return {
+            "product.pricelist.item": Item._load_pos_data_read(items, config),
+            "product.pricelist": self.env["product.pricelist"]._load_pos_data_read(
+                items.pricelist_id, config
+            ),
+        }
 
     @api.model
     def _get_pos_combo_data(self, product_tmpls, config) -> dict:

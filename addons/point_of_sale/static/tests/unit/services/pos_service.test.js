@@ -46,8 +46,6 @@ describe("pos_store.js", () => {
             "update",
             (data) => {
                 if (data.id === order.id) {
-                    const orderToRecompute = models["pos.order"].get(data.id);
-                    orderToRecompute.triggerRecomputeAllPrices();
                     isListenerCalled = true;
                 }
             },

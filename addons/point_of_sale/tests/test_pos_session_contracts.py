@@ -190,6 +190,66 @@ class TestPosSessionClosingGuards(TestPoSCommon):
             " ids into strings",
         )
 
+    def _force_close_with_account(self, user, account):
+        session = self._start_pos_session(self.cash_pm1 | self.bank_split_pm1, 0)
+        forwarded = []
+
+        def spy(
+            records,
+            balancing_account=False,
+            amount_to_balance=0,
+            bank_payment_method_diffs=None,
+        ):
+            forwarded.append(balancing_account)
+            return True
+
+        action = session.with_user(user)._open_force_close_wizard(1.0, {})
+        wizard = (
+            self.env["wizard.pos.session.close.unbalanced"]
+            .with_user(user)
+            .browse(action["res_id"])
+        )
+        wizard.account_id = account
+        self.patch(type(session), "action_pos_session_closing_control", spy)
+
+        wizard.with_context(action["context"]).action_close_session()
+        return session, forwarded
+
+    def test_a_cashier_cannot_choose_the_force_close_account(self):
+        cashier = odoo.tests.new_test_user(
+            self.env,
+            login="force_close_cashier",
+            groups="point_of_sale.group_pos_user",
+        )
+        other = self.company_data["default_account_revenue"]
+
+        session, forwarded = self._force_close_with_account(cashier, other)
+
+        self.assertEqual(forwarded, [session._get_balancing_account()])
+
+    def test_the_force_close_view_locks_the_account_for_a_cashier_only(self):
+        cashier = odoo.tests.new_test_user(
+            self.env,
+            login="force_close_viewer",
+            groups="point_of_sale.group_pos_user",
+        )
+        session = self._start_pos_session(self.cash_pm1, 0)
+
+        for user, locked in ((cashier, True), (self.env.user, False)):
+            action = session.with_user(user)._open_force_close_wizard(1.0, {})
+            wizard = self.env["wizard.pos.session.close.unbalanced"].browse(
+                action["res_id"]
+            )
+            with self.subTest(user=user.login):
+                self.assertEqual(wizard.account_readonly, locked)
+
+    def test_an_accountant_chooses_the_force_close_account(self):
+        other = self.company_data["default_account_revenue"]
+
+        _session, forwarded = self._force_close_with_account(self.env.user, other)
+
+        self.assertEqual(forwarded, [other])
+
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSessionCashMoves(TestPoSCommon):
@@ -598,28 +658,36 @@ class TestPosConfigPricelistPayload(TestPoSCommon):
     def test_the_config_answers_without_a_session(self):
         self.assertFalse(self.config.current_session_id)
 
-        rows = self.config.get_pos_ui_product_pricelist_item_by_product(
-            self.product.product_tmpl_id.ids, self.product.ids
+        rows = self.env["product.template"]._get_pos_pricelist_data(
+            self.product.product_tmpl_id, self.product, self.config
         )
 
         self.assertEqual(sorted(rows), ["product.pricelist", "product.pricelist.item"])
 
-    def test_the_session_form_delegates_on_the_argument(self):
-        session = self._start_pos_session(self.cash_pm1, 0)
-        other = self.basic_config.copy({"name": "pricelist-other"})
+    def test_on_demand_items_include_preset_pricelists(self):
+        takeaway = self.env["product.pricelist"].create({"name": "Takeaway"})
+        item = self.env["product.pricelist.item"].create(
+            {
+                "pricelist_id": takeaway.id,
+                "product_tmpl_id": self.product.product_tmpl_id.id,
+                "applied_on": "1_product",
+                "compute_price": "fixed",
+                "fixed_price": 80,
+            }
+        )
+        preset = self.env["pos.preset"].create(
+            {"name": "Takeaway", "pricelist_id": takeaway.id}
+        )
+        self.config.write(
+            {"use_presets": True, "available_preset_ids": [(4, preset.id)]}
+        )
 
-        by_session = session.get_pos_ui_product_pricelist_item_by_product(
-            self.product.product_tmpl_id.ids, self.product.ids, other.id
-        )
-        by_config = other.get_pos_ui_product_pricelist_item_by_product(
-            self.product.product_tmpl_id.ids, self.product.ids
+        rows = self.env["product.template"]._get_pos_pricelist_data(
+            self.product.product_tmpl_id, self.product, self.config
         )
 
-        self.assertEqual(
-            by_session,
-            by_config,
-            "the session form must answer for the config it is handed, not its own",
-        )
+        self.assertIn(item.id, [row["id"] for row in rows["product.pricelist.item"]])
+        self.assertIn(takeaway.id, [row["id"] for row in rows["product.pricelist"]])
 
 
 @odoo.tests.tagged("post_install", "-at_install")

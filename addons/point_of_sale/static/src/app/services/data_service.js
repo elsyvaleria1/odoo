@@ -166,6 +166,26 @@ export class PosData extends SignalStore {
         await this.indexedDB.reset();
     }
 
+    get serverCacheStores() {
+        // orders, their children and the offline queue are local work, not cache
+        const local = new Set([
+            ...Object.keys(this.opts.databaseTable),
+            UNSYNC_QUEUE_STORE,
+        ]);
+        return this.indexedDB.dbStores
+            .map(([, storeName]) => storeName)
+            .filter((storeName) => !local.has(storeName));
+    }
+
+    async clearServerCacheInIndexedDB() {
+        const stores = this.serverCacheStores;
+        log.lifecycle("[idb] clear server cache", () => ({
+            db: this.databaseName,
+            stores: stores.length,
+        }));
+        return await this.indexedDB.clear(stores);
+    }
+
     async deleteRecordsInIndexedDB(model, ids) {
         log.lifecycle("[idb] delete", () => ({ model, ids: ids.length }));
         return await this.indexedDB.delete(model, ids);
@@ -365,19 +385,11 @@ export class PosData extends SignalStore {
 
     async getCachedServerDataFromIndexedDB() {
         const endRead = log.perf("[idb] getCachedServerDataFromIndexedDB");
-        const data = await this.indexedDB.readAll();
-        const modelToIgnore = new Set([
-            ...Object.keys(this.opts.databaseTable),
-            UNSYNC_QUEUE_STORE,
-        ]);
-        const results = {};
-
-        for (const name in data) {
-            if (modelToIgnore.has(name)) {
-                continue;
-            }
-            results[name] = data[name];
-        }
+        const stores = this.serverCacheStores;
+        // readAll([]) would read every store, orders included
+        const results = stores.length
+            ? (await this.indexedDB.readAll(stores)) || {}
+            : {};
         endRead({ models: Object.keys(results).length });
 
         return results;
@@ -422,8 +434,7 @@ export class PosData extends SignalStore {
                     resetCache: cacheOrder < 0,
                 }));
                 if (cacheOrder < 0) {
-                    await this.resetIndexedDB();
-                    await this.initIndexedDB(this.relations);
+                    await this.clearServerCacheInIndexedDB();
                     localData = {};
                 }
 

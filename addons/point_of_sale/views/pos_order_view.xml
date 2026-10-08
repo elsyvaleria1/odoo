@@ -708,9 +708,8 @@
             name="group_ids"
             eval="[Command.link(ref('point_of_sale.group_pos_user'))]" />
         <field name="state">code</field>
-        <field
-            name="code">if records:
-    action = records.action_pos_order_cancel()</field>
+        <field name="code">if records:
+    records.action_pos_order_cancel()</field>
     </record>
 
     <record id="model_pos_order_send_mail" model="ir.actions.server">

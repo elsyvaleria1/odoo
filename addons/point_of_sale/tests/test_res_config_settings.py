@@ -96,3 +96,42 @@ class TestConfigureShops(TestPoSCommon):
                 "default_preset_id": preset.id,
             }
         )
+
+    def _shop(self, name):
+        return self.env["pos.config"].create({"name": name})
+
+    def test_trust_between_configs_is_mutual(self):
+        shop_a, shop_b, shop_c = (self._shop(name) for name in "ABC")
+
+        shop_a.trusted_config_ids = shop_b | shop_c
+
+        self.assertEqual(shop_b.trusted_config_ids, shop_a)
+        self.assertEqual(shop_c.trusted_config_ids, shop_a)
+
+        shop_a.trusted_config_ids = shop_c
+
+        self.assertFalse(shop_b.trusted_config_ids)
+        self.assertEqual(shop_c.trusted_config_ids, shop_a)
+
+    def test_a_new_config_is_trusted_back(self):
+        shop_a = self._shop("A")
+
+        shop_b = self.env["pos.config"].create(
+            {"name": "B", "trusted_config_ids": [Command.set(shop_a.ids)]}
+        )
+
+        self.assertEqual(shop_a.trusted_config_ids, shop_b)
+
+    def test_editing_trust_in_settings_writes_nothing_until_saved(self):
+        shop_a, shop_b = self._shop("A"), self._shop("B")
+        shop_a.trusted_config_ids = shop_b
+        settings = self.env["res.config.settings"].create({"pos_config_id": shop_a.id})
+
+        settings.onchange(
+            {"pos_config_id": shop_a.id, "pos_trusted_config_ids": [Command.clear()]},
+            ["pos_trusted_config_ids"],
+            {"pos_config_id": {}, "pos_trusted_config_ids": {}},
+        )
+
+        self.env.invalidate_all()
+        self.assertEqual(shop_b.trusted_config_ids, shop_a)

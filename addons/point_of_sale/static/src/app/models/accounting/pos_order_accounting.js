@@ -16,12 +16,6 @@ export class PosOrderAccounting extends Base {
         "is_refund",
     ]);
 
-    setup(vals) {
-        super.setup(vals);
-    }
-
-    triggerRecomputeAllPrices() {}
-
     get currencyDisplayPrice() {
         return formatCurrency(this.displayPrice, this.currency.id);
     }
@@ -47,7 +41,8 @@ export class PosOrderAccounting extends Base {
     get remainingDue() {
         const isNegative = this.totalDue < 0;
         const total = this.totalDue;
-        const remaining = total - this.amountPaid;
+        // 10.10 - 10.05 is 0.0499…, which DOWN rounding would forgive
+        const remaining = this.currency.round(total - this.amountPaid);
 
         if ((isNegative && remaining >= 0) || (!isNegative && remaining <= 0)) {
             return 0;
@@ -93,7 +88,7 @@ export class PosOrderAccounting extends Base {
     get appliedRounding() {
         const total = this.prices.taxDetails.total_amount_no_rounding;
         const isNegative = this.amountPaid > total;
-        const remaining = total - this.amountPaid;
+        const remaining = this.currency.round(total - this.amountPaid);
         const amount =
             this.orderIsRounded &&
             this.config.rounding_method.asymmetricRound(

@@ -8,8 +8,7 @@ class ProductPricelist(models.Model):
 
     @api.model
     def _load_pos_data_domain(self, data, config):
-        pricelist_ids = [preset["pricelist_id"] for preset in data["pos.preset"]]
-        return [("id", "in", config._get_available_pricelists().ids + pricelist_ids)]
+        return [("id", "in", config._get_pos_pricelists().ids)]
 
     @api.model
     def _load_pos_data_fields(self, config):

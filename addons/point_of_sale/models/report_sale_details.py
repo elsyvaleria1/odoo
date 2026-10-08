@@ -936,12 +936,17 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         """List invoices from the same order selection as sales and payments."""
         invoice_list = []
         invoice_total = 0.0
-        for session, invoiced_orders in (
-            orders.filtered("is_invoiced").grouped("session_id").items()
-        ):
+        invoiced_orders = orders.filtered("is_invoiced").sorted("id")
+        # a consolidated invoice covers several orders, possibly of several sessions:
+        # listed once, under the first of them, naming every selected order
+        orders_by_move = invoiced_orders.grouped("account_move")
+        listed_moves = self.env["account.move"]
+        for session, session_orders in invoiced_orders.grouped("session_id").items():
             invoices = []
-            for order in invoiced_orders:
-                move = order.account_move
+            for move in session_orders.account_move:
+                if move in listed_moves:
+                    continue
+                listed_moves |= move
                 total = move.currency_id._convert(
                     move.amount_total_in_currency_signed,
                     currency,
@@ -952,7 +957,9 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
                     {
                         "total": total,
                         "name": move.name,
-                        "order_ref": order.pos_reference,
+                        "order_ref": ", ".join(
+                            orders_by_move[move].mapped("pos_reference")
+                        ),
                     }
                 )
                 invoice_total += total

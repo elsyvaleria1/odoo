@@ -25,14 +25,19 @@ class WizardPosSessionCloseUnbalanced(models.TransientModel):
         session = self.env["pos.session"].browse(self.env.context.get("active_ids"))
         if len(session) != 1 or not session.exists():
             raise UserError(self.env._("Select exactly one session to close."))
+        account = self.account_id
+        # account_readonly only locks the field in the view
+        if not session.has_access("choose_balancing_account"):
+            account = session._get_balancing_account()
         _debug.lifecycle(
             "session_force_close",
             session=session,
             balance=self.amount_to_balance,
-            account=self.account_id,
+            requested_account=self.account_id,
+            account=account,
         )
         return session.action_pos_session_closing_control(
-            self.account_id,
+            account,
             self.amount_to_balance,
             {
                 int(payment_method_id): diff

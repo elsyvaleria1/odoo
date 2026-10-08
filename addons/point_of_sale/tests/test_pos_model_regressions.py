@@ -4,7 +4,7 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 from odoo import fields
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import new_test_user, tagged
 from odoo.tools import SQL
@@ -1023,8 +1023,8 @@ class TestPosModelRegressions(CommonPosTest):
             product.product_tmpl_id.id, [row["id"] for row in delta["product.template"]]
         )
         self.assertIn(item.id, [row["id"] for row in delta["product.pricelist.item"]])
-        on_demand = config.get_pos_ui_product_pricelist_item_by_product(
-            product.product_tmpl_id.ids, product.ids
+        on_demand = self.env["product.template"]._get_pos_pricelist_data(
+            product.product_tmpl_id, product, config
         )
         self.assertIn(
             item.id, [row["id"] for row in on_demand["product.pricelist.item"]]
@@ -1191,3 +1191,60 @@ class TestPosModelRegressions(CommonPosTest):
                 invoice_amount,
                 report["invoice_total"],
             )
+
+    def test_cancelling_draft_orders_of_two_configs_returns_both(self):
+        orders = self.env["pos.order"]
+        for config in (self.pos_config_usd, self.pos_config_eur):
+            config.open_ui()
+            orders |= self.env["pos.order"].create(
+                {
+                    "session_id": config.current_session_id.id,
+                    "amount_tax": 0,
+                    "amount_total": 0,
+                    "amount_paid": 0,
+                    "amount_return": 0,
+                }
+            )
+
+        result = orders.action_pos_order_cancel()
+
+        log.debug("Cancelled %s -> %s", orders.ids, result)
+        self.assertEqual(set(orders.mapped("state")), {"cancel"})
+        self.assertCountEqual([row["id"] for row in result["pos.order"]], orders.ids)
+
+    def test_deleting_draft_orders_of_two_configs(self):
+        orders = self.env["pos.order"]
+        for config in (self.pos_config_usd, self.pos_config_eur):
+            config.open_ui()
+            orders |= self.env["pos.order"].create(
+                {
+                    "session_id": config.current_session_id.id,
+                    "amount_tax": 0,
+                    "amount_total": 0,
+                    "amount_paid": 0,
+                    "amount_return": 0,
+                }
+            )
+
+        orders.unlink()
+
+        self.assertFalse(orders.exists())
+
+    def test_tag_image_flag_follows_the_image(self):
+        tag = self.env["product.tag"].create({"name": "Imaged tag"})
+        self.assertFalse(tag.has_image)
+
+        tag.image = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+            "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+
+        self.assertTrue(tag.has_image)
+
+    def test_switching_a_printer_to_epson_requires_its_address(self):
+        printer = self.env["pos.printer"].create(
+            {"name": "Kitchen", "printer_type": "iot", "epson_printer_ip": False}
+        )
+
+        with self.assertRaises(ValidationError):
+            printer.printer_type = "epson_epos"

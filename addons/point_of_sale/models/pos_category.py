@@ -72,7 +72,7 @@ class PosCategory(models.Model):
     @api.model
     def _load_pos_data_domain(self, data, config):
         domain = []
-        if config.limit_categories:
+        if config._has_category_limit():
             preparation_categories = [
                 printer["product_categories_ids"] for printer in data["pos.printer"]
             ]
@@ -131,7 +131,10 @@ class PosCategory(models.Model):
                     ("company_id", "in", self.env.companies.ids),
                     "|",
                     "|",
+                    "|",
                     ("config_id.limit_categories", "=", False),
+                    # an empty selection restricts nothing (_has_category_limit)
+                    ("config_id.iface_available_categ_ids", "=", False),
                     ("config_id.iface_available_categ_ids", "in", self.ids),
                     ("config_id.printer_ids.product_categories_ids", "in", self.ids),
                 ],

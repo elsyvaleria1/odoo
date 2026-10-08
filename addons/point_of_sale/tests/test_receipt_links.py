@@ -113,3 +113,19 @@ class TestReceiptLinks(TestPointOfSaleHttpCommon):
         self.assertEqual(
             self.env["pos.order"].search([("access_token", "in", [token])]), order
         )
+
+    def test_receipt_links_issued_together_belong_to_their_own_orders(self):
+        other = self.env["res.partner"].create({"name": "Other receipt customer"})
+        first = self._paid_order("Receipt 000000000011")
+        second = self._paid_order("Receipt 000000000012")
+        second.partner_id = other
+        orders = first | second
+
+        orders._issue_receipt_links()
+
+        for order, partner in ((first, self.customer), (second, other)):
+            link = self._links(order)
+            self.assertEqual(len(link), 1)
+            self.assertEqual(link.partner_id, partner)
+            self.assertEqual(link.token_hash, hash_token(order.receipt_token))
+        self.assertNotEqual(first.receipt_token, second.receipt_token)

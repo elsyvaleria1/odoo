@@ -120,7 +120,6 @@ test("[get prices()] with multiple taxes settings", async () => {
 
     models["account.tax"].get(1).include_base_amount = true;
     models["account.tax"].get(2).include_base_amount = true;
-    orderLine.order_id.triggerRecomputeAllPrices();
     const updatedLineTax = orderLine.prices;
     expect(updatedLineTax.total_excluded).toBe(100.0);
     expect(updatedLineTax.total_included).toBe(143.75);

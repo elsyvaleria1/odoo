@@ -69,3 +69,4 @@ from . import test_pos_lock_dates
 from . import test_pos_bus_token
 from . import test_bundle_services
 from . import test_receipt_links
+from . import test_pos_order_settlement

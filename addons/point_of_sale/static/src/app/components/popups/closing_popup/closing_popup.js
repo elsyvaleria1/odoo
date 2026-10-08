@@ -271,25 +271,27 @@ export class ClosePosPopup extends Component {
             }
         }
 
+        let refusal;
         try {
-            await this.pos.data.call(
+            refusal = await this.pos.data.call(
                 "pos.session",
                 "update_closing_control_state_session",
                 [this.pos.session.id, this.state.notes],
             );
         } catch (error) {
-            log.logic("[session:close] closing control state", () => ({
-                session: this.pos.session.id,
-                alreadyClosed:
-                    error.data?.message === "This session is already closed.",
-            }));
-            if (
-                !error.data ||
-                error.data.message !== "This session is already closed."
-            ) {
-                endClose({ stoppedAt: "closingControlState", error: error?.message });
-                throw error;
-            }
+            endClose({ stoppedAt: "closingControlState", error: error?.message });
+            throw error;
+        }
+        // data.call reports a null result as true
+        const refused = refusal?.successful === false;
+        log.logic("[session:close] closing control state", () => ({
+            session: this.pos.session.id,
+            refused,
+            redirect: refusal?.redirect,
+        }));
+        if (refused) {
+            endClose({ stoppedAt: "closingControlState" });
+            return this.handleClosingError(refusal);
         }
 
         try {
