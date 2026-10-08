@@ -130,6 +130,9 @@ access_account_report_send,access.account.report.send,model_wizard_report_formul
 access_account_return_readonly,account.return.readonly,model_account_return,group_account_readonly,permission,r,,,
 access_account_return_acc_user,account.return.acc.user,model_account_return,group_account_user,permission,cud,,,
 access_account_return_acc_manager,account.return.acc.manager,model_account_return,group_account_manager,permission,cud,,,
+access_account_return_payment_readonly,account.return.payment.readonly,model_account_return_payment,group_account_readonly,permission,r,,,
+access_account_return_payment_acc_user,account.return.payment.acc.user,model_account_return_payment,group_account_user,permission,cud,,,
+access_account_return_payment_acc_manager,account.return.payment.acc.manager,model_account_return_payment,group_account_manager,permission,cud,,,
 access_account_return_check_readonly,account.return.check.readonly,model_account_return_check,group_account_readonly,permission,r,,,
 access_account_return_check_acc_user,account.return.check.acc.user,model_account_return_check,group_account_user,permission,cud,,,
 access_account_return_check_acc_manager,account.return.check.acc.manager,model_account_return_check,group_account_manager,permission,cud,,,
@@ -173,12 +176,16 @@ account_return_read_company_rule,Account Returns multi-company,model_account_ret
 account_return_company_rule,Account Returns multi-company,model_account_return,base.group_everyone,guard,cud,,,"['|', ('tax_unit_id.main_company_id', 'in', company_ids), ('company_id', 'in', company_ids)]"
 account_return_check_read_company_rule,Account Returns Check multi-company,model_account_return_check,base.group_everyone,guard,r,company,,
 account_return_check_company_rule,Account Returns Check multi-company,model_account_return_check,base.group_everyone,guard,cud,,,"['|', ('return_id.tax_unit_id.main_company_id', 'in', company_ids), ('return_id.company_id', 'in', company_ids)]"
+account_return_payment_read_company_rule,Account Returns Payment multi-company,model_account_return_payment,base.group_everyone,guard,r,company,,
+account_return_payment_company_rule,Account Returns Payment multi-company,model_account_return_payment,base.group_everyone,guard,cud,company,,
 account_audit_account_status_read_company_rule,Account Audit Account Status multi-company,model_account_audit_account_status,base.group_everyone,guard,r,company,,
 account_audit_account_status_company_rule,Account Audit Account Status multi-company,model_account_audit_account_status,base.group_everyone,guard,cud,,,"['|', ('audit_id.tax_unit_id.main_company_id', 'in', company_ids), ('audit_id.company_id', 'in', company_ids)]"
 account_report_budget_company_rule,Account Report Budget multi-company,model_account_report_budget,base.group_everyone,guard,crud,company,,
 account_report_budget_item_company_rule,Account Report Budget Item multi-company,model_account_report_budget_item,base.group_everyone,guard,crud,company,,
 account_tax_unit_company_rule,Tax Unit multi-company,model_account_tax_unit,base.group_everyone,guard,crud,company,,
 privilege_grant_partial_deductibility_grants,res.users.grant: the partial deductibility feature for whoever posts such a bill,base.model_res_users_grant,privilege_grant_partial_deductibility,permission,cru,,,"[('group_id', '=', ref('account.group_partial_purchase_deductibility'))]"
+privilege_settle_tax_return_returns,account.return: the state of a return its reconciliation settles,model_account_return,privilege_settle_tax_return,permission,ru,,,
+privilege_settle_tax_return_types,account.return.type: the settlement account of a return's type,model_account_return_type,privilege_settle_tax_return,permission,r,,,
 account_partial_reconcile_comp_rule,Partial reconciliation multi-company,model_account_partial_reconcile,base.group_everyone,guard,crud,company,,
 account_fiscal_year_comp_rule,Fiscal year multi-company,model_account_fiscal_year,base.group_everyone,guard,crud,company,,
 account_fiscal_position_account_comp_rule,Fiscal position account mapping multi-company,model_account_fiscal_position_account,base.group_everyone,guard,crud,company,,

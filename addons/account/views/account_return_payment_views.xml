@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_return_payment_list" model="ir.ui.view">
+        <field name="name">account.return.payment.list</field>
+        <field name="model">account.return.payment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="return_id" />
+                <field name="partner_id" />
+                <field name="reference" />
+                <field name="date_due" />
+                <field name="currency_id" column_invisible="True" />
+                <field name="amount" sum="Total" />
+                <field name="payment_id" optional="show" />
+                <field
+                    name="company_id"
+                    optional="show"
+                    groups="base.group_multi_company" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state == 'instructed'"
+                    decoration-muted="state == 'cancelled'"
+                    decoration-success="state == 'paid'"
+                    decoration-warning="state == 'in_process'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_return_payment_form" model="ir.ui.view">
+        <field name="name">account.return.payment.form</field>
+        <field name="model">account.return.payment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_create_payment"
+                        type="object"
+                        string="Create Payment"
+                        invisible="payment_id or state == 'cancelled'"
+                        class="btn-primary" />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        invisible="state in ('paid', 'cancelled')" />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,in_process,paid" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="return_id" readonly="True" />
+                            <field name="partner_id" readonly="payment_id" />
+                            <field name="bank_account_id" readonly="payment_id" />
+                            <field name="reference" readonly="payment_id" />
+                            <field name="date_due" />
+                        </group>
+                        <group>
+                            <field name="currency_id" invisible="True" />
+                            <field name="amount" readonly="payment_id" />
+                            <field name="journal_id" readonly="payment_id" />
+                            <field name="payment_id" />
+                            <field name="bank_receipt_ref" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
+                        </group>
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_return_payment_search" model="ir.ui.view">
+        <field name="name">account.return.payment.search</field>
+        <field name="model">account.return.payment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="return_id" />
+                <field name="reference" />
+                <field name="partner_id" />
+                <filter
+                    name="open"
+                    string="Not Paid"
+                    domain="[('state', 'not in', ('paid', 'cancelled'))]" />
+                <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]" />
+                <separator />
+                <filter
+                    name="groupby_return"
+                    string="Return"
+                    context="{'group_by': 'return_id'}" />
+                <filter
+                    name="groupby_state"
+                    string="Status"
+                    context="{'group_by': 'state'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_return_payment" model="ir.actions.act_window">
+        <field name="name">Tax Payments</field>
+        <field name="res_model">account.return.payment</field>
+        <field name="path">tax-payments</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_account_return_payment_search" />
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+
+</odoo>

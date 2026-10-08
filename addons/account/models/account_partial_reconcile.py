@@ -254,6 +254,11 @@ class AccountPartialReconcile(models.Model):
                 | self.credit_move_id
                 | full_to_unlink.reconciled_line_ids
             )
+            settled_returns = (
+                self.env["account.return"]
+                ._as_settlement_observer()
+                ._get_returns_settled_through(self.debit_move_id | self.credit_move_id)
+            )
 
             _debug.pipeline(
                 "unlink_automatic_entries",
@@ -286,6 +291,7 @@ class AccountPartialReconcile(models.Model):
 
             self._update_matching_number(all_reconciled.exists())
             to_update_payments.state = "in_process"
+            settled_returns.exists()._update_state_from_settlement()
             return res
 
     @api.model_create_multi
@@ -308,6 +314,10 @@ class AccountPartialReconcile(models.Model):
             )
         paid_payments.state = "paid"
         self._update_matching_number(partials.debit_move_id | partials.credit_move_id)
+        returns = self.env["account.return"]._as_settlement_observer()
+        returns._get_returns_settled_through(
+            partials.debit_move_id | partials.credit_move_id
+        )._update_state_from_settlement()
         return partials
 
     def _prefetch_payment_state_fields(self):

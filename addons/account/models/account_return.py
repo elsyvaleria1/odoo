@@ -159,6 +159,11 @@ class AccountReturn(models.Model):
 
     # Tax return fields
     total_amount_to_pay = fields.Monetary(currency_field="amount_to_pay_currency_id")
+    payment_ids = fields.One2many(
+        comodel_name="account.return.payment",
+        inverse_name="return_id",
+        string="Payments",
+    )
     period_amount_to_pay = fields.Monetary(currency_field="amount_to_pay_currency_id")
     amount_to_pay_currency_id = fields.Many2one(
         comodel_name="res.currency",
@@ -896,6 +901,8 @@ class AccountReturn(models.Model):
         wizard = self.env["wizard.account.return.pay"].create(
             {
                 "return_id": self.id,
+                "company_id": self.company_id.id,
+                "bank_account_id": self.type_id.payment_bank_account_id.id,
             }
         )
 
@@ -1079,9 +1086,86 @@ class AccountReturn(models.Model):
             )[0][0]
         )
         return (
-            tax_groups_sudo.tax_payable_account_id,
+            tax_groups_sudo.tax_payable_account_id | self._get_settlement_accounts(),
             tax_groups_sudo.tax_receivable_account_id,
         )
+
+    def _get_settlement_accounts(self):
+        self.check_singleton()
+        return self.env["account.account"].union(
+            *(
+                self.type_id.with_company(company).settlement_account_id
+                for company in self.company_ids
+            )
+        )
+
+    def _get_settlement_lines(self):
+        self.check_singleton()
+        accounts = self._get_settlement_accounts()
+        return self.closing_move_ids.line_ids.filtered(
+            lambda line: line.account_id in accounts and line.parent_state == "posted"
+        )
+
+    def _is_settled_by_ledger(self) -> bool:
+        """Whether every settlement line is reconciled with money that left the bank.
+
+        A counterpart that is an accounting payment counts only once the bank confirmed it
+        (``paid``); one that is a bank statement line is the bank itself.
+        """
+        self.check_singleton()
+        lines = self._get_settlement_lines()
+        if not lines or not all(lines.mapped("reconciled")):
+            return False
+        counterparts = (
+            lines.matched_debit_ids.debit_move_id
+            | lines.matched_credit_ids.credit_move_id
+        ) - lines
+        payments = counterparts.move_id.origin_payment_id
+        return all(payment.state == "paid" for payment in payments)
+
+    @api.model
+    def _as_settlement_observer(self):
+        return self.with_privilege(
+            "account.privilege_settle_tax_return",
+            reason="a reconciliation settled or reopened a tax return",
+        )
+
+    @api.model
+    def _get_returns_settled_through(self, lines):
+        moves = lines.move_id
+        payment_lines = moves.filtered("origin_payment_id").line_ids
+        moves |= (
+            payment_lines.matched_debit_ids.debit_move_id
+            | payment_lines.matched_credit_ids.credit_move_id
+        ).move_id
+        return self.browse(moves.closing_return_id.ids).filtered(
+            lambda tax_return: tax_return._get_settlement_lines()
+        )
+
+    def _update_state_from_settlement(self) -> None:
+        for tax_return in self:
+            if "paid" not in tax_return._get_workflow_state_keys():
+                continue
+            settled = tax_return._is_settled_by_ledger()
+            _debug.logic(
+                "settlement_state",
+                tax_return=tax_return,
+                state=tax_return.state,
+                settled=settled,
+            )
+            if settled and tax_return.state == "submitted":
+                tax_return._action_finalize_payment()
+            elif not settled and tax_return.state == "paid":
+                tax_return.state = "submitted"
+                if tax_return.is_completed:
+                    tax_return._mark_uncompleted()
+
+    def _get_workflow_state_keys(self) -> list:
+        self.check_singleton()
+        return [
+            state
+            for state, _label in self._fields[self.type_id.states_workflow].selection
+        ]
 
     @_debug.perf.timed
     def _evaluate_period_amount_to_pay_from_tax_closing_accounts(
@@ -1172,6 +1256,8 @@ class AccountReturn(models.Model):
         _debug.lifecycle("action_pay", records=self)
         self.check_singleton()
         self._check_failing_checks_in_current_stage()
+        if self._get_settlement_lines() and self._is_settled_by_ledger():
+            return self._action_finalize_payment()
         is_positive_amount = (
             self.amount_to_pay_currency_id.compare_amounts(self.total_amount_to_pay, 0)
             > 0
@@ -1609,7 +1695,6 @@ class AccountReturn(models.Model):
             "mail_notify_author": True,
             "reply_to_force_new": False,
             "default_email_layout_xmlid": "mail.mail_notification_layout_with_responsible_signature",
-            "default_account_reports_finalize_payment": True,
         }
 
         if wizard and "qr_code" in wizard:
@@ -2036,6 +2121,7 @@ class AccountReturn(models.Model):
             return advance_balance
 
         currency = company.currency_id
+        settlement_account = self.type_id.with_company(company).settlement_account_id
         line_ids_vals = []
         # keep track of already balanced account, as one can be used in several tax group
         account_already_balanced = []
@@ -2056,19 +2142,40 @@ class AccountReturn(models.Model):
                 account_already_balanced.append(key[1])
 
             # Balance on the receivable/payable tax account
-            if not currency.is_zero(total):
-                line_ids_vals.append(
-                    Command.create(
-                        {
-                            "name": self.env._("Payable tax amount")
-                            if total < 0
-                            else self.env._("Receivable tax amount"),
-                            "debit": max(0, total),
-                            "credit": abs(total) if total < 0 else 0,
-                            "account_id": key[2] if total < 0 else key[1],
-                        }
-                    )
+            if currency.is_zero(total):
+                continue
+            if total > 0:
+                name, account, partner = (
+                    self.env._("Receivable tax amount"),
+                    key[1],
+                    False,
                 )
+            elif settlement_account:
+                name, account, partner = (
+                    self.env._(
+                        "Payable tax amount (%(account)s)",
+                        account=self.env["account.account"].browse(key[2]).display_name,
+                    ),
+                    settlement_account.id,
+                    self.type_id.payment_partner_id.id,
+                )
+            else:
+                name, account, partner = (
+                    self.env._("Payable tax amount"),
+                    key[2],
+                    False,
+                )
+            line_ids_vals.append(
+                Command.create(
+                    {
+                        "name": name,
+                        "debit": max(0, total),
+                        "credit": abs(total) if total < 0 else 0,
+                        "account_id": account,
+                        "partner_id": partner,
+                    }
+                )
+            )
         _debug.pipeline(
             "tax_group_closing_items_built",
             tax_return=self,

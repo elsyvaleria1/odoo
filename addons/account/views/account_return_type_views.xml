@@ -57,6 +57,9 @@
                                 <field
                                     name="payment_bank_account_id"
                                     invisible="category == 'audit'" />
+                                <field
+                                    name="settlement_account_id"
+                                    invisible="category == 'audit'" />
                             </group>
                         </group>
                     </sheet>

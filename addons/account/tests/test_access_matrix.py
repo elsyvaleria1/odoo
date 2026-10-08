@@ -498,6 +498,16 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             manager_ab="rwcd",
         ),
         Cell(
+            "account.return.payment",
+            "return_payment",
+            billing_a="r",
+            basic_a="r",
+            accountant_a="rwcd",
+            manager_a="rwcd",
+            reader_a="r",
+            manager_ab="rwcd",
+        ),
+        Cell(
             "account.return.check",
             "return_check",
             billing_a="r",
@@ -887,6 +897,14 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             "horizontal_group": horizontal,
             "horizontal_group_rule": horizontal.rule_ids,
             "return": account_return,
+            "return_payment": env["account.return.payment"].create(
+                {
+                    "return_id": account_return.id,
+                    "currency_id": a.currency_id.id,
+                    "partner_id": a.partner_id.id,
+                    "amount": 10.0,
+                }
+            ),
             "return_check": env["account.return.check"].create(
                 {"code": "matrix", "name": "matrix", "return_id": account_return.id}
             ),

@@ -17,6 +17,13 @@
         sequence="67" />
 
     <menuitem
+        id="menu_account_return_payment"
+        name="Tax Payments"
+        parent="account.menu_account_closing"
+        action="action_account_return_payment"
+        sequence="68" />
+
+    <menuitem
         id="menu_view_tax_units"
         parent="account.menu_account_accounting"
         action="action_view_tax_units"

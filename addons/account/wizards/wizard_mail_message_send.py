@@ -13,12 +13,6 @@ class WizardMailMessageSend(models.TransientModel):
     # This is set by passing a default in the context when opening the wizard from a message.
     account_reports_annotation_date = fields.Date(string="Annotated For")
 
-    # Set only via a `default_account_reports_finalize_payment` context key, passed by
-    # account.return's "send payment instructions" flow (action_send_email_instructions).
-    # Guards _action_finalize_payment() so a plain chatter reply on an account.return
-    # cannot silently flip its state to Paid.
-    account_reports_finalize_payment = fields.Boolean()
-
     @_debug.perf.timed
     def _prepare_schedule_message_post_values(self, post_values):
         return {
@@ -58,13 +52,7 @@ class WizardMailMessageSend(models.TransientModel):
             return super().action_send_mail()
 
         return_id = self.env["account.return"].browse(literal_eval(self.res_ids))
-        _debug.logic(
-            "return_mail_sending",
-            tax_return=return_id,
-            finalize_payment=self.account_reports_finalize_payment,
-        )
-        if self.account_reports_finalize_payment:
-            return_id._action_finalize_payment()
+        _debug.logic("return_mail_sending", tax_return=return_id)
         super().action_send_mail()
         return {
             "type": "ir.actions.client",

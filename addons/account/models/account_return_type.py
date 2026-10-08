@@ -86,10 +86,23 @@ class AccountReturnType(models.Model):
     )
     payment_partner_id = fields.Many2one(
         comodel_name="res.partner",
-        related="payment_bank_account_id.partner_id",
         string="Payment Partner",
-        compute_sudo=False,
+        compute="_compute_payment_partner_id",
+        store=True,
+        readonly=False,
         tracking=True,
+        help="The authority the tax is owed to. It is the partner of the closing entry's "
+        "settlement line and of the payments that settle it.",
+    )
+    settlement_account_id = fields.Many2one(
+        comodel_name="account.account",
+        string="Settlement Account",
+        company_dependent=True,
+        domain="[('account_type', '=', 'liability_payable'), ('reconcile', '=', True)]",
+        tracking=True,
+        help="When set, the tax closing moves the net amount due of every tax group into one "
+        "line on this account, and the return is paid once that line is reconciled with "
+        "money that left the bank.",
     )
     states_workflow = fields.Selection(
         selection=[
@@ -176,6 +189,14 @@ class AccountReturnType(models.Model):
             )
             record.is_ec_sales_list_return_type = (
                 report and generic_ec_sales_report in (report, report.root_report_id)
+            )
+
+    @api.depends("payment_bank_account_id")
+    def _compute_payment_partner_id(self) -> None:
+        for return_type in self:
+            return_type.payment_partner_id = (
+                return_type.payment_bank_account_id.partner_id
+                or return_type.payment_partner_id
             )
 
     @api.depends("report_id.country_id")

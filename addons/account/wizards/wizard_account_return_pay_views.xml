@@ -12,11 +12,23 @@
                         <field name="amount_to_pay" readonly="1" />
                     </group>
                 </h2>
+                <group invisible="not has_settlement">
+                    <field name="company_id" invisible="1" />
+                    <field name="journal_id" required="has_settlement" />
+                </group>
                 <footer>
+                    <button
+                        name="action_create_payment"
+                        type="object"
+                        string="Create Payment"
+                        invisible="not has_settlement"
+                        class="btn-primary"
+                        data-hotkey="q" />
                     <button
                         name="action_mark_as_paid"
                         type="object"
                         string="Mark Paid"
+                        invisible="has_settlement"
                         class="btn-primary"
                         data-hotkey="q" />
                     <button

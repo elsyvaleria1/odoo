@@ -152,6 +152,7 @@
         "views/account_move_views_reports.xml",
         "views/res_company_views_reports.xml",
         "views/account_return_views.xml",
+        "views/account_return_payment_views.xml",
         "views/account_return_check_views.xml",
         "views/account_journal_dashboard_view_reports.xml",
         "views/res_config_settings_views_reports.xml",
