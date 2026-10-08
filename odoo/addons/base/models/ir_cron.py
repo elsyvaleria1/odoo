@@ -29,7 +29,7 @@ from odoo.modules.loading import reset_modules_state
 from odoo.modules.registry import Registry
 from odoo.service import get_cron_real_time_budget
 from odoo.service.transaction import retrying
-from odoo.tools import SQL, str2bool
+from odoo.tools import SQL, frozendict, str2bool
 from odoo.tools.constants import CRON_TRIGGER_CHANNEL
 from odoo.tools.date_utils import next_after
 
@@ -225,6 +225,10 @@ class IrCron(models.Model):
     _name = "ir.cron"
     _inherit = ["mixin.recurrence.interval"]
     _order = "cron_name, id"
+    # upstream's fields, which mixin.recurrence.interval names otherwise
+    _legacy_field_names = frozendict(
+        {"interval_number": "repeat_interval", "interval_type": "repeat_unit"}
+    )
     _description = "Scheduled Actions"
     _allow_sudo_commands = False
 

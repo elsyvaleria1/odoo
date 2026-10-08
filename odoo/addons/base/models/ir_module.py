@@ -31,7 +31,7 @@ from odoo.modules.module import (
     MissingDependencyError,
     get_module_content_checksum,
 )
-from odoo.tools import SQL, config
+from odoo.tools import SQL, config, frozendict
 from odoo.tools.misc import get_flag, topological_sort
 from odoo.tools.translate import (
     TranslationImporter,
@@ -235,6 +235,9 @@ class IrModuleModule(models.Model):
     _rec_names_search = ["name", "shortdesc", "summary"]
     _description = "Module"
     _order = "application desc,sequence,name"
+    # upstream's computed manifest version; db_version is what upstream
+    # calls latest_version
+    _legacy_field_names = frozendict({"installed_version": "manifest_version"})
     _allow_sudo_commands = False
 
     name = fields.Char(

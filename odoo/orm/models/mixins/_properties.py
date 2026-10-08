@@ -4,6 +4,7 @@ from odoo.libs.debug_log import DebugLog
 
 from ... import decorators as api
 from ...fields.properties import check_property_field_value_name
+from ...helpers import invalid_field_message
 from ...parsing import parse_field_expr
 from ._model_stubs import _ModelStubs
 
@@ -24,7 +25,7 @@ class _PropertiesMixin(_ModelStubs):
             raise ValueError(f"{full_name!r} does not name a property")
         field = self._fields.get(field_name)
         if not field:
-            raise ValueError(f"Invalid field {field_name!r} on model {self._name!r}")
+            raise ValueError(invalid_field_message(self, field_name))
         if not field.is_properties:
             raise ValueError(
                 f"Field {field_name!r} on model {self._name!r} is not a "

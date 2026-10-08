@@ -79,6 +79,9 @@ class _ModelMetadataMixin(_ModelStubs):
     _allow_sudo_commands: bool = True
 
     _depends: frozendict[str, Iterable[str]] = frozendict()
+    # {"upstream name": "name here"} of fields this fork renamed: an invalid
+    # field error names the field a caller written for upstream Odoo meant
+    _legacy_field_names: frozendict[str, str] = frozendict()
     _access_verbs: typing.ClassVar[dict[str, typing.Any]] = {}
 
     @property

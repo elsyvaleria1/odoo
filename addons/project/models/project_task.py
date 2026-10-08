@@ -129,6 +129,10 @@ class ProjectTask(models.Model):
     _description = "Task"
     _access_residual_class = "project.task_portal_hidden"
     _date_name = "date_assign"
+    # upstream's fields: project.task.type is project.workflow.step
+    _legacy_field_names = frozendict(
+        {"stage_id": "step_id", "date_deadline": "date_end"}
+    )
     _inherit = [
         "mixin.html.field.history",
         "mixin.mail.thread.cc",

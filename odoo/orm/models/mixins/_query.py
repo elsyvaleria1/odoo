@@ -12,6 +12,7 @@ from ... import decorators as api
 from ..._typing import DomainType
 from ...constants import SQL_ORDER_DIR, SQL_ORDER_NULLS
 from ...domain import Domain
+from ...helpers import invalid_field_message
 from ...parsing import parse_field_expr, regex_order
 from ...primitives import NewId
 from ...profiling import _OrmProfile
@@ -116,7 +117,7 @@ class _QueryMixin(_ModelStubs):
         fname, property_name = parse_field_expr(field_name)
         field = self._fields.get(fname)
         if not field:
-            raise ValueError(f"Invalid field {fname!r} on model {self._name!r}")
+            raise ValueError(invalid_field_message(self, fname))
 
         if not self._has_field_access(field, "read"):
             _logger.debug(
@@ -299,7 +300,7 @@ class _QueryMixin(_ModelStubs):
         fname, property_name = parse_field_expr(field_expr)
         field = self._fields.get(fname)
         if not field:
-            raise ValueError(f"Invalid field {fname!r} on model {self._name!r}")
+            raise ValueError(invalid_field_message(self, fname))
         if field.access_classes is not None and not self.env.su:
             mask = self._field_access_mask_sql(field, alias, query)
             if mask is not None:

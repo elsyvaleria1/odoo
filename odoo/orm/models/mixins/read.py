@@ -13,6 +13,7 @@ from odoo.tools import ormcache
 from ... import decorators as api
 from ..._typing import ValuesType
 from ...fields._field_description import description_key
+from ...helpers import invalid_field_message
 from ...primitives import LOG_ACCESS_COLUMNS
 from ...profiling import _OrmProfile
 from ._cache_scan import can_scan_read, is_cache_detached
@@ -549,9 +550,7 @@ class ReadMixin(_ModelStubs):
         fields_done = {self._fields["id"]}
         for field_name in field_names:
             if not isinstance(field_name, str) or field_name not in self._fields:
-                raise ValueError(
-                    f"Invalid field {field_name!r} on model {self._name!r}"
-                )
+                raise ValueError(invalid_field_message(self, field_name))
             field = self._fields[field_name]
             self._check_field_access(field, "read")
             fields_todo.append(field)

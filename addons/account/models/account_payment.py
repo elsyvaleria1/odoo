@@ -4,7 +4,7 @@ from itertools import zip_longest
 from odoo import Command, api, fields, models
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL
+from odoo.tools import SQL, frozendict
 
 _debug = DebugLog(__name__)
 
@@ -77,6 +77,14 @@ class AccountPayment(models.Model):
     ]
     _description = "Payments"
     _order = "date desc, name desc"
+    # upstream's fields: account.payment.method.line is account.payment.channel
+    _legacy_field_names = frozendict(
+        {
+            "is_reconciled": "is_invoice_reconciled",
+            "is_matched": "is_bank_matched",
+            "payment_method_line_id": "payment_channel_id",
+        }
+    )
     _check_company_auto = True
 
     name = fields.Char(

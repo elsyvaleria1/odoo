@@ -17,6 +17,7 @@ from ....constants import (
 )
 from ....fields.properties import temporal_property_sql, temporal_property_text_sql
 from ....fields.temporal import Date
+from ....helpers import invalid_field_message
 from ....parsing import parse_read_group_spec, regex_order_part_read_group
 from ....primitives import SQL_OPERATORS
 from .._model_stubs import _ModelStubs
@@ -265,7 +266,7 @@ class _ReadGroupSQLMixin(_ModelStubs):
     def _read_group_groupby(self, alias: str, groupby_spec: str, query: Query) -> SQL:
         fname, seq_fnames, granularity = parse_read_group_spec(groupby_spec)
         if fname not in self._fields:
-            raise ValueError(f"Invalid field {fname!r} on model {self._name!r}")
+            raise ValueError(invalid_field_message(self, fname))
 
         field = self._fields[fname]
         self._check_field_access(field, "read")

@@ -1075,6 +1075,14 @@ class DomainCondition(Domain):
         try:
             field = model._fields[field_name]
         except KeyError:
+            renamed = model._legacy_field_names.get(field_name)
+            if renamed:
+                raise self._prepare_condition_error(
+                    "Invalid field %s.%s; it is named %r here",
+                    model._name,
+                    field_name,
+                    renamed,
+                ) from None
             raise self._prepare_condition_error(
                 "Invalid field %s.%s", model._name, field_name
             ) from None

@@ -9,7 +9,13 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urls
-from odoo.tools import email_normalize, email_normalize_all, groupby, is_encodable
+from odoo.tools import (
+    email_normalize,
+    email_normalize_all,
+    frozendict,
+    groupby,
+    is_encodable,
+)
 from odoo.tools.misc import hash_sign, register_signed_scope
 from odoo.tools.translate import LazyTranslate
 
@@ -165,6 +171,13 @@ class AccountJournal(models.Model):
     _name = "account.journal"
     _description = "Journal"
     _order = "sequence, type, code"
+    # upstream's fields: account.payment.method.line is account.payment.channel
+    _legacy_field_names = frozendict(
+        {
+            "inbound_payment_method_line_ids": "inbound_payment_channel_ids",
+            "outbound_payment_method_line_ids": "outbound_payment_channel_ids",
+        }
+    )
     _inherit = [
         "mixin.portal",
         "mixin.mail.alias.optional",

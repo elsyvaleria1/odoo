@@ -18,6 +18,17 @@ if typing.TYPE_CHECKING:
 _debug = DebugLog(__name__)
 
 
+def invalid_field_message(model: ModelLike, fname: str) -> str:
+    """The error for `fname` absent from `model`, naming the field this fork
+    calls it when the model declares the rename (`_legacy_field_names`): a
+    caller written for upstream Odoo learns the name here at once."""
+    message = f"Invalid field {fname!r} on model {model._name!r}"
+    renamed = getattr(model, "_legacy_field_names", None) or {}
+    if fname in renamed:
+        message += f"; it is named {renamed[fname]!r} here"
+    return message
+
+
 def get_fields_by_name(
     model: ModelLike, fnames: Iterable[str]
 ) -> list[Field[typing.Any]]:
@@ -27,9 +38,7 @@ def get_fields_by_name(
         try:
             fields.append(_fields[fname])
         except KeyError:
-            raise ValueError(
-                f"Invalid field {fname!r} on model {model._name!r}"
-            ) from None
+            raise ValueError(invalid_field_message(model, fname)) from None
     return fields
 
 

@@ -12,7 +12,7 @@ from odoo.tools import Query
 from .... import decorators as api
 from ...._typing import DomainType
 from ....domain import Domain
-from ....helpers import get_tuple_itemgetter
+from ....helpers import get_tuple_itemgetter, invalid_field_message
 from ....parsing import parse_read_group_spec, regex_field_agg
 from .fill import _ReadGroupFillMixin
 from .format import _ReadGroupFormatMixin
@@ -592,9 +592,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
         for group_spec in lazy_groupby:
             field_name, property_name, granularity = parse_read_group_spec(group_spec)
             if field_name not in self._fields:
-                raise ValueError(
-                    f"Invalid field {field_name!r} on model {self._name!r}"
-                )
+                raise ValueError(invalid_field_message(self, field_name))
             field = self._fields[field_name]
             if property_name and not field.is_properties:
                 raise ValueError(
@@ -646,7 +644,7 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
                 continue
 
             if name not in self._fields:
-                raise ValueError(f"Invalid field {name!r} on model {self._name!r}")
+                raise ValueError(invalid_field_message(self, name))
             field = self._fields[name]
             if (
                 field.base_field.store

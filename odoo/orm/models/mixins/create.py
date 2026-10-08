@@ -13,7 +13,7 @@ from odoo.tools.cache import TransactionMemo
 
 from ... import decorators as api
 from ..._typing import ValuesType
-from ...helpers import get_or_create_class_memo
+from ...helpers import get_or_create_class_memo, invalid_field_message
 from ...primitives import (
     Command,
     NewId,
@@ -239,7 +239,7 @@ class CreateMixin(_ModelStubs):
             for key, val in vals.items():
                 field = self._fields.get(key)
                 if not field:
-                    raise ValueError(f"Invalid field {key!r} on model {self._name!r}")
+                    raise ValueError(invalid_field_message(self, key))
                 if field.store:
                     stored[key] = val
                 delegated = field.inherited and field.related_field is not None

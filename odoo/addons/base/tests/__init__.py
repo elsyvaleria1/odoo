@@ -179,3 +179,4 @@ from . import test_view_depends
 from . import test_ir_model_fields_inherited_translation
 
 from . import test_auth_event
+from . import test_legacy_field_names

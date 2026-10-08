@@ -12,6 +12,7 @@ from ..._typing import (
     ValuesType,
 )
 from ...constants import ACTING_PARTNER_KEY
+from ...helpers import invalid_field_message
 from ...primitives import NewId
 from ._model_stubs import _ModelStubs
 
@@ -174,9 +175,7 @@ class EnvironmentMixin(_ModelStubs):
                 (fields[name], value) for name, value in values.items() if name != "id"
             ]
         except KeyError as e:
-            raise ValueError(
-                f"Invalid field {e.args[0]!r} on model {self._name!r}"
-            ) from e
+            raise ValueError(invalid_field_message(self, e.args[0])) from e
 
         if len(field_values) > 1:
             field_values.sort(key=lambda item: item[0].write_sequence)

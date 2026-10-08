@@ -16,7 +16,7 @@ from ..._recordset import is_search_overridden
 from ...domain import Domain, DomainCondition, OptimizationLevel
 from ...domain.constants import ACCESS_OPERATIONS
 from ...fields.base import call_hook
-from ...helpers import to_record_ids
+from ...helpers import invalid_field_message, to_record_ids
 from ...primitives import LOG_ACCESS_COLUMNS, NO_ACCESS, PREFETCH_MAX, SUPERUSER_ID
 from ..field_classes import is_anonymous
 from ._model_stubs import _ModelStubs
@@ -86,7 +86,7 @@ class AccessMixin(_ModelStubs):
         for field_name in field_names:
             field = self._fields.get(field_name)
             if field is None:
-                raise ValueError(f"Invalid field {field_name!r} in {self._name!r}")
+                raise ValueError(invalid_field_message(self, field_name))
             self._check_field_access(field, "write")
         if self._ids:
             self._check_fields_write_records(field_names)
