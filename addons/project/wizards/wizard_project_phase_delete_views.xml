@@ -48,24 +48,4 @@
         </field>
     </record>
 
-    <record id="view_project_phase_unarchive_wizard" model="ir.ui.view">
-        <field name="name">project.phase.delete.wizard.form</field>
-        <field name="model">wizard.project.phase.delete</field>
-        <field name="arch" type="xml">
-            <form string="Delete Phase">
-                <div>
-                    <p>Would you like to unarchive all of the projects contained in these phases as well?</p>
-                </div>
-                <footer>
-                    <button
-                        name="action_unarchive_project"
-                        type="object"
-                        string="Confirm"
-                        class="btn btn-primary" />
-                    <button special="cancel" string="Discard" />
-                </footer>
-            </form>
-        </field>
-    </record>
-
 </odoo>

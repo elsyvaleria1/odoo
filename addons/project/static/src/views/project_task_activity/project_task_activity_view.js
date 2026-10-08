@@ -7,8 +7,8 @@ import { ProjectTaskControlPanel } from "../project_task_control_panel/project_t
 import { ProjectTaskActivityModel } from "./project_task_activity_model.js";
 
 export const projectTaskActivityView = {
-    SearchModel: HighlightProjectTaskSearchModel,
     ...activityView,
+    SearchModel: HighlightProjectTaskSearchModel,
     ControlPanel: ProjectTaskControlPanel,
     Model: ProjectTaskActivityModel,
 };

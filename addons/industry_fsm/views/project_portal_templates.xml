@@ -21,7 +21,7 @@
                     id="accept"
                     method="POST"
                     t-att-data-task-id="task.id"
-                    t-att-data-token="task.access_token"
+                    t-att-data-token="task_token"
                     class="js_accept_json modal-content js_website_submit_form">
                     <input
                         type="hidden"
@@ -39,7 +39,7 @@
                         <t t-call="portal.signature_form">
                             <t
                                 t-set="call_url"
-                                t-value="task.get_portal_url(suffix='/worksheet/sign/%s' % source)" />
+                                t-value="'%s/worksheet/sign/%s%s' % (task.access_url, source, '?access_token=%s' % task_token if task_token else '')" />
                             <t t-set="default_name" t-value="task.partner_id.name" />
                             <t t-set="font_color" t-value="'black'" />
                             <t t-set="send_label">Sign Report</t>

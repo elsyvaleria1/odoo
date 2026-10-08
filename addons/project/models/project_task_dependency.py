@@ -184,8 +184,9 @@ class ProjectTaskDependency(models.Model):
             )
         )
         tasks = Task.browse({task_id for task_id, _pred in new_pairs})
+        predecessors = Task.browse({pred for _task, pred in new_pairs})
         tasks.invalidate_recordset(["predecessor_ids"])
-        Task.browse(
-            {task_id for pair in new_pairs for task_id in pair}
-        ).invalidate_recordset(["successor_ids"])
+        (tasks | predecessors).invalidate_recordset(["successor_ids"])
+        tasks.modified(["predecessor_ids"])
+        predecessors.modified(["successor_ids"])
         tasks._check_no_cyclic_dependencies()

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Self
 
 from odoo import Command, api, fields, models
@@ -38,9 +38,9 @@ class ProjectTaskRecurrence(models.Model):
     def _compute_company_id(self) -> None:
         for recurrence in self:
             companies = recurrence.task_ids.company_id
-            recurrence.company_id = (
-                companies if len(companies) <= 1 else companies.root_id
-            )
+            if len(companies) > 1:
+                companies = companies.root_id
+            recurrence.company_id = companies if len(companies) <= 1 else False
 
     @api.constrains("repeat_type", "repeat_until")
     def _check_repeat_until_date(self) -> None:
@@ -101,8 +101,20 @@ class ProjectTaskRecurrence(models.Model):
             if self.date_recurrence_origin and self.recurrence_anchor_field == field
             else anchor
         )
-        tz = timezone((task.company_id or self.env.company).partner_id.tz or "UTC")
-        return self._get_next_recurrence_after(origin, anchor, tz) - anchor
+        return (
+            self._get_next_recurrence_after(origin, anchor, self._get_tz(task)) - anchor
+        )
+
+    def _get_tz(self, task):
+        return timezone((task.company_id or self.env.company).partner_id.tz or "UTC")
+
+    def _end(self, deleted_tasks=None) -> None:
+        tasks = self.with_context(active_test=False).task_ids - (
+            deleted_tasks or self.env["project.task"]
+        )
+        _debug.lifecycle("recurrence_ended", recurrences=self, tasks=tasks)
+        self.unlink()
+        tasks.write({"recurring_task": False})
 
     def _get_last_task_id_per_recurrence_id(self) -> dict[int, int]:
         return (
@@ -112,6 +124,7 @@ class ProjectTaskRecurrence(models.Model):
                 recurrence.id: max_task_id
                 for recurrence, max_task_id in self.env["project.task"]
                 .sudo()
+                .with_context(active_test=False)
                 ._read_group(
                     [("recurrence_id", "in", self.ids)],
                     ["recurrence_id"],
@@ -128,17 +141,17 @@ class ProjectTaskRecurrence(models.Model):
 
         def is_occurrence_allowed(task) -> bool:
             rec = task.recurrence_id.sudo()
-            return (
-                rec.repeat_type != "until"
-                or not task.date_end
-                or (
-                    rec.repeat_until
-                    and fields.Datetime.context_timestamp(
-                        rec, task.date_end + rec._get_next_occurrence_shift(task)
-                    ).date()
-                    <= rec.repeat_until
-                )
+            if rec.repeat_type != "until":
+                return True
+            next_start = (
+                task.date_end + rec._get_next_occurrence_shift(task)
+                if task.date_end
+                else fields.Datetime.now()
             )
+            # the series' own clock, the one its shift is computed in, not
+            # the clock of whoever happens to close the task
+            next_date = next_start.replace(tzinfo=UTC).astimezone(rec._get_tz(task))
+            return bool(rec.repeat_until) and next_date.date() <= rec.repeat_until
 
         occurrences_from = occurrences_from.filtered(is_occurrence_allowed)
         _debug.logic(
@@ -186,7 +199,9 @@ class ProjectTaskRecurrence(models.Model):
         tasks = self.env["project.task"].concat(*recurrence_by_task.keys())
         list_create_values = []
         list_copy_data = (
-            tasks.with_context(copy_project=True, active_test=False).sudo().copy_data()
+            tasks.with_context(copy_project=True, active_test=False)
+            .sudo()
+            .copy_data(default={"recurrence_id": False})
         )
         list_fields_to_copy = tasks.sudo()._read_format(
             self._get_recurring_fields_to_copy()

@@ -4,17 +4,9 @@ import { deserializeDate, hasSame, serializeDateTime } from "@web/core/l10n/date
 import { _t } from "@web/core/translation";
 import { CalendarModel } from "@web/views/calendar";
 
-import { useProjectModelActions } from "../project_highlight_tasks.js";
 import { ProjectTaskModelMixin } from "../project_task_model_mixin.js";
 
 export class ProjectTaskCalendarModel extends ProjectTaskModelMixin(CalendarModel) {
-    setup() {
-        super.setup(...arguments);
-        this.getHighlightIds = useProjectModelActions({
-            getContext: () => this.viewContext.searchModel.context,
-        }).getHighlightIds;
-    }
-
     get tasksToPlanDomain() {
         const projectId = this.meta.context.default_project_id;
         const domain = [
@@ -54,9 +46,13 @@ export class ProjectTaskCalendarModel extends ProjectTaskModelMixin(CalendarMode
         return !end || !hasSame(deserializeDate(start), deserializeDate(end), "day");
     }
 
+    /** @returns {boolean} */
+    get isCheckProject() {
+        return "project_id" in this.meta.filtersInfo;
+    }
+
     /** @override */
     get defaultFilterLabel() {
-        this.isCheckProject = "project_id" in this.meta.filtersInfo;
         if (this.isCheckProject) {
             return _t("Private");
         }
@@ -81,7 +77,6 @@ export class ProjectTaskCalendarModel extends ProjectTaskModelMixin(CalendarMode
     }
 
     async loadRecords(data) {
-        this.highlightIds = await this.getHighlightIds();
         const keepCurrentList = !this.meta.showTasksToPlan || this.meta.planTask;
         const [records, tasksToPlan] = await Promise.all([
             super.loadRecords(data),

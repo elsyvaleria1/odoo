@@ -9,7 +9,20 @@
                 <field name="res_model" invisible="1" />
                 <field name="res_id" invisible="1" />
                 <group>
-                    <field name="share_link" widget="CopyClipboardChar" />
+                    <label for="share_link" />
+                    <div>
+                        <field
+                            name="share_link"
+                            widget="CopyClipboardChar"
+                            invisible="not share_link" />
+                        <button
+                            name="action_issue_share_link"
+                            type="object"
+                            string="Create Link"
+                            icon="fa-link"
+                            invisible="share_link"
+                            class="btn-link p-0" />
+                    </div>
                 </group>
                 <field name="collaborator_ids">
                     <list string="Collaborators" editable="bottom">

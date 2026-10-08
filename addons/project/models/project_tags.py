@@ -2,7 +2,7 @@ from odoo import api, fields, models
 from odoo.api import DomainType
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL
+from odoo.tools import SQL, escape_psql
 
 _debug = DebugLog(__name__)
 
@@ -27,11 +27,6 @@ class ProjectTags(models.Model):
         string="Tasks",
         export_string_translation=False,
     )
-
-    @api.model
-    def sort_tags_by_ids(self, tag_list: list[dict], id_order: list[int]) -> list[dict]:
-        tags_by_id = {tag["id"]: tag for tag in tag_list}
-        return [tags_by_id[id] for id in id_order if id in tags_by_id]
 
     @_debug.perf.timed
     @api.model
@@ -87,7 +82,9 @@ class ProjectTags(models.Model):
 
     @api.model
     def name_create(self, name: str) -> tuple[int, str]:
-        existing_tag = self.search([("name", "=ilike", name.strip())], limit=1)
+        existing_tag = self.search(
+            [("name", "=ilike", escape_psql(name.strip()))], limit=1
+        )
         if existing_tag:
             _debug.logic("name_create_reused", name=name, tag=existing_tag.id)
             return existing_tag.id, existing_tag.display_name

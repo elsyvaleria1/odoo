@@ -93,7 +93,7 @@ class TestForecastSampling(TestProjectCommon):
                     "name": f"done {i}",
                     "project_id": project.id,
                     "state": "done",
-                    "date_closed": now - timedelta(days=3),
+                    "date_closed": now - timedelta(days=now.weekday() + 3),
                 }
             )
         wizard = self.env["wizard.project.project.view.forecast"].create(
@@ -119,7 +119,7 @@ class TestForecastSampling(TestProjectCommon):
                 "name": "done",
                 "project_id": self.project_pigs.id,
                 "state": "done",
-                "date_closed": now - timedelta(days=3),
+                "date_closed": now - timedelta(days=now.weekday() + 3),
             }
         )
         self.env["project.task"].create(
@@ -127,7 +127,7 @@ class TestForecastSampling(TestProjectCommon):
                 "name": "canceled",
                 "project_id": self.project_pigs.id,
                 "state": "canceled",
-                "date_closed": now - timedelta(days=3),
+                "date_closed": now - timedelta(days=now.weekday() + 3),
             }
         )
         wizard = self.env["wizard.project.project.view.forecast"].create(

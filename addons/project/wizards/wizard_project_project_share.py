@@ -39,7 +39,7 @@ class WizardProjectProjectShare(models.TransientModel):
                     "partner_name": collaborator.partner_id.display_name,
                     "access_mode": collaborator.access_mode,
                 }
-                for collaborator in project.collaborator_ids
+                for collaborator in self._live_partner_collaborators(project)
             ]
             _debug.logic(
                 "collaborators_prefilled",
@@ -96,22 +96,63 @@ class WizardProjectProjectShare(models.TransientModel):
         for wizard in self:
             wizard.existing_partner_ids = wizard.collaborator_ids.partner_id
 
+    @api.depends("res_model", "res_id")
+    def _compute_share_link(self) -> None:
+        for wizard in self:
+            project = wizard._get_portal_record()
+            token = project.access_token if project else False
+            wizard.share_link = token and (
+                project.get_base_url()
+                + project._get_share_url(redirect=True, token=token)
+            )
+
+    def action_issue_share_link(self) -> dict[str, Any]:
+        self.check_singleton()
+        project = self._get_shared_record()
+        project._portal_get_or_create_token()
+        _debug.lifecycle("share_link_issued", project=project.id)
+        self.invalidate_recordset(["share_link"])
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "res_id": self.id,
+            "views": [(False, "form")],
+            "target": "new",
+            "context": self.env.context,
+        }
+
+    @api.model
+    def _live_partner_collaborators(self, project: models.Model) -> models.Model:
+        now = fields.Datetime.now()
+        return project.collaborator_ids.filtered(
+            lambda c: c.partner_id and (not c.date_to or c.date_to > now)
+        )
+
     @_debug.perf.timed
     def _sync_collaborators(self) -> None:
         for wizard in self:
             project = wizard.resource_ref
-            existing = {c.partner_id: c for c in project.collaborator_ids}
+            existing = {
+                c.partner_id: c for c in project.collaborator_ids if c.partner_id
+            }
+            live = self._live_partner_collaborators(project)
             requested = {c.partner_id: c.access_mode for c in wizard.collaborator_ids}
             commands = [
                 Command.delete(collaborator.id)
-                for partner, collaborator in existing.items()
-                if partner not in requested
+                for collaborator in live
+                if collaborator.partner_id not in requested
             ]
-            commands.extend(
-                Command.update(existing[partner].id, {"access_mode": access_mode})
-                for partner, access_mode in requested.items()
-                if partner in existing and existing[partner].access_mode != access_mode
-            )
+            for partner, access_mode in requested.items():
+                collaborator = existing.get(partner)
+                if not collaborator:
+                    continue
+                vals = {}
+                if collaborator.access_mode != access_mode:
+                    vals["access_mode"] = access_mode
+                if collaborator not in live:
+                    vals["date_to"] = False
+                if vals:
+                    commands.append(Command.update(collaborator.id, vals))
             new_partners = project._get_new_collaborators(
                 self.env["res.partner"].union(*requested)
             )
@@ -125,6 +166,11 @@ class WizardProjectProjectShare(models.TransientModel):
                 "collaborators_synced",
                 project=project.id,
                 added=new_partners,
+                revived=[
+                    partner.id
+                    for partner, collaborator in existing.items()
+                    if partner in requested and collaborator not in live
+                ],
                 commands=len(commands),
             )
             if commands:

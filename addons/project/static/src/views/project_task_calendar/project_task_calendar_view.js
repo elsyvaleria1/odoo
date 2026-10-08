@@ -9,8 +9,8 @@ import { ProjectTaskCalendarModel } from "./project_task_calendar_model.js";
 import { ProjectTaskCalendarRenderer } from "./project_task_calendar_renderer.js";
 
 export const projectTaskCalendarView = {
-    SearchModel: HighlightProjectTaskSearchModel,
     ...calendarView,
+    SearchModel: HighlightProjectTaskSearchModel,
     ControlPanel: ProjectTaskControlPanel,
     Controller: ProjectTaskCalendarController,
     Model: ProjectTaskCalendarModel,

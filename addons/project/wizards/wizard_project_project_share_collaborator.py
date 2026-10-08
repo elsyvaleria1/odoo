@@ -39,8 +39,13 @@ class WizardProjectProjectShareCollaborator(models.TransientModel):
     @api.depends("partner_id", "access_mode")
     def _compute_send_invitation(self) -> None:
         project = self.parent_wizard_id.resource_ref
+        collaborating = (
+            self.env["wizard.project.project.share"]
+            ._live_partner_collaborators(project)
+            .partner_id
+        )
         for collaborator in self:
-            if collaborator.partner_id not in project.collaborator_ids.partner_id:
+            if collaborator.partner_id not in collaborating:
                 _debug.logic(
                     "collaborator_invitation_flagged",
                     partner=collaborator.partner_id.id,

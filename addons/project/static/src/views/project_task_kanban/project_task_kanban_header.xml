@@ -3,7 +3,7 @@
 
     <t t-name="project.ProjectTaskKanbanHeader" t-inherit="mail.RottingKanbanHeader" t-inherit-mode="primary">
         <xpath expr="//span[@t-if='!this.progressBar and !this.props.list.model.useSampleModel']" position="replace">
-            <span t-if="!this.progressBar and !this.props.list.model.useSampleModel"
+            <span t-if="!this.props.list.model.useSampleModel and (this.wipLimit or !this.progressBar)"
                   class="o_column_task_count"
                   t-att-class="{ 'text-danger fw-bolder': this.isOverWipLimit }"
                   t-att-title="this.isOverWipLimit ? this.wipLimitTitle : undefined">

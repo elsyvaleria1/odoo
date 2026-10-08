@@ -1,41 +1,23 @@
 /** @odoo-module native */
-import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
-import { Dropdown, DropdownItem } from "@web/components/dropdown";
-import { user } from "@web/core/user";
-import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/translation";
 
-import { ProjectTemplateButtons } from "./project_template_buttons.js";
+import { TemplateDropdown } from "./template_dropdown.js";
 
-export class ProjectTemplateDropdown extends Component {
-    static template = "project.ProjectTemplateDropdown";
-    static components = {
-        Dropdown,
-        DropdownItem,
-        ProjectTemplateButtons,
-    };
-
-    static props = {
-        hotkey: t.string().optional("c"),
-        newButtonClasses: t.string(),
-        onCreate: t.function(),
-        context: t.object(),
-        getAdditionalContext: t.function().optional(),
-        isDisabled: t.boolean().optional(false),
-    };
-    props = useProps(this.constructor.props);
-
-    setup() {
-        this.action = useService("action");
-        this.orm = useService("orm");
-        this.state = proxy({ projectTemplates: [] });
-        this.isProjectManager = false;
-        onWillStart(this.onWillStart);
+export class ProjectTemplateDropdown extends TemplateDropdown {
+    get templateResModel() {
+        return "project.project";
     }
 
-    get templateItemClasses() {
-        return `btn btn-link o-dropdown-item-indent o-project-template d-flex align-items-center${
-            this.isProjectManager ? " pe-0" : ""
-        }`;
+    get templateItemClass() {
+        return "o-project-template";
+    }
+
+    get newRecordLabel() {
+        return _t("New Project");
+    }
+
+    get templatesHeader() {
+        return _t("Project Templates");
     }
 
     get readFields() {
@@ -46,50 +28,20 @@ export class ProjectTemplateDropdown extends Component {
         return [["is_template", "=", true]];
     }
 
-    async onWillStart() {
-        await Promise.all([
-            user
-                .hasGroup("project.group_project_manager")
-                .then((isProjectManager) => (this.isProjectManager = isProjectManager)),
-            this.fetchProjectTemplates(),
-        ]);
+    async fetchTemplates() {
+        this.state.templates = await this.cachedOrm(
+            (templates) => (this.state.templates = templates),
+        ).searchRead("project.project", this.projectTemplatesDomain, this.readFields);
     }
 
-    async fetchProjectTemplates() {
-        this.state.projectTemplates = await this.orm
-            .cache({
-                type: "disk",
-                update: "always",
-                callback: (result, hasChanged) => {
-                    if (hasChanged) {
-                        this.state.projectTemplates = result;
-                    }
-                },
-            })
-            .searchRead(
-                "project.project",
-                this.projectTemplatesDomain,
-                this.readFields,
-            );
-    }
-
-    contextPreprocess() {
-        const context = { ...this.props.context };
-        if (this.props.getAdditionalContext) {
-            Object.assign(context, this.props.getAdditionalContext());
-        }
-        return context;
-    }
-
-    async createProjectFromTemplate(template) {
-        const { id: templateId, name: templateName } = template;
+    async createFromTemplate({ id: templateId, name: templateName }) {
         const action = await this.orm.call(
             "wizard.project.project.create.from.template",
             "action_view_template_view",
             [],
             {
                 context: {
-                    ...this.contextPreprocess(),
+                    ...this.getCreateContext(),
                     template_id: templateId,
                     template_name: templateName,
                 },

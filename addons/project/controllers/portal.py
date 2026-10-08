@@ -12,10 +12,18 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import groupby as groupbyelem
 
-from odoo.addons.portal.controllers.portal import CustomerPortal, _parse_record_id
+from odoo.addons.portal.controllers.portal import (
+    CustomerPortal,
+    _parse_bool_param,
+    _parse_record_id,
+)
 from odoo.addons.portal.controllers.portal import pager as portal_pager
+from odoo.addons.portal.models.mixin_portal import _presented_link_tokens
+from odoo.addons.portal.utils import get_url_with_params
 
 _debug = DebugLog(__name__)
+
+MAX_PROJECT_FILTERS = 200
 
 
 class ProjectCustomerPortal(CustomerPortal):
@@ -60,6 +68,7 @@ class ProjectCustomerPortal(CustomerPortal):
             groupby=groupby,
             search_in=search_in,
             token=bool(access_token),
+            link=self._opened_by_link(),
         )
         values = self._prepare_tasks_values(
             page,
@@ -71,7 +80,7 @@ class ProjectCustomerPortal(CustomerPortal):
             groupby,
             url,
             domain,
-            su=bool(access_token) and request.env.user.has_group("base.group_public"),
+            su=self._opened_by_link(),
             project=project,
         )
         values["pager"]["url_args"]["access_token"] = access_token
@@ -104,9 +113,20 @@ class ProjectCustomerPortal(CustomerPortal):
     def _get_domain_task(self) -> list:
         return [
             ("project_id", "!=", False),
-            ("is_template", "=", False),
             ("has_template_ancestor", "=", False),
         ]
+
+    def _opened_by_link(self) -> bool:
+        return bool(getattr(request, "access_link", None))
+
+    def _link_token(self, access_token: str | None) -> str | None:
+        return access_token if self._opened_by_link() else None
+
+    def _get_domain_task_not_template(self, task_sudo: Any) -> Domain:
+        templates = task_sudo.with_context(active_test=False)._search(
+            [("has_template_ancestor", "=", True)]
+        )
+        return Domain("id", "not in", templates)
 
     def _prepare_searchbar_sortings(self) -> dict[str, dict[str, str]]:
         return {
@@ -200,7 +220,6 @@ class ProjectCustomerPortal(CustomerPortal):
         search: str | None = None,
         search_in: str = "content",
         groupby: str | None = None,
-        task_id: int | None = None,
         **kw: Any,
     ) -> Response:
         project_sudo = request.link_subject
@@ -226,9 +245,9 @@ class ProjectCustomerPortal(CustomerPortal):
                 target="project_sharing",
             )
             return request.redirect(f"/my/projects/{project_id}/project_sharing")
-        project_sudo = (
-            project_sudo if access_token else project_sudo.with_user(request.env.user)
-        )
+        access_token = self._link_token(access_token)
+        if not access_token:
+            project_sudo = project_sudo.with_user(request.env.user)
         if not groupby:
             groupby = "step_id"
         with _debug.perf(
@@ -292,7 +311,18 @@ class ProjectCustomerPortal(CustomerPortal):
     def _get_project_sharing_access_mode(self, project: Any) -> str:
         user = request.env.user
         if not user._is_portal():
-            return "advanced_edit"
+            probe = request.env["project.task"].new({"project_id": project.id})
+            can_write = bool(
+                probe.filtered_domain(probe._record_access_domain("write"))
+            )
+            _debug.logic(
+                "project_sharing_access_mode",
+                project=project.id,
+                uid=user.id,
+                internal=True,
+                can_write=can_write,
+            )
+            return "advanced_edit" if can_write else "view"
         Collaborator = request.env["project.collaborator"]
         modes = (
             Collaborator.sudo()
@@ -360,6 +390,7 @@ class ProjectCustomerPortal(CustomerPortal):
         **kw: Any,
     ) -> Response:
         project_sudo = request.link_subject
+        access_token = self._link_token(access_token)
         Task = request.env["project.task"]
         if access_token:
             Task = Task.sudo()
@@ -420,12 +451,18 @@ class ProjectCustomerPortal(CustomerPortal):
                 .search([("project_id", "=", project_id), ("id", "=", task_id)])
                 .sudo()
             )
+            if not task_sudo:
+                _debug.logic(
+                    "subtasks_page_not_found",
+                    project=project_id,
+                    task=task_id,
+                    uid=request.env.uid,
+                )
+                raise request.prepare_not_found_error()
             task_domain = Domain("id", "child_of", task_id) & Domain(
                 "id", "!=", task_id
             )
-            searchbar_filters = self._get_my_tasks_searchbar_filters(
-                Domain("id", "=", task_sudo.project_id.id), task_domain
-            )
+            searchbar_filters = self._get_my_tasks_searchbar_filters(task_domain)
 
             if not filterby:
                 filterby = "all"
@@ -504,10 +541,16 @@ class ProjectCustomerPortal(CustomerPortal):
                 )
                 .sudo()
             )
+            if not task_sudo:
+                _debug.logic(
+                    "recurrent_tasks_page_not_found",
+                    project=project_id,
+                    task=task_id,
+                    uid=request.env.uid,
+                )
+                raise request.prepare_not_found_error()
             task_domain = Domain("id", "in", task_sudo.recurrence_id.task_ids.ids)
-            searchbar_filters = self._get_my_tasks_searchbar_filters(
-                Domain("id", "=", project_id), task_domain
-            )
+            searchbar_filters = self._get_my_tasks_searchbar_filters(task_domain)
 
             if not filterby:
                 filterby = "all"
@@ -575,33 +618,40 @@ class ProjectCustomerPortal(CustomerPortal):
             "priority_labels": dict(
                 task._fields["priority"]._description_selection(request.env)
             ),
+            "state_labels": dict(
+                task._fields["state"]._description_selection(request.env)
+            ),
             "task": task,
+            "task_token": _presented_link_tokens().get((task._name, task.id)),
             "user": request.env.user,
             "project_accessible": project_accessible,
             "task_link_section": [],
             "preview_object": task,
         }
 
+        # the neighbours are linked bare: a token presented for this record
+        # opens no other, and asking each neighbour for its own would issue one
         values = self._get_page_view_values(
-            task, access_token, values, history, False, **kwargs
+            task, None, values, history, False, **kwargs
         )
+        if access_token:
+            values.update(access_token=access_token, token=access_token)
         if project:
             values["project_id"] = project.id
             history = request.session.get("my_project_tasks_history", [])
-            try:
-                current_task_index = history.index(task.id)
-            except ValueError:
+            if task.id not in history:
                 return values
+            index = history.index(task.id)
 
-            total_task = len(history)
-            task_url = f"{task.project_id.access_url}/task/%s?model=project.project&res_id={values['user'].id}&access_token={access_token}"
+            def task_url(neighbour_id: int) -> str:
+                url = f"{project.access_url}/task/{neighbour_id}"
+                if not access_token:
+                    return url
+                return get_url_with_params(url, {"access_token": access_token})
 
-            values["prev_record"] = (
-                current_task_index != 0 and task_url % history[current_task_index - 1]
-            )
-            values["next_record"] = (
-                current_task_index < total_task - 1
-                and task_url % history[current_task_index + 1]
+            values["prev_record"] = index > 0 and task_url(history[index - 1])
+            values["next_record"] = index < len(history) - 1 and task_url(
+                history[index + 1]
             )
 
         return values
@@ -800,11 +850,13 @@ class ProjectCustomerPortal(CustomerPortal):
         values = self._prepare_portal_layout_values()
 
         Task = request.env["project.task"]
-
-        domain = Domain.AND([domain or [], [("has_template_ancestor", "=", False)]])
-        if not su and Task.has_access("read"):
-            domain &= Domain("id", "access", "read")
         Task_sudo = Task.sudo()
+
+        domain = Domain(domain or []) & self._get_domain_task_not_template(Task_sudo)
+        if not su:
+            readable = Task.has_access("read")
+            domain &= Domain("id", "access", "read") if readable else Domain.FALSE
+            _debug.logic("tasks_page_access", url=url, readable=readable)
         milestone_domain = (
             domain
             & Domain("allow_milestones", "=", True)
@@ -922,18 +974,6 @@ class ProjectCustomerPortal(CustomerPortal):
             else:
                 grouped_tasks = [tasks] if tasks else []
 
-            task_states = dict(
-                Task_sudo._fields["state"]._description_selection(request.env)
-            )
-            if sortby == "state":
-                if groupby == "none" and grouped_tasks:
-                    grouped_tasks[0] = grouped_tasks[0].sorted(
-                        lambda tasks: task_states.get(tasks.state)
-                    )
-                else:
-                    grouped_tasks.sort(
-                        key=lambda tasks: task_states.get(tasks[0].state)
-                    )
             _debug.logic(
                 "tasks_grouped",
                 tasks=len(tasks),
@@ -951,6 +991,9 @@ class ProjectCustomerPortal(CustomerPortal):
                 "multiple_projects": True,
                 "priority_labels": dict(
                     Task_sudo._fields["priority"]._description_selection(request.env)
+                ),
+                "state_labels": dict(
+                    Task_sudo._fields["state"]._description_selection(request.env)
                 ),
                 "page_name": "task",
                 "default_url": url,
@@ -981,52 +1024,33 @@ class ProjectCustomerPortal(CustomerPortal):
         return values
 
     def _get_my_tasks_searchbar_filters(
-        self,
-        project_domain: list | None = None,
-        task_domain: list | None = None,
+        self, task_domain: Domain | list | None = None
     ) -> dict[str, dict[str, Any]]:
         searchbar_filters = {
             "all": {
                 "label": request.env._("All"),
-                "domain": self._get_domain_task(),
+                "domain": [("project_id", "!=", False)],
             },
         }
-
-        projects = request.env["project.project"].search(
-            project_domain or [], order="id"
-        )
-        for project in projects:
-            searchbar_filters.update(
-                {
-                    str(project.id): {
-                        "label": project.name,
-                        "domain": [("project_id", "=", project.id)],
-                    }
-                }
-            )
-
-        project_groups = request.env["project.task"]._read_group(
-            Domain.AND(
-                [
-                    [
-                        ("project_id", "not in", projects.ids),
-                        ("is_template", "=", False),
-                        ("project_id", "!=", False),
-                    ],
-                    task_domain or [],
-                ]
-            ),
+        Task = request.env["project.task"]
+        if not Task.has_access("read"):
+            return searchbar_filters
+        project_groups = Task._read_group(
+            Domain(self._get_domain_task()) & Domain(task_domain or []),
             ["project_id"],
+            order="project_id",
+            limit=MAX_PROJECT_FILTERS,
+        )
+        _debug.logic(
+            "task_filters",
+            projects=len(project_groups),
+            capped=len(project_groups) == MAX_PROJECT_FILTERS,
         )
         for [project] in project_groups:
-            searchbar_filters.update(
-                {
-                    str(project.id): {
-                        "label": project.sudo().display_name,
-                        "domain": [("project_id", "=", project.id)],
-                    }
-                }
-            )
+            searchbar_filters[str(project.id)] = {
+                "label": project.sudo().display_name,
+                "domain": [("project_id", "=", project.id)],
+            }
         return searchbar_filters
 
     @http.route(
@@ -1047,9 +1071,7 @@ class ProjectCustomerPortal(CustomerPortal):
         groupby: str | None = None,
         **kw: Any,
     ) -> Response:
-        searchbar_filters = self._get_my_tasks_searchbar_filters(
-            [("is_template", "=", False)]
-        )
+        searchbar_filters = self._get_my_tasks_searchbar_filters()
 
         if not filterby:
             filterby = "all"
@@ -1109,10 +1131,11 @@ class ProjectCustomerPortal(CustomerPortal):
         task_id: int,
         report_type: str | None = None,
         access_token: str | None = None,
-        project_sharing: bool = False,
+        project_sharing: str | None = None,
         **kw: Any,
     ) -> Response:
         task_sudo = request.link_subject
+        access_token = self._link_token(access_token)
 
         _debug.pipeline(
             "task_page",
@@ -1127,7 +1150,7 @@ class ProjectCustomerPortal(CustomerPortal):
             )
 
         task_sudo.attachment_ids.generate_access_token()
-        if project_sharing is True:
+        if _parse_bool_param(project_sharing):
             request.session["my_tasks_history"] = task_sudo.ids
         values = self._task_get_page_view_values(task_sudo, access_token, **kw)
         return request.render("project.portal_my_task", values)

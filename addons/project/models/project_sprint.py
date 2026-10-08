@@ -1,9 +1,9 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
-from .project_task import CLOSED_STATES
+from .project_task import CLOSED_STATES, DELIVERED_STATES
 
 _debug = DebugLog(__name__)
 
@@ -84,7 +84,8 @@ class ProjectSprint(models.Model):
         string="Velocity (hours)",
         export_string_translation=False,
         compute="_compute_task_metrics",
-        help="Sum of planned_hours for completed sprint tasks.",
+        help="Sum of planned_hours for done sprint tasks; a cancelled task "
+        "is closed but not delivered.",
     )
     story_points_committed = fields.Float(
         export_string_translation=False,
@@ -135,33 +136,55 @@ class ProjectSprint(models.Model):
     def _compute_task_metrics(self) -> None:
         for sprint in self:
             tasks = sprint.task_ids
-            closed = tasks.filtered(lambda t: t.state in CLOSED_STATES)
+            delivered = tasks.filtered(lambda t: t.state in DELIVERED_STATES)
             carried = sprint.carried_over_count
             sprint.task_count = len(tasks) + carried
-            sprint.completed_count = len(closed)
+            sprint.completed_count = len(delivered)
             sprint.completion_pct = (
-                len(closed) / sprint.task_count * 100 if sprint.task_count else 0.0
+                len(delivered) / sprint.task_count * 100 if sprint.task_count else 0.0
             )
             sprint.committed_hours = (
                 sum(tasks.mapped("planned_hours")) + sprint.carried_over_hours
             )
-            sprint.velocity = sum(closed.mapped("planned_hours"))
+            sprint.velocity = sum(delivered.mapped("planned_hours"))
             sprint.story_points_committed = (
                 sum(tasks.mapped("story_points")) + sprint.carried_over_story_points
             )
-            sprint.story_points_completed = sum(closed.mapped("story_points"))
+            sprint.story_points_completed = sum(delivered.mapped("story_points"))
             _debug.logic(
                 "sprint_metrics_computed",
                 sprint=sprint.id,
                 tasks=sprint.task_count,
-                closed=sprint.completed_count,
+                delivered=sprint.completed_count,
                 carried=carried,
                 committed=sprint.committed_hours,
                 velocity=sprint.velocity,
             )
 
+    def _check_state_in(self, *states: str) -> None:
+        labels = dict(self._fields["state"]._description_selection(self.env))
+        for sprint in self:
+            if sprint.state in states:
+                continue
+            _debug.logic(
+                "sprint_transition_refused",
+                sprint=sprint.id,
+                state=sprint.state,
+                expected=states,
+            )
+            raise UserError(
+                self.env._(
+                    "Sprint %(sprint)s is %(state)s; this step needs it to be "
+                    "%(expected)s.",
+                    sprint=sprint.name,
+                    state=labels[sprint.state],
+                    expected=", ".join(labels[s] for s in states),
+                )
+            )
+
     def action_start(self) -> None:
         self.check_singleton()
+        self._check_state_in("planning")
         _debug.lifecycle(
             "sprint_state_changed",
             sprint=self.id,
@@ -186,8 +209,17 @@ class ProjectSprint(models.Model):
             )
         self.state = "active"
 
+    def action_review(self) -> None:
+        self.check_singleton()
+        self._check_state_in("active")
+        _debug.lifecycle(
+            "sprint_state_changed", sprint=self.id, old=self.state, new="review"
+        )
+        self.state = "review"
+
     def action_close(self) -> None:
         self.check_singleton()
+        self._check_state_in("planning", "active", "review")
         incomplete = self.task_ids.filtered(lambda t: t.state not in CLOSED_STATES)
         _debug.lifecycle(
             "sprint_state_changed",

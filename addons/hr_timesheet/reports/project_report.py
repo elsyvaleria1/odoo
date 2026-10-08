@@ -52,15 +52,3 @@ class ReportProjectTaskUser(models.Model):
                 NULLIF(t.overtime, 0) as overtime
         """
         )
-
-    def _group_by(self):
-        return (
-            super()._group_by()
-            + """,
-                t.effective_hours,
-                t.allocated_hours,
-                t.planned_hours,
-                t.remaining_hours,
-                t.overtime
-        """
-        )

@@ -1948,11 +1948,6 @@ msgid "Create a Task Activity Plan"
 msgstr ""
 
 #. module: project
-#: model_terms:ir.actions.act_window,help:project.open_workflow_step_form_domain
-msgid "Create a new step in the task workflow"
-msgstr ""
-
-#. module: project
 #. odoo-javascript
 #: code:addons/project/static/src/js/tours/project.js:0
 msgid "Create a new sub-task"
@@ -2394,15 +2389,6 @@ msgstr ""
 msgid ""
 "Define the lifecycle phases your projects move through from initiation to "
 "closure."
-msgstr ""
-
-#. module: project
-#: model_terms:ir.actions.act_window,help:project.open_workflow_step_form_domain
-msgid ""
-"Define the steps that will be used in the project from the\n"
-"            creation of the task, up to the closing of the task or issue.\n"
-"            You will use these steps in order to track the progress in\n"
-"            solving a task or an issue."
 msgstr ""
 
 #. module: project
@@ -3968,7 +3954,6 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/components/project_right_side_panel/project_right_side_panel.js:0
 #: code:addons/project/static/src/components/project_right_side_panel/project_right_side_panel.xml:0
 #: model:ir.actions.act_window,name:project.project_milestone_action
 #: model:ir.embedded.actions,name:project.project_embedded_action_project_milestones
@@ -4136,8 +4121,7 @@ msgstr ""
 #. odoo-javascript
 #. odoo-python
 #: code:addons/project/models/project_project.py:0
-#: code:addons/project/static/src/views/components/project_task_template_dropdown.xml:0
-#: code:addons/project/static/src/views/components/project_template_dropdown.xml:0
+#: code:addons/project/static/src/views/components/template_dropdown.xml:0
 #: code:addons/project/static/src/views/project_task_kanban/project_task_kanban_examples.js:0
 #: model:project.workflow.step,name:project.project_stage_0
 msgid "New"
@@ -4156,7 +4140,7 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/views/components/project_template_dropdown.xml:0
+#: code:addons/project/static/src/views/components/project_template_dropdown.js:0
 #: code:addons/project/static/src/views/project_project_calendar/project_project_calendar_controller.js:0
 msgid "New Project"
 msgstr ""
@@ -4175,7 +4159,7 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/views/components/project_task_template_dropdown.xml:0
+#: code:addons/project/static/src/views/components/project_task_template_dropdown.js:0
 #: code:addons/project/static/src/views/project_task_calendar/project_task_calendar_controller.js:0
 msgid "New Task"
 msgstr ""
@@ -4662,11 +4646,6 @@ msgid "Overdue"
 msgstr ""
 
 #. module: project
-#: model:ir.actions.act_window,name:project.action_view_task_overpassed_draft
-msgid "Overpassed Tasks"
-msgstr ""
-
-#. module: project
 #: model:ir.model.fields,field_description:project.field_project_retrospective_action__owner_id
 #: model_terms:ir.ui.view,arch_db:project.project_benefit_search
 #: model_terms:ir.ui.view,arch_db:project.project_retrospective_action_search
@@ -5085,7 +5064,6 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/components/project_right_side_panel/project_right_side_panel.js:0
 #: code:addons/project/static/src/components/project_right_side_panel/project_right_side_panel.xml:0
 msgid "Profitability"
 msgstr ""
@@ -5306,7 +5284,7 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/views/components/project_template_dropdown.xml:0
+#: code:addons/project/static/src/views/components/project_template_dropdown.js:0
 msgid "Project Templates"
 msgstr ""
 
@@ -5358,11 +5336,6 @@ msgstr ""
 #. module: project
 #: model:mail.template,subject:project.project_done_email_template
 msgid "Project status - {{ object.name }}"
-msgstr ""
-
-#. module: project
-#: model:ir.actions.act_window,name:project.dblc_proj
-msgid "Project's tasks"
 msgstr ""
 
 #. module: project
@@ -6802,7 +6775,7 @@ msgstr ""
 
 #. module: project
 #. odoo-javascript
-#: code:addons/project/static/src/views/components/project_task_template_dropdown.xml:0
+#: code:addons/project/static/src/views/components/project_task_template_dropdown.js:0
 #: model_terms:ir.ui.view,arch_db:project.view_task_template_search_form
 msgid "Task Templates"
 msgstr ""
@@ -6882,6 +6855,7 @@ msgstr ""
 #: model:ir.actions.act_window,name:project.act_project_project_2_project_task_all
 #: model:ir.actions.act_window,name:project.action_view_task
 #: model:ir.actions.act_window,name:project.action_view_task_from_milestone
+#: model:ir.actions.act_window,name:project.project_milestone_action_view_tasks
 #: model:ir.embedded.actions,name:project.project_embedded_action_all_tasks_dashboard
 #: model:ir.model.fields,field_description:project.field_project_project__task_ids
 #: model:ir.ui.menu,name:project.menu_project_management
@@ -6957,11 +6931,6 @@ msgstr ""
 msgid ""
 "Tasks still unfinished when this sprint closed, returned to the backlog. "
 "Counted in the sprint's commitment, not in its velocity."
-msgstr ""
-
-#. module: project
-#: model:ir.actions.act_window,name:project.project_milestone_action_view_tasks
-msgid "Tasks.test"
 msgstr ""
 
 #. module: project
@@ -8123,7 +8092,6 @@ msgstr ""
 
 #. module: project
 #: model:ir.actions.act_window,name:project.open_workflow_step_form
-#: model:ir.actions.act_window,name:project.open_workflow_step_form_domain
 #: model:ir.ui.menu,name:project.menu_project_config_project
 #: model_terms:ir.ui.view,arch_db:project.workflow_step_search
 msgid "Workflow Steps"

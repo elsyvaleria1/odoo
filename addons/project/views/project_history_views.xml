@@ -58,6 +58,9 @@
                         <group string="Project">
                             <field name="name" />
                             <field name="project_id" />
+                            <field
+                                name="company_id"
+                                groups="base.group_multi_company" />
                             <field name="date_start" />
                             <field name="date_completed" />
                             <field

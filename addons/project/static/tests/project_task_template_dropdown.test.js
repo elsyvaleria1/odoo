@@ -1,13 +1,17 @@
 import { beforeEach, expect, test } from "@odoo/hoot";
-import { animationFrame, hover } from "@odoo/hoot-dom";
+import { animationFrame, hover, queryAllTexts } from "@odoo/hoot-dom";
+import { Component, proxy, useProps, xml } from "@odoo/owl";
+import { ProjectTaskTemplateDropdown } from "@project/views/components/project_task_template_dropdown";
+import { ProjectTemplateDropdown } from "@project/views/components/project_template_dropdown";
 import {
     contains,
     mockService,
     mountView,
+    mountWithCleanup,
     onRpc,
 } from "@web/../tests/web_test_helpers";
 
-import { defineProjectModels, ProjectTask } from "./project_models.js";
+import { defineProjectModels, ProjectProject, ProjectTask } from "./project_models.js";
 
 defineProjectModels();
 
@@ -175,4 +179,95 @@ test("a user outside the project manager group gets the templates without edit a
     expect.verifySteps(["has_group:project.group_project_manager"], {
         message: "the group is asked once per dropdown, not once per template",
     });
+});
+
+test("the task template dropdown follows a projectId change", async () => {
+    addTemplateTasks();
+    ProjectTask._records.push({
+        id: 6,
+        name: "Template of project 2",
+        project_id: 2,
+        step_id: 1,
+        is_template: true,
+    });
+    onRpc("project.project", "get_template_tasks", ({ args }) => {
+        expect.step(`templates of ${args[0]}`);
+    });
+
+    class Parent extends Component {
+        static components = { ProjectTaskTemplateDropdown };
+        static props = null;
+        static template = xml`
+            <ProjectTaskTemplateDropdown
+                projectId="this.state.projectId"
+                newButtonClasses="'btn o_new'"
+                onCreate="() => {}"
+                context="{}"/>`;
+        props = useProps(this.constructor.props);
+
+        setup() {
+            this.state = proxy({ projectId: 1 });
+        }
+    }
+
+    const parent = await mountWithCleanup(Parent);
+    await contains(".o_new").click();
+    expect(queryAllTexts(".o-task-template")).toEqual([
+        "Template Task 1",
+        "Template Task 2",
+    ]);
+    await contains(".o_new").click();
+
+    parent.state.projectId = 2;
+    await animationFrame();
+    await contains(".o_new").click();
+    expect(queryAllTexts(".o-task-template")).toEqual(["Template of project 2"]);
+    await contains(".o_new").click();
+
+    parent.state.projectId = false;
+    await animationFrame();
+    expect(".o_new").not.toHaveClass("dropdown-toggle");
+    expect.verifySteps(["templates of 1", "templates of 2"]);
+});
+
+test("the project template dropdown creates from the chosen template with the merged context", async () => {
+    ProjectProject._records.push({
+        id: 10,
+        name: "Template Project",
+        is_template: true,
+    });
+    onRpc(
+        "wizard.project.project.create.from.template",
+        "action_view_template_view",
+        ({ kwargs }) => {
+            const { template_id, template_name, from_parent, extra } = kwargs.context;
+            expect.step({ template_id, template_name, from_parent, extra });
+            return { type: "ir.actions.act_window_close" };
+        },
+    );
+
+    class Parent extends Component {
+        static components = { ProjectTemplateDropdown };
+        static props = null;
+        static template = xml`
+            <ProjectTemplateDropdown
+                newButtonClasses="'btn o_new'"
+                onCreate="() => {}"
+                context="{ from_parent: 1 }"
+                getAdditionalContext="() => ({ extra: 2 })"/>`;
+        props = useProps(this.constructor.props);
+    }
+
+    await mountWithCleanup(Parent);
+    await contains(".o_new").click();
+    expect(queryAllTexts(".o-project-template")).toEqual(["Template Project"]);
+    await contains(".o-project-template").click();
+    expect.verifySteps([
+        {
+            template_id: 10,
+            template_name: "Template Project",
+            from_parent: 1,
+            extra: 2,
+        },
+    ]);
 });

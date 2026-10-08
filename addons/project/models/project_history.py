@@ -1,4 +1,7 @@
+from datetime import datetime, time
+
 from odoo import Command, api, fields, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
@@ -9,7 +12,7 @@ _debug = DebugLog(__name__)
 
 class ProjectHistory(models.Model):
     _name = "project.history"
-    _access_anchors = frozendict({"company": "project_id.company_id"})
+    _access_anchors = frozendict({"company": "company_id"})
     _description = "Project History"
     _order = "date_completed desc, id desc"
 
@@ -18,6 +21,15 @@ class ProjectHistory(models.Model):
         index=True,
         ondelete="set null",
         help="Link to the original project (may be archived or deleted).",
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        compute="_compute_company_id",
+        store=True,
+        index=True,
+        readonly=False,
+        help="Kept when the project is deleted, so the snapshot stays scoped to "
+        "its company.",
     )
     name = fields.Char(
         string="Project Name (snapshot)",
@@ -75,6 +87,12 @@ class ProjectHistory(models.Model):
         help="Percentage of tasks that met their deadlines.",
     )
 
+    @api.depends("project_id")
+    def _compute_company_id(self) -> None:
+        for history in self:
+            if history.project_id:
+                history.company_id = history.project_id.company_id
+
     @api.depends(
         "planned_duration_days",
         "actual_duration_days",
@@ -101,86 +119,99 @@ class ProjectHistory(models.Model):
     @_debug.perf.timed
     @api.model
     def create_from_project(self, project) -> ProjectHistory:
-        task_domain = [
-            ("project_id", "=", project.id),
-            ("is_template", "=", False),
-        ]
+        vals = self._prepare_history_vals(project)
+        today_start = datetime.combine(fields.Date.today(), time.min)
+        snapshot = self.search(
+            [("project_id", "=", project.id), ("create_date", ">=", today_start)],
+            limit=1,
+        )
+        _debug.logic(
+            "history_snapshot_written",
+            project=project.id,
+            mode="update" if snapshot else "create",
+            history=snapshot,
+        )
+        if snapshot:
+            snapshot.write(vals)
+            return snapshot
+        return self.create(vals)
+
+    @_debug.perf.timed
+    @api.model
+    def _prepare_history_vals(self, project) -> dict:
         Task = self.env["project.task"]
-        tasks = Task.search(task_domain)
+        domain = Domain("project_id", "=", project.id) & Domain(
+            "is_template", "=", False
+        )
+        delivered = domain & Domain("state", "in", DELIVERED_STATES)
+        has_hours = "effective_hours" in Task._fields
+        aggregates = ["__count", "planned_hours:sum"]
+        if has_hours:
+            aggregates.append("effective_hours:sum")
+        [totals] = Task._read_group(domain, aggregates=aggregates)
+        task_count, planned_hours, *effective = totals
+        actual_hours = effective[0] if has_hours else 0.0
+        team_size = sum(1 for [user] in Task._read_group(domain, ["user_ids"]) if user)
+        [[last_closed]] = Task._read_group(
+            domain & Domain("state", "in", list(CLOSED_STATES)),
+            aggregates=["date_closed:max"],
+        )
+        [[avg_lead_time]] = Task._read_group(
+            delivered & Domain("lead_time_hours", "!=", 0),
+            aggregates=["lead_time_hours:avg"],
+        )
+        [[avg_cycle_time]] = Task._read_group(
+            delivered & Domain("cycle_time_hours", "!=", 0),
+            aggregates=["cycle_time_hours:avg"],
+        )
+        deadline_counts = dict(
+            Task._read_group(
+                delivered & Domain("deadline_met", "!=", False),
+                ["deadline_met"],
+                ["__count"],
+            )
+        )
+        deadline_judged = sum(deadline_counts.values())
+        deadline_pct = (
+            deadline_counts.get("met", 0) / deadline_judged * 100
+            if deadline_judged
+            else 0.0
+        )
 
-        assignees = set()
-        for task in tasks:
-            assignees.update(task.user_ids.ids)
-
+        completion_date = last_closed.date() if last_closed else fields.Date.today()
         planned_days = 0
         if project.date_start and project.date:
             planned_days = (project.date - project.date_start).days
-
-        closed_tasks = tasks.filtered(lambda t: t.state in CLOSED_STATES)
-        closed_dates = closed_tasks.filtered("date_closed").mapped("date_closed")
-        completion_date = (
-            max(closed_dates).date() if closed_dates else fields.Date.today()
-        )
-
         actual_days = 0
         if project.date_start:
             actual_days = (completion_date - project.date_start).days
 
-        planned_hours = sum(tasks.mapped("planned_hours"))
-
-        actual_hours = 0.0
-        if "effective_hours" in Task._fields:
-            actual_hours = sum(tasks.mapped("effective_hours"))
-        delivered_tasks = tasks.filtered(lambda t: t.state in DELIVERED_STATES)
-        avg_lt = 0.0
-        avg_ct = 0.0
-        if delivered_tasks:
-            lt_values = [
-                t.lead_time_hours for t in delivered_tasks if t.lead_time_hours
-            ]
-            avg_lt = sum(lt_values) / len(lt_values) if lt_values else 0.0
-            ct_values = [
-                t.cycle_time_hours for t in delivered_tasks if t.cycle_time_hours
-            ]
-            avg_ct = sum(ct_values) / len(ct_values) if ct_values else 0.0
-
-        dl_tasks = delivered_tasks.filtered("date_end")
-        dl_pct = 0.0
-        if dl_tasks:
-            met = dl_tasks.filtered(
-                lambda t: t.date_closed and t.date_closed <= t.date_end
-            )
-            dl_pct = len(met) / len(dl_tasks) * 100
-
         _debug.logic(
             "history_measured",
             project=project.id,
-            tasks=len(tasks),
-            closed=len(closed_tasks),
-            delivered=len(delivered_tasks),
+            tasks=task_count,
             planned_days=planned_days,
             actual_days=actual_days,
             planned_hours=planned_hours,
             actual_hours=actual_hours,
-            lead_time=avg_lt,
-            cycle_time=avg_ct,
-            deadline_pct=dl_pct,
+            lead_time=avg_lead_time,
+            cycle_time=avg_cycle_time,
+            deadline_pct=deadline_pct,
         )
-        return self.create(
-            {
-                "project_id": project.id,
-                "name": project.name,
-                "date_completed": completion_date,
-                "date_start": project.date_start,
-                "planned_duration_days": planned_days,
-                "actual_duration_days": actual_days,
-                "planned_hours": planned_hours,
-                "actual_hours": actual_hours,
-                "task_count": len(tasks),
-                "team_size": len(assignees),
-                "tag_ids": [Command.set(project.tag_ids.ids)],
-                "avg_lead_time": avg_lt,
-                "avg_cycle_time": avg_ct,
-                "deadline_compliance_pct": dl_pct,
-            }
-        )
+        return {
+            "project_id": project.id,
+            "company_id": project.company_id.id,
+            "name": project.name,
+            "date_completed": completion_date,
+            "date_start": project.date_start,
+            "planned_duration_days": planned_days,
+            "actual_duration_days": actual_days,
+            "planned_hours": planned_hours,
+            "actual_hours": actual_hours,
+            "task_count": task_count,
+            "team_size": team_size,
+            "tag_ids": [Command.set(project.tag_ids.ids)],
+            "avg_lead_time": avg_lead_time or 0.0,
+            "avg_cycle_time": avg_cycle_time or 0.0,
+            "deadline_compliance_pct": deadline_pct,
+        }

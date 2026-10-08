@@ -25,6 +25,132 @@ _debug = DebugLog(__name__)
 _lt = LazyTranslate(__name__)
 
 
+CpmPredecessors = dict[int, list[tuple[int, str, float]]]
+CpmSuccessors = dict[int, list[int]]
+LevellingSlot = tuple[datetime, datetime, float, int]
+
+
+def get_cpm_topological_order(
+    task_ids: Collection[int],
+    deps_on: CpmPredecessors,
+    successors_of: CpmSuccessors,
+) -> list[int]:
+    indegree = {tid: len(deps_on.get(tid, ())) for tid in task_ids}
+    ready = deque(sorted(tid for tid in task_ids if not indegree[tid]))
+    order: list[int] = []
+    while ready:
+        tid = ready.popleft()
+        order.append(tid)
+        for succ_id in successors_of.get(tid, ()):
+            indegree[succ_id] -= 1
+            if not indegree[succ_id]:
+                ready.append(succ_id)
+    return order
+
+
+def get_cpm_earliest_start_and_finish(
+    order: list[int],
+    deps_on: CpmPredecessors,
+    duration: dict[int, float],
+    release: dict[int, float] | None = None,
+) -> tuple[dict[int, float], dict[int, float]]:
+    release = release or {}
+    es: dict[int, float] = {}
+    ef: dict[int, float] = {}
+    for tid in order:
+        start = release.get(tid, 0.0)
+        finish_constraint = None
+        for pred_id, dtype, lag in deps_on.get(tid, ()):
+            if dtype == "fs":
+                start = max(start, ef[pred_id] + lag)
+            elif dtype == "ss":
+                start = max(start, es[pred_id] + lag)
+            elif dtype == "ff":
+                finish_constraint = max(finish_constraint or 0.0, ef[pred_id] + lag)
+            elif dtype == "sf":
+                finish_constraint = max(finish_constraint or 0.0, es[pred_id] + lag)
+        if finish_constraint is not None:
+            start = max(start, finish_constraint - duration[tid])
+        es[tid] = start
+        ef[tid] = start + duration[tid]
+    return es, ef
+
+
+def get_cpm_latest_start(
+    order: list[int],
+    deps_on: CpmPredecessors,
+    successors_of: CpmSuccessors,
+    duration: dict[int, float],
+    project_end: float,
+) -> dict[int, float]:
+    lf: dict[int, float] = {}
+    ls: dict[int, float] = {}
+    for tid in reversed(order):
+        lf[tid] = project_end
+        for succ_id in successors_of.get(tid, ()):
+            for pred_id, dtype, lag in deps_on[succ_id]:
+                if pred_id != tid:
+                    continue
+                if dtype == "fs":
+                    lf[tid] = min(lf[tid], ls[succ_id] - lag)
+                elif dtype == "ss":
+                    lf[tid] = min(lf[tid], ls[succ_id] - lag + duration[tid])
+                elif dtype == "ff":
+                    lf[tid] = min(lf[tid], lf[succ_id] - lag)
+                elif dtype == "sf":
+                    lf[tid] = min(lf[tid], lf[succ_id] - lag + duration[tid])
+        ls[tid] = lf[tid] - duration[tid]
+    return ls
+
+
+def solve_cpm(
+    task_ids: Collection[int],
+    deps_on: CpmPredecessors,
+    successors_of: CpmSuccessors,
+    duration: dict[int, float],
+    release: dict[int, float] | None = None,
+) -> tuple[dict[int, float], dict[int, float], dict[int, float]] | None:
+    order = get_cpm_topological_order(task_ids, deps_on, successors_of)
+    if len(order) != len(task_ids):
+        return None
+    es, ef = get_cpm_earliest_start_and_finish(order, deps_on, duration, release)
+    project_end = max(ef.values(), default=0.0)
+    ls = get_cpm_latest_start(order, deps_on, successors_of, duration, project_end)
+    return es, ef, ls
+
+
+def get_levelling_spread(slot: LevellingSlot, day_capacity: dict) -> dict:
+    start, stop, hours, _task_id = slot
+    days = {
+        day: capacity
+        for day, capacity in day_capacity.items()
+        if start.date() <= day <= last_day_of(start, stop) and capacity
+    }
+    total = sum(days.values())
+    if not total:
+        return {}
+    return {day: hours * capacity / total for day, capacity in days.items()}
+
+
+def is_levelling_overloaded(
+    slot: LevellingSlot, overlapping: list[LevellingSlot], day_capacity: dict
+) -> bool:
+    start, stop = slot[0], slot[1]
+    load_by_day: dict = defaultdict(float)
+    for other in (*overlapping, slot):
+        for day, hours in get_levelling_spread(other, day_capacity).items():
+            load_by_day[day] += hours
+    last_day = last_day_of(start, stop)
+    return any(
+        start.date() <= day <= last_day
+        and float_utils.float_compare(
+            hours, day_capacity.get(day, 0.0), precision_digits=2
+        )
+        > 0
+        for day, hours in load_by_day.items()
+    )
+
+
 class ProjectProject(models.Model):
     _name = "project.project"
     _description = "Project"
@@ -67,8 +193,16 @@ class ProjectProject(models.Model):
                 counts.get(project.id, (0, 0, 0))
             )
 
-    def _default_phase_id(self) -> int | bool:
-        return self.env["project.phase"].search([], limit=1)
+    @api.model
+    def _get_default_phase(self, company: Any) -> Any:
+        return self.env["project.phase"].search(
+            [("company_id", "in", [*company.ids, False])], limit=1
+        )
+
+    def _default_phase_id(self) -> Any:
+        return self._get_default_phase(
+            self.env["res.company"].browse(self.env.context.get("default_company_id"))
+        )
 
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -118,9 +252,12 @@ class ProjectProject(models.Model):
 
     phase_id = fields.Many2one(
         comodel_name="project.phase",
+        compute="_compute_phase_id",
         default=lambda self: self._default_phase_id(),
+        store=True,
         index=True,
         copy=False,
+        readonly=False,
         group_expand="_read_group_expand_full",
         ondelete="restrict",
         tracking=True,
@@ -272,6 +409,21 @@ class ProjectProject(models.Model):
         string="Tasks",
     )
     task_properties_definition = fields.PropertiesDefinition(string="Task Properties")
+    archived_with_project_task_ids = fields.Many2many(
+        comodel_name="project.task",
+        relation="project_project_archived_task_rel",
+        column1="project_id",
+        column2="task_id",
+        string="Tasks Archived with the Project",
+        export_string_translation=False,
+        copy=False,
+        readonly=True,
+    )
+    archived_tasks_recorded = fields.Boolean(
+        export_string_translation=False,
+        copy=False,
+        readonly=True,
+    )
     task_count = fields.Integer(
         export_string_translation=False,
         compute="_compute_task_counts",
@@ -308,9 +460,9 @@ class ProjectProject(models.Model):
         inverse_name="project_id",
         export_string_translation=False,
     )
-    update_count = fields.Integer(
+    update_count = fields.Count(
+        count_of="update_ids",
         export_string_translation=False,
-        compute="_compute_update_count",
     )
     last_update_id = fields.Many2one(
         comodel_name="project.update",
@@ -344,9 +496,9 @@ class ProjectProject(models.Model):
         export_string_translation=False,
         copy=True,
     )
-    milestone_count = fields.Integer(
+    milestone_count = fields.Count(
+        count_of="milestone_ids",
         export_string_translation=False,
-        compute="_compute_milestone_count",
         groups="project.group_project_milestone",
     )
     milestone_count_reached = fields.Integer(
@@ -447,9 +599,9 @@ class ProjectProject(models.Model):
         string="Retrospectives",
         export_string_translation=False,
     )
-    retrospective_count = fields.Integer(
+    retrospective_count = fields.Count(
+        count_of="retrospective_ids",
         export_string_translation=False,
-        compute="_compute_retrospective_count",
     )
 
     health_score = fields.Integer(
@@ -544,80 +696,65 @@ class ProjectProject(models.Model):
         "The project's start date must be before its end date.",
     )
 
-    @api.onchange("company_id")
-    def _onchange_company_id(self) -> None:
-        if (
-            self.env.user.has_group("project.group_project_stages")
-            and self.phase_id.company_id
-            and self.phase_id.company_id != self.company_id
-        ):
-            self.phase_id = (
-                self.env["project.phase"]
-                .search(
-                    [("company_id", "in", [self.company_id.id, False])],
-                    order=f"sequence asc, {self.env['project.phase']._order}",
-                    limit=1,
+    @api.depends("company_id")
+    def _compute_phase_id(self) -> None:
+        # a compute, not a write: the phase follows the company whoever moves
+        # the project, though the field is hidden to users without stages
+        for project in self:
+            if (
+                project.phase_id.company_id
+                and project.phase_id.company_id != project.company_id
+            ):
+                project.phase_id = self._get_default_phase(project.company_id)
+                _debug.logic(
+                    "phase_follows_company",
+                    project=project.id,
+                    company=project.company_id.id,
+                    phase=project.phase_id.id,
                 )
-                .id
-            )
 
     @api.depends(
-        "milestone_ids", "milestone_ids.is_reached", "milestone_ids.date_deadline"
+        "milestone_ids",
+        "milestone_ids.sequence",
+        "milestone_ids.name",
+        "milestone_ids.is_reached",
+        "milestone_ids.date_deadline",
     )
     def _compute_next_milestone_indicators(self) -> None:
-        milestones_per_project_id = {
-            project.id: milestones
-            for project, milestones in self.env["project.milestone"]._read_group(
-                [("project_id", "in", self.ids), ("is_reached", "=", False)],
-                ["project_id"],
-                ["id:recordset"],
-            )
-        }
-        milestones = self.env["project.milestone"].concat(
-            *milestones_per_project_id.values()
+        next_milestone_per_project_id = {}
+        for milestone in self.env["project.milestone"].search(
+            [("project_id", "in", self.ids), ("is_reached", "=", False)]
+        ):
+            next_milestone_per_project_id.setdefault(milestone.project_id.id, milestone)
+        next_milestones = self.env["project.milestone"].concat(
+            *next_milestone_per_project_id.values()
         )
-        task_read_group = self.env["project.task"]._read_group(
-            [("milestone_id", "in", milestones.ids)],
+        task_counts = defaultdict(lambda: [0, 0])
+        for milestone, state, count in self.env["project.task"]._read_group(
+            [("milestone_id", "in", next_milestones.ids)],
             ["milestone_id", "state"],
             ["__count"],
-        )
-        task_count_per_milestones = defaultdict(lambda: (0, 0))
-        for milestone, state, count in task_read_group:
-            opened_task_count, closed_task_count = task_count_per_milestones[
-                milestone.id
-            ]
-            if state in CLOSED_STATES:
-                closed_task_count += count
-            else:
-                opened_task_count += count
-            task_count_per_milestones[milestone.id] = (
-                opened_task_count,
-                closed_task_count,
-            )
+        ):
+            task_counts[milestone.id][state in CLOSED_STATES] += count
         for project in self:
-            milestones = milestones_per_project_id.get(
+            milestone = next_milestone_per_project_id.get(
                 project.id, self.env["project.milestone"]
             )
-            project.next_milestone_id = milestones[:1]
-            milestone_deadline_exceeded = False
-            milestone_marked_as_done = False
-            for m in milestones:
-                opened_task_count, closed_task_count = task_count_per_milestones[m.id]
-                if (
-                    not milestone_deadline_exceeded
-                    and m.is_deadline_exceeded
-                    and (opened_task_count > 0 or closed_task_count == 0)
-                ):
-                    milestone_deadline_exceeded = True
-                    break
-                if (
-                    not milestone_marked_as_done
-                    and opened_task_count == 0
-                    and closed_task_count > 0
-                ):
-                    milestone_marked_as_done = True
-            project.is_milestone_deadline_exceeded = milestone_deadline_exceeded
-            project.can_mark_milestone_as_done = milestone_marked_as_done
+            open_count, closed_count = task_counts[milestone.id]
+            project.next_milestone_id = milestone
+            project.is_milestone_deadline_exceeded = bool(
+                milestone.is_deadline_exceeded and (open_count or not closed_count)
+            )
+            project.can_mark_milestone_as_done = bool(
+                milestone and not open_count and closed_count
+            )
+            _debug.logic(
+                "next_milestone_computed",
+                project=project.id,
+                milestone=milestone.id,
+                open_tasks=open_count,
+                closed_tasks=closed_count,
+            )
 
     @api.depends("sprint_ids", "sprint_ids.state")
     def _compute_active_sprint_id(self) -> None:
@@ -638,55 +775,22 @@ class ProjectProject(models.Model):
         _debug.lifecycle("archived_to_history", project=self.id)
         self.env["project.history"].create_from_project(self)
 
-    @_debug.perf.timed
-    def action_compute_critical_path(self) -> None:
+    def _get_cpm_tasks(self) -> Any:
         self.check_singleton()
-        tasks = self.env["project.task"].search(
+        return self.env["project.task"].search(
             [
                 ("project_id", "=", self.id),
                 ("is_template", "=", False),
                 ("state", "not in", list(CLOSED_STATES)),
             ]
         )
-        _debug.pipeline("critical_path_started", project=self.id, open_tasks=len(tasks))
-        if not tasks:
-            return
 
+    def _get_cpm_network(
+        self, tasks: Any
+    ) -> tuple[CpmPredecessors, CpmSuccessors, dict[int, float]]:
         task_set = set(tasks.ids)
-        deps_on, successors_of = self._get_cpm_predecessors_and_successors(
-            tasks, task_set
-        )
-        duration = {t.id: t._get_cpm_duration_hours() for t in tasks}
-        if _debug.pipeline.enabled:
-            _debug.pipeline(
-                "critical_path_graph",
-                project=self.id,
-                edges=sum(len(preds) for preds in deps_on.values()),
-                duration_hours=sum(duration.values()),
-            )
-        self._check_no_cyclic_dependencies(task_set, deps_on)
-        topo = self._get_cpm_topological_order(task_set, deps_on, successors_of)
-        es, ef = self._get_cpm_earliest_start_and_finish(topo, deps_on, duration)
-        project_end = max(ef.values()) if ef else 0.0
-        ls_map = self._get_cpm_latest_start(
-            topo, deps_on, successors_of, duration, project_end
-        )
-        if _debug.logic.enabled:
-            _debug.logic(
-                "critical_path_computed",
-                project=self.id,
-                end_hours=project_end,
-                critical=tasks.browse(
-                    [tid for tid in topo if abs(ls_map[tid] - es[tid]) < 0.01]
-                ),
-            )
-        self._update_cpm_schedule(tasks, es, ef, ls_map)
-
-    def _get_cpm_predecessors_and_successors(
-        self, tasks: Any, task_set: set[int]
-    ) -> tuple[dict[int, list[tuple[int, str, float]]], dict[int, list[int]]]:
-        deps_on: dict[int, list[tuple[int, str, float]]] = defaultdict(list)
-        successors_of: dict[int, list[int]] = defaultdict(list)
+        deps_on: CpmPredecessors = defaultdict(list)
+        successors_of: CpmSuccessors = defaultdict(list)
         seen_edges: set[tuple[int, int]] = set()
 
         def add_edge(tid, pred_id, dtype, lag) -> None:
@@ -710,117 +814,60 @@ class ProjectProject(models.Model):
         for task in tasks:
             for pred in task.predecessor_ids:
                 add_edge(task.id, pred.id, "fs", 0.0)
-        return deps_on, successors_of
+        duration = {task.id: task._get_cpm_duration_hours() for task in tasks}
+        if _debug.pipeline.enabled:
+            _debug.pipeline(
+                "critical_path_graph",
+                project=self.id,
+                edges=len(seen_edges),
+                duration_hours=sum(duration.values()),
+            )
+        return deps_on, successors_of, duration
 
-    def _check_no_cyclic_dependencies(
-        self, task_set: set[int], deps_on: dict[int, list[tuple[int, str, float]]]
-    ) -> None:
-        _UNVISITED, _IN_STACK, _DONE = 0, 1, 2
-        color = dict.fromkeys(task_set, _UNVISITED)
-        for root in task_set:
-            if color[root] != _UNVISITED:
-                continue
-            dfs_stack: list[tuple[int, int]] = [(root, 0)]
-            while dfs_stack:
-                node, idx = dfs_stack[-1]
-                color[node] = _IN_STACK
-                preds = deps_on[node]
-                if idx < len(preds):
-                    dfs_stack[-1] = (node, idx + 1)
-                    pred_id = preds[idx][0]
-                    if color.get(pred_id) == _IN_STACK:
-                        raise UserError(
-                            self.env._(
-                                "A dependency cycle was detected among the tasks "
-                                "of project %(project)s. Resolve the circular "
-                                "dependency before computing the critical path.",
-                                project=self.display_name,
-                            )
-                        )
-                    if color.get(pred_id, _UNVISITED) == _UNVISITED:
-                        dfs_stack.append((pred_id, 0))
-                else:
-                    color[node] = _DONE
-                    dfs_stack.pop()
-
-    def _get_cpm_topological_order(
+    def _solve_cpm(
         self,
-        task_set: set[int],
-        deps_on: dict[int, list[tuple[int, str, float]]],
-        successors_of: dict[int, list[int]],
-    ) -> list[int]:
-        indegree = {tid: len(deps_on[tid]) for tid in task_set}
-        ready = deque(sorted(tid for tid in task_set if indegree[tid] == 0))
-        topo: list[int] = []
-        while ready:
-            tid = ready.popleft()
-            topo.append(tid)
-            for succ_id in successors_of[tid]:
-                indegree[succ_id] -= 1
-                if indegree[succ_id] == 0:
-                    ready.append(succ_id)
-        return topo
-
-    def _get_cpm_earliest_start_and_finish(
-        self,
-        topo: list[int],
-        deps_on: dict[int, list[tuple[int, str, float]]],
+        tasks: Any,
+        deps_on: CpmPredecessors,
+        successors_of: CpmSuccessors,
         duration: dict[int, float],
-    ) -> tuple[dict[int, float], dict[int, float]]:
-        es: dict[int, float] = {}
-        ef: dict[int, float] = {}
-        for tid in topo:
-            preds = deps_on[tid]
-            if not preds:
-                es[tid] = 0.0
-                ef[tid] = duration[tid]
-                continue
-            max_es = 0.0
-            max_ef_constraint = 0.0
-            has_ef_constraint = False
-            for pred_id, dtype, lag in preds:
-                if dtype == "fs":
-                    max_es = max(max_es, ef[pred_id] + lag)
-                elif dtype == "ss":
-                    max_es = max(max_es, es[pred_id] + lag)
-                elif dtype == "ff":
-                    max_ef_constraint = max(max_ef_constraint, ef[pred_id] + lag)
-                    has_ef_constraint = True
-                elif dtype == "sf":
-                    max_ef_constraint = max(max_ef_constraint, es[pred_id] + lag)
-                    has_ef_constraint = True
-            if has_ef_constraint:
-                max_es = max(max_es, max_ef_constraint - duration[tid])
-            es[tid] = max_es
-            ef[tid] = es[tid] + duration[tid]
-        return es, ef
+        release: dict[int, float] | None = None,
+    ) -> tuple[dict[int, float], dict[int, float], dict[int, float]]:
+        solved = solve_cpm(set(tasks.ids), deps_on, successors_of, duration, release)
+        if solved is None:
+            raise UserError(
+                self.env._(
+                    "A dependency cycle was detected among the tasks "
+                    "of project %(project)s. Resolve the circular "
+                    "dependency before computing the critical path.",
+                    project=self.display_name,
+                )
+            )
+        return solved
 
-    def _get_cpm_latest_start(
-        self,
-        topo: list[int],
-        deps_on: dict[int, list[tuple[int, str, float]]],
-        successors_of: dict[int, list[int]],
-        duration: dict[int, float],
-        project_end: float,
-    ) -> dict[int, float]:
-        lf: dict[int, float] = {}
-        ls_map: dict[int, float] = {}
-        for tid in reversed(topo):
-            lf[tid] = project_end
-            for succ_id in successors_of[tid]:
-                for pred_id, dtype, lag in deps_on[succ_id]:
-                    if pred_id != tid:
-                        continue
-                    if dtype == "fs":
-                        lf[tid] = min(lf[tid], ls_map[succ_id] - lag)
-                    elif dtype == "ss":
-                        lf[tid] = min(lf[tid], ls_map[succ_id] - lag + duration[tid])
-                    elif dtype == "ff":
-                        lf[tid] = min(lf[tid], lf[succ_id] - lag)
-                    elif dtype == "sf":
-                        lf[tid] = min(lf[tid], lf[succ_id] - lag + duration[tid])
-            ls_map[tid] = lf[tid] - duration[tid]
-        return ls_map
+    def _get_cpm_datetime(self, hours: float, now: datetime) -> datetime:
+        if not hours:
+            return now
+        if calendar := self.resource_calendar_id:
+            return calendar.plan_hours(hours, now)
+        return now + timedelta(hours=hours)
+
+    @_debug.perf.timed
+    def action_compute_critical_path(self) -> None:
+        tasks = self._get_cpm_tasks()
+        _debug.pipeline("critical_path_started", project=self.id, open_tasks=len(tasks))
+        if not tasks:
+            return
+        es, ef, ls = self._solve_cpm(tasks, *self._get_cpm_network(tasks))
+        if _debug.logic.enabled:
+            _debug.logic(
+                "critical_path_computed",
+                project=self.id,
+                end_hours=max(ef.values(), default=0.0),
+                critical=tasks.browse(
+                    [tid for tid in es if abs(ls[tid] - es[tid]) < 0.01]
+                ),
+            )
+        self._update_cpm_schedule(tasks, es, ef, ls, fields.Datetime.now())
 
     def _update_cpm_schedule(
         self,
@@ -828,17 +875,8 @@ class ProjectProject(models.Model):
         es: dict[int, float],
         ef: dict[int, float],
         ls_map: dict[int, float],
+        now: datetime,
     ) -> None:
-        calendar = self.resource_calendar_id
-        now = fields.Datetime.now()
-
-        def hours_to_datetime(hours):
-            if not hours:
-                return now
-            if calendar:
-                return calendar.plan_hours(hours, now)
-            return now + timedelta(hours=hours)
-
         tasks_by_vals = defaultdict(lambda: self.env["project.task"])
         vals_by_key = {}
         for task in tasks:
@@ -846,14 +884,14 @@ class ProjectProject(models.Model):
             es_h = es.get(tid, 0.0)
             ls_h = ls_map.get(tid, 0.0)
             total_fl = ls_h - es_h
-            cpm_start = hours_to_datetime(es_h)
+            cpm_start = self._get_cpm_datetime(es_h, now)
             vals = {
                 "cpm_date_earliest_start": cpm_start,
-                "cpm_date_latest_start": hours_to_datetime(ls_h),
+                "cpm_date_latest_start": self._get_cpm_datetime(ls_h, now),
                 "total_float": total_fl,
                 "is_critical_path": abs(total_fl) < 0.01,
                 "cpm_date_start": cpm_start,
-                "cpm_date_end": hours_to_datetime(ef.get(tid, 0.0)),
+                "cpm_date_end": self._get_cpm_datetime(ef.get(tid, 0.0), now),
             }
             key = repr(sorted(vals.items()))
             tasks_by_vals[key] |= task
@@ -878,41 +916,39 @@ class ProjectProject(models.Model):
         )[False]
         return calendar._get_hours_by_day(intervals)
 
-    @staticmethod
-    def _get_levelling_spread(slot: tuple, day_capacity: dict) -> dict:
-        start, stop, hours, _task_id = slot
-        days = {
-            day: capacity
-            for day, capacity in day_capacity.items()
-            if start.date() <= day <= last_day_of(start, stop) and capacity
-        }
-        total = sum(days.values())
-        if not total:
-            return {}
-        return {day: hours * capacity / total for day, capacity in days.items()}
-
     @_debug.perf.timed
     def action_level_resources(self) -> None:
-        self.check_singleton()
-        _debug.pipeline("level_resources_critical_path_requested", project=self.id)
-        self.action_compute_critical_path()
-
-        calendar = self.resource_calendar_id
-        tasks = self.env["project.task"].search(
-            [
-                ("project_id", "=", self.id),
-                ("is_template", "=", False),
-                ("state", "not in", list(CLOSED_STATES)),
-                ("cpm_date_start", "!=", False),
-                ("cpm_date_end", "!=", False),
-            ]
+        tasks = self._get_cpm_tasks()
+        _debug.pipeline(
+            "level_resources_started", project=self.id, open_tasks=len(tasks)
         )
         if not tasks:
             return
+        deps_on, successors_of, duration = self._get_cpm_network(tasks)
+        es, ef, ls = self._solve_cpm(tasks, deps_on, successors_of, duration)
+        now = fields.Datetime.now()
+        calendar = self.resource_calendar_id
+        task_by_id = {task.id: task for task in tasks}
+        dates = {
+            tid: (
+                self._get_cpm_datetime(es[tid], now),
+                self._get_cpm_datetime(ef[tid], now),
+            )
+            for tid in es
+        }
+        load = {
+            task.id: (task.allocated_hours or task.planned_hours or 0.0)
+            / max(len(task.user_ids), 1)
+            for task in tasks
+        }
+        user_slots: dict[int, dict[int, LevellingSlot]] = defaultdict(dict)
+        for task in tasks:
+            for user in task.user_ids:
+                user_slots[user.id][task.id] = (*dates[task.id], load[task.id], task.id)
 
         leveling_order = sorted(
-            tasks.filtered(lambda t: not t.is_critical_path),
-            key=lambda t: -(t.total_float or 0.0),
+            (task for task in tasks if ls[task.id] - es[task.id] >= 0.01),
+            key=lambda task: es[task.id] - ls[task.id],
         )
         _debug.logic(
             "level_resources_candidates",
@@ -921,25 +957,8 @@ class ProjectProject(models.Model):
             to_level=len(leveling_order),
         )
 
-        def get_load_per_assignee(task) -> float:
-            hours = task.allocated_hours or task.planned_hours or 0.0
-            return hours / max(len(task.user_ids), 1)
-
-        user_slots: dict[int, list[tuple]] = defaultdict(list)
-        for task in tasks:
-            share = get_load_per_assignee(task)
-            for user in task.user_ids:
-                user_slots[user.id].append(
-                    (
-                        task.cpm_date_start,
-                        task.cpm_date_end,
-                        share,
-                        task.id,
-                    )
-                )
-
-        window_start = min(tasks.mapped("cpm_date_start"))
-        window_end = max(tasks.mapped("cpm_date_end"))
+        window_start = min(start for start, _stop in dates.values())
+        window_end = max(stop for _start, stop in dates.values())
         day_capacity_per_calendar: dict = {}
 
         def get_day_capacity(user):
@@ -952,98 +971,67 @@ class ProjectProject(models.Model):
                 )
             return day_capacity_per_calendar[user_calendar.id]
 
+        release: dict[int, float] = {}
         for task in leveling_order:
-            task_share = get_load_per_assignee(task)
-            if not task.user_ids or not task_share:
+            tid = task.id
+            if not task.user_ids or not load[tid]:
                 continue
+            start, stop = dates[tid]
+            slot = (start, stop, load[tid], tid)
+            blocking_end = None
             for user in task.user_ids:
-                slots = user_slots[user.id]
                 overlapping = [
-                    s
-                    for s in slots
-                    if s[3] != task.id
-                    and s[0] < task.cpm_date_end
-                    and s[1] > task.cpm_date_start
+                    other
+                    for other in user_slots[user.id].values()
+                    if other[3] != tid and other[0] < stop and other[1] > start
                 ]
-                if not overlapping:
-                    continue
-                capacity_by_day = get_day_capacity(user)
-                load_by_day: dict = defaultdict(float)
-                for slot in [
-                    *overlapping,
-                    (task.cpm_date_start, task.cpm_date_end, task_share, task.id),
-                ]:
-                    for day, hours in self._get_levelling_spread(
-                        slot, capacity_by_day
-                    ).items():
-                        load_by_day[day] += hours
-                candidate_days = [
-                    day
-                    for day in load_by_day
-                    if task.cpm_date_start.date()
-                    <= day
-                    <= last_day_of(task.cpm_date_start, task.cpm_date_end)
-                ]
-                if not any(
-                    float_utils.float_compare(
-                        load_by_day[day],
-                        capacity_by_day.get(day, 0.0),
-                        precision_digits=2,
-                    )
-                    > 0
-                    for day in candidate_days
+                if overlapping and is_levelling_overloaded(
+                    slot, overlapping, get_day_capacity(user)
                 ):
-                    continue
-                latest_end = max(
-                    (s[1] for s in overlapping), default=task.cpm_date_start
+                    user_end = max(other[1] for other in overlapping)
+                    blocking_end = max(blocking_end or user_end, user_end)
+            if blocking_end is None:
+                continue
+            new_start = (
+                calendar.plan_hours(0.0, blocking_end) if calendar else blocking_end
+            )
+            shift_hours = (
+                calendar.get_work_duration_data(start, new_start, compute_leaves=True)[
+                    "hours"
+                ]
+                if calendar and new_start > start
+                else (new_start - start).total_seconds() / 3600
+            )
+            float_hours = ls[tid] - es[tid]
+            shifted = 0 < shift_hours <= float_hours
+            _debug.logic(
+                "level_resources_overload",
+                task=task,
+                users=task.user_ids.ids,
+                shift_hours=shift_hours,
+                float_hours=float_hours,
+                action="shift" if shifted else "keep",
+            )
+            if not shifted:
+                continue
+            release[tid] = es[tid] + shift_hours
+            previous_es = es
+            es, ef, ls = self._solve_cpm(
+                tasks, deps_on, successors_of, duration, release
+            )
+            for moved_id in [t for t in es if es[t] != previous_es[t]]:
+                dates[moved_id] = (
+                    self._get_cpm_datetime(es[moved_id], now),
+                    self._get_cpm_datetime(ef[moved_id], now),
                 )
-                max_shift_hours = task.total_float or 0.0
-                if not latest_end:
-                    continue
-                new_start = (
-                    calendar.plan_hours(0.0, latest_end) if calendar else latest_end
-                )
-                shift_hours = (
-                    calendar.get_work_duration_data(
-                        task.cpm_date_start, new_start, compute_leaves=True
-                    )["hours"]
-                    if calendar and new_start > task.cpm_date_start
-                    else (new_start - task.cpm_date_start).total_seconds() / 3600
-                )
-                _debug.logic(
-                    "level_resources_overload",
-                    task=task,
-                    user=user.id,
-                    shift_hours=shift_hours,
-                    float_hours=max_shift_hours,
-                    action="shift" if 0 < shift_hours <= max_shift_hours else "keep",
-                )
-                if 0 < shift_hours <= max_shift_hours:
-                    new_end = (
-                        calendar.plan_hours(task._get_cpm_duration_hours(), new_start)
-                        if calendar
-                        else new_start + (task.cpm_date_end - task.cpm_date_start)
+                for user in task_by_id[moved_id].user_ids:
+                    user_slots[user.id][moved_id] = (
+                        *dates[moved_id],
+                        load[moved_id],
+                        moved_id,
                     )
-                    user_slots[user.id] = [s for s in slots if s[3] != task.id] + [
-                        (new_start, new_end, task_share, task.id)
-                    ]
-                    task.write(
-                        {
-                            "cpm_date_start": new_start,
-                            "cpm_date_end": new_end,
-                        }
-                    )
-
-    @api.depends("retrospective_ids")
-    def _compute_retrospective_count(self) -> None:
-        retro_data = self.env["project.retrospective"]._read_group(
-            [("project_id", "in", self.ids)],
-            ["project_id"],
-            ["__count"],
-        )
-        counts = {project.id: count for project, count in retro_data}
-        for project in self:
-            project.retrospective_count = counts.get(project.id, 0)
+        _debug.pipeline("level_resources_done", project=self.id, shifted=len(release))
+        self._update_cpm_schedule(tasks, es, ef, ls, now)
 
     @_debug.perf.timed
     def _compute_health_indicators(self) -> None:
@@ -1069,7 +1057,9 @@ class ProjectProject(models.Model):
         self.env["project.milestone"].flush_model(
             ["project_id", "is_reached", "date_deadline"]
         )
-        self.env["project.risk"].flush_model(["project_id", "risk_score", "active"])
+        self.env["project.risk"].flush_model(
+            ["project_id", "risk_score", "active", "state"]
+        )
 
         self.env.cr.execute(
             SQL(
@@ -1117,47 +1107,43 @@ class ProjectProject(models.Model):
         )
         task_scores = {row[0]: (row[1], row[2]) for row in self.env.cr.fetchall()}
 
-        milestone_scores: dict[int, float] = {}
-        if self.ids:
-            self.env.cr.execute(
-                SQL(
-                    """
-                SELECT
-                    project_id,
-                    CASE
-                        WHEN COUNT(*) = 0 THEN 100.0
-                        ELSE 100.0 * COUNT(*) FILTER (
-                            WHERE is_reached
-                               OR date_deadline IS NULL
-                               OR date_deadline >= %(today)s
-                        ) / COUNT(*)
-                    END AS milestone_score
-                FROM project_milestone
-                WHERE project_id IN %(project_ids)s
-                GROUP BY project_id
-                """,
-                    project_ids=tuple(self.ids),
-                    today=today,
-                )
+        self.env.cr.execute(
+            SQL(
+                """
+            SELECT
+                project_id,
+                CASE
+                    WHEN COUNT(*) = 0 THEN 100.0
+                    ELSE 100.0 * COUNT(*) FILTER (
+                        WHERE is_reached
+                           OR date_deadline IS NULL
+                           OR date_deadline >= %(today)s
+                    ) / COUNT(*)
+                END AS milestone_score
+            FROM project_milestone
+            WHERE project_id IN %(project_ids)s
+            GROUP BY project_id
+            """,
+                project_ids=tuple(self.ids),
+                today=today,
             )
-            milestone_scores = {row[0]: row[1] for row in self.env.cr.fetchall()}
+        )
+        milestone_scores: dict[int, float] = dict(self.env.cr.fetchall())
 
-        risk_data: dict[int, int] = {}
-        if self.ids:
-            self.env.cr.execute(
-                SQL(
-                    """
-                SELECT project_id, COALESCE(SUM(risk_score), 0)
-                FROM project_risk
-                WHERE project_id IN %(project_ids)s AND active = TRUE
-                  AND state != %(excluded_state)s
-                GROUP BY project_id
-                """,
-                    project_ids=tuple(self.ids),
-                    excluded_state=self._LIVE_RISK_STATE_EXCLUDED,
-                )
+        self.env.cr.execute(
+            SQL(
+                """
+            SELECT project_id, COALESCE(SUM(risk_score), 0)
+            FROM project_risk
+            WHERE project_id IN %(project_ids)s AND active = TRUE
+              AND state != %(excluded_state)s
+            GROUP BY project_id
+            """,
+                project_ids=tuple(self.ids),
+                excluded_state=self._LIVE_RISK_STATE_EXCLUDED,
             )
-            risk_data = dict(self.env.cr.fetchall())
+        )
+        risk_data: dict[int, int] = dict(self.env.cr.fetchall())
 
         for project in self:
             schedule, staleness = task_scores.get(project.id, (100.0, 100.0))
@@ -1334,9 +1320,12 @@ class ProjectProject(models.Model):
     @_debug.perf.timed
     def _reset_metrics(self) -> None:
         _debug.lifecycle("metrics_reset", projects=self)
+        self._mark_metrics_to_compute()
+        self.env.flush_all()
+
+    def _mark_metrics_to_compute(self) -> None:
         for fname in self._SNAPSHOT_METRIC_FIELDS:
             self.env.add_to_compute(self._fields[fname], self)
-        self.env.flush_all()
 
     @api.model
     def _cron_reset_metrics(self) -> None:
@@ -1386,18 +1375,17 @@ class ProjectProject(models.Model):
                 )
             if not account or not account.company_id:
                 continue
-            _debug.logic(
-                "account_company_changed",
-                project=project.id,
-                old_company=account.company_id.id,
-                new_company=project.company_id.id,
-                account=account.id,
-                account_projects=account.project_count,
-                has_lines=bool(account.line_ids),
-            )
-            if (
-                account.project_count > 1 or account.line_ids
-            ) and project.company_id != account.company_id:
+            if project.company_id != account.company_id and (
+                account._get_project_counts(include_archived=True)[account.id] > 1
+                or account._has_analytic_lines()
+            ):
+                _debug.logic(
+                    "account_company_change_refused",
+                    project=project.id,
+                    old_company=account.company_id.id,
+                    new_company=project.company_id.id,
+                    account=account.id,
+                )
                 raise UserError(
                     self.env._(
                         "The project's company cannot be changed if its analytic account has analytic lines or if more than one project is linked to it."
@@ -1414,15 +1402,6 @@ class ProjectProject(models.Model):
     def _compute_last_update_color(self) -> None:
         for project in self:
             project.last_update_color = STATUS_COLOR[project.last_update_status]
-
-    @api.depends("milestone_ids")
-    def _compute_milestone_count(self) -> None:
-        read_group = self.env["project.milestone"]._read_group(
-            [("project_id", "in", self.ids)], ["project_id"], ["__count"]
-        )
-        mapped_count = {project.id: count for project, count in read_group}
-        for project in self:
-            project.milestone_count = mapped_count.get(project.id, 0)
 
     @api.depends("milestone_ids.is_reached", "milestone_count")
     def _compute_milestone_reached_count(self) -> None:
@@ -1554,18 +1533,6 @@ class ProjectProject(models.Model):
             else:
                 project.access_instruction_message = ""
 
-    @api.depends("update_ids")
-    def _compute_update_count(self) -> None:
-        update_count_per_project = dict(
-            self.env["project.update"]._read_group(
-                [("project_id", "in", self.ids)],
-                ["project_id"],
-                ["id:count"],
-            )
-        )
-        for project in self:
-            project.update_count = update_count_per_project.get(project, 0)
-
     @api.depends("workflow_step_ids.rating_active")
     def _compute_show_ratings(self) -> None:
         projects_with_rating_active = (
@@ -1622,22 +1589,13 @@ class ProjectProject(models.Model):
         ):
             _debug.logic("dependencies_toggled", action="unblock", tasks=waiting_tasks)
             waiting_tasks.state = "in_progress"
-        res = self._sync_feature_group_to_usage(
-            "allow_dependencies", "project.group_project_task_dependencies"
-        )
-        if res or res is False:
-            self.env.ref("project.mt_task_waiting").sudo().hidden = not res
-            self.env.ref("project.mt_project_task_waiting").sudo().hidden = not res
+        self._sync_feature_groups(["allow_dependencies"])
 
     def _inverse_allow_milestones(self) -> None:
-        self._sync_feature_group_to_usage(
-            "allow_milestones", "project.group_project_milestone"
-        )
+        self._sync_feature_groups(["allow_milestones"])
 
     def _inverse_allow_recurring_tasks(self) -> None:
-        self._sync_feature_group_to_usage(
-            "allow_recurring_tasks", "project.group_project_recurring_tasks"
-        )
+        self._sync_feature_groups(["allow_recurring_tasks"])
 
     @api.model
     def _prepare_map_tasks_defaults(self, project: Self) -> dict:
@@ -1661,8 +1619,6 @@ class ProjectProject(models.Model):
             target=project.id,
             root_tasks=len(tasks),
         )
-        if self.allow_dependencies and "task_mapping" not in self.env.context:
-            self = self.with_context(task_mapping={})
         defaults = self._prepare_map_tasks_defaults(project)
         new_tasks = tasks.with_context(copy_project=True).copy(defaults)
         all_subtasks = new_tasks._get_all_subtasks()
@@ -1712,6 +1668,9 @@ class ProjectProject(models.Model):
         return vals_list
 
     def copy_translations(self, new, excluded=()) -> None:
+        if new.name == self.name:
+            super().copy_translations(new, excluded=excluded)
+            return
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
@@ -1742,10 +1701,14 @@ class ProjectProject(models.Model):
                 milestones=old_project.allow_milestones,
                 tasks="task_ids" not in default,
             )
+            partner_ids_per_subtypes = defaultdict(list)
             for follower in old_project.message_follower_ids:
+                partner_ids_per_subtypes[tuple(follower.subtype_ids.ids)].extend(
+                    follower.partner_id.ids
+                )
+            for subtype_ids, partner_ids in partner_ids_per_subtypes.items():
                 new_project.message_subscribe(
-                    partner_ids=follower.partner_id.ids,
-                    subtype_ids=follower.subtype_ids.ids,
+                    partner_ids=partner_ids, subtype_ids=list(subtype_ids)
                 )
             if old_project.allow_milestones:
                 new_project.milestone_ids = old_project.milestone_ids.copy().ids
@@ -1900,7 +1863,9 @@ class ProjectProject(models.Model):
                 keys=sorted({key for vals in vals_list for key in vals}),
                 uid=self.env.uid,
             )
+        caller_env = self.env
         self = self.with_context(mail_create_nosubscribe=True)
+        vals_list = [dict(vals) for vals in vals_list]
         if any("label_tasks" in vals and not vals["label_tasks"] for vals in vals_list):
             task_label = self.env._("Tasks")
             for vals in vals_list:
@@ -1917,28 +1882,20 @@ class ProjectProject(models.Model):
                             continue
                         vals["company_id"] = stage.company_id.id
             else:
-                companies_ids = [
-                    vals.get("company_id", False) for vals in vals_list
-                ] + [False]
-                stages = self.env["project.phase"].search(
-                    [("company_id", "in", companies_ids)]
-                )
+                phase_per_company_id = {}
                 for vals in vals_list:
                     if vals.get("phase_id"):
                         continue
-                    stage_domain = (
-                        [False]
-                        if "company_id" not in vals
-                        else [False, vals.get("company_id")]
-                    )
-                    stage = stages.filtered_domain(
-                        [("company_id", "in", stage_domain)]
-                    )[:1]
-                    vals["phase_id"] = stage.id
+                    company_id = vals.get("company_id") or False
+                    if company_id not in phase_per_company_id:
+                        phase_per_company_id[company_id] = self._get_default_phase(
+                            self.env["res.company"].browse(company_id)
+                        )
+                    vals["phase_id"] = phase_per_company_id[company_id].id
                     _debug.logic(
                         "default_phase_set",
-                        phase=stage.id,
-                        company=vals.get("company_id"),
+                        phase=vals["phase_id"],
+                        company=company_id,
                     )
 
         for vals in vals_list:
@@ -1951,15 +1908,15 @@ class ProjectProject(models.Model):
         _debug.lifecycle("created", projects=projects)
         _debug.pipeline("create_default_workflow_steps_requested", projects=projects)
         projects._create_default_workflow_steps()
-        _debug.pipeline("create_reset_metrics_requested", projects=projects)
-        projects._reset_metrics()
-        return projects
+        projects._mark_metrics_to_compute()
+        return projects.with_env(caller_env)
 
     @_debug.perf.timed
     def write(self, vals: dict[str, Any]) -> bool:
         _debug.lifecycle("write", projects=self, keys=sorted(vals), uid=self.env.uid)
+        vals = dict(vals)
         company_id = vals.get("company_id")
-        if self.env.user.has_group("project.group_project_stages") and company_id:
+        if company_id and self.env.user.has_group("project.group_project_stages"):
             projects_already_with_company = self.filtered(
                 lambda p: p.company_id.id == company_id
             )
@@ -1973,22 +1930,6 @@ class ProjectProject(models.Model):
                     {key: value for key, value in vals.items() if key != "company_id"}
                 )
                 self -= projects_already_with_company
-            if (
-                company_id not in (None, *self.company_id.ids)
-                and self.phase_id.company_id
-            ):
-                ProjectStage = self.env["project.phase"]
-                vals["phase_id"] = ProjectStage.search(
-                    [("company_id", "in", (company_id, False))],
-                    order=f"sequence asc, {ProjectStage._order}",
-                    limit=1,
-                ).id
-                _debug.logic(
-                    "write_company_phase_reset",
-                    projects=self,
-                    company=company_id,
-                    phase=vals["phase_id"],
-                )
 
         if "last_update_status" in vals and vals["last_update_status"] != "to_define":
             _debug.pipeline(
@@ -2007,10 +1948,10 @@ class ProjectProject(models.Model):
                                 get_lang(self.env).date_format
                             ),
                         ),
-                        "status": vals.get("last_update_status"),
+                        "status": vals["last_update_status"],
                     }
                 )
-            vals.pop("last_update_status")
+            del vals["last_update_status"]
         visibility_before = (
             {project: project.privacy_visibility for project in self}
             if vals.get("privacy_visibility")
@@ -2024,6 +1965,12 @@ class ProjectProject(models.Model):
                     vals.get("date_end", vals.get("date", project.date_end)),
                 )
 
+        active_changed = (
+            self.filtered(lambda p: p.active != bool(vals["active"]))
+            if "active" in vals
+            else self.browse()
+        )
+
         with _debug.perf("write_super", cr=self.env.cr):
             res = super().write(vals) if vals else True
 
@@ -2035,18 +1982,6 @@ class ProjectProject(models.Model):
             )
             self._sync_access_to_privacy_visibility(visibility_before)
 
-        if "allow_dependencies" in vals and not vals.get("allow_dependencies"):
-            blocked = self.env["project.task"].search(
-                [
-                    ("project_id", "in", self.ids),
-                    ("state", "=", "blocked"),
-                ]
-            )
-            _debug.pipeline(
-                "write_dependencies_disabled", projects=self, unblocking=blocked
-            )
-            blocked.write({"state": "in_progress"})
-
         if "allow_recurring_tasks" in vals and not vals["allow_recurring_tasks"]:
             recurring = self.env["project.task"].search(
                 [("project_id", "in", self.ids), ("recurring_task", "=", True)]
@@ -2056,20 +1991,23 @@ class ProjectProject(models.Model):
             )
             recurring.write({"recurring_task": False})
 
-        if "active" in vals:
-            tasks = self.with_context(active_test=False).task_ids
-            _debug.pipeline(
-                "write_active_propagated",
-                projects=self,
-                active=vals["active"],
-                tasks=tasks,
+        if active_changed:
+            if vals["active"]:
+                active_changed._unarchive_tasks_archived_with_project()
+            else:
+                active_changed._archive_tasks_with_project()
+            active_changed._sync_feature_groups(
+                active_changed._get_used_project_features()
             )
-            tasks.write({"active": vals["active"]})
         if "name" in vals and self.account_id:
-            projects_read_group = self.env["project.project"]._read_group(
-                [("account_id", "in", self.account_id.ids)],
-                ["account_id"],
-                having=[("__count", "=", 1)],
+            projects_read_group = (
+                self.env["project.project"]
+                .with_context(active_test=False)
+                ._read_group(
+                    [("account_id", "in", self.account_id.ids)],
+                    ["account_id"],
+                    having=[("__count", "=", 1)],
+                )
             )
             analytic_account_to_update = self.env["account.analytic.account"].browse(
                 [analytic_account.id for [analytic_account] in projects_read_group]
@@ -2082,6 +2020,33 @@ class ProjectProject(models.Model):
             analytic_account_to_update.write({"name": vals["name"]})
         return res
 
+    def _archive_tasks_with_project(self) -> None:
+        tasks = self.task_ids.filtered("active")
+        for project in self:
+            project.archived_with_project_task_ids = project.task_ids.filtered("active")
+        self.archived_tasks_recorded = True
+        _debug.pipeline("tasks_archived_with_project", projects=self, tasks=tasks)
+        tasks.write({"active": False})
+
+    def _unarchive_tasks_archived_with_project(self) -> None:
+        projects = self.with_context(active_test=False)
+        tasks = projects.archived_with_project_task_ids
+        # a project archived before the archived tasks were recorded restores
+        # every archived task, as archiving then archived them all
+        unrecorded = projects.filtered(lambda p: not p.archived_tasks_recorded)
+        tasks |= unrecorded.task_ids
+        tasks = tasks.filtered(lambda t: not t.active and t.project_id in projects)
+        _debug.pipeline(
+            "tasks_unarchived_with_project",
+            projects=self,
+            tasks=tasks,
+            unrecorded=unrecorded,
+        )
+        projects.write(
+            {"archived_with_project_task_ids": False, "archived_tasks_recorded": False}
+        )
+        tasks.write({"active": True})
+
     @_debug.perf.timed
     def unlink(self) -> bool:
         _debug.lifecycle("unlink", projects=self)
@@ -2089,36 +2054,32 @@ class ProjectProject(models.Model):
             domain=[("res_id", "in", self.ids), ("res_model", "=", self._name)],
         ).unlink()
         deleted_per_account = defaultdict(int)
-        for project in self:
+        for project in self.with_context(active_test=False):
             if project.account_id:
                 deleted_per_account[project.account_id] += 1
-        analytic_accounts_to_delete = self.env["account.analytic.account"]
-        for account, deleted_count in deleted_per_account.items():
-            if not account.line_ids and account.project_count <= deleted_count:
-                analytic_accounts_to_delete |= account
+        accounts = self.env["account.analytic.account"].concat(*deleted_per_account)
+        project_counts = accounts._get_project_counts(include_archived=True)
+        analytic_accounts_to_delete = accounts.filtered(
+            lambda account: (
+                project_counts[account.id] <= deleted_per_account[account]
+                and not account._has_analytic_lines()
+            )
+        )
+        used_features = self._get_used_project_features()
         tasks = self.with_context(active_test=False).task_ids
         _debug.pipeline(
             "unlink_cascade",
             projects=self,
             tasks=tasks,
             accounts=analytic_accounts_to_delete,
+            features=used_features,
         )
         tasks.unlink()
+        ProjectProject = self.env["project.project"]
         result = super().unlink()
         analytic_accounts_to_delete.unlink()
+        ProjectProject._sync_feature_groups(used_features)
         return result
-
-    @api.ondelete(at_uninstall=False)
-    def _sync_feature_groups_on_unlink(self) -> None:
-        self._sync_feature_group_to_usage(
-            "allow_dependencies", "project.group_project_task_dependencies"
-        )
-        self._sync_feature_group_to_usage(
-            "allow_milestones", "project.group_project_milestone"
-        )
-        self._sync_feature_group_to_usage(
-            "allow_recurring_tasks", "project.group_project_recurring_tasks"
-        )
 
     def _get_fields_assignment(self) -> set[str]:
         """The fields a write names the project manager through.
@@ -2213,7 +2174,7 @@ class ProjectProject(models.Model):
             defaults["project_id"] = self.id
         return values
 
-    @api.constrains("phase_id")
+    @api.constrains("phase_id", "company_id")
     def _check_phase_has_same_company(self) -> None:
         for project in self:
             if (
@@ -2279,12 +2240,31 @@ class ProjectProject(models.Model):
         )
         return res
 
-    def _get_project_features_mapping(self) -> dict:
+    def _get_project_features_mapping(self) -> dict[str, str]:
         return {
             "allow_dependencies": "project.group_project_task_dependencies",
             "allow_milestones": "project.group_project_milestone",
             "allow_recurring_tasks": "project.group_project_recurring_tasks",
         }
+
+    def _get_used_project_features(self) -> list[str]:
+        return [
+            field_name
+            for field_name in self._get_project_features_mapping()
+            if any(self.mapped(field_name))
+        ]
+
+    @api.model
+    def _sync_feature_groups(self, field_names: Collection[str]) -> None:
+        for field_name, group_name in self._get_project_features_mapping().items():
+            if field_name not in field_names:
+                continue
+            implied = self._sync_feature_group_to_usage(field_name, group_name)
+            if field_name == "allow_dependencies" and implied is not None:
+                self.env.ref("project.mt_task_waiting").sudo().hidden = not implied
+                self.env.ref(
+                    "project.mt_project_task_waiting"
+                ).sudo().hidden = not implied
 
     @api.model
     def get_features_enabled(
@@ -2553,22 +2533,11 @@ class ProjectProject(models.Model):
     ) -> dict:
         return {}
 
-    def get_last_update_or_default(self) -> dict:
-        self.check_singleton()
-        labels = dict(
-            self._fields["last_update_status"]._description_selection(self.env)
-        )
-        return {
-            "status": labels.get(self.last_update_status, self.env._("Set Status")),
-            "color": self.last_update_color,
-        }
-
     @_debug.perf.timed
     def get_panel_data(self) -> dict:
         self.check_singleton()
         if not self.env.user.has_group("project.group_project_user"):
             return {}
-        self._reset_metrics()
         show_profitability = self._is_profitability_shown()
         _debug.logic(
             "panel_data",
@@ -2577,7 +2546,6 @@ class ProjectProject(models.Model):
             milestones=self.allow_milestones,
         )
         panel_data = {
-            "user": self._get_user_values(),
             "buttons": sorted(self._get_stat_buttons(), key=lambda k: k["sequence"]),
             "currency_id": self.currency_id.id,
             "show_project_profitability_helper": show_profitability
@@ -2608,11 +2576,6 @@ class ProjectProject(models.Model):
             panel_data["profitability_labels"] = self._get_profitability_labels()
         return panel_data
 
-    def get_milestones(self) -> dict:
-        if self.env.user.has_group("project.group_project_user"):
-            return self._get_milestones()
-        return {}
-
     def _get_profitability_labels(self) -> dict:
         return {}
 
@@ -2621,11 +2584,6 @@ class ProjectProject(models.Model):
 
     def _get_already_included_profitability_invoice_line_ids(self) -> list:
         return []
-
-    def _get_user_values(self) -> dict:
-        return {
-            "is_project_user": self.env.user.has_group("project.group_project_user"),
-        }
 
     def _is_profitability_shown(self) -> bool:
         self.check_singleton()
@@ -2657,7 +2615,7 @@ class ProjectProject(models.Model):
 
     def _get_stat_buttons(self) -> list:
         self.check_singleton()
-        closed_task_count = self.task_count - self.open_task_count
+        closed_task_count = self.closed_task_count
         if self.task_count:
             number = self.env._(
                 "%(closed_task_count)s / %(task_count)s (%(closed_rate)s%%)",
@@ -2886,8 +2844,12 @@ class ProjectProject(models.Model):
             )
             if project.privacy_visibility in shared and old_visibility not in shared:
                 project._add_collaborators(project.partner_id, access_mode="view")
-                for task in project.task_ids.filtered("partner_id"):
-                    task.message_subscribe(partner_ids=task.partner_id.ids)
+                for partner, tasks in (
+                    project.task_ids.filtered("partner_id")
+                    .grouped("partner_id")
+                    .items()
+                ):
+                    tasks.message_subscribe(partner_ids=partner.ids)
             elif old_visibility in shared and project.privacy_visibility not in shared:
                 portal_users = project.message_partner_ids.user_ids.filtered("share")
                 _debug.pipeline(
@@ -2956,6 +2918,26 @@ class ProjectProject(models.Model):
                 ],
             }
         )
+
+    def _revoke_collaborator_access(self, partners: Any) -> None:
+        self.check_singleton()
+        tasks = self.with_context(active_test=False).task_ids
+        _debug.lifecycle(
+            "collaborator_access_revoked", project=self.id, partners=partners
+        )
+        self.message_unsubscribe(partner_ids=partners.ids)
+        tasks.filtered(lambda task: not task.active).message_unsubscribe(
+            partner_ids=partners.ids
+        )
+        reason = "the partner is no longer a collaborator of the project"
+        Link = self.env["access.link"].with_privilege(
+            "base.privilege_manage_links", reason=reason
+        )
+        partner_domain = Domain("partner_id", "in", partners.ids)
+        Link._revoke_record_links(self, reason, domain=partner_domain)
+        Link._revoke_record_links(tasks, reason, domain=partner_domain)
+        self.invalidate_recordset(["access_token"])
+        tasks.invalidate_recordset(["access_token"])
 
     def _get_new_collaborators(self, partners: Any) -> list:
         self.check_singleton()
@@ -3044,10 +3026,7 @@ class ProjectProject(models.Model):
         if self.is_template:
             config["tag"] = "project_template_show_undo_confirmation_dialog"
             if callbacks := self._get_template_to_project_confirmation_callbacks():
-                config["params"]["callback_data"] = {
-                    "method": "action_confirm_template_to_project",
-                    "args": [self.id, callbacks],
-                }
+                config["params"]["callbacks"] = callbacks
             if warning_messages := self._get_template_to_project_warnings():
                 config["params"]["message"] = self.env._(
                     "%(warning_messages)s\nAre you sure you want to continue?",
@@ -3065,19 +3044,24 @@ class ProjectProject(models.Model):
         }
 
     def action_undo_create_template_from_project(
-        self, callbacks: dict[str, Any]
-    ) -> None:
+        self, template_id: int, callbacks: dict[str, Any]
+    ) -> dict:
         self.check_singleton()
+        self.browse(template_id).filtered("is_template").unlink()
         if callbacks.get("unarchive_project"):
             self.action_unarchive()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "type": "success",
+                "message": self.env._("Template converted back to regular project."),
+            },
+        }
 
     def _get_template_from_project_undo_callbacks(self) -> dict:
         self.check_singleton()
-        callbacks = {}
-        if self.active:
-            self.action_archive()
-            callbacks["unarchive_project"] = True
-        return callbacks
+        return {"unarchive_project": True} if self.active else {}
 
     def action_create_template_from_project(self) -> dict:
         self.check_singleton()
@@ -3085,39 +3069,31 @@ class ProjectProject(models.Model):
         _debug.lifecycle("template_created", project=self.id, template=template.id)
         template._update_template_mode(True)
         template.message_post(body=self.env._("Template created from %s.", self.name))
-        config = {
+        callbacks = self._get_template_from_project_undo_callbacks()
+        if self.active:
+            _debug.lifecycle("template_source_archived", project=self.id)
+            self.action_archive()
+        return {
+            "type": "ir.actions.client",
             "tag": "project_template_show_notification",
             "params": {
                 "project_id": template.id,
-                "undo_method": "unlink",
+                "undo_method": "action_undo_create_template_from_project",
+                "undo_args": [self.id, template.id, callbacks],
+                "removes_record": True,
             },
         }
-        if callbacks := self._get_template_from_project_undo_callbacks():
-            config["params"]["callback_data"] = {
-                "method": "action_undo_create_template_from_project",
-                "args": [self.id, callbacks],
-                "post_action": {
-                    "type": "ir.actions.client",
-                    "tag": "display_notification",
-                    "params": {
-                        "type": "success",
-                        "message": self.env._(
-                            "Template converted back to regular project."
-                        ),
-                    },
-                },
-            }
-        return {
-            "type": "ir.actions.client",
-            **config,
-        }
 
-    def action_undo_convert_to_template(self) -> dict | None:
+    def action_undo_convert_to_template(
+        self, callbacks: dict[str, Any] | None = None
+    ) -> dict | None:
         self.check_singleton()
         self._update_template_mode(False)
         self.message_post(
             body=self.env._("Template converted back to regular project.")
         )
+        if callbacks:
+            self.action_confirm_template_to_project(callbacks)
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -3157,7 +3133,7 @@ class ProjectProject(models.Model):
         self, values: dict | None = None, role_to_users_mapping: Any = None
     ) -> Self:
         self.check_singleton()
-        values = values or {}
+        values = dict(values or {})
         _debug.lifecycle("create_from_template", template=self.id, keys=sorted(values))
 
         if self.date_start and self.date:
@@ -3173,9 +3149,11 @@ class ProjectProject(models.Model):
             and key.removeprefix("default_")
             in self._get_template_default_context_whitelist()
         } | values
-        project = self.with_context(
-            copy_from_template=True, copy_from_project_template=True
-        ).copy(default=default)
+        project = (
+            self.with_context(copy_from_template=True, copy_from_project_template=True)
+            .copy(default=default)
+            .with_env(self.env)
+        )
         _debug.pipeline(
             "created_from_template",
             template=self.id,
@@ -3240,38 +3218,21 @@ class ProjectProject(models.Model):
         )
         return project
 
-    def _get_template_task_pairs(self, project):
-
-        def pair(originals, copies):
-            if len(originals) != len(copies):
-                raise ValueError(
-                    f"template {self.id} has {len(originals)} tasks at a level "
-                    f"where its copy {project.id} has {len(copies)}"
-                )
-            copy_per_name = {}
-            for copy in copies:
-                if copy.name in copy_per_name:
-                    raise UserError(
-                        self.env._(
-                            "Two tasks of template %(template)s are both named "
-                            "%(task)s. Rename one: task names are what carry the "
-                            "planned dates across to the new project.",
-                            template=self.display_name,
-                            task=copy.name,
-                        )
-                    )
-                copy_per_name[copy.name] = copy
-            for original in originals:
-                copy = copy_per_name.get(original.name)
-                if copy is None:
-                    raise ValueError(
-                        f"template {self.id} task {original.name!r} has no copy "
-                        f"of that name in {project.id}"
-                    )
-                yield original, copy
-                yield from pair(original.child_ids, copy.child_ids)
-
-        def get_root_tasks(tasks):
-            return tasks.filtered(lambda task: not task.parent_id)
-
-        yield from pair(get_root_tasks(self.task_ids), get_root_tasks(project.task_ids))
+    def _get_template_task_pairs(self, project: Self) -> list[tuple[Any, Any]]:
+        Task = self.env["project.task"].with_context(active_test=False)
+        root_domain = [("parent_id", "=", False)]
+        originals = Task.search([("project_id", "=", self.id), *root_domain])
+        copies = Task.search([("project_id", "=", project.id), *root_domain])
+        task_mapping, _dependencies = originals._get_task_mapping_and_dependencies(
+            copies
+        )
+        _debug.logic(
+            "template_task_pairs",
+            template=self.id,
+            project=project.id,
+            pairs=len(task_mapping),
+        )
+        return [
+            (Task.browse(original_id), copy)
+            for original_id, copy in task_mapping.items()
+        ]

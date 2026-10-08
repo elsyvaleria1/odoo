@@ -24,14 +24,6 @@ class ReportProjectTaskUser(models.Model):
         """
         )
 
-    def _group_by(self):
-        return (
-            super()._group_by()
-            + """,
-            sol.remaining_hours
-        """
-        )
-
     def _from(self):
         return (
             super()._from()

@@ -11,20 +11,11 @@ class ProjectPhase(models.Model):
     _name = "project.phase"
     _description = "Project Phase"
     _inherit = ["mixin.project.pm"]
-    _order = "sequence, id"
 
-    active = fields.Boolean(
-        export_string_translation=False,
-        default=True,
-    )
-    sequence = fields.Integer(
-        export_string_translation=False,
-        default=50,
-    )
-    name = fields.Char(
-        translate=True,
-        required=True,
-    )
+    _member_model = "project.project"
+    _member_field = "phase_id"
+
+    sequence = fields.Integer(default=50)
     mail_template_id = fields.Many2one(
         comodel_name="mail.template",
         string="Email Template",
@@ -32,12 +23,24 @@ class ProjectPhase(models.Model):
         help="Email sent automatically when a project enters this phase.",
     )
     fold = fields.Boolean(
-        string="Folded",
         help="Folded phases are shown collapsed in Kanban and List views. "
         "Projects in a folded phase are considered closed.",
     )
     company_id = fields.Many2one(comodel_name="res.company")
-    color = fields.Integer(export_string_translation=False)
+    archived_member_ids = fields.Many2many(
+        comodel_name="project.project",
+        relation="project_phase_archived_project_rel",
+        column1="phase_id",
+        column2="project_id",
+        string="Projects Archived With the Phase",
+        export_string_translation=False,
+        copy=False,
+        context={"active_test": False},
+    )
+    is_archive_recorded = fields.Boolean(
+        export_string_translation=False,
+        copy=False,
+    )
 
     @api.constrains("mail_template_id")
     def _check_mail_template_model(self) -> None:
@@ -97,10 +100,4 @@ class ProjectPhase(models.Model):
                         or self.env._("no company"),
                     )
                 )
-        if "active" in vals and not vals["active"]:
-            projects = self.env["project.project"].search(
-                [("phase_id", "in", self.ids)]
-            )
-            _debug.pipeline("projects_archived", phases=self, projects=projects)
-            projects.write({"active": False})
         return super().write(vals)

@@ -23,14 +23,26 @@ class AccountAnalyticAccount(models.Model):
     @_debug.perf.timed
     @api.depends("project_ids")
     def _compute_project_count(self) -> None:
-        project_data = self.env["project.project"]._read_group(
-            [("account_id", "in", self.ids)], ["account_id"], ["__count"]
-        )
-        mapping = {
-            analytic_account.id: count for analytic_account, count in project_data
-        }
+        counts = self._get_project_counts(include_archived=False)
         for account in self:
-            account.project_count = mapping.get(account.id, 0)
+            account.project_count = counts.get(account.id, 0)
+
+    def _get_project_counts(self, include_archived: bool) -> dict[int, int]:
+        counts = dict.fromkeys(self.ids, 0)
+        for account, count in (
+            self.env["project.project"]
+            .with_context(active_test=not include_archived)
+            ._read_group([("account_id", "in", self.ids)], ["account_id"], ["__count"])
+        ):
+            counts[account.id] = count
+        return counts
+
+    def _has_analytic_lines(self) -> bool:
+        return bool(
+            self.env["account.analytic.line"].search_count(
+                [("auto_account_id", "in", self.ids)], limit=1
+            )
+        )
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_existing_tasks(self) -> None:

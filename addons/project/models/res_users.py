@@ -74,7 +74,6 @@ class ResUsers(models.Model):
     @_debug.perf.timed
     def _get_valid_work_intervals(self, start, end, calendars=None):
         assert start.tzinfo and end.tzinfo
-        user_calendar_validity_intervals = {}
         calendar_users = defaultdict(lambda: self.env["res.users"])
         user_work_intervals = defaultdict(Intervals)
         calendar_work_intervals = {}

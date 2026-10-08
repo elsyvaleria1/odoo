@@ -3,10 +3,7 @@
 
     <t t-name="project.ProjectUpdateKanbanView" t-inherit="web.KanbanView" t-inherit-mode="primary">
         <xpath expr="//t[@t-component='this.props.Renderer']" position="before">
-            <ProjectRightSidePanel
-                context="this.props.context"
-                domain="this.props.domain"
-            />
+            <ProjectRightSidePanel context="this.props.context"/>
         </xpath>
     </t>
 

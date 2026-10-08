@@ -288,7 +288,7 @@ class TestBurndownChart(TestBurndownChartCommon):
         return {
             (res["date:month"][1], res["step_id"][0]): int(res["__count"])
             for res in read_group_result
-            if res["step_id"][1]
+            if res["step_id"]
         }
 
     def map_read_group_is_closed_result(self, read_group_result) -> None:

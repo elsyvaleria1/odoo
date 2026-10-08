@@ -9,8 +9,8 @@ import { ProjectTaskKanbanModel } from "./project_task_kanban_model.js";
 import { ProjectTaskKanbanRenderer } from "./project_task_kanban_renderer.js";
 
 export const projectTaskKanbanView = {
-    SearchModel: HighlightProjectTaskSearchModel,
     ...rottingKanbanView,
+    SearchModel: HighlightProjectTaskSearchModel,
     ControlPanel: ProjectTaskControlPanel,
     Model: ProjectTaskKanbanModel,
     Renderer: ProjectTaskKanbanRenderer,

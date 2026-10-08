@@ -19,8 +19,7 @@ export class ProjectTaskKanbanHeader extends RottingKanbanHeader {
 
     /** @returns {number} */
     get wipLimit() {
-        const limits = this.props.list.model.wipLimits;
-        return (limits && limits[this.props.group.value]) || 0;
+        return this.props.group.record?.data.wip_limit || 0;
     }
 
     /** @returns {boolean} */

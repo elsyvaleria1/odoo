@@ -1,6 +1,6 @@
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import { describe, expect, test } from "@odoo/hoot";
-import { queryAll } from "@odoo/hoot-dom";
+import { animationFrame, click, queryAll } from "@odoo/hoot-dom";
 import { ProjectRightSidePanel } from "@project/components/project_right_side_panel/project_right_side_panel";
 import { mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
 
@@ -8,9 +8,6 @@ defineMailModels();
 describe.current.tags("desktop");
 
 const FAKE_DATA = {
-    user: {
-        is_project_user: true,
-    },
     buttons: [
         {
             icon: "check",
@@ -54,7 +51,6 @@ test("Right side panel will not be rendered without data and settings set false"
     await mountWithCleanup(ProjectRightSidePanel, {
         props: {
             context: { active_id: 1 },
-            domain: new Array(),
         },
     });
 
@@ -75,7 +71,6 @@ test("Right side panel will be rendered if settings are turned on but doesnt hav
     await mountWithCleanup(ProjectRightSidePanel, {
         props: {
             context: { active_id: 1 },
-            domain: new Array(),
         },
     });
 
@@ -94,7 +89,6 @@ test("Right side panel will be not rendered if settings are turned off but does 
     await mountWithCleanup(ProjectRightSidePanel, {
         props: {
             context: { active_id: 1 },
-            domain: new Array(),
         },
     });
 
@@ -109,11 +103,29 @@ test("Right side panel will be rendered if both setting is turned on and does ha
     await mountWithCleanup(ProjectRightSidePanel, {
         props: {
             context: { active_id: 1 },
-            domain: new Array(),
         },
     });
 
     expect(queryAll("div.o_rightpanel").length).toBe(1, {
         message: "Right panel should be rendered",
     });
+});
+
+test("a toggled milestone keeps its state when the panel re-renders", async () => {
+    onRpc("get_panel_data", () => JSON.parse(JSON.stringify(FAKE_DATA)));
+    onRpc("update_is_reached", ({ args }) => ({ id: args[0][0], is_reached: args[1] }));
+
+    const panel = await mountWithCleanup(ProjectRightSidePanel, {
+        props: { context: { active_id: 1 } },
+    });
+    expect(".o_rightpanel_milestone i").toHaveClass("fa-square");
+
+    await click(".o_rightpanel_milestone");
+    await animationFrame();
+    expect(".o_rightpanel_milestone i").toHaveClass("fa-square-check");
+    expect(panel.state.data.milestones.data[0].is_reached).toBe(true);
+
+    panel.state.gridTemplateColumns += 1;
+    await animationFrame();
+    expect(".o_rightpanel_milestone i").toHaveClass("fa-square-check");
 });

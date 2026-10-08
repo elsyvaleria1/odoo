@@ -24,13 +24,13 @@ class TestTaskState(TestProjectCommon):
     def test_base_state(self) -> None:
         self.assertEqual(
             self.task_1.state,
-            "in_progress",
-            "The task_1 should be in progress by default",
+            "todo",
+            "Moving an unstarted task to another project does not start it",
         )
         self.assertEqual(
             self.task_2.state,
-            "in_progress",
-            "The task_2 should be in progress by default",
+            "todo",
+            "Moving an unstarted task to another project does not start it",
         )
 
         self.task_1.write(

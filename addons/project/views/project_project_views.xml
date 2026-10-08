@@ -98,8 +98,9 @@
                         </div>
                     </button>
                     <button
-                        name="action_view_tasks"
+                        name="action_reset_metrics"
                         type="object"
+                        title="Refresh the health and flow metrics"
                         invisible="is_template"
                         class="oe_stat_button">
                         <field name="health_status" invisible="1" />

@@ -94,19 +94,6 @@ class ReportProjectTaskUserFsm(models.Model):
         """
         )
 
-    def _group_by(self):
-        return (
-            super()._group_by()
-            + """ ,
-            rp.zip,
-            rp.city,
-            rp.street,
-            rp.street2,
-            rp.country_id,
-            rp.state_id
-        """
-        )
-
     def _from(self):
         return (
             super()._from()

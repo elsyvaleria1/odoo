@@ -29,19 +29,8 @@ class WizardProjectPhaseDelete(models.TransientModel):
 
     @api.depends("phase_ids")
     def _compute_projects_count(self) -> None:
-        counts = dict(
-            self.env["project.project"]
-            .with_context(active_test=False)
-            ._read_group(
-                [("phase_id", "in", self.phase_ids.ids)],
-                ["phase_id"],
-                ["__count"],
-            )
-        )
         for wizard in self:
-            wizard.projects_count = sum(
-                counts.get(record, 0) for record in wizard.phase_ids
-            )
+            wizard.projects_count = wizard.phase_ids._get_member_count()
 
     @api.depends("phase_ids")
     def _compute_phases_active(self) -> None:
@@ -49,24 +38,9 @@ class WizardProjectPhaseDelete(models.TransientModel):
             wizard.phases_active = all(wizard.phase_ids.mapped("active"))
 
     def action_archive(self) -> dict[str, Any]:
-        projects = (
-            self.with_context(active_test=False)
-            .env["project.project"]
-            .search([("phase_id", "in", self.phase_ids.ids)])
-        )
-        _debug.lifecycle("phases_archived", phases=self.phase_ids, projects=projects)
-        projects.write({"active": False})
-        self.phase_ids.write({"active": False})
+        _debug.lifecycle("phases_archived", phases=self.phase_ids)
+        self.phase_ids.action_archive()
         return self._prepare_action_redirect()
-
-    def action_unarchive_project(self) -> None:
-        inactive_projects = (
-            self.env["project.project"]
-            .with_context(active_test=False)
-            .search([("active", "=", False), ("phase_id", "in", self.phase_ids.ids)])
-        )
-        _debug.lifecycle("projects_unarchived", projects=inactive_projects)
-        inactive_projects.action_unarchive()
 
     def action_unlink(self) -> dict[str, Any]:
         _debug.lifecycle("phases_unlinked", phases=self.phase_ids)

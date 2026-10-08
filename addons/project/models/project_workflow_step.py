@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import frozendict
+from odoo.tools import SQL, frozendict
 
 from .project_task import CLOSED_STATES
 
@@ -17,21 +17,14 @@ class ProjectWorkflowStep(models.Model):
     _access_anchors = frozendict({"company": "project_ids.company_id"})
     _description = "Workflow Step"
     _inherit = ["mixin.project.pm"]
-    _order = "sequence, id"
+
+    _member_model = "project.task"
+    _member_field = "step_id"
 
     def _default_project_ids(self) -> list[int] | None:
         default_project_id = self.env.context.get("default_project_id")
         return [default_project_id] if default_project_id else None
 
-    active = fields.Boolean(
-        export_string_translation=False,
-        default=True,
-    )
-    name = fields.Char(
-        translate=True,
-        required=True,
-    )
-    sequence = fields.Integer(default=1)
     project_ids = fields.Many2many(
         comodel_name="project.project",
         relation="project_workflow_step_project_rel",
@@ -48,8 +41,20 @@ class ProjectWorkflowStep(models.Model):
         domain=[("model", "=", "project.task")],
         help="Email sent automatically when a task enters this step.",
     )
-    color = fields.Integer(export_string_translation=False)
-    fold = fields.Boolean(string="Folded")
+    archived_member_ids = fields.Many2many(
+        comodel_name="project.task",
+        relation="project_workflow_step_archived_task_rel",
+        column1="step_id",
+        column2="task_id",
+        string="Tasks Archived With the Step",
+        export_string_translation=False,
+        copy=False,
+        context={"active_test": False},
+    )
+    is_archive_recorded = fields.Boolean(
+        export_string_translation=False,
+        copy=False,
+    )
     task_state = fields.Selection(
         selection="_selection_task_states",
         help="When a task is moved into this step, its state is set to this "
@@ -83,8 +88,9 @@ class ProjectWorkflowStep(models.Model):
     )
     date_rating_request = fields.Datetime(
         export_string_translation=False,
-        help="Next scheduled periodic rating request. Seeded when periodic "
-        "rating is enabled and advanced after each send — deliberately a "
+        help="Next scheduled periodic rating request. Scheduled when periodic "
+        "rating is enabled or its frequency changes, cleared when it is "
+        "disabled, and advanced after each send — deliberately a "
         "plain field, not a now()-based compute that would reset on every "
         "module upgrade or unrelated recompute.",
     )
@@ -126,7 +132,7 @@ class ProjectWorkflowStep(models.Model):
             )
         records = super().create(vals_list)
         _debug.lifecycle("created", steps=records)
-        records._update_missing_rating_deadlines()
+        records._update_rating_deadlines(reschedule=False)
         return records
 
     @_debug.perf.timed
@@ -135,7 +141,7 @@ class ProjectWorkflowStep(models.Model):
         res = super().write(vals)
         if {"rating_active", "rating_status", "rating_status_period"} & vals.keys():
             _debug.pipeline("rating_deadlines_refresh_requested", steps=self)
-            self._update_missing_rating_deadlines()
+            self._update_rating_deadlines(reschedule=True)
         return res
 
     def action_open_delete_wizard(self, stage_view: bool = False) -> dict[str, Any]:
@@ -168,6 +174,28 @@ class ProjectWorkflowStep(models.Model):
             "context": context,
         }
 
+    def _count_hidden_projects(self) -> int:
+        relation = self._fields["project_ids"]
+        self.flush_recordset(["project_ids"])
+        linked = self.env.execute_query(
+            SQL(
+                "SELECT count(DISTINCT %s) FROM %s WHERE %s = ANY(%s)",
+                SQL.identifier(relation.column2),
+                SQL.identifier(relation.relation),
+                SQL.identifier(relation.column1),
+                self.ids,
+            )
+        )[0][0]
+        return linked - len(self.with_context(active_test=False).project_ids)
+
+    def _get_projects_out_of_reach(self, members: models.BaseModel) -> models.BaseModel:
+        projects = (self.project_ids | members.project_id).with_context(
+            active_test=False
+        )
+        writable = projects.with_env(self.env(su=False))._filtered_access("write")
+        accessible = projects.filtered_domain([("user_has_access", "=", True)])
+        return projects - writable - accessible
+
     _RATING_PERIOD_DAYS = {
         "daily": 1,
         "weekly": 7,
@@ -183,20 +211,23 @@ class ProjectWorkflowStep(models.Model):
             days=self._RATING_PERIOD_DAYS.get(self.rating_status_period, 0)
         )
 
-    def _update_missing_rating_deadlines(self) -> None:
+    def _update_rating_deadlines(self, reschedule: bool) -> None:
         for step in self:
-            if (
-                step.rating_active
-                and step.rating_status == "periodic"
-                and not step.date_rating_request
-            ):
-                step.date_rating_request = step._get_next_rating_deadline()
-                _debug.logic(
-                    "rating_deadline_seeded",
-                    step=step,
-                    deadline=step.date_rating_request,
-                    period=step.rating_status_period,
-                )
+            if not (step.rating_active and step.rating_status == "periodic"):
+                if step.date_rating_request:
+                    _debug.logic("rating_deadline_cleared", step=step)
+                    step.date_rating_request = False
+                continue
+            if step.date_rating_request and not reschedule:
+                continue
+            step.date_rating_request = step._get_next_rating_deadline()
+            _debug.logic(
+                "rating_deadline_scheduled",
+                step=step,
+                deadline=step.date_rating_request,
+                period=step.rating_status_period,
+                reschedule=reschedule,
+            )
 
     @_debug.perf.timed
     @api.model

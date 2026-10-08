@@ -35,19 +35,8 @@ class WizardProjectWorkflowStepDelete(models.TransientModel):
 
     @api.depends("step_ids")
     def _compute_tasks_count(self) -> None:
-        counts = dict(
-            self.env["project.task"]
-            .with_context(active_test=False)
-            ._read_group(
-                [("step_id", "in", self.step_ids.ids)],
-                ["step_id"],
-                ["__count"],
-            )
-        )
         for wizard in self:
-            wizard.tasks_count = sum(
-                counts.get(record, 0) for record in wizard.step_ids
-            )
+            wizard.tasks_count = wizard.step_ids._get_member_count()
 
     @api.depends("step_ids")
     def _compute_steps_active(self) -> None:
@@ -82,24 +71,9 @@ class WizardProjectWorkflowStepDelete(models.TransientModel):
             "context": self.env.context,
         }
 
-    def action_unarchive_task(self) -> None:
-        inactive_tasks = (
-            self.env["project.task"]
-            .with_context(active_test=False)
-            .search([("active", "=", False), ("step_id", "in", self.step_ids.ids)])
-        )
-        _debug.lifecycle("tasks_unarchived", tasks=inactive_tasks)
-        inactive_tasks.action_unarchive()
-
     def action_confirm(self) -> dict[str, Any]:
-        tasks = (
-            self.with_context(active_test=False)
-            .env["project.task"]
-            .search([("step_id", "in", self.step_ids.ids)])
-        )
-        _debug.lifecycle("steps_archived", steps=self.step_ids, tasks=tasks)
-        tasks.write({"active": False})
-        self.step_ids.write({"active": False})
+        _debug.lifecycle("steps_archived", steps=self.step_ids)
+        self.step_ids.action_archive()
         return self._prepare_action_close()
 
     def action_unlink(self) -> dict[str, Any]:

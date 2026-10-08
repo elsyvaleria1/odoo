@@ -67,24 +67,4 @@
         </field>
     </record>
 
-    <record id="view_project_workflow_step_unarchive_wizard" model="ir.ui.view">
-        <field name="name">project.workflow.step.delete.wizard.form</field>
-        <field name="model">wizard.project.workflow.step.delete</field>
-        <field name="arch" type="xml">
-            <form string="Delete Workflow Step">
-                <div>
-                    <p>Would you like to unarchive all of the tasks contained in these workflow steps as well?</p>
-                </div>
-                <footer>
-                    <button
-                        name="action_unarchive_task"
-                        type="object"
-                        string="Confirm"
-                        class="btn btn-primary" />
-                    <button special="cancel" string="Discard" />
-                </footer>
-            </form>
-        </field>
-    </record>
-
 </odoo>

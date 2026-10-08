@@ -25,7 +25,7 @@ class ProjectRetrospective(models.Model):
         ondelete="cascade",
     )
     date = fields.Date(
-        default=fields.Date.today,
+        default=fields.Date.context_today,
         required=True,
     )
     facilitator_id = fields.Many2one(
@@ -58,7 +58,9 @@ class ProjectRetrospective(models.Model):
     previous_id = fields.Many2one(
         comodel_name="project.retrospective",
         string="Previous Retrospective",
-        help="Link to the previous retrospective for action carry-forward.",
+        domain="[('project_id', '=', project_id), ('id', '!=', id)]",
+        help="Link to the previous retrospective of the same project, for action "
+        "carry-forward.",
     )
     state = fields.Selection(
         selection=[("draft", "Draft"), ("done", "Done")],
@@ -83,6 +85,19 @@ class ProjectRetrospective(models.Model):
                     "(circular 'Previous Retrospective' link)."
                 )
             )
+
+    @api.constrains("previous_id", "project_id")
+    def _check_previous_same_project(self) -> None:
+        for retro in self:
+            if retro.previous_id and retro.previous_id.project_id != retro.project_id:
+                raise ValidationError(
+                    self.env._(
+                        "The previous retrospective of %(retro)s must belong to its "
+                        "project (%(project)s).",
+                        retro=retro.name,
+                        project=retro.project_id.display_name,
+                    )
+                )
 
     @_debug.perf.timed
     def action_carry_forward(self) -> None:
@@ -114,6 +129,7 @@ class ProjectRetrospective(models.Model):
             )
         ]
         self.env["project.retrospective.action"].create(vals_list)
+        open_actions.write({"state": "carried"})
 
 
 class ProjectRetrospectiveAction(models.Model):
@@ -146,6 +162,7 @@ class ProjectRetrospectiveAction(models.Model):
             ("in_progress", "In Progress"),
             ("done", "Done"),
             ("dropped", "Dropped"),
+            ("carried", "Carried Forward"),
         ],
         default="open",
         required=True,
@@ -175,7 +192,7 @@ class ProjectRetrospectiveAction(models.Model):
         ]
     )
 
-    _STATE_ORDER = {"open": 0, "in_progress": 1, "done": 2, "dropped": 3}
+    _STATE_ORDER = {"open": 0, "in_progress": 1, "done": 2, "dropped": 3, "carried": 4}
 
     @api.depends("state")
     def _compute_state_order(self) -> None:

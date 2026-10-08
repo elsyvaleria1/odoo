@@ -659,8 +659,9 @@ class TestRecurrenceDefaults(TestProjectCommon):
         )
         self.assertTrue(rec)
 
-    def test_recurrence_until_respects_user_timezone(self) -> None:
-        self.env.user.tz = "Etc/GMT+6"
+    def test_recurrence_until_respects_the_company_timezone(self) -> None:
+        self.env.company.partner_id.tz = "Etc/GMT+6"
+        self.env.user.tz = "Asia/Tokyo"
         step = self.env["project.workflow.step"].create(
             {"name": "S", "project_ids": [(4, self.project_pigs.id)]}
         )
@@ -685,7 +686,8 @@ class TestRecurrenceDefaults(TestProjectCommon):
         created = self.env["project.task.recurrence"]._create_next_occurrences(task)
         self.assertTrue(
             created,
-            "boundary occurrence must be created (compared in user tz, not UTC)",
+            "boundary occurrence must be created (compared in the company tz, "
+            "whoever closes the task)",
         )
 
 

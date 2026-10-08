@@ -225,8 +225,7 @@
         <field name="search_view_id" ref="industry_fsm.project_task_view_search_fsm" />
         <field
             name="domain">[('is_fsm', '=', True), ('project_id', '!=', False)]</field>
-        <field
-            name="context">{'fsm_mode': 1, 'task_nameget_with_hours': 1, 'default_scale': 'week'}</field>
+        <field name="context">{'fsm_mode': 1, 'default_scale': 'week'}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No tasks found. Let's create one!
@@ -347,8 +346,7 @@
         <field name="search_view_id" ref="industry_fsm.project_task_view_search_fsm" />
         <field
             name="domain">[('is_fsm', '=', True), ('project_id', '!=', False)]</field>
-        <field
-            name="context">{'fsm_mode': 1, 'task_nameget_with_hours': 1, 'default_scale': 'week'}</field>
+        <field name="context">{'fsm_mode': 1, 'default_scale': 'week'}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No tasks found. Let's create one!

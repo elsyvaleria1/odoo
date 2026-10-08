@@ -1,6 +1,5 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
 project_project_manager_rule,Project: project manager: see all,model_project_project,group_project_manager,permission,crud,,,,,
-project_public_members_rule_group_project_user,Project: internal users: projects they can access,model_project_project,group_project_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": """"}",
 access_project_phase,project.phase,model_project_phase,base.group_user,permission,r,,,,,
 access_project_phase_manager,project.phase.manager,model_project_phase,group_project_manager,permission,cud,,,,,
 access_project_workflow_step_user,project.workflow.step.user,model_project_workflow_step,base.group_user,permission,r,,,,,
@@ -9,17 +8,11 @@ workflow_step_visibility_rule,Project/project.workflow.step: employees: project 
 workflow_step_visibility_rule_2,Project/project.workflow.step: employees: project visibility required (2),model_project_workflow_step,group_project_user,permission,cud,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_ids.""}",
 workflow_step_rule_portal_project_sharing,Project/project.workflow.step: portal users: steps of projects they collaborate on,model_project_workflow_step,base.group_portal,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_ids.""}",
 access_project_triage_user,project.triage.user,model_project_triage,base.group_user,permission,crud,,,,,
-task_visibility_rule_group_project_user,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks",model_project_task,group_project_user,permission,r,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_id.""}","[('project_id', '!=', False)]"
-task_visibility_rule_group_project_user_2,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks (2)",model_project_task,group_project_user,permission,r,predicate,,mail.access_predicate_follows,"{""at"": """"}",
-task_visibility_rule_group_project_user_3,"Project/Task: employees: tasks of accessible projects, followed or assigned tasks (3)",model_project_task,group_project_user,permission,r,own,,,,
 project_manager_all_project_tasks_rule,Project/Task: project manager: see all tasks linked to a project or its own tasks,model_project_task,group_project_manager,permission,crud,all,,,,"[('project_id', '!=', False)]"
 project_manager_all_project_tasks_rule_2,Project/Task: project manager: see all tasks linked to a project or its own tasks (2),model_project_task,group_project_manager,permission,crud,own,,,,
 task_visibility_rule_project_user,"Project/Task: project users: tasks of accessible projects, followed or assigned tasks",model_project_task,group_project_user,permission,cud,predicate,,base.access_predicate_user_has_access,"{""at"": ""project_id.""}","[('project_id', '!=', False)]"
 task_visibility_rule_project_user_2,"Project/Task: project users: tasks of accessible projects, followed or assigned tasks (2)",model_project_task,group_project_user,permission,cud,predicate,,mail.access_predicate_follows,"{""at"": """"}",
 task_visibility_rule_project_user_3,"Project/Task: project users: tasks of accessible projects, followed or assigned tasks (3)",model_project_task,group_project_user,permission,cud,own,,,,
-ir_rule_private_task,Project: See private tasks,model_project_task,group_project_user,permission,crud,all,,,,"['&', ('project_id.privacy_visibility', 'in', ['employees', 'portal']), ('project_id', '!=', False)]"
-ir_rule_private_task_2,Project: See private tasks (2),model_project_task,group_project_user,permission,crud,all,,,,"['&', ('project_id.privacy_visibility', 'in', ['employees', 'portal']), ('parent_id', '!=', False)]"
-ir_rule_private_task_3,Project: See private tasks (3),model_project_task,group_project_user,permission,crud,own,,,,"[('project_id.privacy_visibility', 'in', ['employees', 'portal'])]"
 access_loss_reason_project_manager,loss.reason: a project manager maintains the reasons,loss_reason.model_loss_reason,group_project_manager,permission,cud,,,,,
 access_loss_reason_project_portal,loss.reason: a portal user reads the task reasons,loss_reason.model_loss_reason,base.group_portal,permission,r,,,,,"[('scope', 'in', [False, 'task'])]"
 report_project_task_manager_rule,Tasks Analysis: project visibility Manager,model_report_project_task_user,group_project_manager,permission,r,,,,,
@@ -41,7 +34,7 @@ access_account_analytic_account_user,account.analytic.account,analytic.model_acc
 access_account_analytic_account_manager,account.analytic.account,analytic.model_account_analytic_account,group_project_manager,permission,cud,,,,,
 access_account_analytic_line_project_cr,account.analytic.line project,analytic.model_account_analytic_line,group_project_manager,permission,cr,,,,,
 access_account_analytic_line_project_ud,account.analytic.line project,analytic.model_account_analytic_line,group_project_manager,permission,ud,,,,,
-access_project_workflow_step_delete_wizard,wizard.project.workflow.step.delete,model_wizard_project_workflow_step_delete,group_project_manager,permission,crud,,,,,
+access_project_workflow_step_delete_wizard,wizard.project.workflow.step.delete,model_wizard_project_workflow_step_delete,group_project_user,permission,crud,,,,,
 access_project_phase_delete_wizard,wizard.project.phase.delete,model_wizard_project_phase_delete,group_project_manager,permission,crud,,,,,
 access_project_task_recurrence,project.task.recurrence,model_project_task_recurrence,group_project_user,permission,crud,,,,,
 burndown_chart_project_manager_rule,Burndown chart: project visibility User,model_project_task_burndown_chart_report,group_project_manager,permission,crud,,,,,
@@ -94,10 +87,8 @@ sprint_manager_rule,Project/project.sprint: manager full access,model_project_sp
 access_project_forecast_wizard_user,project.forecast.wizard.user,model_wizard_project_project_view_forecast,group_project_user,permission,crud,,,,,
 mail_plan_rule_group_project_manager_task,Manager can manage project/task plans,mail.model_mail_activity_plan,group_project_manager,permission,cud,all,,,,"[('res_model', 'in', ('project.project', 'project.task'))]"
 mail_plan_templates_rule_group_project_manager_task,Manager can manage project/task plan templates,mail.model_mail_activity_plan_template,group_project_manager,permission,cud,all,,,,"[('plan_id.res_model', 'in', ('project.project', 'project.task'))]"
-access_project_template_create_wizard_user,project.template.create.wizard.user,model_wizard_project_project_create_from_template,group_project_user,permission,ru,,,,,
-access_project_template_create_wizard_manager,project.template.create.wizard.manager,model_wizard_project_project_create_from_template,group_project_manager,permission,cd,,,,,
-access_project_template_role_to_users_map_user,project.template.role.to.users.map.user,model_wizard_project_project_create_from_template_mapping,group_project_user,permission,ru,,,,,
-access_project_template_role_to_users_map_manager,project.template.role.to.users.map.manager,model_wizard_project_project_create_from_template_mapping,group_project_manager,permission,cd,,,,,
+access_project_template_create_wizard_manager,project.template.create.wizard.manager,model_wizard_project_project_create_from_template,group_project_manager,permission,crud,,,,,
+access_project_template_role_to_users_map_manager,project.template.role.to.users.map.manager,model_wizard_project_project_create_from_template_mapping,group_project_manager,permission,crud,,,,,
 access_resource_role_project_manager,resource.role.project.manager,resource.model_resource_role,group_project_manager,permission,cud,,,,,
 project_comp_rule,Project: multi-company,model_project_project,base.group_everyone,guard,crud,company,,,,
 project_phase_rule,Project Phase: multi-company,model_project_phase,base.group_everyone,guard,crud,company,,,,

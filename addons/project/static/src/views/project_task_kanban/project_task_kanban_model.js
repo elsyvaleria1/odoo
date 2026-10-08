@@ -38,41 +38,30 @@ export class ProjectTaskRecord extends RelationalRecord {
 }
 
 export class ProjectTaskKanbanModel extends ProjectTaskRelationalModel {
-    /** @type {Record<number, number>} */
-    wipLimits = {};
+    setup() {
+        super.setup(...arguments);
+        const stepInfo = this.groupByInfo.step_id;
+        this.groupByInfo = {
+            ...this.groupByInfo,
+            step_id: {
+                activeFields: {
+                    ...stepInfo?.activeFields,
+                    wip_limit: makeActiveField(),
+                },
+                fields: {
+                    ...stepInfo?.fields,
+                    wip_limit: { name: "wip_limit", type: "integer" },
+                },
+            },
+        };
+    }
 
     async webReadGroup(config) {
         config.context = {
             ...config.context,
             project_kanban: true,
         };
-        const result = await super.webReadGroup(...arguments);
-        await this._loadWipLimits(config, result);
-        return result;
-    }
-
-    async _loadWipLimits(config, result) {
-        if (config.groupBy?.[0] !== "step_id") {
-            this.wipLimits = {};
-            return;
-        }
-        const stepIds = result.groups
-            .map((group) => group.step_id?.[0] ?? group.step_id)
-            .filter((id) => typeof id === "number");
-        if (!stepIds.length) {
-            this.wipLimits = {};
-            return;
-        }
-        try {
-            const steps = await this.orm.read("project.workflow.step", stepIds, [
-                "wip_limit",
-            ]);
-            this.wipLimits = Object.fromEntries(
-                steps.map((step) => [step.id, step.wip_limit]),
-            );
-        } catch {
-            this.wipLimits = {};
-        }
+        return super.webReadGroup(...arguments);
     }
 }
 

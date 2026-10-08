@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Self
 
 from odoo import api, fields, models
@@ -122,9 +123,9 @@ class ProjectCollaborator(models.Model):
                 count=len(vals_list),
                 keys=sorted({k for vals in vals_list for k in vals}),
             )
-        collaborator = self.env["project.collaborator"].search([], limit=1)
+        had_collaborator = self._exists_any_collaborator()
         project_collaborators = super().create(vals_list)
-        if not collaborator:
+        if not had_collaborator:
             _debug.pipeline(
                 "portal_sharing_rules_toggled",
                 active=True,
@@ -137,21 +138,25 @@ class ProjectCollaborator(models.Model):
     @_debug.perf.timed
     def unlink(self) -> bool:
         _debug.lifecycle("unlink", collaborators=self)
-        revoked = [
-            (collaborator.project_id, collaborator.partner_id.id)
-            for collaborator in self.sudo()
-            if collaborator.partner_id
-        ]
+        revoked_partners_per_project = defaultdict(lambda: self.env["res.partner"])
+        for collaborator in self.sudo():
+            if collaborator.partner_id:
+                revoked_partners_per_project[collaborator.project_id] |= (
+                    collaborator.partner_id
+                )
         res = super().unlink()
-        for project, partner_id in revoked:
-            project.message_unsubscribe(partner_ids=[partner_id])
-        collaborator = self.env["project.collaborator"].search([], limit=1)
-        if not collaborator:
+        for project, partners in revoked_partners_per_project.items():
+            project._revoke_collaborator_access(partners)
+        if not self._exists_any_collaborator():
             _debug.pipeline(
                 "portal_sharing_rules_toggled", active=False, reason="last_collaborator"
             )
             self._update_project_sharing_portal_rules(False)
         return res
+
+    @api.model
+    def _exists_any_collaborator(self) -> bool:
+        return bool(self.browse(self._search([], limit=1, bypass_access=True)))
 
     @api.model
     def _update_project_sharing_portal_rules(self, active: bool) -> None:

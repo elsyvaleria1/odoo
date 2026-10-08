@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
@@ -111,6 +112,18 @@ class ProjectBaselineLine(models.Model):
     _description = "Baseline Task Snapshot"
     _order = "sequence, id"
 
+    _SNAPSHOT_FIELDS = frozenset(
+        {
+            "baseline_id",
+            "task_name",
+            "date_planned_start",
+            "date_planned_end",
+            "planned_hours",
+            "milestone_id",
+            "step_id",
+        }
+    )
+
     baseline_id = fields.Many2one(
         comodel_name="project.baseline",
         index=True,
@@ -144,3 +157,59 @@ class ProjectBaselineLine(models.Model):
         string="Step (snapshot)",
         ondelete="set null",
     )
+    start_variance_days = fields.Float(
+        string="Start Slip (days)",
+        export_string_translation=False,
+        digits=(16, 1),
+        compute="_compute_variances",
+        help="Current planned start minus the snapshot's. Positive = later.",
+    )
+    end_variance_days = fields.Float(
+        string="End Slip (days)",
+        export_string_translation=False,
+        digits=(16, 1),
+        compute="_compute_variances",
+        help="Current deadline minus the snapshot's. Positive = later.",
+    )
+    hours_variance = fields.Float(
+        string="Hours Change",
+        export_string_translation=False,
+        compute="_compute_variances",
+        help="Current planned hours minus the snapshot's. Positive = more effort.",
+    )
+
+    @api.depends(
+        "task_id.date_start",
+        "task_id.date_end",
+        "task_id.planned_hours",
+        "date_planned_start",
+        "date_planned_end",
+        "planned_hours",
+    )
+    def _compute_variances(self) -> None:
+        def get_slip_days(current, planned) -> float:
+            if not (current and planned):
+                return 0.0
+            return (current - planned).total_seconds() / 86400
+
+        for line in self:
+            task = line.task_id
+            line.start_variance_days = get_slip_days(
+                task.date_start, line.date_planned_start
+            )
+            line.end_variance_days = get_slip_days(task.date_end, line.date_planned_end)
+            line.hours_variance = (
+                task.planned_hours - line.planned_hours if task else 0.0
+            )
+
+    def write(self, vals: ValuesType) -> bool:
+        frozen = self._SNAPSHOT_FIELDS & vals.keys()
+        if frozen:
+            _debug.logic("snapshot_edit_refused", lines=self, fields=sorted(frozen))
+            raise UserError(
+                self.env._(
+                    "A baseline snapshot cannot be edited; capture a new baseline "
+                    "instead."
+                )
+            )
+        return super().write(vals)

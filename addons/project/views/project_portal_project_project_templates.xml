@@ -44,18 +44,14 @@
                 <span t-field="task.name" />
             </li>
             <li
-                t-if="page_name == 'project_subtasks' or (task and subtask and project)"
-                t-attf-class="breadcrumb-item text-truncate #{'active ' if not subtask else ''}">
-                <a t-if="subtask" t-attf-href="/my/tasks/{{ task.id }}/subtasks?{{ keep_query() }}">Sub-tasks</a>
-                <t t-else="">Sub-tasks</t>
+                t-if="page_name == 'project_subtasks'"
+                class="breadcrumb-item active text-truncate">
+                Sub-tasks
             </li>
             <li
                 t-elif="page_name == 'project_recurrent_tasks' and task and project"
                 t-attf-class="breadcrumb-item text-truncate">
                 Recurrent tasks
-            </li>
-            <li t-if="subtask" class="breadcrumb-item active text-break">
-                <span t-field="subtask.name" />
             </li>
         </xpath>
     </template>

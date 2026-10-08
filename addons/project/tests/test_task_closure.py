@@ -187,17 +187,19 @@ class TestDeliveredVersusClosed(TestProjectCommon):
 @tagged("post_install", "-at_install")
 class TestReportStateSelection(TestProjectCommon):
     def test_report_state_selections_match_the_task(self) -> None:
-        expected = {
-            v for v, _label in self.env["project.task"]._fields["state"].selection
-        }
+        expected = (
+            self.env["project.task"]._fields["state"]._description_selection(self.env)
+        )
         for model in (
             "report.project.task.user",
             "project.task.burndown.chart.report",
             "project.cfd.report",
         ):
             with self.subTest(model=model):
-                got = {v for v, _label in self.env[model]._fields["state"].selection}
-                self.assertEqual(got, expected)
+                self.assertEqual(
+                    self.env[model]._fields["state"]._description_selection(self.env),
+                    expected,
+                )
 
     def test_state_blocked_transition_still_works(self) -> None:
         project = self.env["project.project"].create(

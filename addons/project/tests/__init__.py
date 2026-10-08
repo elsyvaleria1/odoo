@@ -71,3 +71,17 @@ from . import test_rating_mixin_collision
 from . import test_rating_stats
 from . import test_access_user_has_access
 from . import test_access_matrix
+from . import test_project_review_task_create
+from . import test_project_review_pm
+from . import test_project_review_reports
+from . import test_project_review_project_lifecycle
+from . import test_project_review_project_template
+from . import test_project_review_project_milestones
+from . import test_project_review_collaborator
+from . import test_project_review_tags_partner
+from . import test_project_review_portal
+from . import test_project_review_task_state
+from . import test_project_review_cpm
+from . import test_project_review_task_write
+from . import test_project_review_task_challenge
+from . import test_project_review_pm_challenge

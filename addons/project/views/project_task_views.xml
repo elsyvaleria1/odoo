@@ -405,7 +405,6 @@
         <field
             name="context">{
                 'default_project_id': active_id,
-                'show_project_update': True,
                 'search_default_open_tasks': 1,
                 'display_milestone_deadline': True,
             }</field>
@@ -507,8 +506,7 @@
         <field name="search_view_id" ref="project.view_task_search_form" />
         <field
             name="domain">[('id', 'child_of', active_id), ('id', '!=', active_id)]</field>
-        <field
-            name="context">{'show_project_update': False, 'default_parent_id': active_id}</field>
+        <field name="context">{'default_parent_id': active_id}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No tasks found. Let's create one!
@@ -2077,24 +2075,6 @@
         <field name="act_window_id" ref="project_task_action_from_partner" />
     </record>
 
-    <record id="action_view_task_overpassed_draft" model="ir.actions.act_window">
-        <field name="name">Overpassed Tasks</field>
-        <field name="res_model">project.task</field>
-        <field name="view_mode">list,form,calendar,graph,kanban</field>
-        <field name="search_view_id" ref="view_task_search_form" />
-        <field
-            name="domain">[('is_closed', '=', False), ('date_end', '&lt;', 'today'), ('project_id', '!=', False), ('has_template_ancestor', '=', False), ('has_project_template', '=', False)]</field>
-    </record>
-
-    <record id="dblc_proj" model="ir.actions.act_window">
-        <field name="name">Project's tasks</field>
-        <field name="res_model">project.task</field>
-        <field name="view_mode">list,form,calendar,graph,kanban</field>
-        <field
-            name="domain">[('project_id', '=', active_id), ('has_template_ancestor', '=', False)]</field>
-        <field name="context">{'project_id':active_id}</field>
-    </record>
-
     <record id="action_view_task_from_milestone" model="ir.actions.act_window">
         <field name="name">Tasks</field>
         <field name="res_model">project.task</field>
@@ -2150,7 +2130,7 @@
     </record>
 
     <record id="project_milestone_action_view_tasks" model="ir.actions.act_window">
-        <field name="name">Tasks.test</field>
+        <field name="name">Tasks</field>
         <field name="res_model">project.task</field>
         <field name="view_mode">kanban,list,form,calendar,pivot,graph,activity</field>
         <field name="domain">[('has_template_ancestor', '=', False)]</field>

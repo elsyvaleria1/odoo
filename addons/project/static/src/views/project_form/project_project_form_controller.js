@@ -1,13 +1,14 @@
 /** @odoo-module native */
 import { onWillStart, t } from "@odoo/owl";
 import { useFocusTitle } from "@project/utils/project_utils";
-import { useDialogContext } from "@web/core/dialog_context_hooks";
-import { user } from "@web/core/user";
 import { FormControllerWithHTMLExpander } from "@web/views/form_with_html_expander/form_controller_with_html_expander";
 
 import { ProjectTemplateDropdown } from "../components/project_template_dropdown.js";
+import { ProjectManagerActionsMixin } from "../project_manager_actions_mixin.js";
 
-export class ProjectProjectFormController extends FormControllerWithHTMLExpander {
+export class ProjectProjectFormController extends ProjectManagerActionsMixin(
+    FormControllerWithHTMLExpander,
+) {
     static template = "project.ProjectFormView";
     static components = {
         ...FormControllerWithHTMLExpander.components,
@@ -20,11 +21,7 @@ export class ProjectProjectFormController extends FormControllerWithHTMLExpander
 
     setup() {
         super.setup();
-        this.dialogContext = useDialogContext();
         onWillStart(async () => {
-            this.isProjectManager = await user.hasGroup(
-                "project.group_project_manager",
-            );
             this.featuresToObserve = await this.orm.call(
                 this.props.resModel,
                 "get_features_enabled",
@@ -35,16 +32,6 @@ export class ProjectProjectFormController extends FormControllerWithHTMLExpander
         if (this.props.focusTitle) {
             useFocusTitle(this.rootRef);
         }
-    }
-
-    getStaticActionMenuItems() {
-        const actionMenuItems = super.getStaticActionMenuItems(...arguments);
-        if (!this.isProjectManager) {
-            ["duplicate", "archive", "unarchive"].forEach(
-                (item) => delete actionMenuItems[item],
-            );
-        }
-        return actionMenuItems;
     }
 
     /** @override */

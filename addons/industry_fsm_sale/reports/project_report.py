@@ -28,14 +28,6 @@ class ReportProjectTaskUserFsm(models.Model):
         """
         )
 
-    def _group_by(self):
-        return (
-            super()._group_by()
-            + """,
-            so.invoice_state
-        """
-        )
-
     def _from(self):
         return (
             super()._from()

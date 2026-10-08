@@ -1,5 +1,7 @@
 import random
-from datetime import timedelta
+from bisect import bisect_left
+from datetime import UTC, date, datetime, time, timedelta
+from itertools import accumulate
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -16,6 +18,8 @@ class WizardProjectProjectViewForecast(models.TransientModel):
     _description = "Monte Carlo Forecast"
 
     SIMULATION_WEEK_CAP = 200
+    SIMULATION_COUNT_MAX = 10_000
+    HISTORY_WEEKS_MAX = 520
 
     project_id = fields.Many2one(
         comodel_name="project.project",
@@ -66,18 +70,32 @@ class WizardProjectProjectViewForecast(models.TransientModel):
             else:
                 wiz.remaining_items = 0
 
+    def _check_simulation_bounds(self) -> None:
+        if not 1 <= self.simulation_count <= self.SIMULATION_COUNT_MAX:
+            raise UserError(
+                self.env._(
+                    "The number of simulations must be between 1 and %(max)s.",
+                    max=self.SIMULATION_COUNT_MAX,
+                )
+            )
+        if not 1 <= self.weeks_of_history <= self.HISTORY_WEEKS_MAX:
+            raise UserError(
+                self.env._(
+                    "The weeks of history must be between 1 and %(max)s.",
+                    max=self.HISTORY_WEEKS_MAX,
+                )
+            )
+
     @_debug.perf.timed
     def action_run_forecast(self) -> dict:
         self.check_singleton()
-        if self.simulation_count < 1:
-            raise UserError(self.env._("The number of simulations must be at least 1."))
-        sim_count = min(self.simulation_count, 100_000)
+        self._check_simulation_bounds()
+        sim_count = self.simulation_count
         _debug.lifecycle(
             "forecast_started",
             project=self.project_id.id,
             remaining=self.remaining_items,
             sims=sim_count,
-            requested=self.simulation_count,
             weeks=self.weeks_of_history,
         )
         if not self.remaining_items or self.remaining_items <= 0:
@@ -95,21 +113,9 @@ class WizardProjectProjectViewForecast(models.TransientModel):
             )
             return self._prepare_action_reopen()
 
-        results = []
-        truncated = 0
-        for _i in range(sim_count):
-            weeks = 0
-            remaining = self.remaining_items
-            while remaining > 0:
-                weekly_tp = random.choice(throughput)
-                remaining -= max(weekly_tp, 0)
-                weeks += 1
-                if weeks >= self.SIMULATION_WEEK_CAP:
-                    truncated += 1
-                    break
-            results.append(weeks)
-
-        results.sort()
+        results, truncated = self._get_simulated_weeks(
+            throughput, self.remaining_items, sim_count, random.Random()
+        )
         n = len(results)
         self.p50_weeks = results[int(n * 0.50)]
         self.p85_weeks = results[int(n * 0.85)]
@@ -169,53 +175,88 @@ class WizardProjectProjectViewForecast(models.TransientModel):
         self.result_text = "\n".join(lines)
         return self._prepare_action_reopen()
 
+    @api.model
+    def _get_simulated_weeks(
+        self,
+        throughput: list[int],
+        remaining: int,
+        count: int,
+        rng: random.Random,
+    ) -> tuple[list[int], int]:
+        cap = self.SIMULATION_WEEK_CAP
+        results = []
+        truncated = 0
+        for _i in range(count):
+            delivered = list(accumulate(rng.choices(throughput, k=cap)))
+            weeks = bisect_left(delivered, remaining) + 1
+            if weeks > cap:
+                truncated += 1
+                weeks = cap
+            results.append(weeks)
+        results.sort()
+        return results, truncated
+
     @_debug.perf.timed
     def _get_weekly_throughput(self) -> list[int]:
         self.project_id.check_access("read")
-        since = self.env.cr.now() - timedelta(weeks=self.weeks_of_history)
-        self.env.cr.execute(
+        tz = self.env.tz
+        local_now = fields.Datetime.now().replace(tzinfo=UTC).astimezone(tz)
+        current_week = local_now.date() - timedelta(days=local_now.weekday())
+        first_week = current_week - timedelta(weeks=self.weeks_of_history)
+
+        def get_utc_start(day: date) -> datetime:
+            return (
+                datetime.combine(day, time.min, tzinfo=tz)
+                .astimezone(UTC)
+                .replace(tzinfo=None)
+            )
+
+        self.env["project.task"].flush_model(
+            ["project_id", "state", "date_closed", "is_template"]
+        )
+        rows = self.env.execute_query(
             SQL(
                 """
-            WITH closed AS (
-                    SELECT DATE_TRUNC('week', date_closed) AS week_start,
-                           COUNT(*) AS closed_count
-                      FROM project_task
-                     WHERE project_id = %(project_id)s
-                       AND state IN %(delivered_states)s
-                       AND date_closed >= %(since)s
-                       AND is_template IS NOT TRUE
-                     GROUP BY DATE_TRUNC('week', date_closed)
-            ),
-            bounds AS (
-                    SELECT GREATEST(
-                               DATE_TRUNC('week', %(since)s::timestamp),
-                               LEAST(
-                                   DATE_TRUNC('week', %(project_start)s::timestamp),
-                                   COALESCE(
-                                       (SELECT MIN(week_start) FROM closed),
-                                       DATE_TRUNC('week', %(project_start)s::timestamp)
-                                   )
-                               )
-                           ) AS series_start
-            )
-            SELECT COALESCE(closed.closed_count, 0) AS closed_count
-              FROM bounds,
-                   generate_series(
-                       bounds.series_start,
-                       DATE_TRUNC('week', %(now)s::timestamp),
-                       INTERVAL '1 week'
-                   ) AS w(week_start)
-              LEFT JOIN closed ON closed.week_start = w.week_start
-             ORDER BY w.week_start
-            """,
+                SELECT DATE_TRUNC('week', timezone(%(tz)s, timezone('UTC', date_closed)))::date,
+                       COUNT(*)
+                  FROM project_task
+                 WHERE project_id = %(project_id)s
+                   AND state IN %(delivered_states)s
+                   AND date_closed >= %(since)s
+                   AND date_closed < %(until)s
+                   AND is_template IS NOT TRUE
+                 GROUP BY 1
+                """,
+                tz=str(tz),
                 project_id=self.project_id.id,
                 delivered_states=DELIVERED_STATES,
-                since=since,
-                now=self.env.cr.now(),
-                project_start=self.project_id.create_date or since,
+                since=get_utc_start(first_week),
+                until=get_utc_start(current_week),
             )
         )
-        return [row[0] for row in self.env.cr.fetchall()]
+        closed_per_week = dict(rows)
+        project_start = (
+            self.project_id.create_date.replace(tzinfo=UTC).astimezone(tz).date()
+            if self.project_id.create_date
+            else first_week
+        )
+        project_week = project_start - timedelta(days=project_start.weekday())
+        series_start = max(
+            first_week, min(project_week, min(closed_per_week, default=project_week))
+        )
+        weeks = (current_week - series_start).days // 7
+        _debug.logic(
+            "forecast_weeks_bucketed",
+            project=self.project_id.id,
+            tz=str(tz),
+            first=series_start,
+            current=current_week,
+            weeks=weeks,
+        )
+        return [
+            closed_per_week.get(series_start + timedelta(weeks=offset), 0)
+            for offset in range(weeks)
+        ]
 
     def _prepare_action_reopen(self) -> dict:
         return {

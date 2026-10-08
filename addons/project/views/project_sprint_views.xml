@@ -48,11 +48,17 @@
                         invisible="state != 'planning'"
                         class="oe_highlight" />
                     <button
+                        name="action_review"
+                        type="object"
+                        string="Start Review"
+                        invisible="state != 'active'"
+                        class="oe_highlight" />
+                    <button
                         name="action_close"
                         type="object"
                         string="Close Sprint"
                         confirm="Close this sprint? Incomplete tasks will remain in the backlog."
-                        invisible="state != 'review'" />
+                        invisible="state not in ('active', 'review')" />
                     <field
                         name="state"
                         widget="statusbar"

@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class WizardProjectTaskShare(models.TransientModel):
@@ -8,8 +8,15 @@ class WizardProjectTaskShare(models.TransientModel):
 
     task_id = fields.Many2one(
         comodel_name="project.task",
-        default=lambda self: self.res_id,
+        compute="_compute_task_id",
     )
     project_privacy_visibility = fields.Selection(
         related="task_id.project_privacy_visibility"
     )
+
+    @api.depends("res_model", "res_id")
+    def _compute_task_id(self) -> None:
+        for wizard in self:
+            wizard.task_id = (
+                wizard.res_id if wizard.res_model == "project.task" else False
+            )

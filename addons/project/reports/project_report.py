@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.db.schema import drop_view_if_exists
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
@@ -22,6 +22,7 @@ class ReportProjectTaskUser(models.Model):
     _depends = frozendict(
         {
             "project.task": [
+                "active",
                 "allocated_hours",
                 "company_id",
                 "create_date",
@@ -83,6 +84,7 @@ class ReportProjectTaskUser(models.Model):
         string="Last Status Change",
         readonly=True,
     )
+    active = fields.Boolean(readonly=True)
     display_in_project = fields.Boolean(export_string_translation=False)
     project_id = fields.Many2one(
         comodel_name="project.project",
@@ -143,15 +145,7 @@ class ReportProjectTaskUser(models.Model):
     )
 
     state = fields.Selection(
-        selection=[
-            ("todo", "To Do"),
-            ("in_progress", "In Progress"),
-            ("changes_requested", "Changes Requested"),
-            ("approved", "Approved"),
-            ("done", "Done"),
-            ("canceled", "Cancelled"),
-            ("blocked", "Waiting"),
-        ],
+        selection="_selection_task_state",
         readonly=True,
     )
     is_closed = fields.Boolean(
@@ -215,11 +209,18 @@ class ReportProjectTaskUser(models.Model):
     is_template = fields.Boolean(readonly=True)
     has_template_ancestor = fields.Boolean(readonly=True)
 
+    @api.model
+    def _selection_task_state(self) -> list[tuple[str, str]]:
+        return (
+            self.env["project.task"]._fields["state"]._description_selection(self.env)
+        )
+
     def _select(self) -> str:
         return """
-                (select 1) AS nbr,
+                1 AS nbr,
                 t.id as id,
                 t.id as task_id,
+                t.active,
                 t.create_date,
                 t.date_assign,
                 t.date_closed,
@@ -240,7 +241,7 @@ class ReportProjectTaskUser(models.Model):
                 CASE WHEN t.state = ANY(%s) THEN True ELSE False END AS is_closed,
                 t.description,
                 NULLIF(t.rating_last_value, 0) as rating_last_value,
-                AVG(rt.rating) as rating_avg,
+                rating.rating_avg,
                 NULLIF(t.lead_time_days, 0) as lead_time_days,
                 NULLIF(t.queue_time_days, 0) as queue_time_days,
                 NULLIF(t.queue_time_hours, 0) as queue_time_hours,
@@ -250,40 +251,17 @@ class ReportProjectTaskUser(models.Model):
                 t.has_template_ancestor
         """
 
-    def _group_by(self) -> str:
-        return """
-                t.id,
-                t.create_date,
-                t.date_assign,
-                t.date_closed,
-                t.date_last_status_change,
-                t.date_end,
-                t.date_start,
-                t.project_id,
-                t.priority,
-                t.name,
-                t.company_id,
-                t.partner_id,
-                t.parent_id,
-                t.step_id,
-                t.state,
-                t.rating_last_value,
-                t.lead_time_days,
-                t.queue_time_days,
-                t.queue_time_hours,
-                t.lead_time_hours,
-                t.milestone_id,
-                t.lost_reason_id
-        """
-
     def _from(self) -> str:
         return f"""
                 project_task t
-                    LEFT JOIN rating_rating rt ON rt.res_id = t.id
-                          AND rt.res_model = 'project.task'
-                          AND rt.consumed = True
-                          AND rt.rating >= {RATING_LIMIT_MIN}
-                    LEFT JOIN project_project p ON p.id = t.project_id
+                    LEFT JOIN LATERAL (
+                        SELECT AVG(rt.rating) AS rating_avg
+                          FROM rating_rating rt
+                         WHERE rt.res_id = t.id
+                           AND rt.res_model = 'project.task'
+                           AND rt.consumed = True
+                           AND rt.rating >= {RATING_LIMIT_MIN}
+                    ) AS rating ON TRUE
         """
 
     def _where(self) -> str:
@@ -301,14 +279,12 @@ class ReportProjectTaskUser(models.Model):
          SELECT %s
            FROM %s
           WHERE %s
-       GROUP BY %s
         """
             % (
                 self._table,
                 self._select(),
                 self._from(),
                 self._where(),
-                self._group_by(),
             ),
             (list(CLOSED_STATES),),
         )

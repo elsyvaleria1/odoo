@@ -128,3 +128,39 @@ test("column header shows a bare count when no step sets a WIP limit", async () 
     expect(queryAllTexts(".o_column_task_count")).toEqual(["(1)"]);
     expect(".o_column_task_count.text-danger").toHaveCount(0);
 });
+
+test("WIP limit shows beside the state progress bar, with no extra step read", async () => {
+    ProjectTaskType._records = [
+        { id: 1, name: "Todo", wip_limit: 1 },
+        { id: 2, name: "In Progress", wip_limit: 0 },
+    ];
+    ProjectTask._records = [
+        { id: 1, name: "Task 1", project_id: 1, step_id: 1, state: "in_progress" },
+        { id: 2, name: "Task 2", project_id: 1, step_id: 1, state: "done" },
+        { id: 3, name: "Task 3", project_id: 1, step_id: 2, state: "in_progress" },
+    ];
+    onRpc("project.workflow.step", "*", ({ method }) => {
+        expect.step(`project.workflow.step.${method}`);
+    });
+
+    await mountView({
+        ...viewParams,
+        arch: `
+            <kanban default_group_by="step_id" js_class="project_task_kanban">
+                <field name="state"/>
+                <progressbar field="state"
+                    colors='{"done": "success-done", "canceled": "danger", "in_progress": "200"}'/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name"/>
+                    </t>
+                </templates>
+            </kanban>`,
+    });
+    await animationFrame();
+
+    expect(".o_kanban_counter").toHaveCount(2);
+    expect(queryAllTexts(".o_column_task_count")).toEqual(["(2 / 1)"]);
+    expect(".o_column_task_count.text-danger").toHaveCount(1);
+    expect.verifySteps([]);
+});

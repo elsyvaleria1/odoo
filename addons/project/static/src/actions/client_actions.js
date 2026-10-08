@@ -10,8 +10,9 @@ export function showTemplateUndoNotification(
         recordId,
         message,
         undoMethod = "action_undo_convert_to_template",
+        undoArgs,
+        removesRecord = false,
         actionType = "success",
-        undoCallback,
     },
 ) {
     let undoing = false;
@@ -26,19 +27,18 @@ export function showTemplateUndoNotification(
                         return;
                     }
                     undoing = true;
-                    const res = await env.services.orm.call(model, undoMethod, [
-                        recordId,
-                    ]);
-                    if (undoCallback) {
-                        await env.services.orm.call(
+                    let res;
+                    try {
+                        res = await env.services.orm.call(
                             model,
-                            undoCallback.method,
-                            undoCallback.args,
+                            undoMethod,
+                            undoArgs || [recordId],
                         );
+                    } catch (error) {
+                        undoing = false;
+                        throw error;
                     }
-                    if (res && undoMethod !== "unlink") {
-                        env.services.action.doAction(res);
-                    } else if (undoMethod === "unlink") {
+                    if (removesRecord) {
                         const controller = env.services.action.currentController;
                         const restoreController = controller.config.breadcrumbs?.at(-2);
                         if (restoreController) {
@@ -46,10 +46,9 @@ export function showTemplateUndoNotification(
                         } else {
                             controller.config.historyBack();
                         }
-                        const postAction = undoCallback?.post_action;
-                        if (postAction) {
-                            env.services.action.doAction(postAction);
-                        }
+                    }
+                    if (res) {
+                        env.services.action.doAction(res);
                     }
                     undoNotification();
                 },
@@ -66,23 +65,21 @@ export function showTemplateUndoConfirmationDialog(
         bodyMessage,
         confirmLabel,
         undoMethod = "action_undo_convert_to_template",
-        confirmationCallback,
+        callbacks,
     },
 ) {
     env.services.dialog.add(ConfirmationDialog, {
         body: bodyMessage,
         confirmLabel: confirmLabel,
         confirm: async () => {
-            const action = await env.services.orm.call(model, undoMethod, [recordId]);
+            const action = await env.services.orm.call(
+                model,
+                undoMethod,
+                [recordId],
+                callbacks ? { callbacks } : {},
+            );
             if (action) {
                 await env.services.action.doAction(action);
-            }
-            if (confirmationCallback) {
-                await env.services.orm.call(
-                    model,
-                    confirmationCallback.method,
-                    confirmationCallback.args,
-                );
             }
         },
         cancelLabel: _t("Discard"),
@@ -150,7 +147,8 @@ registry
             recordId: params.project_id,
             message: params.message || _t("Project converted to template."),
             undoMethod: params.undo_method,
-            undoCallback: params.callback_data || null,
+            undoArgs: params.undo_args,
+            removesRecord: Boolean(params.removes_record),
         });
         return params.next;
     });
@@ -164,7 +162,7 @@ registry
             recordId: params.project_id,
             bodyMessage: params.message,
             confirmLabel: _t("Revert to Project"),
-            confirmationCallback: params.callback_data || null,
+            callbacks: params.callbacks || null,
         });
         return params.next;
     });

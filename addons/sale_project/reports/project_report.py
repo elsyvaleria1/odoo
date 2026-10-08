@@ -23,6 +23,3 @@ class ReportProjectTaskUser(models.Model):
 
     def _select(self):
         return super()._select() + ", t.sale_line_id as sale_line_id, t.sale_order_id"
-
-    def _group_by(self):
-        return super()._group_by() + ", t.sale_line_id, t.sale_order_id"

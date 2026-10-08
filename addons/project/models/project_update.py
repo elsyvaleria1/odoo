@@ -7,7 +7,7 @@ from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import format_amount, formatLang, frozendict
+from odoo.tools import SQL, format_amount, formatLang, frozendict
 
 _debug = DebugLog(__name__)
 
@@ -158,10 +158,10 @@ class ProjectUpdate(models.Model):
                 keys=sorted({k for vals in vals_list for k in vals}),
             )
         updates = super().create(vals_list)
+        self._sync_project_last_update(updates.project_id)
         per_snapshot = defaultdict(self.browse)
         for update in updates:
             project = update.project_id
-            project.sudo().last_update_id = update
             per_snapshot[
                 (project.task_count, project.task_count - project.open_task_count)
             ] |= update
@@ -178,26 +178,49 @@ class ProjectUpdate(models.Model):
         return updates
 
     @_debug.perf.timed
+    def write(self, vals: ValuesType) -> bool:
+        if not {"date", "project_id"} & vals.keys():
+            return super().write(vals)
+        projects = self.project_id
+        res = super().write(vals)
+        self._sync_project_last_update(projects | self.project_id)
+        return res
+
+    @_debug.perf.timed
     def unlink(self) -> bool:
         projects = self.project_id
         _debug.lifecycle("unlink", updates=self, projects=projects)
         res = super().unlink()
-        if not projects:
-            return res
-        latest_per_project = {}
-        for update in self.search(
-            [("project_id", "in", projects.ids)], order="date desc, id desc"
-        ):
-            latest_per_project.setdefault(update.project_id.id, update)
-        for project in projects:
-            latest = latest_per_project.get(project.id, False)
-            _debug.logic(
-                "last_update_reset",
-                project=project.id,
-                last_update=latest and latest.id,
-            )
-            project.last_update_id = latest
+        self._sync_project_last_update(projects)
         return res
+
+    @api.model
+    def _get_latest_per_project(self, projects: Any) -> dict[int, int]:
+        if not projects:
+            return {}
+        self.flush_model(["project_id", "date"])
+        rows = self.env.execute_query(
+            SQL(
+                """
+                SELECT DISTINCT ON (project_id) project_id, id
+                  FROM project_update
+                 WHERE project_id IN %s
+              ORDER BY project_id, date DESC NULLS LAST, id DESC
+                """,
+                tuple(projects.ids),
+            )
+        )
+        return dict(rows)
+
+    @api.model
+    def _sync_project_last_update(self, projects: Any) -> None:
+        latest_per_project = self._get_latest_per_project(projects)
+        for project in projects.sudo():
+            latest = latest_per_project.get(project.id, False)
+            if project.last_update_id.id == latest:
+                continue
+            _debug.logic("last_update_reset", project=project.id, last_update=latest)
+            project.last_update_id = latest
 
     @api.model
     def _prepare_description(self, project: Any) -> str:

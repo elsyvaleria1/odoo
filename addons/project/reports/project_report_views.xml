@@ -68,6 +68,12 @@
             <search position="attributes">
                 <attribute name="string">Tasks Analysis</attribute>
             </search>
+            <filter name="templates" position="after">
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </filter>
         </field>
     </record>
 

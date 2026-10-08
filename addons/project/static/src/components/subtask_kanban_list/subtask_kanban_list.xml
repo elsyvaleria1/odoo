@@ -6,12 +6,12 @@
         <t t-if="this.props.record.displaySubtasks">
             <div class="subtask_list">
                 <div t-foreach="this.openSubtasks" t-as="record" t-key="record.id"  class="subtask_list_row">
-                    <a t-attf-class="subtask_name_col {{ ['done', 'canceled'].includes(record.data.state) ? 'text-muted opacity-50' : '' }}"
+                    <a class="subtask_name_col"
                         t-att-title="record.data.display_name"
                         t-out="record.data.display_name"
                         t-on-click.prevent="() => this.goToSubtask(record.resId)"/>
                     <Field
-                        class="`o_field_many2many_avatar_user subtask_user_widget_col d-inline-flex align-items-center justify-content-end me-1 ${['done', 'canceled'].includes(record.data.state) ? 'opacity-50' : ''}`"
+                        class="'o_field_many2many_avatar_user subtask_user_widget_col d-inline-flex align-items-center justify-content-end me-1'"
                         name="'user_ids'"
                         record="record"
                         readonly="false"

@@ -1,8 +1,6 @@
 /** @odoo-module native */
 import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
 import { formatCurrency } from "@web/core/currency";
-import { formatFieldFloat } from "@web/core/formatters";
-import { _t } from "@web/core/translation";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { SIZES } from "@web/ui/viewport";
 import { ViewButton } from "@web/views/view_button";
@@ -19,7 +17,7 @@ export class ProjectRightSidePanel extends Component {
         ProjectProfitability,
     };
     static template = "project.ProjectRightSidePanel";
-    static props = { context: t.object(), domain: t.array() };
+    static props = { context: t.object() };
     props = useProps(this.constructor.props);
 
     setup() {
@@ -27,8 +25,7 @@ export class ProjectRightSidePanel extends Component {
         this.orm = useService("orm");
         this.actionService = useService("action");
         this.dialog = useService("dialog");
-        this.uiService = useService("ui");
-        useBus(this.uiService.bus, "resize", this.updateGridTemplateColumns.bind(this));
+        useBus(this.ui.bus, "resize", this.updateGridTemplateColumns.bind(this));
         this.state = proxy({
             data: {
                 milestones: {
@@ -38,7 +35,6 @@ export class ProjectRightSidePanel extends Component {
                     costs: { data: [], total: { billed: 0.0, to_bill: 0.0 } },
                     revenues: { data: [], total: { invoiced: 0.0, to_invoice: 0.0 } },
                 },
-                user: {},
                 currency_id: false,
             },
             gridTemplateColumns: this._getGridTemplateColumns(),
@@ -48,7 +44,7 @@ export class ProjectRightSidePanel extends Component {
     }
 
     _getGridTemplateColumns() {
-        switch (this.uiService.size) {
+        switch (this.ui.size) {
             case SIZES.XS:
                 return 2;
             case SIZES.SM:
@@ -75,10 +71,6 @@ export class ProjectRightSidePanel extends Component {
         return this.props.context;
     }
 
-    get domain() {
-        return this.props.domain;
-    }
-
     get projectId() {
         return this.context.active_id;
     }
@@ -87,20 +79,9 @@ export class ProjectRightSidePanel extends Component {
         return this.state.data.currency_id;
     }
 
-    get sectionNames() {
-        return {
-            milestones: _t("Milestones"),
-            profitability: _t("Profitability"),
-        };
-    }
-
     get showProjectProfitability() {
         const { costs, revenues } = this.state.data.profitability_items;
         return costs.data.length || revenues.data.length;
-    }
-
-    formatFieldFloat(value) {
-        return formatFieldFloat(value, { digits: [false, 1] });
     }
 
     formatMonetary(value, options = {}) {

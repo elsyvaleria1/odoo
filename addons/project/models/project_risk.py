@@ -111,9 +111,43 @@ class ProjectRisk(models.Model):
         required=True,
         tracking=True,
     )
-    date_identified = fields.Date(default=fields.Date.today)
-    date_resolved = fields.Date()
+    date_identified = fields.Date(default=fields.Date.context_today)
+    date_resolved = fields.Date(
+        compute="_compute_date_resolved",
+        store=True,
+        readonly=False,
+    )
     active = fields.Boolean(default=True)
+
+    @api.depends("state")
+    def _compute_date_resolved(self) -> None:
+        for risk in self:
+            if risk.state != "resolved":
+                risk.date_resolved = False
+            elif not risk.date_resolved:
+                risk.date_resolved = fields.Date.context_today(risk)
+                _debug.logic(
+                    "risk_resolution_dated", risk=risk, date=risk.date_resolved
+                )
+
+    @api.constrains("task_id", "project_id")
+    def _check_task_project(self) -> None:
+        for risk in self:
+            if risk.task_id and risk.task_id.project_id != risk.project_id:
+                _debug.logic(
+                    "risk_task_project_refused",
+                    risk=risk,
+                    task=risk.task_id,
+                    task_project=risk.task_id.project_id,
+                )
+                raise ValidationError(
+                    self.env._(
+                        "The related task of risk %(risk)s must belong to its "
+                        "project (%(project)s).",
+                        risk=risk.name,
+                        project=risk.project_id.display_name,
+                    )
+                )
 
     @api.constrains("state", "date_resolved")
     def _check_date_resolved(self) -> None:

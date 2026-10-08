@@ -1,74 +1,65 @@
 /** @odoo-module native */
-import { Component, onWillStart, proxy, t, useProps } from "@odoo/owl";
-import { Dropdown, DropdownItem } from "@web/components/dropdown";
+import { onWillUpdateProps, proxy, t } from "@odoo/owl";
 import { useAppContext } from "@web/core/app_context";
-import { user } from "@web/core/user";
-import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/translation";
 import { clearUncommittedChanges } from "@web/webclient/actions";
 
-import { ProjectTemplateButtons } from "./project_template_buttons.js";
+import { TemplateDropdown } from "./template_dropdown.js";
 
-export class ProjectTaskTemplateDropdown extends Component {
-    static template = "project.TemplateDropdown";
-    static components = {
-        Dropdown,
-        DropdownItem,
-        ProjectTemplateButtons,
-    };
-
+export class ProjectTaskTemplateDropdown extends TemplateDropdown {
     static props = {
-        hotkey: t.string().optional("c"),
-        newButtonClasses: t.string(),
-        onCreate: t.function(),
+        ...TemplateDropdown.props,
         projectId: t.or([t.number(), t.boolean(), t.literal(null)]).optional(null),
-        context: t.object(),
-        getAdditionalContext: t.function().optional(),
     };
-    props = useProps(this.constructor.props);
 
     setup() {
+        super.setup();
         this.appContext = useAppContext();
-        this.action = useService("action");
-        this.orm = useService("orm");
+        // industry_fsm's patch fills this key
         this.state = proxy({ taskTemplates: [] });
-        this.isProjectManager = false;
-        onWillStart(this.onWillStart);
+        onWillUpdateProps(this.onWillUpdateProps);
     }
 
-    get templateItemClasses() {
-        return `btn btn-link o-dropdown-item-indent o-task-template d-flex align-items-center${
-            this.isProjectManager ? " pe-0" : ""
-        }`;
+    get templates() {
+        return this.state.taskTemplates;
     }
 
-    async onWillStart() {
-        await Promise.all([
-            user
-                .hasGroup("project.group_project_manager")
-                .then((isProjectManager) => (this.isProjectManager = isProjectManager)),
-            this.props.projectId && this.fetchTaskTemplates(),
-        ]);
+    get templateResModel() {
+        return "project.task";
     }
 
-    async fetchTaskTemplates() {
-        this.state.taskTemplates = await this.orm
-            .cache({
-                type: "disk",
-                update: "always",
-                callback: (result, hasChanged) => {
-                    if (hasChanged) {
-                        this.state.taskTemplates = result;
-                    }
-                },
-            })
-            .call("project.project", "get_template_tasks", [this.props.projectId]);
+    get templateItemClass() {
+        return "o-task-template";
     }
 
-    async createTaskFromTemplate(templateId) {
-        const context = { ...this.props.context };
-        if (this.props.getAdditionalContext) {
-            Object.assign(context, this.props.getAdditionalContext());
+    get newRecordLabel() {
+        return _t("New Task");
+    }
+
+    get templatesHeader() {
+        return _t("Task Templates");
+    }
+
+    async onWillUpdateProps(nextProps) {
+        if (nextProps.projectId !== this.props.projectId) {
+            await this.fetchTemplates(nextProps);
         }
+    }
+
+    async fetchTemplates({ projectId }) {
+        if (!projectId) {
+            this.state.taskTemplates = [];
+            return;
+        }
+        this.state.taskTemplates = await this.cachedOrm((templates) => {
+            if (this.props.projectId === projectId) {
+                this.state.taskTemplates = templates;
+            }
+        }).call("project.project", "get_template_tasks", [projectId]);
+    }
+
+    async createFromTemplate({ id: templateId }) {
+        const context = this.getCreateContext();
         if (!(await clearUncommittedChanges(this.appContext))) {
             return;
         }

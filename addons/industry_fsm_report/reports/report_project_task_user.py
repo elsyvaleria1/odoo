@@ -22,11 +22,3 @@ class ReportProjectTaskUser(models.Model):
             t.worksheet_template_id
         """
         )
-
-    def _group_by(self):
-        return (
-            super()._group_by()
-            + """,
-                t.worksheet_template_id
-        """
-        )

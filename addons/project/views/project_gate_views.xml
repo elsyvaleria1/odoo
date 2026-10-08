@@ -7,6 +7,31 @@
         <field name="arch" type="xml">
             <form string="Gate Review">
                 <header>
+                    <button
+                        name="action_pass"
+                        type="object"
+                        string="Pass"
+                        groups="project.group_project_manager"
+                        invisible="state != 'pending'"
+                        class="oe_highlight" />
+                    <button
+                        name="action_fail"
+                        type="object"
+                        string="Fail"
+                        groups="project.group_project_manager"
+                        invisible="state != 'pending'" />
+                    <button
+                        name="action_defer"
+                        type="object"
+                        string="Defer"
+                        groups="project.group_project_manager"
+                        invisible="state != 'pending'" />
+                    <button
+                        name="action_reset"
+                        type="object"
+                        string="Reset to Pending"
+                        groups="project.group_project_manager"
+                        invisible="state == 'pending'" />
                     <field
                         name="state"
                         widget="statusbar"

@@ -9,8 +9,8 @@ import { ProjectTaskListController } from "./project_task_list_controller.js";
 import { ProjectTaskListRenderer } from "./project_task_list_renderer.js";
 
 export const projectTaskListView = {
-    SearchModel: HighlightProjectTaskSearchModel,
     ...listView,
+    SearchModel: HighlightProjectTaskSearchModel,
     ControlPanel: ProjectTaskControlPanel,
     Controller: ProjectTaskListController,
     Model: ProjectTaskRelationalModel,
