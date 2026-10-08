@@ -762,6 +762,7 @@ class ThreadedHTTPServer:
         for sock in (self._wake_r, self._wake_w):
             with contextlib.suppress(OSError):
                 sock.close()
+        self._selector.close()
 
     @property
     def busy_workers(self) -> int:
