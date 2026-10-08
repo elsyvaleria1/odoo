@@ -6,7 +6,7 @@ import os
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.memory_watch import read_rss
 
-from ._env import get_env_float
+from ._env import get_env_float, get_env_int
 from .settings import INHERIT_FROM_CRON, current
 
 _debug = DebugLog(__name__)
@@ -50,6 +50,22 @@ base, and `base=2` is what reproduces this curve exactly.
 """
 
 
+WEBSOCKET_MAX_CONNECTIONS = 10000
+
+WEBSOCKET_DESCRIPTORS = 4
+"""Descriptors one websocket holds: its socket, and the selector and the
+socketpair of the thread that serves it."""
+
+
+def get_websocket_max_connections() -> int:
+    return get_env_int(
+        "ODOO_WEBSOCKET_MAX_CONNECTIONS",
+        WEBSOCKET_MAX_CONNECTIONS,
+        minimum=0,
+        logger=logging.getLogger("odoo.service.server"),
+    )
+
+
 def get_cron_real_time_budget() -> float:
     return current().cron_real_time_budget
 
@@ -84,9 +100,12 @@ __all__ = (
     "BACKOFF_CEILING_S",
     "GRACEFUL_STOP_TIMEOUT_S",
     "INHERIT_FROM_CRON",
+    "WEBSOCKET_DESCRIPTORS",
+    "WEBSOCKET_MAX_CONNECTIONS",
     "empty_pipe",
     "get_cron_real_time_budget",
     "get_graceful_stop_timeout",
     "get_job_real_time_budget",
     "get_memory_over_soft_limit",
+    "get_websocket_max_connections",
 )

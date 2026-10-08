@@ -216,10 +216,14 @@ workers before they serve anything.
 
 `lifecycle.py::_update_descriptor_budget` computes what the configuration can
 open at once — threaded: `db_maxconn` + HTTP threads + idle connections +
-listeners; prefork: the larger of a worker (`db_maxconn` + 1) and the websocket
-child (`db_maxconn_gevent` or `db_maxconn`, plus its threads) — adds
+listeners + websockets; prefork: the larger of a worker (`db_maxconn` + 1) and
+the websocket child (`db_maxconn_gevent` or `db_maxconn`, plus its threads,
+idle connections and websockets) — adds
 `DESCRIPTOR_HEADROOM` (128), and raises the soft `RLIMIT_NOFILE` to the hard
-one when that demand exceeds it. When even the hard limit is short it warns
+one when that demand exceeds it. Websockets count
+`ODOO_WEBSOCKET_MAX_CONNECTIONS` × `WEBSOCKET_DESCRIPTORS` (4: the socket, and
+the selector and socketpair of the thread serving it); an unbounded cap counts
+none. When even the hard limit is short it warns
 naming `LimitNOFILE=`, the unit-file key that lifts it; nothing lowers a
 configured value.
 
@@ -355,6 +359,7 @@ Knobs, read from the environment:
 | `ODOO_HTTP_BODY_TIMEOUT` | `20 s` | a request body must arrive within this plus one second per `ODOO_HTTP_BODY_MIN_RATE` bytes received, counted from the application's first read that waits on the network; past it, or past one silent `ODOO_HTTP_SOCKET_TIMEOUT` mid-body, the answer is `408` |
 | `ODOO_HTTP_BODY_MIN_RATE` | `500 B/s` | the pace that earns a body more time: 4 MiB at 1 MiB/s passes a 2 s budget, one byte per 1.5 s does not; `0` gives no credit, so the timeout bounds the whole body |
 | `ODOO_HTTP_DRAIN_BYTES` | `1 MiB` | unread request body discarded, within one second, to keep a connection alive; beyond it the connection closes after a two-second lingering close |
+| `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `10000` | websockets one process holds, counted from the handshake; past it the handshake is answered `503` with `Retry-After: 5` before any `101`. `0` is unbounded |
 
 **What the parser refuses**, each with the connection closed: conflicting
 `Content-Length`, whitespace before a header colon, obsolete line folding,
@@ -443,6 +448,17 @@ by `doc/architecture/factcheck.sh`.
 | `odoo_http_threads_max` | gauge | the bounded HTTP handler slots — threaded and evented |
 | `odoo_limits_reached_threads` | gauge | threads over their time limit whose cancel did not free them, pending the reload — threaded |
 | `odoo_overruns_cancelled_total` | counter | requests, sweeps and jobs over `limit_time_real` whose queries were cancelled — threaded |
+
+**Websockets** (added 2026-10-08, after that freeze; registered by `bus` through
+`metrics.register_collector`; read
+them on the process that holds the websockets — the evented port under
+`workers > 0`)
+
+| Family | Kind | Meaning |
+|---|---|---|
+| `odoo_websocket_connections` | gauge | websockets open or being opened, from the handshake's reservation to the end of the connection |
+| `odoo_websocket_connections_max` | gauge | `ODOO_WEBSOCKET_MAX_CONNECTIONS`; `0` is unbounded |
+| `odoo_websocket_refused_total` | counter | handshakes answered `503` at the cap |
 
 **Prefork master** (absent on a threaded server)
 

@@ -36,6 +36,7 @@ from odoo.http import (
     root,
 )
 from odoo.modules.registry import Registry
+from odoo.service import get_websocket_max_connections, metrics
 from odoo.service.security import is_session_valid
 from odoo.service.server import CommonServer
 from odoo.service.transaction import retrying
@@ -247,11 +248,74 @@ class CloseFrame(Frame):
 
 _public_session_lock = threading.Lock()
 _public_session_sid_by_db = {}
-_PUBLIC_SESSION_TOUCH_INTERVAL = 3600
 
 
 _websocket_instances = WeakSet()
 _websocket_instances_lock = threading.Lock()
+
+
+class ConnectionGauge:
+    REFUSAL_LOG_INTERVAL = 60.0
+
+    def __init__(self, limit=None, *, clock=time.monotonic) -> None:
+        self.limit = get_websocket_max_connections() if limit is None else limit
+        self.count = 0
+        self.refused = 0
+        self._clock = clock
+        self._lock = threading.Lock()
+        self._refusals_logged_at = None
+        self._refusals_unlogged = 0
+
+    def reserve(self) -> bool:
+        with self._lock:
+            if not self.limit or self.count < self.limit:
+                self.count += 1
+                return True
+            self.refused += 1
+            self._refusals_unlogged += 1
+            now = self._clock()
+            logged_at = self._refusals_logged_at
+            if logged_at is not None and now - logged_at < self.REFUSAL_LOG_INTERVAL:
+                return False
+            self._refusals_logged_at = now
+            refusals, self._refusals_unlogged = self._refusals_unlogged, 0
+        _logger.warning(
+            "Refused %d websocket handshake(s) with 503: %d connections open, "
+            "at ODOO_WEBSOCKET_MAX_CONNECTIONS",
+            refusals,
+            self.limit,
+        )
+        return False
+
+    def release(self) -> None:
+        with self._lock:
+            self.count -= 1
+
+
+_connection_gauge = ConnectionGauge()
+
+
+def _collect_metrics(add) -> None:
+    gauge = _connection_gauge
+    add(
+        "odoo_websocket_connections",
+        gauge.count,
+        help="Websocket connections open or being opened in this process.",
+    )
+    add(
+        "odoo_websocket_connections_max",
+        gauge.limit,
+        help="ODOO_WEBSOCKET_MAX_CONNECTIONS; 0 is unbounded.",
+    )
+    add(
+        "odoo_websocket_refused_total",
+        gauge.refused,
+        kind="counter",
+        help="Websocket handshakes answered 503 at the connection cap.",
+    )
+
+
+metrics.register_collector(_collect_metrics)
 
 
 class NotificationDispatchState:
@@ -918,6 +982,7 @@ class WebsocketConnectionHandler:
         "upgrade",
     }
     _VERSION = "19.0-10"
+    RETRY_AFTER_AT_CAPACITY = 5
 
     @classmethod
     def websocket_allowed(cls, request) -> bool:
@@ -930,32 +995,6 @@ class WebsocketConnectionHandler:
         try:
             response = cls._get_handshake_response(request.httprequest.headers)
             socket = request.httprequest.raw_environ["odoo.socket"]
-            public_session = cls._handle_public_configuration(request)
-            if public_session is None and request.session.is_new:
-                # Nothing is stored for an anonymous visitor until it writes,
-                # and its cookie is never written under: the socket serves it
-                # as the public user, as an untrusted origin is served.
-                public_session = cls._get_shared_public_session(request.db)
-            session, db, httprequest = (
-                (public_session or request.session),
-                request.db,
-                request.httprequest,
-            )
-            response.call_on_close(
-                lambda: cls._serve_forever(
-                    Websocket(socket, session, httprequest.cookies),
-                    db,
-                    httprequest,
-                    version,
-                )
-            )
-            if public_session is None and request.session.can_save:
-                # The websocket authenticates from the stored session; marking
-                # it dirty instead would resend its session_id cookie, which a
-                # handshake answered between a login and the next request uses
-                # to put the pre-login session back in the browser.
-                root.session_store.save(request.session)
-            return response
         except KeyError as err:
             raise ServiceUnavailable(
                 "Websocket unavailable on this port. Use the evented service port."
@@ -963,6 +1002,42 @@ class WebsocketConnectionHandler:
         except HTTPException as exc:
             _logger.error(exc)
             raise
+        gauge = _connection_gauge
+        if not gauge.reserve():
+            raise ServiceUnavailable(
+                "Too many websocket connections on this process.",
+                retry_after=cls.RETRY_AFTER_AT_CAPACITY,
+            )
+        try:
+            public_session = cls._handle_public_configuration(request)
+            session, db, httprequest = (
+                (public_session or request.session),
+                request.db,
+                request.httprequest,
+            )
+
+            def serve():
+                try:
+                    cls._serve_forever(
+                        Websocket(socket, session, httprequest.cookies),
+                        db,
+                        httprequest,
+                        version,
+                    )
+                finally:
+                    gauge.release()
+
+            response.call_on_close(serve)
+            if public_session is None and request.session.can_save:
+                # The websocket authenticates from the stored session; marking
+                # it dirty instead would resend its session_id cookie, which a
+                # handshake answered between a login and the next request uses
+                # to put the pre-login session back in the browser.
+                root.session_store.save(request.session)
+        except BaseException:
+            gauge.release()
+            raise
+        return response
 
     @classmethod
     def _get_handshake_response(cls, headers):
@@ -1001,16 +1076,6 @@ class WebsocketConnectionHandler:
         with _public_session_lock:
             sid = _public_session_sid_by_db.get(db)
             session = root.session_store.get(sid) if sid else None
-            if (
-                session
-                and time.time() - (session.mtime or 0) > _PUBLIC_SESSION_TOUCH_INTERVAL
-            ):
-                # Every anonymous socket of the database rides this session:
-                # reaped as idle, it would close them all at once.
-                try:
-                    root.session_store.keep_alive(session)
-                except SessionExpiredException:
-                    session = None
             if not session:
                 session = root.session_store.new()
                 session.update(prepare_default_session(), db=db)

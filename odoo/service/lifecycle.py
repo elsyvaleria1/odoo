@@ -530,15 +530,18 @@ pipes, the listening and wake sockets, the inotify instance, the terminal."""
 def _get_descriptor_budget_demand() -> int:
     # The largest single process this configuration runs.  Threaded: every
     # HTTP slot and every parked idle connection is a socket, each cron and
-    # job thread holds a listener session, and the pool holds db_maxconn.
-    # Prefork: a worker holds db_maxconn and one client; the evented child
-    # is the threaded shape on its own port.  Workers inherit the limit, so
-    # the per-process maximum is what has to fit.
+    # job thread holds a listener session, the pool holds db_maxconn, and
+    # every websocket up to its cap holds its own descriptors.  Prefork: a
+    # worker holds db_maxconn and one client; the evented child is the
+    # threaded shape on its own port.  Workers inherit the limit, so the
+    # per-process maximum is what has to fit.
+    from ._limits import WEBSOCKET_DESCRIPTORS, get_websocket_max_connections
     from ._transport import TransportLimits
     from .httpd import compute_http_thread_limit, count_listener_permits
 
     settings = current()
     idle = TransportLimits.from_environment().max_idle_connections
+    websockets = get_websocket_max_connections() * WEBSOCKET_DESCRIPTORS
     threads, _ = compute_http_thread_limit(settings)
     http = threads + idle
     listeners = count_listener_permits(settings, listeners_spawned=True)
@@ -548,10 +551,13 @@ def _get_descriptor_budget_demand() -> int:
             settings, listeners_spawned=False, evented=True
         )
         evented = (
-            (settings.db_maxconn_gevent or settings.db_maxconn) + evented_threads + idle
+            (settings.db_maxconn_gevent or settings.db_maxconn)
+            + evented_threads
+            + idle
+            + websockets
         )
         return max(worker, evented) + DESCRIPTOR_HEADROOM
-    return settings.db_maxconn + http + listeners + DESCRIPTOR_HEADROOM
+    return settings.db_maxconn + http + listeners + websockets + DESCRIPTOR_HEADROOM
 
 
 def _update_descriptor_budget() -> None:
@@ -588,9 +594,10 @@ def _update_descriptor_budget() -> None:
     _logger.warning(
         "Open-file limit is %d but this configuration may hold %d descriptors at "
         "once (db_maxconn, the HTTP thread and idle-connection budgets, the "
-        "listener sessions). Under load this surfaces as 'Too many open files' "
-        "on accept(). Raise LimitNOFILE= on the unit (or ulimit -n), or lower "
-        "db_maxconn / ODOO_HTTP_MAX_IDLE_CONNECTIONS.",
+        "listener sessions, the websocket cap). Under load this surfaces as "
+        "'Too many open files' on accept(). Raise LimitNOFILE= on the unit (or "
+        "ulimit -n), or lower db_maxconn / ODOO_HTTP_MAX_IDLE_CONNECTIONS / "
+        "ODOO_WEBSOCKET_MAX_CONNECTIONS.",
         hard,
         demand,
     )

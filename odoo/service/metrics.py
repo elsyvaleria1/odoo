@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+from collections.abc import Callable
 from typing import Any
 
 from odoo.libs.debug_log import DebugLog
@@ -155,6 +156,18 @@ class _Exposition:
         for family in self._families.values():
             lines.extend(family.render())
         return "\n".join(lines) + "\n"
+
+
+MetricAdder = Callable[..., None]
+
+_collectors: list[Callable[[MetricAdder], None]] = []
+
+
+def register_collector(collect: Callable[[MetricAdder], None]) -> None:
+    # An addon's own families; it is handed `add(name, value, *, kind, help,
+    # labels)` per scrape, since core imports no addon to ask it.
+    if collect not in _collectors:
+        _collectors.append(collect)
 
 
 def get_service_metrics() -> dict[str, Any]:
@@ -470,6 +483,15 @@ def render_prometheus_exposition() -> str:
     if replicas:
         _debug.pipeline("metrics.replica_families_added", databases=len(replicas))
 
+    for collect in _collectors:
+        try:
+            collect(exp.add)
+        except Exception:
+            _debug.logic(
+                "metrics.collector_failed",
+                collector=getattr(collect, "__qualname__", None),
+            )
+
     with _debug.perf("metrics.rendered", families=len(exp._families)) as span:
         text: str = exp.render()
         span.set(bytes=len(text))
@@ -480,5 +502,6 @@ __all__ = (
     "CONTENT_TYPE",
     "get_metrics_token",
     "get_service_metrics",
+    "register_collector",
     "render_prometheus_exposition",
 )

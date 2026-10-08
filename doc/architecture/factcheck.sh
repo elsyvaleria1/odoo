@@ -279,6 +279,8 @@ for label, text in {
     "max queue": f"| `ODOO_HTTP_MAX_QUEUE` | `max({httpd.MIN_QUEUE}, {httpd.QUEUE_PER_THREAD} × ODOO_MAX_HTTP_THREADS)` |",
     "body timeout": f"| `ODOO_HTTP_BODY_TIMEOUT` | `{int(lim.body.timeout)} s` |",
     "body min rate": f"| `ODOO_HTTP_BODY_MIN_RATE` | `{int(lim.body.min_rate)} B/s` |",
+    "websocket cap": f"| `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `{_limits.WEBSOCKET_MAX_CONNECTIONS}` |",
+    "websocket descriptors": f"`WEBSOCKET_DESCRIPTORS` ({_limits.WEBSOCKET_DESCRIPTORS}:",
 }.items():
     contains(label, text)
 

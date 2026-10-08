@@ -6,7 +6,11 @@ from . import server
 from . import httpd
 
 from ._env import get_env_float, get_env_int, get_env_str
-from ._limits import get_cron_real_time_budget, get_job_real_time_budget
+from ._limits import (
+    get_cron_real_time_budget,
+    get_job_real_time_budget,
+    get_websocket_max_connections,
+)
 
 __all__ = [
     "common",
@@ -16,6 +20,7 @@ __all__ = [
     "get_env_int",
     "get_env_str",
     "get_job_real_time_budget",
+    "get_websocket_max_connections",
     "httpd",
     "lifecycle",
     "model",
