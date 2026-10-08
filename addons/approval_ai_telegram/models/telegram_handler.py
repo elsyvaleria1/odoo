@@ -68,6 +68,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
                 starts_flow=True,
                 access=("approval.request", "create"),
                 description=_lt("Ask for an approval in your own words"),
+                company="choose",
             ),
         }
 
@@ -883,7 +884,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return bot.env["account.journal"].search(
             [
                 ("type", "=", "purchase"),
-                ("company_id", "=", bot.company_id.id),
+                ("company_id", "=", bot._acting_company().id),
             ]
         )
 
@@ -905,7 +906,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
 
         user_env = (
             bot.with_user(internal_user)
-            .with_context(allowed_company_ids=[bot.company_id.id])
+            .with_context(allowed_company_ids=[bot._acting_company().id])
             .env
         )
         try:
@@ -957,7 +958,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         vals = {
             "category_id": data["category_id"],
             "request_owner_id": internal_user.id,
-            "company_id": bot.company_id.id,
+            "company_id": bot._acting_company().id,
             "reason": self._get_reason_html(data),
             "telegram_data": data,
         }
@@ -1143,7 +1144,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return bot.env["approval.category"].search(
             [
                 "|",
-                ("company_id", "=", bot.company_id.id),
+                ("company_id", "=", bot._acting_company().id),
                 ("company_id", "=", False),
             ]
         )

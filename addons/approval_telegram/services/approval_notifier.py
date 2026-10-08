@@ -53,12 +53,12 @@ class TelegramApprovalNotifier(models.AbstractModel):
     @api.model
     def _target_chat(self, user, company):
         """The chat that tells `user` about a record of `company`: one of a
-        bot that speaks for that company, whose buttons and Mini App then
-        act in it."""
+        bot that serves that company, whose buttons and Mini App then act in
+        it."""
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
-            [("notify_approvals", "=", True), ("company_id", "=", company.id)]
+            [("notify_approvals", "=", True), ("company_ids", "in", company.id)]
         )
         if not bots:
             return self.env["telegram.chat"].browse()

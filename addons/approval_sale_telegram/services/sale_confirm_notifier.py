@@ -36,18 +36,23 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
 
     @api.model
     def confirm(self, order, user, bot):
-        """Confirm ``order`` as ``user``, in the company ``bot`` speaks for
-        and no other; returns the error to show, or None."""
+        """Confirm ``order`` as ``user``, in the order's company and no other,
+        which ``bot`` must serve; returns the error to show, or None."""
         env = self.env
         if user not in order.sudo()._get_telegram_confirm_users():
             return env._("You are not set up to confirm this order.")
+        company = order.sudo().company_id
+        if company not in bot._served_companies(user):
+            return env._("This bot does not act for %(company)s.") % {
+                "company": company.name
+            }
         if order.state != "draft":
             return env._("Order %(order)s is no longer a quotation.") % {
                 "order": order.name
             }
         try:
             order.with_user(user).with_context(
-                allowed_company_ids=[bot.company_id.id]
+                allowed_company_ids=company.ids
             ).action_confirm()
         except (AccessError, UserError) as exc:
             return str(exc)

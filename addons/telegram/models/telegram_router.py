@@ -7,8 +7,9 @@ from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 
 from ..tools import format as tg
+from ..tools import keyboard as kb
 from ..tools import replay
-from ..tools.authority import operating
+from ..tools.authority import keeping, operating
 from ..tools.dispatch import message_kind, translation_env
 
 _logger = logging.getLogger(__name__)
@@ -22,6 +23,10 @@ TOPIC_EVENTS = (
 MEMBERSHIP_EVENTS = ("new_chat_members", "left_chat_member", "group_chat_created")
 
 BUSY_CALLBACK_PREFIX = "tg_busy:"
+COMPANY_CALLBACK_PREFIX = "tg_co:"
+_PENDING_COMMAND_KEY = "telegram_pending_command"
+# the company a chosen command ran in, for the buttons its handler sent
+_COMMAND_COMPANY_KEY = "telegram_command_company"
 # what a menu ends with, whatever else a person may run: the way out of what
 # they started, then the help
 _MENU_LAST = ("/cancelar", "/ayuda")
@@ -194,25 +199,58 @@ class TelegramRouter(models.AbstractModel):
     def _as_sender(self, internal_user, bot, chat, *records):
         """The router, `bot`, `chat` and `records` as the update's sender: a
         linked internal user in a private chat acts as themself -- a command,
-        a button, a message alike -- in the bot's company and no other, and
-        anyone else as the request's own user. The bot keeps its records by
-        the privilege either way. A linked internal user who is no member of
-        the bot's company raises ForeignSender."""
+        a button, a message alike -- in the companies the bot serves that they
+        belong to, and anyone else as the request's own user. While a flow is
+        open, everything runs in the company it was started in. The bot keeps
+        its records by the privilege either way. A linked internal user of no
+        company the bot serves raises ForeignSender."""
+        company = self._flow_company(bot, chat)
         records = (self, bot, chat, *records)
         if not internal_user:
+            if company:
+                return self._pin_company(company, *records)
             return records
-        if not bot._admits_user(internal_user):
+        served = bot._served_companies(internal_user)
+        if not served:
             raise ForeignSender(chat)
-        sender_env = self.env(
-            user=internal_user,
-            context={**self.env.context, "allowed_company_ids": [bot.company_id.id]},
-        )
+        context = {**self.env.context, "allowed_company_ids": served.ids}
+        if company in served:
+            context.update(
+                allowed_company_ids=company.ids, telegram_company_id=company.id
+            )
+        sender_env = self.env(user=internal_user, context=context)
         # the sender is who really acts from here on: the guards that ask the
         # transaction for its real user (x2many links to users and partners)
         # must see them, not the request's public user
         self.env.transaction.default_env = sender_env
         env = operating(self.with_env(sender_env)).env
         return tuple(record.with_env(env) for record in records)
+
+    @staticmethod
+    def _flow_company(bot, chat):
+        """The company the chat's open flow runs in, if the bot serves it."""
+        companies = bot.env["res.company"]
+        if not chat or not chat.flow_owner or not chat._flow_is_open():
+            return companies
+        company = chat.flow_company_id
+        return company if company in keeping(bot).company_ids else companies
+
+    @staticmethod
+    def _pin_company(company, *records):
+        """`records` acting in `company` alone: the company of what a command
+        starts and of its flow. A sender who is no member of it -- the public
+        or a portal user of a partner-tier command -- keeps their own
+        companies; in_bot_company reads the pin."""
+        pinned = []
+        for record in records:
+            if not isinstance(record, models.BaseModel):
+                pinned.append(record)
+                continue
+            context = {"telegram_company_id": company.id}
+            if record.env.su or company.id in record.env.user._get_company_ids():
+                context["allowed_company_ids"] = company.ids
+            pinned.append(record.with_context(**context))
+        return tuple(pinned)
 
     @api.model
     def _acquire_chat_and_identity(self, bot, message_or_callback):
@@ -846,6 +884,26 @@ class TelegramRouter(models.AbstractModel):
             if owner is not None:
                 self._send_flow_busy_notice(bot, chat, owner, command)
                 return
+        if spec.company == "choose" and not self.env.context.get("telegram_company_id"):
+            companies = handler._command_companies(
+                bot, chat, command, partner, internal_user
+            )
+            if len(companies) > 1:
+                self._ask_company(bot, chat, command, args, companies)
+                return
+            if companies:
+                self, bot, chat, partner, internal_user = self._pin_company(
+                    companies, self, bot, chat, partner, internal_user
+                )
+                handler = handler.with_env(self.env)
+        if spec.company == "choose" and self.env.context.get("telegram_company_id"):
+            chat._set_context(
+                _COMMAND_COMPANY_KEY,
+                {
+                    "handler": handler._name,
+                    "company_id": self.env.context["telegram_company_id"],
+                },
+            )
         try:
             with bot.env.cr.savepoint():
                 self._run_command_handler(
@@ -924,7 +982,19 @@ class TelegramRouter(models.AbstractModel):
                     bot, chat, callback_query, partner, internal_user
                 )
                 return
+            if data.startswith(COMPANY_CALLBACK_PREFIX):
+                self._handle_company_callback(
+                    bot, chat, callback_query, partner, internal_user
+                )
+                return
             handler = self._callback_owner(bot, data)
+            if handler is not None:
+                company = self._command_company(bot, chat, handler, internal_user)
+                if company:
+                    self, bot, chat, partner, internal_user = self._pin_company(
+                        company, self, bot, chat, partner, internal_user
+                    )
+                    handler = handler.with_env(self.env)
             if handler is not None and handler._on_callback(
                 bot, chat, callback_query, partner, internal_user
             ):
@@ -1058,6 +1128,73 @@ class TelegramRouter(models.AbstractModel):
             refused,
             chat.flow_owner,
             chat.flow_step,
+        )
+
+    # -- the company of what a command starts ---------------------------------
+
+    @api.model
+    def _command_company(self, bot, chat, handler, internal_user):
+        """The company a button of `handler` acts in outside any flow: the one
+        its chosen command last ran in, while the person may still act there.
+        A button of another feature acts in its own record's company."""
+        if self.env.context.get("telegram_company_id"):
+            return self.env["res.company"]
+        remembered = chat._get_context(_COMMAND_COMPANY_KEY) or {}
+        if remembered.get("handler") != handler._name:
+            return self.env["res.company"]
+        company = keeping(bot).company_ids.filtered(
+            lambda company: company.id == remembered.get("company_id")
+        )
+        if internal_user and company not in bot._served_companies(internal_user):
+            return self.env["res.company"]
+        return company.with_env(self.env)
+
+    @api.model
+    def _ask_company(self, bot, chat, command, args, companies) -> None:
+        """Ask which company `command` is for; the button runs it there."""
+        chat._set_context(_PENDING_COMMAND_KEY, {"command": command, "args": args})
+        bot.send_message(
+            chat.chat_id,
+            translation_env(bot, chat)._("Which company is %(command)s for?")
+            % {"command": tg.code(command)},
+            reply_markup=kb.record_list(
+                companies,
+                lambda company: company.name,
+                lambda company: f"{COMPANY_CALLBACK_PREFIX}{company.id}",
+            ),
+        )
+
+    @api.model
+    def _handle_company_callback(
+        self, bot, chat, callback_query, partner, internal_user
+    ) -> None:
+        self.env["mixin.telegram.handler"]._clear_keyboard(bot, chat, callback_query)
+        pending = chat._get_context(_PENDING_COMMAND_KEY) or {}
+        chat._set_context(_PENDING_COMMAND_KEY, False)
+        command = pending.get("command")
+        handler, _spec = self._command_owner(bot, command)
+        chosen = (callback_query.get("data") or "")[len(COMPANY_CALLBACK_PREFIX) :]
+        company = (
+            handler._command_companies(
+                bot, chat, command, partner, internal_user
+            ).filtered(lambda company: str(company.id) == chosen)
+            if handler is not None
+            else self.env["res.company"]
+        )
+        if not company:
+            # pressed on an older question, or the person lost that company
+            bot.send_message(
+                chat.chat_id,
+                translation_env(bot, chat)._(
+                    "That choice is no longer open. Send the command again."
+                ),
+            )
+            return
+        router, bot, chat, partner, internal_user = self._pin_company(
+            company, self, bot, chat, partner, internal_user
+        )
+        router._dispatch_command(
+            bot, chat, command, pending.get("args") or [], partner, internal_user
         )
 
     @api.model

@@ -22,8 +22,9 @@ class BotAssistant:
         self._bot = bot
         self._env = bot.env
         # A webhook runs as the public user, whose company holds no credential
-        # nor policy: the model is chosen and the note heard in the bot's company.
-        self._company = bot.company_id
+        # nor policy: the model is chosen and the note heard in the company the
+        # bot acts in -- the command's or flow's, else the bot's own.
+        self._company = bot._acting_company()
         # A command runs as the requester, who may not read the AI providers
         # the bot's settings point at; those settings are the bot's, not theirs.
         settings = bot.with_privilege(

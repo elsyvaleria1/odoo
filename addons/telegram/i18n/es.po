@@ -815,6 +815,11 @@ msgid "First Name"
 msgstr "Nombre"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_company_id
+msgid "Flow Company"
+msgstr "Compañía del flujo"
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_chat__flow_data
 msgid "Flow Data"
 msgstr "Datos del flujo"
@@ -1408,6 +1413,11 @@ msgid "See who you are in Odoo"
 msgstr "Ver quién eres en Odoo"
 
 #. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__company_ids
+msgid "Serves Companies"
+msgstr "Atiende a"
+
+#. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_bot__token_hash
 msgid ""
 "SHA256 of the bot token, used to resolve the webhook URL to this bot. "
@@ -1701,6 +1711,12 @@ msgstr "Texto"
 
 #. module: telegram
 #. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "That choice is no longer open. Send the command again."
+msgstr "Esa opción ya no está disponible. Vuelve a enviar el comando."
+
+#. module: telegram
+#. odoo-python
 #: code:addons/telegram/models/telegram_handler_base.py:0
 msgid ""
 "That is not your own number. To share yours, press the button that shares "
@@ -1724,6 +1740,39 @@ msgstr ""
 "El menú de comandos que se envió por última vez a Telegram para este chat "
 "privado: lo que su persona puede ejecutar aquí, en el idioma del chat. Se "
 "vuelve a enviar solo cuando eso cambia."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__company_ids
+msgid ""
+"The companies whose people act through this bot, each in the company of what"
+" they do: a record's own, or the one they choose for what they start when "
+"they belong to several."
+msgstr ""
+"Las compañías cuyas personas actúan a través de este bot, cada una en la "
+"compañía de lo que hace: la del registro, o la que elige para lo que inicia "
+"cuando pertenece a varias."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__company_id
+msgid ""
+"The company that owns this bot: its token, its receivers and the log of its "
+"calls to Telegram are this company's. It is always one of the companies the "
+"bot serves."
+msgstr ""
+"La compañía dueña de este bot: su token, sus receptores y el registro de sus"
+" llamadas a Telegram son de esta compañía. Siempre es una de las compañías "
+"que atiende el bot."
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_chat__flow_company_id
+msgid ""
+"The company the open flow acts in: the one its command was started in, "
+"chosen by the person when the bot serves several of theirs. Every message "
+"and button of the flow runs in it."
+msgstr ""
+"La compañía en la que actúa el flujo abierto: aquella en la que se inició su"
+" comando, elegida por la persona cuando el bot atiende a varias de las "
+"suyas. Cada mensaje y botón del flujo corre en ella."
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_res_bank__telegram_account_ids
@@ -2134,6 +2183,12 @@ msgid ""
 msgstr ""
 "Cuándo empezó Telegram a rechazar lo que el bot envía aquí: lo fija el "
 "primer mensaje fallido y lo borra el siguiente que se envía."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "Which company is %(command)s for?"
+msgstr "¿Para qué compañía es %(command)s?"
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_chat__partner_id

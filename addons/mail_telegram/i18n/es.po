@@ -841,6 +841,12 @@ msgstr ""
 #. module: mail_telegram
 #. odoo-python
 #: code:addons/mail_telegram/models/telegram_bot.py:0
+msgid "This bot serves %(companies)s, none of them a company you belong to."
+msgstr "Este bot atiende a %(companies)s, y no perteneces a ninguna de ellas."
+
+#. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_bot.py:0
 msgid "This Telegram account is not connected to you."
 msgstr "Esta cuenta de Telegram no está conectada a ti."
 

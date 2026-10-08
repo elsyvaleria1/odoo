@@ -8,7 +8,7 @@ from odoo.libs.datetime import timezone
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.telegram.tools import format as tg
-from odoo.addons.telegram.tools.authority import in_bot_company
+from odoo.addons.telegram.tools.authority import in_bot_company, keeping
 from odoo.addons.telegram.tools.dispatch import (
     TelegramCommand,
     log_command_execution,
@@ -33,26 +33,34 @@ class TelegramHandlerAttendance(models.AbstractModel):
                 "partner",
                 starts_flow=True,
                 description=_lt("Record your arrival"),
+                company="choose",
             ),
             "/salida": TelegramCommand(
                 "_handle_check_out_command",
                 "partner",
                 description=_lt("Record your departure"),
+                company="choose",
             ),
             "/comida": TelegramCommand(
                 "_handle_lunch_out_command",
                 "partner",
                 description=_lt("Start your lunch break"),
+                company="choose",
             ),
             "/regresocomida": TelegramCommand(
                 "_handle_lunch_in_command",
                 "partner",
                 description=_lt("Come back from lunch"),
+                company="choose",
             ),
         }
 
     def _command_allowed(self, bot, chat, command, partner, internal_user) -> bool:
-        return bool(self._employee(bot, partner))
+        return bool(self._employee_companies(bot, partner))
+
+    def _command_companies(self, bot, chat, command, partner, internal_user):
+        # attendance is recorded on an employee: the companies they are one in
+        return self._employee_companies(bot, partner)
 
     def _explain_command_refusal(
         self, bot, chat, command, partner, internal_user
@@ -67,9 +75,9 @@ class TelegramHandlerAttendance(models.AbstractModel):
 
     @staticmethod
     def _own_attendance(bot, partner, model_name):
-        # on behalf of the chat's contact, in the company the bot speaks for:
-        # the privilege reaches that contact's employee there, whichever user
-        # the command runs as
+        # on behalf of the chat's contact, in the company the bot acts in: the
+        # privilege reaches that contact's employee there, whichever user the
+        # command runs as
         return in_bot_company(
             partner.env[model_name]
             .with_acting_partner(partner)
@@ -81,12 +89,27 @@ class TelegramHandlerAttendance(models.AbstractModel):
         )
 
     def _employee(self, bot, partner):
-        """The employee the chat's contact is in the bot's company, or none."""
+        """The employee the chat's contact is in the company the bot acts in,
+        or none."""
         if not partner:
             return partner.env["hr.employee"]
+        company = bot.with_env(partner.env)._acting_company()
         return self._own_attendance(bot, partner, "hr.employee").search(
-            [("partner_id", "=", partner.id), ("company_id", "=", bot.company_id.id)],
+            [("partner_id", "=", partner.id), ("company_id", "=", company.id)],
             limit=1,
+        )
+
+    def _employee_companies(self, bot, partner):
+        """The companies the bot serves where the chat's contact is an
+        employee."""
+        served = keeping(bot).company_ids.with_env(bot.env)
+        if not partner:
+            return served.browse()
+        return served.filtered(
+            lambda company: self._employee(
+                bot.with_context(telegram_company_id=company.id),
+                partner.with_context(telegram_company_id=company.id),
+            )
         )
 
     def _has_employee_access(self, bot, chat, partner) -> bool:

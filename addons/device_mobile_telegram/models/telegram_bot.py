@@ -34,15 +34,16 @@ class TelegramBot(models.Model):
 
     def _get_company_phone_numbers(self, user) -> set[str]:
         """The numbers, in E.164, of the company phones `user` carries, in the
-        company this bot speaks for."""
+        companies this bot serves them in."""
         self.check_singleton()
         category = self.env.ref("device_mobile.device_category_mobile_phone")
-        # read as `user` in this bot's company, whoever asks: the poster's or
-        # the webhook's companies decide nothing
+        companies = self._served_companies(user)
+        # read as `user` in those companies, whoever asks: the poster's or the
+        # webhook's companies decide nothing
         devices = (
             self.env["device.device"]
             .with_user(user)
-            .with_context(allowed_company_ids=self.company_id.ids)
+            .with_context(allowed_company_ids=companies.ids)
         )
         devices = devices.with_privilege(
             "device_mobile_telegram.privilege_read_company_phones",
@@ -54,7 +55,7 @@ class TelegramBot(models.Model):
                 ("user_id", "=", user.id),
                 ("device_category_id", "=", category.id),
                 ("line_number_e164", "!=", False),
-                ("company_id", "in", [self.company_id.id, False]),
+                ("company_id", "in", [*companies.ids, False]),
             ]
         )
         return set(phones.mapped("line_number_e164"))

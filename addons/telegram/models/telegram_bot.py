@@ -5,7 +5,7 @@ from typing import Any, Self
 
 import psycopg
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.json import dumps as json_dumps
 
@@ -35,8 +35,17 @@ class TelegramBot(models.Model):
         default=lambda self: self.env.company,
         index=True,
         required=True,
-        help="The company this bot speaks for: what it reads and files is that "
-        "company's, whoever the update runs as.",
+        help="The company that owns this bot: its token, its receivers and the "
+        "log of its calls to Telegram are this company's. It is always one of "
+        "the companies the bot serves.",
+    )
+    company_ids = fields.Many2many(
+        comodel_name="res.company",
+        relation="telegram_bot_res_company_rel",
+        string="Serves Companies",
+        help="The companies whose people act through this bot, each in the "
+        "company of what they do: a record's own, or the one they choose for "
+        "what they start when they belong to several.",
     )
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
@@ -127,8 +136,25 @@ class TelegramBot(models.Model):
         "Token hash must be unique (duplicate bot token detected)!",
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        bots = super().create(vals_list)
+        bots._serve_own_company()
+        return bots
+
     def write(self, vals):
+        # a bot serving its owner alone moves with it: a new owner is the one
+        # company it serves, as it was before a bot could serve several
+        moving = (
+            keeping(self).filtered(lambda bot: bot.company_ids == bot.company_id)
+            if "company_id" in vals and "company_ids" not in vals
+            else self.browse()
+        )
         result = super().write(vals)
+        for bot in moving:
+            bot.company_ids = bot.company_id
+        if vals.keys() & {"company_id", "company_ids"}:
+            self._serve_own_company()
         if "company_id" in vals or "credential_id" in vals:
             for bot in keeping(self):
                 if bot.credential_id.company_id != bot.company_id:
@@ -137,11 +163,22 @@ class TelegramBot(models.Model):
             operating(self).chat_ids._sync_command_menu()
         return result
 
+    def _serve_own_company(self) -> None:
+        for bot in keeping(self):
+            if bot.company_id not in bot.company_ids:
+                bot.company_ids = [Command.link(bot.company_id.id)]
+
     @api.model
     def _command_menu_fields(self) -> set:
         """The bot's fields that change what its people may run: a feature
         reading one to enable itself adds it."""
-        return {"command_ids", "company_id", "lang", "answer_in_bot_lang"}
+        return {
+            "command_ids",
+            "company_id",
+            "company_ids",
+            "lang",
+            "answer_in_bot_lang",
+        }
 
     @api.constrains("credential_id")
     def _check_credential_is_for_telegram(self) -> None:
@@ -333,12 +370,35 @@ class TelegramBot(models.Model):
 
     def _admits_user(self, user) -> bool:
         """Whether `user` may act through this bot: an internal user only as a
-        member of the company the bot speaks for, a portal or public user
-        always, on their own contact's data."""
+        member of a company the bot serves, a portal or public user always, on
+        their own contact's data."""
         self.check_singleton()
+        return bool(user.share or self._served_companies(user))
+
+    def _served_companies(self, user):
+        """The companies `user` acts in through this bot: those it serves that
+        an internal user belongs to, their current company first; every one it
+        serves for a portal or public user, who acts on their own data."""
+        self.check_singleton()
+        served = keeping(self).company_ids.with_env(self.env)
         if user.share:
-            return True
-        return self.company_id.id in self.env(user=user.id).user._get_company_ids()
+            return served
+        member_of = set(self.env(user=user.id).user._get_company_ids())
+        served = served.filtered(lambda company: company.id in member_of)
+        return (served & user.company_id) | served
+
+    def _acting_company(self):
+        """The company what runs now acts in: the one the router pinned for
+        this command or its flow, else the current one when the bot serves
+        it, else the bot's own."""
+        self.check_singleton()
+        served = keeping(self).company_ids
+        pinned = self.env.context.get("telegram_company_id")
+        if pinned in served.ids:
+            return self.env["res.company"].browse(pinned)
+        if not self.env.user.share and self.env.company in served:
+            return self.env.company
+        return self.company_id
 
     @api.model
     def _serving(self, handler_name) -> Self:

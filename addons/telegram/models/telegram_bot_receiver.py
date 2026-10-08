@@ -402,11 +402,11 @@ class TelegramBot(models.Model):
         caller's id comes from initData Telegram signed or a session this
         database signed; its username never enters into it.
 
-        A member of the bot's company comes back in that company and no
-        other, and the Mini App call this bot admitted continues as them
-        there, as the router runs an update's sender: what the app reads and
-        writes is the company's the bot speaks for, whichever companies the
-        user has active in Odoo."""
+        An internal user comes back in the companies the bot serves that they
+        belong to and no other, and the Mini App call this bot admitted
+        continues as them there, as the router runs an update's sender: what
+        the app reads and writes is of those companies, whichever companies
+        the user has active in Odoo."""
         self.check_singleton()
         if not telegram_user_id:
             return self.env["res.users"]
@@ -418,9 +418,9 @@ class TelegramBot(models.Model):
         user = account._acting_user(tier)
         if not user or not self._admits_user(user):
             return self.env["res.users"]
-        if self.company_id.id not in user._get_company_ids():
+        if user.share:
             return user
-        in_company = {"allowed_company_ids": [self.company_id.id]}
+        in_company = {"allowed_company_ids": self._served_companies(user).ids}
         admission = getattr(request, "admission", None) if request else None
         if admission and admission.subject == self:
             request.update_env(

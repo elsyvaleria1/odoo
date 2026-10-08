@@ -20,11 +20,14 @@ def keeping(bots):
 
 
 def in_bot_company(records, bot):
-    # `records` in the company `bot` speaks for and no other. The update's
-    # public user, or a portal user, of another company is no member of it and
-    # is pinned there only elevated, since company guards admit no privilege:
-    # the caller's own domains then keep that sender to their own data.
-    pinned = records.with_context(allowed_company_ids=[bot.company_id.id])
-    if records.env.su or bot.company_id.id in records.env.user._get_company_ids():
+    # `records` in the company the bot acts in now -- the one the router
+    # pinned for this command or flow, else the bot's own -- and no other. The
+    # update's public user, or a portal user, of another company is no member
+    # of it and is pinned there only elevated, since company guards admit no
+    # privilege: the caller's own domains then keep that sender to their own
+    # data.
+    company = bot.with_env(records.env)._acting_company()
+    pinned = records.with_context(allowed_company_ids=[company.id])
+    if records.env.su or company.id in records.env.user._get_company_ids():
         return pinned
     return pinned.sudo()

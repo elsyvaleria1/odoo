@@ -42,7 +42,7 @@ class TelegramBot(models.Model):
     @api.model
     def _get_notifying_bots(self, user):
         """The bots delivering `user`'s notifications: those that deliver any
-        and speak for a company of theirs, where their replies are heard.
+        and serve a company of theirs, where their replies are heard.
         Read as `user`, in their companies: the answer is theirs, whoever
         asks -- a poster of another company, the outbox, the webhook."""
         bots = operating(
@@ -64,8 +64,8 @@ class TelegramBot(models.Model):
         self.check_singleton()
         if not self._admits_user(user):
             return self.env._(
-                "This bot speaks for %(company)s, a company you do not belong to.",
-                company=self.company_id.name,
+                "This bot serves %(companies)s, none of them a company you belong to.",
+                companies=", ".join(keeping(self).company_ids.mapped("name")),
             )
         if not account or account._acting_user("internal") != user:
             return self.env._("This Telegram account is not connected to you.")

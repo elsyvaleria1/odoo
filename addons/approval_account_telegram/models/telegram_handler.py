@@ -71,6 +71,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
                 starts_flow=True,
                 access=("approval.request", "create"),
                 description=_lt("Record a payment for approval"),
+                company="choose",
             ),
             "/especie": TelegramCommand(
                 "_handle_especie_command",
@@ -78,6 +79,7 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
                 starts_flow=True,
                 access=("approval.request", "create"),
                 description=_lt("Record a payment in kind for approval"),
+                company="choose",
             ),
         }
 
@@ -623,14 +625,14 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             localized_dt = _localize_strict(naive_dt, mexico_tz)
             user_env = (
                 bot.with_user(internal_user)
-                .with_context(allowed_company_ids=[bot.company_id.id])
+                .with_context(allowed_company_ids=[bot._acting_company().id])
                 .env
             )
 
             approval_vals = {
                 "category_id": bot.payment_approval_category_id.id,
                 "request_owner_id": internal_user.id,
-                "company_id": bot.company_id.id,
+                "company_id": bot._acting_company().id,
                 "partner_id": data["partner_fx_id"],
                 "date": fields.Datetime.to_string(localized_dt),
                 "amount": data["amount"],
@@ -927,14 +929,14 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
             localized_dt = _localize_strict(naive_dt, mexico_tz)
             user_env = (
                 bot.with_user(internal_user)
-                .with_context(allowed_company_ids=[bot.company_id.id])
+                .with_context(allowed_company_ids=[bot._acting_company().id])
                 .env
             )
 
             approval_vals = {
                 "category_id": bot.especie_approval_category_id.id,
                 "request_owner_id": internal_user.id,
-                "company_id": bot.company_id.id,
+                "company_id": bot._acting_company().id,
                 "partner_id": data["partner_fx_id"],
                 "date": fields.Datetime.to_string(localized_dt),
                 "amount": data["amount"],

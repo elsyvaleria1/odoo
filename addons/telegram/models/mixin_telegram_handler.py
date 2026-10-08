@@ -5,6 +5,7 @@ from markupsafe import Markup, escape
 from odoo import models
 
 from ..tools import format as tg
+from ..tools.authority import keeping
 from ..tools.dispatch import translation_env
 
 # What a message carries as files, and the name each gets without its own.
@@ -174,6 +175,14 @@ class MixinTelegramHandler(models.AbstractModel):
         grants. A question only: /ayuda and the command menu ask it too, so
         it sends nothing -- `_explain_command_refusal` does, when it is run."""
         return True
+
+    def _command_companies(self, bot, chat, command, partner, internal_user):
+        """The companies `command` may act in for this person -- one of which
+        it is pinned to when it chooses (TelegramCommand.company): every one
+        the bot serves them in, a contact's every one the bot serves."""
+        if internal_user:
+            return bot._served_companies(internal_user)
+        return keeping(bot).company_ids.with_env(bot.env)
 
     def _explain_command_refusal(
         self, bot, chat, command, partner, internal_user

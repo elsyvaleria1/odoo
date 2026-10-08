@@ -57,17 +57,20 @@ class TelegramHandlerAccount(models.AbstractModel):
                 "_handle_estadoctapropio_command",
                 "partner",
                 description=_lt("Get your account statement"),
+                company="choose",
             ),
             CMD_PERIOD_STATEMENT: TelegramCommand(
                 "_handle_estadocuentaperiodo_command",
                 "partner",
                 description=_lt("Your account statement for a period"),
+                company="choose",
             ),
             CMD_CUSTOMER_STATEMENT: TelegramCommand(
                 "_handle_edocliente_command",
                 "partner",
                 starts_flow=True,
                 description=_lt("Look up a customer's account statement"),
+                company="choose",
             ),
         }
 
@@ -283,7 +286,9 @@ class TelegramHandlerAccount(models.AbstractModel):
         as a user with no timezone, so date.today() is already tomorrow from
         18:00 in Mexico City, and "this year" or "last month" slides with it
         on the last evening of a year or a month."""
-        company = chat.bot_id.company_id.with_env(self._statement_bot(chat.bot_id).env)
+        company = chat.bot_id._acting_company().with_env(
+            self._statement_bot(chat.bot_id).env
+        )
         tz = chat.partner_id.tz or company.partner_id.tz or DEFAULT_TZ
         return fields.Date.context_today(chat.with_context(tz=tz))
 
@@ -496,25 +501,26 @@ class TelegramHandlerAccount(models.AbstractModel):
         return True
 
     def _statement_bot(self, bot):
-        """`bot` holding what printing a statement reads, in the bot's company
-        and no other: whoever may print any customer's prints with their own
-        rights, as in Odoo; anyone else their own contact's only."""
-        in_company = bot.with_context(allowed_company_ids=[bot.company_id.id])
+        """`bot` holding what printing a statement reads, in the company the
+        bot acts in and no other: whoever may print any customer's prints with
+        their own rights, as in Odoo; anyone else their own contact's only."""
+        company = bot._acting_company()
+        in_company = bot.with_context(allowed_company_ids=company.ids)
         if bot.env["res.partner"].has_access("print_statement"):
             return in_company
-        if bot.company_id.id in bot.env.user._get_company_ids():
+        if company.id in bot.env.user._get_company_ids():
             return in_company.with_privilege(
                 "account_telegram.privilege_print_own_statement",
                 reason="a Telegram contact prints their own account statement",
             )
-        # the public or a portal user of another company than the bot's: the
+        # the public or a portal user of another company than that one: the
         # company guards of the journal items admit no privilege, so only the
         # partner and company filters below keep the statement to their own
         return in_bot_company(bot, bot)
 
     def _partners_with_statement_lines(self, bot, partner_domain):
         """Partners matching ``partner_domain`` that hold posted receivable
-        lines in the bot's company: what the statement and the partner's
+        lines in the company the bot acts in: what the statement and the partner's
         Due are made of.
 
         The line condition is part of the same query as the name: searching
@@ -533,7 +539,7 @@ class TelegramHandlerAccount(models.AbstractModel):
         return Domain(
             [
                 ("partner_id", "any", partner_domain),
-                ("company_id", "=", bot.company_id.id),
+                ("company_id", "=", bot._acting_company().id),
                 ("display_type", "not in", ("line_section", "line_note")),
                 ("account_id.account_type", "=", "asset_receivable"),
                 ("move_id.state", "=", "posted"),
@@ -823,7 +829,7 @@ class TelegramHandlerAccount(models.AbstractModel):
             # a database error in the report is rolled back here, before the
             # failure log and the callers' replies run on the transaction
             with bot.env.cr.savepoint():
-                company = bot.company_id
+                company = bot._acting_company()
                 report = self._statement_bot(bot).env.ref(
                     "account.partner_ledger_report"
                 )

@@ -9,6 +9,11 @@ from odoo.tools.translate import LazyGettext
 _logger = logging.getLogger(__name__)
 
 TIERS = ("unlinked", "partner", "internal")
+# "any": the command runs in every company the person acts in through the bot
+# (what a button acts on is in its record's company); "choose": what it
+# starts belongs to one company, which the person picks when they may act in
+# more than one, and its flow stays in it
+COMPANY_MODES = ("any", "choose")
 
 
 @dataclass(frozen=True)
@@ -23,7 +28,8 @@ class TelegramCommand:
     an internal user any of `groups` (xml ids) and the `access` (model,
     operation) the user has in Odoo, then the handler's `_command_allowed`.
     `description` is the menu's line for it; a command without one is not in
-    the menu, and still runs."""
+    the menu, and still runs. `company` says which company it acts in
+    (COMPANY_MODES)."""
 
     method: str
     tier: str = "internal"
@@ -32,10 +38,13 @@ class TelegramCommand:
     groups: tuple[str, ...] = ()
     access: tuple[str, str] | None = None
     description: LazyGettext | None = None
+    company: str = "any"
 
     def __post_init__(self) -> None:
         if self.tier not in TIERS:
             raise ValueError(f"unknown tier {self.tier!r}")
+        if self.company not in COMPANY_MODES:
+            raise ValueError(f"unknown company mode {self.company!r}")
         if isinstance(self.groups, str):
             raise TypeError("groups is a tuple of xml ids")
         if (self.groups or self.access) and self.tier != "internal":

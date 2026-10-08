@@ -8,6 +8,11 @@
             <list string="Telegram Bots">
                 <field name="name" />
                 <field name="company_id" groups="base.group_multi_company" />
+                <field
+                    name="company_ids"
+                    widget="many2many_tags"
+                    groups="base.group_multi_company"
+                    optional="show" />
             </list>
         </field>
     </record>
@@ -40,6 +45,10 @@
                             <field name="name" />
                             <field
                                 name="company_id"
+                                groups="base.group_multi_company" />
+                            <field
+                                name="company_ids"
+                                widget="many2many_tags"
                                 groups="base.group_multi_company" />
                             <field
                                 name="credential_id"

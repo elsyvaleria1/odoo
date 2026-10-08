@@ -58,12 +58,14 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
                 starts_flow=True,
                 access=_COLLECTOR,
                 description=_lt("Record what a customer paid you"),
+                company="choose",
             ),
             "/custodia": TelegramCommand(
                 "_handle_custody_command",
                 "internal",
                 access=_COLLECTOR,
                 description=_lt("See the collections you still hold"),
+                company="choose",
             ),
             "/rendir": TelegramCommand(
                 "_handle_remit_command",
@@ -71,6 +73,7 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
                 starts_flow=True,
                 access=_COLLECTOR,
                 description=_lt("Hand your collections in"),
+                company="choose",
             ),
         }
 

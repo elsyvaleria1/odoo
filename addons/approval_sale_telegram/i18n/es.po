@@ -16,6 +16,12 @@ msgid "Confirm by Telegram"
 msgstr "Confirman por Telegram"
 
 #. module: approval_sale_telegram
+#. odoo-python
+#: code:addons/approval_sale_telegram/services/sale_confirm_notifier.py:0
+msgid "This bot does not act for %(company)s."
+msgstr "Este bot no actúa para %(company)s."
+
+#. module: approval_sale_telegram
 #: model:ir.model.fields,help:approval_sale_telegram.field_approval_category__telegram_confirm_user_ids
 msgid ""
 "Users who confirm the sale order once this category approves it. Each "

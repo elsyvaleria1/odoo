@@ -164,10 +164,10 @@ class DigestDigest(models.Model):
 
     def _get_user_telegram_chat(self, user):
         """The chat that brings `user` their digest, which reports their
-        company: one of a bot that speaks for that company."""
+        company: one of a bot that serves that company."""
         chats = self.env["telegram.chat"]._for_user(user, self.telegram_bot_id or None)
         return chats.filtered(
-            lambda chat: keeping(chat.bot_id).company_id == user.company_id
+            lambda chat: user.company_id in keeping(chat.bot_id).company_ids
         )[:1]
 
     def _format_kpi_for_telegram(self, kpi) -> str:

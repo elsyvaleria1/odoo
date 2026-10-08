@@ -112,6 +112,13 @@ class TelegramChat(models.Model):
         readonly=True,
         help="A flow nobody moved since is over.",
     )
+    flow_company_id = fields.Many2one(
+        comodel_name="res.company",
+        readonly=True,
+        help="The company the open flow acts in: the one its command was "
+        "started in, chosen by the person when the bot serves several of "
+        "theirs. Every message and button of the flow runs in it.",
+    )
     failed_command_count = fields.Integer(
         default=0,
         help="Number of consecutive failed commands. Auto-resets on success.",
@@ -451,7 +458,7 @@ class TelegramChat(models.Model):
                 user=user,
                 context={
                     **self.env.context,
-                    "allowed_company_ids": [self.bot_id.company_id.id],
+                    "allowed_company_ids": self.bot_id._served_companies(user).ids,
                 },
             )
             chat = operating(self.with_env(sender_env))
@@ -493,6 +500,7 @@ class TelegramChat(models.Model):
                 "flow_step": step,
                 "flow_data": data or {},
                 "flow_expires_at": self._flow_expiry(owner),
+                "flow_company_id": self.env.context.get("telegram_company_id"),
             }
         )
 
@@ -523,6 +531,7 @@ class TelegramChat(models.Model):
                 "flow_step": False,
                 "flow_data": False,
                 "flow_expires_at": False,
+                "flow_company_id": False,
             }
         )
 
