@@ -1,6 +1,7 @@
 import json
 import subprocess
 import threading
+import time
 
 import pytest
 
@@ -295,3 +296,59 @@ def test_a_hanging_health_check_is_bounded(host, monkeypatch):
     monkeypatch.setenv("AGENT_RUNNER_DEPLOY_HEALTH_WAIT", "1")
     with pytest.raises(agent.Permanent, match="reverted"):
         deploy.hotfix(_hotfix_lease(host), StubReporter())
+
+
+def test_a_fix_production_already_holds_is_contained_not_failed(host):
+    (host.production / "addons/stock_x/models.py").write_text("fixed\n")
+    _git(
+        host.production,
+        "-c",
+        "user.name=p",
+        "-c",
+        "user.email=p@x",
+        "commit",
+        "-qam",
+        "same fix by hand",
+    )
+    head = host.head()
+    outcome = deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert outcome.result == {"revision": head, "contained": [host.fix], "modules": []}
+    assert host.calls() == []
+
+
+def test_a_hotfix_a_person_reverted_is_applied_again(host):
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    _git(
+        host.production,
+        "-c",
+        "user.name=p",
+        "-c",
+        "user.email=p@x",
+        "revert",
+        "--no-edit",
+        "HEAD",
+    )
+    assert host.file() == "broken\n"
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert host.file() == "fixed\n"
+
+
+def test_a_normal_deploy_does_not_unconfirm_a_hotfix(host):
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    calls = len(host.calls())
+    _commit(host.production, "addons/stock_x/other.py", "x\n", "a normal deploy")
+    deploy.hotfix(_hotfix_lease(host), StubReporter())
+    assert len(host.calls()) == calls, "confirmed already: nothing restarted"
+
+
+def test_a_command_that_times_out_is_killed_with_what_it_started(
+    host, monkeypatch, tmp_path
+):
+    marker = tmp_path / "orphan"
+    wrapper = tmp_path / "slow-upgrade"
+    wrapper.write_text(f"#!/bin/sh\n(sleep 2; touch {marker}) &\nsleep 30\n")
+    wrapper.chmod(0o755)
+    with pytest.raises(RuntimeError, match="timed out"):
+        deploy._run([str(wrapper)], "the upgrade", timeout=0.5)
+    time.sleep(3)
+    assert not marker.exists()

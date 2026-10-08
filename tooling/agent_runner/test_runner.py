@@ -202,3 +202,9 @@ def test_the_heartbeat_survives_an_unexpected_error():
     client = Flaky([_lease(seconds=3, lease_seconds=3)])
     _runner(client).run_once()
     assert client.beats >= 2
+
+
+def test_an_empty_claim_answer_is_no_run(monkeypatch):
+    client = agent.Client("http://odoo.test", "t")
+    monkeypatch.setattr(client, "_post", lambda verb, body: {})
+    assert client.claim() is None

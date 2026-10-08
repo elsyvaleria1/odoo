@@ -32,10 +32,12 @@ again instead of reporting it deployed.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import shlex
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -121,21 +123,25 @@ def _run(
 ) -> None:
     if command is None:
         return
+    # a session of its own: a command that runs out of time is killed with
+    # everything it started, not left upgrading under the revert
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=_host_env(),
+        start_new_session=True,
+    )
     try:
-        completed = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            env=_host_env(),
-            check=False,
-            timeout=timeout,
-        )
+        stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as error:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
         raise RuntimeError(f"{what} timed out after {timeout:.0f}s") from error
-    if completed.returncode:
-        raise RuntimeError(
-            f"{what} failed: {(completed.stderr or completed.stdout).strip()[-500:]}"
-        )
+    if process.returncode:
+        raise RuntimeError(f"{what} failed: {(stderr or stdout).strip()[-500:]}")
 
 
 def _healthy() -> bool:
@@ -237,9 +243,36 @@ def _hotfix_of(checkout: Path, commit: str) -> str | None:
     return found.strip() or None
 
 
-def _confirmed_healthy(checkout: Path) -> str | None:
-    healthy = _git(checkout, "rev-parse", "--verify", "--quiet", HEALTHY, check=False)
-    return healthy.strip() or None
+def _confirmed_running(checkout: Path, applied: str) -> bool:
+    """Whether the revision that applied the fix was confirmed healthy: it is
+    in the revision last confirmed, and that one in what runs -- a normal deploy
+    since, which does not move the marker, does not unconfirm it."""
+    healthy = _git(
+        checkout, "rev-parse", "--verify", "--quiet", HEALTHY, check=False
+    ).strip()
+    return bool(healthy) and (
+        is_ancestor(checkout, applied, healthy, trusted=True)
+        and is_ancestor(checkout, healthy, "HEAD", trusted=True)
+    )
+
+
+def _change_present(checkout: Path, base: str, commit: str) -> bool:
+    """Whether the running tree holds what the fix changed: its diff, reversed,
+    applies cleanly -- false once a person reverted it."""
+    diff = _git(checkout, "diff", "--binary", base, commit)
+    if not diff.strip():
+        return True
+    check = subprocess.run(
+        ["git", "apply", "--reverse", "--check", "-"],
+        cwd=checkout,
+        input=diff,
+        capture_output=True,
+        text=True,
+        env=_host_env(),
+        check=False,
+        timeout=COMMAND_TIMEOUT,
+    )
+    return check.returncode == 0
 
 
 def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
@@ -268,8 +301,12 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
     if _contains(checkout, commit):
         # production's own deploy brought it: activating it is that deploy's
         return Outcome(result={"revision": head, "contained": [commit], "modules": []})
-    if applied := _hotfix_of(checkout, commit):
-        if _confirmed_healthy(checkout) == head:
+    applied = _hotfix_of(checkout, commit)
+    if applied and not _change_present(checkout, base, commit):
+        # a person reverted the hotfix since: it is applied no more
+        applied = None
+    if applied:
+        if _confirmed_running(checkout, applied):
             return Outcome(
                 result={"revision": head, "contained": [commit], "modules": []}
             )
@@ -294,6 +331,10 @@ def hotfix(lease: dict[str, Any], reporter: Reporter) -> Outcome:
         raise Permanent(
             f"the fix does not apply to production's revision {head[:12]}: {error}"
         ) from error
+    if not _git(checkout, "diff", "--cached", "--name-only").strip():
+        # production holds the change already, by another way: nothing to apply
+        _git(checkout, "reset", "--quiet", "--hard", head)
+        return Outcome(result={"revision": head, "contained": [commit], "modules": []})
     _git(
         checkout,
         "-c",
@@ -342,7 +383,10 @@ def _revert(
     """Put the code back as it was, upgrade and restart again; always a
     permanent failure -- another attempt would apply the same fix again."""
     if before == after:
-        raise Permanent(f"the applied fix does not run healthy: {error}") from error
+        raise Permanent(
+            f"the applied fix does not run healthy and cannot be reverted here: "
+            f"{error}; production needs a person"
+        ) from error
     try:
         _git(checkout, "reset", "--quiet", "--hard", before)
         reporter.event(f"reverted to {before[:12]}: {error}", "error")

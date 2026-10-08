@@ -122,7 +122,7 @@ class TestRoutes(RunnerFixtures, HttpCase):
         self.assertEqual((run.cost, run.count_input_token), (0.75, 10))
 
     def test_credentials_that_cannot_be_prepared_do_not_wedge_the_runner(self):
-        stuck = self._run("stuck", priority=50, max_attempts=1)
+        stuck = self._run("stuck", priority=50)
         waiting = self._run("waiting")
         Run = type(self.env["agent.run"])
         original = Run._prepare_credentials
@@ -133,11 +133,9 @@ class TestRoutes(RunnerFixtures, HttpCase):
             return original(run)
 
         with patch.object(Run, "_prepare_credentials", unreachable):
-            status, answer = self._post("claim")
-            self.assertEqual((status, answer), (200, {"run": None}))
-            self.assertEqual(stuck.run_state, "failed")
-            self.assertIn("unreachable", stuck.error)
             self.assertEqual(self._claim()["id"], waiting.id)
+        self.assertEqual((stuck.run_state, stuck.count_attempt), ("queued", 0))
+        self.assertIn("unreachable", stuck.error)
 
     def test_a_wrong_token_reaches_nothing(self):
         run = self._run()

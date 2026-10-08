@@ -21,14 +21,6 @@ msgid "A checkout maps to one repository."
 msgstr "Un checkout corresponde a un repositorio."
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__pass_without_checks
-msgid ""
-"A fix's pull request that no check runs on -- a repository without CI -- "
-"counts as passing, so it can be merged or hotfixed once a person approves "
-"it. Off, such a fix waits in Testing."
-msgstr "El pull request de una corrección en el que no corre ninguna verificación -- un repositorio sin CI -- cuenta como aprobado, de modo que puede fusionarse o aplicarse como hotfix una vez que una persona lo apruebe. Desactivado, esa corrección espera en Pruebas."
-
-#. module: error_incident_autofix
 #: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_prompt_version_uniq
 msgid "A phase's prompt versions are unique."
 msgstr "Las versiones del prompt de una fase son únicas."
@@ -707,7 +699,7 @@ msgid ""
 msgstr "Solo un incidente que sufrió un usuario interno; una acción planificada o un trabajo que falla por sí solo espera a una persona."
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__pass_without_checks
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__pass_without_checks
 msgid "Pass Without Checks"
 msgstr "Aprobar sin verificaciones"
 
@@ -892,6 +884,14 @@ msgstr "El repositorio del módulo de este incidente no está mapeado."
 #: code:addons/error_incident_autofix/models/error_incident.py:0
 msgid "This incident's fix attempts are spent."
 msgstr "Se agotaron los intentos de corrección de este incidente."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__pass_without_checks
+msgid ""
+"This repository runs no CI: a fix's pull request that no check runs on "
+"counts as passing, so it can be merged or hotfixed once a person approves "
+"it. Off, such a fix waits in Testing for its checks."
+msgstr "Este repositorio no ejecuta CI: el pull request de una corrección sobre el que no corre ninguna verificación cuenta como aprobado, así que puede fusionarse o aplicarse como hotfix una vez que una persona lo apruebe. Desactivado, esa corrección espera en Prueba a sus verificaciones."
 
 #. module: error_incident_autofix
 #. odoo-python

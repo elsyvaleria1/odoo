@@ -99,12 +99,13 @@ unreachable.
 
 ## A change, retried
 
-A change whose answer was lost after its push -- the network, a killed runner -- is retried
-by Odoo; the retry finds the branch on the remote and reports that push without running the
-agent again. A pull request GitHub refuses to open does not fail a pushed change: the result
-says why, and Odoo follows the pull request by webhook once a person opens it. A push to
-GitHub without a repository token fails before the agent runs. Every failure after the agent
-ran reports what it spent.
+A change whose answer was lost after its push -- the network, a killed runner -- is retried by
+Odoo; the retry finds the branch on the remote and reports that push without running the agent
+again -- only when the branch's tip carries this run's `Agent-Run` trailer: a branch of that
+name someone else pushed fails the change instead of passing for its work. A pull request
+GitHub refuses to open does not fail a pushed change: the result says why, and Odoo follows
+the pull request by webhook once a person opens it. A push to GitHub without a repository
+token fails before the agent runs. Every failure after the agent ran reports what it spent.
 
 ## A hotfix
 
@@ -114,11 +115,15 @@ base branch's commits production does not run yet. A fix that does not apply cle
 refused, the checkout left as it was. After the upgrade and restart the server must come back
 healthy; the revision that did is recorded as `refs/agent-runner/healthy`, so an attempt that
 finds the fix applied but never confirmed running activates it again rather than report it
-deployed. When the server does not come back, the code is reverted, the modules upgraded and
-the server restarted again; the database is not restored, so a fix whose upgrade migrated
-data is undone in code only. A revert that itself fails, or leaves the server unhealthy, says
-that production needs a person. With `AGENT_RUNNER_DEPLOY_STOP` and `_START` set, the server is
-stopped for the upgrade instead of upgraded while it serves.
+deployed, and one that finds the fix's change gone -- a person reverted it -- applies it
+again. A fix whose change production already holds, by another way, is reported running
+without a commit. When the server does not come back, the code is reverted, the modules
+upgraded and the server restarted again; the database is not restored, so a fix whose upgrade
+migrated data is undone in code only. A revert that itself fails, or leaves the server
+unhealthy, says that production needs a person. A host command that runs out of time is killed
+with every process it started, so no upgrade goes on under the revert. With
+`AGENT_RUNNER_DEPLOY_STOP` and `_START` set, the server is stopped for the upgrade instead of
+upgraded while it serves.
 
 `SIGTERM` (`systemctl stop`, a restart) stops the agent in hand within a second and hands its
 run back to Odoo as retryable, for another runner, instead of leaving it leased until the

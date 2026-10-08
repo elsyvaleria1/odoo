@@ -43,7 +43,7 @@ class ClientErrorCase(TransactionCase):
             cr.execute(
                 SQL(
                     "DELETE FROM ir_attachment WHERE url LIKE %s",
-                    "/web/assets/esm/%/error_incident.probe%",
+                    "/web/assets/esm/%/error_incident.%",
                 )
             )
             cr.commit()

@@ -15,7 +15,7 @@ DIAGNOSE = "error_incident.diagnose"
 FIX = "error_incident.fix"
 ML_PURPOSE = "error_incident.autofix"
 # fix states an incident rests in; a dispatch starts from one of them
-LIVE_FIX_STATES = ("diagnosing", "fixing")
+LIVE_FIX_STATES = ("diagnosing", "fixing", "hotfixing")
 IDLE_FIX_STATES = (
     "none",
     "not_a_defect",

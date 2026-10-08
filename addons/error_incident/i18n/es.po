@@ -503,6 +503,11 @@ msgid "Reopen"
 msgstr "Reabrir"
 
 #. module: error_incident
+#: model:ir.model.fields,field_description:error_incident.field_error_incident__browser_reported_again
+msgid "Reported Again by a Browser"
+msgstr "Reportado de nuevo por un navegador"
+
+#. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_occurrence__request_ref
 #: model:ir.model.fields.selection,name:error_incident.selection__error_incident__source__request
 #: model:ir.model.fields.selection,name:error_incident.selection__error_incident_rule__source__request
@@ -570,6 +575,13 @@ msgstr "Apartado por"
 #: code:addons/error_incident/static/src/incident_words.js:0
 msgid "Set aside"
 msgstr "Descartado por ahora"
+
+#. module: error_incident
+#: model:ir.model.fields,help:error_incident.field_error_incident__browser_reported_again
+msgid ""
+"Since it was resolved, a browser reported it again; a person decides whether"
+" it came back."
+msgstr "Desde que se resolvió, un navegador lo reportó de nuevo; una persona decide si regresó."
 
 #. module: error_incident
 #: model:ir.model.fields,field_description:error_incident.field_error_incident__source

@@ -51,9 +51,11 @@ All `POST` with a JSON body under `/agent_runner/v1/`, `Authorization: Bearer <t
 - **A runner reaches only the runs it holds.** A call naming any other run -- another
   runner's, one that does not exist -- answers `409 lease_lost`, so ids reveal nothing.
 - **Credentials that cannot be prepared** -- GitHub unreachable, a credential misconfigured
-  -- put the run back in the queue with one attempt fewer, so it neither blocks the runner
-  nor retries without end; credentials refused (a data policy, a repository the App does not
-  reach) fail it at once.
+  -- put the run back in the queue, its attempt unspent, and no runner claims it before its
+  `date_not_before`: a wait of one minute that doubles at each failure in a row, an hour at
+  most. The runner is handed its next run meanwhile, so an outage neither spends attempts nor
+  holds other work. After 30 failures in a row -- about a day -- the run fails. Credentials
+  refused (a data policy, a repository the App does not reach) fail it at once.
 - **One run, one runner.** A claim locks the runner's row, so its concurrency holds, and picks
   the run under `FOR UPDATE SKIP LOCKED`, so runners racing for one run never both get it.
 - **A lease is a token.** Only its SHA-256 is stored; a call under any other token -- a

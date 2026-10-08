@@ -587,7 +587,7 @@ class IrAttachment(models.Model):
                 bypass_access=bypass_access,
             )
 
-        sec_domain = Domain("public", "=", True)
+        sec_domain = self._public_reach()
         res_ids = pinned_values(self, "res_id", domain)
         if not res_ids or False in res_ids:
             unlinked = Domain("res_id", "=", False) | Domain("res_model", "=", False)
@@ -641,7 +641,16 @@ class IrAttachment(models.Model):
         unlinked = Domain("res_id", "=", False) | Domain("res_model", "=", False)
         if not self.env.is_system():
             unlinked &= Domain("create_uid", "=", self.env.uid)
-        return Domain("public", "=", True) | unlinked
+        return self._public_reach() | unlinked
+
+    @api.model
+    def _public_reach(self) -> Domain:
+        # public attachments, less the generated source maps the user may not
+        # read (_withheld_source_maps)
+        public = Domain("public", "=", True)
+        if withheld := self._withheld_source_maps():
+            return public & ~withheld
+        return public
 
     @api.model
     def _attached_record_reach(self, Owner: models.BaseModel) -> Domain:
@@ -2283,7 +2292,9 @@ class IrAttachment(models.Model):
                 raise AccessError(msg)
             _debug.logic("return_content", attachment=self.id, via="token")
             return True
-        if attachment_sudo.public:
+        if attachment_sudo.public and not self._withholds(
+            attachment_sudo.url, attachment_sudo.res_model
+        ):
             _debug.logic("return_content", attachment=self.id, via="public")
             return True
         if self.env.user._is_portal():
@@ -2341,7 +2352,11 @@ class IrAttachment(models.Model):
         remaining = remaining.sudo()
         remaining.fetch(SECURITY_FIELDS)
         for attachment in remaining:
-            if attachment.public and operation == "read":
+            if (
+                attachment.public
+                and operation == "read"
+                and not self._withholds(attachment.url, attachment.res_model)
+            ):
                 continue
             att_id = attachment.id
             res_model, res_id = attachment.res_model, attachment.res_id

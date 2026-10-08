@@ -106,7 +106,10 @@ class Client:
         return answer
 
     def claim(self) -> dict[str, Any] | None:
-        return self._post("claim", {})["run"]
+        run = self._post("claim", {}).get("run")
+        if run is not None and not isinstance(run, dict):
+            raise TransportError("claim: the run is not an object")
+        return run
 
     def heartbeat(self, run: int, lease_token: str) -> dict[str, Any]:
         return self._post("heartbeat", {"run": run, "lease_token": lease_token})

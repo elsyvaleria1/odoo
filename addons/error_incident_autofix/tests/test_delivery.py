@@ -303,7 +303,9 @@ class TestDelivery(RunnerFixtures, TransactionCase):
     def test_a_pull_request_without_checks_passes_only_when_the_policy_says(self):
         incident, pull = self._pushed()
         self.assertEqual(incident.fix_state, "testing")
-        self.env.ref("error_incident_autofix.policy_default").pass_without_checks = True
+        self.env.ref(
+            "error_incident_autofix.repository_odoo"
+        ).pass_without_checks = True
         incident._autofix_pull_changed(pull)
         self.assertEqual(incident.fix_state, "test_passed")
 
@@ -334,3 +336,47 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         self.assertFalse(
             self.env["agent.run"].search([("kind", "=", "error_incident.revision")])
         )
+
+    def test_an_approval_of_a_head_that_moved_is_asked_again(self):
+        incident, pull = self._pushed(checks="success")
+        patcher, client = self._merge_client()
+        with patcher:
+            incident.with_user(self.admin).action_autofix_merge()
+            first = incident.approval_request_id
+            pull.head_sha = "c" * 40
+            first.with_user(self.approver).action_approve()
+        client.merge_pull_request.assert_not_called()
+        again = incident.approval_request_id
+        self.assertNotEqual(again, first, "the moved head is asked about afresh")
+        self.assertEqual(again.state, "pending")
+        self.assertEqual(again.operation_snapshot["head"], "c" * 40)
+
+    def test_a_push_while_asked_refuses_the_pending_approval(self):
+        incident, pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_merge()
+        request = incident.approval_request_id
+        self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "open",
+                "head": {
+                    "ref": pull.head_ref,
+                    "sha": "c" * 40,
+                    "repo": {"full_name": REPOSITORY},
+                },
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+        self.assertFalse(incident.approval_request_id)
+        self.assertEqual(request.state, "refused")
+
+    def test_a_regression_while_a_hotfix_runs_leaves_the_hotfix_its_answer(self):
+        incident, _pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_hotfix()
+        incident.approval_request_id.with_user(self.approver).action_approve()
+        self.assertEqual(incident.fix_state, "hotfixing")
+        incident.action_resolve()
+        self._occur()
+        self.assertEqual(incident.fix_state, "hotfixing", "a hotfix at work is live")

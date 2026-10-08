@@ -161,7 +161,20 @@ class IntegrationGithubPull(models.Model):
         pull = self.search(domain, limit=1) or create_once(
             self, domain, {**vals, "repository": repository, "number": pr["number"]}
         )
-        if updated and pull.date_github_updated and updated < pull.date_github_updated:
+        if (
+            updated
+            and pull.date_github_updated
+            and (
+                updated < pull.date_github_updated
+                # within one second, an open pull request is no news of a
+                # closed or merged one
+                or (
+                    updated == pull.date_github_updated
+                    and vals["pull_state"] == "open"
+                    and pull.pull_state != "open"
+                )
+            )
+        ):
             _debug.logic("pull.stale_delivery", pull=pull.id, number=pr["number"])
             return pull
         pull.write(vals)

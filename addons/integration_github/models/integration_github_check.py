@@ -8,6 +8,7 @@ from ..tools import create_once, repository_domain
 # What a check concludes, as GitHub spells it across check runs, workflow runs and
 # commit statuses.
 PASSING = frozenset({"success", "neutral", "skipped"})
+_STATUS_RANK = {"queued": 0, "in_progress": 1, "completed": 2}
 FAILING = frozenset(
     {"failure", "timed_out", "action_required", "startup_failure", "cancelled", "error"}
 )
@@ -95,7 +96,19 @@ class IntegrationGithubCheck(models.Model):
                 {**vals, "repository": repository, "external_ref": external_ref},
             )
         stamp = fields.Datetime.to_datetime(vals.get("date_github"))
-        if stamp and check.date_github and stamp < check.date_github:
+        if (
+            stamp
+            and check.date_github
+            and (
+                stamp < check.date_github
+                # GitHub stamps whole seconds: within one, a status never goes back
+                or (
+                    stamp == check.date_github
+                    and _STATUS_RANK.get(vals.get("check_status"), 0)
+                    < _STATUS_RANK.get(check.check_status, 0)
+                )
+            )
+        ):
             return check
         check.write(vals)
         return check

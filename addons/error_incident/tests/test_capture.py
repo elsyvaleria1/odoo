@@ -84,6 +84,17 @@ class TestCapture(TransactionCase):
             (incident.incident_state, incident.count_regression), ("resolved", 0)
         )
         self.assertIn("a person decides", incident.message_ids[0].body)
+        notes = len(incident.message_ids)
+        for _ in range(3):
+            self.Incident._capture(dict(reported, occurrence_ref=f"again-{_}"))
+        self.assertEqual(len(incident.message_ids), notes, "said once")
+
+    def test_reopening_a_resolved_incident_is_announced_as_a_regression(self):
+        incident = self._capture()
+        incident.action_resolve()
+        with patch.object(type(self.Incident), "_on_regressed", autospec=True) as hook:
+            incident.action_reopen()
+        self.assertEqual(hook.call_count, 1)
 
     def test_a_regression_is_announced_once_to_the_modules_that_act_on_it(self):
         incident = self._capture()

@@ -75,3 +75,21 @@ class TestDeliveryOrder(TransactionCase):
             Pull.search(repository_domain("repository", "Agro-Marin/od_o"))
         )
         self.assertFalse(Pull.search(repository_domain("repository", "Agro-Marin/%")))
+
+    def test_a_late_delivery_of_the_same_second_does_not_undo_a_completed_check(self):
+        check = self._check(
+            at="2026-10-07 10:00:00", status="completed", conclusion="skipped"
+        )
+        self._check(at="2026-10-07 10:00:00")
+        self.assertEqual(check.check_status, "completed")
+
+    def test_a_late_opened_of_the_same_second_does_not_reopen_a_merged_pull(self):
+        merged = self._pull(
+            "2026-10-07T11:00:00Z",
+            state="closed",
+            merged=True,
+            merged_at="2026-10-07T11:00:00Z",
+            merge_commit_sha="b" * 40,
+        )
+        self._pull("2026-10-07T11:00:00Z")
+        self.assertEqual(merged.pull_state, "merged")

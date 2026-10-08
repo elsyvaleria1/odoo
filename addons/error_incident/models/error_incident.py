@@ -116,6 +116,13 @@ class ErrorIncident(models.Model):
         string="Occurrence Count",
         readonly=True,
     )
+    browser_reported_again = fields.Boolean(
+        string="Reported Again by a Browser",
+        copy=False,
+        readonly=True,
+        help="Since it was resolved, a browser reported it again; a person decides "
+        "whether it came back.",
+    )
     count_regression = fields.Integer(
         string="Regressions",
         readonly=True,
@@ -159,10 +166,14 @@ class ErrorIncident(models.Model):
         self.incident_state = "acknowledged"
 
     def action_resolve(self) -> None:
-        self.incident_state = "resolved"
+        self.write({"incident_state": "resolved", "browser_reported_again": False})
 
     def action_reopen(self) -> None:
+        resolved = self.filtered(lambda incident: incident.incident_state == "resolved")
         self.write({"incident_state": "acknowledged", "rule_id": False})
+        # a person reopening a resolved incident says it came back, like a
+        # recurrence the server saw would
+        resolved._on_regressed()
 
     def action_set_aside(self) -> None:
         self.incident_state = "set_aside"
@@ -330,7 +341,10 @@ class ErrorIncident(models.Model):
             )
             incident._notify_journey(users=incident.user_ids - hit_by)
             incident._on_regressed()
-        elif previous_state == "resolved":
+        elif previous_state == "resolved" and not incident.browser_reported_again:
+            # once per resolution: a browser's reports, any number of them,
+            # are one question for a person
+            incident.browser_reported_again = True
             incident.message_post(
                 body=self.env._(
                     "A browser reported it again after it was resolved; a person "

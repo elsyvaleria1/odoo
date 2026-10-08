@@ -217,3 +217,14 @@ def test_the_token_reaches_git_in_its_environment_never_its_command_line():
     assert env["GIT_CONFIG_VALUE_0"].startswith("AUTHORIZATION: basic ")
     assert (env["GIT_CONFIG_GLOBAL"], env["GIT_CONFIG_NOSYSTEM"]) == ("/dev/null", "1")
     assert not any("ghs_secret" in arg or "basic" in arg for arg in gitops._SAFE)
+
+
+def test_a_branch_on_the_remote_that_this_run_did_not_push_is_refused(world):
+    world.behave(edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    change.change(_lease(), StubReporter())
+    calls = len(world.calls())
+    other = _lease()
+    other["id"] = 99
+    with pytest.raises(agent.Permanent, match="not by this run"):
+        change.change(other, StubReporter())
+    assert len(world.calls()) == calls

@@ -163,6 +163,35 @@ class IrAttachment(models.Model):
         }
 
     @api.model
+    def _withheld_source_maps(self) -> Domain | None:
+        """The generated source maps this user may not read, or ``None``.
+
+        A generated asset is a public attachment, since it is served as an
+        asset; its map carries every bundled source, comments included, and is
+        the system's alone -- the server reads it to locate browser errors --
+        unless the maps are linked, served to whoever loads the bundle."""
+        if self.env.su or self.env.is_system():
+            return None
+        if (
+            self.env.registry.settings.get(self.env, "web.esbuild.source_maps", "")
+            == "linked"
+        ):
+            return None
+        return Domain("url", "=like", f"{ASSETS_URL_PREFIX}%.map") & Domain(
+            "res_model", "=", "ir.ui.view"
+        )
+
+    @api.model
+    def _withholds(self, url: str | None, res_model: str | None) -> bool:
+        return bool(
+            url
+            and url.startswith(ASSETS_URL_PREFIX)
+            and url.endswith(".map")
+            and res_model == "ir.ui.view"
+            and self._withheld_source_maps() is not None
+        )
+
+    @api.model
     def _is_generated_asset_vals(self, values: dict) -> bool:
         return bool(
             (values.get("url") or "").startswith(ASSETS_URL_PREFIX)

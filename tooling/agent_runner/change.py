@@ -278,7 +278,7 @@ def apply(
     with tempfile.TemporaryDirectory(prefix="agent-change-") as scratch:
         checkout = _clone(lease, Path(scratch), token)
         if payload.get("push") and (
-            pushed := _pushed_already(checkout, url, branch, token)
+            pushed := _pushed_already(checkout, url, branch, token, lease["id"])
         ):
             # an earlier attempt pushed it and then lost its answer: this one
             # reports that push rather than running the agent again
@@ -389,18 +389,23 @@ def _commit_and_push(
 
 
 def _pushed_already(
-    checkout: Path, url: str, branch: str, token: str | None
+    checkout: Path, url: str, branch: str, token: str | None, run_id: object
 ) -> str | None:
-    """The commit ``branch`` already holds on the remote, or ``None``."""
+    """The commit an earlier attempt of this run pushed to ``branch``, or
+    ``None`` when the branch is not on the remote. A branch there that this run
+    did not push -- its tip has no `Agent-Run: <this run>` trailer -- is
+    refused, never taken for this run's work."""
+    auth = token if url.startswith(GITHUB) else None
     listed = git(
-        checkout,
-        "ls-remote",
-        "--heads",
-        url,
-        f"refs/heads/{branch}",
-        token=token if url.startswith(GITHUB) else None,
+        checkout, "ls-remote", "--heads", url, f"refs/heads/{branch}", token=auth
     )
-    return listed.split()[0] if listed.strip() else None
+    if not listed.strip():
+        return None
+    git(checkout, "fetch", "--quiet", url, f"refs/heads/{branch}", token=auth)
+    message = git(checkout, "log", "-1", "--format=%B", "FETCH_HEAD")
+    if f"Agent-Run: {run_id}" not in message.splitlines():
+        raise Permanent(f"{branch} is on the remote already, and not by this run")
+    return listed.split()[0]
 
 
 def change(lease: dict[str, Any], reporter: Reporter) -> Outcome:

@@ -68,6 +68,10 @@ class ErrorIncident(models.Model):
         if self.fix_state not in _REVIEW_STATES or pull != self._autofix_pull():
             # an earlier fix's pull request speaks for that fix, not this one
             return
+        snapshot = self.approval_request_id.operation_snapshot or {}
+        if snapshot.get("head") and snapshot["head"] != pull.head_sha:
+            # what was asked about is gone: its approval covers nothing
+            self._autofix_release_approval()
         if pull.pull_state == "merged":
             self.write(
                 {
@@ -108,8 +112,7 @@ class ErrorIncident(models.Model):
         return fix.github_pull_id
 
     def _autofix_policy_passes_unchecked(self) -> bool:
-        policy = self.env["error.incident.autofix.policy"]._current()
-        return bool(policy and policy.pass_without_checks)
+        return bool(self._autofix_repository().pass_without_checks)
 
     # -- merge and hotfix, each a person's decision ------------------------------
 
@@ -206,22 +209,42 @@ class ErrorIncident(models.Model):
             incident._autofix_release_approval()
 
     def _autofix_release_approval(self) -> None:
-        """The approved operation ran: its approval is spent. The next merge or
-        hotfix of this incident -- another fix, a retry after a revert -- is
-        a new decision with a request of its own."""
+        """The approval is spent -- its operation ran, or what it was asked
+        about changed: the next merge or hotfix of this incident is a new
+        decision with a request of its own. One still pending is refused, so
+        no approver grants it after."""
         self.check_singleton()
+        if not self.approval_request_id:
+            return
         _debug.logic(
             "autofix.approval_spent",
             incident=self.id,
             request=self.approval_request_id.id,
         )
+        self._refuse_pending_approval()
         self.approval_request_id = False
+
+    def _split_for_approval(self, operation: str) -> tuple:
+        # a request about a commit that is no longer the pull request's head --
+        # approved, or still pending because its approval could not run -- is
+        # released, and the operation asks again, instead of refused for good
+        for incident in self:
+            if (
+                incident.approval_request_id
+                and incident.approval_state in ("new", "pending", "approved")
+                and incident._approval_request_gates(operation)
+                and incident.approval_request_id.operation_snapshot
+                and incident.approval_request_id.operation_snapshot
+                != incident._get_approval_snapshot(operation)
+            ):
+                incident._autofix_release_approval()
+        return super()._split_for_approval(operation)
 
     # -- production --------------------------------------------------------------
 
     def _autofix_delivery_ended(self, run: models.BaseModel) -> None:
         self.check_singleton()
-        if run.kind != HOTFIX:
+        if run.kind != HOTFIX or self.fix_state != "hotfixing":
             return
         if run.run_state != "succeeded":
             self.write({"fix_state": "test_passed"})

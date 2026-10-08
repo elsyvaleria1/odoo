@@ -74,16 +74,52 @@ class TestModelCredentials(RunnerFixtures, TransactionCase):
         self.assertIsNone(self.Run._lease(self.runner))
         self.assertEqual((refused.run_state, refused.count_attempt), ("failed", 1))
 
-    def test_credentials_that_cannot_be_prepared_requeue_the_run(self):
-        run = self._run(ml_purpose=PURPOSE, max_attempts=2)
+    def test_credentials_that_cannot_be_prepared_defer_the_run_unspent(self):
+        run = self._run(ml_purpose=PURPOSE, max_attempts=1)
+        other = self._run("other")
+        Run = type(self.Run)
+        original = Run._prepare_credentials
+
+        def unreachable(record):
+            if record == run:
+                raise ConnectionError("timed out")
+            return original(record)
+
+        with patch.object(Run, "_prepare_credentials", unreachable):
+            answer = self.Run._lease(self.runner)
+        self.assertEqual(answer["id"], other.id, "the runner is served meanwhile")
+        self.assertEqual(
+            (run.run_state, run.count_attempt, run.count_credential_failure),
+            ("queued", 0, 1),
+        )
+        self.assertTrue(run.date_not_before)
+        self.assertTrue(any("timed out" in m for m in run.event_ids.mapped("message")))
+
+    def test_a_run_whose_credentials_keep_failing_fails_in_the_end(self):
+        run = self._run(ml_purpose=PURPOSE)
+        run.count_credential_failure = 29
         Run = type(self.Run)
         with patch.object(
-            Run, "_prepare_credentials", side_effect=ConnectionError("timed out")
+            Run, "_prepare_credentials", side_effect=ConnectionError("x")
         ):
             self.assertIsNone(self.Run._lease(self.runner))
-            self.assertEqual((run.run_state, run.count_attempt), ("queued", 1))
-            self.assertTrue(
-                any("timed out" in m for m in run.event_ids.mapped("message"))
-            )
-            self.assertIsNone(self.Run._lease(self.runner))
-        self.assertEqual((run.run_state, run.count_attempt), ("failed", 2))
+        self.assertEqual(run.run_state, "failed")
+
+    def test_a_deferred_run_waits_its_turn_then_is_leased_afresh(self):
+        run = self._run(ml_purpose=PURPOSE)
+        run.write(
+            {"count_credential_failure": 3, "date_not_before": "2000-01-01 00:00:00"}
+        )
+        answer = self.Run._lease(self.runner)
+        self.assertEqual(answer["id"], run.id)
+        self.assertEqual(
+            (run.count_credential_failure, run.date_not_before), (0, False)
+        )
+        run.write(
+            {
+                "run_state": "queued",
+                "runner_id": False,
+                "date_not_before": "2999-01-01 00:00:00",
+            }
+        )
+        self.assertIsNone(self.Run._claim(self.runner))

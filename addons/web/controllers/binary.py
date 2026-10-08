@@ -54,12 +54,6 @@ def _get_int_or_zero(value) -> int:
         return 0
 
 
-def _is_source_map(record: Any) -> bool:
-    # the record is the elevated one a public attachment is served through,
-    # or one the user read: its url is readable either way
-    return record._name == "ir.attachment" and (record.url or "").endswith(".map")
-
-
 def _resolve_res_id(value) -> int | None:
     if value is None or value is False or value == "":
         return None
@@ -178,11 +172,6 @@ class Binary(http.Controller):
                 record = request.env["ir.binary"]._get_record(
                     xmlid, model, _resolve_res_id(id), access_token, field_name=field
                 )
-                if _is_source_map(record) and not self._source_map_published():
-                    # a generated asset is a public attachment: its map would
-                    # otherwise be served here to whoever guesses its id
-                    _debug.logic("content_source_map_withheld", id=record.id)
-                    raise request.prepare_not_found_error()
                 stream = request.env["ir.binary"]._get_stream_from_record(
                     record, field, filename, filename_field, mimetype
                 )

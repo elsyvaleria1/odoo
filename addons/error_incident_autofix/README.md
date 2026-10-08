@@ -84,8 +84,9 @@ pushed ─► testing ─► test_failed
 - **Checks.** The pull request of the incident's newest fix is followed by webhook
   (`integration_github`); an earlier fix's pull request no longer speaks for the incident.
   Its checks move the incident: any failure fails it, all passed passes it. A pull request
-  with no check at all -- a repository without CI -- waits in Testing, unless the policy's
-  **Pass Without Checks** says it counts as passing.
+  with no check at all waits in Testing, unless its repository is marked **Pass Without
+  Checks** (**Autofix > Repositories**) -- one that runs no CI; a repository with CI is left
+  unmarked, so its fix is not merged before its checks start.
 - **Merge and hotfix are verbs behind an approval.** An administrator asks; a member of
   **Autofix Approver** decides. The group may be a tech lead who is no administrator: it reads
   the incident and its pull request.

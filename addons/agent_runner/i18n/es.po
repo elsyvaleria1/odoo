@@ -179,6 +179,11 @@ msgid "Capability"
 msgstr "Capacidad"
 
 #. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__count_credential_failure
+msgid "Claims in a row its credentials could not be prepared for."
+msgstr "Reclamaciones seguidas en las que no se pudieron preparar sus credenciales."
+
+#. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_capability__code
 msgid "Code"
 msgstr "Código"
@@ -225,6 +230,11 @@ msgstr "Creado por"
 #: model:ir.model.fields,field_description:agent_runner.field_agent_runner__create_date
 msgid "Created on"
 msgstr "Creado el"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__count_credential_failure
+msgid "Credential Failures"
+msgstr "Fallos de credenciales"
 
 #. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_runner__credential_fingerprint
@@ -427,6 +437,12 @@ msgid "Its credentials could not be prepared: %(reason)s"
 msgstr "No se pudieron preparar sus credenciales: %(reason)s"
 
 #. module: agent_runner
+#: model:ir.model.fields,help:agent_runner.field_agent_run__date_not_before
+msgid ""
+"Its credentials could not be prepared: no runner claims it before this."
+msgstr "No se pudieron preparar sus credenciales: ningún ejecutor la reclama antes de esto."
+
+#. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run__kind
 #: model_terms:ir.ui.view,arch_db:agent_runner.view_agent_run_search
 msgid "Kind"
@@ -571,6 +587,11 @@ msgstr "No hay credencial de Anthropic: se usa la sesión del modelo del propio 
 #: model_terms:ir.actions.act_window,help:agent_runner.action_agent_run
 msgid "No run is waiting"
 msgstr "No hay ejecuciones en espera"
+
+#. module: agent_runner
+#: model:ir.model.fields,field_description:agent_runner.field_agent_run__date_not_before
+msgid "Not Before"
+msgstr "No antes de"
 
 #. module: agent_runner
 #: model:ir.model.fields,field_description:agent_runner.field_agent_run__message_needaction_counter

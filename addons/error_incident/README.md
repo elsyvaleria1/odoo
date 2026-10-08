@@ -27,7 +27,9 @@ is resolved, or while a response streams -- which never reaches `_handle_error`.
 
 A resolved incident that occurs again on the server is reopened as regressed. A browser's
 report of it is recorded but does not reopen it: anyone signed in can make one up, so the
-incident's chatter says a browser reported it again, and a person decides.
+incident's chatter says a browser reported it again -- once per resolution, however many
+reports follow -- and a person decides. A person who reopens a resolved incident says it came
+back, as a regression does: the modules acting on one (`_on_regressed`) act on it.
 
 ## What makes two occurrences one incident
 

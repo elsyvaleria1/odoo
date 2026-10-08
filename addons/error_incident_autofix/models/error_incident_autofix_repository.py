@@ -1,4 +1,6 @@
+import os
 import re
+import subprocess
 from pathlib import Path
 
 import odoo
@@ -8,13 +10,13 @@ from odoo.tools import frozendict
 
 from odoo.addons.integration_github.tools import repository_domain
 
-# github.com itself -- after `//`, `@` or nothing, never `notgithub.com` -- with
-# an ssh port or not, then owner/name
+# github.com itself -- after `//`, `@` or nothing, never `notgithub.com`; `www.`
+# or an ssh host alias (`github.com-odoo`) allowed -- with an ssh port or not,
+# then owner/name
 _GITHUB_REMOTE = re.compile(
-    r"(?:^|[/@])github\.com(?::\d+)?[:/]+([\w.-]+/[\w.-]+?)(?:\.git)?/*$"
+    r"(?:^|[/@])(?:www\.)?github\.com(?:-[\w.-]+)?(?::\d+)?[:/]+"
+    r"([\w.-]+/[\w.-]+?)(?:\.git)?/*$"
 )
-_SECTION = re.compile(r'^\s*\[\s*([^\]"\s]+)(?:\s+"([^"]*)")?\s*\]')
-_URL = re.compile(r"^\s*url\s*=\s*(.*?)\s*$", re.IGNORECASE)
 
 
 def _checkout_root(module: str) -> Path | None:
@@ -35,49 +37,34 @@ def _checkout_root(module: str) -> Path | None:
     return None
 
 
-def _git_config(root: Path) -> Path | None:
-    dot_git = root / ".git"
-    if dot_git.is_dir():
-        return dot_git / "config"
-    # a worktree: `.git` names its own git directory, whose `commondir` leads
-    # to the repository's, where the remotes are
-    text = dot_git.read_text(errors="replace").strip()
-    if not text.startswith("gitdir:"):
+def origin_url(root: Path) -> str | None:
+    """The URL a working tree's `origin` fetches from, as git itself resolves
+    it -- includes, `insteadOf`, a worktree's shared config -- or ``None``
+    when there is no origin. No network: `--get-url` only reads the config."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(root), "ls-remote", "--get-url", "origin"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env={
+                "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+                "HOME": os.environ.get("HOME", "/"),
+                "GIT_TERMINAL_PROMPT": "0",
+            },
+            check=False,
+        )
+    except OSError, subprocess.TimeoutExpired:
         return None
-    git_dir = (root / text.removeprefix("gitdir:").strip()).resolve()
-    common = git_dir / "commondir"
-    if common.is_file():
-        git_dir = (git_dir / common.read_text().strip()).resolve()
-    return git_dir / "config"
+    url = done.stdout.strip()
+    # git answers the remote's own name when there is no such remote
+    return url if done.returncode == 0 and url and url != "origin" else None
 
 
-def github_repository_of(root: Path) -> str | None:
-    """``owner/name`` of the GitHub repository a working tree's ``origin``
-    fetches from, or ``None``."""
-    config = _git_config(root)
-    if config is None or not config.is_file():
-        return None
-    url = _origin_url(config.read_text(errors="replace"))
-    remote = url and _GITHUB_REMOTE.search(url)
+def github_repository_of(url: str) -> str | None:
+    """``owner/name`` of the GitHub repository ``url`` names, or ``None``."""
+    remote = _GITHUB_REMOTE.search(url)
     return remote.group(1) if remote else None
-
-
-def _origin_url(config: str) -> str | None:
-    """The `url` of `[remote "origin"]` in a git config file, as git reads it:
-    any indentation, any case of the key, quoted or not, comments aside."""
-    in_origin = False
-    for line in config.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith(("#", ";")):
-            continue
-        if section := _SECTION.match(line):
-            in_origin = (
-                section.group(1).lower() == "remote" and section.group(2) == "origin"
-            )
-            continue
-        if in_origin and (url := _URL.match(line)):
-            return url.group(1).strip('"')
-    return None
 
 
 class ErrorIncidentAutofixRepository(models.Model):
@@ -100,6 +87,12 @@ class ErrorIncidentAutofixRepository(models.Model):
         required=True,
         help="The branch a fix starts from and its pull request targets.",
     )
+    pass_without_checks = fields.Boolean(
+        string="Pass Without Checks",
+        help="This repository runs no CI: a fix's pull request that no check runs "
+        "on counts as passing, so it can be merged or hotfixed once a person "
+        "approves it. Off, such a fix waits in Testing for its checks.",
+    )
     active = fields.Boolean(
         default=True,
     )
@@ -112,11 +105,15 @@ class ErrorIncidentAutofixRepository(models.Model):
     def _for_module(self, module: str) -> ErrorIncidentAutofixRepository:
         """The repository of the checkout ``module`` lives in: by the GitHub
         repository its ``origin`` fetches from, which names it wherever it is
-        cloned; by the checkout's directory name only when it has none -- a
-        GitHub origin that is not mapped, a fork, is no mapped repository's."""
+        cloned; by the checkout's directory name only when it has no origin.
+        An origin that is no mapped GitHub repository -- a fork, another host
+        -- is no repository's."""
         root = _checkout_root(module)
         if root is None:
             return self.browse()
-        if github := github_repository_of(root):
+        url = origin_url(root)
+        if url is None:
+            return self.search([("checkout", "=", root.name)], limit=1)
+        if github := github_repository_of(url):
             return self.search(repository_domain("github_repository", github), limit=1)
-        return self.search([("checkout", "=", root.name)], limit=1)
+        return self.browse()

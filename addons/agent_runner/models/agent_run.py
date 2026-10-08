@@ -8,7 +8,7 @@ from typing import Any
 import psycopg
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import ConcurrencyError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.redact import dump_masked, mask_data, mask_text
 from odoo.tools import SQL
@@ -23,6 +23,7 @@ FINAL_STATES = ("succeeded", "failed", "cancelled")
 EVENT_TYPES = ("info", "progress", "warning", "error")
 MAX_EVENTS_PER_CALL = 100
 MAX_EVENT_DATA = 16_000
+MAX_CREDENTIAL_FAILURES = 30
 
 
 class CredentialsRefused(Exception):
@@ -138,6 +139,19 @@ class AgentRun(models.Model):
         copy=False,
         readonly=True,
     )
+    date_not_before = fields.Datetime(
+        string="Not Before",
+        copy=False,
+        readonly=True,
+        help="Its credentials could not be prepared: no runner claims it before this.",
+    )
+    count_credential_failure = fields.Integer(
+        string="Credential Failures",
+        default=0,
+        copy=False,
+        readonly=True,
+        help="Claims in a row its credentials could not be prepared for.",
+    )
     date_started = fields.Datetime(
         string="Started",
         copy=False,
@@ -213,6 +227,8 @@ class AgentRun(models.Model):
                 "runner_id": False,
                 "date_lease_until": False,
                 "date_finished": False,
+                "date_not_before": False,
+                "count_credential_failure": 0,
                 "error": False,
             }
         )
@@ -269,6 +285,7 @@ class AgentRun(models.Model):
                        AND capability_id = ANY(%s)
                        AND company_id = %s
                        AND company_id <> ALL(%s)
+                       AND (date_not_before IS NULL OR date_not_before <= %s)
                      ORDER BY priority DESC, id
                      LIMIT 1
                        FOR UPDATE SKIP LOCKED
@@ -288,6 +305,7 @@ class AgentRun(models.Model):
                 runner.capability_ids.ids,
                 runner.company_id.id,
                 blocked,
+                now,
                 runner.id,
                 _digest(token),
                 now + timedelta(seconds=self._lease_seconds()),
@@ -320,19 +338,22 @@ class AgentRun(models.Model):
 
         A run whose credentials are refused fails for good, and the next run is
         tried. One whose credentials cannot be prepared now -- GitHub
-        unreachable, a credential misconfigured -- goes back to the queue with
-        one attempt fewer, so it can neither block the runner forever nor be
-        retried without end; the runner asks again at its next poll.
+        unreachable, a credential misconfigured -- is deferred (`_defer`), and
+        the next run is tried.
         """
         while found := self._claim(runner):
             run, token = found
             try:
                 with self.env.cr.savepoint():
-                    return run._lease_answer(token)
+                    answer = run._lease_answer(token)
+                if run.count_credential_failure:
+                    run.write({"count_credential_failure": 0, "date_not_before": False})
+                return answer
             except CredentialsRefused as refusal:
                 run._log_event("error", str(refusal))
                 run._end_attempt(str(refusal), requeue=False)
-            except psycopg.Error:
+            except psycopg.Error, ConcurrencyError:
+                # the transaction itself failed: the request is retried whole
                 raise
             except Exception as error:
                 _logger.warning(
@@ -340,17 +361,38 @@ class AgentRun(models.Model):
                     run.id,
                     exc_info=True,
                 )
-                reason = mask_text(f"{type(error).__name__}: {error}", 1000)
-                run._log_event(
-                    "error",
-                    self.env._(
-                        "Its credentials could not be prepared: %(reason)s",
-                        reason=reason,
-                    ),
-                )
-                run._end_attempt(reason, requeue=True)
-                return None
+                run._defer(mask_text(f"{type(error).__name__}: {error}", 1000))
         return None
+
+    def _defer(self, reason: str) -> None:
+        """Put the run back in the queue, its attempt unspent, for a while that
+        doubles at each failure in a row (an hour at most): a GitHub outage
+        neither spends the run's attempts nor holds the runner's other work.
+        A run whose credentials keep failing for about a day fails."""
+        self.check_singleton()
+        failures = self.count_credential_failure + 1
+        self._log_event(
+            "error",
+            self.env._(
+                "Its credentials could not be prepared: %(reason)s", reason=reason
+            ),
+        )
+        if failures >= MAX_CREDENTIAL_FAILURES:
+            self._end_attempt(reason, requeue=False)
+            return
+        self.write(
+            {
+                "run_state": "queued",
+                "runner_id": False,
+                "date_lease_until": False,
+                "count_attempt": self.count_attempt - 1,
+                "count_credential_failure": failures,
+                "date_not_before": fields.Datetime.now()
+                + timedelta(minutes=min(2 ** (failures - 1), 60)),
+                "error": reason,
+            }
+        )
+        _debug.logic("run.deferred", run=self.id, failures=failures)
 
     def _holds(self, token: object) -> bool:
         self.check_singleton()
