@@ -23,6 +23,11 @@ ASSET_ENCODINGS = (
     ("zstd", ".zst", "application/zstd", lambda raw: zstd.compress(raw, 12)),
     ("gzip", ".gz", "application/gzip", lambda raw: gzip.compress(raw, 6, mtime=0)),
 )
+# a map and its encoded copies: each carries the whole map
+SOURCE_MAP_SUFFIXES = (
+    ".map",
+    *(f".map{suffix}" for _encoding, suffix, _mimetype, _compress in ASSET_ENCODINGS),
+)
 _ENCODED_ASSET_MIMETYPES = frozenset(
     {
         "text/javascript",
@@ -177,16 +182,17 @@ class IrAttachment(models.Model):
             == "linked"
         ):
             return None
-        return Domain("url", "=like", f"{ASSETS_URL_PREFIX}%.map") & Domain(
-            "res_model", "=", "ir.ui.view"
-        )
+        return Domain.OR(
+            Domain("url", "=like", f"{ASSETS_URL_PREFIX}%{suffix}")
+            for suffix in SOURCE_MAP_SUFFIXES
+        ) & Domain("res_model", "=", "ir.ui.view")
 
     @api.model
     def _withholds(self, url: str | None, res_model: str | None) -> bool:
         return bool(
             url
             and url.startswith(ASSETS_URL_PREFIX)
-            and url.endswith(".map")
+            and url.endswith(SOURCE_MAP_SUFFIXES)
             and res_model == "ir.ui.view"
             and self._withheld_source_maps() is not None
         )

@@ -19,8 +19,13 @@ class TestSourceMapContent(HttpCase):
                 "res_model": "ir.ui.view",
                 "res_id": 0,
                 "mimetype": "application/json",
-                "raw": b'{"sourcesContent": ["// the source"]}',
+                # past the size from which a generated asset is also stored
+                # compressed: the copies carry the whole map too
+                "raw": b'{"sourcesContent": ["// the source' + b" " * 9000 + b'"]}',
             }
+        )
+        cls.copies = cls.env["ir.attachment"].search(
+            [("url", "in", [f"{cls.map.url}.gz", f"{cls.map.url}.zst"])]
         )
         new_test_user(cls.env, "map.employee", password="map.employee.pass")
 
@@ -40,6 +45,24 @@ class TestSourceMapContent(HttpCase):
             self._status(f"/web/content?model=ir.attachment&id={self.map.id}"), 404
         )
         self.assertEqual(self._status("/web/assets/any/web.assets_web.min.js.map"), 404)
+
+    def test_the_encoded_copies_of_a_map_are_withheld_alike(self):
+        self.assertEqual(len(self.copies), 2)
+        for copy in self.copies:
+            self.assertEqual(self._status(f"/web/content/{copy.id}"), 404, copy.url)
+            self.assertEqual(self._status(copy.url), 404, copy.url)
+            self.assertNotEqual(
+                self.url_open(f"/web/image/{copy.id}").content, copy.raw, copy.url
+            )
+        employee = self.env["res.users"].search([("login", "=", "map.employee")])
+        self.assertFalse(
+            self.env["ir.attachment"]
+            .with_user(employee)
+            .search([("url", "=like", "/web/assets/%.map%")])
+        )
+        self.authenticate("admin", "admin")
+        for copy in self.copies:
+            self.assertEqual(self._status(f"/web/content/{copy.id}"), 200, copy.url)
 
     def test_an_employee_gets_no_source_map(self):
         self.authenticate("map.employee", "map.employee.pass")

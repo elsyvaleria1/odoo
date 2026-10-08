@@ -22,6 +22,8 @@ from odoo.tools.assets.constants import ANY_UNIQUE
 from odoo.tools.image import image_guess_size_from_field_name
 from odoo.tools.misc import is_valid_limited_field_access_token
 
+from odoo.addons.base.models.ir_attachment_assets import SOURCE_MAP_SUFFIXES
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
@@ -250,7 +252,7 @@ class Binary(http.Controller):
                 if isinstance(assets_params, dict)
                 else assets_params,
             )
-        if filename.endswith(".map") and not self._source_map_published():
+        if filename.endswith(SOURCE_MAP_SUFFIXES) and not self._source_map_published():
             _debug.logic("asset_source_map_withheld", filename=filename)
             raise request.prepare_not_found_error()
         env = request.env
@@ -415,7 +417,7 @@ class Binary(http.Controller):
         readonly=True,
     )
     def content_esm_assets(self, unique: str, filename: str) -> Response:
-        if filename.endswith(".map") and not self._source_map_published():
+        if filename.endswith(SOURCE_MAP_SUFFIXES) and not self._source_map_published():
             _debug.logic("esm_source_map_withheld", filename=filename)
             raise request.prepare_not_found_error()
         return self._serve_generated_esm(f"/web/assets/esm/{unique}/{filename}")
