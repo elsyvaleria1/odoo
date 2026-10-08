@@ -4,3 +4,4 @@ from . import test_pos_data_contract
 from . import test_devices_synchronization
 from . import test_js
 from . import test_replayed_operations
+from . import test_onboarding_scenarios

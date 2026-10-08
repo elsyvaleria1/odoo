@@ -6,9 +6,7 @@ class PosConfig(models.Model):
     _inherit = "pos.config"
 
     def _init_preparation_display_data(self) -> None:
-        main_company = self.env.ref("base.main_company", raise_if_not_found=False)
-        is_main_company = main_company and self.env.company.id == main_company.id
-        if is_main_company:
+        if self._is_main_company():
             self._load_preparation_display_data()
             self._load_preparation_display_demo_data()
 

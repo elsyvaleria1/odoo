@@ -676,9 +676,10 @@ class PosConfig(models.Model):
     @api.depends("payment_method_ids.is_cash_count")
     def _compute_cash_control(self) -> None:
         for config in self:
-            config.cash_control = bool(
-                config.payment_method_ids.filtered("is_cash_count")
-            )
+            config.cash_control = bool(config._get_cash_payment_method())
+
+    def _get_cash_payment_method(self):
+        return self.payment_method_ids.filtered("is_cash_count")[:1]
 
     @api.depends(
         "company_id.account_config_id.chart_template",
@@ -1965,10 +1966,15 @@ class PosConfig(models.Model):
         pos_restaurant_module.button_immediate_install()
         return {"installed_with_demo": pos_restaurant_module.demo}
 
-    def _get_tax_product_field_names(self) -> set:
+    def _get_tax_product_field_names(self) -> frozenset:
+        self.check_singleton()
+        # set by load_data for its own config; JSON-RPC cannot produce a tuple
+        loaded = self.env.context.get("pos_tax_product_field_names")
+        if isinstance(loaded, tuple) and loaded[0] == self.id:
+            return loaded[1]
         Tax = self.env["account.tax"]
         taxes = Tax.search(Tax._load_pos_data_domain({}, self))
-        return taxes._eval_taxes_computation_prepare_product_fields()
+        return frozenset(taxes._eval_taxes_computation_prepare_product_fields())
 
     def _get_available_pricelists(self):
         self.check_singleton()

@@ -7,13 +7,14 @@ class ProductTemplate(models.Model):
     def _load_pos_data_search_read(self, data, config):
         read_data = super()._load_pos_data_search_read(data, config)
 
-        rewards = config._get_program_ids().reward_ids
+        programs = config._get_program_ids()
+        rewards = programs.reward_ids
         reward_products = (
             rewards.discount_line_product_id
             | rewards.reward_product_ids
             | rewards.reward_product_id
         )
-        trigger_products = config._get_program_ids().trigger_product_ids
+        trigger_products = programs.trigger_product_ids
 
         loyalty_product_tmpl_ids = set(
             (reward_products | trigger_products)
@@ -42,6 +43,10 @@ class ProductTemplate(models.Model):
                 self._load_pos_data_domain(data, config)
             )
 
+        read_data.extend(missing_product_templates)
+        # a partial load without the config has no config row to complete
+        if not data.get("pos.config"):
+            return read_data
         config_data = data["pos.config"][0]
         config_data["_pos_special_products_ids"] += (
             product_ids_to_hide.product_variant_id.ids
@@ -70,6 +75,4 @@ class ProductTemplate(models.Model):
         config_data["_pos_special_display_products_ids"] = (
             special_display_products.product_tmpl_id.ids
         )
-
-        read_data.extend(missing_product_templates)
         return read_data

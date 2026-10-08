@@ -46,7 +46,7 @@
 
     <record id="access_pos_config_load_demo_data" model="ir.access">
         <field
-            name="name">pos.config: an administrator fills a point of sale with sample data</field>
+            name="name">pos.config: an administrator creates a sample point of sale or fills one with sample data</field>
         <field name="model_id" ref="model_pos_config" />
         <field name="group_id" ref="base.group_system" />
         <field name="kind">permission</field>

@@ -4,10 +4,20 @@ from odoo.tools import convert
 
 _debug = DebugLog(__name__)
 
+LOAD_DEMO_DATA = models.Verb(
+    methods=(
+        "load_demo_data",
+        "load_onboarding_clothes_scenario",
+        "load_onboarding_bakery_scenario",
+        "load_onboarding_furniture_scenario",
+        "load_onboarding_retail_scenario",
+    )
+)
+
 
 class PosConfigOnboarding(models.Model):
     _inherit = "pos.config"
-    _access_verbs = {"load_demo_data": models.Verb(methods=("load_demo_data",))}
+    _access_verbs = {"load_demo_data": LOAD_DEMO_DATA}
 
     def get_record_by_ref(self, recordRefs) -> list:
         records = (self.env.ref(ref, raise_if_not_found=False) for ref in recordRefs)

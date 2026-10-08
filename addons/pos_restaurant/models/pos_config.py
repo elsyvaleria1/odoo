@@ -1,9 +1,25 @@
+import dataclasses
+
 from odoo import Command, api, fields, models
 from odoo.tools import convert
+
+from odoo.addons.point_of_sale.models.pos_config_onboarding import (
+    LOAD_DEMO_DATA as POS_LOAD_DEMO_DATA,
+)
+
+LOAD_DEMO_DATA = dataclasses.replace(
+    POS_LOAD_DEMO_DATA,
+    methods=(
+        *POS_LOAD_DEMO_DATA.methods,
+        "load_onboarding_restaurant_scenario",
+        "load_onboarding_bar_scenario",
+    ),
+)
 
 
 class PosConfig(models.Model):
     _inherit = "pos.config"
+    _access_verbs = {"load_demo_data": LOAD_DEMO_DATA}
 
     iface_splitbill = fields.Boolean(
         string="Bill Splitting",
@@ -235,11 +251,7 @@ class PosConfig(models.Model):
         existing_session = self.env.ref(
             "pos_restaurant.pos_closed_session_3", raise_if_not_found=False
         )
-        if (
-            with_demo_data
-            and self.env.company.id == self.env.ref("base.main_company").id
-            and not existing_session
-        ):
+        if with_demo_data and self._is_main_company() and not existing_session:
             convert.convert_file(
                 self._get_env_with_clean_context(),
                 "pos_restaurant",

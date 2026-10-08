@@ -271,6 +271,29 @@ class TestPosConfigDataLoad(TestPoSCommon):
         self.assertEqual(set(payload[0]["_product_default_values"]), {"weight"})
         self.assertEqual(payload[0]["access_token"], self.config.access_token)
 
+    def test_a_full_load_derives_the_tax_product_fields_once(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        Tax = type(self.env["account.tax"])
+        with patch.object(
+            Tax,
+            "_eval_taxes_computation_prepare_product_fields",
+            autospec=True,
+            return_value={"weight"},
+        ) as prepare:
+            data = self.pos_session.load_data([])
+        self.assertEqual(prepare.call_count, 1)
+        self.assertEqual(
+            set(data["pos.config"][0]["_product_default_values"]), {"weight"}
+        )
+        self.assertTrue(data["product.product"])
+        self.assertTrue(all("weight" in row for row in data["product.product"]))
+
+    def test_a_client_context_cannot_name_the_tax_product_fields(self):
+        forged = self.config.with_context(
+            pos_tax_product_field_names=[self.config.id, ["name"]]
+        )
+        self.assertNotIn("name", forged._get_tax_product_field_names())
+
     def test_a_currency_change_marks_the_pos_data_changed(self):
         journal = self.env["account.journal"].create(
             {

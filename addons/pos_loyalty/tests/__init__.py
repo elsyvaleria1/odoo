@@ -6,3 +6,5 @@ from . import test_product_loading
 from . import test_loyalty_product_payload
 from . import test_js
 from . import test_gift_card_status
+from . import test_program_pricelists
+from . import test_partial_load

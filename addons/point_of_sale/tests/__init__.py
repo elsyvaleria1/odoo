@@ -74,3 +74,5 @@ from . import test_pos_order_concurrency
 from . import test_pos_config_data_load
 from . import test_pos_processed_operation
 from . import test_pos_order_line_combo_share
+from . import test_pos_onboarding_scenarios
+from . import test_pos_cash_payment_method

@@ -25,7 +25,7 @@ class PosConfig(models.Model):
                     ("date_to", ">=", today),
                     "|",
                     ("pricelist_ids", "=", False),
-                    ("pricelist_ids", "in", self.available_pricelist_ids.ids),
+                    ("pricelist_ids", "in", self._get_pos_pricelists().ids),
                     ("currency_id", "=", self.currency_id.id),
                 ]
             )

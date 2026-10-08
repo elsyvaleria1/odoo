@@ -694,9 +694,7 @@ class PosOrder(models.Model):
         prec_acc = order.currency_id.decimal_places
 
         if not draft and not float_is_zero(amount_return, prec_acc):
-            cash_payment_method = order.session_id.payment_method_ids.filtered(
-                "is_cash_count"
-            )[:1]
+            cash_payment_method = order.session_id.config_id._get_cash_payment_method()
             _debug.logic(
                 "change_recorded_on_cash_method",
                 order=order.uuid,

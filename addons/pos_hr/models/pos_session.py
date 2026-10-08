@@ -114,7 +114,7 @@ class PosSession(models.Model):
         payments = orders.payment_ids.filtered(
             lambda p: p.payment_method_id.type != "pay_later"
         )
-        cash_payment_method = self._get_cash_payment_method()
+        cash_payment_method = self.config_id._get_cash_payment_method()
         default_cash_payments = payments.filtered(
             lambda p: p.payment_method_id == cash_payment_method
         )

@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 import zipfile
 from io import BytesIO
 from itertools import batched
@@ -10,9 +11,22 @@ import qrcode.image.svg
 from odoo import Command, api, fields, models, service
 from odoo.exceptions import AccessError, UserError, ValidationError
 
+from odoo.addons.pos_restaurant.models.pos_config import (
+    LOAD_DEMO_DATA as RESTAURANT_LOAD_DEMO_DATA,
+)
+
 
 class PosConfig(models.Model):
     _inherit = "pos.config"
+    _access_verbs = {
+        "load_demo_data": dataclasses.replace(
+            RESTAURANT_LOAD_DEMO_DATA,
+            methods=(
+                *RESTAURANT_LOAD_DEMO_DATA.methods,
+                "load_onboarding_kiosk_scenario",
+            ),
+        )
+    }
 
     def _self_order_kiosk_default_languages(self):
         return self.env["res.lang"].search([("active", "=", True)])

@@ -56,16 +56,19 @@ class PosSession(models.Model):
                 lambda l: (l.partner_id.id, l.account_id.id)
             )
             no_line = all_session_move_lines.browse()
-            for (partner_id, account_id), move_lines in partner_account_lines.items():
-                session_move_lines = session_lines_by_key.get(
-                    (partner_id, account_id), no_line
-                ).filtered(lambda l: not l.reconciled and l.parent_state == "posted")
-                invoice_move_lines = invoice_lines_by_key.get(
-                    (partner_id, account_id), no_line
-                ).filtered(lambda l: not l.reconciled and l.parent_state == "posted")
-                (
-                    self.env["account.move.line"].browse([l.id for l in move_lines])
+            plan = []
+            for key, move_lines in partner_account_lines.items():
+                session_move_lines = session_lines_by_key.get(key, no_line).filtered(
+                    lambda l: not l.reconciled and l.parent_state == "posted"
+                )
+                invoice_move_lines = invoice_lines_by_key.get(key, no_line).filtered(
+                    lambda l: not l.reconciled and l.parent_state == "posted"
+                )
+                plan.append(
+                    no_line.browse([l.id for l in move_lines])
                     | session_move_lines
                     | invoice_move_lines
-                ).reconcile()
+                )
+            # one group per (partner, account), so the groups are disjoint
+            no_line._reconcile_plan(plan)
         return data

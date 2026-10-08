@@ -336,8 +336,17 @@ class PosSession(models.Model):
             last_server_date=self.env.context.get("pos_last_server_date"),
             limited=self.env.context.get("pos_limited_loading", True),
         )
-        response["pos.session"] = self._load_pos_data_search_read(
-            response, self.config_id
+        session = self
+        if not models_to_load or "pos.config" in models_to_load:
+            config = self.config_id
+            session = self.with_context(
+                pos_tax_product_field_names=(
+                    config.id,
+                    config._get_tax_product_field_names(),
+                )
+            )
+        response["pos.session"] = session._load_pos_data_search_read(
+            response, session.config_id
         )
 
         for model in dict.fromkeys(self._get_model_names_to_load(self.config_id)):
@@ -348,8 +357,8 @@ class PosSession(models.Model):
                 with _debug.perf(
                     "load_model", cr=self.env.cr, session=self, model=model
                 ):
-                    response[model] = self.env[model]._load_pos_data_search_read(
-                        response, self.config_id
+                    response[model] = session.env[model]._load_pos_data_search_read(
+                        response, session.config_id
                     )
                 _debug.pipeline(
                     "model_loaded",
@@ -456,7 +465,7 @@ class PosSession(models.Model):
             for session, payment_method, amount in result
         }
         for session in self:
-            cash_payment_method = session._get_cash_payment_method()
+            cash_payment_method = session.config_id._get_cash_payment_method()
             if cash_payment_method:
                 total_cash_payment = (
                     cash_payment_map.get((session.id, cash_payment_method.id)) or 0.0
@@ -540,7 +549,9 @@ class PosSession(models.Model):
         # changes refresh open sessions explicitly in pos.config.write, preserving
         # the journal used by closed sessions and their accounting history.
         for session in self:
-            session.cash_journal_id = session._get_cash_payment_method().journal_id
+            session.cash_journal_id = (
+                session.config_id._get_cash_payment_method().journal_id
+            )
 
     def init(self) -> None:
         super().init()
@@ -721,9 +732,6 @@ class PosSession(models.Model):
                 last_session=last_session or None,
             )
         return
-
-    def _get_cash_payment_method(self):
-        return self.payment_method_ids.filtered("is_cash_count")[:1]
 
     def get_session_orders(self):
         return self.env["pos.order"].search(
@@ -1340,7 +1348,7 @@ class PosSession(models.Model):
         self.check_singleton()
         orders = self._get_closed_orders()
         payments_by_method = orders.payment_ids.grouped("payment_method_id")
-        cash_method = self._get_cash_payment_method()
+        cash_method = self.config_id._get_cash_payment_method()
         cash_payments = payments_by_method.get(cash_method, self.env["pos.payment"])
         cash_payment_amount = sum(cash_payments.mapped("amount"))
         non_cash_methods = self.payment_method_ids - cash_method
@@ -2700,7 +2708,7 @@ class PosSession(models.Model):
         self.start_at = fields.Datetime.now()
         if notes:
             self.opening_notes = notes
-        if self._get_cash_payment_method():
+        if self.config_id._get_cash_payment_method():
             difference = cashbox_value - self.cash_register_balance_start
             self._post_cash_details_message(
                 True, self.cash_register_balance_start, difference, notes
