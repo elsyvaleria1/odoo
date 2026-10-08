@@ -191,6 +191,11 @@ msgid "Create Invoice"
 msgstr ""
 
 #. module: industry_fsm_sale
+#: model:ir.model,website_form_label:industry_fsm_sale.model_project_task
+msgid "Create a Task"
+msgstr ""
+
+#. module: industry_fsm_sale
 #: model_terms:ir.ui.view,arch_db:industry_fsm_sale.project_view_form_inherit
 msgid "Create new quotations directly from tasks"
 msgstr ""

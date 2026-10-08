@@ -33,8 +33,27 @@ msgstr ""
 
 #. module: integration
 #. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid ""
+"%(connection)s must be authorized again: the provider refused its grant."
+msgstr ""
+
+#. module: integration
+#. odoo-python
 #: code:addons/integration/models/integration_stream.py:0
 msgid "%(protocol)s dials %(schemes)s, not %(scheme)s://."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "%(service)s OAuth client"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "%(service)s needs its OAuth client secret with the client ID."
 msgstr ""
 
 #. module: integration
@@ -138,6 +157,14 @@ msgstr ""
 #. module: integration
 #: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form
 msgid "<strong>Supported Fields:</strong>"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__oauth_authorize_params
+msgid ""
+"A JSON object added to every authorization request, e.g. {\"access_type\": "
+"\"offline\", \"prompt\": \"consent\"} for a provider that issues a refresh "
+"token only when asked."
 msgstr ""
 
 #. module: integration
@@ -481,12 +508,18 @@ msgid "Auth Mode"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__service_auth_type
+msgid "Authentication"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__auth
 msgid "Authentication Error"
 msgstr ""
 
 #. module: integration
 #: model:ir.model.fields,field_description:integration.field_credential_credential__endpoint_auth_type
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__auth_type
 #: model:ir.model.fields,field_description:integration.field_integration_service__auth_type
 #: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__auth_type
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__auth_type
@@ -512,8 +545,18 @@ msgid "Authorization Denied"
 msgstr ""
 
 #. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "Authorize"
+msgstr ""
+
+#. module: integration
 #: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
 msgid "Authorize with OAuth"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__oauth_redirect_uri
+msgid "Authorized Through"
 msgstr ""
 
 #. module: integration
@@ -813,6 +856,11 @@ msgid ""
 msgstr ""
 
 #. module: integration
+#: model:ir.model,name:integration.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: integration
 #: model:ir.ui.menu,name:integration.menu_integration_config
 msgid "Configuration"
 msgstr ""
@@ -849,12 +897,31 @@ msgid "Connection failed"
 msgstr ""
 
 #. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Connection not found"
+msgstr ""
+
+#. module: integration
 #: model:ir.actions.act_window,name:integration.action_integration_connection
 #: model:ir.model.fields,field_description:integration.field_credential_credential__connection_ids
 #: model:ir.model.fields,field_description:integration.field_integration_service__connection_ids
 #: model:ir.ui.menu,name:integration.menu_integration_connection
 #: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
 msgid "Connections"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_legacy_connection_count
+msgid "Connections On Another Path"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__oauth_legacy_connection_count
+msgid ""
+"Connections last authorized through another redirect path than the "
+"service's: its console must keep listing that path until they are authorized"
+" again."
 msgstr ""
 
 #. module: integration
@@ -916,6 +983,12 @@ msgstr ""
 msgid ""
 "Credential %(credential)s is bound to %(bound)s and cannot connect "
 "%(service)s."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid "Credential %s is bound to no service."
 msgstr ""
 
 #. module: integration
@@ -1148,6 +1221,11 @@ msgid "Dial"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__distinct_presented_count
+msgid "Different Credentials"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_service__auth_type__digest
 msgid "Digest Authentication"
 msgstr ""
@@ -1169,15 +1247,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:integration.field_integration_connection__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_exchange__display_name
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_response_cache__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_service__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_stream__display_name
 #: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__display_name
+#: model:ir.model.fields,field_description:integration.field_ir_actions_server__display_name
 #: model:ir.model.fields,field_description:integration.field_ir_egress__display_name
+#: model:ir.model.fields,field_description:integration.field_ir_http__display_name
 #: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__display_name
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__display_name
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_connected__display_name
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__display_name
+#: model:ir.model.fields,field_description:integration.field_res_config_settings__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -1397,12 +1479,24 @@ msgid "Expiring Soon"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_channel__retry_backoff_type__exponential
 #: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__exponential
 #: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__exponential
 #: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__exponential
 #: model:ir.model.fields.selection,name:integration.selection__mixin_integration_channel__retry_backoff_type__exponential
 #: model:ir.model.fields.selection,name:integration.selection__mixin_integration_receiver__retry_backoff_type__exponential
 msgid "Exponential Backoff"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_authorize_params
+msgid "Extra Authorization Parameters"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid "Extra Authorization Parameters must be a JSON object of text values."
 msgstr ""
 
 #. module: integration
@@ -1444,6 +1538,7 @@ msgid "Field Accessed"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_channel__retry_backoff_type__fixed
 #: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__fixed
 #: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__fixed
 #: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__fixed
@@ -1501,6 +1596,11 @@ msgstr ""
 #. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_exchange__performance_rating__good
 msgid "Good (100-500ms)"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_ir_http
+msgid "HTTP Routing"
 msgstr ""
 
 #. module: integration
@@ -1641,6 +1741,14 @@ msgid "How long to keep request logs before deletion"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__distinct_presented_count
+msgid ""
+"How many different credentials the requests this row stands for presented, "
+"told apart by a keyed fingerprint. One means the same bad credential again; "
+"many, a caller guessing. Stops counting at 100."
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_stream__heartbeat_seconds
 msgid "How often the wire is asked whether it is still open."
 msgstr ""
@@ -1659,15 +1767,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:integration.field_integration_connection__id
 #: model:ir.model.fields,field_description:integration.field_integration_egress_purpose__id
 #: model:ir.model.fields,field_description:integration.field_integration_exchange__id
+#: model:ir.model.fields,field_description:integration.field_integration_receiver__id
 #: model:ir.model.fields,field_description:integration.field_integration_response_cache__id
 #: model:ir.model.fields,field_description:integration.field_integration_service__id
 #: model:ir.model.fields,field_description:integration.field_integration_stream__id
 #: model:ir.model.fields,field_description:integration.field_integration_stream_outbox__id
+#: model:ir.model.fields,field_description:integration.field_ir_actions_server__id
 #: model:ir.model.fields,field_description:integration.field_ir_egress__id
+#: model:ir.model.fields,field_description:integration.field_ir_http__id
 #: model:ir.model.fields,field_description:integration.field_mixin_inbound_gate__id
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__id
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_connected__id
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__id
+#: model:ir.model.fields,field_description:integration.field_res_config_settings__id
 msgid "ID"
 msgstr ""
 
@@ -1727,6 +1839,11 @@ msgstr ""
 #. module: integration
 #: model:ir.model,name:integration.model_integration_connection
 msgid "Integration Connection"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_integration_receiver
+msgid "Integration Receiver"
 msgstr ""
 
 #. module: integration
@@ -1832,6 +1949,13 @@ msgid ""
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,help:integration.field_integration_exchange__presented_fingerprints
+msgid ""
+"Keyed fingerprints of the credentials presented: what tells a new one from a"
+" repeat. Never the credential itself."
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_service__max_response_bytes
 msgid ""
 "Largest response body accepted from this service; 0 keeps the server-wide "
@@ -1934,6 +2058,7 @@ msgid ""
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields.selection,name:integration.selection__device_channel__retry_backoff_type__linear
 #: model:ir.model.fields.selection,name:integration.selection__device_device__retry_backoff_type__linear
 #: model:ir.model.fields.selection,name:integration.selection__integration_receiver__retry_backoff_type__linear
 #: model:ir.model.fields.selection,name:integration.selection__integration_service__retry_backoff_type__linear
@@ -2087,6 +2212,8 @@ msgid "Method '%(method)s' not found in model '%(model)s'"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__service_auth_type
+#: model:ir.model.fields,help:integration.field_integration_receiver__auth_type
 #: model:ir.model.fields,help:integration.field_integration_service__auth_type
 #: model:ir.model.fields,help:integration.field_mixin_inbound_gate__auth_type
 #: model:ir.model.fields,help:integration.field_mixin_integration_channel__auth_type
@@ -2153,6 +2280,11 @@ msgid "Name of the API service (if credential is linked to one)"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__needs_reauthorization
+msgid "Needs Reauthorization"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_exchange__error_type__network
 msgid "Network Error"
 msgstr ""
@@ -2199,6 +2331,13 @@ msgid "No receiver yet"
 msgstr ""
 
 #. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_service.py:0
+msgid ""
+"No route answers the OAuth redirect path %(path)s; use one of %(served)s."
+msgstr ""
+
+#. module: integration
 #: model_terms:ir.actions.act_window,help:integration.action_integration_stream
 msgid "No stream yet"
 msgstr ""
@@ -2222,6 +2361,7 @@ msgstr ""
 #. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_service__auth_type__oauth2
 #: model_terms:ir.ui.view,arch_db:integration.view_api_credential_form_oauth
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
 #: model_terms:ir.ui.view,arch_db:integration.view_integration_service_form
 msgid "OAuth 2.0"
 msgstr ""
@@ -2250,6 +2390,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/integration/controllers/oauth.py:0
 msgid "OAuth Error"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_redirect_path
+msgid "OAuth Redirect Path"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_connection__oauth_scope
+msgid "OAuth Scope"
 msgstr ""
 
 #. module: integration
@@ -2330,6 +2480,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/integration/models/integration_exchange.py:0
 msgid "Only failed, pending, or scheduled-retry events can be retried"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid "Only its own user authorizes a personal connection."
 msgstr ""
 
 #. module: integration
@@ -2418,6 +2574,14 @@ msgid "Owner"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__oauth_redirect_path
+msgid ""
+"Path of the redirect URI registered with the provider. A service registered "
+"under an older path keeps it until that provider's console lists the "
+"standard one, then switches."
+msgstr ""
+
+#. module: integration
 #: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
 msgid "Pause after failures"
 msgstr ""
@@ -2494,9 +2658,21 @@ msgid "Prefix before signature value (e.g., 'sha256=')"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_exchange__presented_fingerprints
+msgid "Presented Fingerprints"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_receiver__duplicate_detection_enabled
 #: model:ir.model.fields,help:integration.field_mixin_integration_receiver__duplicate_detection_enabled
 msgid "Prevent duplicate event processing using payload hash"
+msgstr ""
+
+#. module: integration
+#: model:res.groups,name:integration.privilege_oauth_authorization
+msgid ""
+"Privilege: a user authorizes a connection they own or whose record they may "
+"write"
 msgstr ""
 
 #. module: integration
@@ -2543,6 +2719,13 @@ msgstr ""
 #. module: integration
 #: model:ir.model.fields,help:integration.field_integration_stream__options
 msgid "Protocol options: TLS, QoS, client id, unit id."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__oauth_use_pkce
+msgid ""
+"Prove with a one-time verifier that the code is redeemed by the server that "
+"asked for it. Turn off only for a provider that rejects it."
 msgstr ""
 
 #. module: integration
@@ -2937,6 +3120,18 @@ msgid "Send Generic Version Headers"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_token_sends_scope
+msgid "Send Scope With Tokens"
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_service__oauth_token_sends_scope
+msgid ""
+"Send the scope again with the code exchange and every refresh, for a "
+"provider that requires it there (Microsoft)."
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_ir_actions_server__webhook_endpoint_id
 #: model:ir.model.fields,help:integration.field_ir_cron__webhook_endpoint_id
 msgid ""
@@ -2959,6 +3154,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_channel__sequence
 #: model:ir.model.fields,field_description:integration.field_mixin_integration_receiver__sequence
 msgid "Sequence"
+msgstr ""
+
+#. module: integration
+#: model:ir.model,name:integration.model_ir_actions_server
+msgid "Server Action"
 msgstr ""
 
 #. module: integration
@@ -3040,8 +3240,8 @@ msgstr ""
 
 #. module: integration
 #. odoo-python
-#: code:addons/integration/controllers/oauth.py:0
 #: code:addons/integration/models/credential_credential.py:0
+#: code:addons/integration/models/integration_connection.py:0
 msgid "Service '%s' is not configured for OAuth 2.0 authentication"
 msgstr ""
 
@@ -3337,6 +3537,14 @@ msgid ""
 msgstr ""
 
 #. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+msgid ""
+"The authorization state is invalid, expired or already used. Please start "
+"the authorization again."
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_receiver__contract_last_call
 #: model:ir.model.fields,help:integration.field_mixin_inbound_gate__contract_last_call
 #: model:ir.model.fields,help:integration.field_mixin_integration_receiver__contract_last_call
@@ -3431,6 +3639,32 @@ msgid "The payload log limit cannot be negative."
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__oauth_scope
+msgid ""
+"The permissions this connection asks for, when they differ from the "
+"service's: a calendar asks for one scope, a mailbox for another, on one "
+"OAuth client."
+msgstr ""
+
+#. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "The provider refused this connection's grant: authorize it again."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid "The provider refused to refresh %(connection)s's access token."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__needs_reauthorization
+msgid ""
+"The provider refused to refresh this connection's grant (revoked, expired or"
+" its client changed): it must be authorized again."
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_egress_purpose__purpose
 msgid "The purpose a caller named when it sent traffic through ir.egress."
 msgstr ""
@@ -3440,6 +3674,11 @@ msgstr ""
 msgid ""
 "The record's connection the call went through: which provider, terminal or "
 "carrier it was for."
+msgstr ""
+
+#. module: integration
+#: model:ir.model.fields,help:integration.field_integration_connection__oauth_redirect_uri
+msgid "The redirect URI this connection was last authorized through."
 msgstr ""
 
 #. module: integration
@@ -3476,6 +3715,11 @@ msgid "The service's URL for this environment"
 msgstr ""
 
 #. module: integration
+#: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
+msgid "The service's scope"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,help:integration.field_integration_stream__owner
 msgid "The worker holding the connection: host:pid."
 msgstr ""
@@ -3488,6 +3732,12 @@ msgstr ""
 #. module: integration
 #: model_terms:ir.ui.view,arch_db:integration.view_integration_connection_form
 msgid "This connection is not used: its service runs in the"
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/models/integration_connection.py:0
+msgid "This connection's record is gone."
 msgstr ""
 
 #. module: integration
@@ -3705,6 +3955,11 @@ msgid "Use"
 msgstr ""
 
 #. module: integration
+#: model:ir.model.fields,field_description:integration.field_integration_service__oauth_use_pkce
+msgid "Use PKCE"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields,field_description:integration.field_integration_exchange__user_id
 #: model:res.groups,name:integration.group_api_transport_user
 #: model_terms:ir.ui.view,arch_db:integration.view_api_credential_access_log_search
@@ -3866,8 +4121,15 @@ msgstr ""
 
 #. module: integration
 #. odoo-python
-#: code:addons/integration/controllers/oauth.py:0
+#: code:addons/integration/models/integration_connection.py:0
 msgid "You are not allowed to authorize API credentials."
+msgstr ""
+
+#. module: integration
+#. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
+#: code:addons/integration/models/integration_connection.py:0
+msgid "You are not allowed to authorize this connection."
 msgstr ""
 
 #. module: integration

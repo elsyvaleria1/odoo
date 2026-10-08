@@ -1434,6 +1434,16 @@ msgid "Accepted Count"
 msgstr ""
 
 #. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_calendar_event__access_token_hash
+msgid "Access Token Hash"
+msgstr ""
+
+#. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_calendar_event__access_token_sealed
+msgid "Access Token Sealed"
+msgstr ""
+
+#. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_mail_activity_type__category
 msgid "Action"
 msgstr ""
@@ -3303,8 +3313,6 @@ msgid "Going?"
 msgstr ""
 
 #. module: calendar
-#. odoo-javascript
-#: code:addons/calendar/static/src/views/attendee_calendar/attendee_calendar_controller.xml:0
 #: model:ir.model.fields.selection,name:calendar.selection__wizard_ir_config_parameter_update_calendar_provider__external_calendar_provider__google
 msgid "Google"
 msgstr ""
@@ -4060,19 +4068,26 @@ msgid "New Appointments Default"
 msgstr ""
 
 #. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_access_review_item__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_appointment_type__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_approval_request__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_device_device__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_iot_box__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_iot_device__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_ir_access_exception__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_ir_actions_server__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_ir_cron__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_mixin_mail_activity__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_mixin_resource_kind__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_product_pricelist__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_product_product__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_product_template__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_product_trace__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_res_bank__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_res_company__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_res_partner__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_res_users__activity_calendar_event_id
+#: model:ir.model.fields,field_description:calendar.field_resource_resource__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_survey_survey__activity_calendar_event_id
 #: model:ir.model.fields,field_description:calendar.field_survey_user_input__activity_calendar_event_id
 msgid "Next Activity Calendar Event"
@@ -4158,6 +4173,7 @@ msgstr ""
 
 #. module: calendar
 #. odoo-python
+#: code:addons/calendar/models/res_users.py:0
 #: code:addons/calendar/wizards/wizard_ir_config_parameter_update_calendar_provider.py:0
 msgid "No module found to configure the %(provider)s calendar."
 msgstr ""
@@ -4426,8 +4442,6 @@ msgid "Our first availability is"
 msgstr ""
 
 #. module: calendar
-#. odoo-javascript
-#: code:addons/calendar/static/src/views/attendee_calendar/attendee_calendar_controller.xml:0
 #: model:ir.model.fields.selection,name:calendar.selection__wizard_ir_config_parameter_update_calendar_provider__external_calendar_provider__microsoft
 #: model_terms:ir.ui.view,arch_db:calendar.appointment_validated
 msgid "Outlook"
@@ -4560,6 +4574,12 @@ msgid "Private by default"
 msgstr ""
 
 #. module: calendar
+#: model:res.groups,name:calendar.privilege_keep_meeting_channels
+msgid ""
+"Privilege: keep a meeting's video call channel in line with the meeting"
+msgstr ""
+
+#. module: calendar
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__effective_privacy__public
 #: model:ir.model.fields.selection,name:calendar.selection__calendar_event__privacy__public
 #: model:ir.model.fields.selection,name:calendar.selection__res_users_settings__calendar_default_privacy__public
@@ -4599,6 +4619,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:calendar.appointment_type_view_form
 #: model_terms:ir.ui.view,arch_db:calendar.calendar_event_view_form
 msgid "Questions"
+msgstr ""
+
+#. module: calendar
+#: model:ir.model.fields,field_description:calendar.field_appointment_type__rating_ids
+#: model:ir.model.fields,field_description:calendar.field_calendar_event__rating_ids
+msgid "Ratings"
 msgstr ""
 
 #. module: calendar
@@ -4671,6 +4697,13 @@ msgstr ""
 #: model:ir.ui.menu,name:calendar.calendar_submenu_reminders
 #: model:ir.ui.menu,name:calendar.menu_appointment_reminders
 msgid "Reminders"
+msgstr ""
+
+#. module: calendar
+#: model:res.groups,comment:calendar.privilege_keep_meeting_channels
+msgid ""
+"Rename, describe and retire the Discuss video call channels of meetings "
+"their editor may change, members or not."
 msgstr ""
 
 #. module: calendar
@@ -4915,6 +4948,12 @@ msgstr ""
 #. module: calendar
 #: model:ir.model.fields,field_description:calendar.field_appointment_type__min_schedule_hours
 msgid "Schedule before (hours)"
+msgstr ""
+
+#. module: calendar
+#. odoo-javascript
+#: code:addons/calendar/static/src/core/web/messaging_menu_model_patch.js:0
+msgid "Schedule for later"
 msgstr ""
 
 #. module: calendar

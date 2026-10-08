@@ -1116,6 +1116,20 @@ msgid ""
 msgstr ""
 
 #. module: project
+#: model:ir.model.fields,help:project.field_wizard_project_task_share__share_link
+msgid ""
+"Anyone with this link can view the document, without commenting, for 30 "
+"days."
+msgstr ""
+
+#. module: project
+#: model:ir.model.fields,help:project.field_wizard_project_project_share__share_link
+msgid ""
+"Anyone with this link can view the project and its tasks, without "
+"commenting, for 30 days."
+msgstr ""
+
+#. module: project
 #: model:ir.model.fields,help:project.field_wizard_project_project_share__share_link
 msgid "Anyone with this link can access the project in read mode."
 msgstr ""
@@ -1247,6 +1261,7 @@ msgstr ""
 
 #. module: project
 #: model:ir.model.fields,field_description:project.field_project_cfd_report__user_ids
+#: model:ir.model.fields,field_description:project.field_project_task__user_ids
 #: model:ir.model.fields,field_description:project.field_project_task_burndown_chart_report__user_ids
 #: model:ir.model.fields,field_description:project.field_report_project_task_user__user_ids
 #: model:ir.model.fields,field_description:project.field_wizard_project_project_create_from_template_mapping__user_ids
@@ -1609,9 +1624,6 @@ msgstr ""
 #: code:addons/project/models/project_task.py:0
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__canceled
 #: model:project.phase,name:project.project_phase_3
-#: model:project.triage,name:project.project_personal_stage_admin_6
-#: model:project.triage,name:project.project_personal_stage_demo_6
-#: model:project.workflow.step,name:project.project_stage_3
 msgid "Cancelled"
 msgstr ""
 
@@ -2013,6 +2025,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/project/wizards/wizard_project_project_create_from_template.py:0
 msgid "Create a Project from Template %s"
+msgstr ""
+
+#. module: project
+#: model:ir.model,website_form_label:project.model_project_task
+msgid "Create a Task"
 msgstr ""
 
 #. module: project
@@ -2583,7 +2600,6 @@ msgstr ""
 #. module: project
 #. odoo-javascript
 #: code:addons/project/static/src/views/project_task_kanban/project_task_kanban_examples.js:0
-#: model:project.tags,name:project.project_tags_08
 msgid "Design"
 msgstr ""
 
@@ -2626,6 +2642,7 @@ msgid "Discard"
 msgstr ""
 
 #. module: project
+#: model:ir.model.fields,field_description:project.field_access_link__display_name
 #: model:ir.model.fields,field_description:project.field_account_analytic_account__display_name
 #: model:ir.model.fields,field_description:project.field_digest_digest__display_name
 #: model:ir.model.fields,field_description:project.field_home_menu_badge__display_name
@@ -2691,9 +2708,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:project.selection__project_retrospective_action__state__done
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__done
 #: model:project.phase,name:project.project_phase_2
-#: model:project.triage,name:project.project_personal_stage_admin_5
-#: model:project.triage,name:project.project_personal_stage_demo_5
-#: model:project.workflow.step,name:project.project_stage_2
 #: model_terms:ir.ui.view,arch_db:project.project_retrospective_search
 msgid "Done"
 msgstr ""
@@ -2917,8 +2931,12 @@ msgstr ""
 
 #. module: project
 #: model:ir.model.fields.selection,name:project.selection__project_risk__category__external
-#: model:project.tags,name:project.project_tags_05
 msgid "External"
+msgstr ""
+
+#. module: project
+#: model:ir.model,name:project.model_access_link
+msgid "External Link"
 msgstr ""
 
 #. module: project
@@ -3328,6 +3346,7 @@ msgid "How’s this project going?"
 msgstr ""
 
 #. module: project
+#: model:ir.model.fields,field_description:project.field_access_link__id
 #: model:ir.model.fields,field_description:project.field_account_analytic_account__id
 #: model:ir.model.fields,field_description:project.field_digest_digest__id
 #: model:ir.model.fields,field_description:project.field_home_menu_badge__id
@@ -3483,7 +3502,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:project.selection__project_retrospective_action__state__in_progress
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__in_progress
 #: model:project.phase,name:project.project_phase_1
-#: model:project.workflow.step,name:project.project_stage_1
 msgid "In Progress"
 msgstr ""
 
@@ -3496,8 +3514,6 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
-#: model:project.triage,name:project.project_personal_stage_admin_0
-#: model:project.triage,name:project.project_personal_stage_demo_0
 msgid "Inbox"
 msgstr ""
 
@@ -3742,8 +3758,6 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
-#: model:project.triage,name:project.project_personal_stage_admin_4
-#: model:project.triage,name:project.project_personal_stage_demo_4
 msgid "Later"
 msgstr ""
 
@@ -4249,7 +4263,6 @@ msgstr ""
 #: code:addons/project/models/project_project.py:0
 #: code:addons/project/static/src/views/components/template_dropdown.xml:0
 #: code:addons/project/static/src/views/project_task_kanban/project_task_kanban_examples.js:0
-#: model:project.workflow.step,name:project.project_stage_0
 msgid "New"
 msgstr ""
 
@@ -4300,6 +4313,14 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project.project_task_view_tree_base
 #: model_terms:ir.ui.view,arch_db:project.view_task_form2
 msgid "Next Activity"
+msgstr ""
+
+#. module: project
+#: model:ir.model.fields,field_description:project.field_project_benefit__activity_calendar_event_id
+#: model:ir.model.fields,field_description:project.field_project_project__activity_calendar_event_id
+#: model:ir.model.fields,field_description:project.field_project_task__activity_calendar_event_id
+#: model:ir.model.fields,field_description:project.field_project_update__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: project
@@ -4400,6 +4421,14 @@ msgid "No data yet!"
 msgstr ""
 
 #. module: project
+#. odoo-python
+#: code:addons/project/wizards/wizard_project_project_view_forecast.py:0
+msgid ""
+"No historical throughput data available. Close some tasks to build "
+"forecasting data."
+msgstr ""
+
+#. module: project
 #: model_terms:ir.actions.act_window,help:project.project_task_lost_reason_action
 msgid "No lost reasons found. Let's create one!"
 msgstr ""
@@ -4435,6 +4464,12 @@ msgstr ""
 #. module: project
 #: model_terms:ir.actions.act_window,help:project.action_project_portfolio
 msgid "No projects in the portfolio"
+msgstr ""
+
+#. module: project
+#. odoo-python
+#: code:addons/project/wizards/wizard_project_project_view_forecast.py:0
+msgid "No remaining items to forecast."
 msgstr ""
 
 #. module: project
@@ -5140,7 +5175,6 @@ msgstr ""
 #: code:addons/project/controllers/portal.py:0
 #: model:ir.model.fields,field_description:project.field_project_task__priority
 #: model:ir.model.fields,field_description:project.field_report_project_task_user__priority
-#: model:project.tags,name:project.project_tags_16
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_base
 msgid "Priority"
 msgstr ""
@@ -5300,6 +5334,7 @@ msgid "Project Kanban Column Holding Records"
 msgstr ""
 
 #. module: project
+#: model:ir.model.fields,field_description:project.field_project_project__user_id
 #: model_terms:ir.ui.view,arch_db:project.edit_project
 #: model_terms:ir.ui.view,arch_db:project.project_portfolio_search
 #: model_terms:ir.ui.view,arch_db:project.view_project
@@ -7007,12 +7042,6 @@ msgstr ""
 #: model:ir.embedded.actions,name:project.project_embedded_action_all_tasks_dashboard
 #: model:ir.model.fields,field_description:project.field_project_project__task_ids
 #: model:ir.ui.menu,name:project.menu_project_management
-#: model:project.project,label_tasks:project.project_home_construction
-#: model:project.project,label_tasks:project.project_project_1
-#: model:project.project,label_tasks:project.project_project_2
-#: model:project.project,label_tasks:project.project_project_3
-#: model:project.project,label_tasks:project.project_project_4
-#: model:project.project,label_tasks:project.project_template_1
 #: model_terms:ir.ui.view,arch_db:project.portal_layout
 #: model_terms:ir.ui.view,arch_db:project.portal_my_home
 #: model_terms:ir.ui.view,arch_db:project.portal_my_project
@@ -7432,16 +7461,12 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
-#: model:project.triage,name:project.project_personal_stage_admin_3
-#: model:project.triage,name:project.project_personal_stage_demo_3
 msgid "This Month"
 msgstr ""
 
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
-#: model:project.triage,name:project.project_personal_stage_admin_2
-#: model:project.triage,name:project.project_personal_stage_demo_2
 #: model_terms:ir.ui.view,arch_db:project.project_sharing_project_task_view_search
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_project_base
 msgid "This Week"
@@ -7492,6 +7517,13 @@ msgstr ""
 msgid ""
 "This is a preview of how the project will look when it's shared with "
 "customers and they have editing access."
+msgstr ""
+
+#. module: project
+#. odoo-python
+#: code:addons/project/wizards/wizard_mail_message_send_portal_link.py:0
+msgid ""
+"This project cannot be shared by link: it is visible to “%(visibility)s”."
 msgstr ""
 
 #. module: project
@@ -7688,8 +7720,6 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
-#: model:project.triage,name:project.project_personal_stage_admin_1
-#: model:project.triage,name:project.project_personal_stage_demo_1
 #: model_terms:ir.ui.view,arch_db:project.project_sharing_project_task_view_search
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_project_base
 msgid "Today"

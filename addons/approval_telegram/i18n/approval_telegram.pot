@@ -1,0 +1,820 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 19:38+0000\n"
+"PO-Revision-Date: 2026-10-08 19:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Amount"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Amount: %(amount)s"
+msgstr ""
+
+#. module: approval_telegram
+#: model_terms:ir.ui.view,arch_db:approval_telegram.telegram_bot_view_form_approval_request
+msgid "Approval Notifications"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_approval_request
+msgid "Approval Request"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_approval_category_step_member
+msgid "Approval Step Member"
+msgstr ""
+
+#. module: approval_telegram
+#: model_terms:ir.ui.view,arch_db:approval_telegram.telegram_bot_view_form_approval_request
+msgid "Approvals"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Approve"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Approved"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_approval_approver
+msgid "Approver"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Approver comment: %(note)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Attachment"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Attachments"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Billed to"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "CFDI use"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Category: %(category)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Change requested on «%(field)s»: %(note)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Changes"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Comment (optional)"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Comment: %(note)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Company"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Confirm"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Confirm refusal"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Connect this Telegram account to your Odoo user first."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Contact: %(contact)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Correct request"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Correct: %(field)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Correction sent. It is back in approval."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Date"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Date: %(date)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Deadline"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Description"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Description / Reason"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_approver__display_name
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_category_step_member__display_name
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_approval_notifier__display_name
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_handler_approval__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "End"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Field to correct:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "High"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "I could not approve it: %(error)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "I could not refuse it: %(error)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "I could not request the change: %(error)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "I could not resubmit the request: %(error)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "I did not understand the date. Use DD/MM/YYYY or YYYY-MM-DD."
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_approver__id
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_category_step_member__id
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_approval_notifier__id
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_handler_approval__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/controllers/approval_miniapp_controller.py:0
+msgid "Invalid date."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "It could not be done:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Journal"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,help:approval_telegram.field_approval_request__tg_change_note
+msgid ""
+"Latest approver comment explaining the requested change, shown to the owner "
+"in the Telegram correction panel."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Loading…"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Location"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Low"
+msgstr ""
+
+#. module: approval_telegram
+#: model_terms:ir.ui.view,arch_db:approval_telegram.fix_page
+#: model_terms:ir.ui.view,arch_db:approval_telegram.miniapp_page
+msgid "MARIN"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "My approvals"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Network error."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "New date:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "New description / reason:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "No specific reason"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Normal"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_telegram_bot__notify_approvals
+msgid "Notify Approval Requests"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_category_step_member__notify_telegram
+msgid "Notify Telegram"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Number: %(number)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Payment applied to"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Payment method"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Please type the requested value."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Priority"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Product category"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/approval_request.py:0
+msgid "Product reference"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Products"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Quantity"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Reason for refusal:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Reason: %(reason)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Reference"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Reference: %(reference)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Refusal reason:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Refuse"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Refused"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Request:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Requester"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Requester: %(requester)s"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Save and resubmit"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Skip"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Start"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Submitted"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_telegram_approval_notifier
+msgid "Telegram Approval Notifier"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_request__tg_change_note
+msgid "Telegram Change Note"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_request__telegram_data
+#: model_terms:ir.ui.view,arch_db:approval_telegram.view_approval_request_form_inherit_telegram
+msgid "Telegram Data"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,field_description:approval_telegram.field_approval_request__telegram_data_formatted
+msgid "Telegram Data Formatted"
+msgstr ""
+
+#. module: approval_telegram
+#: model_terms:ir.ui.view,arch_db:approval_telegram.view_approval_request_form_inherit_telegram
+msgid "Telegram Details"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model,name:approval_telegram.model_telegram_handler_approval
+msgid "Telegram: Approval Decisions"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "The request is no longer available."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "The request no longer needs corrections."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "The session could not be validated."
+msgstr ""
+
+#. module: approval_telegram
+#: model_terms:ir.ui.view,arch_db:approval_telegram.telegram_bot_view_form_approval_request
+msgid ""
+"This bot sends each approver a notification when a\n"
+"                        request awaits them, with buttons to approve, ask for\n"
+"                        changes or refuse."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid ""
+"This request is no longer available to you: it was already processed, or you"
+" are no longer the approver on duty."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "This request no longer needs corrections from you."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid ""
+"To decide requests your Odoo account must be linked to this chat. Ask IT to "
+"link your Telegram user."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "To submit"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Type a comment for the refusal (or tap Skip):"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Type the new date (e.g. 12/06/2026 or 2026-06-12):"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Type the new description / reason:"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Type what the requester should correct (or tap Skip):"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Urgent"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "Vendor"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "What should the requester correct?"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "What would you like to do?"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "What you must correct:"
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,help:approval_telegram.field_telegram_bot__notify_approvals
+msgid ""
+"When enabled, this bot pushes a Telegram notification to an approver whose "
+"decision is pending on an approval.request, with inline buttons to approve, "
+"request changes or refuse. The approver must have a chat linked to this bot."
+msgstr ""
+
+#. module: approval_telegram
+#: model:ir.model.fields,help:approval_telegram.field_approval_category_step_member__notify_telegram
+msgid ""
+"When enabled, this member receives a Telegram push (with approve / request-"
+"changes / refuse buttons) for requests pending on this step. Opt-in: "
+"disabled by default. The bot's global 'Notify Approval Requests' switch must"
+" also be on, and the member must have a chat linked to an approval bot."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "Which field should the requester correct?"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "You already approved"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "You already refused"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "You have no requests. 🎉"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "an approval decision awaiting a comment"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "the date"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "the description / reason"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "… and %(count)s more lines"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "✅ Approve"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/controllers/approval_miniapp_controller.py:0
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "✅ Correction sent. %(request)s is back in approval."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "✅ You approved request %(request)s."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "✅ Your request %(request)s was APPROVED!"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "✏️ Correct"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "✏️ Request changes"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "✏️ You requested changes on request %(request)s."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "❌ Refuse"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "❌ You refused request %(request)s."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "❌ Your request %(request)s was REFUSED."
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "📄 View request"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "📅 Date"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/models/telegram_handler.py:0
+msgid "📝 Description / Reason"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "🔄 A change was requested on your request"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "🔄 Request corrected and resubmitted"
+msgstr ""
+
+#. module: approval_telegram
+#. odoo-python
+#: code:addons/approval_telegram/services/approval_notifier.py:0
+msgid "🔔 New approval request"
+msgstr ""

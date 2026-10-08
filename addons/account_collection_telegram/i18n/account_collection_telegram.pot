@@ -1,0 +1,612 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 19:38+0000\n"
+"PO-Revision-Date: 2026-10-08 19:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Hand your collections in to a till or the bank."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Record what a customer paid you."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(command)s - See the collections you still hold."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"%(company)s received your payment of %(amount)s through %(collector)s "
+"(receipt %(name)s). Verify it here: %(url)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(customer)s owes %(total)s. Which invoice did they pay?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(date)s %(customer)s: %(amount)s (%(days)s days)"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "%(name)s · due %(due)s · %(amount)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "All %(held)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "All, oldest first (%(total)s)"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Amount"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Cancel"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Cancelled; nothing was recorded."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Cash"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Check"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Check date"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Collection %(name)s recorded: %(amount)s. You now hold %(held)s in %(count)s"
+" collections; hand them in with /rendir."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Collections"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Confirm"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Customer"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Deposit %(amount)s into %(bank)s quoting the reference %(reference)s, then "
+"send a photo of the deposit slip. With that reference the bank's report "
+"validates your hand-in by itself."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Difference: %(difference)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#: model:ir.model.fields,field_description:account_collection_telegram.field_telegram_handler_account_collection__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Field Collections"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Finish or /cancelar what you are doing first."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Full %(due)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Hand in these collections?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Hand them in"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Hand your collections in"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Hand-in slip, sent from Telegram."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Handed in to"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Heads up: %(amount)s of what you hold is past its hand-in date. Hand it in "
+"today with /rendir."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Heads up: you hold %(amount)s, at or above your limit of %(limit)s. Hand it "
+"in with /rendir before collecting more."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "How did they pay?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"How much did they pay? Send the amount, or press the button for the full "
+"%(due)s."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "How much did you hand in? Send the amount, or press the button."
+msgstr ""
+
+#. module: account_collection_telegram
+#: model:ir.model.fields,field_description:account_collection_telegram.field_telegram_handler_account_collection__id
+msgid "ID"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Invoices"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Location"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Location received."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "No customer matching %(query)s owes anything. Try another name."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "No location."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Only collectors record collections here. Ask your manager to make you a "
+"collector."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Paid in"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Paid on"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Press the button to share your location, or Skip."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Proof"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Proof of the collection, sent from Telegram."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Record this collection?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Record what a customer paid you"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Remittance %(name)s sent to the treasury for validation. Your collections "
+"stay in your custody until it is validated."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Same day"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "See the collections you still hold"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send a photo of the cash receipt from the till, or skip it."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send a photo of the check."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send a photo of the deposit slip."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send a photo of the receipt you gave the customer, or skip it."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send a photo or a PDF, please."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send at least three letters of the name."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send the amount as a number, like 1500.50."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Send the date as dd/mm/yyyy."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Share my location"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Share where you are with the button below, so the collection records where "
+"it was made, or skip it."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Skip"
+msgstr ""
+
+#. module: account_collection_telegram
+#: model:ir.model,name:account_collection_telegram.model_telegram_handler_account_collection
+msgid "Telegram: Field Collections"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "That customer owes nothing now."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "That invoice is no longer open."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"That is more than the %(due)s owed. Record the rest at the office, or send "
+"the amount owed."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "The collection was not recorded: %(reason)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "The customer got the receipt by %(channels)s."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"The customer has no email or Telegram on file: hand them a paper receipt."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "The date must be today or within the last %(days)s days."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "The hand-in was not recorded: %(reason)s"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "There is no till or bank account to hand in to."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Today"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Use the buttons above, please."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"What date is written on the check? Press the button if it is the day they "
+"paid you, or send the date as dd/mm/yyyy."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "When did they pay you? Press a button or send the date as dd/mm/yyyy."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Which customer?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Who paid you? Send the customer's name, part of it, or their tax ID.\n"
+"\n"
+"/cancelar stops at any time."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Yesterday"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "You hand in %(held)s. Where did the money go?"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "You hold %(total)s in %(count)s collections:"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "You hold no collections to hand in."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "You hold no collections."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid ""
+"Your company has no journal for collections in custody yet; ask accounting "
+"to set one up."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "Your unfinished hand-in %(names)s was cancelled; start again."
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "a collection"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "a hand-in"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "attached"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "email"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "none"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "overdue"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "shared"
+msgstr ""
+
+#. module: account_collection_telegram
+#. odoo-python
+#: code:addons/account_collection_telegram/models/telegram_handler.py:0
+msgid "your receipt"
+msgstr ""

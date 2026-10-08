@@ -48,7 +48,7 @@ msgstr ""
 #. module: calendar_google
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_event__active
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_recurrence__active
-#: model:ir.model.fields,field_description:calendar_google.field_google_calendar_sync__active
+#: model:ir.model.fields,field_description:calendar_google.field_mixin_google_calendar_sync__active
 msgid "Active"
 msgstr ""
 
@@ -78,6 +78,11 @@ msgstr ""
 #. module: calendar_google
 #: model:ir.model,name:calendar_google.model_calendar_event
 msgid "Calendar Event"
+msgstr ""
+
+#. module: calendar_google
+#: model:ir.model,name:calendar_google.model_calendar_sync_account
+msgid "Calendar Synchronization Account"
 msgstr ""
 
 #. module: calendar_google
@@ -165,15 +170,13 @@ msgid "Discard"
 msgstr ""
 
 #. module: calendar_google
-#: model:ir.model.fields,field_description:calendar_google.field_calendar_alarm_manager__display_name
-#: model:ir.model.fields,field_description:calendar_google.field_calendar_attendee__display_name
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_event__display_name
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_recurrence__display_name
-#: model:ir.model.fields,field_description:calendar_google.field_wizard_res_users_reset_google_calendar__display_name
-#: model:ir.model.fields,field_description:calendar_google.field_google_calendar_sync__display_name
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_sync_account__display_name
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_sync_adapter_google__display_name
+#: model:ir.model.fields,field_description:calendar_google.field_mixin_google_calendar_sync__display_name
 #: model:ir.model.fields,field_description:calendar_google.field_res_config_settings__display_name
-#: model:ir.model.fields,field_description:calendar_google.field_res_users__display_name
-#: model:ir.model.fields,field_description:calendar_google.field_res_users_settings__display_name
+#: model:ir.model.fields,field_description:calendar_google.field_wizard_res_users_reset_google_calendar__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -194,8 +197,7 @@ msgid "Event Recurrence Rule"
 msgstr ""
 
 #. module: calendar_google
-#. odoo-javascript
-#: code:addons/calendar_google/static/src/views/calendar_google/google_calendar_controller.xml:0
+#: model:ir.model.fields.selection,name:calendar_google.selection__calendar_sync_account__provider__google
 msgid "Google"
 msgstr ""
 
@@ -216,9 +218,15 @@ msgid "Google Calendar Event Id"
 msgstr ""
 
 #. module: calendar_google
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_event__google_id
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_recurrence__google_id
-#: model:ir.model.fields,field_description:calendar_google.field_google_calendar_sync__google_id
+#: model:ir.model.fields,field_description:calendar_google.field_mixin_google_calendar_sync__google_id
 msgid "Google Calendar Id"
+msgstr ""
+
+#. module: calendar_google
+#: model:ir.model,name:calendar_google.model_calendar_sync_adapter_google
+msgid "Google Calendar Synchronization Adapter"
 msgstr ""
 
 #. module: calendar_google
@@ -254,15 +262,13 @@ msgid "Guests Event Modification Permission"
 msgstr ""
 
 #. module: calendar_google
-#: model:ir.model.fields,field_description:calendar_google.field_calendar_alarm_manager__id
-#: model:ir.model.fields,field_description:calendar_google.field_calendar_attendee__id
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_event__id
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_recurrence__id
-#: model:ir.model.fields,field_description:calendar_google.field_wizard_res_users_reset_google_calendar__id
-#: model:ir.model.fields,field_description:calendar_google.field_google_calendar_sync__id
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_sync_account__id
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_sync_adapter_google__id
+#: model:ir.model.fields,field_description:calendar_google.field_mixin_google_calendar_sync__id
 #: model:ir.model.fields,field_description:calendar_google.field_res_config_settings__id
-#: model:ir.model.fields,field_description:calendar_google.field_res_users__id
-#: model:ir.model.fields,field_description:calendar_google.field_res_users_settings__id
+#: model:ir.model.fields,field_description:calendar_google.field_wizard_res_users_reset_google_calendar__id
 msgid "ID"
 msgstr ""
 
@@ -276,6 +282,11 @@ msgstr ""
 #. module: calendar_google
 #: model:ir.model.fields,help:calendar_google.field_res_config_settings__cal_sync_paused
 msgid "Indicates if synchronization with Google Calendar is paused or not."
+msgstr ""
+
+#. module: calendar_google
+#: model_terms:ir.ui.view,arch_db:calendar_google.res_config_settings_view_form
+msgid "Kept when left empty"
 msgstr ""
 
 #. module: calendar_google
@@ -337,6 +348,11 @@ msgid "Pause Synchronization"
 msgstr ""
 
 #. module: calendar_google
+#: model:ir.model.fields,field_description:calendar_google.field_calendar_sync_account__provider
+msgid "Provider"
+msgstr ""
+
+#. module: calendar_google
 #: model:ir.model.fields,field_description:calendar_google.field_res_users__google_calendar_rtoken
 #: model:ir.model.fields,field_description:calendar_google.field_res_users_settings__google_calendar_rtoken
 msgid "Refresh Token"
@@ -353,7 +369,7 @@ msgid "Reset Google Calendar Account"
 msgstr ""
 
 #. module: calendar_google
-#: model:ir.model,name:calendar_google.model_google_calendar_sync
+#: model:ir.model,name:calendar_google.model_mixin_google_calendar_sync
 msgid "Synchronize a record with Google Calendar"
 msgstr ""
 
@@ -401,7 +417,6 @@ msgid "Token Validity"
 msgstr ""
 
 #. module: calendar_google
-#: model:ir.model,name:calendar_google.model_res_users
 #: model:ir.model.fields,field_description:calendar_google.field_wizard_res_users_reset_google_calendar__user_id
 msgid "User"
 msgstr ""
@@ -425,6 +440,13 @@ msgstr ""
 #. module: calendar_google
 #: model:ir.model.fields,field_description:calendar_google.field_calendar_event__videocall_source
 msgid "Videocall Source"
+msgstr ""
+
+#. module: calendar_google
+#. odoo-python
+#: code:addons/calendar_google/models/calendar_sync_adapter.py:0
+msgid ""
+"You don't seem to have permission to modify this event on Google Calendar."
 msgstr ""
 
 #. module: calendar_google
@@ -455,4 +477,3 @@ msgstr ""
 #: model:ir.model.fields,help:calendar_google.field_res_users_settings__google_calendar_credential_id
 msgid "Holds this user's Google OAuth tokens."
 msgstr ""
-

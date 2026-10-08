@@ -132,7 +132,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__analytic
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__analytic
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__analytic
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__analytic
 msgid "Analytic From Expenses"
 msgstr ""
 
@@ -188,7 +187,6 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__cancel
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__cancel
 msgid "Cancelled"
 msgstr ""
 
@@ -246,9 +244,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:trade.field_mixin_order_discount__company_id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_fields__company_id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_report__company_id
-#: model:ir.model.fields,field_description:trade.field_trade_config__company_id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_template__company_id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_template_line__company_id
+#: model:ir.model.fields,field_description:trade.field_trade_config__company_id
 msgid "Company"
 msgstr ""
 
@@ -265,7 +263,6 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__done
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__done
 msgid "Confirmed"
 msgstr ""
 
@@ -330,7 +327,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__current_year
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__current_year
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__current_year
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__current_year
 msgid "Current Year"
 msgstr ""
 
@@ -438,19 +434,20 @@ msgstr ""
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_price_history__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_price_history_line__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_transfer__display_name
+#: model:ir.model.fields,field_description:trade.field_mixin_order_loss__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_mass_cancel__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_merge__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_report__display_name
 #: model:ir.model.fields,field_description:trade.field_mixin_order_state_rollup__display_name
+#: model:ir.model.fields,field_description:trade.field_mixin_order_template__display_name
+#: model:ir.model.fields,field_description:trade.field_mixin_order_template_line__display_name
+#: model:ir.model.fields,field_description:trade.field_mixin_order_templated__display_name
 #: model:ir.model.fields,field_description:trade.field_product_product__display_name
 #: model:ir.model.fields,field_description:trade.field_res_company__display_name
 #: model:ir.model.fields,field_description:trade.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:trade.field_res_partner__display_name
 #: model:ir.model.fields,field_description:trade.field_res_partner_tag__display_name
 #: model:ir.model.fields,field_description:trade.field_trade_config__display_name
-#: model:ir.model.fields,field_description:trade.field_mixin_order_template__display_name
-#: model:ir.model.fields,field_description:trade.field_mixin_order_template_line__display_name
-#: model:ir.model.fields,field_description:trade.field_mixin_order_templated__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -479,7 +476,6 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__draft
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__draft
 msgid "Draft"
 msgstr ""
 
@@ -539,7 +535,6 @@ msgstr ""
 #: model:ir.model.constraint,message:trade.constraint_mixin_order_line_fields_non_accountable_null_fields
 #: model:ir.model.constraint,message:trade.constraint_purchase_order_line_non_accountable_null_fields
 #: model:ir.model.constraint,message:trade.constraint_sale_order_line_non_accountable_null_fields
-#: model:ir.model.constraint,message:trade.constraint_test_trade_order_line_non_accountable_null_fields
 msgid "Forbidden values on non-accountable order line"
 msgstr ""
 
@@ -606,19 +601,20 @@ msgstr ""
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_price_history__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_price_history_line__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_line_transfer__id
+#: model:ir.model.fields,field_description:trade.field_mixin_order_loss__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_mass_cancel__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_merge__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_report__id
 #: model:ir.model.fields,field_description:trade.field_mixin_order_state_rollup__id
+#: model:ir.model.fields,field_description:trade.field_mixin_order_template__id
+#: model:ir.model.fields,field_description:trade.field_mixin_order_template_line__id
+#: model:ir.model.fields,field_description:trade.field_mixin_order_templated__id
 #: model:ir.model.fields,field_description:trade.field_product_product__id
 #: model:ir.model.fields,field_description:trade.field_res_company__id
 #: model:ir.model.fields,field_description:trade.field_res_config_settings__id
 #: model:ir.model.fields,field_description:trade.field_res_partner__id
 #: model:ir.model.fields,field_description:trade.field_res_partner_tag__id
 #: model:ir.model.fields,field_description:trade.field_trade_config__id
-#: model:ir.model.fields,field_description:trade.field_mixin_order_template__id
-#: model:ir.model.fields,field_description:trade.field_mixin_order_template_line__id
-#: model:ir.model.fields,field_description:trade.field_mixin_order_templated__id
 msgid "ID"
 msgstr ""
 
@@ -696,7 +692,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__last_12m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__last_12m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__last_12m
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__last_12m
 msgid "Last 12 Months"
 msgstr ""
 
@@ -704,7 +699,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__last_3m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__last_3m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__last_3m
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__last_3m
 msgid "Last 3 Months"
 msgstr ""
 
@@ -744,7 +738,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__manual
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__manual
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__manual
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__manual
 msgid "Manual"
 msgstr ""
 
@@ -789,7 +782,6 @@ msgstr ""
 #: model:ir.model.constraint,message:trade.constraint_mixin_order_line_fields_accountable_required_fields
 #: model:ir.model.constraint,message:trade.constraint_purchase_order_line_accountable_required_fields
 #: model:ir.model.constraint,message:trade.constraint_sale_order_line_accountable_required_fields
-#: model:ir.model.constraint,message:trade.constraint_test_trade_order_line_accountable_required_fields
 msgid "Missing required fields on accountable order line."
 msgstr ""
 
@@ -833,6 +825,11 @@ msgid "Newest"
 msgstr ""
 
 #. module: trade
+#: model:ir.model.fields,field_description:trade.field_mixin_order__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: trade
 #: model:ir.model.fields,field_description:trade.field_mixin_order__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
@@ -859,7 +856,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__priority__0
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__priority__0
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__priority__0
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__priority__0
 msgid "Normal"
 msgstr ""
 
@@ -870,11 +866,10 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__display_type__line_note
-#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_note
-#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_note
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_note
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_template_line__display_type__line_note
+#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_note
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_note
+#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_note
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_note
 msgid "Note"
 msgstr ""
@@ -922,6 +917,12 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_add_discount__discount_type__sol_discount
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_add_discount__discount_type__sol_discount
 msgid "On All Order Lines"
+msgstr ""
+
+#. module: trade
+#. odoo-python
+#: code:addons/trade/models/mixin_order.py:0
+msgid "Only open quotations can be marked as lost or rejected: %(orders)s"
 msgstr ""
 
 #. module: trade
@@ -1254,6 +1255,11 @@ msgid "Quotation"
 msgstr ""
 
 #. module: trade
+#: model:ir.model.fields,field_description:trade.field_mixin_order__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: trade
 #: model:ir.model.fields,field_description:trade.field_res_bank__recent_orders_count
 #: model:ir.model.fields,field_description:trade.field_res_company__recent_orders_count
 #: model:ir.model.fields,field_description:trade.field_res_partner__recent_orders_count
@@ -1323,11 +1329,10 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__display_type__line_section
-#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_section
-#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_section
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_section
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_template_line__display_type__line_section
+#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_section
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_section
+#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_section
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_section
 msgid "Section"
 msgstr ""
@@ -1388,17 +1393,15 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__stock_move
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__stock_move
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__stock_move
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__stock_move
 msgid "Stock Moves"
 msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__display_type__line_subsection
-#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_subsection
-#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_subsection
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_subsection
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_template_line__display_type__line_subsection
+#: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__display_type__line_subsection
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_subsection
+#: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_subsection
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_subsection
 msgid "Subsection"
 msgstr ""
@@ -1489,6 +1492,13 @@ msgstr ""
 msgid ""
 "The taxes the product and fiscal position would give, as a sorted key. "
 "Compared with tax_ids to detect manual overrides."
+msgstr ""
+
+#. module: trade
+#: model:ir.model.fields,help:trade.field_mixin_order__access_token
+msgid ""
+"The token of the link this record's customer is sent, once one was issued; "
+"the link itself is an access.link row holding its hash."
 msgstr ""
 
 #. module: trade
@@ -1598,7 +1608,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__priority__1
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__priority__1
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__priority__1
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__priority__1
 msgid "Urgent"
 msgstr ""
 
@@ -1735,10 +1744,9 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_loss__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__lost
-#: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__lost
+#: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_mark_lost__outcome__lost
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__lost
 msgid "Lost"
 msgstr ""
 
@@ -1757,7 +1765,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__open
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__open
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__open
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__open
 msgid "Open"
 msgstr ""
 
@@ -1784,10 +1791,9 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_loss__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__rejected
-#: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__rejected
+#: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_mark_lost__outcome__rejected
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__rejected
 msgid "Rejected"
 msgstr ""
 
@@ -1795,7 +1801,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__withdrawn
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__withdrawn
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__withdrawn
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__withdrawn
 msgid "Withdrawn"
 msgstr ""
 
@@ -1803,7 +1808,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__won
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__won
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__won
-#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__won
 msgid "Won"
 msgstr ""
 

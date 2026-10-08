@@ -47,6 +47,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/views/graph/graph_renderer.js:0
+msgid "Not stackable: a record can be in several of these groups"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
 msgid "Quick select"
 msgstr ""
@@ -144,6 +150,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
+msgid "%s added"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
 msgid "%s days"
 msgstr ""
@@ -152,6 +164,18 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "%s installed"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
+msgid "%s is now narrow"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
+msgid "%s is now wide"
 msgstr ""
 
 #. module: web
@@ -182,6 +206,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/core/formatters.js:0
 msgid "%s records"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
+msgid "%s removed"
 msgstr ""
 
 #. module: web
@@ -1141,12 +1171,12 @@ msgid "Allow properties"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_res_config_settings__module_google_calendar
+#: model:ir.model.fields,field_description:web.field_res_config_settings__module_calendar_google
 msgid "Allow the users to synchronize their calendar with Google Calendar"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_res_config_settings__module_microsoft_calendar
+#: model:ir.model.fields,field_description:web.field_res_config_settings__module_calendar_microsoft
 msgid "Allow the users to synchronize their calendar with Outlook Calendar"
 msgstr ""
 
@@ -1198,8 +1228,8 @@ msgid "Always-visible steps"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 msgid "Amber"
 msgstr ""
 
@@ -1273,7 +1303,6 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_menu.xml:0
-#: code:addons/web/static/src/webclient/home_menu/quick_launcher.xml:0
 #: model_terms:ir.ui.view,arch_db:web.report_irmodeloverview_document
 msgid "Apps"
 msgstr ""
@@ -1471,6 +1500,7 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/fields/basic/boolean_icon/boolean_icon_field.js:0
 #: code:addons/web/static/src/fields/basic/color/color_field.js:0
 #: code:addons/web/static/src/fields/field_options.js:0
 msgid "Autosave"
@@ -1653,8 +1683,9 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Blue"
 msgstr ""
 
@@ -2124,6 +2155,7 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
 #: code:addons/web/static/src/components/datetime/datetime_picker_popover.xml:0
 #: code:addons/web/static/src/components/model_field_selector/model_field_selector.xml:0
 #: code:addons/web/static/src/components/select_menu/select_menu.xml:0
@@ -2299,8 +2331,8 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: model:ir.model.fields.selection,name:web.selection__res_users_settings__density__compact
 #: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
+#: model:ir.model.fields.selection,name:web.selection__res_users_settings__density__compact
 msgid "Compact"
 msgstr ""
 
@@ -2392,9 +2424,9 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
 #: model:ir.model.fields.selection,name:web.selection__res_users_settings__density__condensed
 #: model:report.theme,name:web.report_theme_condensed
-#: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
 msgid "Condensed"
 msgstr ""
 
@@ -2784,6 +2816,7 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/fields/basic/monetary/monetary_field.js:0
+#: code:addons/web/static/src/fields/display/stat_info/stat_info_field.js:0
 msgid "Currency"
 msgstr ""
 
@@ -2896,8 +2929,9 @@ msgid "DVD"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields.selection,name:web.selection__res_users_settings__color_scheme__dark
+#. odoo-javascript
 #: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
+#: model:ir.model.fields.selection,name:web.selection__res_users_settings__color_scheme__dark
 msgid "Dark"
 msgstr ""
 
@@ -3028,8 +3062,8 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/debug/profiling/profiling_item.xml:0
 #: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
-#: model:ir.model.fields.selection,name:web.selection__res_users_settings__density__default
 #: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
+#: model:ir.model.fields.selection,name:web.selection__res_users_settings__density__default
 msgid "Default"
 msgstr ""
 
@@ -3275,7 +3309,6 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/banners/banner_stack.xml:0
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
 msgid "Dismiss"
 msgstr ""
 
@@ -3293,6 +3326,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:web.field_ir_exports_line__display_name
 #: model:ir.model.fields,field_description:web.field_ir_http__display_name
 #: model:ir.model.fields,field_description:web.field_ir_model__display_name
+#: model:ir.model.fields,field_description:web.field_ir_module_module__display_name
 #: model:ir.model.fields,field_description:web.field_ir_qweb_field_image__display_name
 #: model:ir.model.fields,field_description:web.field_ir_qweb_field_image_url__display_name
 #: model:ir.model.fields,field_description:web.field_ir_ui_menu__display_name
@@ -3571,6 +3605,12 @@ msgstr ""
 #: code:addons/web/static/src/views/kanban/kanban_record_quick_create.xml:0
 #: code:addons/web/static/src/views/view_components/group_config_menu.js:0
 msgid "Edit"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/search/search_bar/search_bar.js:0
+msgid "Edit %s"
 msgstr ""
 
 #. module: web
@@ -4377,15 +4417,16 @@ msgid "Graph type"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 msgid "Graphite"
 msgstr ""
 
 #. module: web
 #. odoo-javascript
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Green"
 msgstr ""
 
@@ -4636,6 +4677,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:web.field_ir_exports_line__id
 #: model:ir.model.fields,field_description:web.field_ir_http__id
 #: model:ir.model.fields,field_description:web.field_ir_model__id
+#: model:ir.model.fields,field_description:web.field_ir_module_module__id
 #: model:ir.model.fields,field_description:web.field_ir_qweb_field_image__id
 #: model:ir.model.fields,field_description:web.field_ir_qweb_field_image_url__id
 #: model:ir.model.fields,field_description:web.field_ir_ui_menu__id
@@ -4721,6 +4763,15 @@ msgstr ""
 msgid ""
 "If checked, the checkboxes will be displayed in a column. Otherwise, they "
 "will be inlined."
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/fields/basic/boolean_icon/boolean_icon_field.js:0
+msgid ""
+"If checked, the record is saved as soon as the icon is toggled. By default "
+"it is saved only when toggled outside edition, where nothing else would save"
+" it."
 msgstr ""
 
 #. module: web
@@ -5642,8 +5693,9 @@ msgid "Libra"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields.selection,name:web.selection__res_users_settings__color_scheme__light
+#. odoo-javascript
 #: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
+#: model:ir.model.fields.selection,name:web.selection__res_users_settings__color_scheme__light
 msgid "Light"
 msgstr ""
 
@@ -6151,6 +6203,11 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/fields/specialized/domain/domain_field.xml:0
 msgid "Modify filter"
+msgstr ""
+
+#. module: web
+#: model:ir.model,name:web.model_ir_module_module
+msgid "Module"
 msgstr ""
 
 #. module: web
@@ -7130,7 +7187,7 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu_grid.js:0
 msgid "Open app"
 msgstr ""
 
@@ -8255,7 +8312,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
 #: code:addons/web/static/src/webclient/home_menu/home_menu.xml:0
 msgid "Retry"
 msgstr ""
@@ -8277,8 +8333,8 @@ msgid "Roboto"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 msgid "Rose"
 msgstr ""
 
@@ -8546,14 +8602,12 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_menu.xml:0
-#: code:addons/web/static/src/webclient/home_menu/quick_launcher.xml:0
 msgid "Search apps and menus"
 msgstr ""
 
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_menu.xml:0
-#: code:addons/web/static/src/webclient/home_menu/quick_launcher.xml:0
 msgid "Search apps and menus..."
 msgstr ""
 
@@ -9127,6 +9181,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/search/search_bar/search_bar.js:0
+msgid "Sort groups by count"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/views/view_button/view_button.xml:0
 msgid "Special:"
 msgstr ""
@@ -9146,6 +9206,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/fields/basic/json_checkboxes/json_checkboxes_field.js:0
 #: code:addons/web/static/src/views/graph/graph_controller.xml:0
+#: code:addons/web/static/src/views/graph/graph_renderer.js:0
 msgid "Stacked"
 msgstr ""
 
@@ -9433,8 +9494,9 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Teal"
 msgstr ""
 
@@ -9613,6 +9675,12 @@ msgstr ""
 msgid ""
 "The ids in %(field_name)s must only be integers or \"false\": "
 "“%(action_ids)s”"
+msgstr ""
+
+#. module: web
+#. odoo-python
+#: code:addons/web/controllers/utils.py:0
+msgid "The model '%s' does not exist"
 msgstr ""
 
 #. module: web
@@ -9808,6 +9876,14 @@ msgid "This endpoint is reserved to internal users."
 msgstr ""
 
 #. module: web
+#. odoo-python
+#: code:addons/web/controllers/export.py:0
+msgid ""
+"This export has more than %(limit)s records. Narrow the search, or ask an "
+"administrator to raise the web.export_max_rows limit."
+msgstr ""
+
+#. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/components/expression_editor/expression_editor.xml:0
 msgid "This expression is not supported."
@@ -9918,6 +9994,7 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.xml:0
 msgid "This tile could not be loaded."
 msgstr ""
 
@@ -10006,6 +10083,7 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
 #: code:addons/web/static/src/core/tree/in_range_options.js:0
 #: code:addons/web/static/src/views/calendar/calendar_controller.xml:0
 msgid "Today"
@@ -10302,6 +10380,7 @@ msgstr ""
 
 #. module: web
 #. odoo-python
+#: code:addons/web/controllers/export.py:0
 #: code:addons/web/controllers/json.py:0
 msgid "Unknown fields for %(model)s: %(fields)s"
 msgstr ""
@@ -10309,6 +10388,7 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/controllers/export.py:0
+#: code:addons/web/controllers/json.py:0
 msgid "Unknown groupby fields for %(model)s: %(fields)s"
 msgstr ""
 
@@ -10793,8 +10873,9 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#. odoo-python
+#: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Violet"
 msgstr ""
 
@@ -10957,6 +11038,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/fields/selection/selection/filterable_selection_field.js:0
 msgid "Whitelisted values"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/views/form/explain_access_cog_menu/explain_access_cog_menu.xml:0
+msgid "Why can I see this?"
 msgstr ""
 
 #. module: web
@@ -11162,6 +11249,12 @@ msgstr ""
 #: code:addons/web/static/src/components/errors/error_dialogs.xml:0
 #: code:addons/web/static/src/public/error_notifications_registry.js:0
 msgid "Your Odoo session expired. The current page is about to be refreshed."
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_tiles/metric_tile.xml:0
+msgid "Your favourite filters could not be loaded."
 msgstr ""
 
 #. module: web
@@ -15049,6 +15142,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "date"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/views/calendar/calendar_common/calendar_common_popover.js:0
+msgid "days"
 msgstr ""
 
 #. module: web
@@ -22522,7 +22621,6 @@ msgstr ""
 #: code:addons/web/static/src/core/tree/tree_processor_service.js:0
 #: code:addons/web/static/src/fields/dynamic_placeholder_popover.xml:0
 #: code:addons/web/static/src/search/search_facets.js:0
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
 msgid "or"
 msgstr ""
 

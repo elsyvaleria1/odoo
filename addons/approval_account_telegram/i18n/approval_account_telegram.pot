@@ -1,0 +1,832 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_account_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 19:38+0000\n"
+"PO-Revision-Date: 2026-10-08 19:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Cancel the payment being recorded."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Cancel the payment in kind being recorded."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Start recording a payment in kind."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Start recording a payment."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "%(field)s: No customer matched '%(name)s'."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"%(field)s: Several customers matched '%(name)s': %(found)s. Please be more "
+"specific."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "(File received)"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "1. Confirm"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "2. %(label)s: %(a)s or %(b)s."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "2. %(label)s: %(a)s."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "2. Cancel"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "3. %(label)s: %(a)s or %(b)s."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "4. %(label)s: %(a)s, %(b)s, %(c)s, %(d)s, %(e)s."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "4. %(label)s: In %(format)s format."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "5. %(label)s: %(a)s, %(b)s or %(c)s."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "5. %(label)s: Numeric amount (e.g. %(example)s)."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "6. %(label)s: Internal product number (e.g. %(example)s)."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "7. %(label)s: In %(format)s format."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "8. %(label)s: Numeric amount (e.g. %(example)s)."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.constraint,message:approval_account_telegram.constraint_approval_category_one_telegram_intake_per_company
+msgid "A company files the requests of each Telegram command in one category."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:res.groups,comment:approval_account_telegram.privilege_log_payment_request
+msgid ""
+"A payment or payment-in-kind request filed over Telegram is created by its "
+"sender, who reads no payment log: writing the log row of what the bot filed "
+"is the bot's record, never the sender's own right."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"After sending the command, the bot will ask you to send the collection "
+"details in a single message, one value per line, in this order:"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"After sending the command, the bot will ask you to send the payment details "
+"in a single message, one value per line, in this order:"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__amount
+msgid "Amount"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/approval_request.py:0
+msgid "An automation workflow already exists for this approval: %s"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"An error occurred creating the request in Odoo. Check the evidence and try "
+"again."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"An error occurred creating the request in Odoo. Check the receipt and try "
+"again."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_approval_category
+msgid "Approval Category"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_approval_request
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__approval_request_id
+msgid "Approval Request"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Approved"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Asset evidence attached from Telegram."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/approval_request.py:0
+msgid "Automation workflow started: %(runtime)s"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/approval_request.py:0
+msgid ""
+"Bank statement line already reconciled; automation workflow skipped (payment"
+" settled outside the approval flow)."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Billed to"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "CFDI use"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__chat_id
+msgid "Chat"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Company"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_list
+msgid "Contact"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_wizard_account_bank_statement_line_start_automation
+msgid "Create Automation Runtime from Bank Statement"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Data validated. Please now send a photo or PDF of the asset as evidence."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Data validated. Please now send the payment receipt (image or PDF)."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__date
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Date"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_approval_notifier__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_handler_approval_account__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__display_name
+#: model:ir.model.fields,field_description:approval_account_telegram.field_wizard_account_bank_statement_line_start_automation__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Done! Approval request %(name)s was created. /ayuda"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Done! Payment-in-kind request %(name)s was created. /ayuda"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__approval_subject
+msgid ""
+"Empty until the request is confirmed, then set to the category's sequence "
+"consecutive (deferred so discarded drafts never burn sequence numbers). "
+"Draft requests display a translated 'New' placeholder via display_name. The "
+"column itself stays language-neutral: storing a translated placeholder made "
+"the numbering check fail when the creator and the confirmer used different "
+"languages."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Error downloading the file. Please try again."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: %(company)s has no approval category for payments in kind recorded "
+"with /especie."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: %(company)s has no approval category for payments recorded with "
+"/pago."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: 6 lines were expected, but %(count)s were received. Please send all "
+"the values in a single message, one per line. Use /ayuda to see the exact "
+"format."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Error: 8 lines were expected, but %(count)s were received. Please send all "
+"the values in a single message, one per line. Use /ayuda to see the exact "
+"format."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Evidence"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__payment_details_display
+msgid "Formatted payment details for display"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_approval_notifier__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_handler_approval_account__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__id
+#: model:ir.model.fields,field_description:approval_account_telegram.field_wizard_account_bank_statement_line_start_automation__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__user_id
+msgid "Internal Odoo user who registered the payment via Telegram."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Invalid CFDI use: '%(value)s'. Options: Adquisicion de mercancias (G01), "
+"Gastos en general (G03)."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Invalid company: '%(value)s'. Options: LMMR, LMMG, N/A."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Invalid document type. Please send an image (JPEG/PNG) or a PDF."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Invalid payment method: '%(value)s'. Options: Transferencia, Efectivo, TC, "
+"TD, Cheque."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Invalid product category: '%(value)s'. Options: Agroquimicos, Papas."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Invalid product category: '%(value)s'. Options: Vehiculos."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__payment_details
+msgid "JSON with the payment details submitted"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__approval_subject
+msgid "Name"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Name (or part of the name) of an existing customer."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.actions.act_window,help:approval_account_telegram.action_telegram_payment_report_log
+msgid "No payment registrations yet"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__partner_id
+msgid "Odoo Contact linked to the internal user who registered the payment."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Operation cancelled."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.actions.act_window,name:approval_account_telegram.action_telegram_payment_report_log
+#: model:ir.ui.menu,name:approval_account_telegram.menu_telegram_payment_report_log
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_list
+msgid "Pay Approval Bot Reports"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Payment Commands"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__payment_details
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+msgid "Payment Details"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__payment_details_display
+msgid "Payment Details Display"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+msgid "Payment Log"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Payment applied to"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Payment date"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Payment in Kind Commands"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Payment method"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields.selection,name:approval_account_telegram.selection__approval_category__telegram_intake__especie
+msgid "Payments in kind recorded with /especie"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields.selection,name:approval_account_telegram.selection__approval_category__telegram_intake__payment
+msgid "Payments recorded with /pago"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Pending"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Please confirm the data to create the payment-in-kind request:"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Please confirm the data to create the request:"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Please send an image (JPEG/PNG) or a PDF of the asset."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Please send an image (JPEG/PNG) or a PDF."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Please send the payment details on 8 separate lines, in the format shown in /ayuda.\n"
+"\n"
+"You can use /cancelar at any time to stop this operation."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Please send the payment-in-kind details on 6 separate lines, in the format shown in /ayuda.\n"
+"\n"
+"You can use /cancelar at any time to stop this operation."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:res.groups,name:approval_account_telegram.privilege_start_approved_workflow
+msgid "Privilege: an approved payment starts the workflow its category names"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:res.groups,name:approval_account_telegram.privilege_log_payment_request
+msgid "Privilege: the bot logs the payment request it filed for its sender"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Product category"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Product reference"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Proof of payment attached from Telegram."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Receipt"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Record a payment for approval"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "Record a payment in kind for approval"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Refused"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_list
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Registered By"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+msgid "Request Information"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Search Payment Logs"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__approval_state
+msgid "State"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_search
+msgid "Status"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_approval_category_form_telegram_intake
+msgid "Telegram"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_telegram_approval_notifier
+msgid "Telegram Approval Notifier"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__telegram_chat_id
+msgid "Telegram Chat"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.ui.view,arch_db:approval_account_telegram.view_telegram_payment_report_log_form
+msgid "Telegram Details"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_approval_category__telegram_intake
+msgid "Telegram Intake"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_telegram_payment_report_log
+msgid "Telegram Payment Approval Log"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model,name:approval_account_telegram.model_telegram_handler_approval_account
+msgid "Telegram: Payment Approvals"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_telegram_payment_report_log__telegram_chat_id
+msgid "The Telegram chat ID where the payment was registered"
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,help:approval_account_telegram.field_approval_category__telegram_intake
+msgid ""
+"The Telegram command whose requests are filed in this category. A company "
+"has one category per command; one without a company takes the requests of "
+"every company that has none of its own."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The amount '%(value)s' is not a valid number."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The amount '%(value)s' must be greater than zero."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:res.groups,comment:approval_account_telegram.privilege_start_approved_workflow
+msgid ""
+"The approver who gives the last approval of a payment request starts the "
+"automation workflow of its category: creating the run, its steps and their "
+"links, and reading the rule and the server actions those steps copy; reading"
+" the bank statement line the request claims and naming the request's partner"
+" on it, its entry and their items. The approver holds no right on "
+"automations or on the bank statement of their own."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The date format is wrong ('%(value)s'). Use AAAA-MM-DD."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The file is larger than 20 MB. Send a smaller photo or PDF."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"The following errors were found:\n"
+"\n"
+"%(errors)s"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "The product reference cannot be empty."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model_terms:ir.actions.act_window,help:approval_account_telegram.action_telegram_payment_report_log
+msgid ""
+"This view shows all payment approval requests created via the Telegram Pay "
+"Approval Bot."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/services/approval_notifier.py:0
+msgid ""
+"To approve it, link the bank transaction that shows the payment, in Odoo: it"
+" cannot be approved from here without it."
+msgstr ""
+
+#. module: approval_account_telegram
+#: model:ir.model.fields,field_description:approval_account_telegram.field_telegram_payment_report_log__user_id
+msgid "User"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/approval_request.py:0
+msgid "Warning: Could not create automation workflow. Error: %s"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "You do not have permission to create approval requests."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"You do not have permission to search customers. Contact an administrator."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "You will then be asked for a photo or PDF of the asset as evidence."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid ""
+"Your Telegram account is not linked to an internal user. Contact IT to fix "
+"it."
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "a payment in kind"
+msgstr ""
+
+#. module: approval_account_telegram
+#. odoo-python
+#: code:addons/approval_account_telegram/models/telegram_handler.py:0
+msgid "a payment record"
+msgstr ""

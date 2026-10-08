@@ -77,6 +77,34 @@ msgid ""
 msgstr ""
 
 #. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid ""
+"'%(step)s' has %(count)s preceding steps (%(keys)s), so `previous` names "
+"none of them: use steps.<key>."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "'%(step)s' is not ready to run in '%(run)s'."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "'%(step)s' received its input."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "'%(step)s' still needs: %(fields)s"
+msgstr ""
+
+#. module: automation
 #. odoo-javascript
 #: code:addons/automation/static/src/workflow_canvas.xml:0
 msgid "(live)"
@@ -115,11 +143,23 @@ msgid ""
 msgstr ""
 
 #. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_ir_actions_server_form_workflow_dag
+msgid "<i class=\"fa-solid fa-triangle-exclamation\" title=\"Warning\"/>"
+msgstr ""
+
+#. module: automation
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_form
 msgid ""
 "<i class=\"fa-solid fa-triangle-exclamation\" title=\"Warning\"/>\n"
 "                                    Empty: the first run covers the entire history and processes\n"
 "                                    every record that already matches. Set a date to scope it."
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form
+msgid ""
+"<i class=\"fa-solid fa-triangle-exclamation\" title=\"Warning\"/>\n"
+"                        No run starts until these steps read only steps that run before them:"
 msgstr ""
 
 #. module: automation
@@ -157,6 +197,16 @@ msgstr ""
 msgid ""
 "<strong>A branch not taken</strong> is skipped, and so is everything only it"
 " leads to"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_ir_actions_server_form_workflow_dag
+msgid ""
+"<strong>Code reads other steps</strong> by key: "
+"<code>steps.&lt;key&gt;.record</code>, <code>.output</code>, "
+"<code>.input</code>, <code>.state</code>, only for steps upstream of it; "
+"<code>previous</code> is the single step before it, and "
+"<code>step.input</code> its own answers"
 msgstr ""
 
 #. module: automation
@@ -231,6 +281,11 @@ msgstr ""
 msgid ""
 "A run's diagram reads the steps the run was started from and the automation "
 "that owns them, whoever may read the run."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__awaiting_input
+msgid "A step waits for someone to fill in fields of this run"
 msgstr ""
 
 #. module: automation
@@ -320,6 +375,14 @@ msgid "Add step"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__input_preview
+#: model:ir.model.fields,help:automation.field_ir_cron__input_preview
+msgid ""
+"Add, reorder and edit the questions of this step's form here. What is filled"
+" in is a sample and reaches no run."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields.selection,name:automation.selection__automation_rule__trg_date_range_mode__after
 msgid "After"
 msgstr ""
@@ -357,6 +420,22 @@ msgid "An exclusive event on the source closed this edge"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.constraint,message:automation.constraint_ir_act_server_step_key_uniq
+msgid "Another step of this automation already has this key."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__input_values
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form
+msgid "Answers"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields.selection,name:automation.selection__ir_actions_server__approval_mode__any
+msgid "Anyone"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_rule__filter_domain
 msgid "Apply on"
 msgstr ""
@@ -384,6 +463,12 @@ msgid "Approval was refused."
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__approval_mode
+#: model:ir.model.fields,field_description:automation.field_ir_cron__approval_mode
+msgid "Approved By"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_ir_actions_server__approval_user_ids
 #: model:ir.model.fields,field_description:automation.field_ir_cron__approval_user_ids
 msgid "Approvers"
@@ -399,6 +484,18 @@ msgstr ""
 #: model:ir.model.fields,field_description:automation.field_ir_actions_server__approval_note
 #: model:ir.model.fields,field_description:automation.field_ir_cron__approval_note
 msgid "Ask For"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__line_input_field_ids
+#: model:ir.model.fields,field_description:automation.field_ir_cron__line_input_field_ids
+msgid "Asks Before Running"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__input_field_ids
+#: model:ir.model.fields,field_description:automation.field_ir_cron__input_field_ids
+msgid "Asks For"
 msgstr ""
 
 #. module: automation
@@ -522,6 +619,15 @@ msgstr ""
 #. odoo-python
 #: code:addons/automation/models/automation_rule.py:0
 msgid ""
+"Automation '%(name)s' cannot start or update a run while its steps read steps that may not have run:\n"
+"\n"
+"%(problems)s"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_rule.py:0
+msgid ""
 "Automation '%(name)s' has conditional connections (%(edges)s) but does not record its runs, so those conditions would be ignored.\n"
 "\n"
 "Switch on 'Record Every Run', or make the connections unconditional."
@@ -541,7 +647,6 @@ msgstr ""
 
 #. module: automation
 #: model:ir.model,name:automation.model_automation_rule
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__automation_rule_id
 #: model:ir.model.fields,field_description:automation.field_ir_actions_server__automation_rule_id
 #: model:ir.model.fields,field_description:automation.field_ir_cron__automation_rule_id
 #: model:ir.model.fields,field_description:automation.field_workflow_edge__automation_rule_id
@@ -586,6 +691,7 @@ msgstr ""
 #. module: automation
 #. odoo-python
 #: code:addons/automation/models/automation_runtime.py:0
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form_workflow_full
 msgid "Automation Workflow"
 msgstr ""
 
@@ -598,6 +704,11 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/automation/static/src/group_config_menu_patch.js:0
 msgid "Automations"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__awaiting_input
+msgid "Awaiting Input"
 msgstr ""
 
 #. module: automation
@@ -648,14 +759,12 @@ msgid "Canvas Width"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__pos_x
 #: model:ir.model.fields,field_description:automation.field_ir_actions_server__pos_x
 #: model:ir.model.fields,field_description:automation.field_ir_cron__pos_x
 msgid "Canvas X"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__pos_y
 #: model:ir.model.fields,field_description:automation.field_ir_actions_server__pos_y
 #: model:ir.model.fields,field_description:automation.field_ir_cron__pos_y
 msgid "Canvas Y"
@@ -706,6 +815,12 @@ msgid "Connections"
 msgstr ""
 
 #. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Continue"
+msgstr ""
+
+#. module: automation
 #: model_terms:ir.actions.act_window,help:automation.action_automation_runtime
 msgid "Create a workflow runtime instance"
 msgstr ""
@@ -726,7 +841,6 @@ msgid "Created Record"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__create_uid
 #: model:ir.model.fields,field_description:automation.field_automation_rule__create_uid
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__create_uid
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__create_uid
@@ -736,7 +850,6 @@ msgid "Created by"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__create_date
 #: model:ir.model.fields,field_description:automation.field_automation_rule__create_date
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__create_date
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__create_date
@@ -847,7 +960,12 @@ msgid "Disable"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__display_name
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Discard"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_rule__display_name
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__display_name
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__display_name
@@ -1000,6 +1118,36 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime__company_ids
 msgid ""
+"Every company this run creates documents in; the run is listed in each of "
+"them. With two, the one that owns the bank statement line is the vehicle "
+"that received the money and the other holds the transaction with the "
+"partner."
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form
+msgid ""
+"Every run still going takes this automation's current steps and connections."
+" Steps that already ran keep what they ran under; nothing is executed."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields.selection,name:automation.selection__ir_actions_server__approval_mode__all
+msgid "Everyone"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__approval_mode
+#: model:ir.model.fields,help:automation.field_ir_cron__approval_mode
+msgid ""
+"Everyone: the step waits until each approver has marked their activity done."
+" Anyone: the first approver to do so releases the step, and the other "
+"approvers' activities are removed"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__company_ids
+msgid ""
 "Every company this run works in. A run that creates documents in two "
 "companies belongs to both, and is listed in each of them."
 msgstr ""
@@ -1020,6 +1168,12 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime_line__sequence
 msgid "Execution order (lower = earlier)"
+msgstr ""
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "Exit full screen"
 msgstr ""
 
 #. module: automation
@@ -1052,6 +1206,14 @@ msgid "Failed"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__line_input_field_ids
+#: model:ir.model.fields,help:automation.field_ir_cron__line_input_field_ids
+msgid ""
+"Fields of this step, on each run, that must be filled before it runs. A step"
+" reached with one empty waits for someone to fill it in."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,help:automation.field_automation_rule__on_change_field_ids
 msgid "Fields that trigger the onchange."
 msgstr ""
@@ -1079,6 +1241,31 @@ msgstr ""
 msgid ""
 "For a step no edge leads to: how long after its run starts it becomes ready."
 " Ignored on a step with predecessors, whose edges carry their own delays."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__input_definition
+#: model:ir.model.fields,field_description:automation.field_ir_cron__input_definition
+#: model_terms:ir.ui.view,arch_db:automation.view_ir_actions_server_form_workflow_dag
+msgid "Form"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__input_preview
+#: model:ir.model.fields,field_description:automation.field_ir_cron__input_preview
+msgid "Form Preview"
+msgstr ""
+
+#. module: automation
+#. odoo-javascript
+#: code:addons/automation/static/src/workflow_canvas.xml:0
+msgid "Full screen"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form
+msgid ""
+"Give the runs still going the steps and connections this automation has now"
 msgstr ""
 
 #. module: automation
@@ -1156,12 +1343,19 @@ msgid "How many typed dependencies order this automation's steps"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__step_key
+#: model:ir.model.fields,help:automation.field_ir_cron__step_key
+msgid ""
+"How the code of later steps names this one: steps.<key>. Unique within the "
+"automation; derived from the name when left empty."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime__progress_display
 msgid "Human-readable progress display"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__id
 #: model:ir.model.fields,field_description:automation.field_automation_rule__id
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__id
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__id
@@ -1261,6 +1455,32 @@ msgid "Incoming Edges"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields.selection,name:automation.selection__ir_actions_server__node_type__input
+msgid "Input"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__input_form_node_id
+#: model:ir.model.fields,field_description:automation.field_ir_cron__input_form_node_id
+msgid "Input Form Node"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "Input Received"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Input step '%(action)s' asks both the run's fields and a form of its own. "
+"Ask one of them, or split it into two steps."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_rule__message_is_follower
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__message_is_follower
 msgid "Is Follower"
@@ -1272,12 +1492,17 @@ msgid "Keep track of what this automation does and why it exists..."
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__step_key
+#: model:ir.model.fields,field_description:automation.field_ir_cron__step_key
+msgid "Key"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_workflow_edge__label
 msgid "Label"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__write_uid
 #: model:ir.model.fields,field_description:automation.field_automation_rule__write_uid
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__write_uid
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__write_uid
@@ -1287,7 +1512,6 @@ msgid "Last Updated by"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__write_date
 #: model:ir.model.fields,field_description:automation.field_automation_rule__write_date
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__write_date
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_edge__write_date
@@ -1403,6 +1627,12 @@ msgid "New Step"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_rule__activity_calendar_event_id
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_rule__activity_date_deadline
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__activity_date_deadline
 msgid "Next Activity Deadline"
@@ -1447,6 +1677,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/automation/models/automation_runtime_line.py:0
 msgid "No document created by this action"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "No step of '%(run)s' is waiting for input."
 msgstr ""
 
 #. module: automation
@@ -1588,6 +1824,11 @@ msgid "Outgoing Edges"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__output
+msgid "Output"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__parent_line_id
 msgid "Parent Step"
 msgstr ""
@@ -1654,6 +1895,43 @@ msgid "Progress %"
 msgstr ""
 
 #. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_input
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form_input
+msgid "Provide Input"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_workflow_edge__condition_expr
+msgid ""
+"Python expression evaluated against the runtime; required when the condition"
+" is Expression. It reads `runtime`, `record`, `state` and `output`, what the"
+" source step reported it did"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_ir_actions_server_form_workflow_dag
+msgid ""
+"Questions asked before the step runs. Each run keeps its\n"
+"                        answers, and later steps read them as\n"
+"                        <code>steps.&lt;key&gt;.input</code>."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__input_definition
+#: model:ir.model.fields,help:automation.field_ir_cron__input_definition
+msgid ""
+"Questions this step asks before it runs. Each run keeps its own answers, "
+"which later steps read as steps.<key>.input."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_rule__rating_ids
+#: model:ir.model.fields,field_description:automation.field_automation_runtime__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,help:automation.field_workflow_edge__condition_expr
 msgid ""
 "Python expression evaluated against the runtime; required when the condition"
@@ -1710,6 +1988,12 @@ msgid "Responsible User"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_runtime_line__output_summary
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form
+msgid "Result"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_line__date_resume
 msgid "Resumes At"
 msgstr ""
@@ -1736,8 +2020,31 @@ msgid "Revoked by an exclusive event"
 msgstr ""
 
 #. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_line_form
+msgid "Run"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_rule__run_mode
 msgid "Run Mode"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_rule__live_run_count
+msgid "Running"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_rule.py:0
+#: model:ir.model.fields,field_description:automation.field_automation_rule__live_runtime_ids
+msgid "Running Runs"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_rule__live_run_count
+msgid "Runs of this automation still in progress or waiting"
 msgstr ""
 
 #. module: automation
@@ -1855,6 +2162,15 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_ir_actions_server__approval_note
 #: model:ir.model.fields,help:automation.field_ir_cron__approval_note
+msgid ""
+"Shown on the activity each approver receives. May read the record the run is"
+" about as object, for example {{ object.name }}, with mail's inline template"
+" syntax"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__approval_note
+#: model:ir.model.fields,help:automation.field_ir_cron__approval_note
 msgid "Shown on the activity each approver receives"
 msgstr ""
 
@@ -1936,6 +2252,18 @@ msgid "Start Workflow"
 msgstr ""
 
 #. module: automation
+#: model:res.groups,name:automation.privilege_start_run
+msgid "Start Workflow Run"
+msgstr ""
+
+#. module: automation
+#: model:res.groups,comment:automation.privilege_start_run
+msgid ""
+"Starting a run checks that its steps read only steps that run before them, "
+"which reads the automation and its steps, whoever starts the run."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__state
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_line__state
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_search
@@ -1974,6 +2302,14 @@ msgstr ""
 #. module: automation
 #. odoo-python
 #: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' asks for input but names no field to fill in, so the "
+"workflow would wait forever."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
 msgid "Step '%(action)s' has a negative start delay."
 msgstr ""
 
@@ -1986,7 +2322,56 @@ msgstr ""
 #. module: automation
 #. odoo-python
 #: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' has the key '%(key)s'. A key is lowercase letters, digits "
+"and single underscores, starts with a letter, is at most %(max)s characters "
+"and is not a Python keyword nor one of: %(reserved)s."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
 msgid "Step '%(action)s' is a sub-workflow but names no automation to run."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' is read as steps.%(key)s by: %(readers)s. Change them "
+"first."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' reads `previous`, but %(count)s steps lead to it. Name the"
+" one it means with steps.<key>."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' uses step '%(key)s', and no step of this automation has "
+"that key."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' uses step '%(other)s' (%(key)s), which is not upstream of "
+"it, so it may not have run yet. Connect '%(other)s' before '%(action)s'."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/ir_actions_server.py:0
+msgid ""
+"Step '%(action)s' uses steps.%(key)s, which is itself; a step reads its own "
+"answers as `step`."
 msgstr ""
 
 #. module: automation
@@ -2025,6 +2410,20 @@ msgid "Step Name"
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,field_description:automation.field_automation_rule__step_reference_warning
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__step_reference_warning
+#: model:ir.model.fields,field_description:automation.field_ir_cron__step_reference_warning
+msgid "Step Reference Warning"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,field_description:automation.field_ir_actions_server__step_references
+#: model:ir.model.fields,field_description:automation.field_ir_cron__step_references
+#: model:ir.model.fields,field_description:automation.field_workflow_edge__step_references
+msgid "Step References"
+msgstr ""
+
+#. module: automation
 #: model_terms:ir.ui.view,arch_db:automation.view_ir_actions_server_form_workflow_dag
 msgid "Step Type"
 msgstr ""
@@ -2039,6 +2438,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:automation.field_automation_rule__step_count
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
 msgid "Steps"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_rule__step_reference_warning
+msgid ""
+"Steps that read other steps the graph does not guarantee have run; no run "
+"starts while it is set"
 msgstr ""
 
 #. module: automation
@@ -2063,6 +2469,13 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields.selection,name:automation.selection__automation_rule__trigger__on_tag_set
 msgid "Tag is added"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+msgid ""
+"Take the automation's current steps and connections; steps that already ran "
+"keep what they ran under, and nothing is executed"
 msgstr ""
 
 #. module: automation
@@ -2160,6 +2573,22 @@ msgid ""
 msgstr ""
 
 #. module: automation
+#. odoo-python
+#: code:addons/automation/models/workflow_edge.py:0
+msgid ""
+"The condition of %(edge)s reads `previous`; an edge reads the step it leaves"
+" as `output` and `state`, or by its key."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/workflow_edge.py:0
+msgid ""
+"The condition of %(edge)s uses step '%(key)s', which is neither '%(source)s'"
+" nor upstream of it."
+msgstr ""
+
+#. module: automation
 #. odoo-javascript
 #: code:addons/automation/static/src/automation_error_dialog.xml:0
 msgid ""
@@ -2172,6 +2601,29 @@ msgstr ""
 msgid ""
 "The event this edge waits for, or waits out; required when the condition is "
 "On Event or Without Event"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__partner_id
+msgid ""
+"The partner the operation is about: the customer whose debt a collection "
+"reduces, whoever a document is made out to."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__third_party_id
+msgid ""
+"The party a fiscal document is made out to when it is not the partner, such "
+"as the generic public for a customer who takes no invoice. Leave it empty "
+"when the partner is invoiced himself."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__input_field_ids
+#: model:ir.model.fields,help:automation.field_ir_cron__input_field_ids
+msgid ""
+"The run's fields an Input step asks someone to fill in before the workflow "
+"continues"
 msgstr ""
 
 #. module: automation
@@ -2200,6 +2652,27 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime_line__action_id
 msgid "The server action to execute"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__input_form_node_id
+#: model:ir.model.fields,help:automation.field_ir_cron__input_form_node_id
+msgid ""
+"The step itself: what lets its own form preview edit the questions in place,"
+" since a form's questions are edited from a record that shows them"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_workflow_edge__step_references
+msgid "The step keys the condition names, parsed when it is saved"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__step_references
+#: model:ir.model.fields,help:automation.field_ir_cron__step_references
+msgid ""
+"The step keys this step names, parsed when its code is saved: checking a run"
+" reads them here, so it needs no right to read code"
 msgstr ""
 
 #. module: automation
@@ -2236,6 +2709,20 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/automation/static/src/workflow_canvas.xml:0
 msgid "This run has no steps yet. Start the workflow to draw them."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime_line__input_values
+msgid ""
+"This run's answers to the step's form; later steps read them as "
+"steps.<key>.input"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime.py:0
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "This step of '%(run)s' is no longer waiting for input."
 msgstr ""
 
 #. module: automation
@@ -2305,6 +2792,16 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_automation_rule__edge_ids
 msgid "Typed dependencies between this automation's steps"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form
+msgid "Update Running Runs"
+msgstr ""
+
+#. module: automation
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+msgid "Update to Current Workflow"
 msgstr ""
 
 #. module: automation
@@ -2427,6 +2924,35 @@ msgid ""
 msgstr ""
 
 #. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime_line__output
+msgid ""
+"What the step reports it did, as data. An edge leaving the step reads it as "
+"`output` in its expression."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime_line__output_summary
+msgid "What the step reports it did, in words"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__node_type
+#: model:ir.model.fields,help:automation.field_ir_cron__node_type
+msgid ""
+"What this step does when the workflow reaches it. An Action runs the server "
+"action; a Wait pauses the run and resumes it later; an Input pauses it until"
+" someone fills in the run's fields it asks for."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__step_reference_warning
+#: model:ir.model.fields,help:automation.field_ir_cron__step_reference_warning
+msgid ""
+"What this step reads of other steps that the graph does not guarantee has "
+"run; no run starts while it is set"
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,help:automation.field_ir_actions_server__node_type
 #: model:ir.model.fields,help:automation.field_ir_cron__node_type
 msgid ""
@@ -2485,6 +3011,15 @@ msgstr ""
 #. module: automation
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_form
 msgid "When updating"
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_ir_actions_server__approval_user_ids
+#: model:ir.model.fields,help:automation.field_ir_cron__approval_user_ids
+msgid ""
+"Who receives an activity when an Approval step is reached. Approved By says "
+"whether everyone, or any one of them, must mark it done for the workflow to "
+"continue"
 msgstr ""
 
 #. module: automation
@@ -2572,6 +3107,7 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime_line__runtime_id
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form_workflow_full
 msgid "Workflow Runtime"
 msgstr ""
 
@@ -2629,6 +3165,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/automation/models/automation_runtime.py:0
 msgid "Workflow is not in progress"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_rule.py:0
+#: code:addons/automation/models/automation_runtime.py:0
+msgid "Workflow of %s"
 msgstr ""
 
 #. module: automation
@@ -2724,6 +3267,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/automation/static/src/automation_actions_one2many_field.xml:0
 msgid "no action defined..."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "none"
 msgstr ""
 
 #. module: automation

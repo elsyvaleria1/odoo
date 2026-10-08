@@ -340,6 +340,11 @@ msgid "Confirmation"
 msgstr ""
 
 #. module: hr_timesheet
+#: model:ir.model,website_form_label:hr_timesheet.model_project_task
+msgid "Create a Task"
+msgstr ""
+
+#. module: hr_timesheet
 #: model:ir.model.fields,field_description:hr_timesheet.field_account_analytic_line_calendar_employee__create_uid
 #: model:ir.model.fields,field_description:hr_timesheet.field_hr_timesheet_config__create_uid
 #: model:ir.model.fields,field_description:hr_timesheet.field_wizard_hr_employee_delete__create_uid

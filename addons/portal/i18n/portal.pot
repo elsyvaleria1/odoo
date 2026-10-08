@@ -228,6 +228,12 @@ msgid "Add extra content to display in the email"
 msgstr ""
 
 #. module: portal
+#. odoo-python
+#: code:addons/portal/wizards/wizard_mail_message_send_portal_link.py:0
+msgid "Add the contacts to send the document to."
+msgstr ""
+
+#. module: portal
 #: model_terms:ir.ui.view,arch_db:portal.portal_my_home
 msgid "Add, remove or modify your addresses"
 msgstr ""
@@ -251,6 +257,13 @@ msgstr ""
 #. module: portal
 #: model:ir.model.fields.selection,name:portal.selection__wizard_res_partner_grant_portal_access_line__email_state__exist
 msgid "Already Registered"
+msgstr ""
+
+#. module: portal
+#: model:ir.model.fields,help:portal.field_wizard_mail_message_send_portal_link__share_link
+msgid ""
+"Anyone with this link can view the document, without commenting, for 30 "
+"days."
 msgstr ""
 
 #. module: portal
@@ -405,6 +418,11 @@ msgstr ""
 #. module: portal
 #: model_terms:ir.ui.view,arch_db:portal.address_form_fields
 msgid "Country"
+msgstr ""
+
+#. module: portal
+#: model_terms:ir.ui.view,arch_db:portal.portal_share_wizard
+msgid "Create Link"
 msgstr ""
 
 #. module: portal
@@ -869,11 +887,29 @@ msgstr ""
 
 #. module: portal
 #: model:ir.model.fields,field_description:portal.field_account_analytic_account__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_agent_run__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_agent_runner__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_approval_category__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_base_module_install_request__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_device_device__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_discuss_channel__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_error_incident__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_activity__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_badge__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_badge_user__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_challenge__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_goal__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_kudos__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_mentorship__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_quest__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_season__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_gamification_team__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_iap_account__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_integration_github_pull__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_integration_github_webhook__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_iot_box__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_iot_device__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_ir_access_exception__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_ir_actions_server__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_ir_cron__website_message_ids
@@ -886,12 +922,19 @@ msgstr ""
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_tracking_duration__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_mixin_rating__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_phone_blacklist__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_phone_call__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_product_category__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_product_pricelist__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_product_product__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_product_template__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_bank__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_company__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_partner__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_users__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_users_deletion__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_resource_resource__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_team_member__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_team_team__website_message_ids
 msgid "Portal Messages"
 msgstr ""
 
@@ -917,11 +960,29 @@ msgstr ""
 
 #. module: portal
 #: model:ir.model.fields,help:portal.field_account_analytic_account__website_message_ids
+#: model:ir.model.fields,help:portal.field_agent_run__website_message_ids
+#: model:ir.model.fields,help:portal.field_agent_runner__website_message_ids
 #: model:ir.model.fields,help:portal.field_approval_category__website_message_ids
 #: model:ir.model.fields,help:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,help:portal.field_base_module_install_request__website_message_ids
+#: model:ir.model.fields,help:portal.field_device_device__website_message_ids
 #: model:ir.model.fields,help:portal.field_discuss_channel__website_message_ids
+#: model:ir.model.fields,help:portal.field_error_incident__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_activity__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_badge__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_badge_user__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_challenge__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_goal__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_kudos__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_mentorship__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_quest__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_season__website_message_ids
+#: model:ir.model.fields,help:portal.field_gamification_team__website_message_ids
 #: model:ir.model.fields,help:portal.field_iap_account__website_message_ids
+#: model:ir.model.fields,help:portal.field_integration_github_pull__website_message_ids
+#: model:ir.model.fields,help:portal.field_integration_github_webhook__website_message_ids
+#: model:ir.model.fields,help:portal.field_iot_box__website_message_ids
+#: model:ir.model.fields,help:portal.field_iot_device__website_message_ids
 #: model:ir.model.fields,help:portal.field_ir_access_exception__website_message_ids
 #: model:ir.model.fields,help:portal.field_ir_actions_server__website_message_ids
 #: model:ir.model.fields,help:portal.field_ir_cron__website_message_ids
@@ -934,12 +995,19 @@ msgstr ""
 #: model:ir.model.fields,help:portal.field_mixin_mail_tracking_duration__website_message_ids
 #: model:ir.model.fields,help:portal.field_mixin_rating__website_message_ids
 #: model:ir.model.fields,help:portal.field_phone_blacklist__website_message_ids
+#: model:ir.model.fields,help:portal.field_phone_call__website_message_ids
+#: model:ir.model.fields,help:portal.field_product_category__website_message_ids
+#: model:ir.model.fields,help:portal.field_product_pricelist__website_message_ids
+#: model:ir.model.fields,help:portal.field_product_product__website_message_ids
+#: model:ir.model.fields,help:portal.field_product_template__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_bank__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_company__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_partner__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_users__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_users_deletion__website_message_ids
 #: model:ir.model.fields,help:portal.field_resource_resource__website_message_ids
+#: model:ir.model.fields,help:portal.field_team_member__website_message_ids
+#: model:ir.model.fields,help:portal.field_team_team__website_message_ids
 msgid "Portal communication history for this record."
 msgstr ""
 

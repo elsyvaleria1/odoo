@@ -83,6 +83,13 @@ msgid "0: SO not required or partially linked. 1: All lines linked"
 msgstr ""
 
 #. module: sale
+#: model_terms:web_tour.tour,rainbow_man_message:sale.sale_tour
+msgid ""
+"<b>Congratulations</b>, your first quotation is sent!<br>Check your email to"
+" validate the quote."
+msgstr ""
+
+#. module: sale
 #. odoo-javascript
 #: code:addons/sale/static/src/js/tours/sale.js:0
 msgid ""
@@ -2995,6 +3002,11 @@ msgid "Is In Sale Order"
 msgstr ""
 
 #. module: sale
+#: model:ir.model.fields,field_description:sale.field_sale_order__is_invoiceable
+msgid "Is Invoiceable"
+msgstr ""
+
+#. module: sale
 #: model:ir.model.fields,field_description:sale.field_sale_order__is_late
 msgid "Is Late"
 msgstr ""
@@ -3365,6 +3377,11 @@ msgid "Move Down"
 msgstr ""
 
 #. module: sale
+#: model:ir.model.fields,field_description:sale.field_sale_invoice_match__move_type
+msgid "Move Type"
+msgstr ""
+
+#. module: sale
 #. odoo-javascript
 #: code:addons/sale/static/src/js/sale_order_line_field/sale_order_line_field.xml:0
 msgid "Move Up"
@@ -3398,6 +3415,11 @@ msgstr ""
 #. module: sale
 #: model:ir.model.fields,field_description:sale.field_sale_order_line__price_unit_discounted_taxexc_product_uom
 msgid "Net Unit Price Product UoM"
+msgstr ""
+
+#. module: sale
+#: model:ir.model.fields,field_description:sale.field_sale_order__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: sale
@@ -4073,6 +4095,11 @@ msgstr ""
 #. module: sale
 #: model:ir.model.fields,field_description:sale.field_sale_order__priority
 msgid "Priority"
+msgstr ""
+
+#. module: sale
+#: model:res.groups,name:sale.privilege_note_invoice_paid
+msgid "Privilege: a paid invoice notes its payment on the orders it bills"
 msgstr ""
 
 #. module: sale
@@ -5045,7 +5072,6 @@ msgstr ""
 
 #. module: sale
 #: model:ir.model.fields,field_description:sale.field_sale_invoice_line_match__user_id
-#: model:ir.model.fields,field_description:sale.field_sale_invoice_match__user_id
 #: model:ir.model.fields,field_description:sale.field_sale_order__user_id
 #: model:ir.model.fields,field_description:sale.field_sale_order_line__user_id
 #: model:ir.model.fields,field_description:sale.field_sale_report__user_id
@@ -5357,6 +5383,13 @@ msgid ""
 msgstr ""
 
 #. module: sale
+#: model:ir.model.fields,help:sale.field_sale_order__is_invoiceable
+msgid ""
+"Something on the order can be invoiced now. An order still owed an "
+"undelivered quantity reads \"To invoice\" without it."
+msgstr ""
+
+#. module: sale
 #: model:ir.model.fields,field_description:sale.field_account_bank_statement_line__source_id
 #: model:ir.model.fields,field_description:sale.field_account_move__source_id
 #: model:ir.model.fields,field_description:sale.field_sale_invoice_match__reference
@@ -5524,6 +5557,11 @@ msgstr ""
 msgid ""
 "Tell us why you are refusing this quotation, this will help\n"
 "                                        us improve our services."
+msgstr ""
+
+#. module: sale
+#: model:ir.model.fields,field_description:sale.field_sale_invoice_match__template_id
+msgid "Template"
 msgstr ""
 
 #. module: sale
@@ -6250,6 +6288,11 @@ msgid "Used by salespeople when they send quotations or proforma to prospects"
 msgstr ""
 
 #. module: sale
+#: model:ir.model.fields,field_description:sale.field_sale_invoice_match__user_id
+msgid "User"
+msgstr ""
+
+#. module: sale
 #: model:res.groups,name:sale.group_sale_salesman_all_leads
 msgid "User: All Documents"
 msgstr ""
@@ -6419,6 +6462,15 @@ msgstr ""
 msgid ""
 "Whether this section's lines' prices will be hidden in reports and in the "
 "portal."
+msgstr ""
+
+#. module: sale
+#: model:res.groups,comment:sale.privilege_note_invoice_paid
+msgid ""
+"Whoever settles a customer invoice, a collector or the bank's reconciliation"
+" included, has the invoice note its payment on the sales orders it bills: "
+"reading the invoiced order lines and posting the note on their orders. "
+"Nothing else of the orders is theirs."
 msgstr ""
 
 #. module: sale

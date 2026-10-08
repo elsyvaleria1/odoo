@@ -37,9 +37,9 @@ msgid "Access your"
 msgstr ""
 
 #. module: pos_iot
-#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__pos_config_ids
 #: model:ir.model.fields,field_description:pos_iot.field_iot_box__associated_pos_config_ids
 #: model:ir.model.fields,field_description:pos_iot.field_iot_device__associated_pos_config_ids
+#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__pos_config_ids
 msgid "Associated PoS"
 msgstr ""
 
@@ -145,7 +145,6 @@ msgid "Discard"
 msgstr ""
 
 #. module: pos_iot
-#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__display_name
 #: model:ir.model.fields,field_description:pos_iot.field_iot_box__display_name
 #: model:ir.model.fields,field_description:pos_iot.field_iot_device__display_name
 #: model:ir.model.fields,field_description:pos_iot.field_pos_config__display_name
@@ -153,6 +152,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:pos_iot.field_pos_printer__display_name
 #: model:ir.model.fields,field_description:pos_iot.field_pos_session__display_name
 #: model:ir.model.fields,field_description:pos_iot.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -184,7 +184,6 @@ msgid "Firefox only: Click on Confirm Security Exception"
 msgstr ""
 
 #. module: pos_iot
-#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__id
 #: model:ir.model.fields,field_description:pos_iot.field_iot_box__id
 #: model:ir.model.fields,field_description:pos_iot.field_iot_device__id
 #: model:ir.model.fields,field_description:pos_iot.field_pos_config__id
@@ -192,6 +191,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:pos_iot.field_pos_printer__id
 #: model:ir.model.fields,field_description:pos_iot.field_pos_session__id
 #: model:ir.model.fields,field_description:pos_iot.field_res_config_settings__id
+#: model:ir.model.fields,field_description:pos_iot.field_wizard_pos_config_update_iot_device__id
 msgid "ID"
 msgstr ""
 
@@ -471,6 +471,13 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/pos_iot/static/src/app/services/pos_store.js:0
 msgid "Transaction in progress"
+msgstr ""
+
+#. module: pos_iot
+#: model:ir.model.fields,help:pos_iot.field_pos_printer__device_identifier
+msgid ""
+"Unique identifier for the device (MAC address, serial number, etc.) "
+"different than IMEI"
 msgstr ""
 
 #. module: pos_iot

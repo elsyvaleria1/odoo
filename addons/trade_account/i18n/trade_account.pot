@@ -255,8 +255,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__done
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__done
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__done
 msgid "Fully invoiced"
 msgstr ""
 
@@ -328,8 +326,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__draft
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__draft
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__draft
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__draft
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__draft
 msgid "Invoice in draft"
 msgstr ""
 
@@ -367,6 +363,11 @@ msgstr ""
 #. module: trade_account
 #: model:ir.model.fields,field_description:trade_account.field_account_move_line__is_downpayment
 msgid "Is Downpayment"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_invoice__is_invoiceable
+msgid "Is Invoiceable"
 msgstr ""
 
 #. module: trade_account
@@ -412,6 +413,16 @@ msgid ""
 msgstr ""
 
 #. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__move_id
+msgid "Move"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__move_type
+msgid "Move Type"
+msgstr ""
+
+#. module: trade_account
 #. odoo-python
 #: code:addons/trade_account/models/mixin_order_document_import.py:0
 msgid "No attachment was provided."
@@ -424,8 +435,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__no
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__no
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__no
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__no
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__no
 msgid "Nothing to invoice"
 msgstr ""
 
@@ -487,8 +496,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__over_done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__over_done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__over_done
 msgid "Over-invoiced"
 msgstr ""
 
@@ -499,8 +506,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__partial
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__partial
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__partial
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__partial
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__partial
 msgid "Partially invoiced"
 msgstr ""
 
@@ -589,7 +594,6 @@ msgid "Report this order as fully invoiced regardless of its lines."
 msgstr ""
 
 #. module: trade_account
-#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__user_id
 #: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__user_id
 msgid "Salesperson"
 msgstr ""
@@ -607,6 +611,13 @@ msgid "Some move lines do not have a product set. Please review."
 msgstr ""
 
 #. module: trade_account
+#: model:ir.model.fields,help:trade_account.field_mixin_order_invoice__is_invoiceable
+msgid ""
+"Something on the order can be invoiced now. An order still owed an "
+"undelivered quantity reads \"To invoice\" without it."
+msgstr ""
+
+#. module: trade_account
 #: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__reference
 msgid "Source"
 msgstr ""
@@ -614,6 +625,11 @@ msgstr ""
 #. module: trade_account
 #: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_match__state
 msgid "State"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__template_id
+msgid "Template"
 msgstr ""
 
 #. module: trade_account
@@ -661,8 +677,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__to_do
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__to_do
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__to_do
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__to_do
-#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__to_do
 msgid "To invoice"
 msgstr ""
 
@@ -684,6 +698,11 @@ msgstr ""
 #. module: trade_account
 #: model:ir.model.fields,field_description:trade_account.field_mixin_order_line_invoice__amount_taxexc_invoiced
 msgid "Untaxed Invoiced Amount"
+msgstr ""
+
+#. module: trade_account
+#: model:ir.model.fields,field_description:trade_account.field_mixin_order_document_match__user_id
+msgid "User"
 msgstr ""
 
 #. module: trade_account

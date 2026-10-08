@@ -528,6 +528,16 @@ msgid "Access Denied"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_order__access_token_hash
+msgid "Access Token Hash"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_order__access_token_sealed
+msgid "Access Token Sealed"
+msgstr ""
+
+#. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__access_warning
 msgid "Access warning"
 msgstr ""
@@ -877,8 +887,8 @@ msgstr ""
 #. module: point_of_sale
 #. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__amount
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment__amount
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__amount
 msgid "Amount"
 msgstr ""
 
@@ -1122,6 +1132,7 @@ msgid "Automatic"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_hr_employee__fiscal_position_id
 #: model:ir.model.fields,field_description:point_of_sale.field_res_bank__fiscal_position_id
 #: model:ir.model.fields,field_description:point_of_sale.field_res_company__fiscal_position_id
 #: model:ir.model.fields,field_description:point_of_sale.field_res_partner__fiscal_position_id
@@ -1580,7 +1591,6 @@ msgstr ""
 #: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment_method__is_cash_count
 #: model:ir.model.fields.selection,name:point_of_sale.selection__pos_payment_method__type__cash
-#: model:pos.payment.method,name:point_of_sale.cash_payment_method_furniture
 #: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
 msgid "Cash"
 msgstr ""
@@ -2567,13 +2577,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__create_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__create_uid
@@ -2583,6 +2587,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__create_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__create_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__create_uid
 msgid "Created by"
 msgstr ""
 
@@ -2590,13 +2600,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__create_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__create_date
@@ -2606,6 +2610,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__create_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__create_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__create_date
 msgid "Created on"
 msgstr ""
 
@@ -2667,10 +2677,10 @@ msgstr ""
 #: code:addons/point_of_sale/static/src/app/screens/payment_screen/payment_screen.xml:0
 #: code:addons/point_of_sale/static/src/app/screens/product_screen/control_buttons/select_partner_button/select_partner_button.xml:0
 #: code:addons/point_of_sale/static/src/app/screens/ticket_screen/ticket_screen.js:0
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__partner_id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__partner_id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment__partner_id
 #: model:ir.model.fields,field_description:point_of_sale.field_report_pos_order__partner_id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__partner_id
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_pos_order_filter
 msgid "Customer"
 msgstr ""
@@ -2734,7 +2744,7 @@ msgstr ""
 #. odoo-javascript
 #. odoo-python
 #: code:addons/point_of_sale/static/src/app/utils/order_payment_validation.js:0
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 msgid "Customer is required for %s payment method."
 msgstr ""
 
@@ -3154,13 +3164,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__display_name
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__display_name
@@ -3203,6 +3207,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_stock_scheduler__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_stock_warehouse__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_uom_uom__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -3619,6 +3629,7 @@ msgid "Fiscal Positions"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,help:point_of_sale.field_hr_employee__fiscal_position_id
 #: model:ir.model.fields,help:point_of_sale.field_res_bank__fiscal_position_id
 #: model:ir.model.fields,help:point_of_sale.field_res_company__fiscal_position_id
 #: model:ir.model.fields,help:point_of_sale.field_res_partner__fiscal_position_id
@@ -4008,13 +4019,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__id
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__id
@@ -4057,6 +4062,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_stock_scheduler__id
 #: model:ir.model.fields,field_description:point_of_sale.field_stock_warehouse__id
 #: model:ir.model.fields,field_description:point_of_sale.field_uom_uom__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__id
 msgid "ID"
 msgstr ""
 
@@ -4288,6 +4299,7 @@ msgid "Invoice"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_hr_employee__invoice_emails
 #: model:ir.model.fields,field_description:point_of_sale.field_res_bank__invoice_emails
 #: model:ir.model.fields,field_description:point_of_sale.field_res_company__invoice_emails
 #: model:ir.model.fields,field_description:point_of_sale.field_res_partner__invoice_emails
@@ -4443,7 +4455,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_confirmation_wizard.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice_missing_customer.py:0
 msgid ""
 "It seems that the POS order(s) %(order_ref)s do not have a customer.\n"
 "\n"
@@ -4488,7 +4500,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_make_invoice.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice.py:0
 msgid "Kindly ensure that each order contains a customer."
 msgstr ""
 
@@ -4549,13 +4561,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__write_uid
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__write_uid
@@ -4565,6 +4571,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__write_uid
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__write_uid
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__write_uid
 msgid "Last Updated by"
 msgstr ""
 
@@ -4572,13 +4584,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_point_of_sale_config__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_bill__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_category__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__write_date
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_note__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__write_date
@@ -4588,6 +4594,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__write_date
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_close_unbalanced__write_date
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -5170,6 +5182,11 @@ msgid "New amount"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_session__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: point_of_sale
 #: model:product.template,name:point_of_sale.newspaper_rack_product_template
 msgid "Newspaper Rack"
 msgstr ""
@@ -5358,7 +5375,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_make_invoice.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice.py:0
 msgid "No valid orders were selected. No new invoices could be generated"
 msgstr ""
 
@@ -5786,8 +5803,8 @@ msgid "Order Backend Sequence"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__order_count
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__order_count
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice__order_count
 msgid "Order Count"
 msgstr ""
 
@@ -5888,8 +5905,8 @@ msgstr ""
 #: model:ir.actions.act_window,name:point_of_sale.action_pos_order_filtered
 #: model:ir.actions.act_window,name:point_of_sale.action_pos_pos_form
 #: model:ir.actions.act_window,name:point_of_sale.action_pos_sale_graph
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__order_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__order_ids
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_invoice_missing_customer__order_ids
 #: model:ir.ui.menu,name:point_of_sale.menu_point_of_sale
 #: model:ir.ui.menu,name:point_of_sale.menu_point_ofsale
 #: model:ir.ui.menu,name:point_of_sale.menu_report_pos_order_all
@@ -6131,7 +6148,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/point_of_sale/static/src/app/screens/product_screen/product_screen.xml:0
 #: code:addons/point_of_sale/static/src/app/screens/ticket_screen/ticket_screen.js:0
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 #: model:ir.actions.act_window,name:point_of_sale.action_pos_payment
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_pos_pos_form
@@ -6154,9 +6171,9 @@ msgid "Payment Issuer Bank"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__payment_method_id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment__payment_method_id
 #: model:ir.model.fields,field_description:point_of_sale.field_report_pos_order__payment_method_id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_order_pay__payment_method_id
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_pos_payment_search
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_report_pos_order_search
 msgid "Payment Method"
@@ -6490,6 +6507,7 @@ msgid "Please, Scan again!"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_hr_employee__pos_contact_address
 #: model:ir.model.fields,field_description:point_of_sale.field_res_bank__pos_contact_address
 #: model:ir.model.fields,field_description:point_of_sale.field_res_company__pos_contact_address
 #: model:ir.model.fields,field_description:point_of_sale.field_res_partner__pos_contact_address
@@ -6747,8 +6765,8 @@ msgid "Pos Allowed Pricelist"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__pos_config_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__pos_config_ids
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_config_print_sale_detail__pos_config_ids
 msgid "Pos Config"
 msgstr ""
 
@@ -6760,6 +6778,7 @@ msgstr ""
 #. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_account_bank_statement_line__pos_order_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_account_move__pos_order_ids
+#: model:ir.model.fields,field_description:point_of_sale.field_hr_employee__pos_order_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_res_bank__pos_order_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_res_company__pos_order_ids
 #: model:ir.model.fields,field_description:point_of_sale.field_res_partner__pos_order_ids
@@ -6769,6 +6788,7 @@ msgid "Pos Order"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_hr_employee__pos_order_count
 #: model:ir.model.fields,field_description:point_of_sale.field_res_bank__pos_order_count
 #: model:ir.model.fields,field_description:point_of_sale.field_res_company__pos_order_count
 #: model:ir.model.fields,field_description:point_of_sale.field_res_partner__pos_order_count
@@ -6804,8 +6824,8 @@ msgid "Pos Selectable Categ"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__pos_session_id
 #: model:ir.model.fields,field_description:point_of_sale.field_stock_picking__pos_session_id
+#: model:ir.model.fields,field_description:point_of_sale.field_wizard_pos_session_print_sale_detail__pos_session_id
 msgid "Pos Session"
 msgstr ""
 
@@ -7445,6 +7465,12 @@ msgid "REFUNDED:"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_order__rating_ids
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_session__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "Razorpay"
 msgstr ""
@@ -7497,6 +7523,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:point_of_sale.pos_config_view_form
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "Receipt Printer"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_order__receipt_token
+msgid "Receipt Token"
 msgstr ""
 
 #. module: point_of_sale
@@ -8066,7 +8097,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 msgid "Select a point of sale order to register a payment."
 msgstr ""
 
@@ -8084,19 +8115,19 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 msgid "Select an order to register a payment."
 msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_close_session_wizard.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_session_close_unbalanced.py:0
 msgid "Select exactly one session to close."
 msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_confirmation_wizard.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice_missing_customer.py:0
 msgid ""
 "Select orders from one point of sale with exactly one customer to assign."
 msgstr ""
@@ -8283,6 +8314,12 @@ msgstr ""
 #. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__statistics_for_current_session
 msgid "Session Statistics"
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-python
+#: code:addons/point_of_sale/models/pos_session.py:0
+msgid "Session already closed"
 msgstr ""
 
 #. module: point_of_sale
@@ -9073,7 +9110,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_confirmation_wizard.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice_missing_customer.py:0
 msgid ""
 "The customer has changed. Close this dialog and select the orders again."
 msgstr ""
@@ -9115,7 +9152,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_details.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_config_print_sale_detail.py:0
 msgid "The end date must not precede the start date."
 msgstr ""
 
@@ -9159,7 +9196,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_make_invoice.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice.py:0
 msgid ""
 "The following refund orders can't be part of a consolidated invoice because they refunded invoiced orders. Each refund order should be handled separately.\n"
 "\n"
@@ -9229,6 +9266,7 @@ msgid "The name of the Coins/Bills must be a number."
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,help:point_of_sale.field_hr_employee__pos_order_count
 #: model:ir.model.fields,help:point_of_sale.field_res_bank__pos_order_count
 #: model:ir.model.fields,help:point_of_sale.field_res_company__pos_order_count
 #: model:ir.model.fields,help:point_of_sale.field_res_partner__pos_order_count
@@ -9287,7 +9325,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 msgid "The payment configuration must match the order's point of sale."
 msgstr ""
 
@@ -9430,6 +9468,12 @@ msgstr ""
 #. module: point_of_sale
 #. odoo-python
 #: code:addons/point_of_sale/models/pos_session.py:0
+msgid "The session has already been closed by another user."
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-python
+#: code:addons/point_of_sale/models/pos_session.py:0
 msgid ""
 "The session has been already closed by another User. All sales completed in "
 "the meantime have been saved in a Rescue Session, which can be reviewed "
@@ -9462,6 +9506,20 @@ msgstr ""
 msgid ""
 "The tip has been added to the order. However, the selected payment line does"
 " not allow tips to be added."
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,help:point_of_sale.field_pos_order__receipt_token
+msgid ""
+"The token of the link the receipt's QR code and the online payment carry; "
+"the link is an access.link row holding its hash."
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,help:point_of_sale.field_pos_order__access_token
+msgid ""
+"The token of the link this record's customer is sent, once one was issued; "
+"the link itself is an access.link row holding its hash."
 msgstr ""
 
 #. module: point_of_sale
@@ -9778,6 +9836,12 @@ msgstr ""
 #: model:ir.model.fields,help:point_of_sale.field_pos_config__tip_product_id
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "This product is used as reference on customer receipts."
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-python
+#: code:addons/point_of_sale/models/pos_order.py:0
+msgid "This refund returns more than was sold: %(lines)s"
 msgstr ""
 
 #. module: point_of_sale
@@ -10403,7 +10467,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_make_invoice.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_invoice.py:0
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_confirm_action_wizard
 msgid "Warning"
 msgstr ""
@@ -10693,6 +10757,12 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
+#: code:addons/point_of_sale/models/pos_order.py:0
+msgid "You cannot refund more than was sold: %(lines)s"
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-python
 #: code:addons/point_of_sale/models/pos_session.py:0
 msgid ""
 "You cannot register a cash movement on a session that is no longer open: "
@@ -10701,7 +10771,7 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/wizards/pos_payment.py:0
+#: code:addons/point_of_sale/wizards/wizard_pos_order_pay.py:0
 msgid "You cannot register a payment for a cancelled order."
 msgstr ""
 

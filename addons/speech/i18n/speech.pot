@@ -152,6 +152,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__failed
 msgid "Failed"
 msgstr ""
@@ -324,6 +325,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__none
 msgid "Not transcribed"
 msgstr ""
@@ -372,6 +374,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__queued
 msgid "Queued"
 msgstr ""
@@ -490,6 +493,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__done
 msgid "Transcribed"
 msgstr ""
@@ -499,6 +503,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__running
 msgid "Transcribing"
 msgstr ""

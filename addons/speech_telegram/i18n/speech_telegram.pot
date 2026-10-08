@@ -1,0 +1,43 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* speech_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 19:38+0000\n"
+"PO-Revision-Date: 2026-10-08 19:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: speech_telegram
+#: model:ir.model.fields,field_description:speech_telegram.field_telegram_bot__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: speech_telegram
+#: model:ir.model.fields,field_description:speech_telegram.field_telegram_bot__id
+msgid "ID"
+msgstr ""
+
+#. module: speech_telegram
+#: model:ir.model,name:speech_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr ""
+
+#. module: speech_telegram
+#: model:ir.model.fields,field_description:speech_telegram.field_telegram_bot__voice_notes_heard
+msgid "Voice Notes Heard"
+msgstr ""
+
+#. module: speech_telegram
+#: model:ir.model.fields,help:speech_telegram.field_telegram_bot__voice_notes_heard
+msgid ""
+"Whether a voice note sent to this bot can be transcribed: some speech engine"
+" may hear it under the company's transcription policy."
+msgstr ""

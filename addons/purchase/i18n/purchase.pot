@@ -119,6 +119,11 @@ msgid "3-way matching: purchases, receptions and bills"
 msgstr ""
 
 #. module: purchase
+#: model_terms:web_tour.tour,rainbow_man_message:purchase.purchase_tour
+msgid "<b>Good job!</b> You went through all steps of this tour."
+msgstr ""
+
+#. module: purchase
 #: model:mail.template,body_html:purchase.email_template_edi_purchase_done
 msgid ""
 "<div style=\"margin: 0px; padding: 0px;\">\n"
@@ -1168,6 +1173,7 @@ msgstr ""
 
 #. module: purchase
 #: model:ir.model.fields,field_description:purchase.field_wizard_purchase_order_bill__advance_payment_method
+#: model_terms:ir.ui.view,arch_db:purchase.view_purchase_order_form
 msgid "Create Bill"
 msgstr ""
 
@@ -1976,6 +1982,11 @@ msgid "Is In Purchase Order"
 msgstr ""
 
 #. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_purchase_order__is_invoiceable
+msgid "Is Invoiceable"
+msgstr ""
+
+#. module: purchase
 #: model:ir.model.fields,field_description:purchase.field_purchase_order__is_late
 msgid "Is Late"
 msgstr ""
@@ -2257,6 +2268,11 @@ msgid "Messages"
 msgstr ""
 
 #. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_purchase_bill_match__move_type
+msgid "Move Type"
+msgstr ""
+
+#. module: purchase
 #. odoo-javascript
 #: code:addons/purchase/static/src/views/purchase_dashboard.xml:0
 msgid "My"
@@ -2295,6 +2311,11 @@ msgstr ""
 #. module: purchase
 #: model_terms:ir.ui.view,arch_db:purchase.view_purchase_order_list
 msgid "Next Activity"
+msgstr ""
+
+#. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_purchase_order__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: purchase
@@ -3494,7 +3515,6 @@ msgstr ""
 
 #. module: purchase
 #: model:ir.model.fields,field_description:purchase.field_purchase_bill_line_match__user_id
-#: model:ir.model.fields,field_description:purchase.field_purchase_bill_match__user_id
 msgid "Salesperson"
 msgstr ""
 
@@ -3677,6 +3697,13 @@ msgid ""
 msgstr ""
 
 #. module: purchase
+#: model:ir.model.fields,help:purchase.field_purchase_order__is_invoiceable
+msgid ""
+"Something on the order can be invoiced now. An order still owed an "
+"undelivered quantity reads \"To invoice\" without it."
+msgstr ""
+
+#. module: purchase
 #: model:ir.model.fields,field_description:purchase.field_purchase_bill_match__reference
 #: model:ir.model.fields,field_description:purchase.field_purchase_order__origin
 msgid "Source"
@@ -3835,6 +3862,7 @@ msgid "Taxes"
 msgstr ""
 
 #. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_purchase_bill_match__template_id
 #: model:ir.model.fields,field_description:purchase.field_purchase_order_template_line__template_id
 msgid "Template"
 msgstr ""
@@ -4299,6 +4327,11 @@ msgstr ""
 msgid ""
 "Use the above REST URL to get structured data of the purchase order in UBL "
 "format."
+msgstr ""
+
+#. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_purchase_bill_match__user_id
+msgid "User"
 msgstr ""
 
 #. module: purchase

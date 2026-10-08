@@ -556,6 +556,36 @@ msgid ""
 "dictated name or date transcribes wrong too easily to act on silently.\n"
 "\n"
 "The date is never assumed: a request without one is answered with a question,\n"
+"not with a default period. Access follows ``account_telegram``: whoever\n"
+"reads the partner ledger, or is a sales user, can name any customer; any other\n"
+"linked employee or customer gets their own statement.\n"
+"\n"
+"Every question the statement commands ask also takes a voice note: the period\n"
+"buttons and custom dates of ``/estadocuentaperiodo`` (the requester's own\n"
+"statement, an employee's too), and the customer, period and custom dates of\n"
+"``/edocliente``.\n"
+"\n"
+"A request that is not understood is not dropped. The chat waits for a second\n"
+"try, by voice note or typed, and keeps what it did understand -- the customer,\n"
+"or the period -- so the second try only adds what is missing. After two tries\n"
+"in a row the reply spells out the typed form.\n"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_speech_telegram
+msgid ""
+"\n"
+"Telegram Bot Financial - Speech\n"
+"===============================\n"
+"\n"
+"A sales representative asks for a customer's account statement by sending a\n"
+"voice note: \"estado de cuenta de Ferretería López al 27 de septiembre\". The\n"
+"note is transcribed by ``speech`` and interpreted by the company's chat model\n"
+"through ``integration_machine_learning`` into a customer and a period. The bot repeats what it\n"
+"understood and only generates the PDF after the requester confirms, because a\n"
+"dictated name or date transcribes wrong too easily to act on silently.\n"
+"\n"
+"The date is never assumed: a request without one is answered with a question,\n"
 "not with a default period. Access follows ``account_telegram``: a linked\n"
 "employee can name any customer, a linked customer gets their own statement.\n"
 msgstr ""
@@ -843,6 +873,22 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_ui_view_arch.py:0
 msgid "%(action_name)s is not a valid action on %(model_name)s"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/mixin_access_graph.py:0
+msgid ""
+"%(classes)s cannot label a record: it lets someone write without reading, "
+"and the record would hide from them."
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:addons/base/models/ir_access_class.py:0
+msgid ""
+"%(classes)s label records: a row of theirs cannot let anyone write them "
+"without reading them, or those records hide from the people they let edit."
 msgstr ""
 
 #. module: base
@@ -1423,6 +1469,12 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_account_collection_sale_telegram
+msgid ""
+"/cobro offers the customer's cash sales to invoice and collect on the spot"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_ir_profile_enable__duration__days_1
 msgid "1 Day"
 msgstr ""
@@ -1908,6 +1960,55 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_device_mobile_telegram
+msgid ""
+"A bot delivering Odoo notifications can be restricted to company phones: a "
+"user's notifications, replies and inbox then reach only a Telegram account "
+"whose number, shared by its owner and vouched for by Telegram, is the SIM "
+"number of an active Mobile Phone device the user carries. A connected "
+"account without a shared number is asked for it. The device form shows the "
+"Telegram account of the phone's number and who it acts as."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_device_voip
+msgid ""
+"A call the phone system reports names the extension that answered it: the "
+"extension's user answers for it, and a call the softphone already filed is "
+"completed instead of duplicated, so its recording lands on it. A company "
+"handset fetches its softphone settings, the extension and secret of its "
+"user, from the device configuration route."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_collection_sale_fleet_trace
+msgid ""
+"A cash sale handed over on the route takes its goods from the stock the "
+"salesperson's vehicle carries to sell"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection_sale_fleet
+msgid ""
+"A cash sale whose customer takes the goods at once is handed over at the "
+"counter or from the salesperson's vehicle, not delivered: its transfer is "
+"validated outside any trip even where the operation type asks deliveries to "
+"leave in trips, and it needs no photo of a signed slip, the collection's "
+"receipt being the customer's acknowledgement."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_training_simulator
+msgid ""
+"A catalogue of training simulators by area and the record of every session: "
+"who played, which scenario, how long, the errors and the result. Each "
+"simulator lives in its own module and plays on a snapshot of real data taken"
+" when the session starts; what happens in the game is kept only in the "
+"session, so production records are never touched. The tests of each "
+"simulator prove it with TrainingNeutralityCase."
+msgstr ""
+
+#. module: base
 #: model_terms:ir.actions.act_window,help:base.ir_job_channel_act
 msgid ""
 "A channel bounds how many background jobs of its kind run\n"
@@ -1917,8 +2018,64 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_l10n_mx_edi_account_collection
+msgid ""
+"A collection recorded by a collector carries the SAT form of payment of what"
+" the customer handed over (01 cash, 02 check, 03 transfer, 04 card) instead "
+"of falling back to transfer, so its payment complement declares the real "
+"form of payment on the date the customer paid. A daily run stamps the "
+"complements of collections whose invoices are stamped, while the money may "
+"still be in the collector's custody, and warns the collection supervisor two"
+" days before the SAT deadline (the 5th of the following month) of any still "
+"unsent."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection_sale
+msgid ""
+"A collector collects a confirmed cash sale (immediate payment terms) where "
+"it happens: the order is invoiced, dated the day the customer paid and "
+"posted in one step, the invoice is issued (stamped, where a localization "
+"issues invoices), and the payment is recorded in the collector's custody "
+"with its receipt. A per-company switch, off by default, holds the sales "
+"orders on credit terms of a salesperson who keeps collections past their "
+"hand-in date."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection
+msgid ""
+"A collector records the customer's payment on the day the customer paid, in "
+"a custody journal: the invoice is settled at once while the money stays "
+"booked to the collector's custody account. The collector hands the money in "
+"through a remittance, cash to a till or a bank deposit, which the treasury "
+"validates; shortages are charged to the collector. A daily check reminds "
+"collectors of custody held beyond its working days. The customer receives "
+"the receipt by email with a link to verify it and to report a problem to the"
+" collection supervisor."
+msgstr ""
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_account_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_barcodes_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_document_product_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_hr_attendance_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_hr_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_hr_timesheet_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_integration_ml_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_mail_config_company_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_company_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_partner_autocomplete_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_point_of_sale_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_purchase_config_company_uniq
 #: model:ir.model.constraint,message:base.constraint_report_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_resource_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_sale_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_snailmail_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_social_media_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_stock_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_tax_config_company_uniq
+#: model:ir.model.constraint,message:base.constraint_trade_config_company_uniq
 #: model:ir.model.constraint,message:base.constraint_web_config_company_uniq
 msgid "A company has one configuration record per application."
 msgstr ""
@@ -1960,6 +2117,13 @@ msgid "A field class's name is unique."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_account_collection
+msgid ""
+"A field collection's payment complement states how the customer paid the "
+"collector and is stamped daily"
+msgstr ""
+
+#. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_attachment_reading_attachment_representation_unique
 msgid "A file is read once per representation."
 msgstr ""
@@ -1990,7 +2154,9 @@ msgid "A grant must end after it starts."
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_document_access_one_principal
 #: model:ir.model.constraint,message:base.constraint_mixin_access_grant_one_principal
+#: model:ir.model.constraint,message:base.constraint_project_collaborator_one_principal
 msgid "A grant names exactly one principal: a partner or a group."
 msgstr ""
 
@@ -2152,6 +2318,15 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_account_credit_promissory_note
+msgid ""
+"A posted customer invoice with a credit term gets its own promissory note: a"
+" PDF in the company's text, filed in the customer's credit dossier as a "
+"Promissory Note document with amount, issue date and expiration, and marked "
+"when the signed original comes back."
+msgstr ""
+
+#. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_access_predicate_template_or_method
 msgid "A predicate is a template or a method, not both."
 msgstr ""
@@ -2183,8 +2358,28 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_ir_access_class__can_label
+msgid ""
+"A record may carry the class as its sensitivity label: not when the class "
+"lets someone write without reading, as a label lets its writers edit what "
+"only its readers see."
+msgstr ""
+
+#. module: base
+#: model:ir.model.constraint,message:base.constraint_calendar_event_type_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_device_kind_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_document_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_fleet_vehicle_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_im_livechat_conversation_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_integration_ml_use_case_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_mixin_attribute_name_src_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_catalog_name_src_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_mrp_workcenter_tag_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_project_tags_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_resource_kind_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_survey_category_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_survey_tag_name_src_uniq
 msgid "A record with this name already exists in this catalog."
 msgstr ""
 
@@ -2198,6 +2393,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/mixin_recurrence_rrule.py:0
 msgid "A recurrence that repeats until a date needs that date."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_collection_payroll_loan
+msgid ""
+"A remittance short of what its collector collected proposes the payroll "
+"deduction that recovers it"
 msgstr ""
 
 #. module: base
@@ -2233,6 +2435,17 @@ msgstr ""
 msgid ""
 "A root company's configuration reaches every branch below it, whether or not"
 " the writer can see those branches."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_agent_runner_github
+msgid ""
+"A run that names a GitHub repository is handed, with its lease, an "
+"installation token of the company's GitHub App limited to that repository "
+"and to the permissions its kind needs, which expires within the hour. When "
+"it completes it reports the branch it pushed, and the pull request of that "
+"branch is linked to it -- whichever GitHub or the runner reports first. The "
+"modules that hand out work react to the link."
 msgstr ""
 
 #. module: base
@@ -2280,15 +2493,27 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_calendar_event_type_code_uniq
+#: model:ir.model.constraint,message:base.constraint_crm_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_document_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_fleet_vehicle_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_im_livechat_conversation_tag_code_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_tag_code_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_tag_nested_code_uniq
+#: model:ir.model.constraint,message:base.constraint_mrp_workcenter_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_project_tags_code_uniq
 #: model:ir.model.constraint,message:base.constraint_res_partner_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_srm_tag_code_uniq
+#: model:ir.model.constraint,message:base.constraint_survey_category_code_uniq
+#: model:ir.model.constraint,message:base.constraint_survey_tag_code_uniq
 #: model:ir.model.constraint,message:base.constraint_tag_tag_code_uniq
 msgid "A tag with this code already exists."
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_crm_tag_name_src_uniq
 #: model:ir.model.constraint,message:base.constraint_mixin_tag_nested_name_src_uniq
+#: model:ir.model.constraint,message:base.constraint_srm_tag_name_src_uniq
 #: model:ir.model.constraint,message:base.constraint_tag_tag_name_src_uniq
 msgid "A tag with this name already exists under the same parent."
 msgstr ""
@@ -2307,6 +2532,19 @@ msgid "A token opens one link."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_stock_fleet_trace_training
+msgid ""
+"A training game for drivers, supervisors and warehouse clerks: a CDG "
+"delivery trip built from the deliveries ready to go today on each route of "
+"the calendar, with their sale orders, reserved lots, credit verdict, people "
+"and vehicle, and the vehicle's real GPS track of a reference day. The player"
+" walks the whole flow (sale order, approval, credit, SHIP, authorization, "
+"loading, delivery, return) with the driver's phone and a barcode reader, in "
+"eight scenarios. It reads production data through a read-only privilege and "
+"keeps everything the game does in the training session."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_res_partner_merge__exclude_contact
 msgid "A user associated to the contact"
 msgstr ""
@@ -2316,6 +2554,28 @@ msgstr ""
 msgid ""
 "A user may not belong to this group and one of those.  For instance, users "
 "may not be portal users and internal users."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_mail_telegram
+msgid ""
+"A user who connected Telegram (Preferences) receives their inbox "
+"notifications, direct and group chats and channel mentions in Telegram, each"
+" with a link back to Odoo and a Mark as Read button, according to "
+"preferences that say always, only while away, or never. Nothing already read"
+" in Odoo is sent: delivery waits a grace period and checks again. Replying "
+"to one of those messages in Telegram posts the reply on the same record or "
+"conversation as that user, under their access rights; a reply to an internal"
+" note stays a note, and a reply that would reach external followers asks "
+"first. They go to one chat: the one the user connected last through a bot "
+"delivering them, or the one they choose in Preferences, which also says "
+"whether they are being delivered and why not. When Telegram starts refusing "
+"them, or the user blocks the bot, Odoo tells the user once, in Odoo. "
+"Requires a bot with Deliver Odoo Notifications enabled; Connect Telegram "
+"opens that bot. A Telegram group, connected with a link made in Odoo, is a "
+"Telegram channel of Discuss: its people's messages are posted there as their"
+" contacts, forum topics are sub-channels, and what Odoo users write goes to "
+"the group under their names."
 msgstr ""
 
 #. module: base
@@ -4523,6 +4783,17 @@ msgstr ""
 msgid ""
 "Adds Read from GPS actions to delivery trips and vehicle helpers for "
 "odometer and fuel readings. Requires a linked GPS tracker with recent data; "
+"the odometer action also requires a valid positive odometer reading from the"
+" last two hours (system parameter "
+"asset_delivery_gps.trip_reading_max_age_minutes). Missing or stale data "
+"requires manual entry."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_asset_delivery_gps
+msgid ""
+"Adds Read from GPS actions to delivery trips and vehicle helpers for "
+"odometer and fuel readings. Requires a linked GPS tracker with recent data; "
 "the odometer action also requires a valid positive odometer reading within "
 "the configured look-back window. Missing or stale data requires manual "
 "entry."
@@ -4930,6 +5201,17 @@ msgstr ""
 #: model:ir.module.module,description:base.module_l10n_se_sie_import
 msgid ""
 "Adds a SIE 5 import wizard with company checks, signature verification "
+"against the company's trusted signer certificates under a per-company "
+"signature policy, account and partner mapping, journal entry creation and "
+"balance adjustments. Embedded document import is optional; only the "
+"implemented XML record structures are handled, not arbitrary accounting "
+"exports."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_l10n_se_sie_import
+msgid ""
+"Adds a SIE 5 import wizard with company checks, signature verification "
 "against the company's trusted signer certificates, account and partner "
 "mapping, journal entry creation and balance adjustments. Embedded document "
 "import is optional; only the implemented XML record structures are handled, "
@@ -4962,12 +5244,36 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_molecular_screening_agro
+msgid ""
+"Adds a Systemic flag to compounds, read from the most recent 'systemic' "
+"property, with a list column, a search filter and a count of systemic "
+"candidates on each campaign. Adds an Import SDF wizard on campaigns that "
+"reads the 3D export of the AgroMarin screening pipeline, whose data tags are"
+" Spanish (masa_molecular, carga_formal, motivo, detalle), with the drawing "
+"stage's JSON as an optional companion for SVG, TPSA, hydrogen-bond counts, "
+"the systemic flag and compound classes. Each imported value is stored with "
+"the method declared on the wizard."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_document_speech
 msgid ""
 "Adds a Transcribe action and related transcript text, state and availability"
 " fields to documents. Delegates transcription to the speech attachment "
 "implementation and exposes its subtitle helper; supported recordings and "
 "speech-provider configuration are determined by that dependency."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_stock_fleet_trace_gps_geoengine
+msgid ""
+"Adds a View GPS Track button to delivery trips: it draws the vehicle's GPS "
+"trail between departure and return on the trail map, with the trip's planned"
+" stops, what happened at each (arrival, delivery, not delivered), the "
+"incidents and the GPS alerts marked where they happened. The printed trip "
+"sheet carries the same as a route map, with each stop numbered as the sheet "
+"sequences it."
 msgstr ""
 
 #. module: base
@@ -5457,6 +5763,17 @@ msgstr ""
 msgid ""
 "Adds account-statement commands with period selection, PDF delivery and "
 "request logs. Self-service uses the linked partner; querying other customers"
+" requires a linked internal user who reads the partner ledger in Odoo "
+"(accounting read access); a linked customer gets their own statement only. "
+"Requires a configured bot and accounting report access; there is no separate"
+" manager-role field on the chat."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_telegram
+msgid ""
+"Adds account-statement commands with period selection, PDF delivery and "
+"request logs. Self-service uses the linked partner; querying other customers"
 " requires a linked internal user; a linked customer gets their own statement"
 " only. Requires a configured bot and accounting report access; there is no "
 "separate manager-role field on the chat."
@@ -5787,6 +6104,19 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,description:base.module_document_physical
 msgid ""
+"Adds archive locations, barcoded containers (lever-arch files, hanging "
+"folders, boxes), document transfer records, a transfer wizard for intake, "
+"loans, returns and other movements, and a scan wizard that files or lends "
+"whole containers from a barcode reader. Tracks the current location and "
+"custodian, registers intake when a storage location is assigned and reminds "
+"the lender the day before a loan is due and once it is overdue. Document "
+"types can require an original and a storage location; users must record "
+"physical movements to keep these records current."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_document_physical
+msgid ""
 "Adds archive locations, document transfer records and a transfer wizard for "
 "intake, loans, returns and other movements. Tracks the current location and "
 "custodian and registers intake when a storage location is assigned. Document"
@@ -5801,6 +6131,16 @@ msgid ""
 "requester with the granted role. The supplied category uses internal article"
 " editors and system administrators as reviewers; eligibility depends on the "
 "article request route and existing permissions."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_asset_gps_geoengine
+msgid ""
+"Adds asset and operator selection to the GPS trail wizard, labels to map "
+"devices and links on client visits. Supplies speed-event, daily-speed and "
+"vehicle-stop reports and a scheduled critical-speed alert action. Uses the "
+"GPS geospatial and asset-operator dependencies and requires recorded "
+"positions and configured alert settings."
 msgstr ""
 
 #. module: base
@@ -5875,6 +6215,17 @@ msgid ""
 "document approval-access adapter. The supplied category routes review to the"
 " owner and document managers; approval grants the requested role through "
 "document sharing. Shortcut requests must target the underlying document."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_device_phone_call
+msgid ""
+"Adds authenticated device routes for call-log batches and call recordings, "
+"on the companion app's wire contract, and the phone-system device category. "
+"Each reported call becomes a phone call of the device's company, matched to "
+"a contact and to the device's user; a recording is filed on the call it "
+"belongs to, and one that arrives ahead of its call-log entry makes a call "
+"that the entry completes on arrival."
 msgstr ""
 
 #. module: base
@@ -6685,6 +7036,14 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_l10n_mx_edi_approval_sale_telegram
+msgid ""
+"Adds fiscal and non-fiscal tax, RFC, CFDI usage and payment way checks to "
+"Telegram sale confirmation messages. Findings are advisory; confirmation "
+"keeps the sale order's normal validation and user permissions."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_ai_document
 msgid ""
 "Adds folder sorting prompts, automation rules, document move and tag tools, "
@@ -7077,6 +7436,15 @@ msgid ""
 "agreement line list. The shared trade agreement competition addon computes "
 "these values from recorded competitor offers. This addon supplies the sale "
 "agreement view extension; it does not fetch external market prices."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_room
+msgid ""
+"Adds meeting-room asset details and a tablet-oriented booking page. Projects"
+" reservation occupancy from the shared resource engine and sends updates "
+"when relevant bookings change. Requires configured room resources and access"
+" to the room booking page."
 msgstr ""
 
 #. module: base
@@ -7805,6 +8173,19 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_molecular_screening
+msgid ""
+"Adds screening campaigns, receptor targets with a redocking validation gate,"
+" a compound library keyed on chemical identity with campaign roles, 2D and "
+"3D structures, and docking jobs that stay blocked while their target fails "
+"validation. Includes a sketch editor and a 3D viewer; formula, masses, "
+"rings, aromaticity, hydrogen-bond counts and Gasteiger partial charges are "
+"recomputed on the server, and every property keeps the method that produced "
+"it. It records docking runs and results but does not run a docking engine, "
+"and it perceives no stereochemistry."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_hr_employee_firstname
 msgid ""
 "Adds separate name components and a configurable name order to employee "
@@ -7985,6 +8366,19 @@ msgstr ""
 #: model:ir.module.module,description:base.module_ai_project
 msgid ""
 "Adds task analysis and code-generation actions, codebase context selection, "
+"workflow states and GitHub pull-request synchronization. Code generation is "
+"an agent run on an isolated runner: it clones the project's repository, "
+"writes the task's change on a branch of its own, pushes it and opens a pull "
+"request, with a GitHub App token for that repository alone and the company's"
+" model key only where its data policy allows. Requires a runner, the "
+"company's GitHub App and AI service access; generated changes require review"
+" and deployment is not automated by the workflow state labels."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_ai_project
+msgid ""
+"Adds task analysis and code-generation actions, codebase context selection, "
 "workflow states and GitHub pull-request synchronization. Code generation can"
 " create a branch, commit, push and pull request using configured credentials"
 " and local tooling. Requires suitable AI service access, GitHub permissions "
@@ -8050,6 +8444,17 @@ msgid ""
 "Adds terminal pairing, merchant settings, receipt options and surcharge-"
 "product configuration to the Tyro POS payment interface. Requires a "
 "supported terminal and merchant account."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_stock_fleet_telegram
+msgid ""
+"Adds the /entrega bot command: the driver or salesperson who delivered sends"
+" the photo of the delivery slip the customer signed. The bot reads the "
+"slip's QR code, or offers the deliveries waiting for it, files the photo as "
+"the delivery's signed slip and, when the delivery rides a departed trip of "
+"theirs, marks it delivered. Requires a linked Telegram account and the "
+"Driver group."
 msgstr ""
 
 #. module: base
@@ -8170,6 +8575,17 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_device_mobile
+msgid ""
+"Adds the company-phone device category, the number of its SIM, and its "
+"authenticated location upload, storing GPS points. The handset's call log "
+"and recordings arrive on the device call routes and become phone calls. "
+"Requires a provisioned device and compatible companion client; recording "
+"capture and handset permissions belong to that client and its device "
+"environment."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_ai_document_account
 msgid ""
 "Adds the document or environment company to AI sorting context and adapts "
@@ -8267,6 +8683,16 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_phone_call_speech_analysis
+msgid ""
+"Adds the speech-analysis mixin to phone calls, whatever line carried them: "
+"once the recordings filed on an ended call are transcribed, the call gets a "
+"summary, topics, commitments, questions and moments. Requires a configured "
+"analysis model; a recording a business layer files on another record is "
+"analysed there instead."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_voip_speech_analysis
 msgid ""
 "Adds the speech-analysis mixin to VoIP calls and marks a call ready when its"
@@ -8303,6 +8729,18 @@ msgid ""
 "checks. It uses the mail follower mechanism and the record access checks in "
 "those endpoints; other addons supply the pages and records where the widget "
 "appears."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection_telegram
+msgid ""
+"Adds three bot commands for collectors: /cobro records a customer's cash or "
+"check payment against their open invoices on the day it was paid, with a "
+"photo of the receipt; /custodia lists the collections the collector still "
+"holds; /rendir hands them in to a till or a bank account with the deposit "
+"slip, as a remittance the treasury validates. Requires a linked Telegram "
+"account, the Collector group and a collection custody journal in the "
+"collector's company."
 msgstr ""
 
 #. module: base
@@ -8394,6 +8832,17 @@ msgid ""
 "Provides driver assignments, handover actions, odometer readings and service"
 " and cost records using the shared asset infrastructure. Vehicle details and"
 " costs are based on entered records."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_stock_fleet
+msgid ""
+"Adds vehicle capacity, dock and driver assignments to stock batches, with "
+"departure and return odometers and trip progress. Extends deliveries with "
+"dispatch requirements, delivery-failure handling and, per operation type, "
+"the photo of the signed delivery slip required to validate them. Requires "
+"stock batch and fleet configuration and recorded operational events; GPS "
+"readings are supplied by a separate integration."
 msgstr ""
 
 #. module: base
@@ -8977,6 +9426,16 @@ msgid "After this moment the grant grants nothing."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_agent_runner
+msgid "Agent Runners"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_agent_runner_github
+msgid "Agent Runners on GitHub"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_device_machines
 msgid ""
 "Aggregate MQTT machine counters and attribute readings to manufacturing work"
@@ -9005,6 +9464,16 @@ msgid "Agriculture"
 msgstr ""
 
 #. module: base
+#: model:ir.module.category,name:base.module_category_inventory_agro
+msgid "Agro"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_marin_crm
+msgid "AgroMarin - CRM Policies"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_marin
 msgid "AgroMarin Business Configuration"
 msgstr ""
@@ -9012,6 +9481,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_marin_data
 msgid "AgroMarin Master Data"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_product_msds_bundle
+msgid "Agrochemical Sales Bundles"
 msgstr ""
 
 #. module: base
@@ -10240,6 +10714,18 @@ msgid "An identifier type with this name already exists."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_mail_inbox
+msgid ""
+"An inbox is an email address served by Odoo, for one person or a team. Mail "
+"sent to it arrives as a Discuss conversation in the Email tab, one per "
+"correspondent, whose members are the inbox's users and the sender; a reply "
+"written there is sent by email from the inbox's address, threaded with the "
+"messages it answers, and the correspondent's next reply lands in the same "
+"conversation. Requires the address to be routed to Odoo (an incoming mail "
+"server and an alias domain)."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_hr_recruitment_reports
 msgid "Analyse applicants and recruitment stage progression"
 msgstr ""
@@ -10247,6 +10733,12 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_product_margin
 msgid "Analyse product sales, purchase amounts and margins from invoices"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_phone_call_speech_analysis
+msgid ""
+"Analyse the transcript of a recorded phone call once the call has ended"
 msgstr ""
 
 #. module: base
@@ -10983,7 +11475,9 @@ msgid "Approve or reject received Nemhandel documents and track responses"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__document_access__cause__approval_request
 #: model:ir.model.fields.selection,name:base.selection__mixin_access_grant__cause__approval_request
+#: model:ir.model.fields.selection,name:base.selection__project_collaborator__cause__approval_request
 msgid "Approved request"
 msgstr ""
 
@@ -11685,6 +12179,13 @@ msgid "AsiaPay Payments"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_automation_telegram
+msgid ""
+"Ask a question on Telegram from a workflow step and resume the run with the "
+"answer"
+msgstr ""
+
+#. module: base
 #. odoo-python
 #: code:addons/base/models/res_partner.py:0
 msgid "Ask an administrator to archive their associated user first."
@@ -12073,6 +12574,11 @@ msgid ""
 "Attach PDF documents to products and quotations and select how they are "
 "included in quotation output. Populate mapped PDF form fields from the sales"
 " order."
+msgstr ""
+
+#. module: base
+#: model_terms:ir.actions.act_window,help:base.action_attachment
+msgid "Attach a new document"
 msgstr ""
 
 #. module: base
@@ -12465,8 +12971,32 @@ msgid "Authorize incoming and outgoing mail servers with Microsoft OAuth"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_mail_oauth2
+msgid "Authorize mail servers with a vendor's OAuth service"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_payment_authorize
 msgid "Authorize.Net Payments"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_mail_google
+msgid ""
+"Authorizes Gmail outgoing and incoming mail servers through the company's "
+"Google OAuth client: each server holds its own connection to Google, a "
+"personal server authorized by the account it sends as, and logs in with "
+"XOAUTH2. Requires the Google OAuth client set under Settings, Integrations."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_mail_microsoft
+msgid ""
+"Authorizes Outlook outgoing and incoming mail servers through the company's "
+"Microsoft OAuth client: each server holds its own connection to Microsoft, a"
+" personal server authorized by the account it sends as, and logs in with "
+"XOAUTH2. Requires the Microsoft OAuth client set under Settings, "
+"Integrations."
 msgstr ""
 
 #. module: base
@@ -12524,6 +13054,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_automation
 msgid "Automation Rules"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_automation_telegram
+msgid "Automation Telegram"
 msgstr ""
 
 #. module: base
@@ -12713,6 +13248,11 @@ msgid "Background Jobs"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_res_users__barcode
+msgid "Badge ID"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.bs
 msgid "Bahamas"
 msgstr ""
@@ -12862,7 +13402,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_bank__barcode
 #: model:ir.model.fields,field_description:base.field_res_company__barcode
 #: model:ir.model.fields,field_description:base.field_res_partner__barcode
-#: model:ir.model.fields,field_description:base.field_res_users__barcode
 msgid "Barcode"
 msgstr ""
 
@@ -13320,6 +13859,17 @@ msgid "Binding View Types"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_mail_oauth2
+msgid ""
+"Binds each OAuth mail server to its own connection on a vendor's integration"
+" service, which authorizes it through the standard OAuth flow and keeps its "
+"tokens fresh; the server logs in to SMTP and IMAP with XOAUTH2. A personal "
+"server must be authorized by the account it sends as. Vendor addons supply "
+"the service, the scope and the server types; installing this infrastructure "
+"alone configures no mail account."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_approval_purchase
 msgid ""
 "Binds purchase confirmation to approval requests and adds vendor, product "
@@ -13711,6 +14261,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_account_loans
 msgid "Build loan repayment schedules and related accounting entries"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_product_msds_bundle
+msgid "Build sales bundles from agrochemical News with the products in stock"
 msgstr ""
 
 #. module: base
@@ -14352,6 +14907,11 @@ msgid "Calendar SMS Reminders"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_calendar_sync
+msgid "Calendar Synchronization"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_hr_homeworking_calendar
 msgid "Calendar Work Locations"
 msgstr ""
@@ -14439,6 +14999,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_agro_surface_device_gps_geoengine
 msgid "Campaign GPS Geofences"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,field_description:base.field_ir_access_class__can_label
+msgid "Can Label"
 msgstr ""
 
 #. module: base
@@ -14683,8 +15248,8 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:odoo/orm/runtime/_backend_memory.py:0
-#: code:odoo/orm/runtime/backend.py:0
+#: code:odoo/orm/runtime/_backend_memory_write.py:0
+#: code:odoo/orm/runtime/_backend_pg_write.py:0
 msgid "Cannot grab a lock on records"
 msgstr ""
 
@@ -14796,6 +15361,18 @@ msgid "Capture restaurant payments with Adyen tip adjustments"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_error_incident
+msgid ""
+"Captures every unexpected error raised by a request, a scheduled action, a "
+"background job or the browser, locates browser errors in the sources through"
+" the bundles' source maps, groups the occurrences by origin into incidents, "
+"masks secrets before storing them, names the incident in the error a request"
+" returns, and shows the user who hit it where it stands, live, in the error "
+"dialog, with a notice once it is fixed. Expected errors raised for the user,"
+" such as access or validation errors, are not recorded."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_esg
 msgid "Carbon Emissions Accounting"
 msgstr ""
@@ -14806,7 +15383,9 @@ msgid "Carried over"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__document_access__cause__migration
 #: model:ir.model.fields.selection,name:base.selection__mixin_access_grant__cause__migration
+#: model:ir.model.fields.selection,name:base.selection__project_collaborator__cause__migration
 msgid "Carried over by an upgrade"
 msgstr ""
 
@@ -14911,6 +15490,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_model_fields__on_delete__cascade
 msgid "Cascade"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_sale_telegram
+msgid "Cash Sales over Telegram"
 msgstr ""
 
 #. module: base
@@ -15745,6 +16329,13 @@ msgid "Collect Mexican CFDI information during website checkout"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_account_collection_sale
+msgid ""
+"Collect a cash sale on the spot, invoiced and issued at once, and optionally"
+" hold credit sales of overdue collectors"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_approval_ai_telegram
 msgid ""
 "Collect approval requests from text or voice with optional AI classification"
@@ -15786,6 +16377,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_account_intrastat
 msgid "Collect trade classifications and invoice data for Intrastat reporting"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_collection_telegram
+msgid ""
+"Collectors record what customers paid them, see their custody and hand it in"
+" from Telegram"
 msgstr ""
 
 #. module: base
@@ -16084,6 +16682,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_partner_form
 #: model_terms:ir.ui.view,arch_db:base.view_partner_simple_form
 msgid "Company Name..."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_device_mobile
+msgid "Company Phone Telemetry"
 msgstr ""
 
 #. module: base
@@ -17530,6 +18133,11 @@ msgid "Confirm Password"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_approval_sale_telegram
+msgid "Confirm approved sale orders from Telegram"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_access_sod_rule__function_b_id
 msgid "Conflicts With"
 msgstr ""
@@ -17562,6 +18170,16 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_ai_gateway_ml
 msgid "Connect AI requests to gateway policy checks and credential lookup"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_integration_google
+msgid "Connect Google APIs through one OAuth client per company"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_integration_microsoft
+msgid "Connect Microsoft Graph through one OAuth client per company"
 msgstr ""
 
 #. module: base
@@ -17680,6 +18298,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_device_websocket
 msgid "Connect device records to WebSocket streams and queue outgoing frames"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_integration_twilio
+msgid ""
+"Connect each company's Twilio account for SMS delivery, inbound SMS "
+"conversations and account checks"
 msgstr ""
 
 #. module: base
@@ -18202,6 +18827,7 @@ msgid "Control electronic-invoice inclusion in Indian GSTR reporting"
 msgstr ""
 
 #. module: base
+#: model:ir.module.category,name:base.module_category_productivity_conversations
 #: model:ir.module.module,shortdesc:base.module_conversation
 msgid "Conversations"
 msgstr ""
@@ -18219,6 +18845,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_conversation_meeting
 msgid "Conversations - Meetings"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_conversation_phone_call
+msgid "Conversations - Phone Calls"
 msgstr ""
 
 #. module: base
@@ -19401,6 +20032,11 @@ msgid "Credential revoked"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_account_credit_promissory_note
+msgid "Credit Promissory Notes"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.hr
 msgid "Croatia"
 msgstr ""
@@ -19708,6 +20344,13 @@ msgid "Customer Tiers on Sales Orders"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_account_collection
+msgid ""
+"Customer payments collected in the field stay in the collector's custody "
+"until a remittance hands them in"
+msgstr ""
+
+#. module: base
 #: model:ir.actions.act_window,name:base.action_partner_customer_form
 #: model:ir.actions.act_window,name:base.action_partner_form
 msgid "Customers"
@@ -20000,6 +20643,7 @@ msgid "Date Start"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__month_by__date
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__month_by__date
 msgid "Date of month"
 msgstr ""
@@ -20026,22 +20670,34 @@ msgid "Day"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__month_by__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__month_by__day
 msgid "Day of month"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__day
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__day
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__day
 msgid "Days"
 msgstr ""
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_cron_progress__deactivate
 msgid "Deactivate"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_marin_crm
+msgid ""
+"Deactivates the access row through which CRM lets every salesperson create "
+"and edit partner tags, so tags stay in the catalog maintained by AgroMarin's"
+" marketing and contact managers. Installs itself when both AgroMarin and CRM"
+" are present."
 msgstr ""
 
 #. module: base
@@ -20980,6 +21636,17 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_phone_call
+msgid ""
+"Defines the phone call every telephony source files on: the softphone, a "
+"phone system and a company handset. Holds the number, direction, outcome, "
+"timing, contact, responsible user and company, matches the number to a "
+"contact of that company, and files the call's recordings on its timeline for"
+" transcription. Placing, receiving and recording calls belong to the addons "
+"that drive a line."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_timer
 msgid ""
 "Defines timer records, reusable model mixins and interface components for "
@@ -21029,6 +21696,11 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_kanban
 msgid "Delete Action"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_l10n_mx_avoid_reversal_entry
+msgid "Delete eligible automatic entries when undoing Mexican reconciliations"
 msgstr ""
 
 #. module: base
@@ -21139,6 +21811,12 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_stock_fleet_trace
 msgid "Delivery Trips - Traceability"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_stock_fleet_trace_training
+msgid ""
+"Delivery-trip game on the real deliveries ready to go, without touching them"
 msgstr ""
 
 #. module: base
@@ -21383,8 +22061,18 @@ msgid "Device Name"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_device_phone_call
+msgid "Device Phone Calls"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_device
 msgid "Device Registry"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_device_resource
+msgid "Device Resources"
 msgstr ""
 
 #. module: base
@@ -21417,6 +22105,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_device_websocket
 msgid "Devices - WebSocket"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_error_incident_autofix
+msgid ""
+"Diagnose an incident and propose its fix through agent runs, in shadow or "
+"live"
 msgstr ""
 
 #. module: base
@@ -21977,6 +22672,11 @@ msgstr ""
 #: model:ir.module.category,name:base.module_category_productivity_documents
 #: model:ir.module.module,shortdesc:base.module_document
 msgid "Documents"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_document_model_viewer
+msgid "Documents 3D Model Preview"
 msgstr ""
 
 #. module: base
@@ -22555,6 +23255,11 @@ msgid "Email Domain Placeholder"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_mail_inbox
+msgid "Email Inboxes in Discuss"
+msgstr ""
+
+#. module: base
 #: model:ir.module.category,name:base.module_category_marketing_email_marketing
 #: model:ir.module.module,shortdesc:base.module_mass_mailing
 msgid "Email Marketing"
@@ -22657,6 +23362,11 @@ msgid "Employee Course Completion Records"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_document_physical_hr
+msgid "Employee Document Custody"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_document_hr
 msgid "Employee Document Folders"
 msgstr ""
@@ -22742,6 +23452,11 @@ msgid "Employee Survey Certification Records"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_res_users__tag_ids
+msgid "Employee Tags"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_hr_gantt
 msgid "Employee Timeline Resources"
 msgstr ""
@@ -22765,6 +23480,16 @@ msgstr ""
 #: model:ir.module.category,name:base.module_category_human_resources_employees
 #: model:ir.module.module,shortdesc:base.module_hr
 msgid "Employees"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_document_physical_hr
+msgid ""
+"Employees become custodians of document originals: the scan wizard accepts "
+"the employee badge as the custodian, the employee form counts and lists the "
+"originals on loan to them, and the departure wizard can register the return "
+"of every original the leaving employee still holds, as the asset custody "
+"release does."
 msgstr ""
 
 #. module: base
@@ -23028,6 +23753,21 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_module.py:0
 msgid "Error ! You cannot create recursive categories."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_error_incident_autofix
+msgid "Error Incident Autofix"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_error_incident
+msgid "Error Incidents"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_error_incident_github
+msgid "Error Incidents on GitHub"
 msgstr ""
 
 #. module: base
@@ -25368,6 +26108,22 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,description:base.module_automation_account
 msgid ""
+"Extends automation runs with bank statement context and with workflow step "
+"types that create a document from a template, register and reconcile the "
+"run's statement line and apply a credit note to open invoices; each document"
+" step names its template, company, partner, date and taxes on its own form, "
+"and a step that works on an earlier document names the step that made it. "
+"The same operations stay available as helpers for Python steps. A collection"
+" banked by another company is settled through an intercompany journal each "
+"company sets. A run reports what its remaining declared steps are missing, "
+"and the wizard that starts a workflow from a statement line previews what "
+"each declared step will create. Requires suitable templates; this addon "
+"supplies accounting operations to the shared automation runtime."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_automation_account
+msgid ""
 "Extends automation runs with bank statement context and helpers for creating"
 " documents from templates, registering payments and reconciling statement "
 "lines. Includes a wizard to start a configured workflow from a statement "
@@ -25702,6 +26458,15 @@ msgid ""
 "Extends task generation from appointment-linked sales lines with the "
 "calendar event reference and appointment dates. Adds task navigation to the "
 "appointment; requires a sales product configured to generate project work."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection_sale_telegram
+msgid ""
+"Extends the /cobro bot command: next to the customer's open invoices it "
+"offers their confirmed cash sales not yet invoiced. Choosing one invoices "
+"the order, issues the invoice and records the payment in the collector's "
+"custody, as the cash-sale dialog does in the back office."
 msgstr ""
 
 #. module: base
@@ -26384,6 +27149,36 @@ msgid "Field Class"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_payroll_loan
+msgid "Field Collection Shortages Through Payroll"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection
+msgid "Field Collections"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_sale
+msgid "Field Collections and Sales"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_telegram
+msgid "Field Collections over Telegram"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_sale_fleet
+msgid "Field Collections, Sales and Fleet Trips"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_collection_sale_fleet_trace
+msgid "Field Collections, Sales and Traced Trips"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_test_converter
 msgid "Field Conversion Tests"
 msgstr ""
@@ -26644,6 +27439,12 @@ msgid "File asset documents by asset kind and company settings"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_conversation_phone_call
+msgid ""
+"File every recorded phone call on a conversation, whatever line carried it"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_ir_ui_view__arch_fs
 msgid ""
 "File from where the view originates.\n"
@@ -26679,8 +27480,25 @@ msgid "File streaming helper model for controllers"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_device_phone_call
+msgid ""
+"File the calls and recordings a company handset or a phone system reports"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_document_hr_sign
 msgid "File the documents of a completed employee or contract signature"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_conversation_phone_call
+msgid ""
+"Files a phone call's recordings on a conversation instead of on the call, so"
+" a call from the softphone, the phone system or a company handset is "
+"analysed, and its business actions proposed, the same way. The conversation "
+"names the call's contact, responsible user, number and the name the line "
+"knew the contact by, and follows the call when a late call-log entry "
+"completes it."
 msgstr ""
 
 #. module: base
@@ -26701,6 +27519,25 @@ msgid ""
 "a company employee folder and HR document settings are enabled. Also hides "
 "save warnings on the Belgian 281.10, 281.45 and individual account views; "
 "declaration generation belongs to the payroll dependencies."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_invoice_receipt_telegram
+msgid ""
+"Files the photos and PDFs a chat sends after /subirfactura. The posted "
+"customer invoice is found only by exact equality on the fiscal folio (SAT "
+"UUID) the file carries, read from its SAT QR code, its text layer or local "
+"OCR, or an AI model; a typed invoice number never finds one. A file on which"
+" no fiscal folio is legible, or whose fiscal folios name no single posted "
+"customer invoice, is refused with the reason. A filed scan is stored in the "
+"company's Signed Invoices folder, where every salesperson of the company "
+"files, with its author, capture date and device (a PDF keeps the file sent "
+"as its previous version), linked to the invoice and added to the chat's "
+"delivery list, which /terminar hands to administration; the model also reads"
+" who signed it as received. Requires a configured Telegram bot, CFDI-stamped"
+" invoices, a Signed Invoices folder on the company (made at install for "
+"every company with a credit folder) and, for the model read, an AI provider "
+"key."
 msgstr ""
 
 #. module: base
@@ -26888,6 +27725,7 @@ msgid "Finland - Sales Payment References"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__1
 msgid "First"
 msgstr ""
@@ -26938,6 +27776,13 @@ msgid "Fiscal filters and CFDI XML linking on approval requests"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_approval_account_l10n_mx_edi_telegram
+msgid ""
+"Fiscal review of the supplier RFC and linked SAT CFDI in Telegram approval "
+"requests"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_module_module__icon_flag
 #: model:ir.model.fields,field_description:base.field_res_country__image_url
 msgid "Flag"
@@ -26946,6 +27791,13 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_lang__flag_image_url
 msgid "Flag Image Url"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_molecular_screening_agro
+msgid ""
+"Flag systemic compounds and import the AgroMarin screening pipeline's SDF "
+"export into campaigns"
 msgstr ""
 
 #. module: base
@@ -26973,6 +27825,11 @@ msgstr ""
 msgid ""
 "Follow the goods of a delivery trip on the vehicle, stop by stop, until they"
 " are reconciled on return"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_error_incident_github
+msgid "Follow the pull requests that fix an incident on the incident itself"
 msgstr ""
 
 #. module: base
@@ -27073,8 +27930,11 @@ msgid "Forbidden use of `__comp__` in arch."
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__account_move__repeat_type__forever
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__forever
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__forever
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_type__forever
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_type__forever
 msgid "Forever"
 msgstr ""
 
@@ -27103,7 +27963,6 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_bank__email_formatted
-#: model:ir.model.fields,help:base.field_res_company__email_formatted
 #: model:ir.model.fields,help:base.field_res_partner__email_formatted
 #: model:ir.model.fields,help:base.field_res_users__email_formatted
 msgid "Format email address \"Name <email@domain>\""
@@ -27144,6 +28003,7 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__4
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__4
 msgid "Fourth"
 msgstr ""
@@ -27254,6 +28114,7 @@ msgid "Fri"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__fri
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__5
@@ -27822,6 +28683,11 @@ msgid "Geocoding"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_test_geoengine
+msgid "Geoengine Tests"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.ge
 msgid "Georgia"
 msgstr ""
@@ -27933,6 +28799,13 @@ msgid "Goals and Badges"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_account_collection_sale_fleet
+msgid ""
+"Goods a customer takes when the salesperson collects the cash sale leave in "
+"no trip"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_google_account
 msgid "Google Account Connection"
 msgstr ""
@@ -27950,6 +28823,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_cloud_storage_google
 msgid "Google Cloud Attachment Storage"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_integration_google
+msgid "Google Integration"
 msgstr ""
 
 #. module: base
@@ -28039,6 +28917,22 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__access_review_campaign__kind__timed_grants
 msgid "Grants ending soon"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_move_template_purchase
+msgid ""
+"Grants purchase users access to readable accounting template sources in "
+"purchase autocomplete. Querying and loading templates belong to Accounting "
+"Document Templates."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_move_template_sale
+msgid ""
+"Grants sales users access to readable accounting template sources in sales "
+"invoice autocomplete. Querying and loading templates belong to Accounting "
+"Document Templates."
 msgstr ""
 
 #. module: base
@@ -28469,6 +29363,19 @@ msgstr ""
 #. module: base
 #: model:res.currency,currency_subunit_label:base.CZK
 msgid "Halers"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_agent_runner_github
+msgid ""
+"Hand an agent run a token for its repository alone, and follow the pull "
+"request of the branch it pushed"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_agent_runner
+msgid ""
+"Hand work to isolated runner machines over a leased, authenticated protocol"
 msgstr ""
 
 #. module: base
@@ -29162,6 +30069,12 @@ msgid "ID"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_ir_actions_server__xml_id
+#: model:ir.model.fields,help:base.field_ir_cron__xml_id
+msgid "ID of the action if defined in a XML file"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_ir_model_data__res_id
 msgid "ID of the target record in the database"
 msgstr ""
@@ -29169,6 +30082,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_ui_view__xml_id
 msgid "ID of the view defined in xml file"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_users__barcode
+msgid "ID used for employee identification."
 msgstr ""
 
 #. module: base
@@ -31103,6 +32021,11 @@ msgid "Issue and cancel ECPay invoice and allowance documents"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_account_credit_promissory_note
+msgid "Issue and file a promissory note for every credit invoice"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_access_link__partner_id
 msgid "Issued To"
 msgstr ""
@@ -31346,6 +32269,13 @@ msgid "Jobs of this channel waiting to be claimed."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_device_voip
+msgid ""
+"Join what a phone system reports to the softphone's own calls, and provision"
+" a handset's softphone"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.jo
 msgid "Jordan"
 msgstr ""
@@ -31493,6 +32423,11 @@ msgid "Keep fractional day values in Belgian holiday attestation calculations"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_phone_call
+msgid "Keep one record per phone call, whichever line or device carried it"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_account_accountant_fleet
 msgid "Keep tax calculations and journal lines grouped by asset"
 msgstr ""
@@ -31501,6 +32436,58 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_purchase_tender_sale
 msgid ""
 "Keep the sales line on purchase tender offers for subcontracted services"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_integration_google
+msgid ""
+"Keeps each company's Google OAuth client in the credential vault and calls "
+"Google APIs through the integration transport. Users authorize their own "
+"Google account through the standard OAuth flow, so a calendar or another "
+"Google feature uses that personal connection; an authorization keeps the "
+"scopes granted before it. Requires a Google Cloud OAuth client whose "
+"authorized redirect URIs list this database's callback."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_integration_microsoft
+msgid ""
+"Keeps each company's Microsoft Entra OAuth client in the credential vault "
+"and calls Microsoft Graph through the integration transport. Users authorize"
+" their own Microsoft account through the standard OAuth flow, so a calendar "
+"or another Microsoft feature uses that personal connection. Requires a "
+"Microsoft Entra app registration whose redirect URIs list this database's "
+"callback; a single-tenant registration sets its tenant in the service's "
+"authorization and token URLs."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_integration_twilio
+msgid ""
+"Keeps one Twilio account per company in the credential vault and sends every"
+" Twilio API call through the integration transport. Sends SMS through the "
+"account when the company selects Twilio as its SMS provider, records "
+"delivery status from signed callbacks, and turns SMS received on the "
+"company's Twilio numbers into one Discuss conversation per sender, whose "
+"replies are sent back as SMS from the same number. Syncs the account's "
+"numbers and their capabilities and can point a number's incoming-SMS webhook"
+" at Odoo. Requires a Twilio Account SID and Auth Token, numbers able to send"
+" and receive SMS, and a public HTTPS base URL for Twilio's webhooks."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_calendar_sync
+msgid ""
+"Keeps one synchronization account per user and provider: the delta token, "
+"the stop flag and the last synchronization, beside the user's own connection"
+" to the provider. Links each event and recurrence to its copy in each "
+"account's calendar, and keeps a deleted one's link until its copy is "
+"deleted. Runs every provider's synchronization from one scheduled action and"
+" one route, answers the calendar view's status and its start, stop and pause"
+" buttons for every installed provider, and lets a provider adapter (Google, "
+"Outlook) supply only what is particular to it. Installs with the calendar "
+"and integration modules; synchronizes nothing until an adapter is installed "
+"and a user authorizes it."
 msgstr ""
 
 #. module: base
@@ -31850,6 +32837,7 @@ msgid "Lari"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__-1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__-1
 msgid "Last"
 msgstr ""
@@ -32256,6 +33244,12 @@ msgid "Lempiras"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_document_physical_hr
+msgid ""
+"Lend document originals to employees by badge and see them on the employee"
+msgstr ""
+
+#. module: base
 #: model:res.currency,currency_unit_label:base.SLE
 #: model:res.currency,currency_unit_label:base.SLL
 msgid "Leone"
@@ -32264,6 +33258,13 @@ msgstr ""
 #. module: base
 #: model:res.country,name:base.ls
 msgid "Lesotho"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_device_mobile_telegram
+msgid ""
+"Let a bot deliver Odoo notifications only to the Telegram of a company phone"
+" assigned to its user"
 msgstr ""
 
 #. module: base
@@ -32291,6 +33292,17 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_website_sale_stock_wishlist
 msgid ""
 "Let wishlist users request email notifications when products return to stock"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_automation_telegram
+msgid ""
+"Lets a workflow step send a message through a Telegram bot and wait for the "
+"person's answer: a text, a photo, a file, a voice note, a contact or a "
+"location. The answer is the event its On Event edge waits for, so a Without "
+"Event edge is the reminder or the timeout. Files are kept on the run and the"
+" answer becomes the asking step's output. Requires a private chat between "
+"the person and the bot."
 msgstr ""
 
 #. module: base
@@ -32652,6 +33664,15 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_error_incident_github
+msgid ""
+"Links a pull request to the agent run that pushed its branch and to the "
+"incident that run works for, by the branch -- never by matching error "
+"signatures. The incident's chatter hears when the pull request opens, its "
+"checks pass or fail, and it is merged or closed."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_hr_payroll_expense
 msgid ""
 "Links approved or posted employee-paid expenses marked for payroll "
@@ -32725,6 +33746,15 @@ msgid ""
 "and undercut settings and the shared loss and activity helpers. The "
 "comparison depends on recorded offers and costs; this addon does not obtain "
 "competitor pricing automatically."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_device_resource
+msgid ""
+"Links endpoints to the material resources they represent, without creating "
+"or owning resource identities. Several endpoints can represent one resource."
+" Endpoint structure and observation targets remain separate from physical "
+"resource containment."
 msgstr ""
 
 #. module: base
@@ -33538,6 +34568,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_test_mail_full
 msgid "Mail Integration Tests"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_mail_oauth2
+msgid "Mail OAuth2"
 msgstr ""
 
 #. module: base
@@ -34609,6 +35644,11 @@ msgid "Mexico - Enterprise Payroll CFDI"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_account_collection
+msgid "Mexico - Field Collections"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_geoengine_l10n_mx
 msgid "Mexico - Geographic Boundaries"
 msgstr ""
@@ -34684,6 +35724,11 @@ msgid "Mexico - Sales CFDI Fields"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_edi_approval_sale_telegram
+msgid "Mexico - Telegram Sale Confirmation Review"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_mx_avoid_reversal_entry
 msgid "Mexico - Unreconciliation Entry Deletion"
 msgstr ""
@@ -34726,6 +35771,11 @@ msgstr ""
 #. module: base
 #: model:res.country,name:base.fm
 msgid "Micronesia"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_integration_microsoft
+msgid "Microsoft Integration"
 msgstr ""
 
 #. module: base
@@ -34778,6 +35828,13 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__minute
 msgid "Minutes"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_l10n_mx_pesticide_registry
+msgid ""
+"Mirror the COFEPRIS public pesticide registry by company and active "
+"ingredient"
 msgstr ""
 
 #. module: base
@@ -35175,6 +36232,16 @@ msgid "Moldova"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_molecular_screening
+msgid "Molecular Screening"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_molecular_screening_agro
+msgid "Molecular Screening for Crop Protection"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_payment_mollie
 msgid "Mollie Payments"
 msgstr ""
@@ -35195,6 +36262,7 @@ msgid "Monaco - Accounting"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__mon
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__1
@@ -35267,11 +36335,13 @@ msgid "Monthly ISR provisional payments working paper (LISR art. 106)"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__month
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__month
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__month
 msgid "Months"
 msgstr ""
 
@@ -36054,6 +37124,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__repeat_number
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__count
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__count
 msgid "Number of Repetitions"
 msgstr ""
@@ -36325,6 +37396,15 @@ msgid "Onboarding Steps"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_approval_sale_telegram
+msgid ""
+"Once a sale order's approval request is approved and the company does not "
+"confirm it automatically, the users named on the approval category receive "
+"the order summary in Telegram and a button that confirms it as them. "
+"Requires an approval bot with notifications enabled and linked user chats."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_access_review_campaign__recurrence_months
 msgid "Once closed, the review starts again after this many months; 0: once."
 msgstr ""
@@ -36389,7 +37469,9 @@ msgid "Only a draft change set is proposed."
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_document_access_company_of_a_group
 #: model:ir.model.constraint,message:base.constraint_mixin_access_grant_company_of_a_group
+#: model:ir.model.constraint,message:base.constraint_project_collaborator_company_of_a_group
 msgid "Only a group's grant is limited to a company."
 msgstr ""
 
@@ -36705,6 +37787,17 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_project_dashboard_links
 msgid "Open task groups from counters on project cards"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_document_model_viewer
+msgid ""
+"Opens documents whose type is glTF 2.0 or GLB in the Documents preview, "
+"rendered with the 3D model viewer of web_widget_model_viewer instead of "
+"offering only a download. The model is streamed through the document's "
+"content route, so viewing is logged and cloud-stored files are read through "
+"their signed link. Files whose glTF references external buffers or textures "
+"cannot be resolved and show a load error."
 msgstr ""
 
 #. module: base
@@ -38209,6 +39302,16 @@ msgid "Phone"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_phone_call_speech_analysis
+msgid "Phone Call Transcript Analysis"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_phone_call
+msgid "Phone Calls"
+msgstr ""
+
+#. module: base
 #: model:ir.model,name:base.model_phone_number
 msgid "Phone Number"
 msgstr ""
@@ -38229,6 +39332,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_voip_sms
 msgid "Phone SMS Actions"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_device_voip
+msgid "Phone System Calls in the Softphone"
 msgstr ""
 
 #. module: base
@@ -39007,6 +40115,11 @@ msgid "Preview DPI"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_document_model_viewer
+msgid "Preview glTF and GLB documents in an interactive 3D viewer"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_l10n_mx_edi_payment_preview
 msgid "Preview payment-complement XML and reports before signing and stamping"
 msgstr ""
@@ -39618,6 +40731,14 @@ msgid "Project Work-Order Labor Costs"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_resource_asset_mrp
+msgid ""
+"Projects work-center machine vocabulary from shared resource identities. "
+"Switching machines preserves other representations and operational use, "
+"while reservations remain explicit capacity claims."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_project_mrp_account
 msgid ""
 "Propagates project analytic accounts into manufacturing moves and work-order"
@@ -39734,6 +40855,13 @@ msgid ""
 "Provide French company configuration and country-specific partner fields. "
 "Includes company secure-sequence setup and country checks used by dependent "
 "French applications."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_integration_github
+msgid ""
+"Provide GitHub REST calls, App installation tokens, and pull request and "
+"check state kept current by webhook"
 msgstr ""
 
 #. module: base
@@ -40218,6 +41346,17 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_rust_engine
+msgid ""
+"Provides a server-wide loader for the engine_py extension and its ORM read-"
+"routing hooks. Supports off, shadow and active modes, model filters and "
+"fallback controls. Shadow mode returns Python results while recording "
+"comparisons. Requires the built extension and server-wide loading "
+"configuration; routing defaults to off. This addon is marked non-installable"
+" and is loaded through its post-load hook."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_stock_threed_building
 msgid ""
 "Provides a warehouse building editor with wall segments, doors, windows and "
@@ -40360,6 +41499,17 @@ msgid ""
 "Provides bot conversations and Mini App forms for task creation, editing and"
 " closing. Optional configured AI services extract task drafts from text, "
 "audio or images according to model capabilities."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_telegram
+msgid ""
+"Provides bot credentials, webhook registration and authentication, linked "
+"chats, command routing, message records and outbound API helpers, with the "
+"number a Telegram account shared as its own and the delivery health of each "
+"chat. Adds chat-flow state, rate limiting and retry-response reuse. Requires"
+" a Telegram bot token, reachable webhook and configured commands; business "
+"operations such as attendance and approvals belong to extension addons."
 msgstr ""
 
 #. module: base
@@ -41186,6 +42336,11 @@ msgid "Purchase Teams"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_account_move_template_purchase
+msgid "Purchase Template Autocomplete"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_purchase_tender_agreement
 msgid "Purchase Tender Agreement Awards"
 msgstr ""
@@ -41333,6 +42488,17 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_attachment_reading__state__queued
 msgid "Queued"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_agent_runner
+msgid ""
+"Queues agent runs and leases each to exactly one runner machine with the "
+"capability it needs. A runner authenticates with its own token, claims a "
+"run, keeps its lease alive, reports events and finishes it; an expired lease"
+" is handed out again within a bounded number of attempts. Reported spend "
+"counts against the company's machine-learning budget, and a company over "
+"budget is handed no work."
 msgstr ""
 
 #. module: base
@@ -41640,6 +42806,12 @@ msgid "Read PASE TAG balances and movements through the TuTag mobile API"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_mail_inbox
+msgid ""
+"Read and answer the mail sent to a person's or a team's address in Discuss"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_crm_extract
 msgid ""
 "Read business cards through the extraction framework for CRM lead creation"
@@ -41734,6 +42906,21 @@ msgid ""
 "customer's location verifies the stop; an outcome the track never visited, "
 "an unplanned stop, harsh driving, refuelling and a silent GPS are recorded "
 "on the trip. Entering the warehouse geofence records the return readings and"
+" closes the trip once every stop has its outcome. The GPS times date the "
+"departure and the return, and the kilometres of each leg follow the stops "
+"the track verified, not delivered ones included. Requires warehouse and "
+"customer coordinates and a GPS device linked to the vehicle."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_stock_fleet_trace_gps
+msgid ""
+"Reads the GPS history of each delivery vehicle. Leaving the warehouse "
+"geofence departs its loaded trip with the GPS odometer and fuel, and a "
+"delivery vehicle leaving without one raises an alert. Dwelling at a "
+"customer's location verifies the stop; an outcome the track never visited, "
+"an unplanned stop, harsh driving, refuelling and a silent GPS are recorded "
+"on the trip. Entering the warehouse geofence records the return readings and"
 " closes the trip once every stop has its outcome. Requires warehouse and "
 "customer coordinates and a GPS device linked to the vehicle."
 msgstr ""
@@ -41779,6 +42966,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_device_mobile
 msgid ""
+"Receive phone locations from a companion client, and file its calls and "
+"recordings"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_device_mobile
+msgid ""
 "Receive phone locations, call logs and recording uploads from a companion "
 "client"
 msgstr ""
@@ -41788,6 +42982,13 @@ msgstr ""
 msgid ""
 "Receive scale confirmations and expose station configuration and picking "
 "endpoints"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_invoice_receipt_telegram
+msgid ""
+"Receive signed invoice scans through Telegram and file each on the invoice "
+"its fiscal folio names"
 msgstr ""
 
 #. module: base
@@ -42025,6 +43226,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_equity
 msgid "Record securities, ownership transactions and company valuations"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_error_incident
+msgid ""
+"Record the server's and the browser's unexpected errors as grouped, tracked "
+"incidents"
 msgstr ""
 
 #. module: base
@@ -44362,6 +45570,12 @@ msgid "Reports"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_device_resource
+msgid ""
+"Represent operational resources through optional communication endpoints"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_ir_attachment_reading__representation
 msgid "Representation"
 msgstr ""
@@ -44909,6 +46123,12 @@ msgid "Review stock operations through maps and cohort reports"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_l10n_mx_edi_approval_sale_telegram
+msgid ""
+"Review taxes, RFC and CFDI fields before confirming sales from Telegram"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_hr_work_entry_enterprise
 msgid "Review work entries and conflicts on a timeline"
 msgstr ""
@@ -45211,6 +46431,13 @@ msgid "Route purchased components directly to subcontractors"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_rust_engine
+msgid ""
+"Route selected ORM reads through the Rust engine or compare them with Python"
+" results"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_stock_dropshipping
 msgid "Route supplier deliveries directly to customers"
 msgstr ""
@@ -45496,6 +46723,16 @@ msgid ""
 "Run regression tests for Field Conversion. Loaded test suites include "
 "``TestCharExport``, ``TestIntegerExport``, ``TestFloatExport``, "
 "``TestCurrencyExport``, ``TestTextExport``."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_test_geoengine
+msgid ""
+"Run regression tests for GeoEngine on the models they need, declared here "
+"instead of registered by each test: geometry storage, coercion and checks, "
+"geo domains and their SQL, I/O round trips, CRS contracts, map access, "
+"vector tiles, OGC features, layers, trails, static maps and the map server's"
+" query budgets."
 msgstr ""
 
 #. module: base
@@ -45918,6 +47155,11 @@ msgid "Russian Federation"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_rust_engine
+msgid "Rust Read Engine"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.rw
 msgid "Rwanda"
 msgstr ""
@@ -46228,6 +47470,11 @@ msgid "Sales Teams"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_account_move_template_sale
+msgid "Sales Template Autocomplete"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_sale_tender_agreement
 msgid "Sales Tender Agreement Awards"
 msgstr ""
@@ -46281,6 +47528,11 @@ msgstr ""
 #. module: base
 #: model:res.country,name:base.sm
 msgid "San Marino"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_l10n_mx_pesticide_registry
+msgid "Sanitary Registration Search (Pesticides and Nutrients)"
 msgstr ""
 
 #. module: base
@@ -46344,6 +47596,7 @@ msgid "Satang"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sat
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__6
@@ -46702,6 +47955,7 @@ msgid "Searchpanel items with a domain attribute must have select='multi'."
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__2
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__2
 msgid "Second"
 msgstr ""
@@ -46795,6 +48049,12 @@ msgstr ""
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_gps_geoengine
+msgid ""
+"Select GPS trails by asset or operator and report speed events and stops"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_asset_gps_geoengine
 msgid "Select GPS trails by asset or operator and report speed events"
 msgstr ""
 
@@ -46831,6 +48091,11 @@ msgstr ""
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid "Select a sequence..."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_move_template_sale
+msgid "Select accounting templates through sales invoice autocomplete"
 msgstr ""
 
 #. module: base
@@ -46966,6 +48231,14 @@ msgstr ""
 #. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_model_fields_selection_selection_field_uniq
 msgid "Selections values must be unique per field"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_l10n_mx_avoid_reversal_entry
+msgid ""
+"Selects core accounting's delete-if-allowed policy for automatic exchange-"
+"difference and cash-basis entries in Mexican companies. Protected entries "
+"are reversed; other companies retain the standard reversal policy."
 msgstr ""
 
 #. module: base
@@ -47259,6 +48532,16 @@ msgid "Sendcloud Website Pickup Locations"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,help:base.field_res_partner_bank_account__allow_out_payment
+msgid ""
+"Sending fake invoices with a fraudulent account number is a common phishing "
+"practice. To protect yourself, always verify new bank account numbers, "
+"preferably by calling the vendor, as phishing usually happens when their "
+"emails are compromised. Once verified, you can activate the ability to send "
+"money."
+msgstr ""
+
+#. module: base
 #: model:res.currency,currency_subunit_label:base.WST
 msgid "Sene"
 msgstr ""
@@ -47424,6 +48707,7 @@ msgid "Server"
 msgstr ""
 
 #. module: base
+#: model:ir.model,name:base.model_ir_actions_server
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__usage__ir_actions_server
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_search
@@ -47442,7 +48726,6 @@ msgstr ""
 
 #. module: base
 #: model:ir.actions.act_window,name:base.action_server_action
-#: model:ir.model,name:base.model_ir_actions_server
 #: model:ir.ui.menu,name:base.menu_server_action
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_search
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_tree
@@ -47574,7 +48857,9 @@ msgid "Set barcode-line quantities by voice and read selected lines aloud"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__document_access__cause__module
 #: model:ir.model.fields.selection,name:base.selection__mixin_access_grant__cause__module
+#: model:ir.model.fields.selection,name:base.selection__project_collaborator__cause__module
 msgid "Set by a module"
 msgstr ""
 
@@ -47766,7 +49051,9 @@ msgid "Shared Theme Snippets"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__document_access__cause__manual
 #: model:ir.model.fields.selection,name:base.selection__mixin_access_grant__cause__manual
+#: model:ir.model.fields.selection,name:base.selection__project_collaborator__cause__manual
 msgid "Shared by a user"
 msgstr ""
 
@@ -47959,6 +49246,16 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_account_invoice_signed_flow
+msgid ""
+"Shows the tracking reference of a sale's third-party delivery order on the "
+"sale order and its invoices, editable there and kept on the delivery order "
+"with its history in the chatter. On journals marked as requiring a signed "
+"invoice, an invoice whose goods ship through a third-party carrier is not "
+"posted until that reference is captured."
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.sl
 msgid "Sierra Leone"
 msgstr ""
@@ -47981,6 +49278,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_auth_oauth
 msgid "Sign users in through configured OAuth providers"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_account_invoice_signed_flow
+msgid "Signed Invoice Flow"
 msgstr ""
 
 #. module: base
@@ -49433,6 +50735,23 @@ msgid ""
 "the arrival times are refreshed from the vehicle's GPS, and a delay above a "
 "threshold is reported to the supervisor, the driver and the seller. The scan"
 " wizard can read codes with the phone camera, and the trip sheet and "
+"delivery slip print a QR code. Requires a TomTom API key held as a "
+"credential of the outbound endpoint TomTom Routing (one per company, or one "
+"without a company for all of them), warehouse and customer coordinates, and "
+"linked Telegram chats."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_stock_fleet_route
+msgid ""
+"Suggests the order of a delivery trip's stops from TomTom's routing with "
+"live traffic, and stores the estimated arrival at each customer, with a "
+"service time per stop. Opens the route in Google Maps for the driver. When "
+"the trip departs, each seller gets a Telegram message with a WhatsApp link "
+"to tell the customer the estimated arrival. While the trip is on the road "
+"the arrival times are refreshed from the vehicle's GPS, and a delay above a "
+"threshold is reported to the supervisor, the driver and the seller. The scan"
+" wizard can read codes with the phone camera, and the trip sheet and "
 "delivery slip print a QR code. Requires a TomTom API key in the system "
 "parameter stock_fleet_route.tomtom_api_key, warehouse and customer "
 "coordinates, and linked Telegram chats."
@@ -49449,6 +50768,7 @@ msgid "Sun"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__sun
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__7
@@ -49560,6 +50880,20 @@ msgstr ""
 msgid ""
 "Supplies calendar-event Gantt views grouped by room for the room booking "
 "integration."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_integration_github
+msgid ""
+"Supplies client helpers for repositories, branches, commits, webhooks, "
+"issues, pull requests and reviews, plus a GraphQL query method. Seeds a "
+"GitHub integration service and uses the shared transport and credential "
+"records. Adds check run, commit status, workflow run, compare and branch "
+"calls; mints GitHub App installation tokens limited to named repositories "
+"from an app credential; and receives signed webhook deliveries that keep "
+"pull requests and the checks of their head commit current, for other modules"
+" to follow. Calling addons must provide credentials with permissions for the"
+" requested GitHub operation."
 msgstr ""
 
 #. module: base
@@ -50105,11 +51439,29 @@ msgid "Synchronize calendar events with authorized Microsoft accounts"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,summary:base.module_calendar_sync
+msgid ""
+"Synchronize users' calendars with external providers through one engine"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_sale_gelato
 msgid ""
 "Synchronizes product template information and print files, requests shipping"
 " rates and submits supported sales orders to Gelato. Requires API "
 "credentials and configured Gelato products and shipping services."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_l10n_mx_pesticide_registry
+msgid ""
+"Synchronizes the public SIIPRIS pesticide registry of COFEPRIS into Odoo: "
+"which company holds each registration, its active ingredients, validity and "
+"estimated issue date, and whether it is a mixture, a single ingredient "
+"already on the market, or a molecule that first appeared in the registry. "
+"COFEPRIS does not publish the issue date, so it is estimated from the five-"
+"year validity term; a molecule counts as new only when it appears after the "
+"first synchronization."
 msgstr ""
 
 #. module: base
@@ -50235,7 +51587,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_bank__tag_ids
 #: model:ir.model.fields,field_description:base.field_res_company__tag_ids
 #: model:ir.model.fields,field_description:base.field_res_partner__tag_ids
-#: model:ir.model.fields,field_description:base.field_res_users__tag_ids
 #: model:ir.ui.menu,name:base.tag_tag_menu
 #: model_terms:ir.ui.view,arch_db:base.tag_tag_view_list
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
@@ -50375,6 +51726,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.module.category,name:base.module_category_hidden
+#: model:ir.module.category,name:base.module_category_technical
 #: model:ir.ui.menu,name:base.menu_custom
 msgid "Technical"
 msgstr ""
@@ -50431,6 +51783,11 @@ msgid "Telegram Approvals"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_approval_account_l10n_mx_edi_telegram
+msgid "Telegram Approvals - Mexican EDI Review"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_hr_attendance_telegram
 msgid "Telegram Attendance Commands"
 msgstr ""
@@ -50471,6 +51828,11 @@ msgid "Telegram Payment Approval Intake"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_approval_sale_telegram
+msgid "Telegram Sale Order Confirmation"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_mail_speech_telegram
 msgid "Telegram Voice Replies for Discuss and Chatter"
 msgstr ""
@@ -50488,6 +51850,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_livechat_telegram
 msgid "Telegram for Live Chat AI Agents"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_device_mobile_telegram
+msgid "Telegram on Company Phones"
 msgstr ""
 
 #. module: base
@@ -50688,6 +52055,13 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_test_converter
 msgid "Test Field Conversion behaviour, including html"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_test_geoengine
+msgid ""
+"Test GeoEngine's fields, domains, I/O, views, tiles and map server on "
+"fixture models"
 msgstr ""
 
 #. module: base
@@ -51154,6 +52528,16 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_approval_account_l10n_mx_edi_telegram
+msgid ""
+"The Telegram message that asks an approver to decide an accounting request "
+"carries a fiscal review read from the request itself: fiscal (FF) or non-"
+"fiscal (NF) by its journal and, for a fiscal one, the supplier's RFC and the"
+" state of the SAT CFDI XML linked to the request. Findings are warnings; the"
+" approver decides."
+msgstr ""
+
+#. module: base
 #: model:ir.model.constraint,message:base.constraint_res_lang_url_code_uniq
 msgid "The URL code of the language must be unique!"
 msgstr ""
@@ -51363,6 +52747,7 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.model.constraint,message:base.constraint_calendar_recurrence_month_day
 #: model:ir.model.constraint,message:base.constraint_mixin_recurrence_rrule_month_day
 msgid "The day must be between 1 and 31, or the last day of the month"
 msgstr ""
@@ -52357,6 +53742,7 @@ msgid "They Reach"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__3
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__3
 msgid "Third"
 msgstr ""
@@ -52365,6 +53751,13 @@ msgstr ""
 #: model:ir.actions.act_url,name:base.action_third_party
 #: model:ir.ui.menu,name:base.menu_third_party
 msgid "Third-Party Apps"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_account_invoice_signed_flow
+msgid ""
+"Third-party tracking reference on sales and invoices for the signed-invoice "
+"flow"
 msgstr ""
 
 #. module: base
@@ -52629,6 +54022,7 @@ msgid "Thu"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__thu
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__4
@@ -53029,6 +54423,11 @@ msgstr ""
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
+msgid "Track original-document locations, containers, custody and transfers"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_document_physical
 msgid "Track original-document locations, custody and transfers"
 msgstr ""
 
@@ -53099,6 +54498,13 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_resource_asset_vehicle
 msgid ""
 "Track vehicles, driver assignments, odometer readings and service costs"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_molecular_screening
+msgid ""
+"Track virtual screening campaigns: targets, redocking gate, compounds and "
+"docking results"
 msgstr ""
 
 #. module: base
@@ -53174,6 +54580,27 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_trade_edi_ubl
 msgid "Trade UBL Order Infrastructure"
+msgstr ""
+
+#. module: base
+#: model:ir.module.category,name:base.module_category_human_resources_training
+msgid "Training"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_stock_fleet_trace_training
+msgid "Training Simulator - Delivery Trips"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_training_simulator
+msgid "Training Simulators"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_training_simulator
+msgid ""
+"Training games of every area, played on a read-only snapshot of real data"
 msgstr ""
 
 #. module: base
@@ -53300,11 +54727,17 @@ msgid "Trinidad and Tobago"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,shortdesc:base.module_stock_fleet_telegram
+msgid "Trips over Telegram"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_rrule__tue
 msgid "Tue"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__tue
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__2
@@ -53347,6 +54780,20 @@ msgid "Turks and Caicos Islands"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_product_msds_bundle
+msgid ""
+"Turns each agrochemical News finding into a sales bundle for the commercial "
+"team: one line per active ingredient with the dose the finding reports, the "
+"suggested product in stock at the bundle warehouse (own brand first) and the"
+" other in-stock products that carry the same active ingredient. Third-party "
+"products are matched through their substances, loaded from a verified brand-"
+"to-active-ingredient table. Stock is a snapshot refreshed daily and on "
+"demand, and a product whose lots at the warehouse have passed their "
+"expiration date is flagged; a bundle is a suggestion, not a reservation or a"
+" price."
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.tv
 msgid "Tuvalu"
 msgstr ""
@@ -53354,6 +54801,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_mixin_recurrence_anchored__repeat_twice
 msgid "Twice per Period"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_integration_twilio
+msgid "Twilio Integration"
 msgstr ""
 
 #. module: base
@@ -53713,7 +55165,7 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:odoo/orm/runtime/backend.py:0
+#: code:odoo/orm/runtime/_backend_pg_write.py:0
 msgid ""
 "Unable to delete %(record)s because it is used as the default value of "
 "%(field)s"
@@ -54097,8 +55549,11 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_grant__date_to
+#: model:ir.model.fields.selection,name:base.selection__account_move__repeat_type__until
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_type__until
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_type__until
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_type__until
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_type__until
 msgid "Until"
 msgstr ""
 
@@ -54340,7 +55795,6 @@ msgstr ""
 #: model:ir.model.fields,help:base.field_res_bank__barcode
 #: model:ir.model.fields,help:base.field_res_company__barcode
 #: model:ir.model.fields,help:base.field_res_partner__barcode
-#: model:ir.model.fields,help:base.field_res_users__barcode
 msgid "Use a barcode to identify this contact."
 msgstr ""
 
@@ -55590,6 +57044,7 @@ msgid "Wed"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__weekday__wed
 #: model:ir.model.fields.selection,name:base.selection__res_lang__week_start__3
@@ -55603,11 +57058,13 @@ msgid "Weekday"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__week
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__week
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__week
 msgid "Weeks"
 msgstr ""
 
@@ -55781,12 +57238,38 @@ msgid "Whatsapp-Payment"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_account_collection_sale_fleet_trace
+msgid ""
+"When a salesperson on a departed traced trip collects a cash sale whose "
+"customer takes the goods at once, and the vehicle carries enough unreserved "
+"stock of every product of the order, the delivery leaves from the vehicle's "
+"location and counts as delivered in the trip's balance. Otherwise it leaves "
+"from the warehouse, as a counter pickup. What the vehicle does not sell "
+"comes back with the trip's unloading."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_document_hr_sign
 msgid ""
 "When a signature request linked to an employee or a contract version is "
 "completed, files its signed documents in the employee's contract folder. "
 "Folder configuration and the signing workflow are supplied by the "
 "dependencies."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_error_incident_autofix
+msgid ""
+"When an incident meets the policy -- a server error hit by an internal user,"
+" often enough, in a module whose repository is mapped, under the daily cap "
+"and the company's machine-learning budget -- queues a diagnosis run for an "
+"agent runner. A real defect is handed to a fix run, which works in a clone "
+"of the module's repository on a branch named after the incident. In shadow "
+"mode the fix stays a proposal -- its diff, analysis and cost reviewed in "
+"Odoo, nothing pushed; in live mode the runner pushes the branch and opens "
+"the pull request, which error_incident_github follows. A regression is "
+"diagnosed again with the history of the fix that did not hold. Read-only "
+"runs get a read-only repository token."
 msgstr ""
 
 #. module: base
@@ -55844,6 +57327,20 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_res_users_eligibility__active_until
 msgid "When the live activation ends; empty: not active now."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_account_collection_payroll_loan
+msgid ""
+"When the treasury validates a remittance that hands in less than its "
+"collector collected, the shortage, already charged to the collector, becomes"
+" a draft employee loan on the company's configured payroll input type, split"
+" into the configured number of payslips. Payroll reviews it, computes its "
+"table and confirms it, which is the approval; until then nothing is "
+"deducted. Reverting the remittance archives a loan that is not yet running "
+"and is refused once it runs. The salary rule of that input type decides the "
+"payroll entry; crediting the collector shortage account there settles the "
+"charge."
 msgstr ""
 
 #. module: base
@@ -55934,6 +57431,12 @@ msgstr ""
 msgid ""
 "Who reaches what has changed since this change set was proposed: propose it "
 "again, so that what is activated is what was reviewed."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_stock_fleet_telegram
+msgid ""
+"Whoever delivered sends the photo of the signed delivery slip from Telegram"
 msgstr ""
 
 #. module: base
@@ -56045,6 +57548,11 @@ msgid ""
 "With no model line, a key of this scope reaches no model rather than every "
 "model. For a door whose module mints its keys: they reach what an operator "
 "names, and nothing before."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_marin_crm
+msgid "Withdraw the CRM grants that AgroMarin's own access policy replaces"
 msgstr ""
 
 #. module: base
@@ -56245,11 +57753,13 @@ msgid "Xu"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__ir_cron__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_interval__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__repeat_unit__year
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rule__repeat_unit__year
+#: model:ir.model.fields.selection,name:base.selection__project_task_recurrence__repeat_unit__year
 msgid "Years"
 msgstr ""
 
@@ -56469,8 +57979,8 @@ msgstr ""
 
 #. module: base
 #. odoo-python
-#: code:odoo/orm/runtime/_backend_memory.py:0
-#: code:odoo/orm/runtime/backend.py:0
+#: code:odoo/orm/runtime/_backend_memory_write.py:0
+#: code:odoo/orm/runtime/_backend_pg_write.py:0
 msgid ""
 "You cannot delete %(to_delete_record)s, as it is used by "
 "%(on_restrict_record)s"
@@ -57457,6 +58967,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/ir_ui_view_arch.py:0
 msgid "“%(attribute)s” value must be an integer (%(value)s)"
+msgstr ""
+
+#. module: base
+#. odoo-python
+#: code:odoo/orm/fields/properties.py:0
+msgid "“%(value)s” is not a valid %(type)s for the property %(property)s."
 msgstr ""
 
 #. module: base

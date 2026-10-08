@@ -78,11 +78,15 @@ msgstr ""
 #. module: device_mobile_telegram
 #: model:ir.model,name:device_mobile_telegram.model_telegram_account
 #: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__telegram_account_id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_iot_box__telegram_account_id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_iot_device__telegram_account_id
 msgid "Telegram Account"
 msgstr ""
 
 #. module: device_mobile_telegram
 #: model:ir.model.fields,field_description:device_mobile_telegram.field_device_device__telegram_user_id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_iot_box__telegram_user_id
+#: model:ir.model.fields,field_description:device_mobile_telegram.field_iot_device__telegram_user_id
 msgid "Telegram Acts As"
 msgstr ""
 
@@ -93,6 +97,8 @@ msgstr ""
 
 #. module: device_mobile_telegram
 #: model:ir.model.fields,help:device_mobile_telegram.field_device_device__telegram_user_id
+#: model:ir.model.fields,help:device_mobile_telegram.field_iot_box__telegram_user_id
+#: model:ir.model.fields,help:device_mobile_telegram.field_iot_device__telegram_user_id
 msgid "The Odoo user that Telegram account is connected to."
 msgstr ""
 
@@ -105,6 +111,8 @@ msgstr ""
 
 #. module: device_mobile_telegram
 #: model:ir.model.fields,help:device_mobile_telegram.field_device_device__telegram_account_id
+#: model:ir.model.fields,help:device_mobile_telegram.field_iot_box__telegram_account_id
+#: model:ir.model.fields,help:device_mobile_telegram.field_iot_device__telegram_account_id
 msgid "The Telegram account whose shared number is this phone's."
 msgstr ""
 

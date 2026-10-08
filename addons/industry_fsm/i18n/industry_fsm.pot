@@ -229,6 +229,7 @@ msgstr ""
 #. module: industry_fsm
 #. odoo-python
 #: code:addons/industry_fsm/models/project_project.py:0
+#: model:project.workflow.step,name:industry_fsm.planning_project_stage_4
 msgid "Cancelled"
 msgstr ""
 
@@ -326,6 +327,11 @@ msgstr ""
 #. module: industry_fsm
 #: model:ir.actions.act_window,name:industry_fsm.open_create_project_fsm
 msgid "Create a Project"
+msgstr ""
+
+#. module: industry_fsm
+#: model:ir.model,website_form_label:industry_fsm.model_project_task
+msgid "Create a Task"
 msgstr ""
 
 #. module: industry_fsm
@@ -444,6 +450,7 @@ msgstr ""
 #. module: industry_fsm
 #. odoo-python
 #: code:addons/industry_fsm/models/project_project.py:0
+#: model:project.workflow.step,name:industry_fsm.planning_project_stage_3
 msgid "Done"
 msgstr ""
 
@@ -800,6 +807,7 @@ msgstr ""
 #. module: industry_fsm
 #. odoo-python
 #: code:addons/industry_fsm/models/project_project.py:0
+#: model:project.workflow.step,name:industry_fsm.planning_project_stage_0
 msgid "New"
 msgstr ""
 
