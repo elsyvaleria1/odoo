@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 23:07+0000\n"
-"PO-Revision-Date: 2026-09-24 23:07+0000\n"
+"POT-Creation-Date: 2026-10-08 05:46+0000\n"
+"PO-Revision-Date: 2026-10-08 05:46+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -489,18 +489,19 @@ msgid ""
 msgstr ""
 
 #. module: portal
+#: model:ir.model.fields,field_description:portal.field_ir_config_parameter__display_name
 #: model:ir.model.fields,field_description:portal.field_ir_http__display_name
 #: model:ir.model.fields,field_description:portal.field_ir_qweb__display_name
 #: model:ir.model.fields,field_description:portal.field_ir_ui_view__display_name
 #: model:ir.model.fields,field_description:portal.field_mail_message__display_name
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_thread__display_name
 #: model:ir.model.fields,field_description:portal.field_mixin_portal__display_name
-#: model:ir.model.fields,field_description:portal.field_wizard_mail_message_send_portal_link__display_name
-#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access__display_name
-#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access_line__display_name
 #: model:ir.model.fields,field_description:portal.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:portal.field_res_partner__display_name
 #: model:ir.model.fields,field_description:portal.field_res_users_apikeys__display_name
+#: model:ir.model.fields,field_description:portal.field_wizard_mail_message_send_portal_link__display_name
+#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access__display_name
+#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access_line__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -600,18 +601,19 @@ msgid "Home"
 msgstr ""
 
 #. module: portal
+#: model:ir.model.fields,field_description:portal.field_ir_config_parameter__id
 #: model:ir.model.fields,field_description:portal.field_ir_http__id
 #: model:ir.model.fields,field_description:portal.field_ir_qweb__id
 #: model:ir.model.fields,field_description:portal.field_ir_ui_view__id
 #: model:ir.model.fields,field_description:portal.field_mail_message__id
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_thread__id
 #: model:ir.model.fields,field_description:portal.field_mixin_portal__id
-#: model:ir.model.fields,field_description:portal.field_wizard_mail_message_send_portal_link__id
-#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access__id
-#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access_line__id
 #: model:ir.model.fields,field_description:portal.field_res_config_settings__id
 #: model:ir.model.fields,field_description:portal.field_res_partner__id
 #: model:ir.model.fields,field_description:portal.field_res_users_apikeys__id
+#: model:ir.model.fields,field_description:portal.field_wizard_mail_message_send_portal_link__id
+#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access__id
+#: model:ir.model.fields,field_description:portal.field_wizard_res_partner_grant_portal_access_line__id
 msgid "ID"
 msgstr ""
 
@@ -671,13 +673,13 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_share.py:0
+#: code:addons/portal/wizards/wizard_mail_message_send_portal_link.py:0
 msgid "Invitation to access %s"
 msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_share.py:0
+#: code:addons/portal/wizards/wizard_mail_message_send_portal_link.py:0
 msgid "Invitation to access this document sent to %(partners)s"
 msgstr ""
 
@@ -855,7 +857,7 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access.py:0
 #: model_terms:ir.ui.view,arch_db:portal.wizard_view
 msgid "Portal Access Management"
 msgstr ""
@@ -866,6 +868,9 @@ msgid "Portal Access URL"
 msgstr ""
 
 #. module: portal
+#: model:ir.model.fields,field_description:portal.field_account_analytic_account__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_approval_category__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_base_module_install_request__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_discuss_channel__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_iap_account__website_message_ids
@@ -879,11 +884,14 @@ msgstr ""
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_thread_main_attachment__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_thread_phone__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_mixin_mail_tracking_duration__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_mixin_rating__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_phone_blacklist__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_bank__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_company__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_partner__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_users__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_res_users_deletion__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_resource_resource__website_message_ids
 msgid "Portal Messages"
 msgstr ""
 
@@ -908,6 +916,9 @@ msgid "Portal User Config"
 msgstr ""
 
 #. module: portal
+#: model:ir.model.fields,help:portal.field_account_analytic_account__website_message_ids
+#: model:ir.model.fields,help:portal.field_approval_category__website_message_ids
+#: model:ir.model.fields,help:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,help:portal.field_base_module_install_request__website_message_ids
 #: model:ir.model.fields,help:portal.field_discuss_channel__website_message_ids
 #: model:ir.model.fields,help:portal.field_iap_account__website_message_ids
@@ -921,17 +932,25 @@ msgstr ""
 #: model:ir.model.fields,help:portal.field_mixin_mail_thread_main_attachment__website_message_ids
 #: model:ir.model.fields,help:portal.field_mixin_mail_thread_phone__website_message_ids
 #: model:ir.model.fields,help:portal.field_mixin_mail_tracking_duration__website_message_ids
+#: model:ir.model.fields,help:portal.field_mixin_rating__website_message_ids
 #: model:ir.model.fields,help:portal.field_phone_blacklist__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_bank__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_company__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_partner__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_users__website_message_ids
+#: model:ir.model.fields,help:portal.field_res_users_deletion__website_message_ids
+#: model:ir.model.fields,help:portal.field_resource_resource__website_message_ids
 msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: portal
 #: model_terms:ir.ui.view,arch_db:portal.portal_record_sidebar
 msgid "Powered by"
+msgstr ""
+
+#. module: portal
+#: model:res.groups,name:portal.privilege_track_legacy_hash
+msgid "Privilege: track and end the legacy portal link fallback"
 msgstr ""
 
 #. module: portal
@@ -955,6 +974,14 @@ msgstr ""
 #. module: portal
 #: model:ir.model.fields,field_description:portal.field_wizard_mail_message_send_portal_link__partner_ids
 msgid "Recipients"
+msgstr ""
+
+#. module: portal
+#: model:res.groups,comment:portal.privilege_track_legacy_hash
+msgid ""
+"Record the last day a portal link signed with the bare database secret was "
+"used, and turn that fallback off once it has been idle long enough; the two "
+"system parameters, and only those."
 msgstr ""
 
 #. module: portal
@@ -1125,6 +1152,11 @@ msgid "Street and Number"
 msgstr ""
 
 #. module: portal
+#: model:ir.model,name:portal.model_ir_config_parameter
+msgid "System Parameter"
+msgstr ""
+
+#. module: portal
 #. odoo-javascript
 #: code:addons/portal/static/src/signature_form/signature_form.xml:0
 msgid "Thank You!"
@@ -1184,13 +1216,13 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid "The contact \"%s\" does not have a valid email."
 msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid "The contact \"%s\" has the same email as an existing user"
 msgstr ""
 
@@ -1221,13 +1253,13 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid "The partner \"%s\" already has the portal access."
 msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid "The partner \"%s\" has no portal access or is internal."
 msgstr ""
 
@@ -1239,10 +1271,29 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid ""
 "The template \"Portal: new user\" not found for sending email to the portal "
 "user."
+msgstr ""
+
+#. module: portal
+#: model:ir.model.fields,help:portal.field_mixin_portal__access_token
+msgid ""
+"The token of the link this record's customer is sent, once one was issued; "
+"the link itself is an access.link row holding its hash."
+msgstr ""
+
+#. module: portal
+#. odoo-python
+#: code:addons/portal/controllers/portal.py:0
+msgid "This attachment does not exist."
+msgstr ""
+
+#. module: portal
+#. odoo-python
+#: code:addons/portal/controllers/portal.py:0
+msgid "This attachment is not yours."
 msgstr ""
 
 #. module: portal
@@ -1252,14 +1303,8 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_share.py:0
+#: code:addons/portal/wizards/wizard_mail_message_send_portal_link.py:0
 msgid "This document cannot be shared: it has no portal page."
-msgstr ""
-
-#. module: portal
-#. odoo-python
-#: code:addons/portal/controllers/portal.py:0
-msgid "This document does not exist."
 msgstr ""
 
 #. module: portal
@@ -1408,7 +1453,7 @@ msgstr ""
 
 #. module: portal
 #. odoo-python
-#: code:addons/portal/wizards/portal_wizard.py:0
+#: code:addons/portal/wizards/wizard_res_partner_grant_portal_access_line.py:0
 msgid "You should first grant the portal access to the partner \"%s\"."
 msgstr ""
 
