@@ -73,6 +73,21 @@ class SignRequest(models.Model):
             )
             sign_request._update_cache({"access_token": token}, validate=False)
 
+    def _signer_chatter_token(self, partner) -> str:
+        """The token a signer's portal page writes in the request's history
+        with: a link to comment that only `partner`, signed in, opens, living
+        as the request's view link does."""
+        self.check_singleton()
+        __, token = self.env["access.link"]._issue(
+            self,
+            partner=partner,
+            role="comment",
+            audience="partners",
+            cause="notification",
+            date_to=self._request_link_end() or None,
+        )
+        return token
+
     @api.model
     def _from_request_token(self, token, request_id):
         """The request whose live view link ``token`` is, in sudo, or an empty

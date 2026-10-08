@@ -13,6 +13,7 @@ from odoo.addons.mail.tools.discuss import EMPTY_EDIT_MARKER
 from odoo.addons.portal.utils import (
     is_thread_hash_pid_valid,
     is_thread_token_valid,
+    link_role_for_message_operation,
     resolve_thread_for_credentials,
 )
 
@@ -208,16 +209,37 @@ class MixinMailThread(models.AbstractModel):
 
     @api.model
     def _get_thread_with_access(
-        self, thread_id, *, hash=None, pid=None, token=None, **kwargs
+        self,
+        thread_id,
+        *,
+        hash=None,
+        pid=None,
+        token=None,
+        message_operation="read",
+        **kwargs,
     ):
         if thread := super()._get_thread_with_access(
-            thread_id, hash=hash, pid=pid, token=token, **kwargs
+            thread_id,
+            hash=hash,
+            pid=pid,
+            token=token,
+            message_operation=message_operation,
+            **kwargs,
         ):
             return thread
         thread = resolve_thread_for_credentials(self.browse(thread_id).sudo())
-        if thread and (
-            is_thread_hash_pid_valid(thread, hash, pid, token)
-            or is_thread_token_valid(thread, token)
-        ):
-            return thread
-        return self.browse()
+        if not thread or not (token or hash):
+            return self.browse()
+        role = link_role_for_message_operation(message_operation)
+        granted = is_thread_hash_pid_valid(
+            thread, hash, pid, token, role=role
+        ) or is_thread_token_valid(thread, token, role=role)
+        _debug.logic(
+            "thread_credential",
+            model=self._name,
+            record=thread.id,
+            operation=message_operation,
+            role=role,
+            granted=granted,
+        )
+        return thread if granted else self.browse()

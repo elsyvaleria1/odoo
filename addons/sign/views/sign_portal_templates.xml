@@ -245,9 +245,7 @@
                 <h3>Communication history</h3>
                 <t t-call="portal.message_thread">
                     <t t-set="object" t-value="my_sign_item.sign_request_id" />
-                    <t
-                        t-set="token"
-                        t-value="my_sign_item.sign_request_id.access_token" />
+                    <t t-set="token" t-value="chatter_token" />
                     <t t-set="pid" t-value="pid" />
                     <t t-set="hash" t-value="hash" />
                 </t>

@@ -13,11 +13,14 @@ from odoo.addons.portal.utils import (
 
 
 class _FakeTokenThread:
+    _name = "res.partner"
     _mail_post_token_field = "access_token"
     _fields = {"access_token": object()}
+    id = 0
 
-    def __init__(self, token="a-real-token"):
+    def __init__(self, token="a-real-token", env=None):
         self._token = token
+        self.env = env
 
     def __getitem__(self, key):
         return self._token
@@ -48,7 +51,7 @@ class TestCredentialTypeCoercion(TransactionCase):
                 )
 
     def test_hash_pid_happy_path_still_validates(self):
-        thread = _FakeTokenThread()
+        thread = _FakeTokenThread(env=self.env)
         self.assertTrue(is_thread_hash_pid_valid(thread, thread._sign_token(7), 7))
         self.assertTrue(is_thread_hash_pid_valid(thread, thread._sign_token(7), "7"))
 

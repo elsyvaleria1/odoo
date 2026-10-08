@@ -92,7 +92,9 @@ class ThreadController(http.Controller):
         )
         if not access_mode:
             return model.browse()
-        return cls._resolve_thread(model, record_id, access_mode, kwargs)
+        return cls._resolve_thread(
+            model, record_id, access_mode, kwargs, message_operation="create"
+        )
 
     @classmethod
     def _get_thread_with_access(
@@ -104,7 +106,11 @@ class ThreadController(http.Controller):
 
     @staticmethod
     def _resolve_thread(
-        model: models.Model, record_id: int, mode: str, access_params: dict
+        model: models.Model,
+        record_id: int,
+        mode: str,
+        access_params: dict,
+        message_operation: str = "read",
     ) -> models.Model:
         allowed_params = model._get_allowed_access_params()
         if dropped := set(access_params) - allowed_params:
@@ -114,6 +120,7 @@ class ThreadController(http.Controller):
         return model._get_thread_with_access(
             record_id,
             mode=mode,
+            message_operation=message_operation,
             **{
                 key: value
                 for key, value in access_params.items()

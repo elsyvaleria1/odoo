@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import parse_qsl, urlsplit
 
 from odoo import fields
 from odoo.tests import tagged
@@ -165,6 +166,48 @@ class TestPortalLinks(TestPortal):
         res.raise_for_status()
         self.assertNotIn("error", res.json())
         self.assertEqual(self.record_portal.message_ids[0].author_id, self.partner_2)
+
+    def test_the_link_the_customer_is_mailed_posts_as_the_customer(self):
+        groups = self.record_portal._notify_get_recipients_groups(
+            self.env["mail.message"], False
+        )
+        url = next(
+            data["button_access"]["url"]
+            for name, matches, data in groups
+            if name == "portal_customer" and matches({"id": self.partner_1.id})
+        )
+        query = dict(parse_qsl(urlsplit(url).query))
+        self.authenticate(None, None)
+        for name, credentials in (
+            ("token", {"token": query["access_token"]}),
+            (
+                "token and hash",
+                {
+                    "token": query["access_token"],
+                    "hash": query["hash"],
+                    "pid": query["pid"],
+                },
+            ),
+        ):
+            with self.subTest(name):
+                body = f"From the customer's mail, with its {name}"
+                res = self.url_open(
+                    url=f"{self.record_portal.get_base_url()}/mail/message/post",
+                    json={
+                        "params": {
+                            "thread_model": self.record_portal._name,
+                            "thread_id": self.record_portal.id,
+                            "post_data": {"body": body},
+                            **credentials,
+                        },
+                    },
+                )
+                self.assertNotIn("error", res.json())
+                self.env.invalidate_all()
+                self.assertIn(body, self.record_portal.message_ids[0].body)
+                self.assertEqual(
+                    self.record_portal.message_ids[0].author_id, self.partner_1
+                )
 
     def test_a_list_reads_its_tokens_in_as_many_queries_as_one_record(self):
         records = self.env["mail.test.portal"].create(

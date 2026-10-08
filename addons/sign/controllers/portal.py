@@ -196,7 +196,14 @@ class CustomerPortal(portal.CustomerPortal):
         ):
             return request.redirect("/my/")
         url = f"/sign/document/{sign_item_sudo.sign_request_id.id}/{sign_item_sudo.access_token}?portal=1"
-        values = {"page_name": "signature", "my_sign_item": sign_item_sudo, "url": url}
+        values = {
+            "page_name": "signature",
+            "my_sign_item": sign_item_sudo,
+            "url": url,
+            "chatter_token": sign_item_sudo.sign_request_id._signer_chatter_token(
+                partner_id
+            ),
+        }
         # exclude access_token from kwargs to prevent redundant passing
         kwargs.pop("access_token", None)
         values = self._get_page_view_values(

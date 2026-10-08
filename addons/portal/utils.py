@@ -1,8 +1,15 @@
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from odoo.libs.debug_log import DebugLog
 from odoo.models import BaseModel
 
-from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
+from odoo.addons.base.models.access_link import (
+    ROLE_RANK,
+    LinkLoginRequired,
+    LinkRefused,
+)
+
+_debug = DebugLog(__name__)
 
 
 def get_url_with_params(
@@ -36,14 +43,24 @@ def resolve_thread_for_credentials(thread: BaseModel) -> BaseModel:
     return thread.exists() if thread.ids else thread
 
 
-def thread_link(thread: BaseModel, token: str | None, action: str | None = None):
-    """The live access.link `token` opens `thread` with, or an empty link."""
+def link_role_for_message_operation(message_operation: str) -> str:
+    return "view" if message_operation == "read" else "comment"
+
+
+def thread_link(
+    thread: BaseModel,
+    token: str | None,
+    action: str | None = None,
+    role: str = "view",
+):
+    """The live access.link `token` opens `thread` with at `role` or above, or
+    an empty link."""
     Link = thread.env["access.link"]
     if not thread:
         return Link
     try:
         return Link._resolve(
-            token, model=thread._name, res_id=thread.id, action=action
+            token, model=thread._name, res_id=thread.id, role=role, action=action
         ).link
     except LinkRefused, LinkLoginRequired:
         return Link
@@ -54,6 +71,8 @@ def is_thread_hash_pid_valid(
     _hash: str | None,
     pid: int | str | None,
     token: str | None = None,
+    *,
+    role: str = "comment",
 ) -> bool:
     if not isinstance(_hash, str) or not _hash or not pid:
         return False
@@ -67,17 +86,36 @@ def is_thread_hash_pid_valid(
         return False
     # a hash signs the token its URL carries: an old URL's token is a link
     # carried over from before, and its hash still holds over it
-    signed_over = token if token and thread_link(thread, token) else None
+    presented = thread_link(thread, token) if token else thread.env["access.link"]
+    signed_over = token if presented else None
+    # the hash speaks for `pid` with what the link it signs allows; a token
+    # the record keeps that is no link (a course's) leaves the hash alone
+    signed_link = presented or thread_link(
+        thread, thread[thread._mail_post_token_field]
+    )
+    if signed_link and ROLE_RANK[signed_link.role] < ROLE_RANK[role]:
+        _debug.logic(
+            "hash_refused",
+            model=thread._name,
+            record=thread.id,
+            link=signed_link.id,
+            reason="role",
+            role=role,
+        )
+        return thread._portal_verify_parent_hash(_hash, pid, token=token)
     return thread._verify_sign_token(
         _hash, pid, token=signed_over
     ) or thread._portal_verify_parent_hash(_hash, pid, token=token)
 
 
-def is_thread_token_valid(thread: BaseModel, token: str | None) -> bool:
+def is_thread_token_valid(
+    thread: BaseModel, token: str | None, *, role: str = "comment"
+) -> bool:
     token_field = thread._mail_post_token_field
     if not isinstance(token, str) or not token or token_field not in thread._fields:
         return False
-    return bool(thread_link(thread, token, action="comment"))
+    action = "view" if role == "view" else "comment"
+    return bool(thread_link(thread, token, action=action, role=role))
 
 
 def get_portal_partner(

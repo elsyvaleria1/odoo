@@ -6074,7 +6074,12 @@ class MixinMailThread(models.AbstractModel):
 
     @api.model
     def _get_thread_with_access(
-        self, thread_id: int, *, mode: str = "read", **kwargs
+        self,
+        thread_id: int,
+        *,
+        mode: str = "read",
+        message_operation: str = "read",
+        **kwargs,
     ) -> Self:
         allowed_params = self._get_allowed_access_params()
         if invalid := (set((kwargs or {}).keys()) - allowed_params):

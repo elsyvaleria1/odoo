@@ -557,7 +557,7 @@ class MailMessage(models.Model):
                 mode
             ).get(thread_su)
             if access_mode and self.env[message.model]._get_thread_with_access(
-                message.res_id, mode=access_mode, **kwargs
+                message.res_id, mode=access_mode, message_operation=mode, **kwargs
             ):
                 _debug.logic(
                     "access",
