@@ -27,7 +27,7 @@
                     data-hotkey="r" />
             </button>
             <button position="attributes" id="create_invoice">
-                <attribute name="invisible">(not is_subscription and not is_invoiceable) or (is_subscription and (state != 'done' or (next_invoice_date &gt; current_date and invoice_state != 'to do')))</attribute>
+                <attribute name="invisible">(not is_subscription and not is_invoiceable) or (is_subscription and (state != 'done' or (next_invoice_date &gt; current_date and not is_invoiceable)))</attribute>
             </button>
             <button position="after" id="create_invoice">
                 <button
@@ -35,7 +35,7 @@
                     id="create_invoice_sub"
                     type="action"
                     string="Create Invoice"
-                    invisible="(not is_subscription or state != 'done') or (is_subscription and (invoice_state == 'to do') or (next_invoice_date &lt;= current_date))"
+                    invisible="not is_subscription or state != 'done' or is_invoiceable or next_invoice_date &lt;= current_date"
                     class="btn-secondary"
                     data-hotkey="q" />
             </button>

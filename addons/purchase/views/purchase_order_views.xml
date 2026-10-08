@@ -607,6 +607,14 @@
                         invisible="acknowledged or state != 'done'" />
                     <button
                         name="%(purchase.action_view_purchase_advance_payment_inv)d"
+                        id="create_bill"
+                        type="action"
+                        string="Create Bill"
+                        invisible="not is_invoiceable"
+                        class="btn-primary" />
+                    <button
+                        name="%(purchase.action_view_purchase_advance_payment_inv)d"
+                        id="create_bill_down_payment"
                         type="action"
                         string="Down Payment"
                         context="{'default_advance_payment_method': 'percentage'}"

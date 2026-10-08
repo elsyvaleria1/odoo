@@ -35,15 +35,13 @@ patch(PurchaseAdditionalTourSteps.prototype, {
                 run: "click",
             },
             ...stepUtils.statusbarButtonsSteps(
-                "Down Payment",
+                "Create Bill",
                 _t("Bill the vendor for the received products."),
             ),
             {
+                isActive: ["auto"],
                 trigger:
-                    ".modal .o_field_widget[name='advance_payment_method'] input[data-value='delivered']",
-                content: _t("Bill the received quantities with a regular bill."),
-                tooltipPosition: "right",
-                run: "click",
+                    ".modal .o_field_widget[name='advance_payment_method'] input[data-value='delivered']:checked",
             },
             {
                 trigger: ".modal-footer button[name='create_invoices']",

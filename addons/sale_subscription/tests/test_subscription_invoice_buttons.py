@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
@@ -93,3 +95,18 @@ class TestSubscriptionInvoiceButtons(TestSubscriptionCommon):
 
         self.assertFalse(subscription.is_invoiceable)
         self.assertEqual(wizard.advance_payment_method, "delivered")
+
+    def test_a_subscription_starting_later_offers_its_invoice_in_advance(self):
+        start = fields.Date.today() + relativedelta(weeks=2)
+        subscription = self.subscription
+        subscription.write({"start_date": start, "next_invoice_date": start})
+        subscription.action_confirm()
+
+        self.assertEqual(set(subscription.line_ids.mapped("invoice_state")), {"no"})
+        self.assertEqual(subscription.invoice_state, "to do")
+        self.assertFalse(subscription.is_invoiceable)
+        self.assertEqual(
+            self._shown_invoice_buttons(subscription), ["create_invoice_sub"]
+        )
+        self._wizard(subscription).create_invoices()
+        self.assertEqual(len(subscription.invoice_ids), 1)

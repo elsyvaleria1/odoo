@@ -344,22 +344,26 @@ class TestPurchaseDownpaymentWizard(TestPurchaseToInvoiceCommon):
         dp_bill.action_cancel()
         self.assertEqual(dp_line.name, "Down Payment (Cancelled)")
 
-    def _wizard_form(self, po):
+    def _wizard_form(self, po, context=None):
         return Form(
             self.env["wizard.purchase.order.bill"].with_context(
-                active_model="purchase.order", active_ids=po.ids, active_id=po.id
+                active_model="purchase.order",
+                active_ids=po.ids,
+                active_id=po.id,
+                **(context or {}),
             )
         )
 
-    def _is_down_payment_button_shown(self, po):
+    def _shown_bill_buttons(self, po):
         form = Form(po)
         eval_context = form._prepare_eval_context()
-        (button,) = (
-            button
+        action = self.env.ref("purchase.action_view_purchase_advance_payment_inv")
+        return {
+            button.get("string"): safe_eval(button.get("context") or "{}", eval_context)
             for button in form._view["tree"].iter("button")
-            if button.get("string") == "Down Payment"
-        )
-        return not safe_eval(button.get("invisible") or "False", eval_context)
+            if button.get("name") == str(action.id)
+            and not safe_eval(button.get("invisible") or "False", eval_context)
+        }
 
     def test_the_wizard_defaults_to_a_down_payment_until_something_is_received(self):
         po = self.init_purchase(
@@ -372,13 +376,43 @@ class TestPurchaseDownpaymentWizard(TestPurchaseToInvoiceCommon):
             "to do",
             "the unreceived quantity is still expected to be billed",
         )
-        self.assertTrue(self._is_down_payment_button_shown(po))
+        self.assertIn("Down Payment", self._shown_bill_buttons(po))
         self.assertEqual(self._wizard_form(po).advance_payment_method, "percentage")
 
         po.line_ids.qty_transferred = 1
-        self.assertTrue(self._is_down_payment_button_shown(po))
+        self.assertIn("Down Payment", self._shown_bill_buttons(po))
         self.assertEqual(self._wizard_form(po).advance_payment_method, "delivered")
         self.assertTrue(self._wizard_form(po).save().create_invoices())
+
+    def test_down_payment_opens_on_a_down_payment_and_create_bill_on_a_regular_bill(
+        self,
+    ):
+        po = self.init_purchase(
+            confirm=True,
+            products=[self.product_deliver],
+            taxes=self.env["account.tax"],
+        )
+
+        buttons = self._shown_bill_buttons(po)
+
+        self.assertEqual(sorted(buttons), ["Down Payment"])
+        self.assertEqual(
+            self._wizard_form(po, buttons["Down Payment"]).advance_payment_method,
+            "percentage",
+        )
+
+        po.line_ids.qty_transferred = 1
+        buttons = self._shown_bill_buttons(po)
+
+        self.assertEqual(sorted(buttons), ["Create Bill", "Down Payment"])
+        self.assertEqual(
+            self._wizard_form(po, buttons["Down Payment"]).advance_payment_method,
+            "percentage",
+        )
+        wizard = self._wizard_form(po, buttons["Create Bill"])
+        self.assertEqual(wizard.advance_payment_method, "delivered")
+        wizard.save().create_invoices()
+        self.assertEqual(po.invoice_ids.invoice_line_ids.quantity, 1)
 
 
 @tagged("-at_install", "post_install")
