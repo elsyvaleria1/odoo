@@ -1635,6 +1635,12 @@ msgstr ""
 
 #. module: telegram
 #. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "That choice is no longer open. Send your message again."
+msgstr ""
+
+#. module: telegram
+#. odoo-python
 #: code:addons/telegram/models/telegram_handler_base.py:0
 msgid ""
 "That is not your own number. To share yours, press the button that shares "
@@ -2025,6 +2031,12 @@ msgid ""
 "What a handler parks on the chat outside any flow until a button of its "
 "answers it: a reply waiting for its visibility, a draft waiting for its "
 "thread."
+msgstr ""
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "What should I do with this?"
 msgstr ""
 
 #. module: telegram

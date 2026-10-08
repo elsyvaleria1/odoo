@@ -81,6 +81,12 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
     def _telegram_intakes(self):
         return frozenset({"voice"})
 
+    def _telegram_intake_command(self, bot, chat, kind):
+        return "/solicitar" if kind == "voice" else None
+
+    def _telegram_intake_label(self, bot, chat, kind):
+        return self._tr(bot, chat)._("Approval request")
+
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
         # a voice note starts a /solicitar: only for whoever may send one
         return bool(

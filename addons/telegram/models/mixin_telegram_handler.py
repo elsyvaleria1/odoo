@@ -36,8 +36,11 @@ class MixinTelegramHandler(models.AbstractModel):
         flow it opens on a chat is its own, gets that chat's free text and
         nobody else's, and ends by its own step, by expiring, or by /cancelar;
       - the message kinds it takes from an idle chat (text, voice, photo,
-        document, contact, location): when several do, the bot says which,
-        else the lowest `_telegram_intake_priority` wins.
+        document, contact, location): when several take a person's message,
+        the one the bot names for its kind does, else the bot asks the person
+        which (`_telegram_intake_label`); one standing for a command
+        (`_telegram_intake_command`) follows that command's permissions and
+        company.
 
     Extending a handler is Odoo inheritance: `_inherit` it and call super().
     """
@@ -103,6 +106,28 @@ class MixinTelegramHandler(models.AbstractModel):
 
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
         return kind in self._telegram_intakes()
+
+    def _telegram_intake_command(self, bot, chat, kind) -> str | None:
+        """The command an idle message of `kind` starts here, if it starts
+        one: it is taken only from whoever may run that command, and in the
+        company chosen for it, as the command would be."""
+        return None
+
+    def _telegram_intake_label(self, bot, chat, kind) -> str:
+        """What this feature is called when several take a person's message
+        and the bot asks them which: by default its model's name."""
+        name = (
+            self.env["ir.model"]
+            ._get(self._name)
+            .with_context(lang=self._tr(bot, chat).lang)
+        )
+        return (name.name or self._description).removeprefix("Telegram: ")
+
+    def _on_unhandled_message(self, bot, chat, message, partner, internal_user):
+        """Answer a message no flow, claim or intake took; True when this
+        handler answered it -- the general "commands only" reply is the last
+        resort."""
+        return False
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         """Handle a non-command message; True when it was consumed."""

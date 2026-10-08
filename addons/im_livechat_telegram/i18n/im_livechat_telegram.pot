@@ -97,6 +97,12 @@ msgid "Show Operator Names"
 msgstr ""
 
 #. module: im_livechat_telegram
+#. odoo-python
+#: code:addons/im_livechat_telegram/models/telegram_handler_livechat.py:0
+msgid "Talk to us"
+msgstr ""
+
+#. module: im_livechat_telegram
 #: model:ir.model,name:im_livechat_telegram.model_telegram_bot
 msgid "Telegram Bot Configuration"
 msgstr ""

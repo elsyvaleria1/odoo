@@ -24,6 +24,8 @@ MEMBERSHIP_EVENTS = ("new_chat_members", "left_chat_member", "group_chat_created
 
 BUSY_CALLBACK_PREFIX = "tg_busy:"
 COMPANY_CALLBACK_PREFIX = "tg_co:"
+INTAKE_CALLBACK_PREFIX = "tg_in:"
+_PENDING_INTAKE_KEY = "telegram_pending_intake"
 _PENDING_COMMAND_KEY = "telegram_pending_command"
 # the company a chosen command ran in, for the buttons its handler sent
 _COMMAND_COMPANY_KEY = "telegram_command_company"
@@ -55,8 +57,9 @@ class TelegramRouter(models.AbstractModel):
        the command menu each person sees (`_available_commands`).
     4. Any other message goes to the handler owning the chat's flow; else to
        a handler claiming it (a reply to something it sent); else to the idle
-       intake for its kind -- the one the bot names, or the lowest priority
-       among those accepting it.
+       intake for its kind -- the one the bot names, else the one taking it
+       from this person, whom the bot asks when several do; else to a
+       handler answering what nothing took.
     """
 
     _name = "telegram.router"
@@ -417,39 +420,135 @@ class TelegramRouter(models.AbstractModel):
                     handler, bot, chat, message, partner, internal_user
                 ):
                     return
-            idle = self._idle_handler(bot, chat, message, partner, internal_user)
-            if idle is not None and self._run_message_handler(
-                idle, bot, chat, message, partner, internal_user
+            idle = self._idle_handlers(bot, chat, message, partner, internal_user)
+            if len(idle) > 1:
+                self._ask_intake(bot, chat, message, idle)
+                return
+            if idle and self._run_intake(
+                idle[0], bot, chat, message, partner, internal_user
             ):
                 return
         self._unhandled_message(bot, chat, message, partner, internal_user)
 
     @api.model
-    def _idle_handler(self, bot, chat, message, partner, internal_user):
+    def _idle_handlers(self, bot, chat, message, partner, internal_user) -> list:
+        """The handlers an idle message may go to: the one the bot names for
+        its kind, when it takes it; else every one that takes it from this
+        person -- who is asked when they are several -- in priority order."""
         kind = message_kind(message)
         accepting = [
             h
             for h in self._handlers(bot)
             if h._accepts_idle(bot, chat, kind, message, partner, internal_user)
+            and self._intake_permitted(h, bot, chat, kind, partner, internal_user)
         ]
-        if not accepting:
-            return None
         chosen = bot._idle_handler_name(kind)
-        if chosen:
-            named = [h for h in accepting if h._name == chosen]
-            if named:
-                return named[0]
-        accepting.sort(key=lambda h: (h._telegram_intake_priority, h._name))
-        if len(accepting) > 1 and not chosen:
-            _logger.warning(
-                "Bot %s: %s all take an idle %s message; %s answers. Name one on "
-                "the bot to decide.",
-                bot.id,
-                [h._name for h in accepting],
-                kind,
-                accepting[0]._name,
+        named = [h for h in accepting if h._name == chosen]
+        if named:
+            return named
+        return sorted(accepting, key=lambda h: (h._telegram_intake_priority, h._name))
+
+    @api.model
+    def _idle_handler(self, bot, chat, message, partner, internal_user):
+        """The first handler an idle message may go to, or None."""
+        idle = self._idle_handlers(bot, chat, message, partner, internal_user)
+        return idle[0] if idle else None
+
+    @api.model
+    def _intake_permitted(self, handler, bot, chat, kind, partner, internal_user):
+        """Whether this person may start here what an idle message of `kind`
+        starts: the command it stands for, if any, as if they had sent it."""
+        command = handler._telegram_intake_command(bot, chat, kind)
+        spec = handler._telegram_commands().get(command) if command else None
+        if spec is None:
+            return True
+        return self._command_permitted(
+            bot, chat, handler, command, spec, partner, internal_user
+        )
+
+    @api.model
+    def _run_intake(self, handler, bot, chat, message, partner, internal_user):
+        """Give an idle message to `handler`, in the company of the command it
+        stands for -- asking which when that command chooses and the person
+        has several."""
+        kind = message_kind(message)
+        command = handler._telegram_intake_command(bot, chat, kind)
+        spec = handler._telegram_commands().get(command) if command else None
+        if (
+            spec is not None
+            and spec.company == "choose"
+            and not self.env.context.get("telegram_company_id")
+        ):
+            companies = self._companies_for_command(
+                bot, chat, handler, command, partner, internal_user
             )
-        return accepting[0]
+            if len(companies) > 1:
+                self._ask_company(
+                    bot,
+                    chat,
+                    command,
+                    [],
+                    companies,
+                    pending={"handler": handler._name, "message": message},
+                )
+                return True
+            if companies:
+                self, bot, chat, partner, internal_user = self._pin_company(
+                    companies, self, bot, chat, partner, internal_user
+                )
+                handler = handler.with_env(self.env)
+        return self._run_message_handler(
+            handler, bot, chat, message, partner, internal_user
+        )
+
+    @api.model
+    def _ask_intake(self, bot, chat, message, handlers) -> None:
+        """Ask what to do with a message several features take."""
+        kind = message_kind(message)
+        chat._set_context(
+            _PENDING_INTAKE_KEY,
+            {"message": message, "handlers": [h._name for h in handlers]},
+        )
+        bot.send_message(
+            chat.chat_id,
+            translation_env(bot, chat)._("What should I do with this?"),
+            parse_mode=None,
+            reply_markup=kb.keyboard(
+                *(
+                    [
+                        kb.button(
+                            h._telegram_intake_label(bot, chat, kind),
+                            f"{INTAKE_CALLBACK_PREFIX}{h._name}",
+                        )
+                    ]
+                    for h in handlers
+                )
+            ),
+        )
+
+    @api.model
+    def _handle_intake_callback(
+        self, bot, chat, callback_query, partner, internal_user
+    ) -> None:
+        self.env["mixin.telegram.handler"]._clear_keyboard(bot, chat, callback_query)
+        pending = chat._get_context(_PENDING_INTAKE_KEY) or {}
+        chat._set_context(_PENDING_INTAKE_KEY, False)
+        name = (callback_query.get("data") or "")[len(INTAKE_CALLBACK_PREFIX) :]
+        message = pending.get("message") or {}
+        handler = self.env[name] if name in (pending.get("handlers") or ()) else None
+        # what the person may do may have changed since the question
+        if handler is None or handler not in self._idle_handlers(
+            bot, chat, message, partner, internal_user
+        ):
+            bot.send_message(
+                chat.chat_id,
+                translation_env(bot, chat)._(
+                    "That choice is no longer open. Send your message again."
+                ),
+            )
+            return
+        if not self._run_intake(handler, bot, chat, message, partner, internal_user):
+            self._unhandled_message(bot, chat, message, partner, internal_user)
 
     @api.model
     def _run_message_handler(self, handler, bot, chat, message, partner, internal_user):
@@ -469,6 +568,11 @@ class TelegramRouter(models.AbstractModel):
         if owner is not None:
             self._send_flow_busy_notice(bot, chat, owner, trigger="message")
             return
+        for handler in self._handlers(bot):
+            if handler._on_unhandled_message(
+                bot, chat, message, partner, internal_user
+            ):
+                return
         bot.send_message(
             chat.chat_id,
             translation_env(bot, chat)._(
@@ -1007,6 +1111,11 @@ class TelegramRouter(models.AbstractModel):
                     bot, chat, callback_query, partner, internal_user
                 )
                 return
+            if data.startswith(INTAKE_CALLBACK_PREFIX):
+                self._handle_intake_callback(
+                    bot, chat, callback_query, partner, internal_user
+                )
+                return
             handler = self._callback_owner(bot, data)
             if handler is not None:
                 company = self._command_company(bot, chat, handler, internal_user)
@@ -1170,9 +1279,14 @@ class TelegramRouter(models.AbstractModel):
         return company.with_env(self.env)
 
     @api.model
-    def _ask_company(self, bot, chat, command, args, companies) -> None:
-        """Ask which company `command` is for; the button runs it there."""
-        chat._set_context(_PENDING_COMMAND_KEY, {"command": command, "args": args})
+    def _ask_company(self, bot, chat, command, args, companies, pending=None) -> None:
+        """Ask which company `command` is for; the button runs it there -- or,
+        for an idle message standing for it, gives the `pending` message to
+        its handler there."""
+        chat._set_context(
+            _PENDING_COMMAND_KEY,
+            {"command": command, "args": args, **(pending or {})},
+        )
         bot.send_message(
             chat.chat_id,
             translation_env(bot, chat)._("Which company is %(command)s for?")
@@ -1213,6 +1327,16 @@ class TelegramRouter(models.AbstractModel):
         router, bot, chat, partner, internal_user = self._pin_company(
             company, self, bot, chat, partner, internal_user
         )
+        if pending.get("message"):
+            router._run_intake(
+                handler.with_env(router.env),
+                bot,
+                chat,
+                pending["message"],
+                partner,
+                internal_user,
+            )
+            return
         router._dispatch_command(
             bot, chat, command, pending.get("args") or [], partner, internal_user
         )

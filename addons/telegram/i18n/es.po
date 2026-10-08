@@ -1722,6 +1722,12 @@ msgstr "Esa opción ya no está disponible. Vuelve a enviar el comando."
 
 #. module: telegram
 #. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "That choice is no longer open. Send your message again."
+msgstr "Esa opción ya no está disponible. Vuelve a enviar tu mensaje."
+
+#. module: telegram
+#. odoo-python
 #: code:addons/telegram/models/telegram_handler_base.py:0
 msgid ""
 "That is not your own number. To share yours, press the button that shares "
@@ -2185,6 +2191,12 @@ msgstr ""
 "Lo que un manejador deja guardado en el chat fuera de cualquier flujo hasta "
 "que uno de sus botones lo responde: una respuesta que espera su visibilidad,"
 " un borrador que espera su hilo."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
+msgid "What should I do with this?"
+msgstr "¿Qué hago con esto?"
 
 #. module: telegram
 #: model:ir.model.fields,help:telegram.field_telegram_message__error_class

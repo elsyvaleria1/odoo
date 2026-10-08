@@ -43,6 +43,15 @@ class FakeHandler:
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
         return kind in self.intakes
 
+    def _telegram_intake_command(self, bot, chat, kind):
+        return None
+
+    def _telegram_intake_label(self, bot, chat, kind):
+        return self._name
+
+    def _on_unhandled_message(self, bot, chat, message, partner, internal_user):
+        return False
+
     def _on_message(self, bot, chat, message, partner, internal_user):
         self.seen.append(message.get("text") or "media")
         return True
@@ -100,13 +109,20 @@ class TestRouterPrecedence(TelegramBotTestCase):
         self.assertEqual(claimer.seen, ["hola"])
         self.assertEqual(idle.seen, [])
 
-    def test_the_lowest_priority_idle_intake_wins(self):
+    def test_two_idle_intakes_ask_the_person_which(self):
+        # the lower priority used to answer, unasked
         late = FakeHandler("telegram.handler.late", intakes={"text"}, priority=50)
         early = FakeHandler("telegram.handler.early", intakes={"text"}, priority=10)
 
-        self._route([late, early])
+        post = self._route([late, early])
 
-        self.assertEqual(early.seen, ["hola"])
+        self.assertEqual(late.seen + early.seen, [])
+        markup = post.call_args.kwargs["json"]["reply_markup"]
+        # the higher priority is offered first
+        self.assertLess(
+            markup.index("tg_in:telegram.handler.early"),
+            markup.index("tg_in:telegram.handler.late"),
+        )
 
     def test_the_bot_names_its_idle_intake(self):
         late = FakeHandler("telegram.handler.late", intakes={"text"}, priority=50)

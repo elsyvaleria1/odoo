@@ -382,6 +382,12 @@ msgid "Message"
 msgstr ""
 
 #. module: mail_telegram
+#. odoo-python
+#: code:addons/mail_telegram/models/telegram_handler_mail.py:0
+msgid "Message to a conversation"
+msgstr ""
+
+#. module: mail_telegram
 #: model:ir.model.fields.selection,name:mail_telegram.selection__wizard_telegram_group_link__purpose__group
 msgid "Mirror a Telegram group"
 msgstr ""

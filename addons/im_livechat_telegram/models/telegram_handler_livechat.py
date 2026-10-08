@@ -28,13 +28,34 @@ class TelegramHandlerLivechat(models.AbstractModel):
     def _telegram_callback_prefixes(self):
         return ("lc:",)
 
-    def _claims_message(self, bot, chat, message, partner, internal_user) -> bool:
+    def _is_customer_chat(self, bot, chat, internal_user) -> bool:
         return (
             not internal_user
             and chat.chat_type == "private"
             and bool(chat.account_id)
             and bool(bot.livechat_channel_id)
         )
+
+    def _claims_message(self, bot, chat, message, partner, internal_user) -> bool:
+        # a customer in an open session writes to it, whatever else the bot
+        # takes; a first message is anyone's, as idle intake decides
+        return self._is_customer_chat(bot, chat, internal_user) and bool(
+            self._serving(self.env["discuss.channel"]).search_count(
+                [("telegram_chat_id", "=", chat.id), ("livechat_end_dt", "=", False)],
+                limit=1,
+            )
+        )
+
+    def _telegram_intakes(self):
+        return frozenset({"text", "photo", "document", "voice"})
+
+    def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
+        return kind in self._telegram_intakes() and self._is_customer_chat(
+            bot, chat, internal_user
+        )
+
+    def _telegram_intake_label(self, bot, chat, kind):
+        return self._tr(bot, chat)._("Talk to us")
 
     @staticmethod
     def _serving(records):

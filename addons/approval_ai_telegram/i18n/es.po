@@ -111,6 +111,12 @@ msgstr "Proveedor de IA para aprobaciones"
 #. module: approval_ai_telegram
 #. odoo-python
 #: code:addons/approval_ai_telegram/models/telegram_handler.py:0
+msgid "Approval request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_ai_telegram
+#. odoo-python
+#: code:addons/approval_ai_telegram/models/telegram_handler.py:0
 msgid "Approval Request Commands"
 msgstr "Comandos de Solicitudes de Aprobación"
 

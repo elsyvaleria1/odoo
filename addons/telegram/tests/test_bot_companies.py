@@ -11,11 +11,8 @@ from odoo.addons.telegram.tools.authority import in_bot_company
 from odoo.addons.telegram.tools.dispatch import TelegramCommand
 
 
-@tagged("post_install", "-at_install")
-class TestBotCompanies(TelegramBotTestCase):
-    """A bot serves several companies: its people act through it in those of
-    theirs, a command that starts something asks which one when they have
-    several, and its flow and its buttons stay in the one chosen."""
+class BotCompaniesCase(TelegramBotTestCase):
+    """A bot serving the main company and another, and a user of both."""
 
     @classmethod
     def setUpClass(cls):
@@ -85,6 +82,13 @@ class TestBotCompanies(TelegramBotTestCase):
         ):
             self.router._dispatch_callback_query(self.test_bot, query)
         return send
+
+
+@tagged("post_install", "-at_install")
+class TestBotCompanies(BotCompaniesCase):
+    """A bot serves several companies: its people act through it in those of
+    theirs, a command that starts something asks which one when they have
+    several, and its flow and its buttons stay in the one chosen."""
 
     def test_a_bot_always_serves_its_own_company(self):
         bot = self._bot_of_another_company("Owned Bot")
@@ -240,3 +244,81 @@ class TestBotCompanies(TelegramBotTestCase):
                 )
             ]
         self.assertIn("/empezar", menu)
+
+
+@tagged("post_install", "-at_install")
+class TestIdleIntake(BotCompaniesCase):
+    """A message without a command that a feature takes as one of its commands
+    follows that command: who may send it, and the company it is chosen in."""
+
+    CONTACT = {"message_id": 7, "contact": {"phone_number": "+5215550000"}}
+
+    @contextmanager
+    def intake(self, command="/empezar", **declared):
+        """The general handler's contact intake stands for `command`; yield
+        the companies its runs acted in."""
+        runs = []
+
+        def on_message(this, bot, chat, message, partner, internal_user):
+            runs.append(this.env.company)
+            return True
+
+        with (
+            self.started(**declared),
+            patch.object(
+                self.handler,
+                "_telegram_intake_command",
+                lambda this, bot, chat, kind: command,
+                create=True,
+            ),
+            patch.object(self.handler, "_on_message", on_message),
+        ):
+            yield runs
+
+    def _send(self):
+        router, bot, chat, partner = self._sender()
+        with patch.object(TelegramBot, "send_message") as send:
+            router._dispatch_free_message(
+                bot, chat, dict(self.CONTACT), partner, self.test_user
+            )
+        return send
+
+    def test_an_idle_message_asks_the_company_of_its_command(self):
+        with self.intake() as runs:
+            send = self._send()
+        self.assertFalse(runs)
+        self.assertIn("/empezar", send.call_args.args[1])
+
+        with self.intake() as runs:
+            self._press(f"tg_co:{self.other.id}")
+        self.assertEqual(runs, [self.other])
+
+    def test_an_idle_message_is_not_taken_from_who_may_not_run_its_command(self):
+        command = self.env["telegram.command"]._for_name("/empezar")
+        third = self.env["res.company"].create({"name": "TG Intake Third"})
+        self.test_bot.company_ids = [Command.link(third.id)]
+        command.company_ids = third
+        with self.intake() as runs:
+            send = self._send()
+        self.assertFalse(runs)
+        self.assertIn("only process commands", send.call_args.args[1])
+
+    def test_what_nothing_took_may_still_be_answered(self):
+        answered = []
+
+        def unhandled(this, bot, chat, message, partner, internal_user):
+            answered.append(message["message_id"])
+            return True
+
+        with patch.object(self.handler, "_on_unhandled_message", unhandled):
+            router, bot, chat, partner = self._sender()
+            with patch.object(TelegramBot, "send_message") as send:
+                router._dispatch_free_message(
+                    bot,
+                    chat,
+                    {"message_id": 8, "text": "hola"},
+                    partner,
+                    self.test_user,
+                )
+        self.assertEqual(answered, [8])
+        self.assertFalse(send.called)

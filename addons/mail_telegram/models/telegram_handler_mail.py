@@ -376,6 +376,9 @@ class TelegramHandlerMail(models.AbstractModel):
 
     # -- text without a reply -------------------------------------------------
 
+    def _telegram_intake_label(self, bot, chat, kind):
+        return self._tr(bot, chat)._("Message to a conversation")
+
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
         return (
             kind == "text"
