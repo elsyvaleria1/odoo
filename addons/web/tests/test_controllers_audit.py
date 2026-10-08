@@ -1215,3 +1215,53 @@ class TestActionLoadCost(HttpCase):
         self.assertEqual(
             self._statements("base.action_partner_form"), self._statements(action.id)
         )
+
+
+@tagged("web_http", "web_controllers_audit")
+class TestCallKwModelEnumeration(HttpCase):
+    def _call(self, path, model):
+        return self.url_open(
+            path,
+            headers={"Content-Type": "application/json"},
+            data=json_dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "call",
+                    "params": {
+                        "model": model,
+                        "method": "search_read",
+                        "args": [],
+                        "kwargs": {},
+                    },
+                }
+            ),
+        )
+
+    def _shape(self, response):
+        body = response.json()
+        error = body.get("error") or {}
+        return (
+            response.status_code,
+            "result" in body,
+            error.get("code"),
+            (error.get("data") or {}).get("name"),
+            (error.get("data") or {}).get("message"),
+        )
+
+    def test_an_anonymous_caller_cannot_tell_a_model_exists(self):
+        with mute_logger("odoo.http"):
+            for path in ("/web/dataset/call_kw", "/web/dataset/call_button"):
+                with self.subTest(path=path):
+                    known = self._shape(self._call(path, "res.partner"))
+                    unknown = self._shape(self._call(path, "no.such.model"))
+                    self.assertEqual(known, unknown)
+                    self.assertFalse(known[1], "an anonymous call answers no result")
+
+    def test_an_authenticated_caller_gets_not_found_for_an_unknown_model(self):
+        self.authenticate("admin", "admin")
+        with mute_logger("odoo.http"):
+            for path in ("/web/dataset/call_kw", "/web/dataset/call_button"):
+                with self.subTest(path=path):
+                    error = self._call(path, "no.such.model").json()["error"]
+                    self.assertIn("NotFound", error["data"]["name"])

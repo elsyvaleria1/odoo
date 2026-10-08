@@ -25,6 +25,7 @@ These are the primary backend APIs consumed by the JS ORM service (`core/network
 > `/web/dataset/call_kw/{model}/{method}` and POSTs `{model, method, args, kwargs}`.
 > `call_button` is a second RPC path specifically for button actions — it wraps results through `clean_action()`.
 > Both use `readonly=_call_kw_readonly` which inspects the method's `_readonly` attribute dynamically.
+> That probe runs before authentication, so it answers an unknown model as read-only rather than refusing it; the endpoint raises `NotFound` once the caller is authenticated, and an anonymous caller gets the same session-expired answer whether the model exists or not.
 
 ### controllers/model.py — Model
 

@@ -16,6 +16,13 @@ def _tag_thread_with_rpc_target(model: str, method: str, path: str | None) -> No
         current_worker_thread().rpc_model_method = f"{model}.{method}"
 
 
+def _get_called_model(model: str) -> Any:
+    if model not in request.env.registry:
+        _debug.logic("rpc_unknown_model", model=model)
+        raise NotFound
+    return request.env[model]
+
+
 class DataSet(http.Controller):
     def _call_kw_readonly(self, rule: Any, args: Any) -> bool:
         try:
@@ -31,9 +38,12 @@ class DataSet(http.Controller):
             raise ParameterError("call_kw expects the model and method as strings")
         try:
             model_class = request.registry[model_name]
-        except KeyError as e:
+        except KeyError:
+            # This runs before authentication: answering NotFound here told an
+            # anonymous caller which models exist. The endpoint refuses it once
+            # the caller is authenticated (_get_called_model).
             _debug.logic("rpc_readonly_probe_unknown_model", model=model_name)
-            raise NotFound from e
+            return True
         readonly = api.is_readonly(model_class, method_name)
         _debug.logic(
             "rpc_readonly", model=model_name, method=method_name, readonly=readonly
@@ -65,7 +75,7 @@ class DataSet(http.Controller):
             )
         _tag_thread_with_rpc_target(model, method, path)
         with _debug.perf("call_kw", cr=request.env.cr, model=model, method=method):
-            return call_kw(request.env[model], method, args, kwargs)
+            return call_kw(_get_called_model(model), method, args, kwargs)
 
     @http.route(
         ["/web/dataset/call_button", "/web/dataset/call_button/<path:path>"],
@@ -91,7 +101,7 @@ class DataSet(http.Controller):
             )
         _tag_thread_with_rpc_target(model, method, path)
         with _debug.perf("call_button", cr=request.env.cr, model=model, method=method):
-            action = call_kw(request.env[model], method, args, kwargs)
+            action = call_kw(_get_called_model(model), method, args, kwargs)
         if isinstance(action, dict) and action.get("type") != "":
             _debug.pipeline(
                 "call_button_action",

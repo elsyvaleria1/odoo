@@ -127,6 +127,9 @@ class TestHttpJsonError(TestHttpBase):
 
     @mute_logger("odoo.http")
     def test_error_call_kw_model_not_found(self):
+        # an anonymous caller is answered as for any model (web's
+        # TestCallKwModelEnumeration): the 404 is an authenticated answer
+        self.authenticate("admin", "admin")
         res = self.db_url_open(
             "/web/dataset/call_kw/lorem.ipsum/get_views",
             data=json_dumps(
@@ -138,6 +141,7 @@ class TestHttpJsonError(TestHttpBase):
                         "model": "lorem.ipsum",
                         "method": "get_views",
                         "args": [],
+                        "kwargs": {},
                     },
                 }
             ),
