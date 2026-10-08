@@ -187,6 +187,21 @@
                         name="action_test_connection"
                         type="object"
                         string="Test Connection" />
+                    <field name="inbound_token_set" invisible="1" />
+                    <button
+                        name="action_generate_inbound_token"
+                        type="object"
+                        string="Generate Token"
+                        groups="device.group_device_manager"
+                        invisible="auth_type not in ('bearer', 'api_key') or inbound_token_set"
+                        class="btn-primary" />
+                    <button
+                        name="action_generate_inbound_token"
+                        type="object"
+                        string="Regenerate Token"
+                        confirm="The device stops reporting until the new token is entered in it. Generate a new token?"
+                        groups="device.group_device_manager"
+                        invisible="auth_type not in ('bearer', 'api_key') or not inbound_token_set" />
                     <field
                         name="connection_state"
                         widget="statusbar"

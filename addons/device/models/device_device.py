@@ -13,6 +13,7 @@ from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, frozendict
 
+from odoo.addons.base.models.res_users import check_identity
 from odoo.addons.integration.tools.connection_gate import breaker_for
 
 _logger = logging.getLogger(__name__)
@@ -161,6 +162,11 @@ class DeviceDevice(models.Model):
         "credential, which holds its REST bearer token.",
     )
     date_last_data_received = fields.Datetime(readonly=True)
+    inbound_token_set = fields.Boolean(
+        related="credential_id.is_provisioned",
+        string="Token Set",
+        help="Whether the device's credential holds the token it must send.",
+    )
     comm_protocol = fields.Selection(
         selection=[
             ("http", "HTTP/REST"),
@@ -262,7 +268,8 @@ class DeviceDevice(models.Model):
             for field_name, default in self._DEVICE_ENDPOINT_DEFAULTS.items():
                 vals.setdefault(field_name, default)
 
-            if "credential_id" not in vals:
+            # the form sends an empty credential as False: still none to keep
+            if not vals.get("credential_id"):
                 vals["credential_id"] = self._create_inbound_credential(
                     self._credential_label(vals),
                     vals.get("company_id") or self.env.company.id,
@@ -329,12 +336,18 @@ class DeviceDevice(models.Model):
         return " / ".join(reversed(path))
 
     @api.model
-    def _create_inbound_credential(self, label, company_id):
+    def _inbound_credentials(self):
+        # a device manager provisions the device's own token without holding
+        # credential rights: the one elevation, shared by creation and rotation
+        return self.env["credential.credential"].sudo()
+
+    @api.model
+    def _create_inbound_credential(self, label, company_id, token=None):
         bearer_token_category = self.env.ref(
             "credential.credential_category_bearer_token",
             raise_if_not_found=False,
         )
-        Credential = self.env["credential.credential"].sudo()
+        Credential = self._inbound_credentials()
         vals = {
             "name": "Device %s Token" % label,
             "company_id": company_id,
@@ -343,7 +356,7 @@ class DeviceDevice(models.Model):
             ),
         }
         if Credential._is_encryption_key_configured():
-            vals["credential_value"] = self._generate_api_token()
+            vals["credential_value"] = token or self._generate_api_token()
         else:
             _logger.warning(
                 "Device %s: no ODOO_API_ENCRYPTION_KEY, so its inbound credential "
@@ -944,6 +957,63 @@ class DeviceDevice(models.Model):
     @api.model
     def _generate_api_token(self):
         return secrets.token_hex(32)
+
+    @check_identity
+    def action_generate_inbound_token(self):
+        """Store a new token on the device's credential and show it once.
+
+        The token is kept encrypted in the credential and handed to the dialog
+        through its context only, the way an API key is: it cannot be read
+        back afterwards, only replaced.
+        """
+        self.check_singleton()
+        self.check_access("write")
+        if self.auth_type not in ("bearer", "api_key"):
+            raise UserError(
+                self.env._("Only a device that sends a token can be given one.")
+            )
+        Credential = self._inbound_credentials()
+        if not Credential._is_encryption_key_configured():
+            raise UserError(
+                self.env._(
+                    "No token can be stored: ODOO_API_ENCRYPTION_KEY is not set "
+                    "on this server."
+                )
+            )
+        token = self._generate_api_token()
+        if self.credential_id:
+            Credential.browse(self.credential_id.id).write({"credential_value": token})
+        else:
+            company_id = self.company_id.id or self.env.company.id
+            label = self._credential_label(
+                {
+                    "identifier": self.identifier,
+                    "name": self.name,
+                    "parent_id": self.parent_id.id,
+                }
+            )
+            # a credential this device let go of may still hold the name, and
+            # names are unique per company: one that is not its own is not
+            # reused, the device's id tells the new one apart
+            if Credential.with_context(active_test=False).search_count(
+                [
+                    ("name", "=", f"Device {label} Token"),
+                    ("company_id", "=", company_id),
+                ]
+            ):
+                label = f"{label} ({self.id})"
+            self.credential_id = self._create_inbound_credential(
+                label, company_id, token=token
+            )
+        _logger.info("Device %s: a new inbound token was issued", self.id)
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "device.token.show",
+            "name": self.env._("Device Token"),
+            "views": [(False, "form")],
+            "target": "new",
+            "context": {"default_token": token, "default_identifier": self.identifier},
+        }
 
     _INBOUND_UNLOGGED_EVENTS = frozenset({"device_status"})
 

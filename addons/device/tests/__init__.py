@@ -22,3 +22,4 @@ from . import test_inbound_credential_without_key
 from . import test_home_tile_devices
 
 from . import test_integrity_probe
+from . import test_inbound_token_action

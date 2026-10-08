@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="device_token_show_view_form" model="ir.ui.view">
+        <field name="name">device.token.show.view.form</field>
+        <field name="model">device.token.show</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <h3 class="fw-bold">Copy the device's token</h3>
+                    <p>
+                        Enter it in the device together with its identifier
+                        <code><field name="identifier" readonly="True" /></code>.
+                    </p>
+                    <field name="token" widget="CopyClipboardChar" readonly="True" />
+                    <p class="alert alert-warning mt-3" role="alert">
+                        <strong>Important:</strong> the token cannot be shown again.
+                        Whoever holds it can send data in this device's name, so
+                        keep it only on the device.
+                    </p>
+                    <footer>
+                        <button special="cancel" string="Done" data-hotkey="x" />
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>
