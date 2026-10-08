@@ -9,7 +9,8 @@
         <field name="kind">guard</field>
         <field name="guard_scope">members</field>
         <field name="operation">crud</field>
-        <field name="domain">['|', ('company_id', 'in', user.company_ids.ids), ('company_ids', 'in', user.company_ids.ids)]</field>
+        <field
+            name="domain">['|', ('company_id', 'in', user.company_ids.ids), ('company_ids', 'in', user.company_ids.ids)]</field>
     </record>
 
 </odoo>

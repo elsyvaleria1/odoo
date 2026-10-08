@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="automation_telegram_wait_menu"
+        parent="base.menu_automation"
+        action="automation_telegram_wait_action"
+        sequence="66" />
+
+</odoo>

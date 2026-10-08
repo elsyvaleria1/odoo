@@ -15,6 +15,7 @@
         "security/ir.access.csv",
         "data/ir_cron_data.xml",
         "views/automation_telegram_wait_views.xml",
+        "views/automation_telegram_menus.xml",
     ],
     "auto_install": True,
 }

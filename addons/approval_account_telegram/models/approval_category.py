@@ -10,8 +10,8 @@ class ApprovalCategory(models.Model):
             ("especie", "Payments in kind recorded with /especie"),
         ],
         string="Telegram Intake",
-        copy=False,
         index=True,
+        copy=False,
         help="The Telegram command whose requests are filed in this category. "
         "A company has one category per command; one without a company takes "
         "the requests of every company that has none of its own.",

@@ -7,8 +7,6 @@ from odoo.addons.telegram.tools.dispatch import message_kind
 
 _logger = logging.getLogger(__name__)
 
-PRIVILEGE = "automation_telegram.privilege_answer_question"
-
 
 class TelegramHandlerAutomation(models.AbstractModel):
     """Answers to the questions workflow steps asked on Telegram.
@@ -65,7 +63,7 @@ class TelegramHandlerAutomation(models.AbstractModel):
             waits = self.env["automation.telegram.wait"]
             return waits, waits
         waits = self.env["automation.telegram.wait"].with_privilege(
-            PRIVILEGE,
+            "automation_telegram.privilege_answer_question",
             reason="a message in a chat answers the workflow question asked there",
         )
         # the router asks before any handler runs, outside the savepoint a

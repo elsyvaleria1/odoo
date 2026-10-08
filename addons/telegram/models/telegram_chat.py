@@ -151,8 +151,8 @@ class TelegramChat(models.Model):
         "for its thread."
     )
     command_menu = fields.Json(
-        readonly=True,
         copy=False,
+        readonly=True,
         help="The command menu last sent to Telegram for this private chat: "
         "what its person may run here, in the chat's language. It is sent "
         "again only when that changes.",

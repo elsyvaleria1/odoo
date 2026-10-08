@@ -1,1 +1,1 @@
-from . import test_send_and_wait
+from . import test_access_matrix, test_send_and_wait

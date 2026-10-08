@@ -11,8 +11,8 @@
                 <field
                     name="company_ids"
                     widget="many2many_tags"
-                    groups="base.group_multi_company"
-                    optional="show" />
+                    optional="show"
+                    groups="base.group_multi_company" />
             </list>
         </field>
     </record>

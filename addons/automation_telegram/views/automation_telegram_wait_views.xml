@@ -83,10 +83,4 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem
-        id="automation_telegram_wait_menu"
-        parent="base.menu_automation"
-        action="automation_telegram_wait_action"
-        sequence="66" />
-
 </odoo>

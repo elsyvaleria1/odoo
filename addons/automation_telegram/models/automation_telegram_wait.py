@@ -7,7 +7,7 @@ import psycopg
 
 from odoo import api, fields, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 from odoo.addons.automation.models.workflow_edge import EVENT_CONDITIONS
 from odoo.addons.telegram.tools.authority import operating
@@ -67,37 +67,34 @@ class AutomationTelegramWait(models.Model):
     line_id = fields.Many2one(
         comodel_name="automation.runtime.line",
         string="Asking Step",
-        required=True,
         index=True,
-        ondelete="cascade",
         readonly=True,
+        required=True,
+        ondelete="cascade",
     )
     runtime_id = fields.Many2one(
         related="line_id.runtime_id",
-        store=True,
-        index=True,
     )
     event_code = fields.Char(
         string="Event",
-        required=True,
         readonly=True,
+        required=True,
         help="The event the answer delivers to the asking step: its On Event "
         "edge runs, its Without Event edge for the same event does not.",
     )
     chat_id = fields.Many2one(
         comodel_name="telegram.chat",
-        required=True,
         index=True,
-        ondelete="cascade",
         readonly=True,
+        required=True,
+        ondelete="cascade",
     )
     bot_id = fields.Many2one(
         related="chat_id.bot_id",
-        store=True,
     )
     accepted_kinds = fields.Char(
-        required=True,
         readonly=True,
+        required=True,
         help="Comma-separated kinds of message that answer: text, photo, "
         "document, voice, contact, location.",
     )
@@ -105,8 +102,8 @@ class AutomationTelegramWait(models.Model):
         comodel_name="telegram.message",
         string="Question",
         index="btree_not_null",
-        ondelete="set null",
         readonly=True,
+        ondelete="set null",
     )
     state = fields.Selection(
         selection=[
@@ -117,8 +114,8 @@ class AutomationTelegramWait(models.Model):
             ("error", "Failed"),
         ],
         default="waiting",
-        required=True,
         readonly=True,
+        required=True,
         help="Waiting: no answer yet.\n"
         "Answered: the answer arrived; the dispatcher has yet to hand it on.\n"
         "Delivered: the asking step received its event.\n"
@@ -282,7 +279,7 @@ class AutomationTelegramWait(models.Model):
         for file_id, name in (self.reply_payload or {}).get("files", []):
             downloaded = self.bot_id.get_file(file_id)
             if not downloaded:
-                raise ValueError(
+                raise UserError(
                     self.env._("Telegram did not hand over the file %s.", name)
                 )
             # a photo's name is Telegram's stored one, which carries the extension

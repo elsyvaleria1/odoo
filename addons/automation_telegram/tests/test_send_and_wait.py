@@ -275,9 +275,7 @@ class TestSendAndWait(TelegramBotTestCase):
         self.assertEqual(wait.attempts, MAX_ATTEMPTS)
         self.assertFalse(wait.attachment_ids)
         self.assertEqual(self._line(runtime, self.save).state, "waiting")
-        self.assertIn(
-            "could not be delivered", runtime.message_ids[:1].body or ""
-        )
+        self.assertIn("could not be delivered", runtime.message_ids[:1].body or "")
 
     def test_a_failed_delivery_backs_off(self):
         runtime = self._run()
