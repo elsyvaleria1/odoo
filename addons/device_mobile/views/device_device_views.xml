@@ -5,6 +5,11 @@
         <field name="name">device.device.view.form.mobile</field>
         <field name="model">device.device</field>
         <field name="inherit_id" ref="device.view_device_device_form" />
+        <!--
+            after every other device view: device_access_control replaces the
+            connection page's invisible, and this one adds to whatever is there
+        -->
+        <field name="priority">99</field>
         <field name="arch" type="xml">
             <field name="device_category_id" position="after">
                 <field name="device_category_code" invisible="1" />
@@ -13,6 +18,59 @@
                     widget="phone"
                     invisible="device_category_code != 'mobile_phone'" />
             </field>
+            <!-- a phone is enrolled with its token: shown beside the rest of
+                its fields, not on the Inbound Authentication page -->
+            <field name="user_id" position="after">
+                <field
+                    name="credential_id"
+                    invisible="device_category_code != 'mobile_phone'" />
+                <field
+                    name="auth_type"
+                    invisible="device_category_code != 'mobile_phone'" />
+            </field>
+            <!-- what a phone does not use: it pushes over HTTPS on its own -->
+            <field name="plate" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </field>
+            <field name="gps_receiver_key" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </field>
+            <field name="comm_protocol" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </field>
+            <field name="link_mode" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </field>
+            <field name="connection_state_message" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </field>
+            <page name="connection" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </page>
+            <page name="api_auth" position="attributes">
+                <attribute
+                    name="invisible"
+                    add="device_category_code == 'mobile_phone'"
+                    separator=" or " />
+            </page>
         </field>
     </record>
 

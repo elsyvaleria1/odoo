@@ -230,6 +230,7 @@
                                 placeholder="e.g., Warehouse Temperature Sensor 01" />
                         </h1>
                         <group>
+                            <field name="device_category_id" />
                             <field
                                 name="identifier"
                                 placeholder="MAC address, Serial number, etc." />
@@ -240,7 +241,6 @@
                     </div>
                     <group>
                         <group>
-                            <field name="device_category_id" />
                             <field
                                 name="comm_protocol"
                                 widget="radio"

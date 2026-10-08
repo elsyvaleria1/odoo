@@ -7,4 +7,5 @@ from . import (
     test_mobile_location,
     test_retry_after_failure,
     test_device_device,
+    test_device_form,
 )
