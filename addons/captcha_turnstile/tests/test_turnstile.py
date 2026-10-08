@@ -12,7 +12,7 @@ class TestTurnstile(TransactionCase):
         super().setUp()
         self.icp = self.env["ir.config_parameter"].sudo()
 
-    def test_the_verification_goes_through_its_service(self):
+    def test_a_visitor_is_verified_through_the_service(self):
         self.env["credential.credential"]._set_system_secret(
             "captcha_turnstile.secret_key", "SECRET"
         )
@@ -21,8 +21,10 @@ class TestTurnstile(TransactionCase):
             **{"json.return_value": {"success": True, "action": "signup"}},
         )
         with patch.object(GuardedSession, "request", return_value=response) as sent:
-            verdict = self.env["captcha.adapter.turnstile"]._verdict(
-                "10.0.0.1", "a-token", "login"
+            verdict = (
+                self.env["captcha.adapter.turnstile"]
+                .with_user(self.env.ref("base.public_user"))
+                ._verdict("10.0.0.1", "a-token", "login")
             )
         self.assertEqual(verdict, "wrong_action")
         self.assertEqual(

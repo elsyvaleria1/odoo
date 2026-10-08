@@ -23,15 +23,8 @@ class CaptchaAdapterTurnstile(models.AbstractModel):
 
     @api.model
     def _post_verification(self, data):
-        service = self.env.ref("captcha_turnstile.service_turnstile")
-        return (
-            self.env["integration.connection"]
-            ._shared(service)
-            ._egress_request(
-                "POST",
-                f"{service.endpoint_url}/turnstile/v0/siteverify",
-                purpose=service.code,
-                data=data,
-                timeout=3.05,
-            )
+        return self.env.ref(
+            "captcha_turnstile.service_turnstile"
+        )._shared_egress_request(
+            "POST", "/turnstile/v0/siteverify", data=data, timeout=3.05
         )

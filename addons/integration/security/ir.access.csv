@@ -27,3 +27,4 @@ rule_integration_connection_company,Connection: Company isolation,model_integrat
 privilege_oauth_authorization_connection,OAuth authorization: the connection authorized,model_integration_connection,privilege_oauth_authorization,permission,r,,,
 privilege_oauth_authorization_service,OAuth authorization: its service,model_integration_service,privilege_oauth_authorization,permission,r,,,
 privilege_oauth_authorization_credential,OAuth authorization: the credential a legacy authorize names,credential.model_credential_credential,privilege_oauth_authorization,permission,r,,,
+privilege_shared_egress_service,Shared egress: the service sent to,model_integration_service,privilege_shared_egress,permission,r,,,

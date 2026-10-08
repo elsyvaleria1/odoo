@@ -27,18 +27,11 @@ class CaptchaAdapterRecaptcha(models.AbstractModel):
 
     @api.model
     def _post_verification(self, data):
-        service = self.env.ref("captcha_recaptcha.service_recaptcha")
         # it takes ~50ms to answer; a slow answer is not worth a stuck form
-        return (
-            self.env["integration.connection"]
-            ._shared(service)
-            ._egress_request(
-                "POST",
-                f"{service.endpoint_url}/recaptcha/api/siteverify",
-                purpose=service.code,
-                data=data,
-                timeout=2,
-            )
+        return self.env.ref(
+            "captcha_recaptcha.service_recaptcha"
+        )._shared_egress_request(
+            "POST", "/recaptcha/api/siteverify", data=data, timeout=2
         )
 
     @api.model

@@ -20,12 +20,14 @@ class TestRecaptcha(TransactionCase):
     def _verdict(self, answer):
         response = MagicMock(status_code=200, **{"json.return_value": answer})
         with patch.object(GuardedSession, "request", return_value=response) as sent:
-            verdict = self.env["captcha.adapter.recaptcha"]._verdict(
-                "10.0.0.1", "a-token", "login"
+            verdict = (
+                self.env["captcha.adapter.recaptcha"]
+                .with_user(self.env.ref("base.public_user"))
+                ._verdict("10.0.0.1", "a-token", "login")
             )
         return verdict, sent
 
-    def test_the_verification_goes_through_its_service(self):
+    def test_a_visitor_is_verified_through_the_service(self):
         verdict, sent = self._verdict(
             {"success": True, "score": 0.9, "action": "login"}
         )

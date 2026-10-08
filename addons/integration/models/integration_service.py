@@ -838,3 +838,24 @@ class IntegrationService(models.Model):
             company_id=(credential.company_id.id if credential else None) or None,
             credential_id=credential.id if credential else None,
         )
+
+    def _shared_egress_request(self, method: str, path: str, **kwargs: Any):
+        """Send `path` on this service's endpoint through its shared connection,
+        whoever the caller is: a public form's captcha or a visitor's address
+        lookup reads the service only to know where to send, and the
+        connection's breaker and budget still bind."""
+        self.check_singleton()
+        service = self.with_privilege(
+            "integration.privilege_shared_egress",
+            reason="the caller sends through the service's shared connection",
+        )
+        return (
+            self.env["integration.connection"]
+            ._shared(service)
+            ._egress_request(
+                method,
+                f"{service.endpoint_url}{path}",
+                purpose=service.code,
+                **kwargs,
+            )
+        )

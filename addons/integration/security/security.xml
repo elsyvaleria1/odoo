@@ -59,4 +59,10 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_shared_egress" model="res.groups">
+        <field
+            name="name">Privilege: any caller sends through a service's shared connection</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>
