@@ -1,56 +1,64 @@
-from odoo import Command, fields, models
-from odoo.api import ValuesType
-from odoo.exceptions import UserError
+from typing import Any, NamedTuple
+
+from odoo import Command, api, fields, models
+from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
+from odoo.tools.translate import LazyGettext
 
 _debug = DebugLog(__name__)
 
 
-class MixinProjectPm(models.AbstractModel):
-    _name = "mixin.project.pm"
-    _description = "Project Kanban Column"
-    _order = "sequence, id"
+class ColumnDeleteTexts(NamedTuple):
+    title: LazyGettext
+    confirm: LazyGettext
+    archive: LazyGettext
+    blocked: LazyGettext
 
-    _member_model: str | None = None
-    _member_field: str | None = None
 
-    active = fields.Boolean(
+class MixinProjectColumnContainer(models.AbstractModel):
+    _name = "mixin.project.column.container"
+    _description = "Project Kanban Column Holding Records"
+    _inherit = ["mixin.project.column"]
+
+    _member_model = ""
+    _member_field = ""
+    _column_action = ""
+    _delete_texts: ColumnDeleteTexts
+
+    mail_template_id = fields.Many2one(
+        comodel_name="mail.template",
+        string="Email Template",
+        domain=lambda self: self._domain_mail_template_id(),
+    )
+    is_archive_recorded = fields.Boolean(
         export_string_translation=False,
-        default=True,
+        copy=False,
     )
-    sequence = fields.Integer(
-        export_string_translation=False,
-        default=1,
-    )
-    name = fields.Char(
-        translate=True,
-        required=True,
-    )
-    fold = fields.Boolean(string="Folded")
-    color = fields.Integer(export_string_translation=False)
 
-    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
-        vals_list = super().copy_data(default=default)
-        _debug.lifecycle("copy_data", records=self, default=sorted(default or {}))
-        if default and "name" in default:
-            return vals_list
-        return [
-            dict(vals, name=self.env._("%s (copy)", record.name))
-            for record, vals in zip(self, vals_list, strict=True)
-        ]
+    def _domain_mail_template_id(self) -> list:
+        return [("model", "=", self._member_model)]
 
-    def copy_translations(self, new, excluded=()) -> None:
-        if new.name != self.env._("%s (copy)", self.name):
-            super().copy_translations(new, excluded=excluded)
-            return
-        super().copy_translations(new, excluded=(*excluded, "name"))
-        self._copy_translations_of_renamed_field(
-            new, "name", lambda record, term: record.env._("%s (copy)", term)
-        )
+    @api.constrains("mail_template_id")
+    def _check_mail_template_model(self) -> None:
+        member_model = self.env["ir.model"]._get(self._member_model)
+        for column in self:
+            template = column.mail_template_id
+            if template and template.model != self._member_model:
+                raise ValidationError(
+                    self.env._(
+                        "The email template %(template)s is defined on %(model)s, but "
+                        "%(column)s sends it about a record of %(member_model)s. "
+                        "Choose a template whose model is %(member_model)s.",
+                        template=template.display_name,
+                        model=template.model,
+                        column=column.display_name,
+                        member_model=member_model.name,
+                    )
+                )
 
-    def write(self, vals: ValuesType) -> bool:
-        if "active" not in vals or not self._member_field:
+    def write(self, vals: dict) -> bool:
+        if "active" not in vals:
             return super().write(vals)
         restoring = bool(vals["active"])
         columns = self.filtered(lambda column: column.active != restoring)
@@ -75,9 +83,25 @@ class MixinProjectPm(models.AbstractModel):
         return res
 
     def unlink(self) -> bool:
-        if self._member_field and not self.env.su:
+        if not self.env.su:
             self._check_archive_reach(self.env[self._member_model], hidden=0)
         return super().unlink()
+
+    def action_open_delete_wizard(self, stage_view: bool = False) -> dict[str, Any]:
+        _debug.lifecycle("delete_wizard_opened", columns=self, stage_view=stage_view)
+        wizard = self.env["wizard.project.column.delete"].create(
+            {"res_model": self._name, "res_ids": self.ids}
+        )
+        return {
+            "name": str(self._delete_texts.title),
+            "view_mode": "form",
+            "res_model": wizard._name,
+            "views": [(False, "form")],
+            "type": "ir.actions.act_window",
+            "res_id": wizard.id,
+            "target": "new",
+            "context": dict(self.env.context, stage_view=stage_view),
+        }
 
     def _count_reached_members(self, restoring: bool) -> int:
         # every member the cascade would reach, read past the user's rules: a
@@ -129,6 +153,14 @@ class MixinProjectPm(models.AbstractModel):
     def _count_hidden_projects(self) -> int:
         return 0
 
+    def _get_delete_message(self, count_member: int) -> str:
+        texts = self._delete_texts
+        if not count_member:
+            return str(texts.confirm)
+        if all(self.mapped("active")):
+            return str(texts.archive)
+        return str(texts.blocked)
+
     def _get_member_count(self) -> int:
         return (
             self.env[self._member_model]
@@ -137,8 +169,10 @@ class MixinProjectPm(models.AbstractModel):
         )
 
     def _get_members_to_archive(self) -> models.BaseModel:
-        return self.env[self._member_model].search(
-            [(self._member_field, "in", self.ids)]
+        return (
+            self.env[self._member_model]
+            .with_context(active_test=True)
+            .search([(self._member_field, "in", self.ids)])
         )
 
     def _get_members_to_restore(self) -> models.BaseModel:
@@ -167,6 +201,9 @@ class MixinProjectPm(models.AbstractModel):
         return members
 
     def _get_projects_out_of_reach(self, members: models.BaseModel) -> models.BaseModel:
+        return self.env["project.project"]
+
+    def _get_sharing_projects(self) -> models.BaseModel:
         return self.env["project.project"]
 
     def _check_archive_reach(self, members: models.BaseModel, hidden: int) -> None:

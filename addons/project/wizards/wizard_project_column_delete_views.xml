@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_wizard_project_column_delete_form" model="ir.ui.view">
+        <field name="name">wizard.project.column.delete.form</field>
+        <field name="model">wizard.project.column.delete</field>
+        <field name="arch" type="xml">
+            <form string="Delete">
+                <field name="count_member" invisible="1" />
+                <field name="is_columns_active" invisible="1" />
+                <div name="message">
+                    <field name="message" />
+                </div>
+                <div
+                    name="projects"
+                    invisible="not project_ids or not count_member or not is_columns_active">
+                    <p>Archiving them also archives what they hold in the following projects:</p>
+                    <field name="project_ids" readonly="1">
+                        <list>
+                            <field name="name" />
+                        </list>
+                    </field>
+                </div>
+                <footer>
+                    <button
+                        name="action_archive"
+                        type="object"
+                        string="Archive"
+                        invisible="not is_columns_active or count_member == 0"
+                        class="btn btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="action_unlink"
+                        type="object"
+                        string="Delete"
+                        invisible="count_member &gt; 0"
+                        class="btn btn-primary"
+                        data-hotkey="w" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        invisible="not is_columns_active and count_member"
+                        data-hotkey="x" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        invisible="is_columns_active or not count_member"
+                        class="btn btn-primary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

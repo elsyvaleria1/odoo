@@ -187,11 +187,11 @@ class TestReviewPmColumns(TestProjectCommon):
         shelved = Project.create({"name": "Shelved", "phase_id": phase.id})
         shelved.active = False
         wizard = (
-            self.env["wizard.project.phase.delete"]
+            self.env["wizard.project.column.delete"]
             .with_user(self.user_projectmanager)
-            .create({"phase_ids": phase.ids})
+            .create({"res_model": phase._name, "res_ids": phase.ids})
         )
-        self.assertEqual(wizard.projects_count, 2)
+        self.assertEqual(wizard.count_member, 2)
         wizard.action_archive()
         self.assertFalse(phase.active)
         self.assertFalse(cascaded.active)
@@ -217,11 +217,11 @@ class TestReviewPmColumns(TestProjectCommon):
         )
         shelved.active = False
         wizard = (
-            self.env["wizard.project.workflow.step.delete"]
+            self.env["wizard.project.column.delete"]
             .with_user(self.user_projectmanager)
-            .create({"step_ids": step.ids, "project_ids": self.project_goats.ids})
+            .create({"res_model": step._name, "res_ids": step.ids})
         )
-        self.assertEqual(wizard.tasks_count, 2)
+        self.assertEqual(wizard.count_member, 2)
         wizard.action_archive()
         self.assertFalse(step.active)
         self.assertFalse(cascaded.active)

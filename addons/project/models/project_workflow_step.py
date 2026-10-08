@@ -1,25 +1,39 @@
 from datetime import timedelta
-from typing import Any
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, frozendict
+from odoo.tools import SQL, LazyTranslate, frozendict
 
+from .mixin_project_column_container import ColumnDeleteTexts
 from .project_task import CLOSED_STATES
 
 _debug = DebugLog(__name__)
+_lt = LazyTranslate(__name__)
 
 
 class ProjectWorkflowStep(models.Model):
     _name = "project.workflow.step"
     _access_anchors = frozendict({"company": "project_ids.company_id"})
     _description = "Workflow Step"
-    _inherit = ["mixin.project.pm"]
+    _inherit = ["mixin.project.column.container"]
 
     _member_model = "project.task"
     _member_field = "step_id"
+    _column_action = "project.open_workflow_step_form"
+    _delete_texts = ColumnDeleteTexts(
+        title=_lt("Delete Workflow Step"),
+        confirm=_lt("Are you sure you want to delete these workflow steps?"),
+        archive=_lt(
+            "You cannot delete workflow steps containing tasks. You can either "
+            "archive them or first delete all of their tasks."
+        ),
+        blocked=_lt(
+            "You cannot delete workflow steps containing tasks. You should first "
+            "delete all of their tasks."
+        ),
+    )
 
     def _default_project_ids(self) -> list[int] | None:
         default_project_id = self.env.context.get("default_project_id")
@@ -36,9 +50,6 @@ class ProjectWorkflowStep(models.Model):
         "projects with similar processes to consolidate reporting.",
     )
     mail_template_id = fields.Many2one(
-        comodel_name="mail.template",
-        string="Email Template",
-        domain=[("model", "=", "project.task")],
         help="Email sent automatically when a task enters this step.",
     )
     archived_member_ids = fields.Many2many(
@@ -50,10 +61,6 @@ class ProjectWorkflowStep(models.Model):
         export_string_translation=False,
         copy=False,
         context={"active_test": False},
-    )
-    is_archive_recorded = fields.Boolean(
-        export_string_translation=False,
-        copy=False,
     )
     task_state = fields.Selection(
         selection="_selection_task_states",
@@ -144,36 +151,6 @@ class ProjectWorkflowStep(models.Model):
             self._update_rating_deadlines(reschedule=True)
         return res
 
-    def action_open_delete_wizard(self, stage_view: bool = False) -> dict[str, Any]:
-        _debug.lifecycle(
-            "delete_wizard_opened",
-            steps=self,
-            projects=self.project_ids,
-            stage_view=stage_view,
-        )
-        wizard = self.env["wizard.project.workflow.step.delete"].create(
-            {
-                "project_ids": self.project_ids.ids,
-                "step_ids": self.ids,
-            }
-        )
-        context = dict(self.env.context, stage_view=stage_view)
-        return {
-            "name": self.env._("Delete Workflow Step"),
-            "view_mode": "form",
-            "res_model": "wizard.project.workflow.step.delete",
-            "views": [
-                (
-                    self.env.ref("project.view_project_workflow_step_delete_wizard").id,
-                    "form",
-                )
-            ],
-            "type": "ir.actions.act_window",
-            "res_id": wizard.id,
-            "target": "new",
-            "context": context,
-        }
-
     def _count_hidden_projects(self) -> int:
         relation = self._fields["project_ids"]
         self.flush_recordset(["project_ids"])
@@ -195,6 +172,9 @@ class ProjectWorkflowStep(models.Model):
         writable = projects.with_env(self.env(su=False))._filtered_access("write")
         accessible = projects.filtered_domain([("user_has_access", "=", True)])
         return projects - writable - accessible
+
+    def _get_sharing_projects(self) -> models.BaseModel:
+        return self.project_ids
 
     _RATING_PERIOD_DAYS = {
         "daily": 1,

@@ -1,25 +1,37 @@
-from typing import Any
-
-from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo import fields, models
+from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import LazyTranslate
+
+from .mixin_project_column_container import ColumnDeleteTexts
 
 _debug = DebugLog(__name__)
+_lt = LazyTranslate(__name__)
 
 
 class ProjectPhase(models.Model):
     _name = "project.phase"
     _description = "Project Phase"
-    _inherit = ["mixin.project.pm"]
+    _inherit = ["mixin.project.column.container"]
 
     _member_model = "project.project"
     _member_field = "phase_id"
+    _column_action = "project.project_phase_configure"
+    _delete_texts = ColumnDeleteTexts(
+        title=_lt("Delete Phase"),
+        confirm=_lt("Are you sure you want to delete these phases?"),
+        archive=_lt(
+            "You cannot delete phases containing projects. You can either archive "
+            "them or first delete all of their projects."
+        ),
+        blocked=_lt(
+            "You cannot delete phases containing projects. You should first delete "
+            "all of their projects."
+        ),
+    )
 
     sequence = fields.Integer(default=50)
     mail_template_id = fields.Many2one(
-        comodel_name="mail.template",
-        string="Email Template",
-        domain=[("model", "=", "project.project")],
         help="Email sent automatically when a project enters this phase.",
     )
     fold = fields.Boolean(
@@ -37,45 +49,6 @@ class ProjectPhase(models.Model):
         copy=False,
         context={"active_test": False},
     )
-    is_archive_recorded = fields.Boolean(
-        export_string_translation=False,
-        copy=False,
-    )
-
-    @api.constrains("mail_template_id")
-    def _check_mail_template_model(self) -> None:
-        for phase in self:
-            template = phase.mail_template_id
-            if template and template.model != "project.project":
-                raise ValidationError(
-                    self.env._(
-                        "The email template %(template)s is defined on %(model)s, but a "
-                        "phase email is sent about a project. Choose a template whose "
-                        "model is Project.",
-                        template=template.display_name,
-                        model=template.model,
-                    )
-                )
-
-    def action_open_delete_wizard(self, stage_view: bool = False) -> dict[str, Any]:
-        _debug.lifecycle("delete_wizard_opened", phases=self, stage_view=stage_view)
-        wizard = self.env["wizard.project.phase.delete"].create({"phase_ids": self.ids})
-        context = dict(self.env.context, stage_view=stage_view)
-        return {
-            "name": self.env._("Delete Phase"),
-            "view_mode": "form",
-            "res_model": "wizard.project.phase.delete",
-            "views": [
-                (
-                    self.env.ref("project.view_project_phase_delete_wizard").id,
-                    "form",
-                )
-            ],
-            "type": "ir.actions.act_window",
-            "res_id": wizard.id,
-            "target": "new",
-            "context": context,
-        }
 
     @_debug.perf.timed
     def write(self, vals: dict) -> bool:

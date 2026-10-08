@@ -11,7 +11,7 @@ _debug = DebugLog(__name__)
 class ProjectTriage(models.Model):
     _name = "project.triage"
     _description = "Personal Task Triage Bucket"
-    _inherit = ["mixin.project.pm"]
+    _inherit = ["mixin.project.column"]
     _access_anchors = frozendict(
         {
             "owner": "user_id",

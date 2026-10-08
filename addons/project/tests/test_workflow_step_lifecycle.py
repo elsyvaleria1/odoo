@@ -116,13 +116,13 @@ class TestQuickCreateSeedsAStep(TestProjectCommon):
         self.env["project.task"].create(
             {"name": "in step", "project_id": self.project_pigs.id, "step_id": step.id}
         )
-        wizard = self.env["wizard.project.workflow.step.delete"].create(
-            {"step_ids": [(6, 0, step.ids)]}
+        wizard = self.env["wizard.project.column.delete"].create(
+            {"res_model": step._name, "res_ids": step.ids}
         )
-        self.assertEqual(wizard.tasks_count, 1)
-        wizard.step_ids = [(5,)]
+        self.assertEqual(wizard.count_member, 1)
+        wizard.res_ids = []
         self.assertEqual(
-            wizard.tasks_count, 0, "tasks_count must react to step_ids changes"
+            wizard.count_member, 0, "count_member must react to res_ids changes"
         )
 
     def test_rating_deadline_is_seeded_and_stable(self) -> None:

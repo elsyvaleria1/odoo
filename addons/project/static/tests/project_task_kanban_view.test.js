@@ -46,7 +46,7 @@ test("stages nocontent helper should be displayed in the project Kanban", async 
             </kanban>
         `,
         context: {
-            active_model: "wizard.project.workflow.step.delete",
+            active_model: "wizard.project.column.delete",
             default_project_id: 1,
         },
     });
