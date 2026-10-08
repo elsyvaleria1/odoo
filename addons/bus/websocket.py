@@ -147,6 +147,7 @@ class ConnectionState(IntEnum):
 
 _public_session_lock = threading.Lock()
 _public_session_sid_by_db = {}
+_PUBLIC_SESSION_TOUCH_INTERVAL = 3600
 
 
 class ConnectionGauge:
@@ -1308,6 +1309,11 @@ class WebsocketConnectionHandler:
             )
         try:
             public_session = cls._handle_public_configuration(request)
+            if public_session is None and request.session.is_new:
+                # Nothing is stored for an anonymous visitor until it writes,
+                # and its cookie is never written under: the socket serves it
+                # as the public user, as an untrusted origin is served.
+                public_session = cls._get_shared_public_session(request.db)
             httprequest = request.httprequest
             websocket = Websocket(
                 httprequest.raw_environ["odoo.socket"],
@@ -1368,6 +1374,16 @@ class WebsocketConnectionHandler:
         with _public_session_lock:
             sid = _public_session_sid_by_db.get(db)
             session = root.session_store.get(sid) if sid else None
+            if (
+                session
+                and time.time() - (session.mtime or 0) > _PUBLIC_SESSION_TOUCH_INTERVAL
+            ):
+                # Every anonymous socket of the database rides this session:
+                # reaped as idle, it would close them all at once.
+                try:
+                    root.session_store.keep_alive(session)
+                except SessionExpiredException:
+                    session = None
             if not session:
                 session = root.session_store.new()
                 session.update(prepare_default_session(), db=db)
