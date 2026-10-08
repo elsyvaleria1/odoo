@@ -23,3 +23,4 @@ from . import test_home_tile_devices
 
 from . import test_integrity_probe
 from . import test_inbound_token_action
+from . import test_device_receiver

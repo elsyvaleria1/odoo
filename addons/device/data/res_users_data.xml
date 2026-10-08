@@ -5,7 +5,7 @@
         <field name="name">Device Receiver</field>
         <field name="login">__device_receiver__</field>
         <field name="group_ids" eval="[Command.set([ref('group_device_user')])]" />
-        <field name="active" eval="False" />
+        <field name="active" eval="True" />
         <field name="principal_type">service</field>
     </record>
 
