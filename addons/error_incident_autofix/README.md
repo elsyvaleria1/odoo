@@ -105,7 +105,9 @@ pushed ─► testing ─► test_failed
     touches, restarts and checks health. When the server does not come back healthy, it
     reverts all of that, and the incident returns to **Tests Passed**.
   - **Merge.** A merged fix waits for production's own deploy. Every ten minutes Odoo asks the
-    deploy runner which awaited commits the running checkouts contain.
+    deploy runner which awaited commits the running checkouts contain -- for the policy's
+    **Production Wait** (30 days); a fix production has not run by then is marked **Not
+    Deployed**, and the incident says so for a person to deploy or close it.
   - **Resolved.** A contained fix puts the incident **In Production** and resolves it, and its
     users are told it is fixed.
   - **What the runner may do.** The deploy runner's checkouts and its upgrade, restart and

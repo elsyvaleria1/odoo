@@ -316,6 +316,13 @@ msgid "Date and time when final approval was granted"
 msgstr "Fecha y hora en que se otorgó la aprobación final"
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
+msgid ""
+"Days production is asked, every ten minutes, whether it runs a merged fix; "
+"after that the incident is marked Not Deployed for a person."
+msgstr "Días durante los que se pregunta a producción, cada diez minutos, si ejecuta una corrección fusionada; después, el incidente se marca como No desplegado para una persona."
+
+#. module: error_incident_autofix
 #: model:res.groups,comment:error_incident_autofix.group_autofix_approver
 msgid ""
 "Decides whether an agent's fix is merged, or applied to production before it"
@@ -412,6 +419,11 @@ msgstr "Rama de la corrección"
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_commit
 msgid "Fix Commit"
 msgstr "Commit de la corrección"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__date_fix_merged
+msgid "Fix Merged"
+msgstr "Corrección fusionada"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__fix_model
@@ -622,6 +634,11 @@ msgid "No incident was handed to the agents yet"
 msgstr "Todavía no se entregó ningún incidente a los agentes"
 
 #. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__not_deployed
+msgid "Not Deployed"
+msgstr "No desplegado"
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__none
 msgid "Not Dispatched"
 msgstr "No despachado"
@@ -715,6 +732,24 @@ msgid "Policy"
 msgstr "Política"
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
+msgid "Production Wait"
+msgstr "Espera de producción"
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid ""
+"Production has not run this fix in %(days)s days; it is no longer asked "
+"about. Deploy it, or close the incident."
+msgstr "Producción no ha ejecutado esta corrección en %(days)s días; ya no se le pregunta. Despliéguela o cierre el incidente."
+
+#. module: error_incident_autofix
+#: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_policy_production_wait_positive
+msgid "Production is asked about a merged fix for at least a day."
+msgstr "A producción se le pregunta por una corrección fusionada durante al menos un día."
+
+#. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_prompt_form
 msgid "Prompt"
 msgstr "Rápido"
@@ -775,6 +810,11 @@ msgstr "Sombra"
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__count_fix_attempt
 msgid "Since the last regression."
 msgstr "Desde la última regresión."
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_fix_merged
+msgid "Since when production is asked whether it runs the merged fix."
+msgstr "Desde cuándo se pregunta a producción si ejecuta la corrección fusionada."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__testing

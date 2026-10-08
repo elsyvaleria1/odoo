@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 from odoo import api, fields, models
@@ -35,6 +36,7 @@ class ErrorIncident(models.Model):
             ("merged", "Merged"),
             ("hotfixing", "Hotfixing"),
             ("deployed", "In Production"),
+            ("not_deployed", "Not Deployed"),
         ],
         ondelete={
             "testing": "set default",
@@ -44,6 +46,7 @@ class ErrorIncident(models.Model):
             "merged": "set default",
             "hotfixing": "set default",
             "deployed": "set default",
+            "not_deployed": "set default",
         },
     )
     fix_commit = fields.Char(
@@ -51,6 +54,11 @@ class ErrorIncident(models.Model):
         readonly=True,
         help="The commit production must contain for the fix to be running: the "
         "merge, or the fix branch's head for a hotfix.",
+    )
+    date_fix_merged = fields.Datetime(
+        string="Fix Merged",
+        readonly=True,
+        help="Since when production is asked whether it runs the merged fix.",
     )
 
     # -- the pull request -------------------------------------------------------
@@ -61,7 +69,13 @@ class ErrorIncident(models.Model):
             # an earlier fix's pull request speaks for that fix, not this one
             return
         if pull.pull_state == "merged":
-            self.write({"fix_state": "merged", "fix_commit": pull.merge_commit_sha})
+            self.write(
+                {
+                    "fix_state": "merged",
+                    "fix_commit": pull.merge_commit_sha,
+                    "date_fix_merged": fields.Datetime.now(),
+                }
+            )
         elif pull.pull_state == "closed":
             self.write({"fix_state": "closed"})
         else:
@@ -147,7 +161,13 @@ class ErrorIncident(models.Model):
             merged = get_github_client(self.env).merge_pull_request(
                 owner, name, pull.number, merge_method="squash", sha=pull.head_sha
             )
-            incident.write({"fix_state": "merged", "fix_commit": merged.get("sha")})
+            incident.write(
+                {
+                    "fix_state": "merged",
+                    "fix_commit": merged.get("sha"),
+                    "date_fix_merged": fields.Datetime.now(),
+                }
+            )
             incident._autofix_release_approval()
             incident.message_post(
                 body=self.env._(
@@ -233,12 +253,31 @@ class ErrorIncident(models.Model):
 
     @api.model
     def _cron_autofix_check_production(self) -> None:
-        """Ask production which awaited fixes it runs, unless it is being asked."""
-        waiting = self.search(
+        """Ask production which awaited fixes it runs, unless it is being asked.
+        A fix production has not run for the policy's wait is no longer asked
+        about: the incident says so, once, for a person to deploy or decide."""
+        policy = self.env["error.incident.autofix.policy"]._current()
+        if not policy:
+            return
+        merged = self.search(
             [("fix_state", "=", "merged"), ("fix_commit", "!=", False)]
         )
-        policy = self.env["error.incident.autofix.policy"]._current()
-        if not waiting or not policy:
+        merged.filtered(lambda incident: not incident.date_fix_merged).write(
+            {"date_fix_merged": fields.Datetime.now()}
+        )
+        horizon = fields.Datetime.now() - timedelta(days=policy.production_wait_days)
+        overdue = merged.filtered(lambda incident: incident.date_fix_merged < horizon)
+        for incident in overdue:
+            incident.write({"fix_state": "not_deployed"})
+            incident.message_post(
+                body=self.env._(
+                    "Production has not run this fix in %(days)s days; it is no "
+                    "longer asked about. Deploy it, or close the incident.",
+                    days=policy.production_wait_days,
+                )
+            )
+        waiting = merged - overdue
+        if not waiting:
             return
         Run = self.env["agent.run"]
         if Run.search_count(

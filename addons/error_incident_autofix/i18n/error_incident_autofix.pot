@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 23:19+0000\n"
-"PO-Revision-Date: 2026-10-07 23:19+0000\n"
+"POT-Creation-Date: 2026-10-08 02:41+0000\n"
+"PO-Revision-Date: 2026-10-08 02:41+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -316,6 +316,13 @@ msgid "Date and time when final approval was granted"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
+msgid ""
+"Days production is asked, every ten minutes, whether it runs a merged fix; "
+"after that the incident is marked Not Deployed for a person."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:res.groups,comment:error_incident_autofix.group_autofix_approver
 msgid ""
 "Decides whether an agent's fix is merged, or applied to production before it"
@@ -411,6 +418,11 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_commit
 msgid "Fix Commit"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__date_fix_merged
+msgid "Fix Merged"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -622,6 +634,11 @@ msgid "No incident was handed to the agents yet"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__not_deployed
+msgid "Not Deployed"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__none
 msgid "Not Dispatched"
 msgstr ""
@@ -715,6 +732,24 @@ msgid "Policy"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
+msgid "Production Wait"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid ""
+"Production has not run this fix in %(days)s days; it is no longer asked "
+"about. Deploy it, or close the incident."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_policy_production_wait_positive
+msgid "Production is asked about a merged fix for at least a day."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_prompt_form
 msgid "Prompt"
 msgstr ""
@@ -774,6 +809,11 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__count_fix_attempt
 msgid "Since the last regression."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_fix_merged
+msgid "Since when production is asked whether it runs the merged fix."
 msgstr ""
 
 #. module: error_incident_autofix

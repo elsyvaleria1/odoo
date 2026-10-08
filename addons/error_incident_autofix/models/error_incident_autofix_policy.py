@@ -57,6 +57,12 @@ class ErrorIncidentAutofixPolicy(models.Model):
         "CI -- counts as passing, so it can be merged or hotfixed once a person "
         "approves it. Off, such a fix waits in Testing.",
     )
+    production_wait_days = fields.Integer(
+        string="Production Wait",
+        default=30,
+        help="Days production is asked, every ten minutes, whether it runs a merged "
+        "fix; after that the incident is marked Not Deployed for a person.",
+    )
     excluded_exception_types = fields.Text(
         default="odoo.exceptions.AccessError\nodoo.exceptions.AccessDenied",
         help="One exception per line, as a traceback prints it: granting access "
@@ -98,6 +104,11 @@ class ErrorIncidentAutofixPolicy(models.Model):
     _min_occurrences_positive = models.Constraint(
         "CHECK(min_occurrences > 0)",
         "An incident occurs at least once.",
+    )
+
+    _production_wait_positive = models.Constraint(
+        "CHECK(production_wait_days > 0)",
+        "Production is asked about a merged fix for at least a day.",
     )
 
     @api.model

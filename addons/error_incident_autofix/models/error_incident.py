@@ -25,6 +25,7 @@ IDLE_FIX_STATES = (
     "failed",
     "test_failed",
     "closed",
+    "not_deployed",
 )
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+){0,4}$")
 _MAX_DIFF = 200_000

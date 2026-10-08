@@ -1,5 +1,7 @@
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
@@ -318,4 +320,17 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         Incident = self.env["error.incident"].with_user(self.approver)
         self.assertEqual(
             Incident.search([("id", "in", (decided | other).ids)]), decided
+        )
+
+    def test_production_is_asked_about_a_merged_fix_for_a_while_not_forever(self):
+        incident, _pull = self._pushed(checks="success")
+        self._pull_merged()
+        self.assertTrue(incident.date_fix_merged)
+        Incident = self.env["error.incident"]
+        incident.date_fix_merged = fields.Datetime.now() - timedelta(days=31)
+        Incident._cron_autofix_check_production()
+        self.assertEqual(incident.fix_state, "not_deployed")
+        self.assertIn("no longer asked", incident.message_ids[0].body)
+        self.assertFalse(
+            self.env["agent.run"].search([("kind", "=", "error_incident.revision")])
         )

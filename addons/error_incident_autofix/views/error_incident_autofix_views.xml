@@ -36,6 +36,7 @@
                         </group>
                         <group string="Delivery">
                             <field name="pass_without_checks" />
+                            <field name="production_wait_days" />
                         </group>
                         <group string="Commits">
                             <field name="commit_author_name" />
