@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { markRaw } from "@odoo/owl";
+import { effect, markRaw, proxy, toRaw, untrack } from "@odoo/owl";
 import { createRelatedModels } from "@point_of_sale/app/models/related_models";
 import { getOnNotified, uuidv4 } from "@point_of_sale/utils";
 import { browser } from "@web/core/browser/browser";
@@ -28,6 +28,26 @@ const CONSOLE_COLOR = "#28ffeb";
 const MAX_SYNC_ATTEMPTS = 5;
 const log = makeLogger("pos.data");
 const UNQUEUEABLE_TYPES = new Set(["read", "search_read"]);
+
+function readPlainState(value, seen = new Set()) {
+    if (!value || typeof value !== "object" || seen.has(toRaw(value))) {
+        return;
+    }
+    seen.add(toRaw(value));
+    if (value instanceof Set || value instanceof Map) {
+        for (const item of value.values()) {
+            readPlainState(item, seen);
+        }
+        return;
+    }
+    const prototype = Object.getPrototypeOf(toRaw(value));
+    if (prototype !== Object.prototype && prototype !== null && !Array.isArray(value)) {
+        return;
+    }
+    for (const item of Object.values(value)) {
+        readPlainState(item, seen);
+    }
+}
 
 export class QueuedOperation {
     constructor(uuid) {
@@ -59,6 +79,8 @@ export class PosData extends SignalStore {
         this.opts = new DataServiceOptions();
         this.channels = [];
         this.dirtyLocalRecords = new Map();
+        this.localStateWatchers = markRaw(new Map());
+        this.referenceFieldsByModel = markRaw(new Map());
         this.debouncedSynchronizeLocalDataInIndexedDB = debounce(
             () => this.syncLocalDataInIndexedDB({ onlyDirty: true }),
             300,
@@ -261,6 +283,13 @@ export class PosData extends SignalStore {
                     mark(parent);
                 }
             }
+            // a referenced row is kept or purged by what references it
+            for (const fieldName of this.trackedReferenceFields(modelName, tracked)) {
+                const referenced = record[fieldName];
+                if (referenced?.model) {
+                    mark(referenced);
+                }
+            }
         };
         for (const id of ids) {
             const record = this.models[model].get(id);
@@ -268,6 +297,23 @@ export class PosData extends SignalStore {
                 mark(record);
             }
         }
+    }
+
+    trackedReferenceFields(model, tracked) {
+        let fieldNames = this.referenceFieldsByModel.get(model);
+        if (!fieldNames) {
+            const dynamicModels = new Set(this.opts.dynamicModels);
+            fieldNames = Object.values(this.relations[model] || {})
+                .filter(
+                    (field) =>
+                        field.type === "many2one" &&
+                        tracked[field.relation] &&
+                        !dynamicModels.has(field.relation),
+                )
+                .map((field) => field.name);
+            this.referenceFieldsByModel.set(model, fieldNames);
+        }
+        return fieldNames;
     }
 
     takeDirtyLocalRecords(model) {
@@ -442,10 +488,33 @@ export class PosData extends SignalStore {
 
         const results = this.models.loadConnectedData(missing, []);
 
+        this.purgeRestoredOrders(results);
         await this.checkAndDeleteMissingOrders(results);
         endLoad({ orders: results["pos.order"]?.length });
 
         return results;
+    }
+
+    // before checkAndDeleteMissingOrders: loadServerOrders stamps the current
+    // session on every order it reads, after which none is ever purgeable
+    purgeRestoredOrders(results) {
+        const isPurgeable = this.opts.databaseTable["pos.order"]?.condition;
+        const restored = results?.["pos.order"];
+        if (!isPurgeable || !restored?.length) {
+            return;
+        }
+        const purged = restored.filter((order) => isPurgeable(order) === true);
+        log.logic("[idb] purgeRestoredOrders", () => ({
+            restored: restored.length,
+            purged: purged.map((order) => order.uuid),
+        }));
+        for (const order of purged) {
+            this.localDeleteCascade(order);
+        }
+        if (purged.length) {
+            const gone = new Set(purged);
+            results["pos.order"] = restored.filter((order) => !gone.has(order));
+        }
     }
 
     async getCachedServerDataFromIndexedDB() {
@@ -697,6 +766,17 @@ export class PosData extends SignalStore {
         await this.initData();
         await this.getLocalDataFromIndexedDB();
         this.initListeners();
+        // the incremental flush only re-checks what changes: one full pass
+        // drops the rows whose purge condition turned true before this boot
+        Promise.resolve(this.syncLocalDataInIndexedDB()).catch((error) =>
+            logPosMessage(
+                "DataService",
+                "intializeDataRelation",
+                "The boot pass over the local rows failed; they are re-checked when they change",
+                CONSOLE_COLOR,
+                [error],
+            ),
+        );
         this.drainRestoredQueue();
 
         if (odoo.debug === "assets") {
@@ -756,30 +836,79 @@ export class PosData extends SignalStore {
 
     listenToLocalChanges() {
         const databaseTable = this.opts.databaseTable;
-        for (const dynamicModel of this.opts.dynamicModels) {
-            if (!this.models[dynamicModel]) {
+        const localModels = new Set([
+            ...this.opts.dynamicModels,
+            ...Object.keys(databaseTable),
+        ]);
+        for (const localModel of localModels) {
+            if (!this.models[localModel]) {
                 continue;
             }
 
             const persist = (ids) => {
-                this.markLocalRecordsDirty(dynamicModel, ids);
+                this.markLocalRecordsDirty(localModel, ids);
                 this.debouncedSynchronizeLocalDataInIndexedDB();
             };
-            this.models[dynamicModel].addEventListener("update", (params) =>
+            this.models[localModel].addEventListener("update", (params) =>
                 persist([params.id]),
             );
-            this.models[dynamicModel].addEventListener("create", (params) =>
-                persist(params.ids),
-            );
+            this.models[localModel].addEventListener("create", (params) => {
+                persist(params.ids);
+                for (const id of params.ids) {
+                    this.watchLocalState(localModel, this.models[localModel].get(id));
+                }
+            });
 
-            if (databaseTable[dynamicModel]) {
-                this.models[dynamicModel].addEventListener("delete", (params) => {
+            if (databaseTable[localModel]) {
+                for (const record of this.models[localModel].getAll()) {
+                    this.watchLocalState(localModel, record);
+                }
+                this.models[localModel].addEventListener("delete", (params) => {
+                    this.unwatchLocalState(localModel, params.key);
                     if (params.key !== undefined) {
-                        this.deleteRecordsInIndexedDB(dynamicModel, [params.key]);
+                        this.deleteRecordsInIndexedDB(localModel, [params.key]);
                     }
                 });
             }
         }
+    }
+
+    // uiState is persisted with its row but fires no update event
+    watchLocalState(model, record) {
+        const key = this.opts.databaseTable[model]?.key;
+        if (!key || !record || typeof record.uiState !== "object") {
+            return;
+        }
+        const watchKey = `${model}:${record[key]}`;
+        if (this.localStateWatchers.has(watchKey)) {
+            return;
+        }
+        const observed = proxy(record);
+        let initialRun = true;
+        const stop = effect(
+            () => {
+                readPlainState(observed.uiState);
+                if (initialRun) {
+                    initialRun = false;
+                    return;
+                }
+                untrack(() => {
+                    if (this.models[model].get(record.id) !== record) {
+                        return;
+                    }
+                    this.markLocalRecordsDirty(model, [record.id]);
+                    this.debouncedSynchronizeLocalDataInIndexedDB();
+                });
+            },
+            { detached: true, name: "pos.data local state" },
+        );
+        this.localStateWatchers.set(watchKey, stop);
+    }
+
+    unwatchLocalState(model, key) {
+        const watchKey = `${model}:${key}`;
+        this.localStateWatchers.get(watchKey)?.();
+        this.localStateWatchers.delete(watchKey);
     }
 
     async execute({
@@ -1149,6 +1278,7 @@ export class PosData extends SignalStore {
                 : String(entry.date ?? ""),
             try: entry.try ?? 1,
             args: entry.args,
+            appliedLocally: entry.appliedLocally === true,
         });
         entry.sequence = saved.sequence;
     }
@@ -1166,7 +1296,9 @@ export class PosData extends SignalStore {
                 if (!this.network.unsyncData.some((d) => d.uuid === row.uuid)) {
                     this.network.unsyncData.push({
                         args: row.args,
+                        appliedLocally: row.appliedLocally,
                         date: row.date,
+                        restored: true,
                         try: row.try ?? 1,
                         uuid: row.uuid,
                         sequence: row.sequence,
@@ -1231,6 +1363,9 @@ export class PosData extends SignalStore {
                     this.network.unsyncData.shift();
                     this._unpersistQueueEntry(data.uuid);
                     const params = data.args[0];
+                    if (data.restored && params?.type === "write") {
+                        await this.readBackReplayedWrite(params);
+                    }
                     if (params?.type === "write" && this.deviceSync?.dispatch) {
                         Promise.resolve(
                             this.deviceSync.dispatch({
@@ -1282,6 +1417,26 @@ export class PosData extends SignalStore {
             }
         });
         endSync({ replayed, pending: this.network.unsyncData.length });
+    }
+
+    // a restored write may have committed before the reload and been overwritten
+    // since (its replay is then answered without being applied), or not: only the
+    // server knows. databaseTable rows are the till's own and are left alone
+    async readBackReplayedWrite({ model, ids }) {
+        if (!this.models[model] || this.opts.databaseTable[model] || !ids?.length) {
+            return;
+        }
+        try {
+            await this.read(model, ids);
+        } catch (error) {
+            logPosMessage(
+                "DataService",
+                "readBackReplayedWrite",
+                `Could not re-read ${model} after replaying a restored write`,
+                CONSOLE_COLOR,
+                [error],
+            );
+        }
     }
 
     async loadServerOrders(domain) {

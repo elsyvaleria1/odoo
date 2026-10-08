@@ -83,7 +83,10 @@ test("legacy offline entries replay chronologically after reopening", async () =
         const applied = [];
         patchWithCleanup(store.data, { indexedDB: db });
         patchWithCleanup(store.data.orm, {
-            write: async (_model, _ids, values) => applied.push(values.name),
+            async write(_model, _ids, values) {
+                applied.push(values.name);
+                return super.write(...arguments);
+            },
         });
         await store.data.restoreUnsyncQueue();
         expect(store.data.network.unsyncData.map((r) => r.uuid)).toEqual(["z", "a"]);
@@ -209,8 +212,7 @@ test("direct ORM writes still update local records after acknowledgement", async
     expect(record.name).toBe("Acknowledged");
 });
 
-test("replaying an optimistic write updates the restored local record", async () => {
-    const store = await setupPosEnv();
+async function queueOptimisticWriteAndReload(store, name) {
     const record = store.models["pos.category"].get(1);
     let persisted;
     patchWithCleanup(store.data.indexedDB, {
@@ -220,18 +222,42 @@ test("replaying an optimistic write updates the restored local record", async ()
         },
         readAll: async () => ({ "pos.unsync.queue": [persisted] }),
     });
-    patchWithCleanup(store.data.orm, {
-        write: async () => {
-            throw new ConnectionLostError();
-        },
-    });
-    await store.data.write("pos.category", [record.id], { name: "Queued" });
+    const write = store.data.orm.write;
+    store.data.orm.write = async () => {
+        throw new ConnectionLostError();
+    };
+    await store.data.write("pos.category", [record.id], { name });
+    store.data.orm.write = write;
     store.data.network.unsyncData.length = 0;
     await store.data.restoreUnsyncQueue();
+    return { record, persisted };
+}
+
+test("a restored optimistic write keeps its flag and shows what the server applied", async () => {
+    const store = await setupPosEnv();
+    const { record, persisted } = await queueOptimisticWriteAndReload(store, "Queued");
+    expect(persisted.appliedLocally).toBe(true);
+    expect(store.data.network.unsyncData[0].appliedLocally).toBe(true);
     record.update({ name: "Restored cache" });
-    patchWithCleanup(store.data.orm, { write: async () => true });
+
     await store.data.syncData();
+
     expect(record.name).toBe("Queued");
+    expect(store.data.network.unsyncData).toHaveLength(0);
+});
+
+test("a restored write the server had already committed does not bring back its stale value", async () => {
+    const store = await setupPosEnv();
+    const { record } = await queueOptimisticWriteAndReload(store, "Queued");
+    // the first attempt committed; another till renamed it since, and the
+    // reload brought that name; the replay is answered from the stored result
+    await store.data.orm.write("pos.category", [record.id], { name: "Other till" });
+    record.update({ name: "Other till" });
+    patchWithCleanup(store.data.orm, { write: async () => true });
+
+    await store.data.syncData();
+
+    expect(record.name).toBe("Other till");
     expect(store.data.network.unsyncData).toHaveLength(0);
 });
 

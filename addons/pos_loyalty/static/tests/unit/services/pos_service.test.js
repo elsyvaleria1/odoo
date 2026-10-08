@@ -2,7 +2,7 @@ import { describe, expect, test } from "@odoo/hoot";
 import { setupPosEnv } from "@point_of_sale/../tests/unit/utils";
 import { definePosLoyaltyModels } from "@pos_loyalty/../tests/unit/data/generate_model_definitions";
 import { addProductLineToOrder } from "@pos_loyalty/../tests/unit/utils";
-import { onRpc } from "@web/../tests/web_test_helpers";
+import { onRpc, patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { toDate } from "@web/core/l10n/dates";
 
 definePosLoyaltyModels();
@@ -80,5 +80,51 @@ describe("PosStore - loyalty essentials", () => {
         const card = await store.fetchLoyaltyCard(program.id, partner.id);
 
         expect(card.id).toBe(2);
+    });
+});
+
+describe("PosStore - loyalty cards on the till", () => {
+    test("a promotion card created on the till is written with the reward line using it, and restored with it", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = store.addNewOrder();
+        const written = {};
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                (written[model] ??= []).push(...JSON.parse(JSON.stringify(rows)));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+
+        const card = await store.couponForProgram(
+            store.models["loyalty.program"].get(1),
+        );
+        const rewardLine = store.models["pos.order.line"].create({
+            order_id: order,
+            product_id: store.models["product.product"].get(1),
+            qty: 1,
+            price_unit: -1,
+            is_reward_line: true,
+            reward_id: store.models["loyalty.reward"].get(1),
+            coupon_id: card,
+        });
+        data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+        await data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+
+        expect(card.id).toBeLessThan(0);
+        expect((written["loyalty.card"] ?? []).map((row) => row.id)).toEqual([card.id]);
+
+        const rows = {
+            "loyalty.card": written["loyalty.card"],
+            "pos.order": written["pos.order"],
+            "pos.order.line": written["pos.order.line"],
+        };
+        data.localDeleteCascade(order);
+        card.delete();
+        store.models.loadConnectedData(rows, []);
+
+        const restored = store.models["pos.order.line"].getBy("uuid", rewardLine.uuid);
+        expect(restored.coupon_id?.id).toBe(card.id);
     });
 });

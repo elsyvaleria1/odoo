@@ -64,3 +64,91 @@ describe("the till counts a draft refund made elsewhere", () => {
         expect(refundLine.setQuantity(-1)).toBe(true);
     });
 });
+
+/** A synced refund line of `originalLine`: the server's refunded_qty counts it. */
+async function aSyncedRefund(store, originalLine, id, qty) {
+    const refundOrder = store.addNewOrder();
+    return store.models["pos.order.line"].create({
+        id,
+        order_id: refundOrder,
+        product_id: originalLine.product_id,
+        qty,
+        price_unit: originalLine.price_unit,
+        refunded_orderline_id: originalLine,
+    });
+}
+
+describe("a synced refund line edited on this till", () => {
+    test("counts once: its old quantity leaves the server's count", async () => {
+        const store = await setupPosEnv();
+        const original = await getFilledOrder(store);
+        const originalLine = original.lines[0];
+        originalLine.qty = 2;
+        original.uiState.lineToRefund[originalLine.uuid] = new PosOrderLineRefund(
+            { line_uuid: originalLine.uuid, qty: 1 },
+            store.models,
+        );
+        const refund = await aSyncedRefund(store, originalLine, 9101, -1);
+        originalLine.refunded_qty = 1;
+
+        expect(refund.setQuantity(0)).toBe(true);
+        expect(originalLine.refundedQty).toBe(0);
+        expect(refund.setQuantity(-2)).toBe(true);
+        expect(originalLine.refundedQty).toBe(2);
+        expect(refund.setQuantity(-3)).not.toBe(true);
+    });
+
+    test("still counts another line's edit and what only the server knows", async () => {
+        const store = await setupPosEnv();
+        const original = await getFilledOrder(store);
+        const originalLine = original.lines[0];
+        originalLine.qty = 5;
+        original.uiState.lineToRefund[originalLine.uuid] = new PosOrderLineRefund(
+            { line_uuid: originalLine.uuid, qty: 1 },
+            store.models,
+        );
+        const other = await aSyncedRefund(store, originalLine, 9102, -1);
+        const refund = await aSyncedRefund(store, originalLine, 9103, -1);
+        // 1 more was refunded in a session this till has not loaded
+        originalLine.refunded_qty = 3;
+        expect(originalLine.refundedQty).toBe(3);
+
+        expect(refund.setQuantity(-3)).toBe(true);
+        expect(refund.setQuantity(-4)).not.toBe(true);
+
+        other.update({ qty: -2 });
+        expect(originalLine.refundedQty).toBe(6);
+        expect(refund.setQuantity(-3)).not.toBe(true);
+        expect(refund.setQuantity(-2)).toBe(true);
+    });
+
+    test("is counted from the synced quantity it kept through a reload", async () => {
+        const store = await setupPosEnv();
+        const original = await getFilledOrder(store);
+        const originalLine = original.lines[0];
+        originalLine.qty = 2;
+        const refund = await aSyncedRefund(store, originalLine, 9104, -1);
+        originalLine.refunded_qty = 1;
+        refund.update({ qty: -2 });
+        const row = JSON.parse(JSON.stringify(refund.serializeForIndexedDB()));
+        expect(row.__dirty).toBe(true);
+
+        // a reload restores the row; under new keys, as the deleted ones stay pending
+        const refundOrder = refund.order_id;
+        refund.delete({ silent: true });
+        store.models["pos.order.line"].create({
+            id: 9105,
+            __dirty: row.__dirty,
+            JSONuiState: row.JSONuiState,
+            order_id: refundOrder,
+            product_id: originalLine.product_id,
+            qty: row.qty,
+            price_unit: row.price_unit,
+            refunded_orderline_id: originalLine,
+        });
+        expect(originalLine.refund_orderline_ids.map((line) => line.id)).toEqual([
+            9105,
+        ]);
+        expect(originalLine.refundedQty).toBe(2);
+    });
+});

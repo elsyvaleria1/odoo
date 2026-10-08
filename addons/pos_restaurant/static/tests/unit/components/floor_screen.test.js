@@ -2,7 +2,11 @@ import { expect, test } from "@odoo/hoot";
 import { setupPosEnv } from "@point_of_sale/../tests/unit/utils";
 import { definePosRestaurantModels } from "@pos_restaurant/../tests/unit/data/generate_model_definitions";
 import { FloorScreen } from "@pos_restaurant/app/screens/floor_screen/floor_screen";
-import { mountWithCleanup, patchWithCleanup } from "@web/../tests/web_test_helpers";
+import {
+    getService,
+    mountWithCleanup,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
 import { appContextOf } from "@web/core/app_context";
 import { cookie } from "@web/core/browser/cookie";
 import { ConnectionLostError } from "@web/core/network";
@@ -133,6 +137,39 @@ test("a table created offline is queued and nothing is selected", async () => {
     expect(store.models["restaurant.table"].length).toBe(tables);
     expect(store.data.network.unsyncData.map(({ args: [op] }) => op.model)).toEqual([
         "restaurant.table",
+    ]);
+});
+
+test.tags("desktop");
+test("a second table click while one waits for the connection queues nothing more", async () => {
+    const store = await setupPosEnv();
+    const notified = [];
+    patchWithCleanup(getService("notification"), {
+        add: (message, options) => notified.push([String(message), options?.type]),
+    });
+    const floor = store.models["restaurant.floor"].get(2);
+    const screen = await mountWithCleanup(FloorScreen, {});
+    screen.selectFloor(floor);
+    store.data.network.unsyncData = [];
+    patchWithCleanup(store.data.orm, {
+        create: async () => {
+            throw new ConnectionLostError();
+        },
+    });
+
+    await screen.createTable();
+    await screen.createTable();
+    screen.state.selectedTableIds = [floor.table_ids[0].id];
+    await screen.duplicateTable();
+
+    expect(store.data.network.unsyncData).toHaveLength(1);
+    expect(notified).toEqual([
+        [
+            "You are offline. The table will be created once the connection is back.",
+            "warning",
+        ],
+        ["A new table is already waiting for the connection to come back.", "warning"],
+        ["A new table is already waiting for the connection to come back.", "warning"],
     ]);
 });
 

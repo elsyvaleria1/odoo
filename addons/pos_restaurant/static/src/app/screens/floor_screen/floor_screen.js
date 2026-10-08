@@ -112,6 +112,7 @@ export class FloorScreen extends Component {
         this.floorScrollBox = elementRef();
         this.map = elementRef();
         this.alert = useService("alert");
+        this.notification = useService("notification");
         const getTableElem = (table) =>
             this.map.el.querySelector(`.tableId-${table.id}`);
         const findIntersectingTableElem = (tableElem) => {
@@ -772,9 +773,39 @@ export class FloorScreen extends Component {
         });
     }
 
+    // a queued create has no id to select or to dedupe a second click against
+    isTableCreationQueued() {
+        return this.pos.data.network.unsyncData.some(
+            ({ args: [operation] }) =>
+                operation?.type === "create" && operation.model === "restaurant.table",
+        );
+    }
+
+    refuseWhileTableCreationQueued() {
+        if (!this.isTableCreationQueued()) {
+            return false;
+        }
+        this.notification.add(
+            _t("A new table is already waiting for the connection to come back."),
+            { type: "warning" },
+        );
+        return true;
+    }
+
     async createTable() {
+        if (this.refuseWhileTableCreationQueued()) {
+            return;
+        }
         const newTable = await this._createTableHelper();
         if (!newTable) {
+            if (this.isTableCreationQueued()) {
+                this.notification.add(
+                    _t(
+                        "You are offline. The table will be created once the connection is back.",
+                    ),
+                    { type: "warning" },
+                );
+            }
             return;
         }
         this.state.selectedTableIds = [newTable.id];
@@ -836,6 +867,9 @@ export class FloorScreen extends Component {
         this.selectFloor(copyFloor[0]);
     }
     async duplicateTable() {
+        if (this.refuseWhileTableCreationQueued()) {
+            return;
+        }
         const selectedTables = this.selectedTables;
         this.state.selectedTableIds = [];
 

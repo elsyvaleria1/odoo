@@ -18,6 +18,10 @@ export class PosOrderline extends PosOrderlineAccounting {
 
     setup(vals) {
         super.setup(vals);
+        // read before setFullProductName, whose write marks the line dirty
+        if (this.isSynced && !this._dirty) {
+            this._syncedQty = this.qty;
+        }
         if (!this.product_id) {
             log.lifecycle("setup: no product, deleting", () => ({
                 line: this.uuid,
@@ -37,6 +41,20 @@ export class PosOrderline extends PosOrderlineAccounting {
             savedQuantity: 0,
             oldQty: this.qty,
         };
+    }
+
+    serializeState() {
+        const state = super.serializeState();
+        if (state && this._syncedQty !== undefined) {
+            state.syncedQty = this._syncedQty;
+        }
+        return state;
+    }
+
+    restoreState(uiState) {
+        const { syncedQty, ...state } = uiState;
+        super.restoreState(state);
+        this._syncedQty ??= syncedQty;
     }
 
     setFullProductName() {
@@ -619,12 +637,13 @@ export class PosOrderline extends PosOrderlineAccounting {
             (line) => line.order_id.state !== "cancel",
         );
         const loaded = refunds.reduce((acc, line) => acc - line.qty, 0);
-        // refunds from other sessions are only known through the server's count;
-        // a synced line edited since is counted again in full, never short
-        const unknownToServer = refunds
-            .filter((line) => !line.isSynced || line._dirtyFields?.has("qty"))
-            .reduce((acc, line) => acc - line.qty, 0);
-        return Math.max(loaded, (this.refunded_qty || 0) + unknownToServer);
+        // the server's count holds each synced refund at its last synced quantity;
+        // the rest was refunded on lines this till has not loaded. A synced line
+        // whose synced quantity is unknown counts as 0 there, so never short
+        const countedByServer = refunds
+            .filter((line) => line.isSynced)
+            .reduce((acc, line) => acc - (line._syncedQty ?? 0), 0);
+        return loaded + Math.max(0, (this.refunded_qty || 0) - countedByServer);
     }
 }
 

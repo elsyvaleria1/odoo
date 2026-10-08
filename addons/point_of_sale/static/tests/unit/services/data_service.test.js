@@ -286,4 +286,113 @@ describe("data_service", () => {
             `delete:${line.uuid}`,
         ]);
     });
+
+    test("a uiState change alone writes its order", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => `${model}:${row.uuid}`));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+
+        order.setScreenData({ name: "PaymentScreen" });
+        await tick();
+        data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+        await data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+
+        expect(written).toEqual([`pos.order:${order.uuid}`]);
+    });
+
+    test("a nested uiState change writes its order once per change", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => JSON.parse(row.JSONuiState)));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+        const flush = async () => {
+            await tick();
+            data.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+            await data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+        };
+
+        order.uiState.TipScreen.inputTipAmount = "5";
+        await flush();
+        await flush();
+        order.uiState.selected_orderline_uuid = order.lines[0].uuid;
+        await flush();
+
+        expect(written.map((state) => state.TipScreen.inputTipAmount)).toEqual([
+            "5",
+            "5",
+        ]);
+        expect(written[1].selected_orderline_uuid).toBe(order.lines[0].uuid);
+    });
+
+    test("a finalized synced order of a past session is purged at boot, not re-read", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const sessionId = parseInt(odoo.pos_session_id);
+        const restoredOrder = (uuid, id, state, session_id) => ({
+            id,
+            uuid,
+            state,
+            session_id,
+            config_id: 1,
+            lines: [],
+            payment_ids: [],
+        });
+        const results = store.models.loadConnectedData(
+            {
+                "pos.order": [
+                    restoredOrder("old-paid", 7001, "paid", sessionId + 100),
+                    restoredOrder("old-draft", 7002, "draft", sessionId + 100),
+                    restoredOrder("current-paid", 7003, "paid", sessionId),
+                    restoredOrder(
+                        "unsynced-paid",
+                        "unsynced-paid",
+                        "paid",
+                        sessionId + 100,
+                    ),
+                ],
+            },
+            [],
+        );
+        const deleted = [];
+        const reread = [];
+        patchWithCleanup(data, {
+            async deleteRecordsInIndexedDB(model, keys) {
+                deleted.push(...keys.map((key) => `${model}:${key}`));
+            },
+        });
+        patchWithCleanup(data.orm, {
+            async call(model, method, args) {
+                if (method !== "read_pos_orders") {
+                    return super.call(...arguments);
+                }
+                reread.push(...args[0][0][2]);
+                return { "pos.order": [] };
+            },
+        });
+
+        data.purgeRestoredOrders(results);
+        await data.checkAndDeleteMissingOrders(results);
+
+        expect(deleted).toInclude("pos.order:old-paid");
+        expect(reread.sort()).toEqual([7002, 7003]);
+        expect(store.models["pos.order"].getBy("uuid", "old-paid")).toBe(undefined);
+        expect(store.models["pos.order"].getBy("uuid", "unsynced-paid")).not.toBe(
+            undefined,
+        );
+    });
 });
