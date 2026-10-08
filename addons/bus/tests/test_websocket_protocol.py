@@ -492,6 +492,7 @@ class TestSessionValidityCache(BaseCase):
         ws._waiting_for_dispatch = True
         ws._channels = set()
         ws._dispatch_state = NotificationDispatchState(10, clock=clock)
+        ws.SESSION_VALIDITY_JITTER = 0
         return ws
 
     @contextmanager
@@ -549,6 +550,20 @@ class TestSessionValidityCache(BaseCase):
         with self._dispatch_env(check_session_return=False):
             with self.assertRaises(SessionExpiredException):
                 ws._dispatch_bus_notifications()
+
+    def test_validity_is_spread_below_the_ttl(self):
+        clock = _ManualClock(100.0)
+        session = MagicMock(sid="sid-A", uid=1, db="testdb")
+        horizons = set()
+        with self._dispatch_env():
+            for _ in range(50):
+                ws = self._make_ws(clock, session)
+                del ws.SESSION_VALIDITY_JITTER
+                ws._dispatch_bus_notifications()
+                horizons.add(ws._session_validated_until - clock.now)
+        ttl, jitter = Websocket.SESSION_VALIDITY_TTL, Websocket.SESSION_VALIDITY_JITTER
+        self.assertGreater(len(horizons), 1)
+        self.assertTrue(all(ttl * (1 - jitter) <= h <= ttl for h in horizons))
 
     def test_waiting_for_dispatch_reset_even_without_notifications(self):
         clock = _ManualClock(100.0)

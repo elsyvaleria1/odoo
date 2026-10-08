@@ -254,6 +254,35 @@ class TestDispatchRoundSharesOnePoll(BaseCase):
 
         self.assertEqual(poll.call_count, 5)
 
+    def test_a_wake_while_waiting_moves_the_connection_to_the_newer_round(self):
+        sockets = [self._make_ws() for _ in range(5)]
+        stale = dispatch.open_poll_round()
+        self._wake(sockets, stale)
+        fresh = dispatch.open_poll_round()
+        self._wake(sockets, fresh)
+
+        poll, _send = self._dispatch_all(sockets)
+
+        poll.assert_called_once()
+
+    def test_a_validating_connection_still_shares_the_round_answer(self):
+        sockets = [self._make_ws() for _ in range(5)]
+        for ws in sockets:
+            ws._session_validated_until = 0.0
+        poll_round = dispatch.open_poll_round()
+        self._wake(sockets, poll_round)
+        with (
+            patch(
+                "odoo.addons.bus.websocket._follow_session_chain",
+                side_effect=lambda session: session,
+            ),
+            patch("odoo.addons.bus.websocket.is_session_valid", return_value=True),
+        ):
+            poll, send = self._dispatch_all(sockets)
+
+        poll.assert_called_once()
+        self.assertEqual(send.call_count, 5)
+
     def test_each_wake_authorises_only_one_shared_answer(self):
         ws = self._make_ws()
         poll_round = dispatch.open_poll_round()

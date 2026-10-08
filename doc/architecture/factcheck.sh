@@ -298,6 +298,7 @@ for label, text in {
     "websocket drain timeout": f"| `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `{bus_constant('DRAIN_TIMEOUT'):g} s` |",
     "websocket drain timeout in prose": f"`ODOO_WEBSOCKET_DRAIN_TIMEOUT`\n({bus_constant('DRAIN_TIMEOUT'):g} s)",
     "websocket lane depth": f"at most {bus_constant('LANE_DEPTH')} queued frames",
+    "websocket send buffer": f"kernel send buffer is capped at {bus_constant('SEND_BUFFER') // 1024} KiB",
     "websocket write buffer limit": f"more than {bus_constant('WRITE_BUFFER_LIMIT') // 1024} KiB its client has not read",
     "websocket outbound limit": f"while the process holds {bus_constant('OUTBOUND_LIMIT', 'tools/websocket_hub.py') // MIB} MiB",
     "websocket write stall": f"whose client takes nothing for {bus_constant('WRITE_STALL_TIMEOUT')} s is cut",

@@ -16,6 +16,7 @@ except ImportError:
     WebSocketBadStatusException = None
 
 from .. import websocket as websocket_module
+from ..models.bus import dispatch
 from ..tools.websocket_hub import DbExecutor, WebsocketHub
 from ..websocket import (
     CloseCode,
@@ -117,6 +118,11 @@ class TestWebsocketHub(BaseCase):
             self.assertEqual(peer.frame(), (Opcode.PONG, b"hi"))
         self.assertLessEqual(threading.active_count() - before, 1)
 
+    def test_the_kernel_send_buffer_is_capped(self):
+        ws, _peer, _gauge = self._connect()
+        sndbuf = ws.sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        self.assertLessEqual(sndbuf, 2 * Websocket.SEND_BUFFER)
+
     def test_bytes_handed_over_with_the_socket_are_served(self):
         _ws, peer, _gauge = self._connect(
             buffered=_masked_client_frame(Opcode.PING, b"early")
@@ -186,6 +192,69 @@ class TestWebsocketHub(BaseCase):
         )
         self.assertEqual(self.served, [str(i) for i in range(Websocket.LANE_DEPTH + 4)])
         self.assertTrue(ws._reading)
+
+    def test_a_full_lane_does_not_count_against_the_ping_answer(self):
+        self.release.clear()
+        with patch.object(TimeoutManager, "TIMEOUT", 0.3):
+            ws, peer, _gauge = self._connect()
+            for i in range(Websocket.LANE_DEPTH + 2):
+                peer.send(Opcode.TEXT, str(i).encode())
+                time.sleep(0.01)
+            self.assertTrue(_wait_until(lambda: not ws._reading))
+            self.hub.call_soon(ws._send_ping_frame)
+            self.assertEqual(peer.frame()[0], Opcode.PING)
+            peer.send(Opcode.PONG)
+            time.sleep(0.6)
+            self.assertIs(ws.state, ConnectionState.OPEN, "its pong sits unread")
+            self.release.set()
+            self.assertTrue(
+                _wait_until(lambda: len(self.served) == Websocket.LANE_DEPTH + 2)
+            )
+            time.sleep(0.6)
+            self.assertIs(ws.state, ConnectionState.OPEN)
+
+    def test_a_round_asks_once_and_hands_idle_subscribers_one_frame(self):
+        idle = [self._connect() for _ in range(5)]
+        busy, busy_peer, _gauge = self._connect()
+        for ws, _peer, _gauge in [*idle, (busy, busy_peer, None)]:
+            ws._channels = {("db", "chan")}
+            ws._session_validated_until = float("inf")
+            ws._validated_session_sid = ws._session.sid
+        one_by_one = []
+
+        def dispatch_bus_notifications():
+            busy._waiting_for_dispatch = False
+            one_by_one.append(busy._poll_round)
+
+        busy._dispatch_bus_notifications = dispatch_bus_notifications
+        self.release.clear()
+        busy_peer.send(Opcode.TEXT, b"busy")
+        self.assertTrue(_wait_until(lambda: self.running == 1))
+        notifications = [{"id": 7, "message": {"type": "t", "payload": 1}}]
+        env = MagicMock()
+        poll = env.__getitem__.return_value._poll_batch
+        poll.return_value = (notifications, False)
+        cursor = MagicMock()
+        cursor.__enter__.return_value = MagicMock()
+        with (
+            patch("odoo.addons.bus.websocket.acquire_cursor", return_value=cursor),
+            patch.object(Websocket, "new_env", return_value=env),
+        ):
+            poll_round = dispatch.open_poll_round()
+            websocket_module._wake_websockets(
+                [ws for ws, _peer, _gauge in idle] + [busy], poll_round
+            )
+            for _ws, peer, _gauge in idle:
+                opcode, payload = peer.frame()
+                self.assertEqual(opcode, Opcode.TEXT)
+                self.assertEqual(json_loads(payload), notifications)
+            self.assertEqual(poll.call_count, 1, "one question for the round")
+            self.assertEqual(one_by_one, [], "the busy one waits for its job")
+            self.release.set()
+            self.assertTrue(_wait_until(lambda: one_by_one))
+        self.assertEqual(one_by_one, [poll_round], "and then shares the round")
+        for ws, _peer, _gauge in idle:
+            self.assertEqual(ws._dispatch_state.ignore_ids, [7])
 
     def test_dispatch_requests_coalesce_behind_a_running_job(self):
         self.release.clear()

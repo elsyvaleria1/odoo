@@ -315,6 +315,7 @@ class Websocket:
     RL_DELAY = float(config["websocket_rate_limit_delay"])
     RL_CONTROL_FACTOR = 10
     SESSION_VALIDITY_TTL = 60
+    SESSION_VALIDITY_JITTER = 0.5
     FRAME_RECEIVE_TIMEOUT = 15
     RECEIVE_SIZE = 65536
     LANE_DEPTH = 8
@@ -322,6 +323,7 @@ class Websocket:
     LINGER_READS = 16
     WRITE_STALL_TIMEOUT = 15
     WRITE_BUFFER_LIMIT = 256 * 1024
+    SEND_BUFFER = 128 * 1024
 
     # The dispatch round a batched wake authorised this connection to share an
     # answer in, None otherwise. Declared on the class so a connection that
@@ -414,7 +416,15 @@ class Websocket:
         self.trigger_notification_dispatching()
 
     def trigger_notification_dispatching(self, poll_round=None) -> None:
-        if self.state is not ConnectionState.OPEN or self._waiting_for_dispatch:
+        if self.state is not ConnectionState.OPEN:
+            return
+        if self._waiting_for_dispatch:
+            # Still queued from an earlier wake: it may share this newer
+            # round's answer, which was polled after both notifications.
+            # Left on the old round, whose answers are gone, a backlog only
+            # grows: every late connection polls for itself.
+            if poll_round is not None:
+                self._poll_round = poll_round
             return
         self._waiting_for_dispatch = True
         # Only a caller that woke a BATCH passes a round, and only that round
@@ -446,6 +456,11 @@ class Websocket:
             hub.call_soon(func, *args)
 
     def on_attached(self, buffered) -> None:
+        # The kernel would otherwise grow the send buffer to megabytes for a
+        # client that reads nothing, all of it progress as far as the stall
+        # timer can tell, and dispatches for it would go on until it filled.
+        with suppress(OSError):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.SEND_BUFFER)
         try:
             if self._hub.stopping:
                 self._disconnect(CloseCode.GOING_AWAY)
@@ -491,6 +506,7 @@ class Websocket:
         self._check_deadlines()
         if (
             self.state is ConnectionState.OPEN
+            and self._reading
             and self._timeout_manager.is_ping_frame_required()
         ):
             self._send_ping_frame()
@@ -606,6 +622,7 @@ class Websocket:
                 self._start_next_job(hub)
         if not self._reading and len(self._lane) < self.LANE_DEPTH:
             self._reading = True
+            self._timeout_manager.postpone_responses()
             self._update_events()
 
     def _start_next_job(self, hub) -> None:
@@ -794,7 +811,9 @@ class Websocket:
         if manager.has_keep_alive_timed_out() and self.state is ConnectionState.OPEN:
             self._disconnect(CloseCode.KEEP_ALIVE_TIMEOUT)
             return
-        if manager.has_frame_response_timed_out():
+        # While the lane holds the socket unread, the answer to a ping waits
+        # unread too: that wait is this server's, not the client's.
+        if self._reading and manager.has_frame_response_timed_out():
             self._terminate()
             return
         self._check_frame_deadline()
@@ -1023,26 +1042,20 @@ class Websocket:
         self._waiting_for_dispatch = False
         # Subscribers to a busy channel converge on one cursor, so a dispatch
         # round asks the same question once per connection. Each wake
-        # authorises at most one shared answer, in the round that wake belongs
-        # to: a dispatch nobody woke, or a second dispatch inside one round,
-        # queries for itself. That keeps a hit to rows committed before the
-        # notification that opened the round; anything later wakes the
-        # connection again, because _waiting_for_dispatch is cleared above.
+        # authorises at most one shared answer, in the newest round that woke
+        # the connection while it waited: a dispatch nobody woke, or a second
+        # dispatch inside one round, queries for itself. That keeps a hit to
+        # rows committed before the notification that opened the round;
+        # anything later wakes the connection again, because
+        # _waiting_for_dispatch is cleared above.
         # The result is read-only downstream -- _send only serialises it.
         poll_round = self._poll_round
         self._poll_round = None
-        memo_key = (
-            session.db,
-            frozenset(self._channels),
-            self._dispatch_state.last_id,
-            tuple(self._dispatch_state.ignore_ids),
-        )
+        memo_key = self._dispatch_key()
         cached = None
-        if poll_round is not None and not must_validate:
+        if poll_round is not None:
             cached = dispatch.poll_memo_get(poll_round, memo_key)
-        if cached is not None:
-            notifications, truncated = cached
-        else:
+        if must_validate or cached is None:
             with acquire_cursor(session.db) as cr:
                 env = self.new_env(cr, session)
                 if must_validate:
@@ -1050,21 +1063,47 @@ class Websocket:
                         session, env, fresh_primary_cr=cr
                     ):
                         raise SessionExpiredException
-                    self._session_validated_until = now + self.SESSION_VALIDITY_TTL
+                    # Up to SESSION_VALIDITY_TTL, never past it: connections
+                    # that subscribed together must not all come due together.
+                    self._session_validated_until = now + self.SESSION_VALIDITY_TTL * (
+                        1 - self.SESSION_VALIDITY_JITTER * random.random()
+                    )
                     self._validated_session_sid = session.sid
-                notifications, truncated = env["bus.bus"]._poll_batch(
-                    self._channels,
-                    self._dispatch_state.last_id,
-                    self._dispatch_state.ignore_ids,
-                )
-            if poll_round is not None:
-                dispatch.poll_memo_set(poll_round, memo_key, (notifications, truncated))
+                if cached is None:
+                    cached = env["bus.bus"]._poll_batch(
+                        self._channels,
+                        self._dispatch_state.last_id,
+                        self._dispatch_state.ignore_ids,
+                    )
+                    if poll_round is not None:
+                        dispatch.poll_memo_set(poll_round, memo_key, cached)
+        notifications, truncated = cached
         if not notifications:
             return
         self._dispatch_state.record_dispatched([notif["id"] for notif in notifications])
         self._send(notifications)
         if truncated:
             self.trigger_notification_dispatching()
+
+    def _dispatch_key(self) -> tuple:
+        return (
+            self._session.db,
+            frozenset(self._channels),
+            self._dispatch_state.last_id,
+            tuple(self._dispatch_state.ignore_ids),
+        )
+
+    def _can_join_batch(self) -> bool:
+        return (
+            self.state is ConnectionState.OPEN
+            and self._job is None
+            and not self._waiting_for_dispatch
+            and not self._lane
+            and not self._opening
+            and self._clock() < self._session_validated_until
+            and self._session.sid == self._validated_session_sid
+            and not self._dispatch_held()
+        )
 
     def new_env(self, cr, session, *, set_lang=False):
         uid = session.uid
@@ -1112,6 +1151,11 @@ class TimeoutManager:
             self._expiration_time_by_opcode[
                 Opcode.PONG if frame.opcode is Opcode.PING else Opcode.CLOSE
             ] = now + self.TIMEOUT
+
+    def postpone_responses(self) -> None:
+        horizon = self._clock() + self.TIMEOUT
+        for opcode, expiration in self._expiration_time_by_opcode.items():
+            self._expiration_time_by_opcode[opcode] = max(expiration, horizon)
 
     def has_keep_alive_timed_out(self) -> bool:
         return self._clock() >= self._keep_alive_expiration_time
@@ -1416,9 +1460,94 @@ def _open_websockets() -> list:
     return list(_hub.connections.values())
 
 
+_BATCH_JOB = object()
+
+
 def _trigger_dispatch(websockets, poll_round) -> None:
+    # The idle subscribers of one round that would ask the same question are
+    # asked once, on one database thread, and handed the same encoded frame;
+    # the others, busy or due a session check, dispatch one by one.
+    batches = {}
     for websocket in websockets:
+        if poll_round is not None and websocket._can_join_batch():
+            batches.setdefault(websocket._dispatch_key(), []).append(websocket)
+        else:
+            websocket.trigger_notification_dispatching(poll_round)
+    for key, members in batches.items():
+        hub = members[0]._hub
+        for websocket in members:
+            websocket._job = _BATCH_JOB
+        job = functools.partial(_run_batch, hub, key, members, poll_round, hub.now())
+        if not hub.submit(job):
+            for websocket in members:
+                websocket._job = None
+
+
+def _run_batch(hub, key, members, poll_round, woken_at) -> None:
+    try:
+        answer = dispatch.poll_memo_get(poll_round, key)
+        if answer is None:
+            db, channels, last_id, ignore_ids = key
+            with acquire_cursor(db) as cr:
+                env = members[0].new_env(cr, members[0]._session)
+                answer = env["bus.bus"]._poll_batch(channels, last_id, list(ignore_ids))
+            dispatch.poll_memo_set(poll_round, key, answer)
+        notifications, truncated = answer
+        frame = Frame(Opcode.TEXT, notifications)
+        data = encode_frame(frame) if notifications else None
+    except Exception:
+        _logger.warning("Batched websocket dispatch failed", exc_info=True)
+        hub.call_soon(_retry_batch_one_by_one, members, poll_round)
+        return
+    hub.call_soon(
+        _deliver_batch,
+        hub,
+        key,
+        members,
+        notifications,
+        truncated,
+        data,
+        frame,
+        woken_at,
+    )
+
+
+def _deliver_batch(
+    hub, key, members, notifications, truncated, data, frame, woken_at
+) -> None:
+    ids = [notification["id"] for notification in notifications]
+    latency = hub.now() - woken_at
+    for websocket in members:
+        websocket._job = None
+        try:
+            rearm = False
+            if websocket.state is not ConnectionState.OPEN:
+                pass
+            elif websocket._dispatch_key() != key:
+                rearm = True
+            elif data is not None:
+                websocket._dispatch_state.record_dispatched(ids)
+                websocket._write_data_frame(data, frame)
+                rearm = truncated
+            hub.dispatch_latency.observe(latency)
+            _finish_batch_member(websocket, rearm)
+        except Exception as exc:
+            websocket.on_loop_error(exc)
+
+
+def _retry_batch_one_by_one(members, poll_round) -> None:
+    for websocket in members:
+        websocket._job = None
+        _finish_batch_member(websocket, rearm=True, poll_round=poll_round)
+
+
+def _finish_batch_member(websocket, rearm, poll_round=None) -> None:
+    if websocket._teardown_pending:
+        websocket._job_done()
+        return
+    if rearm:
         websocket.trigger_notification_dispatching(poll_round)
+    websocket._pump()
 
 
 def _wake_websockets(websockets, poll_round) -> None:
