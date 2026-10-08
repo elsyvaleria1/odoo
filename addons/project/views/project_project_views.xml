@@ -69,10 +69,10 @@
                         groups="project.group_project_manager"
                         invisible="is_template or not allow_dependencies" />
                     <button
-                        name="action_archive_to_history"
+                        name="action_snapshot_to_history"
                         type="object"
-                        string="Archive to History"
-                        confirm="This will create a historical snapshot of this project. Continue?"
+                        string="Snapshot to History"
+                        confirm="This records a historical snapshot of this project, which stays active. Continue?"
                         groups="project.group_project_manager"
                         invisible="is_template" />
                     <field

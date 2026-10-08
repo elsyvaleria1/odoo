@@ -44,7 +44,6 @@ class ProjectUpdate(models.Model):
         _debug.lifecycle("project_updates_created", updates=updates, uom=encode_uom)
         for update in updates:
             project = update.project_id
-            project.sudo().last_update_id = update
             update.write(
                 {
                     "uom_id": encode_uom,

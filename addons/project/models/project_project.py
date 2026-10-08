@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 from collections.abc import Collection
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any, Literal, Self
 
 from odoo import api, fields, models
@@ -467,7 +467,9 @@ class ProjectProject(models.Model):
     last_update_id = fields.Many2one(
         comodel_name="project.update",
         export_string_translation=False,
-        copy=False,
+        compute="_compute_last_update_id",
+        compute_sudo=True,
+        store=True,
     )
     last_update_status = fields.Selection(
         selection=[
@@ -770,10 +772,17 @@ class ProjectProject(models.Model):
                 :1
             ]
 
-    def action_archive_to_history(self) -> None:
+    def action_snapshot_to_history(self) -> None:
         self.check_singleton()
-        _debug.lifecycle("archived_to_history", project=self.id)
+        _debug.lifecycle("snapshot_to_history", project=self.id)
         self.env["project.history"].create_from_project(self)
+
+    def _snapshot_archived_to_history(self) -> None:
+        projects = self.filtered(lambda project: not project.is_template)
+        _debug.logic("archive_snapshots", projects=projects, templates=self - projects)
+        History = self.env["project.history"]
+        for project in projects:
+            History.create_from_project(project)
 
     def _get_cpm_tasks(self) -> Any:
         self.check_singleton()
@@ -1393,6 +1402,20 @@ class ProjectProject(models.Model):
                 )
             account.company_id = project.company_id or project.partner_id.company_id
 
+    @api.depends("update_ids.date")
+    def _compute_last_update_id(self) -> None:
+        for project in self:
+            latest = max(
+                project.update_ids,
+                key=lambda update: (update.date or date.min, update._origin.id),
+                default=project.update_ids,
+            )
+            if latest != project.last_update_id:
+                _debug.logic(
+                    "last_update_reset", project=project.id, last_update=latest.id
+                )
+            project.last_update_id = latest
+
     @api.depends("last_update_id.status")
     def _compute_last_update_status(self) -> None:
         for project in self:
@@ -1995,6 +2018,7 @@ class ProjectProject(models.Model):
             if vals["active"]:
                 active_changed._unarchive_tasks_archived_with_project()
             else:
+                active_changed._snapshot_archived_to_history()
                 active_changed._archive_tasks_with_project()
             active_changed._sync_feature_groups(
                 active_changed._get_used_project_features()
@@ -2211,9 +2235,11 @@ class ProjectProject(models.Model):
     def _sync_feature_group_to_usage(
         self, field_name: str, group_name: str
     ) -> bool | None:
-        has_user_group = bool(self.env.user.has_group(group_name))
+        # the sync owns the implication alone: a grant of the group given by
+        # hand or by data outlives the last project using the feature
         group = self.env.ref(group_name)
         base_group_user = self.env.ref("base.group_user")
+        implied = group in base_group_user.implied_ids
         has_project_field_set = bool(
             self.env["project.project"]
             .sudo()
@@ -2221,20 +2247,17 @@ class ProjectProject(models.Model):
         )
         res = None
 
-        if not has_user_group and has_project_field_set:
+        if not implied and has_project_field_set:
             base_group_user.sudo().write({"implied_ids": [Command.link(group.id)]})
             res = True
-        elif has_user_group and not has_project_field_set:
+        elif implied and not has_project_field_set:
             base_group_user.sudo().write({"implied_ids": [Command.unlink(group.id)]})
-            self.env["res.users.grant"].with_privilege(
-                "project.privilege_manage_feature_groups"
-            )._revoke(None, group, reason=f"no project uses {field_name} any more")
             res = False
         _debug.logic(
             "feature_group_synced",
             field=field_name,
             group=group_name,
-            has_group=has_user_group,
+            implied=implied,
             in_use=has_project_field_set,
             result={True: "implied", False: "removed", None: "unchanged"}[res],
         )
@@ -2267,20 +2290,21 @@ class ProjectProject(models.Model):
                 ).sudo().hidden = not implied
 
     @api.model
+    def get_features_groups(self) -> dict[str, str]:
+        if not self.env.user.has_group("project.group_project_user"):
+            return {}
+        return self._get_project_features_mapping()
+
+    @api.model
     def get_features_enabled(
         self, updated_features: list[str] | None = None
     ) -> dict[str, bool]:
         if not self.env.user.has_group("project.group_project_user"):
             return {}
-        if updated_features:
-            return {
-                field_name: self.env.user.has_group(group)
-                for field_name, group in self._get_project_features_mapping().items()
-                if field_name in updated_features
-            }
         return {
             field_name: self.env.user.has_group(group)
             for field_name, group in self._get_project_features_mapping().items()
+            if not updated_features or field_name in updated_features
         }
 
     def _track_template(self, changes: Collection[str]) -> dict:
@@ -2947,36 +2971,6 @@ class ProjectProject(models.Model):
                 and partner.partner_share
             )
         )
-
-    def _add_followers(self, partners: Any) -> None:
-        self.check_singleton()
-        self.message_subscribe(partners.ids)
-
-        dict_tasks_per_partner = {}
-        dict_partner_ids_to_subscribe_per_partner = {}
-        for task in self.task_ids:
-            if task.partner_id in dict_tasks_per_partner:
-                dict_tasks_per_partner[task.partner_id] |= task
-            else:
-                partner_ids_to_subscribe = [
-                    partner.id
-                    for partner in partners
-                    if partner == task.partner_id
-                    or partner in task.partner_id.child_ids
-                ]
-                if partner_ids_to_subscribe:
-                    dict_tasks_per_partner[task.partner_id] = task
-                    dict_partner_ids_to_subscribe_per_partner[task.partner_id] = (
-                        partner_ids_to_subscribe
-                    )
-        _debug.pipeline(
-            "followers_added",
-            project=self.id,
-            partners=partners,
-            task_partner_groups=len(dict_tasks_per_partner),
-        )
-        for partner, tasks in dict_tasks_per_partner.items():
-            tasks.message_subscribe(dict_partner_ids_to_subscribe_per_partner[partner])
 
     def _thread_to_store(
         self,

@@ -33,7 +33,7 @@ class TestFollowerPropagation(TestProjectCommon):
             "follower must be removed from the closed task as well",
         )
 
-    def test_add_followers_covers_closed_tasks(self) -> None:
+    def test_project_subtypes_reach_a_closed_task(self) -> None:
         project = self.env["project.project"].create(
             {"name": "AddF", "partner_id": self.partner_1.id}
         )
@@ -46,11 +46,19 @@ class TestFollowerPropagation(TestProjectCommon):
             }
         )
         self.assertTrue(closed.is_closed)
-        project._add_followers(self.partner_1)
+        closed.message_subscribe(partner_ids=self.partner_1.ids)
+        project_subtype = self.env.ref("project.mt_project_task_new")
+        project.message_subscribe(
+            partner_ids=self.partner_1.ids, subtype_ids=project_subtype.ids
+        )
+        self.assertIn(self.partner_1, project.message_partner_ids)
+        follower = closed.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.partner_1
+        )
         self.assertIn(
-            self.partner_1,
-            closed.message_partner_ids,
-            "partner must follow their closed task after being added",
+            project_subtype.parent_id,
+            follower.subtype_ids,
+            "the project subscription must reach the follower's closed task",
         )
 
     def test_message_subscribe_none_safe_and_no_mutation(self) -> None:

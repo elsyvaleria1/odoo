@@ -1,6 +1,12 @@
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import { defineModels, fields, models } from "@web/../tests/web_test_helpers";
 
+export const PROJECT_FEATURE_GROUPS = {
+    allow_dependencies: "project.group_project_task_dependencies",
+    allow_milestones: "project.group_project_milestone",
+    allow_recurring_tasks: "project.group_project_recurring_tasks",
+};
+
 export class ProjectProject extends models.Model {
     _name = "project.project";
 
@@ -53,6 +59,10 @@ export class ProjectProject extends models.Model {
             ],
             ["id", "name"],
         );
+    }
+
+    get_features_groups() {
+        return { ...PROJECT_FEATURE_GROUPS };
     }
 
     get_features_enabled() {

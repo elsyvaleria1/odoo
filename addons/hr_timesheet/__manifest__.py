@@ -1,6 +1,6 @@
 {
     "name": "Task Logs",
-    "version": "1.5",
+    "version": "1.6",
     "oldest_upgradable_version": "1.5",
     "category": "Services/Timesheets",
     "sequence": 23,

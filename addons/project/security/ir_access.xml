@@ -8,7 +8,6 @@
             <field name="model_id" ref="model_project_task" />
             <field name="group_id" ref="base.group_portal" />
             <field name="kind">permission</field>
-            <field name="active" eval="False" />
             <field name="operation">cu</field>
             <field
                 name="domain">[ ('project_id.privacy_visibility', 'in', ['invited_users', 'portal']), ('active', '=', True), ('project_id.collaborator_ids', 'any', [ ('is_current_user_collaboration', '=', True), ('access_mode', 'in', ['edit', 'advanced_edit']), ]), ]</field>

@@ -7,15 +7,7 @@ from odoo.libs.sql import normalize_identifier
 from odoo.db.schema import create_index
 
 
-def _update_project_sharing_rules_if_collaborators(env) -> None:
-    collaborator = env["project.collaborator"].search([], limit=1)
-    if collaborator:
-        env["project.collaborator"]._update_project_sharing_portal_rules(True)
-
-
 def _project_post_init(env) -> None:
-    _update_project_sharing_rules_if_collaborators(env)
-
     project_task_step_field_id = (
         env["ir.model.fields"]._get_ids_by_name("project.task").get("step_id")
     )

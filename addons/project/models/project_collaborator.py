@@ -123,17 +123,7 @@ class ProjectCollaborator(models.Model):
                 count=len(vals_list),
                 keys=sorted({k for vals in vals_list for k in vals}),
             )
-        had_collaborator = self._exists_any_collaborator()
-        project_collaborators = super().create(vals_list)
-        if not had_collaborator:
-            _debug.pipeline(
-                "portal_sharing_rules_toggled",
-                active=True,
-                reason="first_collaborator",
-                collaborators=project_collaborators,
-            )
-            self._update_project_sharing_portal_rules(True)
-        return project_collaborators
+        return super().create(vals_list)
 
     @_debug.perf.timed
     def unlink(self) -> bool:
@@ -147,20 +137,4 @@ class ProjectCollaborator(models.Model):
         res = super().unlink()
         for project, partners in revoked_partners_per_project.items():
             project._revoke_collaborator_access(partners)
-        if not self._exists_any_collaborator():
-            _debug.pipeline(
-                "portal_sharing_rules_toggled", active=False, reason="last_collaborator"
-            )
-            self._update_project_sharing_portal_rules(False)
         return res
-
-    @api.model
-    def _exists_any_collaborator(self) -> bool:
-        return bool(self.browse(self._search([], limit=1, bypass_access=True)))
-
-    @api.model
-    def _update_project_sharing_portal_rules(self, active: bool) -> None:
-        access = self.env.ref("project.project_task_rule_portal_project_sharing").sudo()
-        _debug.logic("portal_sharing_rule_update", active=active, was=access.active)
-        if access.active != active:
-            access.write({"active": active})

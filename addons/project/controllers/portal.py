@@ -12,6 +12,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import groupby as groupbyelem
 
+from odoo.addons.base.models.access_link import ROLE_RANK
 from odoo.addons.portal.controllers.portal import (
     CustomerPortal,
     _parse_bool_param,
@@ -419,7 +420,32 @@ class ProjectCustomerPortal(CustomerPortal):
             task_sudo, access_token, project=project_sudo, **kw
         )
         values["project"] = project_sudo
+        if access_token and not values["task_token"]:
+            values.update(self._project_link_chatter_values(project_sudo, access_token))
         return request.render("project.portal_my_task", values)
+
+    def _project_link_chatter_values(
+        self, project_sudo: Any, access_token: str
+    ) -> dict[str, Any]:
+        # a task has no link of its own here: the project's link speaks in its
+        # chatter, signed for the link's partner as the project's mails are
+        link = request.access_link
+        partner = link.partner_id
+        commenting = ROLE_RANK[link.role] >= ROLE_RANK["comment"]
+        _debug.logic(
+            "project_link_task_chatter",
+            project=project_sudo.id,
+            link=link.id,
+            partner=partner.id,
+            commenting=commenting,
+        )
+        if not (partner and commenting):
+            return {}
+        return {
+            "task_token": access_token,
+            "pid": partner.id,
+            "hash": project_sudo._sign_token(partner.id, token=access_token),
+        }
 
     @http.route(
         "/my/projects/<int:project_id>/task/<int:task_id>/subtasks",

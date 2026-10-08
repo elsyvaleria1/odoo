@@ -86,3 +86,4 @@ from . import test_project_review_task_write
 from . import test_project_review_task_challenge
 from . import test_project_review_pm_challenge
 from . import test_project_column_wizard
+from . import test_project_project_followup

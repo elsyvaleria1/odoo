@@ -5,7 +5,6 @@ from . import wizards
 
 from odoo import fields
 
-from odoo.addons.project import _update_project_sharing_rules_if_collaborators
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import SQL
 
@@ -35,8 +34,6 @@ def create_internal_project(env) -> None:
             )
         ]
     )
-
-    _update_project_sharing_rules_if_collaborators(env)
 
 
 def _uninstall_hook(env) -> None:

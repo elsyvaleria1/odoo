@@ -1,6 +1,7 @@
 /** @odoo-module native */
 import { onWillStart, t } from "@odoo/owl";
 import { useFocusTitle } from "@project/utils/project_utils";
+import { user } from "@web/core/user";
 import { FormControllerWithHTMLExpander } from "@web/views/form_with_html_expander/form_controller_with_html_expander";
 
 import { ProjectTemplateDropdown } from "../components/project_template_dropdown.js";
@@ -22,10 +23,15 @@ export class ProjectProjectFormController extends ProjectManagerActionsMixin(
     setup() {
         super.setup();
         onWillStart(async () => {
-            this.featuresToObserve = await this.orm.call(
-                this.props.resModel,
-                "get_features_enabled",
-                [],
+            const featureGroups = await this.orm
+                .cache()
+                .call(this.props.resModel, "get_features_groups");
+            const featureNames = Object.keys(featureGroups);
+            const enabled = await Promise.all(
+                featureNames.map((fName) => user.hasGroup(featureGroups[fName])),
+            );
+            this.featuresToObserve = Object.fromEntries(
+                featureNames.map((fName, index) => [fName, enabled[index]]),
             );
         });
 

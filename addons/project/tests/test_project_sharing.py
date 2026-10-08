@@ -1048,73 +1048,40 @@ class TestProjectSharing(TestProjectSharingCommon):
                 }
             )
 
-    def test_add_followers_from_share_edit_wizard(self) -> None:
-        company_partner = self.env.company.partner_id
-        partners = partner_a, partner_b, partner_d = self.env["res.partner"].create(
-            [
-                {"name": "Solanum", "parent_id": company_partner.id},
-                {"name": "Zana", "parent_id": company_partner.id},
-                {"name": "Thresh"},
-            ]
-        )
-        partners |= company_partner
+    def test_sharing_subscribes_only_the_project(self) -> None:
+        portal_partner = self.user_portal.partner_id
         project_to_share = self.env["project.project"].create(
-            {"name": "project to share"}
+            {"name": "project to share", "privacy_visibility": "portal"}
         )
-        (
-            task_with_partner_1,
-            task_with_partner_2,
-            task_with_parent_partner,
-            task_without_partner,
-        ) = self.env["project.task"].create(
+        task_of_the_partner, task_of_nobody = self.env["project.task"].create(
             [
                 {
-                    "name": "Task with partner 1",
-                    "partner_id": partner_a.id,
+                    "name": "Task of the partner",
+                    "partner_id": portal_partner.id,
                     "project_id": project_to_share.id,
                 },
-                {
-                    "name": "Task with partner 2",
-                    "partner_id": partner_b.id,
-                    "project_id": project_to_share.id,
-                },
-                {
-                    "name": "Task with company",
-                    "partner_id": company_partner.id,
-                    "project_id": project_to_share.id,
-                },
-                {
-                    "name": "Task with no partner",
-                    "project_id": project_to_share.id,
-                },
+                {"name": "Task of nobody", "project_id": project_to_share.id},
             ]
         )
-        project_to_share._add_followers(partners)
-
-        self.assertEqual(
-            partners,
-            project_to_share.message_partner_ids,
-            "All the partner should be set as a new follower of the project",
-        )
-        self.assertEqual(
-            partner_a,
-            task_with_partner_1.message_partner_ids,
-            "Only the first partner should be set as a new follower for the task 1",
-        )
-        self.assertEqual(
-            partner_b,
-            task_with_partner_2.message_partner_ids,
-            "Only the second partner should be set as a new follower for the task 2",
-        )
-        self.assertEqual(
-            partners - partner_d,
-            task_with_parent_partner.message_partner_ids,
-            "The first, second, and the company partner should be set as new followers for the task 3 because the partner of this task is the parent of the other 2",
-        )
-        self.assertFalse(
-            task_without_partner.message_partner_ids,
-            "Since this task has no partner, no follower should be added",
-        )
+        self.env["wizard.project.project.share"].create(
+            {
+                "res_model": "project.project",
+                "res_id": project_to_share.id,
+                "collaborator_ids": [
+                    Command.create(
+                        {"partner_id": portal_partner.id, "access_mode": "edit"}
+                    ),
+                ],
+            }
+        ).action_send_mail()
+        self.assertEqual(project_to_share.collaborator_ids.partner_id, portal_partner)
+        self.assertNotIn(portal_partner, task_of_the_partner.message_partner_ids)
+        self.assertNotIn(portal_partner, task_of_nobody.message_partner_ids)
+        project_to_share.message_subscribe(partner_ids=portal_partner.ids)
+        task_of_the_partner.message_subscribe(partner_ids=portal_partner.ids)
+        self.assertIn(portal_partner, project_to_share.message_partner_ids)
+        self.assertIn(portal_partner, task_of_the_partner.message_partner_ids)
+        self.assertNotIn(portal_partner, task_of_nobody.message_partner_ids)
 
     def test_project_manager_remains_follower_after_sharing(self) -> None:
         project = (
