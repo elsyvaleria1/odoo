@@ -14,6 +14,14 @@
                     options="{'no_create': True}"
                     groups="stock.group_adv_location" />
             </xpath>
+            <field name="tracking_url" position="after">
+                <field
+                    name="tracking_ref_pattern"
+                    placeholder="e.g. [A-Z]{3}[0-9]{8}" />
+                <field
+                    name="tracking_ref_example"
+                    invisible="not tracking_ref_pattern" />
+            </field>
         </field>
     </record>
 

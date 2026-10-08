@@ -1,6 +1,6 @@
 {
     "name": "Carrier Stock Shipments",
-    "version": "1.0",
+    "version": "1.1",
     "category": "Shipping Connectors",
     "summary": "Create carrier shipments and retrieve labels for stock transfers",
     "description": "Connect stock pickings to delivery carriers and shipment actions. Provider-specific modules supply carrier calls for labels, tracking, returns and cancellation where supported.",

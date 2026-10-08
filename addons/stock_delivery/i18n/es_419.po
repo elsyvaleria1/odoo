@@ -27,6 +27,26 @@ msgid "%(name)s (Estimated Cost: %(cost)s)"
 msgstr "%(name)s (Costo estimado: %(cost)s)"
 
 #. module: stock_delivery
+#. odoo-python
+#: code:addons/stock_delivery/models/stock_picking.py:0
+msgid ""
+"%(references)s is not a tracking reference of %(carrier)s: it must look like"
+" %(example)s."
+msgstr ""
+"%(references)s no es una referencia de rastreo (guía) de %(carrier)s: debe "
+"tener la forma de %(example)s."
+
+#. module: stock_delivery
+#. odoo-python
+#: code:addons/stock_delivery/models/stock_picking.py:0
+msgid ""
+"%(references)s is not a tracking reference of %(carrier)s: it must match the"
+" format %(pattern)s."
+msgstr ""
+"%(references)s no es una referencia de rastreo (guía) de %(carrier)s: debe "
+"cumplir el formato %(pattern)s."
+
+#. module: stock_delivery
 #: model_terms:ir.ui.view,arch_db:stock_delivery.stock_package_view_form
 msgid "(computed:"
 msgstr "(calculado:"
@@ -99,6 +119,15 @@ msgid ""
 msgstr ""
 "<strong>Peso:</strong>\n"
 "             <br/>"
+
+#. module: stock_delivery
+#: model:ir.model.fields,help:stock_delivery.field_delivery_carrier__tracking_ref_example
+msgid ""
+"A valid tracking reference, shown to whoever types one that does not match "
+"the format."
+msgstr ""
+"Una referencia de rastreo válida, que se muestra a quien capture una que no "
+"cumple el formato."
 
 #. module: stock_delivery
 #: model:ir.model.fields,help:stock_delivery.field_stock_picking__integration_level
@@ -340,6 +369,17 @@ msgid "Real cost"
 msgstr "Costo real"
 
 #. module: stock_delivery
+#: model:ir.model.fields,help:stock_delivery.field_delivery_carrier__tracking_ref_pattern
+msgid ""
+"Regular expression each tracking reference of this carrier must match whole,"
+" e.g. [A-Z]{3}[0-9]{8} for three letters and eight digits. Empty accepts any"
+" reference."
+msgstr ""
+"Expresión regular que cada referencia de rastreo de este transportista debe "
+"cumplir completa, p. ej. [A-Z]{3}[0-9]{8} para tres letras y ocho dígitos. "
+"Vacío acepta cualquier referencia."
+
+#. module: stock_delivery
 #: model:ir.model.fields,field_description:stock_delivery.field_stock_picking__return_label_ids
 msgid "Return Label"
 msgstr "Etiqueta de devolución"
@@ -467,6 +507,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/stock_delivery/models/delivery_carrier.py:0
 msgid ""
+"The example %(example)s does not match the tracking reference format of "
+"%(carrier)s."
+msgstr ""
+"El ejemplo %(example)s no cumple el formato de la referencia de rastreo de "
+"%(carrier)s."
+
+#. module: stock_delivery
+#. odoo-python
+#: code:addons/stock_delivery/models/delivery_carrier.py:0
+msgid ""
 "The package cannot be created because the total weight of the products in "
 "the picking is 0.0 %s"
 msgstr ""
@@ -477,6 +527,16 @@ msgstr ""
 #: code:addons/stock_delivery/wizard/choose_delivery_carrier.py:0
 msgid "The shipping price will be set once the delivery is done."
 msgstr "El precio de envío se establecerá una vez realizada la entrega."
+
+#. module: stock_delivery
+#. odoo-python
+#: code:addons/stock_delivery/models/delivery_carrier.py:0
+msgid ""
+"The tracking reference format of %(carrier)s is not a valid regular "
+"expression: %(error)s"
+msgstr ""
+"El formato de la referencia de rastreo de %(carrier)s no es una expresión "
+"regular válida: %(error)s"
 
 #. module: stock_delivery
 #. odoo-python
@@ -528,6 +588,16 @@ msgstr "Seguimiento"
 #: model:ir.model.fields,field_description:stock_delivery.field_stock_picking__carrier_tracking_ref
 msgid "Tracking Reference"
 msgstr "Referencia de rastreo"
+
+#. module: stock_delivery
+#: model:ir.model.fields,field_description:stock_delivery.field_delivery_carrier__tracking_ref_example
+msgid "Tracking Reference Example"
+msgstr "Ejemplo de referencia de rastreo"
+
+#. module: stock_delivery
+#: model:ir.model.fields,field_description:stock_delivery.field_delivery_carrier__tracking_ref_pattern
+msgid "Tracking Reference Format"
+msgstr "Formato de la referencia de rastreo"
 
 #. module: stock_delivery
 #: model:ir.model.fields,field_description:stock_delivery.field_stock_picking__carrier_tracking_url
@@ -639,6 +709,11 @@ msgstr "^FO35, 220 ^A0N,15^FDHS:"
 #: model_terms:ir.ui.view,arch_db:stock_delivery.normal_zpl_label
 msgid "^FS"
 msgstr "^FS"
+
+#. module: stock_delivery
+#: model_terms:ir.ui.view,arch_db:stock_delivery.view_delivery_carrier_form_inherit_stock_delivery
+msgid "e.g. [A-Z]{3}[0-9]{8}"
+msgstr "p. ej. [A-Z]{3}[0-9]{8}"
 
 #~ msgid "<strong>Weight</strong>"
 #~ msgstr "<strong>Peso</strong>"

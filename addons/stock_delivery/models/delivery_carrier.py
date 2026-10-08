@@ -1,4 +1,6 @@
-from odoo import fields, models
+import re
+
+from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.numbers import float_is_zero, float_round
@@ -28,6 +30,60 @@ class DeliveryCarrier(models.Model):
         string="Routes",
         domain=[("shipping_selectable", "=", True)],
     )
+    tracking_ref_pattern = fields.Char(
+        string="Tracking Reference Format",
+        help="Regular expression each tracking reference of this carrier must match "
+        "whole, e.g. [A-Z]{3}[0-9]{8} for three letters and eight digits. "
+        "Empty accepts any reference.",
+    )
+    tracking_ref_example = fields.Char(
+        string="Tracking Reference Example",
+        help="A valid tracking reference, shown to whoever types one that does not "
+        "match the format.",
+    )
+
+    @api.constrains("tracking_ref_pattern", "tracking_ref_example")
+    def _check_tracking_ref_pattern(self) -> None:
+        for carrier in self.filtered("tracking_ref_pattern"):
+            try:
+                re.compile(carrier.tracking_ref_pattern)
+            except re.error as error:
+                raise ValidationError(
+                    self.env._(
+                        "The tracking reference format of %(carrier)s is not a valid "
+                        "regular expression: %(error)s",
+                        carrier=carrier.name,
+                        error=error,
+                    )
+                ) from error
+            example = carrier.tracking_ref_example
+            if example and carrier._get_malformed_tracking_refs(example):
+                raise ValidationError(
+                    self.env._(
+                        "The example %(example)s does not match the tracking "
+                        "reference format of %(carrier)s.",
+                        example=example,
+                        carrier=carrier.name,
+                    )
+                )
+
+    def _get_malformed_tracking_refs(self, tracking_ref: str) -> list[str]:
+        """The references in ``tracking_ref`` that do not match this carrier's format.
+
+        :param tracking_ref: one reference, or several separated by commas as
+            shipping connectors store them
+        :return: the offending references, empty when all match or no format is set
+        :rtype: list[str]
+        """
+        self.check_singleton()
+        if not self.tracking_ref_pattern:
+            return []
+        pattern = re.compile(self.tracking_ref_pattern)
+        return [
+            reference
+            for reference in (part.strip() for part in tracking_ref.split(","))
+            if not pattern.fullmatch(reference)
+        ]
 
     def send_shipping(self, pickings):
         _debug.pipeline("carrier_send_shipping", carrier=self.id, pickings=pickings)

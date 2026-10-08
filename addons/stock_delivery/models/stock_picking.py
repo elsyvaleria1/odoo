@@ -3,7 +3,7 @@ from datetime import date
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
@@ -96,6 +96,40 @@ class StockPicking(models.Model):
                 if picking.partner_id
                 else carriers
             )
+
+    @api.constrains("carrier_id", "carrier_tracking_ref")
+    def _check_carrier_tracking_ref_format(self) -> None:
+        # Checked on save, so a mistyped reference is caught while the slip is in
+        # hand rather than when the customer asks where the goods are.
+        checked = self.filtered(
+            lambda picking: (
+                picking.carrier_tracking_ref and picking.carrier_id.tracking_ref_pattern
+            )
+        )
+        for picking in checked:
+            carrier = picking.carrier_id
+            malformed = carrier._get_malformed_tracking_refs(
+                picking.carrier_tracking_ref
+            )
+            if not malformed:
+                continue
+            if carrier.tracking_ref_example:
+                message = self.env._(
+                    "%(references)s is not a tracking reference of %(carrier)s: it "
+                    "must look like %(example)s.",
+                    references=", ".join(malformed),
+                    carrier=carrier.name,
+                    example=carrier.tracking_ref_example,
+                )
+            else:
+                message = self.env._(
+                    "%(references)s is not a tracking reference of %(carrier)s: it "
+                    "must match the format %(pattern)s.",
+                    references=", ".join(malformed),
+                    carrier=carrier.name,
+                    pattern=carrier.tracking_ref_pattern,
+                )
+            raise ValidationError(message)
 
     @api.depends("carrier_id", "carrier_tracking_ref")
     def _compute_carrier_tracking_url(self) -> None:
