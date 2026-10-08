@@ -10,6 +10,7 @@ from werkzeug.http import http_date
 
 from odoo import api, http
 from odoo.exceptions import UserError
+from odoo.modules.module import Manifest
 from odoo.tests import RecordCapturer, new_test_user, tagged
 from odoo.tools import config, file_open
 from odoo.tools.image import image_process
@@ -127,12 +128,50 @@ class TestHttpStatic(TestHttpStaticCommon):
             self.assertCacheControl(res, "public, max-age=604800")
 
     def test_static01_debug_assets(self):
-        session = self.authenticate(None, None)
-        session.debug = "assets"
-        http.root.session_store.save(session)
-
+        self.authenticate(None, None)
+        self.db_url_open("/test_http/greeting?debug=assets").raise_for_status()
+        self.assertEqual(self.opener.cookies.get(http.DEBUG_ASSETS_COOKIE), "1")
         res = self.assertDownloadGizeh("/test_http/static/src/img/gizeh.png")
         self.assertCacheControl(res, "no-cache, max-age=0")
+
+        self.db_url_open("/test_http/greeting?debug=").raise_for_status()
+        self.assertNotIn(http.DEBUG_ASSETS_COOKIE, self.opener.cookies)
+        res = self.assertDownloadGizeh("/test_http/static/src/img/gizeh.png")
+        self.assertCacheControl(res, f"public, max-age={http.STATIC_CACHE}")
+
+    def test_static01_reads_no_session(self):
+        self.authenticate("admin", "admin")
+        with (
+            patch.object(http.Request, "_load_session", side_effect=AssertionError),
+            patch.object(http.root.session_store, "get", side_effect=AssertionError),
+        ):
+            self.assertDownloadGizeh("/test_http/static/src/img/gizeh.png")
+
+    def test_static01_module_paths_are_resolved_once_a_minute(self):
+        root = http.root
+        root._static_paths.clear()
+        self.addCleanup(root._static_paths.clear)
+        static_dir = root.get_static_path("test_http")
+        self.assertTrue(static_dir)
+        root._static_paths.clear()
+
+        def resolutions():
+            return sum(
+                call.args[0] in ("test_http", "no_such_module")
+                for call in for_addon.call_args_list
+            )
+
+        with patch.object(Manifest, "for_addon", wraps=Manifest.for_addon) as for_addon:
+            for _ in range(3):
+                self.assertIsNone(root.get_static_path("no_such_module"))
+                self.assertEqual(root.get_static_path("test_http"), static_dir)
+            self.assertEqual(resolutions(), 2, "absent ones are held too")
+            Manifest.cache_generation += 1
+            root.get_static_path("test_http")
+            self.assertEqual(resolutions(), 3, "a changed addons path re-resolves")
+            with patch("odoo.http.application.time.monotonic", return_value=1e12):
+                root.get_static_path("test_http")
+            self.assertEqual(resolutions(), 4, "an answer expires")
 
     def test_static01_module_sources_revalidate(self):
         # the per-file ESM fallback loads these by bare URL: a stale cached

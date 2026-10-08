@@ -89,8 +89,14 @@ database maps (`SignedIntConverter`, owned here and imported by `base`).
 
 **`Request._serve_static`** — streams an already-resolved file via
 `Stream.prepare_response`. A static file needs no database: `__call__` resolves
-the path before `_post_init`, so the database is never selected for it, and the
-session is read only for its debug mode (`debug=assets` serves without cache). It does **not** resolve the path: `Application.resolve_static_file`
+the path before `_post_init`, so the database is never selected for it, and no
+session is read: `debug=assets` (served without cache) is the session's, and
+web's `ir.http._handle_debug` mirrors it into the `odoo_debug_assets` cookie
+(`DEBUG_ASSETS_COOKIE`) the static path reads; any `dev_mode` serves without
+cache too. `Application.get_static_path` holds each module's answer (an absent
+module's too) for 60 s, or until `Manifest.clear_caches()` moves
+`Manifest.cache_generation`: an unknown module name otherwise stats every
+addons path on every request. It does **not** resolve the path: `Application.resolve_static_file`
 does, before the request reaches here, with `file_path()` plus a
 `Path.resolve().is_relative_to()` containment check. It takes the request path
 as a path — already decoded, so never re-parsed as a URL, where a decoded `?`,

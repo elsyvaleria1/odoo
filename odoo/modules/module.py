@@ -347,6 +347,8 @@ class Manifest(Mapping[str, typing.Any]):
 
     _resolution_cache: dict[str, str] = {}
 
+    cache_generation: int = 0
+
     @staticmethod
     def _get_manifest_from_addons(module: str) -> Manifest | None:
         if (known := Manifest._resolution_cache.get(module)) is not None:
@@ -373,6 +375,7 @@ class Manifest(Mapping[str, typing.Any]):
         )
         Manifest._parse_cache.clear()
         Manifest._resolution_cache.clear()
+        Manifest.cache_generation += 1
 
     @staticmethod
     def for_addon(module_name: str, *, display_warning: bool = True) -> Manifest | None:

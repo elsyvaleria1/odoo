@@ -189,6 +189,8 @@ ISSUED_SID_KEY = "_issued_sid"
 
 STATIC_CACHE = 60 * 60 * 24 * 7
 
+DEBUG_ASSETS_COOKIE = "odoo_debug_assets"
+
 REGISTRY_RETRY_AFTER = 5
 
 STATIC_CACHE_LONG = 60 * 60 * 24 * 365

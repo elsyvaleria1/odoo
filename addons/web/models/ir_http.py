@@ -4,7 +4,13 @@ from typing import Any
 
 import odoo
 from odoo import api, fields, models
-from odoo.http import DEFAULT_LANG, DEFAULT_MAX_CONTENT_LENGTH, request
+from odoo.http import (
+    DEBUG_ASSETS_COOKIE,
+    DEFAULT_LANG,
+    DEFAULT_MAX_CONTENT_LENGTH,
+    SESSION_LIFETIME,
+    request,
+)
 from odoo.libs.json import loads as json_loads
 from odoo.tools import config, html_sanitize, ormcache
 from odoo.tools.misc import hmac, register_signed_scope, str2bool
@@ -73,6 +79,13 @@ class IrHttp(models.AbstractModel):
                 )
                 for mode in (debug or "").split(",")
             )
+            # a static file reads no session: it learns debug=assets here
+            if "assets" in request.session.debug:
+                request.future_response.set_cookie(
+                    DEBUG_ASSETS_COOKIE, "1", max_age=SESSION_LIFETIME, httponly=True
+                )
+            elif DEBUG_ASSETS_COOKIE in request.httprequest.cookies:
+                request.future_response.set_cookie(DEBUG_ASSETS_COOKIE, max_age=0)
 
     @classmethod
     def _pre_dispatch(cls, rule: Any, args: dict) -> None:

@@ -190,10 +190,15 @@ _SESSION_STORE_OPENERS: dict[str, Callable[[HttpSettings], SessionStore]] = {
 }
 
 
+_STATIC_PATH_TTL = 60.0
+_STATIC_PATH_CACHE_SIZE = 4096
+
+
 class Application:
     def __init__(self) -> None:
         self._geoip_city = _GeoIPReaderSlot("city")
         self._geoip_country = _GeoIPReaderSlot("country")
+        self._static_paths: dict[str, tuple[float, int, str | None]] = {}
 
     def initialize(self) -> None:
         module_manager.initialize_sys_path()
@@ -220,8 +225,25 @@ class Application:
         return filter_dbs_served(dbs, host=host)
 
     def get_static_path(self, module_name: str) -> str | None:
+        # every static request asks, an unknown module stats every addons
+        # path: answers, absent ones included, hold a minute or until the
+        # addons path changes
+        now = time.monotonic()
+        generation = module_manager.Manifest.cache_generation
+        cached = self._static_paths.get(module_name)
+        if cached is not None and cached[0] > now and cached[1] == generation:
+            return cached[2]
         manifest = module_manager.Manifest.for_addon(module_name, display_warning=False)
-        return manifest.static_path if manifest is not None else None
+        static_path = manifest.static_path if manifest is not None else None
+        if len(self._static_paths) >= _STATIC_PATH_CACHE_SIZE:
+            self._static_paths.clear()
+        self._static_paths[module_name] = (
+            now + _STATIC_PATH_TTL,
+            generation,
+            static_path,
+        )
+        _debug.perf.count("http.static.path_resolved", found=static_path is not None)
+        return static_path
 
     def get_static_file_path(self, url: str, host: str = "") -> str | None:
         if "/static/" not in url:
@@ -594,9 +616,8 @@ class Application:
                 with _debug.perf(
                     "http.request", method=httprequest.method, path=httprequest.path
                 ) as span:
-                    # A module's static file needs no database: it is served
-                    # before the session's database is selected, and reads the
-                    # session only for its debug mode.
+                    # A module's static file needs no database and reads no
+                    # session: it is served before either is looked at.
                     static_file = self.resolve_static_file(httprequest.path)
                     db_free = not static_file and httprequest.path in self.db_free_paths
                     if db_free:

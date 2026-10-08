@@ -25,7 +25,12 @@ from odoo.service.transaction import retrying
 from ._cors import is_cors_preflight
 from ._protocols import RequestState, get_ir_http
 from ._retry import RequestRetryParticipant, rewind_uploaded_files
-from .constants import NOT_FOUND_NODB, NOT_FOUND_NODB_TEXT, STATIC_CACHE
+from .constants import (
+    DEBUG_ASSETS_COOKIE,
+    NOT_FOUND_NODB,
+    NOT_FOUND_NODB_TEXT,
+    STATIC_CACHE,
+)
 from .core import borrow_request
 from .dispatcher import (
     _dispatchers,
@@ -37,6 +42,7 @@ from .exceptions import (
     get_error_response,
     set_error_response,
 )
+from .settings import current as current_settings
 from .stream import Stream
 from .wrappers import Response, prepare_exception_response
 
@@ -99,9 +105,12 @@ class _RequestServeMixin(RequestState):
         ) as span:
             try:
                 stream = Stream._from_trusted_path(filepath, public=True)
-                if not self._post_init_done:
-                    self.session = self._load_session()
-                debug = "assets" in self.session.debug
+                # debug=assets is the session's, mirrored into a cookie by
+                # ir.http._handle_debug: a static file reads no session
+                debug = bool(
+                    self.httprequest.cookies.get(DEBUG_ASSETS_COOKIE)
+                    or current_settings().dev_mode
+                )
                 path = getattr(self.httprequest, "path", "") or ""
                 # an ES module under static/src is fetched by its bare URL when
                 # the page falls back to per-file loading; a week of cache would

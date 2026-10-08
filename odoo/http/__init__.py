@@ -1,6 +1,7 @@
 from .constants import (
     CORS_MAX_AGE,
     CSRF_TOKEN_MAX_AGE,
+    DEBUG_ASSETS_COOKIE,
     DEFAULT_ALLOWED_METHODS,
     DEFAULT_LANG,
     DEFAULT_MAX_CONTENT_LENGTH,
@@ -144,6 +145,7 @@ from .application import (
 __all__ = [
     "CORS_MAX_AGE",
     "CSRF_TOKEN_MAX_AGE",
+    "DEBUG_ASSETS_COOKIE",
     "DEFAULT_ALLOWED_METHODS",
     "DEFAULT_LANG",
     "DEFAULT_MAX_CONTENT_LENGTH",
