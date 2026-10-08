@@ -1310,7 +1310,7 @@ class TestTheEnvironIsWsgiCompliant:
 
 class TestTheListenerSurvivesAReexec:
     def test_bequeath_leaves_the_bound_port_open_after_server_close(self):
-        with _server() as srv, patch.dict(os.environ, {}, clear=False):
+        with _server(serve=False) as srv, patch.dict(os.environ, {}, clear=False):
             os.environ.pop("ODOO_HTTP_SOCKET_FD", None)
             port = srv.server_port
             srv.bequeath_listener()
