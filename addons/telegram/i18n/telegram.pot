@@ -46,6 +46,20 @@ msgid "/quiensoy - Verify your identity in Odoo."
 msgstr ""
 
 #. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__moved_to_id
+msgid ""
+"A bot its people moved away from: it answers every private message and "
+"button with a link to this one, offers no command and delivers no "
+"notification."
+msgstr ""
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot.py:0
+msgid "A bot moves to a bot that has not moved itself."
+msgstr ""
+
+#. module: telegram
 #: model:ir.model.constraint,message:telegram.constraint_telegram_binding_one_active_per_account
 msgid "A Telegram account is one person at a time."
 msgstr ""
@@ -843,6 +857,12 @@ msgstr ""
 #. module: telegram
 #. odoo-python
 #: code:addons/telegram/models/telegram_router.py:0
+msgid "I moved: from now on write to %(bot)s. Open %(link)s and press Start."
+msgstr ""
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
 msgid "I received an action, but I don't know how to process it."
 msgstr ""
 
@@ -1094,6 +1114,11 @@ msgstr ""
 #. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_bot__mini_app_receiver_id
 msgid "Mini App Receiver"
+msgstr ""
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__moved_to_id
+msgid "Moved To"
 msgstr ""
 
 #. module: telegram

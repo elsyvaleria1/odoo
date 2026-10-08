@@ -41,7 +41,7 @@ class ResUsers(models.Model):
     @api.depends_context("uid")
     def _compute_telegram_connect_bot_ids(self) -> None:
         bots = operating(self.env["telegram.bot"]).search(
-            [("bot_username", "!=", False)]
+            [("bot_username", "!=", False), ("moved_to_id", "=", False)]
         )
         for user in self:
             # a bot of another company refuses whatever its user writes

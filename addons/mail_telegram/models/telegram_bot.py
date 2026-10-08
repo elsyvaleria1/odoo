@@ -18,7 +18,7 @@ class TelegramBot(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        if "notify_mail" in vals or "active" in vals:
+        if vals.keys() & {"notify_mail", "active", "moved_to_id"}:
             self.env.registry.clear_cache("mail")
         return super().write(vals)
 
@@ -37,7 +37,9 @@ class TelegramBot(models.Model):
         # would make it the first caller's: which bots deliver is the bots'
         # own configuration
         bots = keeping(self).with_context(active_test=True)
-        return tuple(bots.search([("notify_mail", "=", True)]).ids)
+        return tuple(
+            bots.search([("notify_mail", "=", True), ("moved_to_id", "=", False)]).ids
+        )
 
     @api.model
     def _get_notifying_bots(self, user):

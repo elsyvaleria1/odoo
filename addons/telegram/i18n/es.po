@@ -48,6 +48,22 @@ msgid "/quiensoy - Verify your identity in Odoo."
 msgstr "/quiensoy - Verifica tu identidad en Odoo."
 
 #. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_bot__moved_to_id
+msgid ""
+"A bot its people moved away from: it answers every private message and "
+"button with a link to this one, offers no command and delivers no "
+"notification."
+msgstr ""
+"Un bot del que su gente se mudó: contesta cada mensaje privado y cada botón "
+"con un enlace a este, no ofrece comandos y no entrega notificaciones."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_bot.py:0
+msgid "A bot moves to a bot that has not moved itself."
+msgstr "Un bot solo se puede mudar a un bot que no se haya mudado."
+
+#. module: telegram
 #: model:ir.model.constraint,message:telegram.constraint_telegram_binding_one_active_per_account
 msgid "A Telegram account is one person at a time."
 msgstr "Una cuenta de Telegram es una sola persona a la vez."
@@ -891,6 +907,14 @@ msgstr ""
 #. module: telegram
 #. odoo-python
 #: code:addons/telegram/models/telegram_router.py:0
+msgid "I moved: from now on write to %(bot)s. Open %(link)s and press Start."
+msgstr ""
+"Me mudé: a partir de ahora escríbele a %(bot)s. Abre %(link)s y pulsa "
+"Iniciar."
+
+#. module: telegram
+#. odoo-python
+#: code:addons/telegram/models/telegram_router.py:0
 msgid "I received an action, but I don't know how to process it."
 msgstr "Recibí una acción, pero no sé cómo procesarla."
 
@@ -1152,6 +1176,11 @@ msgstr "Migrado a"
 #: model:ir.model.fields,field_description:telegram.field_telegram_bot__mini_app_receiver_id
 msgid "Mini App Receiver"
 msgstr "Receptor de Mini App"
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_bot__moved_to_id
+msgid "Moved To"
+msgstr "Mudado a"
 
 #. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_account__name

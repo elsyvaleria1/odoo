@@ -39,6 +39,15 @@ class TelegramBot(models.Model):
         "log of its calls to Telegram are this company's. It is always one of "
         "the companies the bot serves.",
     )
+    moved_to_id = fields.Many2one(
+        comodel_name="telegram.bot",
+        string="Moved To",
+        index="btree_not_null",
+        ondelete="set null",
+        help="A bot its people moved away from: it answers every private "
+        "message and button with a link to this one, offers no command and "
+        "delivers no notification.",
+    )
     company_ids = fields.Many2many(
         comodel_name="res.company",
         relation="telegram_bot_res_company_rel",
@@ -136,6 +145,15 @@ class TelegramBot(models.Model):
         "Token hash must be unique (duplicate bot token detected)!",
     )
 
+    @api.constrains("moved_to_id")
+    def _check_moved_to(self) -> None:
+        for bot in self:
+            target = bot.moved_to_id
+            if target and (target == bot or target.moved_to_id):
+                raise ValidationError(
+                    self.env._("A bot moves to a bot that has not moved itself.")
+                )
+
     @api.model_create_multi
     def create(self, vals_list):
         bots = super().create(vals_list)
@@ -178,6 +196,7 @@ class TelegramBot(models.Model):
             "company_ids",
             "lang",
             "answer_in_bot_lang",
+            "moved_to_id",
         }
 
     @api.constrains("credential_id")
@@ -402,9 +421,14 @@ class TelegramBot(models.Model):
 
     @api.model
     def _serving(self, handler_name) -> Self:
-        """The bots that run a feature: those its handler is enabled on."""
+        """The bots that run a feature: those its handler is enabled on, but
+        a bot its people moved away from."""
         handler = self.env[handler_name]
-        return operating(self).search([]).filtered(handler._feature_enabled)
+        return (
+            operating(self)
+            .search([("moved_to_id", "=", False)])
+            .filtered(handler._feature_enabled)
+        )
 
     def _idle_handler_name(self, kind):
         self.check_singleton()

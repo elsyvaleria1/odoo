@@ -148,6 +148,9 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_update(self, bot, data) -> None:
+        if bot.moved_to_id:
+            self._dispatch_moved(bot, data)
+            return
         if "message" in data:
             self._dispatch_message(bot, data["message"])
         elif "callback_query" in data:
@@ -373,6 +376,28 @@ class TelegramRouter(models.AbstractModel):
         )
 
     # -- messages -------------------------------------------------------------
+
+    @api.model
+    def _dispatch_moved(self, bot, data) -> None:
+        """Point whoever writes or presses a button in a private chat of a bot
+        its people moved away from to the bot they moved to; nothing else of
+        theirs runs here any more."""
+        query = data.get("callback_query")
+        message = data.get("message") or (query or {}).get("message") or {}
+        if (message.get("chat") or {}).get("type") != "private":
+            return
+        if query and query.get("id"):
+            bot.answer_callback_query(query["id"])
+        target = keeping(bot.moved_to_id)
+        link = target._deep_link() or ""
+        bot.send_message(
+            str(message["chat"]["id"]),
+            translation_env(bot)._(
+                "I moved: from now on write to %(bot)s. Open %(link)s and press Start."
+            )
+            % {"bot": f"@{target.bot_username or target.name}", "link": link},
+            parse_mode=None,
+        )
 
     @api.model
     def _dispatch_message(self, bot, message) -> None:
@@ -951,8 +976,11 @@ class TelegramRouter(models.AbstractModel):
     @api.model
     def _available_commands(self, bot, chat, partner, internal_user) -> list:
         """`[(command, spec)]` this person may run on `bot`, in the order the
-        menu shows them: alphabetical, then /cancelar and /ayuda."""
+        menu shows them: alphabetical, then /cancelar and /ayuda. None on a bot
+        its people moved away from."""
         available = []
+        if bot.moved_to_id:
+            return available
         for handler in self._handlers(bot):
             for command, spec in handler._telegram_commands().items():
                 if self._is_command_enabled(

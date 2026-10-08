@@ -39,7 +39,8 @@ class TelegramApprovalNotifier(models.AbstractModel):
     def _feature_active(self) -> bool:
         return bool(
             operating(self.env["telegram.bot"]).search_count(
-                [("notify_approvals", "=", True)], limit=1
+                [("notify_approvals", "=", True), ("moved_to_id", "=", False)],
+                limit=1,
             )
         )
 
@@ -58,7 +59,11 @@ class TelegramApprovalNotifier(models.AbstractModel):
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
-            [("notify_approvals", "=", True), ("company_ids", "in", company.id)]
+            [
+                ("notify_approvals", "=", True),
+                ("company_ids", "in", company.id),
+                ("moved_to_id", "=", False),
+            ]
         )
         if not bots:
             return self.env["telegram.chat"].browse()

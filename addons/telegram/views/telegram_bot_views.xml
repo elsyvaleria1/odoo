@@ -55,6 +55,7 @@
                                 context="{                                     'default_endpoint_id': %(telegram.service_telegram)d,                                     'default_category_id': %(credential.credential_category_bearer_token)d,                                     'default_company_id': company_id,                                 }" />
                             <field name="lang" />
                             <field name="answer_in_bot_lang" />
+                            <field name="moved_to_id" />
                             <field name="token_masked" groups="base.group_system" />
                             <field name="bot_username" />
                             <field name="can_read_all_group_messages" />

@@ -231,11 +231,12 @@ class TelegramChat(models.Model):
     def _for_partner(self, partner, bot=None):
         """The private chats reaching `partner` through a bound account --
         their own with the bot, never a business chat they are the customer
-        of."""
+        of, nor one with a bot its people moved away from."""
         domain = [
             ("chat_type", "=", "private"),
             ("business_connection_id", "=", False),
             ("account_id.partner_id", "in", partner.ids),
+            ("bot_id.moved_to_id", "=", False),
         ]
         if bot is not None:
             domain.append(("bot_id", "in", bot.ids))
