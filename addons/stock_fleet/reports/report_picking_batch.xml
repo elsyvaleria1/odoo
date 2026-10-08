@@ -116,9 +116,7 @@
             position="attributes">
             <attribute name="t-if">not o.has_dispatch_management</attribute>
         </xpath>
-        <xpath
-            expr="//td[span[@t-field='pick.name'][@t-options]]"
-            position="after">
+        <xpath expr="//td[span[@t-field='pick.name'][@t-options]]" position="after">
             <td
                 t-if="o.has_dispatch_management"
                 name="td_trip_barcode"
