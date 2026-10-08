@@ -47,12 +47,10 @@ class TestPosConfigAudit(TestPoSCommon):
 
                 self.assertFalse(menu.active)
 
-    def test_open_and_rescue_sessions_prevent_archiving(self):
-        session = self.env["pos.session"].create({"config_id": self.config.id})
-        for rescue in (False, True):
-            session.rescue = rescue
-            with self.subTest(rescue=rescue), self.assertRaises(UserError):
-                self.config.active = False
+    def test_open_sessions_prevent_archiving(self):
+        self.env["pos.session"].create({"config_id": self.config.id})
+        with self.assertRaises(UserError):
+            self.config.active = False
 
         self.config.write({"name": "Editable while open", "active": True})
         self.assertEqual(self.config.name, "Editable while open")
@@ -151,11 +149,11 @@ class TestPosConfigAudit(TestPoSCommon):
             session.stop_at.astimezone(self.env.tz).date(),
         )
 
-    def test_rescue_change_refreshes_current_session_user(self):
+    def test_closing_refreshes_current_session_user(self):
         session = self.env["pos.session"].create({"config_id": self.config.id})
         self.assertEqual(self.config.current_user_id, session.user_id)
 
-        session.rescue = True
+        session.state = "closed"
 
         self.assertFalse(self.config.current_user_id)
         self.assertFalse(self.config.statistics_for_current_session)
@@ -215,16 +213,13 @@ class TestPosConfigAudit(TestPoSCommon):
             {"config_id": self.config.id, "user_id": self.env.uid}
         )
         session.action_pos_session_closing_control()
-        if session.state != "closed":
-            session.action_pos_session_close()
         dated_stop_at = session.stop_at
         self.assertTrue(dated_stop_at)
 
         undated = self.env["pos.session"].create(
             {"config_id": self.config.id, "user_id": self.env.uid}
         )
-        undated.action_pos_session_close()
-        self.assertEqual(undated.state, "closed")
+        undated.write({"state": "closed"})
         self.assertFalse(undated.stop_at)
 
         self.env.invalidate_all()

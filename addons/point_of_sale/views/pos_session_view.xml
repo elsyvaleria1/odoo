@@ -11,13 +11,13 @@
                         name="action_open_frontend"
                         type="object"
                         string="Continue Selling"
-                        invisible="rescue or state not in ['opening_control', 'opened']" />
+                        invisible="state not in ['opening_control', 'opened']" />
                     <button
                         name="action_pos_session_closing_control"
                         id="validate_closing_control"
                         type="object"
                         string="Close Session &amp; Post Entries"
-                        invisible="(state != 'closing_control' and not rescue or state == 'closed' and rescue) and state != 'closing_control'"
+                        invisible="state != 'closing_control'"
                         class="oe_highlight" />
                     <field
                         name="state"
@@ -26,7 +26,6 @@
                 </header>
                 <sheet>
                     <field name="failed_pickings" invisible="1" />
-                    <field name="rescue" invisible="1" />
                     <div class="oe_button_box" name="button_box">
                         <button
                             name="action_view_order"

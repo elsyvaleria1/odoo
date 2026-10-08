@@ -50,7 +50,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.4)
         self.assertEqual(round(self._synced_orders()[2].margin_percent, 2), 0.42)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_negative_margin(self):
 
@@ -75,7 +75,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, -1)
         self.assertEqual(round(self._synced_orders()[2].margin_percent, 2), -0.92)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_full_margin(self):
 
@@ -100,7 +100,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 1)
         self.assertEqual(self._synced_orders()[2].margin_percent, 1)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_tax_margin(self):
 
@@ -129,7 +129,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.4)
         self.assertEqual(round(self._synced_orders()[2].margin_percent, 2), 0.42)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_other_currency_margin(self):
 
@@ -157,7 +157,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.4)
         self.assertEqual(round(self._synced_orders()[2].margin_percent, 2), 0.42)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         self.config = current_config
 
@@ -191,7 +191,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.4)
         self.assertEqual(self._synced_orders()[2].margin_percent, 0.4167)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         self.config = current_config
 
@@ -218,7 +218,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.4)
         self.assertEqual(round(self._synced_orders()[2].margin_percent, 2), 0.42)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_fifo_margin_real_time(self):
 
@@ -282,7 +282,7 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[0].margin_percent, 0.45)
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.5)
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_avco_margin_closing_time(self):
 

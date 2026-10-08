@@ -424,7 +424,7 @@ class TestPointOfSaleFlow(CommonPosTest):
         self.assertEqual(order.amount_paid, 30)
         self.assertEqual(order.state, "paid")
         current_session = self.pos_config_eur.current_session_id
-        current_session.action_pos_session_validate()
+        current_session.action_pos_session_closing_control()
         self.assertTrue(current_session.move_id)
         debit_lines = current_session.move_id.mapped("line_ids.debit")
         credit_lines = current_session.move_id.mapped("line_ids.credit")

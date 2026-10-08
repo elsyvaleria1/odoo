@@ -41,23 +41,25 @@ class PosSession(models.Model):
         split_receivables_online = data.get("split_receivables_online")
         MoveLine = data.get("MoveLine")
 
-        online_payment_to_receivable_lines = {}
-
-        for payment, amounts in split_receivables_online.items():
-            split_receivable_line = MoveLine.create(
+        split_receivable_lines = MoveLine.create(
+            [
                 self._prepare_split_receivable_op_vals(
                     payment, amounts["amount"], amounts["amount_converted"]
                 )
+                for payment, amounts in split_receivables_online.items()
+            ]
+        )
+        data["online_payment_to_receivable_lines"] = {
+            payment: split_receivable_line
+            | payment.online_account_payment_id.move_id.line_ids.filtered(
+                lambda line, account_payment=payment.online_account_payment_id: (
+                    line.account_id == account_payment.destination_account_id
+                )
             )
-            account_payment = payment.online_account_payment_id
-            payment_receivable_line = account_payment.move_id.line_ids.filtered_domain(
-                [("account_id", "=", account_payment.destination_account_id.id)]
+            for payment, split_receivable_line in zip(
+                split_receivables_online, split_receivable_lines, strict=True
             )
-            online_payment_to_receivable_lines[payment] = (
-                split_receivable_line | payment_receivable_line
-            )
-
-        data["online_payment_to_receivable_lines"] = online_payment_to_receivable_lines
+        }
         return data
 
     def _prepare_split_receivable_op_vals(self, payment, amount, amount_converted):
@@ -89,8 +91,12 @@ class PosSession(models.Model):
             "online_payment_to_receivable_lines"
         )
 
-        for payment, lines in online_payment_to_receivable_lines.items():
-            if payment.online_account_payment_id.partner_id.property_account_receivable_id.reconcile:
-                lines.filtered(lambda line: not line.reconciled).reconcile()
-
+        plan = [
+            unreconciled
+            for payment, lines in online_payment_to_receivable_lines.items()
+            if payment.online_account_payment_id.partner_id.property_account_receivable_id.reconcile
+            and (unreconciled := lines.filtered(lambda line: not line.reconciled))
+        ]
+        if plan:
+            self.env["account.move.line"]._reconcile_plan(plan)
         return data

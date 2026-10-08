@@ -25,7 +25,7 @@ class PosConfig(models.Model):
         configs = self.env["pos.config"].search([])
         open_configs = (
             self.env["pos.session"]
-            .search(["|", ("state", "!=", "closed"), ("rescue", "=", True)])
+            .search([("state", "!=", "closed")])
             .mapped("config_id")
         )
         # Do not modify configs where an opened session exists.

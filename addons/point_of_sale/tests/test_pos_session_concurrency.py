@@ -12,33 +12,32 @@ class TestPosSessionConcurrency(TestPoSCommon):
         super().setUp()
         self.config = self.basic_config
 
-    def _insert_session(self, config, state, rescue=False):
+    def _insert_session(self, config, state):
         self.env.cr.execute(
             """
-            INSERT INTO pos_session (config_id, user_id, state, rescue,
+            INSERT INTO pos_session (config_id, user_id, state,
                                      create_uid, write_uid, create_date, write_date)
-                 VALUES (%s, %s, %s, %s, %s, %s, now(), now())
+                 VALUES (%s, %s, %s, %s, %s, now(), now())
               RETURNING id
             """,
             (
                 config.id,
                 self.env.user.id,
                 state,
-                rescue,
                 self.env.user.id,
                 self.env.user.id,
             ),
         )
         return self.env.cr.fetchone()[0]
 
-    def _assert_rejected(self, config, state, rescue=False):
+    def _assert_rejected(self, config, state):
         with self.assertRaises(psycopg.errors.UniqueViolation):
             with self.env.cr.savepoint(flush=False):
-                self._insert_session(config, state, rescue=rescue)
+                self._insert_session(config, state)
 
-    def _assert_accepted(self, config, state, rescue=False):
+    def _assert_accepted(self, config, state):
         with self.env.cr.savepoint(flush=False):
-            self.assertTrue(self._insert_session(config, state, rescue=rescue))
+            self.assertTrue(self._insert_session(config, state))
 
     def test_open_session_index_exists(self):
         self.assertTrue(
@@ -53,10 +52,6 @@ class TestPosSessionConcurrency(TestPoSCommon):
     def test_closing_control_still_holds_the_slot(self):
         self._insert_session(self.config, "closing_control")
         self._assert_rejected(self.config, "opened")
-
-    def test_rescue_sessions_are_exempt(self):
-        self._insert_session(self.config, "opened")
-        self._assert_accepted(self.config, "opened", rescue=True)
 
     def test_closed_sessions_do_not_hold_the_slot(self):
         self._insert_session(self.config, "closed")

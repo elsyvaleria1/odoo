@@ -262,10 +262,6 @@ class PosConfig(models.Model):
         compute="_compute_current_session",
     )
     current_session_state = fields.Char(compute="_compute_current_session")
-    number_of_rescue_session = fields.Integer(
-        string="Number of Rescue Session",
-        compute="_compute_current_session",
-    )
     last_session_closing_cash = fields.Float(compute="_compute_last_session")
     last_session_closing_date = fields.Date(compute="_compute_last_session")
     pos_session_username = fields.Char(compute="_compute_current_session_user")
@@ -720,7 +716,7 @@ class PosConfig(models.Model):
         sessions = (
             self.env["pos.session"].search_fetch(
                 [("config_id", "in", persisted.ids), ("state", "!=", "closed")],
-                ["config_id", "state", "rescue"],
+                ["config_id", "state"],
             )
             if persisted
             else self.env["pos.session"]
@@ -730,7 +726,7 @@ class PosConfig(models.Model):
             lambda session: session.state != "closed"
         )
 
-    @api.depends("session_ids", "session_ids.state", "session_ids.rescue")
+    @api.depends("session_ids", "session_ids.state")
     def _compute_current_session(self) -> None:
         sessions_by_config = (
             self.filtered("id")._get_open_sessions().grouped("config_id")
@@ -741,17 +737,15 @@ class PosConfig(models.Model):
                 if pos_config.id
                 else pos_config._get_open_sessions()
             )
-            session = open_sessions.filtered(lambda s: not s.rescue)[:1]
-            pos_config.has_active_session = bool(open_sessions)
+            session = open_sessions[:1]
+            pos_config.has_active_session = bool(session)
             pos_config.current_session_id = session
             pos_config.current_session_state = session.state or False
-            pos_config.number_of_rescue_session = len(open_sessions.filtered("rescue"))
             _debug.logic(
                 "current_session",
                 config=pos_config.id,
                 session=session.id,
                 state=session.state or None,
-                rescue=pos_config.number_of_rescue_session,
             )
 
     @api.depends_context("tz", "lang", "uid")
@@ -1626,27 +1620,6 @@ class PosConfig(models.Model):
             "view_id": False,
             "type": "ir.actions.act_window",
         }
-
-    def action_view_rescue_sessions(self) -> dict:
-        rescue_session_ids = self.session_ids.filtered(
-            lambda s: s.state != "closed" and s.rescue
-        )
-
-        if len(rescue_session_ids) == 1:
-            return {
-                "res_model": "pos.session",
-                "view_mode": "form",
-                "res_id": rescue_session_ids.id,
-                "type": "ir.actions.act_window",
-            }
-        else:
-            return {
-                "name": self.env._("Rescue Sessions"),
-                "res_model": "pos.session",
-                "view_mode": "list,form",
-                "domain": [("id", "in", rescue_session_ids.ids)],
-                "type": "ir.actions.act_window",
-            }
 
     def get_limited_product_count(self):
         return self._get_pos_loading_limit(

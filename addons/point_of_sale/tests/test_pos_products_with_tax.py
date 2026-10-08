@@ -645,7 +645,7 @@ class TestPoSProductsWithTax(TestPoSCommon):
                 )
             ]
         )
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         lines = self.pos_session.move_id.line_ids.sorted("balance")
         self.assertEqual(
@@ -724,7 +724,7 @@ class TestPoSProductsWithTax(TestPoSCommon):
                 )
             ]
         )
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         lines = self.pos_session.move_id.line_ids.sorted("balance")
         self.assertEqual(
@@ -803,7 +803,7 @@ class TestPoSProductsWithTax(TestPoSCommon):
                 )
             ]
         )
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         lines = self.pos_session.move_id.line_ids.sorted("balance")
 
@@ -885,7 +885,7 @@ class TestPoSProductsWithTax(TestPoSCommon):
                 )
             ]
         )
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         lines = self.pos_session.move_id.line_ids.sorted("balance")
 
@@ -984,7 +984,7 @@ class TestPoSProductsWithTax(TestPoSCommon):
                 )
             ]
         )
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         lines = self.pos_session.move_id.line_ids.sorted("balance")
 

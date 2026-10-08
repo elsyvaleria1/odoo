@@ -72,7 +72,7 @@ class TestPosSessionAmounts(TestPoSCommon):
         session = self._start_pos_session(self.bank_pm1, 0)
         _logger.debug("Closing refuses overflowing bank difference")
         self._assert_rejected_without_rollback(
-            session.action_pos_session_close,
+            session.action_pos_session_closing_control,
             bank_payment_method_diffs={self.bank_pm1.id: 10**400},
         )
         self.assertEqual(session.state, "opened")
@@ -114,7 +114,7 @@ class TestPosSessionAmounts(TestPoSCommon):
         self.assertEqual(
             session.update_closing_cash_details(12.50), {"successful": True}
         )
-        session.action_pos_session_close()
+        session.action_pos_session_closing_control()
         self.assertEqual(session.state, "closed")
         refusal = session.update_closing_cash_details(99)
         _logger.debug("Closed cashier session count refusal=%s", refusal)

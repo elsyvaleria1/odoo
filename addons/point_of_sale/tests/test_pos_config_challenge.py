@@ -276,16 +276,12 @@ class TestPosConfigChallenge(TestPoSCommon):
         closed = self._create_session()
         closed.write({"state": "closed", "stop_at": fields.Datetime.now()})
         current = self._create_session()
-        rescue = self._create_session(rescue=True)
         self.env.flush_all()
         self.env.invalidate_all()
         self.assertEqual(self.config.current_session_id, current)
-        self.assertEqual(self.config.number_of_rescue_session, 1)
         self.assertTrue(self.config.has_active_session)
         loaded = self.env.cache.contains(closed, closed._fields["state"])
-        _logger.debug(
-            "Closed session %s state loaded=%s; rescue=%s", closed.id, loaded, rescue.id
-        )
+        _logger.debug("Closed session %s state loaded=%s", closed.id, loaded)
         self.assertFalse(
             loaded, "Selecting an open session must not load closed history"
         )
@@ -373,10 +369,10 @@ class TestPosConfigChallenge(TestPoSCommon):
             onchange.current_session_id,
         )
         self.assertEqual(onchange.current_session_id._origin, session)
-        onchange.session_ids.rescue = True
+        onchange.session_ids.state = "closed"
         self.assertFalse(onchange.current_session_id)
-        self.assertEqual(onchange.number_of_rescue_session, 1)
-        self.assertFalse(session.rescue)
+        self.assertFalse(onchange.has_active_session)
+        self.assertNotEqual(session.state, "closed")
 
     def test_unsaved_config_keeps_unsaved_open_sessions(self):
         config = self.env["pos.config"].new(
@@ -384,15 +380,13 @@ class TestPosConfigChallenge(TestPoSCommon):
                 "name": "Unsaved sessions",
                 "session_ids": [
                     Command.create({"state": "closed"}),
-                    Command.create({"state": "opened", "rescue": True}),
-                    Command.create({"state": "opening_control", "rescue": False}),
+                    Command.create({"state": "opening_control"}),
                 ],
             }
         )
         _logger.debug("Unsaved config session selection: %s", config.current_session_id)
         self.assertEqual(config.current_session_id, config.session_ids[-1])
         self.assertEqual(config.current_session_state, "opening_control")
-        self.assertEqual(config.number_of_rescue_session, 1)
         self.assertTrue(config.has_active_session)
 
     def test_cached_statistics_follow_refund_link_changes(self):
@@ -452,14 +446,14 @@ class TestPosConfigChallenge(TestPoSCommon):
             local_config.last_session_closing_date, fields.Date.to_date("2025-12-31")
         )
 
-    def test_cached_user_and_statistics_follow_rescue_and_name_changes(self):
+    def test_cached_user_and_statistics_follow_closing_and_name_changes(self):
         session = self._create_session()
         self.assertTrue(self.config.statistics_for_current_session)
         self.assertEqual(self.config.pos_session_username, session.user_id.name)
         session.user_id.name = "Renamed responsible"
         self.assertEqual(self.config.pos_session_username, "Renamed responsible")
 
-        session.rescue = True
+        session.state = "closed"
 
         self.assertFalse(self.config.statistics_for_current_session)
         self.assertFalse(self.config.current_user_id)
@@ -551,7 +545,7 @@ class TestPosConfigChallenge(TestPoSCommon):
 
     def test_session_guard_rejects_a_batch_with_one_open_config(self):
         second = self.config.copy({"name": "Closed config"})
-        self._create_session(rescue=True)
+        self._create_session()
         with self.assertRaises(UserError):
             (second | self.config).write({"active": False})
         self.assertTrue(second.active)

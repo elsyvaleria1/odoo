@@ -21,7 +21,7 @@ class TestPosSessionAudit(TestPoSCommon):
 
     def test_new_session_uses_replacement_journal_without_rewriting_history(self):
         session = self._start_pos_session(self.cash_pm1, 0)
-        session.action_pos_session_close()
+        session.action_pos_session_closing_control()
         previous = session.cash_journal_id
         replacement = previous.copy({"name": "Replacement cash", "code": "RPLC"})
 
@@ -60,7 +60,7 @@ class TestPosSessionAudit(TestPoSCommon):
 
     def test_cash_control_follows_payment_method_type(self):
         session = self._start_pos_session(self.cash_pm1, 0)
-        session.action_pos_session_close()
+        session.action_pos_session_closing_control()
         self.assertTrue(session.cash_control)
         self.assertTrue(self.config.cash_control)
         previous_journal = session.cash_journal_id
@@ -119,7 +119,7 @@ class TestPosSessionAudit(TestPoSCommon):
     def test_reminders_exclude_recent_and_closed_sessions(self):
         closed = self._start_pos_session(self.cash_pm1, 0)
         closed.start_at = fields.Datetime.now() - timedelta(days=8)
-        closed.action_pos_session_close()
+        closed.action_pos_session_closing_control()
         self.config.open_ui()
         recent = self.config.current_session_id
         recent.set_opening_control(0, "")
@@ -214,15 +214,15 @@ class TestPosSessionAudit(TestPoSCommon):
         self.assertLessEqual(len(materialized), len(configs))
         self.assertLessEqual(len(fetched_history), len(configs))
 
-    def test_opening_history_preserves_rescue_and_empty_history_behavior(self):
+    def test_opening_history_takes_the_latest_session_and_starts_empty(self):
         self.config.payment_method_ids = self.cash_pm1
         first = self.env["pos.session"].create({"config_id": self.config.id})
         self.assertEqual(first.cash_register_balance_start, 0)
-        first.action_pos_session_close()
-        rescue = self.env["pos.session"].create(
+        first.action_pos_session_closing_control()
+        latest = self.env["pos.session"].create(
             {
                 "config_id": self.config.id,
-                "rescue": True,
+                "state": "closed",
                 "cash_register_balance_end_real": 42,
             }
         )
@@ -230,8 +230,8 @@ class TestPosSessionAudit(TestPoSCommon):
         regular = self.env["pos.session"].create({"config_id": self.config.id})
 
         _logger.debug(
-            "Opening chose latest rescue %s with cash=%s",
-            rescue.id,
+            "Opening chose latest session %s with cash=%s",
+            latest.id,
             regular.cash_register_balance_start,
         )
         self.assertEqual(regular.cash_register_balance_start, 42)

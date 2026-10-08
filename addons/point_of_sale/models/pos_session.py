@@ -166,12 +166,6 @@ class PosSession(models.Model):
         comodel_name="stock.picking",
         inverse_name="pos_session_id",
     )
-    rescue = fields.Boolean(
-        string="Recovery Session",
-        copy=False,
-        readonly=True,
-        help="Auto-generated session for orphan orders, ignored in constraints",
-    )
     move_id = fields.Many2one(
         comodel_name="account.move",
         string="Journal Entry",
@@ -462,9 +456,7 @@ class PosSession(models.Model):
             for session, payment_method, amount in result
         }
         for session in self:
-            cash_payment_method = session.payment_method_ids.filtered("is_cash_count")[
-                :1
-            ]
+            cash_payment_method = session._get_cash_payment_method()
             if cash_payment_method:
                 total_cash_payment = (
                     cash_payment_map.get((session.id, cash_payment_method.id)) or 0.0
@@ -548,10 +540,7 @@ class PosSession(models.Model):
         # changes refresh open sessions explicitly in pos.config.write, preserving
         # the journal used by closed sessions and their accounting history.
         for session in self:
-            cash_journal = session.payment_method_ids.filtered("is_cash_count")[
-                :1
-            ].journal_id
-            session.cash_journal_id = cash_journal
+            session.cash_journal_id = session._get_cash_payment_method().journal_id
 
     def init(self) -> None:
         super().init()
@@ -559,7 +548,7 @@ class PosSession(models.Model):
             """
             SELECT config_id, array_agg(id ORDER BY id)
               FROM pos_session
-             WHERE state != 'closed' AND rescue IS NOT TRUE
+             WHERE state != 'closed'
           GROUP BY config_id
             HAVING count(*) > 1
             """
@@ -580,20 +569,17 @@ class PosSession(models.Model):
             indexname="pos_session_open_per_config_uniq",
             tablename=self._table,
             expressions=["config_id"],
-            where="state != 'closed' AND rescue IS NOT TRUE",
+            where="state != 'closed'",
             unique=True,
-            comment="At most one non-rescue open session per point of sale.",
+            comment="At most one open session per point of sale.",
         )
 
     @api.constrains("config_id")
     def _check_pos_config(self) -> None:
-        if self.env.context.get("onboarding_creation", False):
-            return
         open_per_config = self._read_group(
             [
                 ("state", "!=", "closed"),
                 ("config_id", "in", self.config_id.ids),
-                ("rescue", "=", False),
             ],
             ["config_id"],
             ["__count"],
@@ -677,7 +663,7 @@ class PosSession(models.Model):
             )
         # The partial unique index must see pending closes before inserting a new session.
         with _debug.perf("flush_uniqueness_before_create", cr=self.env.cr):
-            self.flush_model(["config_id", "state", "rescue"])
+            self.flush_model(["config_id", "state"])
         if self.env.user.has_group("point_of_sale.group_pos_user"):
             sessions = super(PosSession, self.sudo()).create(vals_list)
         else:
@@ -699,9 +685,7 @@ class PosSession(models.Model):
     def action_pos_session_open(self) -> None:
         opening = self.filtered(
             lambda session: (
-                session.state == "opening_control"
-                and session.config_id.cash_control
-                and not session.rescue
+                session.state == "opening_control" and session.config_id.cash_control
             )
         )
         if not opening:
@@ -738,6 +722,9 @@ class PosSession(models.Model):
             )
         return
 
+    def _get_cash_payment_method(self):
+        return self.payment_method_ids.filtered("is_cash_count")[:1]
+
     def get_session_orders(self):
         return self.env["pos.order"].search(
             [
@@ -749,74 +736,6 @@ class PosSession(models.Model):
         )
 
     def action_pos_session_closing_control(
-        self,
-        balancing_account=False,
-        amount_to_balance=0,
-        bank_payment_method_diffs=None,
-    ):
-        self.check_singleton()
-        bank_payment_method_diffs = bank_payment_method_diffs or {}
-        if any(order.state == "draft" for order in self.get_session_orders()):
-            raise UserError(
-                self.env._(
-                    "You cannot close the POS while there are still draft orders for the day."
-                )
-            )
-        if self.state == "closed":
-            raise UserError(self.env._("This session is already closed."))
-        stop_at = self.stop_at or fields.Datetime.now()
-        _debug.lifecycle(
-            "state_closing_control",
-            session=self,
-            state=self.state,
-            cash_control=self.config_id.cash_control,
-            rescue=self.rescue,
-            balancing_account=balancing_account or None,
-            amount_to_balance=amount_to_balance,
-            bank_diffs=bank_payment_method_diffs,
-        )
-        self.write({"state": "closing_control", "stop_at": stop_at})
-        if not self.config_id.cash_control:
-            return self.action_pos_session_close(
-                balancing_account, amount_to_balance, bank_payment_method_diffs
-            )
-        if self.rescue and self.config_id.cash_control:
-            default_cash_payment_method_id = self.payment_method_ids.filtered(
-                "is_cash_count"
-            )[:1]
-            if not default_cash_payment_method_id:
-                raise UserError(
-                    self.env._(
-                        "This point of sale has cash control enabled but no cash "
-                        "payment method, so its cash register cannot be counted."
-                    )
-                )
-            orders = self._get_closed_orders()
-            total_cash = (
-                sum(
-                    orders.payment_ids.filtered(
-                        lambda p: p.payment_method_id == default_cash_payment_method_id
-                    ).mapped("amount")
-                )
-                + self.cash_register_balance_start
-            )
-            self.cash_register_balance_end_real = total_cash
-            _debug.logic("rescue_counted_cash", session=self, total_cash=total_cash)
-        return self.action_pos_session_validate(
-            balancing_account, amount_to_balance, bank_payment_method_diffs
-        )
-
-    def action_pos_session_validate(
-        self,
-        balancing_account=False,
-        amount_to_balance=0,
-        bank_payment_method_diffs=None,
-    ):
-        return self.action_pos_session_close(
-            balancing_account, amount_to_balance, bank_payment_method_diffs
-        )
-
-    def action_pos_session_close(
         self,
         balancing_account=False,
         amount_to_balance=0,
@@ -843,6 +762,23 @@ class PosSession(models.Model):
             record = record.sudo()
         if self.state == "closed":
             raise UserError(self.env._("This session is already closed."))
+        session_orders = self.get_session_orders()
+        self._check_no_draft_orders(session_orders)
+        _debug.lifecycle(
+            "state_closing_control",
+            session=self,
+            state=self.state,
+            cash_control=self.config_id.cash_control,
+            balancing_account=balancing_account or None,
+            amount_to_balance=amount_to_balance,
+            bank_diffs=bank_payment_method_diffs,
+        )
+        self.write(
+            {
+                "state": "closing_control",
+                "stop_at": self.stop_at or fields.Datetime.now(),
+            }
+        )
         data = {}
         # future-dated orders are excluded from get_session_orders, not from the entry
         has_activity = bool(
@@ -862,7 +798,6 @@ class PosSession(models.Model):
                 self.cash_real_transaction = sum(
                     self.sudo().statement_line_ids.mapped("amount")
                 )
-                self._check_no_draft_orders()
                 self._check_invoices_are_posted()
                 cash_difference_before_statements = self.cash_register_difference
                 _debug.logic(
@@ -940,7 +875,7 @@ class PosSession(models.Model):
             )._create_bank_payment_difference_moves(bank_payment_method_diffs)
 
         if self.config_id.order_edit_tracking:
-            edited_orders = self.get_session_orders().filtered(lambda o: o.is_edited)
+            edited_orders = session_orders.filtered(lambda o: o.is_edited)
             if len(edited_orders) > 0:
                 body = self.env._(
                     "Edited order(s) during the session:%s",
@@ -1141,8 +1076,7 @@ class PosSession(models.Model):
                 "redirect": True,
             }
 
-        if self.env.user.email:
-            self.post_close_register_message()
+        self.post_close_register_message()
         return {"successful": True}
 
     def post_close_register_message(self):
@@ -1406,7 +1340,7 @@ class PosSession(models.Model):
         self.check_singleton()
         orders = self._get_closed_orders()
         payments_by_method = orders.payment_ids.grouped("payment_method_id")
-        cash_method = self.payment_method_ids.filtered("is_cash_count")[:1]
+        cash_method = self._get_cash_payment_method()
         cash_payments = payments_by_method.get(cash_method, self.env["pos.payment"])
         cash_payment_amount = sum(cash_payments.mapped("amount"))
         non_cash_methods = self.payment_method_ids - cash_method
@@ -1433,9 +1367,7 @@ class PosSession(models.Model):
             "opening_notes": self.opening_notes,
             "default_cash_details": {
                 "name": cash_method.name,
-                "amount": self.cash_register_balance_start
-                + cash_payment_amount
-                + sum(self.sudo().statement_line_ids.mapped("amount")),
+                "amount": self.cash_register_balance_end,
                 "opening": self.cash_register_balance_start,
                 "payment_amount": cash_payment_amount,
                 "moves": cash_in_out_list,
@@ -1909,7 +1841,6 @@ class PosSession(models.Model):
         bank_payment_method_diffs = data.get("bank_payment_method_diffs")
         MoveLine = data.get("MoveLine")
         payment_method_to_receivable_lines = {}
-        payment_to_receivable_lines = {}
         for payment_method, amounts in combine_receivables_bank.items():
             combine_receivable_line = MoveLine.create(
                 self._prepare_combine_receivable_vals(
@@ -1925,18 +1856,9 @@ class PosSession(models.Model):
                 combine_receivable_line | payment_receivable_line
             )
 
-        for payment, amounts in split_receivables_bank.items():
-            split_receivable_line = MoveLine.create(
-                self._prepare_split_receivable_vals(
-                    payment, amounts["amount"], amounts["amount_converted"]
-                )
-            )
-            payment_receivable_line = self._create_split_account_payment(
-                payment, amounts
-            )
-            payment_to_receivable_lines[payment] = (
-                split_receivable_line | payment_receivable_line
-            )
+        payment_to_receivable_lines = self._create_split_bank_payments(
+            MoveLine, split_receivables_bank
+        )
 
         self._create_bank_payment_difference_moves(
             bank_payment_method_diffs, combine_receivables_bank
@@ -2017,11 +1939,16 @@ class PosSession(models.Model):
             destination=payment.destination_account_id,
         )
 
-    def _create_pos_account_payment(
+    def _prepare_pos_account_payment_vals(
         self, payment_method, amount, destination_account, memo, partner=None
-    ):
+    ) -> dict:
         vals = {
             "amount": abs(amount),
+            "payment_type": (
+                "outbound"
+                if self.currency_id.compare_amounts(amount, 0) < 0
+                else "inbound"
+            ),
             "currency_id": self.currency_id.id,
             "journal_id": payment_method.journal_id.id,
             "force_outstanding_account_id": payment_method.outstanding_account_id.id,
@@ -2033,12 +1960,32 @@ class PosSession(models.Model):
         }
         if partner:
             vals["partner_id"] = partner.id
-        account_payment = (
-            self.env["account.payment"].with_context(pos_payment=True).create(vals)
+        return vals
+
+    def _create_pos_account_payments(self, vals_list):
+        account_payments = (
+            self.env["account.payment"].with_context(pos_payment=True).create(vals_list)
         )
-        self._update_payment_outstanding_account(account_payment, amount)
-        account_payment.action_post()
-        return account_payment
+        for account_payment, vals in zip(account_payments, vals_list, strict=True):
+            signed_amount = (
+                -vals["amount"]
+                if vals["payment_type"] == "outbound"
+                else vals["amount"]
+            )
+            self._update_payment_outstanding_account(account_payment, signed_amount)
+        account_payments.action_post()
+        return account_payments
+
+    def _create_pos_account_payment(
+        self, payment_method, amount, destination_account, memo, partner=None
+    ):
+        return self._create_pos_account_payments(
+            [
+                self._prepare_pos_account_payment_vals(
+                    payment_method, amount, destination_account, memo, partner
+                )
+            ]
+        )
 
     def _create_combine_account_payment(self, payment_method, amounts, diff_amount):
         destination_account = self._get_receivable_account(payment_method)
@@ -2137,14 +2084,51 @@ class PosSession(models.Model):
         )
         account_payment.move_id.action_post()
 
-    def _create_split_account_payment(self, payment, amounts):
+    def _create_split_bank_payments(self, MoveLine, split_receivables_bank) -> dict:
+        if not split_receivables_bank:
+            return {}
+        payments = list(split_receivables_bank)
+        receivable_lines = MoveLine.create(
+            [
+                self._prepare_split_receivable_vals(
+                    payment, amounts["amount"], amounts["amount_converted"]
+                )
+                for payment, amounts in split_receivables_bank.items()
+            ]
+        )
+        account_payments = self._create_pos_account_payments(
+            list(
+                starmap(
+                    self._prepare_split_account_payment_vals,
+                    split_receivables_bank.items(),
+                )
+            )
+        )
+        _debug.pipeline(
+            "split_bank_payments_created",
+            session=self,
+            payments=account_payments,
+            receivable_lines=receivable_lines,
+        )
+        return {
+            payment: receivable_line
+            | account_payment.move_id.line_ids.filtered(
+                lambda line, account=receivable_line.account_id: (
+                    line.account_id == account
+                )
+            )
+            for payment, receivable_line, account_payment in zip(
+                payments, receivable_lines, account_payments, strict=True
+            )
+        }
+
+    def _prepare_split_account_payment_vals(self, payment, amounts) -> dict:
         payment_method = payment.payment_method_id
         accounting_partner = payment.partner_id.commercial_partner_id
-        destination_account = accounting_partner.property_account_receivable_id
-        account_payment = self._create_pos_account_payment(
+        return self._prepare_pos_account_payment_vals(
             payment_method,
             amounts["amount"],
-            destination_account,
+            accounting_partner.property_account_receivable_id,
             self.env._(
                 "%(payment_method)s POS payment of %(partner)s in %(session)s",
                 payment_method=payment_method.name,
@@ -2152,9 +2136,6 @@ class PosSession(models.Model):
                 session=self.name,
             ),
             partner=accounting_partner,
-        )
-        return account_payment.move_id.line_ids.filtered(
-            lambda line: line.account_id == destination_account
         )
 
     def _create_cash_statement_lines_and_cash_move_lines(self, data):
@@ -2309,63 +2290,48 @@ class PosSession(models.Model):
         )
         unposted.move_id._post(soft=False)
 
-        accounts = all_lines.mapped("account_id")
+        no_line = self.env["account.move.line"]
         all_lines_by_account = all_lines.grouped("account_id")
-        lines_by_account = [
-            all_lines_by_account[account].filtered(lambda l: not l.reconciled)
-            for account in accounts
+        plan = [
+            lines
+            for account, lines in all_lines_by_account.items()
             if account.reconcile
+        ]
+        plan += [
+            lines
+            for payment_method, lines in payment_method_to_receivable_lines.items()
+            if self._get_receivable_account(payment_method).reconcile
+        ]
+        plan += [
+            lines
+            for payment, lines in payment_to_receivable_lines.items()
+            if payment.partner_id.property_account_receivable_id.reconcile
+        ]
+        if self.company_id.account_config_id.account_default_pos_receivable_account_id.reconcile:
+            plan += [
+                lines | combine_invoice_receivable_lines.get(payment_method, no_line)
+                for payment_method, lines in combine_inv_payment_receivable_lines.items()
+            ]
+            plan += [
+                lines | split_invoice_receivable_lines.get(payment, no_line)
+                for payment, lines in split_inv_payment_receivable_lines.items()
+            ]
+        # The groups are disjoint, so one plan reconciles each as its own call did.
+        plan = [
+            unreconciled
+            for lines in plan
+            if (unreconciled := lines.filtered(lambda line: not line.reconciled))
         ]
         if _debug.logic.enabled:
             _debug.logic(
-                "cash_reconciliation_groups",
+                "closing_reconciliation_plan",
                 session=self,
-                group_sizes=[len(lines) for lines in lines_by_account],
+                group_sizes=[len(lines) for lines in plan],
+                combined_invoices=len(combine_inv_payment_receivable_lines),
+                split_invoices=len(split_inv_payment_receivable_lines),
             )
-        for lines in lines_by_account:
-            lines.with_context(no_cash_basis=True).reconcile()
-
-        for payment_method, lines in payment_method_to_receivable_lines.items():
-            receivable_account = self._get_receivable_account(payment_method)
-            if receivable_account.reconcile:
-                lines.filtered(lambda line: not line.reconciled).with_context(
-                    no_cash_basis=True
-                ).reconcile()
-
-        for payment, lines in payment_to_receivable_lines.items():
-            if payment.partner_id.property_account_receivable_id.reconcile:
-                lines.filtered(lambda line: not line.reconciled).with_context(
-                    no_cash_basis=True
-                ).reconcile()
-
-        _debug.logic(
-            "invoice_receivable_reconciliation",
-            session=self,
-            default_reconcilable=self.company_id.account_config_id.account_default_pos_receivable_account_id.reconcile,
-            combined=len(combine_inv_payment_receivable_lines),
-            split=len(split_inv_payment_receivable_lines),
-        )
-        if self.company_id.account_config_id.account_default_pos_receivable_account_id.reconcile:
-            for payment_method in combine_inv_payment_receivable_lines:
-                lines = combine_inv_payment_receivable_lines[
-                    payment_method
-                ] | combine_invoice_receivable_lines.get(
-                    payment_method, self.env["account.move.line"]
-                )
-                lines.filtered(lambda line: not line.reconciled).with_context(
-                    no_cash_basis=True
-                ).reconcile()
-
-            for payment in split_inv_payment_receivable_lines:
-                lines = split_inv_payment_receivable_lines[
-                    payment
-                ] | split_invoice_receivable_lines.get(
-                    payment, self.env["account.move.line"]
-                )
-                lines.filtered(lambda line: not line.reconciled).with_context(
-                    no_cash_basis=True
-                ).reconcile()
-
+        if plan:
+            no_line.with_context(no_cash_basis=True)._reconcile_plan(plan)
         return data
 
     def _prepare_rounding_difference_vals(self, amount, amount_converted):
@@ -2646,7 +2612,7 @@ class PosSession(models.Model):
             "res_model": "account.move.line",
             "view_mode": "list",
             "view_id": self.env.ref("account.view_account_move_line_list").id,
-            "domain": [("id", "in", all_related_moves.mapped("line_ids").ids)],
+            "domain": [("move_id", "in", all_related_moves.ids)],
             "context": {
                 "journal_type": "general",
                 "search_default_group_by_move": 1,
@@ -2732,12 +2698,9 @@ class PosSession(models.Model):
         )
         self.state = "opened"
         self.start_at = fields.Datetime.now()
-        cash_payment_method_ids = self.config_id.payment_method_ids.filtered(
-            lambda pm: pm.is_cash_count
-        )
         if notes:
             self.opening_notes = notes
-        if cash_payment_method_ids:
+        if self._get_cash_payment_method():
             difference = cashbox_value - self.cash_register_balance_start
             self._post_cash_details_message(
                 True, self.cash_register_balance_start, difference, notes
@@ -2785,10 +2748,7 @@ class PosSession(models.Model):
             )
             message += notes
         if message:
-            self.message_post(
-                body=plaintext2html(message),
-                email_from=self.env.user.email or "admin@example.com",
-            )
+            self.message_post(body=plaintext2html(message))
 
     def action_view_order(self) -> dict:
         return {
@@ -2844,10 +2804,8 @@ class PosSession(models.Model):
                 ),
             )
 
-    def _check_no_draft_orders(self) -> bool:
-        draft_orders = self.get_session_orders().filtered(
-            lambda order: order.state == "draft"
-        )
+    def _check_no_draft_orders(self, session_orders) -> bool:
+        draft_orders = session_orders.filtered(lambda order: order.state == "draft")
         if draft_orders:
             raise UserError(
                 self.env._(

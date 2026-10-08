@@ -40,7 +40,7 @@ class TestPosLockDates(TestPoSCommon):
         self.assertEqual(self.company.account_config_id.fiscalyear_lock_date, earlier)
 
     def test_lock_over_closed_session_is_allowed(self):
-        self.session.action_pos_session_close()
+        self.session.action_pos_session_closing_control()
         self.assertEqual(self.session.state, "closed")
         self.company.account_config_id.fiscalyear_lock_date = self.lock_date
         self.assertEqual(

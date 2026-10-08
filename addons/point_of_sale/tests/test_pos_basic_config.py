@@ -959,7 +959,7 @@ class TestPoSBasicConfig(TestPoSCommon):
             orders[1]["amount_return"], 0, msg="The amount return should be 0"
         )
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         session_account_move = self.pos_session.move_id
 
@@ -2084,7 +2084,7 @@ class TestPoSBasicConfig(TestPoSCommon):
         )
 
         self.env["pos.order"].sync_from_ui(orders)
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         session_account_move = self.pos_session.move_id
 
@@ -2129,7 +2129,7 @@ class TestPoSBasicConfig(TestPoSCommon):
         )
 
         self.env["pos.order"].sync_from_ui(orders)
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         pos_orders = self.env["pos.order"].search([])
         pos_orders.write({"partner_id": self.customer.id})
@@ -2162,7 +2162,7 @@ class TestPoSBasicConfig(TestPoSCommon):
             )
         )
         self.env["pos.order"].sync_from_ui(orders)
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         self.open_new_session()
         orders2 = []
@@ -2179,7 +2179,7 @@ class TestPoSBasicConfig(TestPoSCommon):
             )
         )
         self.env["pos.order"].sync_from_ui(orders2)
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
         pos_orders = self.env["pos.order"].search([])
         pos_orders.write({"partner_id": self.customer.id})

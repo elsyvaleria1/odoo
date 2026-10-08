@@ -77,15 +77,12 @@ class PosController(PortalAccount):
             "pos_ui_config_state",
             config=pos_config.id,
             active=pos_config.active,
-            has_active_session=pos_config.has_active_session,
             session=pos_session,
         )
-        if pos_config.has_active_session and (
-            not pos_session or pos_session.state not in ("opening_control", "opened")
-        ):
+        if pos_session and pos_session.state not in ("opening_control", "opened"):
             return request.redirect(_POS_MENU_URL)
 
-        if not pos_config.has_active_session:
+        if not pos_session:
             # the service worker refetches this page to cache it; only a cashier
             # navigating here may open a session
             fetch_mode = request.httprequest.headers.get("Sec-Fetch-Mode", "navigate")

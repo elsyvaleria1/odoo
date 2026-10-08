@@ -1,6 +1,8 @@
 import logging
+from unittest.mock import patch
 
-from odoo.tests import tagged
+from odoo.exceptions import UserError
+from odoo.tests import new_test_user, tagged
 
 from .common import TestPoSCommon
 
@@ -139,3 +141,213 @@ class TestPosSessionChallenge(TestPoSCommon):
                 self.assertEqual(sum(lines.mapped("balance")), 20 * sign)
                 self.assertEqual(moves.state, "posted")
                 self.assertFalse(empty.bank_payment_ids)
+
+
+@tagged("post_install", "-at_install")
+class TestPosSessionClosingPaths(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+
+    def _cash_sales(self, session, amounts, method=None, customer=False):
+        method = method or self.cash_pm1
+        product = self.create_product("Closing path", self.categ_basic, 1, 0)
+        return self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(product, amount)],
+                    "payments": [(method, amount)],
+                    "customer": customer,
+                    "uuid": f"closing-path-{session.id}-{method.id}-{index}-{amount}",
+                }
+                for index, amount in enumerate(amounts)
+            ]
+        )
+
+    def test_cash_messages_are_authored_by_the_cashier(self):
+        self.env["res.partner"].create(
+            {"name": "Email namesake", "email": "till@example.com"}
+        )
+        self.config.payment_method_ids = self.cash_pm1
+        for login, email in (
+            ("till_without_email", False),
+            ("till_sharing_an_email", "till@example.com"),
+        ):
+            with self.subTest(email=email):
+                cashier = new_test_user(
+                    self.env,
+                    login=login,
+                    email=email,
+                    groups="base.group_user,point_of_sale.group_pos_user",
+                    company_id=self.company.id,
+                )
+                self.config.open_ui()
+                session = self.config.current_session_id.with_user(cashier)
+                session.set_opening_control(5, "")
+                session.update_closing_control_state_session("Counted")
+                self.assertEqual(session.close_session_from_ui(), {"successful": True})
+
+                messages = session.sudo().message_ids
+                authors = {
+                    label: messages.filtered(
+                        lambda message, label=label: label in (message.body or "")
+                    ).author_id
+                    for label in (
+                        "Opening cash difference",
+                        "Closing difference",
+                        "Closed Register",
+                    )
+                }
+                _logger.debug("Cashier %s message authors: %s", login, authors)
+                for label, author in authors.items():
+                    self.assertEqual(author, cashier.partner_id, label)
+
+    def test_closing_cash_summary_is_the_theoretical_balance(self):
+        rounding = self.env["account.cash.rounding"].create(
+            {
+                "name": "Closing summary rounding",
+                "rounding": 0.05,
+                "strategy": "add_invoice_line",
+                "profit_account_id": self.company.account_config_id[
+                    "default_cash_difference_income_account_id"
+                ].id,
+                "loss_account_id": self.company.account_config_id[
+                    "default_cash_difference_expense_account_id"
+                ].id,
+                "rounding_method": "HALF-UP",
+            }
+        )
+        self.config.write({"cash_rounding": True, "rounding_method": rounding.id})
+        session = self._start_pos_session(self.cash_pm1 | self.bank_pm1, 7.5)
+        product = self.create_product("Rounded sale", self.categ_basic, 10.03, 5)
+        self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(product, 1)],
+                    "payments": [(self.cash_pm1, 10.05)],
+                    "uuid": "summary-rounded-cash",
+                },
+                {
+                    "pos_order_lines_ui_args": [(product, 1)],
+                    "payments": [(self.bank_pm1, 10.05)],
+                    "uuid": "summary-rounded-bank",
+                },
+            ]
+        )
+        session.try_cash_in_out("in", 20, "Float", False, {})
+        session.try_cash_in_out("out", 4.25, "Petty cash", False, {})
+
+        for state in ("opened", "closing_control"):
+            with self.subTest(state=state):
+                if state == "closing_control":
+                    session.update_closing_control_state_session("")
+                summary = session.get_closing_control_data()["default_cash_details"]
+                _logger.debug("Closing cash summary in %s: %s", state, summary)
+                self.assertEqual(session.state, state)
+                self.assertAlmostEqual(summary["amount"], 7.5 + 10.05 + 20 - 4.25)
+                self.assertEqual(summary["amount"], session.cash_register_balance_end)
+                self.assertAlmostEqual(summary["payment_amount"], 10.05)
+
+    def test_a_ui_close_reads_the_session_orders_once_per_guard(self):
+        self.config.order_edit_tracking = True
+        session = self._start_pos_session(self.cash_pm1, 0)
+        self._cash_sales(session, [3, 4])
+        session.update_closing_cash_details(7)
+        calls = []
+        get_session_orders = type(session).get_session_orders
+
+        def counted_get_session_orders(records):
+            calls.append(records.ids)
+            return get_session_orders(records)
+
+        with patch.object(
+            type(session), "get_session_orders", counted_get_session_orders
+        ):
+            self.assertEqual(session.close_session_from_ui(), {"successful": True})
+
+        _logger.debug("get_session_orders calls during a UI close: %s", calls)
+        self.assertEqual(session.state, "closed")
+        self.assertEqual(len(calls), 2)
+
+    def test_closing_a_closed_session_leaves_it_closed(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        self._cash_sales(session, [5])
+        session.action_pos_session_closing_control()
+        stop_at = session.stop_at
+
+        with self.assertRaises(UserError):
+            session.action_pos_session_closing_control()
+
+        self.assertEqual(session.state, "closed")
+        self.assertEqual(session.stop_at, stop_at)
+
+    def test_journal_items_action_selects_lines_by_entry(self):
+        session = self._start_pos_session(self.cash_pm1 | self.bank_pm1, 0)
+        self._cash_sales(session, [5, 6])
+        self._cash_sales(session, [7], method=self.bank_pm1)
+        session.action_pos_session_closing_control()
+        moves = session._get_related_account_moves()
+
+        action = session.action_view_journal_items()
+
+        self.assertEqual(action["domain"], [("move_id", "in", moves.ids)])
+        self.assertEqual(
+            self.env["account.move.line"].search(action["domain"]), moves.line_ids
+        )
+
+    def test_split_bank_payments_are_created_and_reconciled_in_one_batch(self):
+        session = self._start_pos_session(self.cash_pm1 | self.bank_split_pm1, 0)
+        customers = self.env["res.partner"].create(
+            [{"name": f"Split customer {index}"} for index in range(20)]
+        )
+        for index, customer in enumerate(customers):
+            self._cash_sales(
+                session, [index + 1], method=self.bank_split_pm1, customer=customer
+            )
+        AccountPayment = type(self.env["account.payment"])
+        MoveLine = type(self.env["account.move.line"])
+        payment_create = AccountPayment.create
+        reconcile_plan = MoveLine._reconcile_plan
+        payment_batches = []
+        reconcile_plans = []
+
+        def counted_payment_create(records, vals_list):
+            payment_batches.append(len(vals_list) if isinstance(vals_list, list) else 1)
+            return payment_create(records, vals_list)
+
+        def counted_reconcile_plan(records, plan):
+            reconcile_plans.append(len(plan))
+            return reconcile_plan(records, plan)
+
+        self.env.flush_all()
+        statements = self.env.cr.sql_statement_count
+        with (
+            patch.object(AccountPayment, "create", counted_payment_create),
+            patch.object(MoveLine, "_reconcile_plan", counted_reconcile_plan),
+        ):
+            session.action_pos_session_closing_control()
+            self.env.flush_all()
+        statements = self.env.cr.sql_statement_count - statements
+        _logger.debug(
+            "Closing 20 split bank payments: %s statements, payment batches %s,"
+            " reconcile plans %s",
+            statements,
+            payment_batches,
+            reconcile_plans,
+        )
+
+        self.assertEqual(session.state, "closed")
+        payments = session.bank_payment_ids
+        self.assertEqual(len(payments), 20)
+        self.assertEqual(payments.partner_id, customers)
+        receivable_account = customers.property_account_receivable_id
+        self.assertEqual(len(receivable_account), 1)
+        receivable_lines = (session.move_id | payments.move_id).line_ids.filtered(
+            lambda line: line.account_id == receivable_account
+        )
+        self.assertEqual(len(receivable_lines), 40)
+        self.assertTrue(all(receivable_lines.mapped("reconciled")))
+        for customer, lines in receivable_lines.grouped("partner_id").items():
+            self.assertEqual(sum(lines.mapped("balance")), 0, customer.name)
+        self.assertEqual(payment_batches, [20])
+        self.assertEqual(len(reconcile_plans), 1)

@@ -1174,7 +1174,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         )
         pos_session = self.main_pos_config.current_session_id
 
-        pos_session.action_pos_session_validate()
+        pos_session.action_pos_session_closing_control()
 
         lines = pos_session.move_id.line_ids.sorted("balance")
 
@@ -3812,7 +3812,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         pos_session = self.main_pos_config.current_session_id
         self.assertEqual(pos_session.order_ids[0].payment_ids[0].amount, 7771.01)
 
-        pos_session.action_pos_session_validate()
+        pos_session.action_pos_session_closing_control()
 
         lines = pos_session.move_id.line_ids.sorted("balance")
 

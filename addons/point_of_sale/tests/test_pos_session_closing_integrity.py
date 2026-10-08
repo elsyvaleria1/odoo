@@ -114,7 +114,7 @@ class TestPosSessionClosingIntegrity(TestPoSCommon):
         session = self._start_pos_session(self.bank_pm1, 0)
 
         with self.assertRaises(UserError):
-            session.action_pos_session_close(
+            session.action_pos_session_closing_control(
                 bank_payment_method_diffs={self.bank_split_pm1.id: 20}
             )
 
@@ -125,7 +125,7 @@ class TestPosSessionClosingIntegrity(TestPoSCommon):
 
         for amount in (float("nan"), float("inf"), -float("inf")):
             with self.subTest(amount=amount), self.assertRaises(UserError):
-                session.action_pos_session_close(
+                session.action_pos_session_closing_control(
                     bank_payment_method_diffs={self.bank_pm1.id: amount}
                 )
 
@@ -136,7 +136,7 @@ class TestPosSessionClosingIntegrity(TestPoSCommon):
         session = self._start_pos_session(self.bank_pm1, 0)
 
         with self.assertRaises(UserError):
-            session.action_pos_session_close(
+            session.action_pos_session_closing_control(
                 bank_payment_method_diffs={self.bank_pm1.id: 20}
             )
 

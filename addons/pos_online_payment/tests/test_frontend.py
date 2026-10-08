@@ -444,7 +444,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             )
             # Make sure that we can close the session
             session.order_ids.filtered(lambda o: o.state == "draft").unlink()
-            session.action_pos_session_close()
+            session.action_pos_session_closing_control()
             self.assertEqual(session.state, "closed")
 
     def test_selected_customer_after_adding_payment_sync(self):

@@ -479,7 +479,7 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
     def test_pos_ui_rolls_back_a_competing_session_creation(self):
         def open_competing_sessions(config):
             config.env["res.partner"].create({"name": "Rolled back POS opener"})
-            sessions = config.env["pos.session"].with_context(onboarding_creation=True)
+            sessions = config.env["pos.session"]
             sessions.create({"config_id": config.id})
             sessions.create({"config_id": config.id})
 
@@ -515,15 +515,6 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
         )
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(self.main_pos_config.session_ids), 1)
-
-    def test_pos_ui_refuses_rescue_only_config(self):
-        self.main_pos_config.open_ui()
-        self.main_pos_config.current_session_id.rescue = True
-        self.assertFalse(self.main_pos_config.current_session_id)
-        self.authenticate("pos_user", "pos_user")
-        res = self.url_open(f"/pos/ui/{self.main_pos_config.id}", allow_redirects=False)
-        self.assertEqual(res.status_code, 303)
         self.assertEqual(len(self.main_pos_config.session_ids), 1)
 
     def test_pos_ui_missing_or_archived_config_cannot_open_session(self):

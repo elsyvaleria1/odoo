@@ -368,7 +368,7 @@ class TestPoSStock(TestPoSCommon):
                 "Move Lines Owner should be taken into account.",
             )
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
 
     def test_04_order_refund(self):
         self.categ4 = self.env["product.category"].create(
@@ -403,7 +403,7 @@ class TestPoSStock(TestPoSCommon):
         )
         refund_payment.with_context(**payment_context).action_make_payment()
 
-        self.pos_session.action_pos_session_validate()
+        self.pos_session.action_pos_session_closing_control()
         expense_account_move_line = self.env["account.move.line"].search(
             [("account_id", "=", self.expense_account.id), ("product_id", "=", False)]
         )

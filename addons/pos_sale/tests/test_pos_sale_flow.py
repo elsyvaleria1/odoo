@@ -2816,7 +2816,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             "test_multiple_lots_sale_order_3",
             login="accountman",
         )
-        self.main_pos_config.current_session_id.action_pos_session_close()
+        self.main_pos_config.current_session_id.action_pos_session_closing_control()
         picking = sale_order.pos_order_line_ids.order_id.picking_ids
         self.assertEqual(picking.move_ids.quantity, 3)
         self.assertEqual(len(picking.move_ids.move_line_ids), 2)

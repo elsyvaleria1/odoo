@@ -7,11 +7,7 @@
                 name="implied_ids"
                 eval="[Command.link(ref('point_of_sale.group_pos_manager'))]" />
         </record>
-        <record
-            id="pos_closed_session_1"
-            model="pos.session"
-            context="{'onboarding_creation': True}"
-            forcecreate="False">
+        <record id="pos_closed_session_1" model="pos.session" forcecreate="False">
             <field name="config_id" ref="pos_config_main" />
             <field name="user_id" ref="base.user_admin" />
             <field name="name">Furniture Shop/Demo/01</field>
@@ -112,11 +108,7 @@
             model="pos.session"
             name="action_pos_session_closing_control"
             eval="[[ref('pos_closed_session_1')]]" />
-        <record
-            id="pos_closed_session_2"
-            model="pos.session"
-            context="{'onboarding_creation': True}"
-            forcecreate="False">
+        <record id="pos_closed_session_2" model="pos.session" forcecreate="False">
             <field name="config_id" ref="pos_config_main" />
             <field name="user_id" ref="base.user_admin" />
             <field name="name">Furniture Shop/Demo/02</field>

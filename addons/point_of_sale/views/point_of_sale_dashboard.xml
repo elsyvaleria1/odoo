@@ -197,14 +197,6 @@
                                             class="col-6" />
                                     </div>
                                 </t>
-
-                                <a
-                                    t-if="record.number_of_rescue_session.value &gt; 0"
-                                    class="col-12"
-                                    name="action_view_rescue_sessions"
-                                    type="object">
-                                    <field name="number_of_rescue_session" /> outstanding rescue session
-                                </a>
                             </div>
                         </div>
                         <field
