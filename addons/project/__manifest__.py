@@ -1,6 +1,6 @@
 {
     "name": "Project",
-    "version": "1.32",
+    "version": "1.33",
     "oldest_upgradable_version": "1.31",
     "category": "Services/Project",
     "sequence": 45,

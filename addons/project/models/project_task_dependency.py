@@ -62,7 +62,8 @@ class ProjectTaskDependency(models.Model):
         default=0.0,
         required=True,
         help="Calendar hours added to the predecessor date the dependency reads. "
-        "Negative = lead time.",
+        "It moves the planning (scheduling and the date warning), not the waiting "
+        "state, which follows the predecessor's state alone. Negative = lead time.",
     )
     project_id = fields.Many2one(
         related="task_id.project_id",

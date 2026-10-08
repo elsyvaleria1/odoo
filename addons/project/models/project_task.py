@@ -1053,11 +1053,18 @@ class ProjectTask(models.Model):
 
     @api.depends("user_ids", "date_assign")
     def _compute_date_first_assign(self) -> None:
-        now = fields.Datetime.now()
         for task in self:
             if task.user_ids and not task.date_first_assign:
-                # an assignee given by default at create stamps no date_assign
-                task.date_first_assign = task.date_assign or task.create_date or now
+                # date_assign can land after this runs (none for a default
+                # assignee at create, a later write under project_hr): the
+                # assignment is this transaction's, which create_date would date
+                # back and which at create is create_date itself
+                task.date_first_assign = task.date_assign or self.env.cr.now()
+                _debug.logic(
+                    "first_assign_stamped",
+                    task=task,
+                    from_date_assign=bool(task.date_assign),
+                )
             else:
                 task.date_first_assign = task.date_first_assign
 
@@ -1122,28 +1129,42 @@ class ProjectTask(models.Model):
             )
         )
 
-    @api.constrains("state")
     def _check_finish_dependencies(self) -> None:
+        # called on a privileged recordset entering a delivered state, never on a
+        # recompute: a predecessor reopened after its successor was done leaves
+        # the successor done. Every predecessor binds; only those the acting user
+        # may read are named
         for task in self:
             if task.state not in DELIVERED_STATES or not task.allow_dependencies:
                 continue
             blocking = task._get_predecessor_dependencies().filtered(
                 lambda dep: dep._is_finish_blocking()
             )
-            if blocking:
-                _debug.logic(
-                    "finish_refused", task=task, predecessors=blocking.depends_on_id
+            if not blocking:
+                continue
+            predecessors = blocking.depends_on_id
+            readable = predecessors.sudo(False)._filtered_access("read")
+            hidden = len(predecessors - readable)
+            _debug.logic(
+                "finish_refused",
+                task=task,
+                predecessors=predecessors,
+                readable=readable,
+                hidden=hidden,
+            )
+            names = readable.mapped("display_name")
+            if hidden == 1:
+                names.append(self.env._("1 other task"))
+            elif hidden:
+                names.append(self.env._("%(count)s other tasks", count=hidden))
+            raise ValidationError(
+                self.env._(
+                    "%(task)s cannot be done before these tasks finish (or "
+                    "start, for start-to-finish): %(tasks)s",
+                    task=task.display_name,
+                    tasks=format_list(self.env, names),
                 )
-                raise ValidationError(
-                    self.env._(
-                        "%(task)s cannot be done before these tasks finish (or "
-                        "start, for start-to-finish): %(tasks)s",
-                        task=task.display_name,
-                        tasks=format_list(
-                            self.env, blocking.depends_on_id.mapped("display_name")
-                        ),
-                    )
-                )
+            )
 
     def _update_state_from_predecessors(self) -> None:
         blocked = self.sudo().filtered(
@@ -1372,6 +1393,22 @@ class ProjectTask(models.Model):
     def _check_no_cyclic_dependencies(self) -> None:
         if self._has_cycle("predecessor_ids"):
             raise ValidationError(self.env._("Two tasks cannot depend on each other."))
+
+    def _check_no_self_dependency(self, vals: dict[str, Any]) -> None:
+        # the many2many writes the dependency table directly, whose CHECK would
+        # surface as a database error before any constraint runs
+        linked_ids = set()
+        for fname in ("predecessor_ids", "successor_ids"):
+            for command in vals.get(fname) or ():
+                if isinstance(command, int):
+                    linked_ids.add(command)
+                elif command[0] == Command.LINK:
+                    linked_ids.add(command[1])
+                elif command[0] == Command.SET:
+                    linked_ids.update(command[2])
+        if linked_ids.intersection(self.ids):
+            _debug.logic("self_dependency_refused", tasks=self)
+            raise ValidationError(self.env._("A task cannot depend on itself."))
 
     def _invalidate_dependency_links(self, predecessors: Self) -> None:
         # project.task.dependency is the table both many2many read: a row
@@ -2173,13 +2210,16 @@ class ProjectTask(models.Model):
         copied_tasks = copied_tasks.sorted("id")
         for original_task, copied_task in zip(self, copied_tasks, strict=True):
             task_mapping[original_task.id] = copied_task
-            if original_task.allow_dependencies and (
-                original_task.predecessor_ids or original_task.successor_ids
-            ):
-                task_dependencies[original_task.id] = [
-                    original_task.predecessor_ids.ids,
-                    original_task.successor_ids.ids,
-                ]
+            if original_task.allow_dependencies:
+                # archived neighbours too: a link between two copied tasks is
+                # copied whatever their active state; the many2many read still
+                # leaves out the tasks the user may not read
+                linked = original_task.with_context(active_test=False)
+                if linked.predecessor_ids or linked.successor_ids:
+                    task_dependencies[original_task.id] = [
+                        linked.predecessor_ids.ids,
+                        linked.successor_ids.ids,
+                    ]
             active_children = original_task.child_ids.filtered("active").sorted("id")
             if active_children:
                 children_mapping, children_dependencies = (
@@ -2217,43 +2257,52 @@ class ProjectTask(models.Model):
         )
         if not task_dependencies:
             return
-        original_ids = list(task_dependencies)
-        Dependency = self.env["project.task.dependency"]
-        originals = Dependency.search(
+        pairs = set()
+        for task_id, (predecessor_ids, successor_ids) in task_dependencies.items():
+            pairs.update(
+                (task_id, predecessor_id) for predecessor_id in predecessor_ids
+            )
+            pairs.update((successor_id, task_id) for successor_id in successor_ids)
+        left_behind = self.browse(
+            sorted({task_id for pair in pairs for task_id in pair})
+        )
+        left_behind = left_behind.filtered(lambda task: task.id not in task_mapping)
+        archived_ids = set(left_behind.filtered(lambda task: not task.active).ids)
+        pairs = {pair for pair in pairs if not archived_ids.intersection(pair)}
+        if not pairs:
+            return
+        rows = self.env["project.task.dependency"].search(
             [
-                "|",
-                ("task_id", "in", original_ids),
-                ("depends_on_id", "in", original_ids),
+                ("task_id", "in", list({pair[0] for pair in pairs})),
+                ("depends_on_id", "in", list({pair[1] for pair in pairs})),
             ]
         )
+        row_per_pair = {(row.task_id.id, row.depends_on_id.id): row for row in rows}
 
         def get_copied_id(task_id):
             copied = task_mapping.get(task_id)
             return copied.id if copied else task_id
 
         vals_per_pair = {}
-        for dependency in originals:
-            if not (dependency.task_id.active and dependency.depends_on_id.active):
-                continue
-            pair = (
-                get_copied_id(dependency.task_id.id),
-                get_copied_id(dependency.depends_on_id.id),
-            )
-            if pair == (dependency.task_id.id, dependency.depends_on_id.id):
-                continue
+        for pair in sorted(pairs):
+            copied_pair = tuple(get_copied_id(task_id) for task_id in pair)
+            row = row_per_pair.get(pair)
             vals_per_pair.setdefault(
-                pair,
+                copied_pair,
                 {
-                    "task_id": pair[0],
-                    "depends_on_id": pair[1],
-                    "dependency_type": dependency.dependency_type,
-                    "lag_hours": dependency.lag_hours,
+                    "task_id": copied_pair[0],
+                    "depends_on_id": copied_pair[1],
+                    "dependency_type": row.dependency_type if row else "fs",
+                    "lag_hours": row.lag_hours if row else 0.0,
                 },
             )
         _debug.logic(
-            "dependencies_copied", originals=len(originals), copied=len(vals_per_pair)
+            "dependencies_copied",
+            originals=len(pairs),
+            copied=len(vals_per_pair),
+            archived_left_behind=len(archived_ids),
         )
-        Dependency.create(list(vals_per_pair.values()))
+        self.env["project.task.dependency"].create(list(vals_per_pair.values()))
 
     @_debug.perf.timed
     def copy(self, default=None) -> Self:
@@ -2625,12 +2674,16 @@ class ProjectTask(models.Model):
             )
             group_tasks.write(vals_by_key[key])
         _debug.pipeline("create_step", tasks=tasks, step="triages")
-        tasks.sudo()._create_missing_triages()
+        privileged_tasks = tasks.sudo()
+        privileged_tasks._create_missing_triages()
         if any(
             "predecessor_ids" in vals or "successor_ids" in vals for vals in vals_list
         ):
             tasks._invalidate_dependency_rows()
         _debug.pipeline("create_step", tasks=tasks, step="state_from_predecessors")
+        privileged_tasks.filtered(
+            lambda task: task.state in DELIVERED_STATES
+        )._check_finish_dependencies()
         tasks._update_state_from_predecessors()
         _debug.pipeline("create_step", tasks=tasks, step="assignment_notify")
         self_ctx._task_message_auto_subscribe_notify(
@@ -2829,6 +2882,7 @@ class ProjectTask(models.Model):
             raise UserError(
                 self.env._("Sorry. You can't set a task as its parent task.")
             )
+        self._check_no_self_dependency(vals)
 
         now = fields.Datetime.now()
         state_changed = (
@@ -2927,7 +2981,9 @@ class ProjectTask(models.Model):
             not in (assignees | self.env["res.users"].browse(SUPERUSER_ID))
         ):
             assignees |= self.env.user
-            additional_vals.update(self._prepare_assignment_vals(assignees))
+            additional_vals.update(
+                self._prepare_assignment_vals_keeping(vals, assignees)
+            )
         if assignees:
             additional_vals["date_assign"] = fields.Datetime.now()
         if default_triage and "triage_id" not in vals:
@@ -3251,6 +3307,32 @@ class ProjectTask(models.Model):
         assignment on: writing `user_ids` is not enough where it is composed."""
         return {"user_ids": [Command.set(users.ids)]}
 
+    @api.model
+    def _prepare_assignment_vals_keeping(
+        self, vals: dict[str, Any], users
+    ) -> dict[str, Any]:
+        # the assignment is rebuilt from users, so a given assignee that stands
+        # for no user (project_hr's employee without one) is carried over
+        assignment = self._prepare_assignment_vals(users)
+        for fname, value in assignment.items():
+            if fname not in vals:
+                continue
+            given_ids = self._fields[fname].convert_to_cache(
+                vals[fname], self.browse(), validate=False
+            )
+            kept_ids = [
+                record_id
+                for record_id in given_ids
+                if not self._get_assigned_users({fname: [Command.set([record_id])]})
+            ]
+            if kept_ids:
+                prepared_ids = self._fields[fname].convert_to_cache(
+                    value, self.browse(), validate=False
+                )
+                _debug.logic("assignees_without_user_kept", field=fname, kept=kept_ids)
+                assignment[fname] = [Command.set([*prepared_ids, *kept_ids])]
+        return assignment
+
     def _filter_active_assignees(self, assignees):
         return assignees.filtered("active")
 
@@ -3305,7 +3387,11 @@ class ProjectTask(models.Model):
     def _apply_entered_step_state(self) -> None:
         for step, tasks in self.sudo().grouped("step_id").items():
             unblocked = tasks.filtered(lambda t: t.state != "blocked")
-            if step.task_state:
+            if step.task_state in CLOSED_STATES:
+                # a waiting task is closable, as the state widget offers it
+                state = step.task_state
+                changed = tasks.filtered(lambda t, state=state: t.state != state)
+            elif step.task_state:
                 state = step.task_state
                 changed = unblocked.filtered(lambda t, state=state: t.state != state)
             else:
@@ -3313,7 +3399,13 @@ class ProjectTask(models.Model):
                 changed = unblocked.filtered(
                     lambda t: t.state in STATES_RESET_ON_STEP_CHANGE
                 )
-            _debug.logic("entered_step_state", step=step.id, tasks=changed, state=state)
+            _debug.logic(
+                "entered_step_state",
+                step=step.id,
+                tasks=changed,
+                state=state,
+                closed_waiting=changed - unblocked,
+            )
             if changed:
                 changed.state = state
 
@@ -3325,7 +3417,10 @@ class ProjectTask(models.Model):
                 "state_changed", tasks=self, state=vals["state"], changed=state_changed
             )
             if state_changed:
-                state_changed.sudo().date_last_status_change = now
+                changed = state_changed.sudo()
+                if vals["state"] in DELIVERED_STATES:
+                    changed._check_finish_dependencies()
+                changed.date_last_status_change = now
             if vals["state"] not in CLOSED_STATES and vals["state"] != "blocked":
                 for task in self.sudo():
                     if task.allow_dependencies and task.is_blocked_by_predecessors():
