@@ -135,3 +135,30 @@ class TestLinkRolePosting(HttpCase):
             (self.opening.reaction_ids.partner_id, self.opening.reaction_ids.guest_id),
             (self.customer, self.env["mail.guest"]),
         )
+
+    def _chatter_init(self, **credentials):
+        init = self._rpc(
+            "/portal/chatter_init",
+            thread_model=self.record._name,
+            thread_id=self.record.id,
+            **credentials,
+        )
+        (thread,) = init["result"]["mixin.mail.thread"]
+        return thread
+
+    def test_the_chatter_offers_posting_only_where_posting_is_granted(self):
+        for role, granted in (("view", False), ("comment", True), ("edit", True)):
+            token = self._token(role)
+            for name, credentials in (
+                ("token", {"token": token}),
+                ("token and hash", self._signed(token)),
+            ):
+                with self.subTest(role=role, credentials=name):
+                    thread = self._chatter_init(**credentials)
+                    self.assertIs(thread["can_post"], granted)
+                    self.assertIs(thread["can_react"], granted)
+
+    def test_the_chatter_offers_posting_to_a_user_with_the_right(self):
+        self.authenticate("admin", "admin")
+        thread = self._chatter_init()
+        self.assertIs(thread["can_post"], True)

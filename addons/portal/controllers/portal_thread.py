@@ -53,11 +53,14 @@ class PortalChatter(ThreadController):
             store.add(request.env.user.partner_id, {"is_user_publisher": True})
         thread = self._get_thread_with_access(thread_model, thread_id, **kwargs)
         if thread:
-            has_react_access = self._get_thread_with_access_for_post(
-                thread_model, thread_id, **kwargs
+            can_post = bool(
+                self._get_thread_with_access_for_post(thread_model, thread_id, **kwargs)
             )
-            can_react = has_react_access
+            can_react = can_post
             if request.env.user._is_public():
+                # an anonymous visitor is offered the composer on a credential
+                # only, as the pages invite one to sign in to comment otherwise
+                can_post = can_post and bool(kwargs.get("token") or kwargs.get("hash"))
                 if portal_partner := get_portal_partner(
                     thread,
                     kwargs.get("hash"),
@@ -79,11 +82,12 @@ class PortalChatter(ThreadController):
                         },
                         as_thread=True,
                     )
-                can_react = has_react_access and portal_partner
+                can_react = can_react and bool(portal_partner)
             store.add(
                 thread,
                 {
-                    "can_react": bool(can_react),
+                    "can_post": can_post,
+                    "can_react": can_react,
                     "hasReadAccess": thread.sudo(False).has_access("read"),
                 },
                 ["display_name"],

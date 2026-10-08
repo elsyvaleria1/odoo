@@ -7,7 +7,6 @@ import { ConnectionLostError, rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { attachShadowRoot } from "@web/core/utils/dom/ui";
 import { makeAppConfig } from "@web/env";
-import { session } from "@web/session";
 
 const log = makeLogger("portal.chatter");
 
@@ -35,9 +34,7 @@ export class PortalChatterService {
         const props = {
             resId: parseInt(chatterEl.getAttribute("data-res_id"), 10),
             resModel: chatterEl.getAttribute("data-res_model"),
-            composer:
-                parseInt(chatterEl.getAttribute("data-allow_composer"), 10) &&
-                (chatterEl.getAttribute("data-token") || !session.is_public),
+            composer: false,
             twoColumns: chatterEl.getAttribute("data-two_columns") === "true",
             displayRating: chatterEl.getAttribute("data-display_rating") === "True",
         };
@@ -71,6 +68,9 @@ export class PortalChatterService {
                 ),
             ]);
             this.store.insert(data);
+            props.composer =
+                parseInt(chatterEl.getAttribute("data-allow_composer"), 10) === 1 &&
+                Boolean(thread.can_post);
             app = new App(makeAppConfig(env, { name: "PortalChatter" }));
             await app.createRoot(PortalChatter, { props }).mount(shadow);
             log.lifecycle("mounted");

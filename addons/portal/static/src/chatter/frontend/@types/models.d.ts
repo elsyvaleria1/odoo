@@ -3,6 +3,7 @@ declare module "models" {
         portalComment: boolean;
     }
     export interface Thread {
+        can_post: boolean | undefined;
         hasReadAccess: boolean | undefined;
     }
 }

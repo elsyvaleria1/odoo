@@ -6,6 +6,8 @@ patch(Thread.prototype, {
     setup() {
         super.setup(...arguments);
         /** @type {boolean|undefined} */
+        this.can_post;
+        /** @type {boolean|undefined} */
         this.hasReadAccess;
     },
     get effectiveSelf() {
