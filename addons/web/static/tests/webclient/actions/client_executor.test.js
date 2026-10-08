@@ -256,3 +256,29 @@ test("an async function entry is awaited before its result is chained", async ()
     await executeClientAction(/** @type {any} */ ({ tag }), {}, am);
     expect(am.__calls.doAction).toHaveLength(1);
 });
+
+test("a function entry that returns nothing settles the caller's onClose", async () => {
+    const tag = defineClientAction("ce_fn_settles", () => {});
+    let closed = 0;
+    await executeClientAction(
+        /** @type {any} */ ({ tag }),
+        { onClose: () => closed++ },
+        makeFakeAm(),
+    );
+    expect(closed).toBe(1);
+});
+
+test("a function entry that navigated by itself leaves the caller's onClose alone", async () => {
+    const am = makeFakeAm();
+    const tag = defineClientAction("ce_fn_navigates", () => {
+        am.navigation.mint();
+    });
+    let closed = 0;
+    const res = await executeClientAction(
+        /** @type {any} */ ({ tag }),
+        { onClose: () => closed++ },
+        am,
+    );
+    expect(closed).toBe(0);
+    expect(res).toBe(undefined);
+});

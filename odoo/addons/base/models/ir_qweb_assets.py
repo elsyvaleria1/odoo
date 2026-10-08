@@ -2048,7 +2048,7 @@ class IrQweb(models.AbstractModel):
         import_map: dict[str, str],
         bridge_specifiers: list[str],
     ) -> str:
-        hoot_specs = self._get_hoot_specifiers(bundle, bridge_specifiers)
+        hoot_specs = sorted(self._get_hoot_specifiers(bundle, bridge_specifiers))
         hoot_spec_set = set(hoot_specs)
         non_hoot_specs = [s for s in bridge_specifiers if s not in hoot_spec_set]
         bridge_code = self._prepare_register_native_modules_js(
@@ -2146,10 +2146,13 @@ class IrQweb(models.AbstractModel):
         if not debug_assets:
             pre_nodes.extend(self._get_esm_preload_links(bundle, native_data))
 
-        bridge_specifiers = sorted(
-            set(native_data["import_map"])
-            | self._bridge_external_specifiers(native_data)
-            | set(registered_reach)
+        # evaluated in the production entry's order (EsbuildCompiler.
+        # _esbuild_entry_lines): the bundle's own modules first, in bundle
+        # order, so the same registry add comes first in both modes
+        own_specifiers = list(native_data["import_map"])
+        bridge_specifiers = own_specifiers + sorted(
+            (self._bridge_external_specifiers(native_data) | set(registered_reach))
+            - set(own_specifiers)
         )
         if bridge_specifiers:
             pre_nodes.append(self._prepare_loader_shim_node(bundle))

@@ -14,12 +14,15 @@ import {
     onRpc,
     patchWithCleanup,
     stepAllNetworkCalls,
+    toggleActionMenu,
+    toggleMenuItem,
     webModels,
 } from "@web/../tests/web_test_helpers";
 import { appContextOf } from "@web/core/app_context";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { SupersededError } from "@web/core/utils/concurrency";
+import { useServiceProtectMethodHandling } from "@web/core/utils/hooks";
 import { redirect } from "@web/core/utils/urls";
 import { viewConfigOf } from "@web/core/view_config_hooks";
 
@@ -697,4 +700,82 @@ test("a function can deliberately perform nested navigation", async () => {
         tag: "nested_navigation",
     });
     expect(getService("action").currentController.action.id).toBe(1);
+});
+
+test("a function client action that navigates by itself drops the caller's onClose", async () => {
+    actionRegistry.add("navigating_probe", async (env) => {
+        await env.services.action.doAction(3);
+    });
+    await mountWebClient();
+    await getService("action").doAction(1);
+
+    let closed = 0;
+    await getService("action").doAction(
+        { type: "ir.actions.client", tag: "navigating_probe" },
+        { onClose: () => closed++ },
+    );
+    await animationFrame();
+
+    expect(".o_list_view").toHaveCount(1);
+    expect(closed).toBe(0);
+});
+
+test("a function client action that hands onClose to its dialog settles it on close", async () => {
+    actionRegistry.add("dialog_probe", (env, _action, options) =>
+        env.services.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "partner",
+                res_id: 1,
+                views: [[false, "form"]],
+                target: "new",
+            },
+            { onClose: options.onClose },
+        ),
+    );
+    await mountWebClient();
+
+    let closed = 0;
+    await getService("action").doAction(
+        { type: "ir.actions.client", tag: "dialog_probe" },
+        { onClose: () => closed++ },
+    );
+    await animationFrame();
+    expect(".o_dialog .o_form_view").toHaveCount(1);
+    expect(closed).toBe(0);
+
+    await contains(".o_dialog .btn-close").click();
+    expect(".o_dialog").toHaveCount(0);
+    expect(closed).toBe(1);
+});
+
+test.tags("desktop");
+test("soft_reload run from the action menu reloads no form it replaced", async () => {
+    patchWithCleanup(useServiceProtectMethodHandling, {
+        fn() {
+            expect.step("service call from a destroyed component");
+            return super.fn();
+        },
+    });
+    const softReload = { id: 88, name: "Soft reload", type: "ir.actions.server" };
+    defineActions([softReload]);
+    Partner._toolbar = { action: [softReload], print: [] };
+    onRpc("/web/action/run", () => ({ type: "ir.actions.client", tag: "soft_reload" }));
+    onRpc("web_read", () => expect.step("web_read"));
+
+    await mountWebClient();
+    await getService("action").doAction({
+        type: "ir.actions.act_window",
+        res_model: "partner",
+        res_id: 1,
+        views: [[false, "form"]],
+    });
+    expect.verifySteps(["web_read"]);
+
+    await toggleActionMenu();
+    await toggleMenuItem("Soft reload");
+    await animationFrame();
+
+    expect(".o_form_view").toHaveCount(1);
+    expect.verifySteps(["web_read"]);
 });

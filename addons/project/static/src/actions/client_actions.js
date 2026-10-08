@@ -92,9 +92,6 @@ export async function showTemplateFormView(
     { model, recordId, method = "action_create_template_from_project" },
 ) {
     const action = await env.services.orm.call(model, method, [recordId]);
-    // returned rather than dispatched here: a client action that navigates by
-    // itself and returns nothing makes the executor run the caller's onClose,
-    // which reloads the form this navigation just destroyed
     return {
         ...action,
         params: {

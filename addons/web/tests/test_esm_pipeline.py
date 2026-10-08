@@ -2537,6 +2537,39 @@ class TestImportMapMergeHelpers(TransactionCase):
         rendered = self._rendered_import_map("assets")
         self.assertEqual(rendered.get("dompurify"), externals["dompurify"])
 
+    def test_the_debug_bridge_evaluates_the_bundle_in_its_own_order(self):
+        bundle = "web.assets_web"
+        own = self._qweb._get_native_module_data_cached(
+            bundle,
+            assets_params=self.env["ir.asset"]._prepare_assets_params(),
+        )["import_map"]
+        _pre, post = self._qweb._get_native_module_nodes(bundle, debug="assets")
+        bridge = next(
+            attrs["text"] for _tag, attrs in post if attrs.get("data-bridge") == bundle
+        )
+        imported = list(
+            dict.fromkeys(
+                re.findall(
+                    r'^import \* as __m\d+ from "([^"]+)";$', bridge, re.MULTILINE
+                )
+            )
+        )
+        own_urls = list(dict.fromkeys(own.values()))
+        bridged_own = set(own_urls) & set(imported)
+        self.assertGreater(len(bridged_own), 100)
+        self.assertEqual(
+            [url for url in imported if url in bridged_own],
+            [url for url in own_urls if url in bridged_own],
+            "the debug bridge evaluates the bundle in another order than its "
+            "production entry: a registry entry's first add is not the same one",
+        )
+        last_own = max(imported.index(url) for url in bridged_own)
+        self.assertEqual(
+            [url for url in imported[:last_own] if url not in bridged_own],
+            [],
+            "a module from outside the bundle is evaluated before the bundle's own",
+        )
+
     @staticmethod
     def _fake_registry(**overrides):
         reg = SimpleNamespace(
