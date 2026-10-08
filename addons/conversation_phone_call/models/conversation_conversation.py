@@ -48,3 +48,28 @@ class ConversationConversation(models.Model):
             if name
         )
         return "\n".join(part for part in (preamble, *lines) if part)
+
+    def _on_media_transcribed(self, attachment) -> None:
+        # before the parent adds the named voices to the attendees
+        self._name_call_voices(attachment)
+        super()._on_media_transcribed(attachment)
+
+    def _name_call_voices(self, attachment) -> None:
+        """Name the two voices of a two-party call: the phone's user and the
+        call's contact. Whoever answers speaks first, so the direction says
+        which voice is which; any other recording stays anonymous."""
+        self.check_singleton()
+        call = self.phone_call_id
+        owner = call.user_id.partner_id
+        contact = call.partner_id
+        answerer = {"outgoing": contact, "incoming": owner}.get(call.direction)
+        if not answerer or not owner or not contact or owner == contact:
+            return
+        # in this conversation's environment: the transcript's owner is
+        # reached elevated, as is the call whose entry completes it
+        voices = attachment.with_env(self.env).speaker_ids.filtered("turns")
+        if len(voices) != 2 or voices.partner_id:
+            return
+        first, second = voices.sorted("first_spoke_s")
+        first.partner_id = answerer
+        second.partner_id = (owner | contact) - answerer

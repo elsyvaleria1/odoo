@@ -136,3 +136,72 @@ class TestEveryModelKindHasItsMethod(TransactionCase):
                     f"can select it for a {method} call, and "
                     f"{client_cls.__name__} has no {method}",
                 )
+
+
+def _word(word, start, end, confidence=0.9):
+    return {
+        "word": word.strip("¿?.,").lower(),
+        "punctuated_word": word,
+        "start": start,
+        "end": end,
+        "confidence": confidence,
+        "speaker": 0,
+    }
+
+
+@tagged("post_install", "-at_install")
+class TestDeepgramSentences(TransactionCase):
+    # the 2026-10-08 call: the callee's "¿Bueno?" and the caller's reply came
+    # back as one utterance of one speaker
+    ANSWERED = {
+        "transcript": "¿Bueno? Hola, Jaz.",
+        "start": 0.4,
+        "end": 2.6,
+        "speaker": 0,
+        "confidence": 0.92,
+        "words": [
+            _word("¿Bueno?", 0.4, 1.1, 0.8),
+            _word("Hola,", 1.4, 1.9, 1.0),
+            _word("Jaz.", 2.0, 2.6, 0.9),
+        ],
+    }
+
+    def _cues(self, *utterances):
+        return DeepgramClient._read_cues({"results": {"utterances": list(utterances)}})
+
+    def test_an_utterance_is_split_at_each_sentence_its_words_end(self):
+        first, second = self._cues(self.ANSWERED)
+        self.assertEqual(
+            (first["start"], first["end"], first["text"]), (0.4, 1.1, "¿Bueno?")
+        )
+        self.assertEqual(
+            (second["start"], second["end"], second["text"]), (1.4, 2.6, "Hola, Jaz.")
+        )
+        self.assertAlmostEqual(second["confidence"], 0.95)
+        self.assertEqual({first["speaker"], second["speaker"]}, {"Speaker 0"})
+
+    def test_a_single_sentence_stays_as_deepgram_timed_it(self):
+        one = {**self.ANSWERED, "words": self.ANSWERED["words"][1:]}
+        (cue,) = self._cues(one)
+        self.assertEqual(
+            (cue["start"], cue["end"], cue["text"], cue["confidence"]),
+            (0.4, 2.6, "¿Bueno? Hola, Jaz.", 0.92),
+        )
+
+    def test_words_without_punctuation_leave_the_utterance_whole(self):
+        bare = {
+            **self.ANSWERED,
+            "words": [
+                {**word, "punctuated_word": ""} for word in self.ANSWERED["words"]
+            ],
+        }
+        self.assertEqual(len(self._cues(bare)), 1)
+
+    def test_a_trailing_fragment_without_a_stop_is_its_own_sentence(self):
+        cut = {
+            **self.ANSWERED,
+            "words": [*self.ANSWERED["words"], _word("este", 2.8, 3.0)],
+        }
+        self.assertEqual(
+            [cue["text"] for cue in self._cues(cut)], ["¿Bueno?", "Hola, Jaz.", "este"]
+        )

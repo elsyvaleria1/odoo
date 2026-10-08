@@ -41,6 +41,21 @@ class TestSpeakers(SpeechCase):
         self.assertEqual(len(attachment.speaker_ids), 2)
         self.assertEqual(voice.partner_id, partner)
 
+    def test_a_new_transcript_drops_the_voices_it_no_longer_hears_unless_named(self):
+        attachment = self._transcribed()
+        partner = self.env["res.partner"].create({"name": "Víctor"})
+        attachment.speaker_ids.filtered(
+            lambda s: s.label == "SPEAKER_1"
+        ).partner_id = partner
+        unregister_reader(self._engine)
+        self._engine = self._register(
+            StubTranscription(cues=[Cue(0.0, 3.0, "otra vez", "SPEAKER_2")])
+        )
+        attachment._transcribe()
+        self.assertEqual(
+            sorted(attachment.speaker_ids.mapped("label")), ["SPEAKER_1", "SPEAKER_2"]
+        )
+
     def test_a_name_typed_by_hand_stays_until_a_person_is_chosen(self):
         voice = self._transcribed().speaker_ids[:1]
         voice.name = "La del rancho"

@@ -16,13 +16,14 @@ from odoo.libs.documents import (
 )
 from odoo.tools import config
 
-from .engine import LocalEngine
+from .engine import LocalDiarizer, LocalEngine
 
 _logger = logging.getLogger(__name__)
 
 MODEL_DIR_PARAM = "speech_local.model_dir"
 
 _ENGINES: dict[Path, LocalEngine] = {}
+_DIARIZERS: dict[Path, LocalDiarizer] = {}
 _REPORTED: set[Path] = set()
 
 
@@ -59,6 +60,16 @@ def local_engine(env: Any, purpose: str | None = None) -> LocalEngine | None:
             )
         return None
     return _ENGINES.setdefault(directory, LocalEngine(directory))
+
+
+# the speaker models alone are enough: no Whisper is needed to tell voices apart
+def local_diarizer(env: Any, purpose: str | None = None) -> LocalDiarizer | None:
+    directory = model_dir(env, purpose)
+    if directory in _DIARIZERS:
+        return _DIARIZERS[directory]
+    if not LocalDiarizer.available(directory):
+        return None
+    return _DIARIZERS.setdefault(directory, LocalDiarizer(directory))
 
 
 class LocalTranscription(BaseReader):

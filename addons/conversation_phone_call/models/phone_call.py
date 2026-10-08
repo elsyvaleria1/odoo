@@ -68,6 +68,12 @@ class PhoneCall(models.Model):
             if call.user_id and call.user_id != conversation.user_id:
                 vals["user_id"] = call.user_id.id
             conversation.write(vals)
+            # a recording heard before the call's entry came had no one to
+            # name its voices after
+            for attachment in conversation.segment_ids.attachment_id.filtered(
+                lambda recording: recording.transcript_state == "done"
+            ):
+                conversation._name_call_voices(attachment)
         super()._on_call_details_completed()
 
     def _on_merged_into(self, call) -> None:

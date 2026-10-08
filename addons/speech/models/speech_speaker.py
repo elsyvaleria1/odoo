@@ -100,9 +100,13 @@ class SpeechSpeaker(models.Model):
             for cue in attachment.transcript_cues or []
             if cue.get("speaker")
         }
-        known = set(
-            self.sudo().search([("attachment_id", "=", attachment.id)]).mapped("label")
-        )
+        speakers = self.sudo().search([("attachment_id", "=", attachment.id)])
+        # a reading done again can tell the voices apart differently: a label
+        # it no longer uses is gone, unless someone put a person on it
+        speakers.filtered(
+            lambda speaker: speaker.label not in labels and not speaker.partner_id
+        ).unlink()
+        known = set(speakers.exists().mapped("label"))
         return self.sudo().create(
             [
                 {"attachment_id": attachment.id, "label": label}

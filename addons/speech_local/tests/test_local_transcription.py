@@ -320,3 +320,101 @@ class TestLocalTranscription(TransactionCase):
         self.assertEqual(whisper_language("es_MX"), "es")
         self.assertEqual(whisper_language("en-US"), "en")
         self.assertEqual(whisper_language(None), "")
+
+
+class FakeDiarizer:
+    def __init__(self, turns=None, error=None):
+        self.turns_heard = turns or []
+        self.error = error
+        self.calls = 0
+
+    def turns(self, samples):
+        self.calls += 1
+        if self.error:
+            raise self.error
+        return list(self.turns_heard)
+
+
+@tagged("post_install", "-at_install")
+class TestVoiceSeparation(TransactionCase):
+    ONE_VOICE = [
+        Cue(0.5, 1.2, "¿Bueno?", "SPEAKER_0"),
+        Cue(1.4, 3.9, "Hola, esto es una prueba", "SPEAKER_0"),
+        Cue(4.7, 5.3, "Ok", "SPEAKER_0"),
+    ]
+    TURNS = [(0.5, 1.2, 2), (1.35, 3.9, 1), (4.7, 5.3, 2)]
+    ATTACHMENT = "odoo.addons.speech_local.models.ir_attachment"
+
+    def _vendor(self, cues):
+        vendor = VendorStub(True, cues=cues)
+        register_reader(vendor)
+        self.addCleanup(unregister_reader, vendor)
+
+    def _heard(self, cues, diarizer):
+        self._vendor(cues)
+        attachment = self.env["ir.attachment"].create(
+            {"name": "call.mp3", "mimetype": "audio/mpeg", "raw": b"fake-audio"}
+        )
+        with (
+            patch(f"{self.ATTACHMENT}.local_diarizer", return_value=diarizer),
+            patch(f"{self.ATTACHMENT}.decode_audio", return_value=np.zeros(8)),
+        ):
+            attachment._transcribe()
+        return attachment
+
+    def _speakers(self, attachment):
+        return [cue["speaker"] for cue in attachment.transcript_cues]
+
+    def test_a_vendor_that_heard_one_voice_is_told_apart_here(self):
+        attachment = self._heard(self.ONE_VOICE, FakeDiarizer(self.TURNS))
+        self.assertEqual(
+            self._speakers(attachment), ["SPEAKER_2", "SPEAKER_1", "SPEAKER_2"]
+        )
+        self.assertEqual(
+            [cue["text"] for cue in attachment.transcript_cues],
+            [cue.text for cue in self.ONE_VOICE],
+            "the vendor's words are kept",
+        )
+        self.assertEqual(
+            sorted(attachment.speaker_ids.mapped("label")), ["SPEAKER_1", "SPEAKER_2"]
+        )
+
+    def test_a_vendor_that_told_two_voices_apart_is_trusted(self):
+        two = [*self.ONE_VOICE[:1], Cue(1.4, 3.9, "Hola", "SPEAKER_1")]
+        diarizer = FakeDiarizer(self.TURNS)
+        attachment = self._heard(two, diarizer)
+        self.assertEqual(self._speakers(attachment), ["SPEAKER_0", "SPEAKER_1"])
+        self.assertFalse(diarizer.calls)
+
+    def test_without_speaker_models_the_transcript_is_left_alone(self):
+        attachment = self._heard(self.ONE_VOICE, None)
+        self.assertEqual(self._speakers(attachment), ["SPEAKER_0"] * 3)
+
+    def test_one_voice_heard_here_too_leaves_the_transcript_alone(self):
+        attachment = self._heard(self.ONE_VOICE, FakeDiarizer([(0.0, 6.0, 0)]))
+        self.assertEqual(self._speakers(attachment), ["SPEAKER_0"] * 3)
+
+    def test_a_separation_that_fails_keeps_the_transcript(self):
+        diarizer = FakeDiarizer(error=RuntimeError("bad model"))
+        with self.assertLogs(self.ATTACHMENT, "WARNING"):
+            attachment = self._heard(self.ONE_VOICE, diarizer)
+        self.assertEqual(attachment.transcript_state, "done")
+        self.assertEqual(self._speakers(attachment), ["SPEAKER_0"] * 3)
+
+    def test_what_this_server_transcribed_is_not_separated_twice(self):
+        attachment = self.env["ir.attachment"].create(
+            {"name": "call.mp3", "mimetype": "audio/mpeg", "raw": b"fake-audio"}
+        )
+        reading = self.env["ir.attachment.reading"].create(
+            {
+                "attachment_id": attachment.id,
+                "representation": CUES,
+                "state": "done",
+                "read_by": local.LocalTranscription.name,
+                "value": [{"start": 0.0, "end": 1.0, "text": "hola", "speaker": ""}],
+            }
+        )
+        diarizer = FakeDiarizer(self.TURNS)
+        with patch(f"{self.ATTACHMENT}.local_diarizer", return_value=diarizer):
+            attachment._separate_voices(reading)
+        self.assertFalse(diarizer.calls)

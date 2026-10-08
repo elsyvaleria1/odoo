@@ -8,6 +8,8 @@ _logger = logging.getLogger(__name__)
 
 SYNTHESIZE_TIMEOUT = 60
 
+SENTENCE_ENDS = (".", "?", "!", "…")
+
 
 class DeepgramClient(BaseAIClient):
     ENDPOINT_CODE = "deepgram"
@@ -255,6 +257,48 @@ class DeepgramClient(BaseAIClient):
         return audio
 
     @staticmethod
+    def _sentences(utterance, text):
+        """One span per sentence of an utterance, timed by its words.
+
+        Deepgram ends an utterance at a pause, not at a change of voice: on a
+        phone call recorded in mono the callee's "¿Bueno?" and the caller's
+        reply came back as one utterance, too long for a voice told apart
+        afterwards to be assigned to either. Without word timings, or with a
+        single sentence, the utterance stays whole.
+        """
+        whole = {
+            "start": float(utterance.get("start") or 0.0),
+            "end": float(utterance.get("end") or 0.0),
+            "text": text,
+            "confidence": float(utterance.get("confidence") or 0.0),
+        }
+        words = utterance.get("words") or []
+        if not words or not all(word.get("punctuated_word") for word in words):
+            return [whole]
+        sentences, current = [], []
+        for word in words:
+            current.append(word)
+            if word["punctuated_word"].rstrip().endswith(SENTENCE_ENDS):
+                sentences.append(current)
+                current = []
+        if current:
+            sentences.append(current)
+        if len(sentences) < 2:
+            return [whole]
+        return [
+            {
+                "start": float(sentence[0].get("start") or 0.0),
+                "end": float(sentence[-1].get("end") or 0.0),
+                "text": " ".join(word["punctuated_word"] for word in sentence),
+                "confidence": sum(
+                    float(word.get("confidence") or 0.0) for word in sentence
+                )
+                / len(sentence),
+            }
+            for sentence in sentences
+        ]
+
+    @staticmethod
     def _read_cues(result):
         result = result or {}
         duration = (result.get("metadata") or {}).get("duration") or 0.0
@@ -264,15 +308,13 @@ class DeepgramClient(BaseAIClient):
             if not text:
                 continue
             speaker = utterance.get("speaker")
-            spans.append(
+            spans.extend(
                 {
-                    "start": float(utterance.get("start") or 0.0),
-                    "end": float(utterance.get("end") or 0.0),
-                    "text": text,
+                    **piece,
                     "speaker": f"Speaker {speaker}" if speaker is not None else "",
                     "speaker_index": speaker,
-                    "confidence": float(utterance.get("confidence") or 0.0),
                 }
+                for piece in DeepgramClient._sentences(utterance, text)
             )
         if spans:
             return Cues(spans, duration)

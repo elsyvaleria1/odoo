@@ -141,3 +141,97 @@ class TestPhoneCallConversation(TransactionCase):
         ).unlink()
         self.call._on_merged_into(target)
         self.assertFalse(conversation.exists())
+
+
+class _HearsVoices(BaseReader):
+    name = "conversation_phone_call_voices_stub"
+    mimetypes = frozenset({"audio/mpeg"})
+    yields = (CUES,)
+    cost = METERED
+
+    def __init__(self, cues):
+        self.cues = cues
+
+    def read(self, document):
+        return list(self.cues)
+
+
+@tagged("post_install", "-at_install")
+class TestCallVoices(TransactionCase):
+    ANSWER_THEN_TALK = [
+        Cue(0.5, 1.2, "¿Bueno?", "SPEAKER_2"),
+        Cue(1.4, 3.9, "Hola, le hablo de AgroMarin", "SPEAKER_1"),
+        Cue(4.7, 5.3, "Ok, gracias", "SPEAKER_2"),
+    ]
+
+    def setUp(self):
+        super().setUp()
+        self.seller = new_test_user(
+            self.env, login="call_voices_seller", groups="base.group_user"
+        )
+        self.customer = self.env["res.partner"].create({"name": "Jazmín Olvera"})
+
+    def _heard(self, cues, direction="outgoing", partner=True):
+        engine = register_reader(_HearsVoices(cues))
+        self.addCleanup(unregister_reader, engine)
+        call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "direction": direction,
+                "channel": "mobile",
+                "user_id": self.seller.id,
+                "partner_id": self.customer.id if partner else False,
+            }
+        )
+        recording = self.env["ir.attachment"].create(
+            {
+                "name": "call.mp3",
+                "mimetype": "audio/mpeg",
+                "raw": b"ID3-call",
+                "res_model": "phone.call",
+                "res_id": call.id,
+            }
+        )
+        call._file_recording(recording, 0, 6000)
+        recording._transcribe()
+        return call, recording
+
+    def _named(self, recording):
+        return {speaker.label: speaker.partner_id for speaker in recording.speaker_ids}
+
+    def test_in_an_outgoing_call_the_first_voice_is_the_contact(self):
+        _call, recording = self._heard(self.ANSWER_THEN_TALK)
+        self.assertEqual(
+            self._named(recording),
+            {"SPEAKER_2": self.customer, "SPEAKER_1": self.seller.partner_id},
+        )
+
+    def test_in_an_incoming_call_the_first_voice_is_the_phones_user(self):
+        _call, recording = self._heard(self.ANSWER_THEN_TALK, direction="incoming")
+        self.assertEqual(
+            self._named(recording),
+            {"SPEAKER_2": self.seller.partner_id, "SPEAKER_1": self.customer},
+        )
+
+    def test_one_voice_is_not_guessed(self):
+        one = [Cue(0.0, 3.0, "¿Bueno? ¿Bueno?", "SPEAKER_0")]
+        _call, recording = self._heard(one)
+        self.assertFalse(recording.speaker_ids.partner_id)
+
+    def test_three_voices_are_not_guessed(self):
+        three = [*self.ANSWER_THEN_TALK, Cue(6.0, 7.0, "¿quién habla?", "SPEAKER_3")]
+        _call, recording = self._heard(three)
+        self.assertFalse(recording.speaker_ids.partner_id)
+
+    def test_voices_wait_for_the_contact_the_calls_entry_brings(self):
+        call, recording = self._heard(self.ANSWER_THEN_TALK, partner=False)
+        self.assertFalse(recording.speaker_ids.partner_id)
+        call.partner_id = self.customer
+        call._on_call_details_completed()
+        self.assertEqual(self._named(recording)["SPEAKER_2"], self.customer)
+
+    def test_the_named_voices_join_the_conversation(self):
+        call, _recording = self._heard(self.ANSWER_THEN_TALK)
+        self.assertEqual(
+            call.conversation_id.attendee_ids, self.seller.partner_id | self.customer
+        )

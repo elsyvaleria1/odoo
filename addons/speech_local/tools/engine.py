@@ -77,7 +77,7 @@ class LocalEngine:
         self.model_dir = model_dir
         self.files = model_files(model_dir)[0]
         self._recognizers: dict[str, sherpa_onnx.OfflineRecognizer] = {}
-        self._diarizer: sherpa_onnx.OfflineSpeakerDiarization | None = None
+        self._diarizer = LocalDiarizer(model_dir)
         self._lock = threading.Lock()
 
     @classmethod
@@ -86,9 +86,7 @@ class LocalEngine:
 
     @property
     def diarizes(self) -> bool:
-        return all(
-            (self.model_dir / name).is_file() for name in (SEGMENTATION, EMBEDDING)
-        )
+        return LocalDiarizer.available(self.model_dir)
 
     def transcribe(self, samples: np.ndarray, language: str | None = None) -> list[Cue]:
         with self._lock:
@@ -96,7 +94,7 @@ class LocalEngine:
             if not utterances:
                 return []
             texts = self._recognize(utterances, whisper_language(language))
-            turns = self._turns(samples) if self.diarizes else []
+            turns = self._diarizer.turns(samples) if self.diarizes else []
         return [
             Cue(
                 start=round(utterance.start, 2),
@@ -167,7 +165,25 @@ class LocalEngine:
             return {"tail_paddings": WHISPER_TAIL_PADDINGS}
         return {}
 
-    def _turns(self, samples: np.ndarray) -> list[tuple[float, float, int]]:
+
+# Which voice speaks when, apart from what is said: it runs behind this
+# server's own transcription and behind a vendor's that heard one voice
+class LocalDiarizer:
+    def __init__(self, model_dir: Path) -> None:
+        self.model_dir = model_dir
+        self._diarizer: sherpa_onnx.OfflineSpeakerDiarization | None = None
+        self._lock = threading.Lock()
+
+    @classmethod
+    def available(cls, model_dir: Path) -> bool:
+        return all((model_dir / name).is_file() for name in (SEGMENTATION, EMBEDDING))
+
+    def turns(self, samples: np.ndarray) -> list[tuple[float, float, int]]:
+        with self._lock:
+            result = self._loaded().process(samples).sort_by_start_time()
+        return [(turn.start, turn.end, turn.speaker) for turn in result]
+
+    def _loaded(self) -> sherpa_onnx.OfflineSpeakerDiarization:
         if self._diarizer is None:
             config = sherpa_onnx.OfflineSpeakerDiarizationConfig(
                 segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
@@ -191,8 +207,7 @@ class LocalEngine:
                     f"The speaker models in {self.model_dir} cannot be loaded"
                 )
             self._diarizer = sherpa_onnx.OfflineSpeakerDiarization(config)
-        result = self._diarizer.process(samples).sort_by_start_time()
-        return [(turn.start, turn.end, turn.speaker) for turn in result]
+        return self._diarizer
 
 
 def speaker_of(utterance: Utterance, turns: list[tuple[float, float, int]]) -> str:
