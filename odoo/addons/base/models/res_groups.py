@@ -5,7 +5,7 @@ from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import Query, SetDefinitions
+from odoo.tools import SQL, Query, SetDefinitions
 
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
 from odoo.addons.base.models.res_users_grant import projecting
@@ -535,6 +535,13 @@ class ResGroups(models.Model):
 
     def _get_user_type_groups(self) -> Self:
         return self.sudo().browse(self._get_user_type_group_ids())
+
+    @api.model
+    @tools.ormcache(cache="groups")
+    def _get_privilege_group_ids(self) -> frozenset[int]:
+        self.flush_model(["is_privilege"])
+        self.env.cr.execute(SQL("SELECT id FROM res_groups WHERE is_privilege"))
+        return frozenset(group_id for (group_id,) in self.env.cr.fetchall())
 
     @api.model
     @tools.ormcache(cache="groups")

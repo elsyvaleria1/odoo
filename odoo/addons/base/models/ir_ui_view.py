@@ -2667,8 +2667,11 @@ class IrUiView(models.Model):
         )
         parent_name_manager = node_info["name_manager"] if node_info else None
 
+        # a privilege is held by code, never by a user: no user's view is shaped
+        # by what a privilege alone may read
         model_groups &= group_definitions.from_ids(
             self.env["ir.access"]._group_ids_with_access(model_name, "read")
+            - self.env["res.groups"]._get_privilege_group_ids()
         )
 
         model = self.env[model_name]
