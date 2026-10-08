@@ -1023,20 +1023,26 @@ class ProjectTask(models.Model):
     @api.depends("predecessor_ids.state", "dependency_ids.dependency_type", "step_id")
     def _compute_state(self) -> None:
         for task in self:
-            previous = task.state
-            if task.state not in CLOSED_STATES:
-                if task.allow_dependencies and task.is_blocked_by_predecessors():
-                    task.state = "blocked"
-                elif task.state == "blocked":
-                    task.state = "in_progress"
+            previous = state = task.state
+            blocked = None
+            if state not in CLOSED_STATES:
+                blocked = task._is_waiting_on_predecessors()
+                if blocked:
+                    state = "blocked"
+                elif state == "blocked":
+                    state = "in_progress"
             # a stored task entering a step gets its state from write(), which
-            # also runs the closing side effects; only new and onchange records
-            # are handled here
+            # also runs the closing side effects; new and onchange records get
+            # here the same answer write() will give
             entered_step = task.step_id != task._origin.step_id
-            if entered_step and task.step_id.task_state and task.state != "blocked":
-                task.state = task.step_id.task_state
-            elif not task.state:
-                task.state = "todo"
+            if entered_step:
+                state = task._resolve_entered_step_state(state) or state
+                if state not in CLOSED_STATES:
+                    if blocked is None:
+                        blocked = task._is_waiting_on_predecessors()
+                    if blocked:
+                        state = "blocked"
+            task.state = state or "todo"
             if task.state != previous:
                 _debug.logic(
                     "task_state_computed",
@@ -1044,7 +1050,29 @@ class ProjectTask(models.Model):
                     previous=previous,
                     state=task.state,
                     step_state=task.step_id.task_state,
+                    entered_step=entered_step,
+                    waiting=bool(blocked),
                 )
+
+    def _is_waiting_on_predecessors(self) -> bool:
+        self.check_singleton()
+        return bool(self.allow_dependencies and self.is_blocked_by_predecessors())
+
+    def _resolve_entered_step_state(self, state: str | None) -> str | None:
+        # a step mapped to a closed state closes even a waiting task, as the
+        # state widget offers it; an open predecessor finishing first is
+        # checked on the move into done, not here
+        self.check_singleton()
+        step_state = self.step_id.task_state
+        if step_state in CLOSED_STATES:
+            return step_state
+        if state == "blocked":
+            return None
+        if step_state:
+            return step_state
+        if state in STATES_RESET_ON_STEP_CHANGE:
+            return "in_progress"
+        return None
 
     @api.depends("state")
     def _compute_is_closed(self) -> None:
@@ -3385,29 +3413,22 @@ class ProjectTask(models.Model):
             rated._send_task_rating_mail(force_send=True)
 
     def _apply_entered_step_state(self) -> None:
-        for step, tasks in self.sudo().grouped("step_id").items():
-            unblocked = tasks.filtered(lambda t: t.state != "blocked")
-            if step.task_state in CLOSED_STATES:
-                # a waiting task is closable, as the state widget offers it
-                state = step.task_state
-                changed = tasks.filtered(lambda t, state=state: t.state != state)
-            elif step.task_state:
-                state = step.task_state
-                changed = unblocked.filtered(lambda t, state=state: t.state != state)
-            else:
-                state = "in_progress"
-                changed = unblocked.filtered(
-                    lambda t: t.state in STATES_RESET_ON_STEP_CHANGE
-                )
+        task_ids_per_state = defaultdict(list)
+        privileged = self.sudo()
+        for task in privileged:
+            state = task._resolve_entered_step_state(task.state)
+            if state and state != task.state:
+                task_ids_per_state[state].append(task.id)
+        for state, task_ids in task_ids_per_state.items():
+            changed = privileged.browse(task_ids)
             _debug.logic(
                 "entered_step_state",
-                step=step.id,
+                steps=changed.step_id,
                 tasks=changed,
                 state=state,
-                closed_waiting=changed - unblocked,
+                closed_waiting=changed.filtered(lambda t: t.state == "blocked"),
             )
-            if changed:
-                changed.state = state
+            changed.state = state
 
     def _write_apply_state(
         self, vals: dict[str, Any], now: Any, state_changed: Self
