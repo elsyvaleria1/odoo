@@ -455,3 +455,17 @@ class TestTaskParentHashRole(TestProjectCommon):
         self.assertTrue(
             self.task_1._portal_verify_parent_hash(signature, pid, token=token)
         )
+
+
+class TestPrivateTaskWithoutAssignees(TestProjectCommon):
+    def test_the_creator_owns_a_private_task_created_without_assignees(self) -> None:
+        user = self.user_projectuser
+        for vals in ({"user_ids": []}, {"user_ids": [Command.set([])]}):
+            with self.subTest(vals=vals):
+                task = (
+                    self.env["project.task"]
+                    .with_user(user)
+                    .create({"name": "mine", **vals})
+                )
+                self.assertFalse(task.project_id)
+                self.assertEqual(task.user_ids, user)

@@ -2918,16 +2918,20 @@ class ProjectTask(models.Model):
         project_id = vals.get("project_id", default_project_id)
 
         assignees = self._get_assigned_users(vals)
+        # A task with no project is private to its assignees, so a creator who
+        # is not one of them could not read back what they just created; given
+        # no assignee at all, the creator is the one (default_get does the same
+        # when the vals name none).
+        if (
+            not (vals.get("parent_id") or project_id)
+            and not self._get_fields_assignment().isdisjoint(vals)
+            and self.env.user
+            not in (assignees | self.env["res.users"].browse(SUPERUSER_ID))
+        ):
+            assignees |= self.env.user
+            additional_vals.update(self._prepare_assignment_vals(assignees))
         if assignees:
             additional_vals["date_assign"] = fields.Datetime.now()
-            # A task with no project is private to its assignees, so a creator who
-            # is not one of them could not read back what they just created.
-            if not (vals.get("parent_id") or project_id) and self.env.user not in (
-                assignees | self.env["res.users"].browse(SUPERUSER_ID)
-            ):
-                additional_vals.update(
-                    self._prepare_assignment_vals(assignees | self.env.user)
-                )
         if default_triage and "triage_id" not in vals:
             additional_vals["triage_id"] = default_triage[0]
         if not vals.get("name") and vals.get("display_name"):

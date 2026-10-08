@@ -820,9 +820,6 @@ class ProjectProject(models.Model):
                 dep.dependency_type,
                 dep.lag_hours,
             )
-        for task in tasks:
-            for pred in task.predecessor_ids:
-                add_edge(task.id, pred.id, "fs", 0.0)
         duration = {task.id: task._get_cpm_duration_hours() for task in tasks}
         if _debug.pipeline.enabled:
             _debug.pipeline(
