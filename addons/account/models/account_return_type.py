@@ -86,7 +86,6 @@ class AccountReturnType(models.Model):
     )
     payment_partner_id = fields.Many2one(
         comodel_name="res.partner",
-        string="Payment Partner",
         compute="_compute_payment_partner_id",
         store=True,
         readonly=False,
@@ -116,7 +115,6 @@ class AccountReturnType(models.Model):
     )
     settlement_account_id = fields.Many2one(
         comodel_name="account.account",
-        string="Settlement Account",
         company_dependent=True,
         domain="[('account_type', '=', 'liability_payable'), ('reconcile', '=', True)]",
         tracking=True,

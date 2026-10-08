@@ -65,6 +65,7 @@ class AccountReturnSubmission(models.Model):
     request_attachment_id = fields.Many2one(
         comodel_name="ir.attachment",
         string="What Was Sent",
+        index="btree_not_null",
         readonly=True,
     )
     receipt_attachment_ids = fields.Many2many(
@@ -76,7 +77,6 @@ class AccountReturnSubmission(models.Model):
     error_message = fields.Text(compute="_compute_error_message")
     rectifies_id = fields.Many2one(
         comodel_name="account.return.submission",
-        string="Rectifies",
         index="btree_not_null",
         readonly=True,
     )
