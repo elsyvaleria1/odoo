@@ -352,3 +352,77 @@ class TestPosConfigDataLoad(TestPoSCommon):
         self.assertEqual(
             self.config._get_pos_data_change_date(), self.config.last_data_change
         )
+
+    def test_pricelist_is_rechecked_when_only_its_company_changes(self):
+        self.config.pricelist_id.company_id = self.config.company_id
+        company = self.env["res.company"].create({"name": "Pricelist destination"})
+        self.config.write(
+            {
+                "journal_id": False,
+                "invoice_journal_id": False,
+                "payment_method_ids": [Command.clear()],
+                "available_pricelist_ids": [Command.clear()],
+            }
+        )
+
+        with self.assertRaisesRegex(UserError, "pricelist_id"):
+            self.config.write({"company_id": company.id})
+
+    def test_a_pricelist_constraint_judges_each_config_on_its_own(self):
+        shared = self.env["product.pricelist"].create(
+            {
+                "name": "No company pricelist",
+                "company_id": False,
+                "currency_id": self.env.company.currency_id.id,
+            }
+        )
+        owned = self.env["product.pricelist"].create(
+            {
+                "name": "Own company pricelist",
+                "company_id": self.env.company.id,
+                "currency_id": self.env.company.currency_id.id,
+            }
+        )
+        first = self.config.copy({"name": "pl-a", "pricelist_id": shared.id})
+        second = self.config.copy({"name": "pl-b", "pricelist_id": owned.id})
+        (first | second)._check_company(["pricelist_id", "available_pricelist_ids"])
+
+    def test_read_config_open_orders_accepts_its_own_default(self):
+        self.config.read_config_open_orders({"pos.order": []})
+
+    def test_partner_paging_returns_each_partner_exactly_once(self):
+        self.env["res.partner"].create(
+            [
+                {"name": "Tied Partner", "company_id": self.env.company.id}
+                for _ in range(300)
+            ]
+        )
+        page_size = self.config._get_limited_partner_count()
+        seen = []
+        for offset in range(0, 400, page_size):
+            seen += [row[0] for row in self.config.get_limited_partners_loading(offset)]
+        self.assertEqual(len(seen), len(set(seen)), "paging returned a partner twice")
+
+    def test_archived_partners_do_not_consume_the_load_limit(self):
+        archived = self.env["res.partner"].create(
+            {"name": "Archived Partner", "company_id": self.env.company.id}
+        )
+        archived.active = False
+        loaded = [row[0] for row in self.config.get_limited_partners_loading()]
+        self.assertNotIn(archived.id, loaded)
+
+    def test_the_client_payload_carries_no_dashboard_computes_and_no_blob(self):
+        fields = self.env["pos.config"]._load_pos_data_fields(self.config)
+        self.assertTrue(fields, "pos.config must enumerate its client fields")
+        for excluded in (
+            "customer_display_bg_img",
+            "session_ids",
+            "statistics_for_current_session",
+            "last_session_closing_cash",
+            "last_session_closing_date",
+            "company_has_template",
+            "pos_session_username",
+        ):
+            self.assertNotIn(excluded, fields)
+        for required in ("id", "name", "company_id", "currency_id", "cash_control"):
+            self.assertIn(required, fields)

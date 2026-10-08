@@ -527,6 +527,67 @@ class CommonPosTest(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
         return untax, sum(tax.get("amount", 0.0) for tax in res["taxes"])
 
 
+class PosCashRoundingCommon(CommonPosTest):
+    def _open_session(self, rounding_method="HALF-UP"):
+        self.rounding = self.env["account.cash.rounding"].create(
+            {
+                "name": "Cash-only rounding",
+                "rounding": 0.05,
+                "rounding_method": rounding_method,
+                "profit_account_id": self.company_data["default_account_revenue"].id,
+                "loss_account_id": self.company_data["default_account_expense"].id,
+            }
+        )
+        self.pos_config_usd.write(
+            {
+                "cash_rounding": True,
+                "only_round_cash_method": True,
+                "rounding_method": self.rounding.id,
+            }
+        )
+        self.pos_config_usd.open_ui()
+        self.session = self.pos_config_usd.current_session_id
+
+    def _create_bare_order(self, **values):
+        return self.env["pos.order"].create(
+            {
+                "session_id": self.session.id,
+                "amount_tax": 0,
+                "amount_total": 0,
+                "amount_paid": 0,
+                "amount_return": 0,
+                **values,
+            }
+        )
+
+    def _create_line(self, order):
+        return self.env["pos.order.line"].create(
+            {
+                "order_id": order.id,
+                "product_id": self.product_a.id,
+                "qty": 1,
+                "price_unit": 0,
+                "price_subtotal": 0,
+                "price_subtotal_incl": 0,
+                "tax_ids": [Command.clear()],
+            }
+        )
+
+    def _sync_values(self, order, commands):
+        return {
+            "uuid": order.uuid,
+            "session_id": self.session.id,
+            "state": "draft",
+            "lines": commands,
+        }
+
+
+class PosCashRoundingSessionCommon(PosCashRoundingCommon):
+    def setUp(self):
+        super().setUp()
+        self._open_session()
+
+
 class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
     @classmethod
     def setUpClass(cls):

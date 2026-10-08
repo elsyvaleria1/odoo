@@ -3,7 +3,7 @@ import logging
 from odoo import fields
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest
+from odoo.addons.point_of_sale.tests.common import CommonPosTest, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
@@ -150,3 +150,31 @@ class TestPosOrderLookup(CommonPosTest):
         order = self._create_order()
         stamp = dict(self._lookup()["ordersInfo"])[order.id]
         self.assertEqual(stamp, fields.Datetime.to_datetime(stamp))
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderLookupSyncedOrders(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.product = self.create_product("Lookup product", self.categ_basic, 100, 50)
+
+    def test_the_count_matches_the_listed_orders_of_the_config_currency(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product, 1)],
+                    "payments": [(self.cash_pm1, 100)],
+                    "uuid": "audit-a2-%02d" % i,
+                }
+                for i in range(3)
+            ]
+        )
+        result = self.env["pos.order"].search_paid_order_ids(self.config.id, [], 100, 0)
+        _logger.info("Paid order lookup=%r", result)
+        self.assertEqual(result["totalCount"], 3)
+        self.assertEqual(len(result["ordersInfo"]), 3)
+        returned_ids = [oid for oid, _date in result["ordersInfo"]]
+        orders = self.env["pos.order"].browse(returned_ids)
+        self.assertTrue(all(o.currency_id == self.config.currency_id for o in orders))

@@ -2,6 +2,7 @@ import logging
 from unittest.mock import patch
 
 from odoo import Command
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
@@ -11,6 +12,11 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestPosConfigSynchronization(TestPoSCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.config = cls.basic_config
+
     def _create_sync_order(self):
         session = self.env["pos.session"].create({"config_id": self.basic_config.id})
         product = self.env["product.product"].create(
@@ -154,3 +160,65 @@ class TestPosConfigSynchronization(TestPoSCommon):
         )
         self.assertIn(move.id, loaded_ids)
         self.assertNotIn(move.id, result["deleted_record_ids"].get("account.move", []))
+
+    def test_trusted_configs_cannot_cross_company_boundaries(self):
+        company = self.env["res.company"].create({"name": "Foreign trust company"})
+        self.env["account.chart.template"].try_loading(
+            "generic_coa", company=company, install_demo=False
+        )
+        other = self.env["pos.config"].create(
+            {"name": "Foreign trust", "company_id": company.id}
+        )
+        config = self.config.with_context(
+            allowed_company_ids=[self.config.company_id.id, company.id]
+        )
+        self.assertEqual(config.currency_id, other.currency_id)
+        _logger.debug(
+            "Rejecting trust across companies %s and %s",
+            config.company_id.id,
+            company.id,
+        )
+        with (
+            self.assertRaisesRegex(ValidationError, "same company"),
+            self.env.cr.savepoint(),
+        ):
+            config.trusted_config_ids = other
+
+        target = config.copy({"name": "Incoming trust target"})
+        config.trusted_config_ids = target
+        config.active = False
+        _logger.debug("Checking incoming trust from archived config %s", config.id)
+        with (
+            self.assertRaisesRegex(ValidationError, "same company"),
+            self.env.cr.savepoint(),
+        ):
+            target.write(
+                {
+                    "company_id": company.id,
+                    "journal_id": other.journal_id.id,
+                    "invoice_journal_id": other.invoice_journal_id.id,
+                    "picking_type_id": other.picking_type_id.id,
+                    "pricelist_id": False,
+                    "available_pricelist_ids": [Command.clear()],
+                    "payment_method_ids": [Command.clear()],
+                }
+            )
+
+    def test_synchronisation_rechecks_changed_journal_currency(self):
+        target = self.config.copy({"name": "Currency trust target"})
+        target.journal_id = self.config.journal_id.copy({"name": "Trust journal"})
+        self.config.trusted_config_ids = target
+        currency = (
+            self.env["res.currency"]
+            .with_context(active_test=False)
+            .search([("id", "!=", self.config.currency_id.id)], limit=1)
+        )
+        currency.active = True
+        target.journal_id.currency_id = currency
+        _logger.debug(
+            "Synchronization currency source=%s target=%s",
+            self.config.currency_id.id,
+            target.currency_id.id,
+        )
+        with self.assertRaisesRegex(ValidationError, "same currency"):
+            self.config.notify_synchronisation(False, "challenge")

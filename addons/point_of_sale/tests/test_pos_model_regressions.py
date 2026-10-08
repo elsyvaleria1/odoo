@@ -15,8 +15,7 @@ from odoo.addons.point_of_sale.models.pos_config import (
 )
 from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
-log = logging.getLogger("odoo.addons.point_of_sale.debug.challenge")
-log.setLevel(logging.DEBUG)
+_logger = logging.getLogger(__name__)
 
 
 def _get_counted(original, calls):
@@ -44,8 +43,8 @@ class TestPosModelRegressions(CommonPosTest):
         country.with_context(lang="es_MX").name = "Antártida editada"
         self.assertIn("Antártida editada", spanish.pos_contact_address)
         self.assertIn("Antarctica", english.pos_contact_address)
-        log.debug(
-            "CHALLENGE address en=%r es=%r",
+        _logger.debug(
+            "address en=%r es=%r",
             english.pos_contact_address,
             spanish.pos_contact_address,
         )
@@ -87,9 +86,7 @@ class TestPosModelRegressions(CommonPosTest):
                 self.assertEqual(partner.write_date, partner_date)
                 delta = incremental.load_data([])
                 rows = {row["id"]: row for row in delta[record._name]}
-                log.debug(
-                    "CHALLENGE edited=%s id=%s delta=%s", record._name, record.id, rows
-                )
+                _logger.debug("edited=%s id=%s delta=%s", record._name, record.id, rows)
                 self.assertIn(record.id, rows)
                 self.assertEqual(rows[record.id]["name"], "Edited address label")
                 self.assertIn(partner.id, {row["id"] for row in delta["res.partner"]})
@@ -120,7 +117,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(leaf.display_name, "New ancestor / Middle / Leaf")
         middle.parent_id = False
         self.assertEqual(leaf.display_name, "Middle / Leaf")
-        log.debug("CHALLENGE reparented warm category=%s", leaf.display_name)
+        _logger.debug("reparented warm category=%s", leaf.display_name)
 
     def test_cashier_can_load_state_only_partner(self):
         cashier = new_test_user(
@@ -145,7 +142,7 @@ class TestPosModelRegressions(CommonPosTest):
             .with_user(cashier)
             .get_new_partner(self.pos_config_usd.id, [("id", "=", partner.id)], 0)
         )
-        log.debug("CHALLENGE cashier=%s countries=%s", cashier.id, data["res.country"])
+        _logger.debug("cashier=%s countries=%s", cashier.id, data["res.country"])
         self.assertEqual([row["id"] for row in data["res.partner"]], partner.ids)
         self.assertIn(country.id, {row["id"] for row in data["res.country"]})
         self.assertIn(state.id, {row["id"] for row in data["res.country.state"]})
@@ -154,7 +151,7 @@ class TestPosModelRegressions(CommonPosTest):
         parameters = self.env["ir.config_parameter"].sudo()
         for name in ("limited_product_count", "limited_customer_count"):
             parameters.set_param(f"point_of_sale.{name}", str(2**63))
-        log.debug("CHALLENGE load with limits outside PostgreSQL bigint range")
+        _logger.debug("load with limits outside PostgreSQL bigint range")
         data = self._session().load_data([])
         self.assertTrue(data["product.template"])
         self.assertTrue(data["res.partner"])
@@ -163,7 +160,7 @@ class TestPosModelRegressions(CommonPosTest):
         parameters = self.env["ir.config_parameter"].sudo()
         for name in ("limited_product_count", "limited_customer_count"):
             parameters.set_param(f"point_of_sale.{name}", "-1")
-        log.debug(
+        _logger.debug(
             "LOAD negative product and customer limits through complete session load"
         )
         data = self._session().load_data([])
@@ -189,7 +186,7 @@ class TestPosModelRegressions(CommonPosTest):
                 with self.subTest(name=name, value=value):
                     parameters.set_param(f"point_of_sale.{name}", value)
                     count = getter()
-                    log.debug(
+                    _logger.debug(
                         "LOAD parameter=%s value=%r parsed=%s", name, value, count
                     )
                     if value in ("invalid", "-1"):
@@ -254,8 +251,8 @@ class TestPosModelRegressions(CommonPosTest):
             )
         )
         records.invalidate_recordset(["write_date"])
-        log.debug(
-            "CHALLENGE stamp %s ids=%s dates=%s",
+        _logger.debug(
+            "stamp %s ids=%s dates=%s",
             records._name,
             records.ids,
             records.mapped("write_date"),
@@ -315,8 +312,8 @@ class TestPosModelRegressions(CommonPosTest):
                 [("product_id", "=", product.id), ("location_id", "in", bins.ids)]
             )
             balances = sorted(quants.mapped("quantity"))
-            log.debug(
-                "CHALLENGE stock persisted=%s split=%s states=%s balances=%s",
+            _logger.debug(
+                "stock persisted=%s split=%s states=%s balances=%s",
                 order.lines.ids,
                 split,
                 order.picking_ids.mapped("state"),
@@ -355,8 +352,8 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(
             normal["res.partner"][0]["fiscal_position_id"], positions[0].id
         )
-        log.debug(
-            "CHALLENGE fiscal first=%s switched=%s fresh=%s normal_payload=%s",
+        _logger.debug(
+            "fiscal first=%s switched=%s fresh=%s normal_payload=%s",
             first.id,
             switched.id,
             fresh.id,
@@ -388,8 +385,8 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertIn(partner.id, [row["id"] for row in delta["res.partner"]])
         self.assertIn(country.id, [row["id"] for row in delta["res.country"]])
         self.assertIn(country.id, [row["id"] for row in full["res.country"]])
-        log.debug(
-            "CHALLENGE country initial=%s delta_partners=%s delta_countries=%s full_countries=%s cutoff=%s config_change=%s",
+        _logger.debug(
+            "country initial=%s delta_partners=%s delta_countries=%s full_countries=%s cutoff=%s config_change=%s",
             [r["id"] for r in initial["res.country"]],
             [r["id"] for r in delta["res.partner"]],
             [r["id"] for r in delta["res.country"]],
@@ -435,8 +432,8 @@ class TestPosModelRegressions(CommonPosTest):
         def ids(data):
             return [row["id"] for row in data["product.pricelist.item"]]
 
-        log.debug(
-            "CHALLENGE scheduled initial=%s delta=%s full=%s item=%s config_change=%s cutoff=%s",
+        _logger.debug(
+            "scheduled initial=%s delta=%s full=%s item=%s config_change=%s cutoff=%s",
             ids(initial),
             ids(delta),
             ids(full),
@@ -462,7 +459,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(before, "Root / Middle / Leaf")
         self.assertEqual(stale, "Changed / Middle / Leaf")
         self.assertEqual(fresh, "Changed / Middle / Leaf")
-        log.debug("CHALLENGE category depth=3 stale=%r fresh=%r", stale, fresh)
+        _logger.debug("category depth=3 stale=%r fresh=%r", stale, fresh)
 
     def test_dst_default_and_explicit_window_controls(self):
         report = self.env["report.point_of_sale.report_saledetails"].with_context(
@@ -487,8 +484,8 @@ class TestPosModelRegressions(CommonPosTest):
             ).astimezone(UTC).replace(tzinfo=None) - timedelta(microseconds=1)
             explicit = report._get_date_start_and_date_stop(start, expected_stop)
             self.assertEqual(explicit, (start, expected_stop))
-            log.debug(
-                "CHALLENGE DST day=%s implicit_stop=%s explicit_stop_utc=%s",
+            _logger.debug(
+                "DST day=%s implicit_stop=%s explicit_stop_utc=%s",
                 day,
                 local_stop,
                 explicit[1],
@@ -546,8 +543,8 @@ class TestPosModelRegressions(CommonPosTest):
         )
         order._create_order_picking()
         moves = order.picking_ids.move_ids
-        log.debug(
-            "CHALLENGE grouping ordered=%s demands=%s done_quantities=%s attrs=%s",
+        _logger.debug(
+            "grouping ordered=%s demands=%s done_quantities=%s attrs=%s",
             sum(order.lines.mapped("qty")),
             moves.mapped("product_uom_qty"),
             moves.mapped("quantity"),
@@ -574,7 +571,7 @@ class TestPosModelRegressions(CommonPosTest):
             order.lines, are_quantities_done=False
         )
         self.assertEqual(reserved_moves.mapped("quantity"), [1, 1])
-        log.debug(
+        _logger.debug(
             "STOCK attribute reservation quantities=%s",
             reserved_moves.mapped("quantity"),
         )
@@ -624,8 +621,8 @@ class TestPosModelRegressions(CommonPosTest):
         report_model = self.env["report.point_of_sale.report_saledetails"]
         single = report_model.get_sale_details(session_ids=orders[0].session_id.ids)
         report = report_model.get_sale_details(session_ids=orders.session_id.ids)
-        log.debug(
-            "CHALLENGE currencies=%s converted=%s product_total=%s payments=%s single=%s",
+        _logger.debug(
+            "currencies=%s converted=%s product_total=%s payments=%s single=%s",
             orders.currency_id.mapped("name"),
             report["currency"]["total_paid"],
             report["products_info"]["total"],
@@ -649,8 +646,8 @@ class TestPosModelRegressions(CommonPosTest):
             method.write({"name": "Mutation while session open"})
         method.invalidate_recordset(["open_session_ids"])
         fresh = method.open_session_ids
-        log.debug(
-            "CHALLENGE payment guard cached=%s fresh=%s session=%s",
+        _logger.debug(
+            "payment guard cached=%s fresh=%s session=%s",
             cached.ids,
             fresh.ids,
             session.id,
@@ -720,8 +717,8 @@ class TestPosModelRegressions(CommonPosTest):
         correct_next = self.env["res.partner"].get_new_partner(
             self.pos_config_usd.id, [], 3
         )["res.partner"]
-        log.debug(
-            "CHALLENGE pagination ranked=%s first=%s client_offset=%s next=%s correct_next=%s",
+        _logger.debug(
+            "pagination ranked=%s first=%s client_offset=%s next=%s correct_next=%s",
             ranked,
             [r["id"] for r in first],
             client_offset,
@@ -753,8 +750,8 @@ class TestPosModelRegressions(CommonPosTest):
                 ),
             ):
                 method.write({"sequence": method.sequence + 1})
-            log.debug(
-                "CHALLENGE debug-label lifecycle_enabled=%s computed_calls=%s",
+            _logger.debug(
+                "debug-label lifecycle_enabled=%s computed_calls=%s",
                 enabled,
                 calls,
             )
@@ -778,8 +775,8 @@ class TestPosModelRegressions(CommonPosTest):
                 self.pos_config_usd,
             )
         )
-        log.debug(
-            "CHALLENGE variant cutoff=%s persisted_write=%s ids=%s",
+        _logger.debug(
+            "variant cutoff=%s persisted_write=%s ids=%s",
             cutoff,
             product.write_date,
             [r["id"] for r in rows],
@@ -808,8 +805,8 @@ class TestPosModelRegressions(CommonPosTest):
             line.with_context(check_move_validity=False).write(
                 {"debit": line.debit + 1}
             )
-            log.debug(
-                "CHALLENGE injected imbalance=%s into move=%s",
+            _logger.debug(
+                "injected imbalance=%s into move=%s",
                 sum(record.move_id.line_ids.mapped("balance")),
                 record.move_id.id,
             )
@@ -823,8 +820,8 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertFalse(session.move_id)
         session.action_pos_session_closing_control()
         self.assertEqual(session.state, "closed")
-        log.debug(
-            "CHALLENGE unbalanced close preserved order=%s and retry closed session=%s",
+        _logger.debug(
+            "unbalanced close preserved order=%s and retry closed session=%s",
             order.id,
             session.id,
         )
@@ -863,7 +860,7 @@ class TestPosModelRegressions(CommonPosTest):
         report = self.env["report.point_of_sale.report_saledetails"].get_sale_details(
             session_ids=orders.session_id.ids,
         )
-        log.debug(
+        _logger.debug(
             "REPORT taxed currencies totals=%s taxes=%s discounts=%s payments=%s",
             report["currency"],
             report["taxes_info"],
@@ -908,7 +905,7 @@ class TestPosModelRegressions(CommonPosTest):
         report = self.env["report.point_of_sale.report_saledetails"].get_sale_details(
             session_ids=orders.session_id.ids
         )
-        log.debug(
+        _logger.debug(
             "REPORT date-sensitive sale=%s payments=%s",
             report["currency"]["total_paid"],
             report["total_paid"],
@@ -929,7 +926,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(partner.fiscal_position_id, positions[0])
         partner.property_account_position_id = positions[1]
         self.assertEqual(partner.fiscal_position_id, positions[1])
-        log.debug(
+        _logger.debug(
             "CACHE fiscal property change resolved position=%s",
             partner.fiscal_position_id.id,
         )
@@ -949,7 +946,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(domain, [("id", "=", partner.id)])
         self.assertIn(country.id, [row["id"] for row in result["res.country"]])
         self.assertIn(state.id, [row["id"] for row in result["res.country.state"]])
-        log.debug(
+        _logger.debug(
             "LOAD on demand partner=%s country=%s state=%s",
             partner.id,
             country.id,
@@ -974,7 +971,7 @@ class TestPosModelRegressions(CommonPosTest):
         )
         countries = {row["id"] for row in result["res.country"]}
         states = {row["id"]: row for row in result["res.country.state"]}
-        log.debug(
+        _logger.debug(
             "LOAD state-only partner=%s states=%s countries=%s",
             partner.id,
             states,
@@ -1029,7 +1026,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertIn(
             item.id, [row["id"] for row in on_demand["product.pricelist.item"]]
         )
-        log.debug(
+        _logger.debug(
             "LOAD unchanged product=%s scheduled item=%s included in delta and on demand",
             product.id,
             item.id,
@@ -1077,7 +1074,7 @@ class TestPosModelRegressions(CommonPosTest):
                 if row["session"] == eur_order.session_id.id
                 and row["id"] == self.bank_payment_method.id
             )
-            log.debug("REPORT foreign closed count=%s", row)
+            _logger.debug("REPORT foreign closed count=%s", row)
             self.assertEqual(row["total"], total)
             self.assertEqual(row["money_counted"], counted)
             self.assertEqual(row["money_difference"], difference)
@@ -1107,7 +1104,7 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(payment.currency_id, order.currency_id)
         self.assertEqual(payment.amount, 100)
         self.assertEqual(payment.amount_company_currency_signed, 200)
-        log.debug(
+        _logger.debug(
             "ACCOUNT split foreign payment=%s currency=%s amount=%s company_amount=%s",
             payment.id,
             payment.currency_id.name,
@@ -1156,7 +1153,9 @@ class TestPosModelRegressions(CommonPosTest):
         self.assertEqual(row["money_counted"], 400)
         self.assertEqual(row["final_count"], 400)
         self.assertEqual(row["money_difference"], 0)
-        log.debug("REPORT sale rate and closing rate differ without shortage: %s", row)
+        _logger.debug(
+            "REPORT sale rate and closing rate differ without shortage: %s", row
+        )
 
     def test_foreign_invoice_rows_and_totals_use_report_currency(self):
         self._set_report_rates()
@@ -1186,7 +1185,7 @@ class TestPosModelRegressions(CommonPosTest):
             )
             self.assertEqual(invoice_amount, expected)
             self.assertEqual(report["invoice_total"], expected)
-            log.debug(
+            _logger.debug(
                 "REPORT foreign invoice rows=%s total=%s",
                 invoice_amount,
                 report["invoice_total"],
@@ -1208,7 +1207,7 @@ class TestPosModelRegressions(CommonPosTest):
 
         result = orders.action_pos_order_cancel()
 
-        log.debug("Cancelled %s -> %s", orders.ids, result)
+        _logger.debug("Cancelled %s -> %s", orders.ids, result)
         self.assertEqual(set(orders.mapped("state")), {"cancel"})
         self.assertCountEqual([row["id"] for row in result["pos.order"]], orders.ids)
 

@@ -1,36 +1,19 @@
 import logging
 
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest, TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import (
+    PosCashRoundingCommon,
+    PosCashRoundingSessionCommon,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 @tagged("post_install", "-at_install")
-class TestPosOrderSettlement(CommonPosTest):
-    def _open_session(self, rounding_method="HALF-UP"):
-        self.rounding = self.env["account.cash.rounding"].create(
-            {
-                "name": "Settlement cash rounding",
-                "rounding": 0.05,
-                "rounding_method": rounding_method,
-                "profit_account_id": self.company_data["default_account_revenue"].id,
-                "loss_account_id": self.company_data["default_account_expense"].id,
-            }
-        )
-        self.pos_config_usd.write(
-            {
-                "cash_rounding": True,
-                "only_round_cash_method": True,
-                "rounding_method": self.rounding.id,
-            }
-        )
-        self.pos_config_usd.open_ui()
-        self.session = self.pos_config_usd.current_session_id
-
+class TestPosOrderSettlement(PosCashRoundingCommon):
     def _create_order(self, price_unit, **values):
         order = self.env["pos.order"].create(
             {
@@ -220,86 +203,300 @@ class TestPosOrderSettlement(CommonPosTest):
 
 
 @tagged("post_install", "-at_install")
-class TestPosRefundQuantities(TestPoSCommon):
-    def setUp(self):
-        super().setUp()
-        self.config = self.basic_config
-        self.product = self.create_product("Refundable", self.categ_basic, 10)
-        self.session = self._start_pos_session(self.cash_pm1, 0)
-        self.original = self._sync([(self.product, 2)])
-
-    def _sync(self, lines, refunded_line=None):
-        args = [
+class TestPosOrderPaidPaymentEdits(PosCashRoundingSessionCommon):
+    def _create_rounded_paid_order(self, sign=1):
+        order = self._create_bare_order(is_refund=sign < 0)
+        line = self._create_line(order)
+        line.write({"qty": sign, "price_unit": 10.02})
+        order._recompute_amounts()
+        order.add_payment(
             {
-                "product": product,
-                "quantity": qty,
-                **(
-                    {"refunded_orderline_id": refunded_line.id} if refunded_line else {}
-                ),
+                "pos_order_id": order.id,
+                "payment_method_id": self.cash_payment_method.id,
+                "amount": sign * 10,
             }
-            for product, qty in lines
-        ]
-        data = self.create_ui_order_data(args)
-        if refunded_line:
-            data["is_refund"] = True
-        result = self.env["pos.order"].sync_from_ui([data])
-        return self.env["pos.order"].browse(
-            row["id"] for row in result["pos.order"] if row["uuid"] == data["uuid"]
         )
+        order.action_pos_order_paid()
+        return order
 
-    def test_an_over_refund_from_the_till_is_recorded_and_flagged(self):
-        line = self.original.lines
-        self._sync([(self.product, -1)], line)
-        self._sync([(self.product, -1)], line)
-        self.assertEqual(line.refunded_qty, 2)
+    def test_paid_cash_payment_can_switch_to_exact_bank_settlement(self):
+        for sign in (1, -1):
+            with self.subTest(sign=sign):
+                order = self._create_rounded_paid_order(sign)
+                order.write(
+                    {
+                        "payment_ids": [
+                            Command.update(
+                                order.payment_ids.id,
+                                {
+                                    "payment_method_id": self.bank_payment_method.id,
+                                    "amount": sign * 10.02,
+                                },
+                            )
+                        ]
+                    }
+                )
+                self.assertEqual(
+                    order.payment_ids.payment_method_id, self.bank_payment_method
+                )
+                self.assertEqual(order.amount_paid, sign * 10.02)
+                self.assertTrue(order._is_payment_amount_valid())
 
-        over = self._sync([(self.product, -1)], line)
+    def test_rounded_paid_payment_updates_preserve_valid_settlement(self):
+        for sign in (1, -1):
+            for state in ("paid", "done"):
+                with self.subTest(sign=sign, state=state):
+                    order = self._create_rounded_paid_order(sign)
+                    order.state = state
+                    before = order.message_ids
+                    order.write(
+                        {
+                            "payment_ids": [
+                                Command.update(
+                                    order.payment_ids.id, {"name": "terminal reference"}
+                                )
+                            ]
+                        }
+                    )
+                    self.assertEqual(order.amount_paid, sign * 10)
+                    self.assertEqual(order.state, state)
+                    self.assertFalse(order.message_ids - before)
 
-        _logger.debug("Refunded %s of %s", line.refunded_qty, line.qty)
-        self.assertEqual(over.state, "paid")
-        self.assertEqual(line.refunded_qty, 3)
-        self.assertIn("returns more than was sold", over.message_ids[0].body)
+    def test_paid_refund_cannot_be_edited_to_underpay_customer(self):
+        for state in ("paid", "done"):
+            with self.subTest(state=state):
+                order = self._create_rounded_paid_order(-1)
+                order.state = state
+                with self.assertRaises(UserError):
+                    order.write(
+                        {
+                            "payment_ids": [
+                                Command.update(order.payment_ids.id, {"amount": -9})
+                            ]
+                        }
+                    )
+                self.assertEqual(order.amount_paid, -10)
 
-    def test_a_draft_refund_does_not_block_a_paid_one(self):
-        line = self.original.lines
-        draft = self.create_ui_order_data(
-            [
-                {
-                    "product": self.product,
-                    "quantity": -2,
-                    "refunded_orderline_id": line.id,
+    def test_paid_payment_edits_still_reject_underpayment_and_warn_overpayment(self):
+        for sign in (1, -1):
+            with self.subTest(sign=sign):
+                order = self._create_rounded_paid_order(sign)
+                with self.assertRaises(UserError):
+                    order.write(
+                        {
+                            "payment_ids": [
+                                Command.update(
+                                    order.payment_ids.id, {"amount": sign * 9}
+                                )
+                            ]
+                        }
+                    )
+                previous = order.message_ids
+                values = {
+                    "payment_ids": [
+                        Command.update(order.payment_ids.id, {"amount": sign * 11})
+                    ]
                 }
-            ],
-            pos_order_ui_args={"state": "draft", "is_refund": True},
-            payments=[],
+                if sign < 0:
+                    # Preserve the existing rejection of excessive refund payments.
+                    with self.assertRaises(UserError):
+                        order.write(values)
+                else:
+                    order.write(values)
+                    self.assertIn(
+                        "higher than the total", (order.message_ids - previous).body
+                    )
+
+    def test_paid_cash_rounding_cannot_be_kept_after_switching_to_bank(self):
+        for sign in (1, -1):
+            with self.subTest(sign=sign):
+                order = self._create_rounded_paid_order(sign)
+                with self.assertRaises(UserError):
+                    order.write(
+                        {
+                            "payment_ids": [
+                                Command.update(
+                                    order.payment_ids.id,
+                                    {
+                                        "payment_method_id": self.bank_payment_method.id,
+                                    },
+                                )
+                            ]
+                        }
+                    )
+                self.assertEqual(
+                    order.payment_ids.payment_method_id, self.cash_payment_method
+                )
+
+    def test_zero_payment_edit_is_in_chatter(self):
+        order = self._create_bare_order()
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "payment_method_id": self.cash_payment_method.id,
+                "amount": 5,
+            }
         )
-        self.env["pos.order"].sync_from_ui([draft])
-        _logger.debug("Draft refund pending: refunded_qty=%s", line.refunded_qty)
+        previous_messages = order.message_ids
 
-        self._sync([(self.product, -2)], line)
-
-        self.assertEqual(
-            self.env["pos.order"].search([("uuid", "=", draft["uuid"])]).state, "draft"
+        order.write(
+            {"payment_ids": [Command.update(order.payment_ids.id, {"amount": 0})]}
         )
 
-    def test_a_draft_refund_settled_by_the_wizard_cannot_over_refund(self):
-        line = self.original.lines
-        draft = self.create_ui_order_data(
-            [
+        messages = order.message_ids - previous_messages
+        self.assertEqual(len(messages), 1)
+        self.assertIn("changed from", messages.body)
+        self.assertEqual(order.amount_paid, 0)
+
+    def test_zero_edit_with_method_change_preserves_both_history_values(self):
+        order = self._create_bare_order()
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "payment_method_id": self.cash_payment_method.id,
+                "amount": 5,
+            }
+        )
+        before = order.message_ids
+
+        order.write(
+            {
+                "payment_ids": [
+                    Command.update(
+                        order.payment_ids.id,
+                        {
+                            "amount": 0,
+                            "payment_method_id": self.bank_payment_method.id,
+                        },
+                    )
+                ]
+            }
+        )
+
+        messages = order.message_ids - before
+        self.assertEqual(len(messages), 1)
+        self.assertIn(self.cash_payment_method.name, messages.body)
+        self.assertIn(self.bank_payment_method.name, messages.body)
+        self.assertIn("and from", messages.body)
+        self.assertIn("0.00", messages.body)
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderCashOnlyRounding(PosCashRoundingSessionCommon):
+    def test_card_underpayment_cannot_use_cash_only_tolerance(self):
+        order = self._create_bare_order(amount_total=10.02)
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "payment_method_id": self.bank_payment_method.id,
+                "amount": 10,
+            }
+        )
+        _logger.debug(
+            "Card-only payment: total=%s paid=%s", order.amount_total, order.amount_paid
+        )
+
+        with self.assertRaises(UserError):
+            order.action_pos_order_paid()
+
+        self.assertEqual(order.state, "draft")
+
+    def test_cash_payment_can_use_cash_rounding(self):
+        order = self._create_bare_order(amount_total=10.02)
+        order.add_payment(
+            {
+                "pos_order_id": order.id,
+                "payment_method_id": self.cash_payment_method.id,
+                "amount": 10,
+            }
+        )
+
+        order.action_pos_order_paid()
+
+        self.assertEqual(order.state, "paid")
+
+    def test_cash_only_rounding_through_sync_with_real_totals(self):
+        self.product_a.type = "service"
+        for sign in (1, -1):
+            for method in (self.cash_payment_method, self.bank_payment_method):
+                with self.subTest(sign=sign, method=method.name):
+                    order = self._create_bare_order(is_refund=sign < 0)
+                    line = self._create_line(order)
+                    line.write({"qty": sign, "price_unit": 10.02})
+                    order._recompute_amounts()
+                    self.assertEqual(order.amount_total, sign * 10.02)
+                    values = self._sync_values(order, [])
+                    values.update(
+                        {
+                            "state": "paid",
+                            "payment_ids": [
+                                Command.create(
+                                    {
+                                        "payment_method_id": method.id,
+                                        "amount": sign * 10,
+                                    }
+                                )
+                            ],
+                        }
+                    )
+
+                    if method == self.bank_payment_method:
+                        with self.assertRaises(UserError), self.env.cr.savepoint():
+                            self.env["pos.order"].sync_from_ui([values])
+                        self.assertEqual(order.state, "draft")
+                        self.assertFalse(order.payment_ids)
+                    else:
+                        self.env["pos.order"].sync_from_ui([values])
+                        self.assertEqual(order.state, "paid")
+
+    def test_zero_cash_line_preserves_explicit_rounding_intent(self):
+        order = self._create_bare_order(amount_total=10.02)
+        for method, amount in (
+            (self.bank_payment_method, 10),
+            (self.cash_payment_method, 0),
+        ):
+            order.add_payment(
                 {
-                    "product": self.product,
-                    "quantity": -2,
-                    "refunded_orderline_id": line.id,
+                    "pos_order_id": order.id,
+                    "payment_method_id": method.id,
+                    "amount": amount,
                 }
-            ],
-            pos_order_ui_args={"state": "draft", "is_refund": True},
-            payments=[],
+            )
+
+        order.action_pos_order_paid()
+
+        self.assertEqual(order.state, "paid")
+
+    def test_cash_payment_can_round_the_entire_order_to_zero(self):
+        self.session.set_opening_control(0, None)
+        order = self._create_bare_order()
+        self.product_a.type = "service"
+        line = self._create_line(order)
+        line.price_unit = 0.02
+        order._recompute_amounts()
+        self.assertEqual(order.amount_total, 0.02)
+        values = self._sync_values(order, [])
+        values.update(
+            {
+                "state": "paid",
+                "payment_ids": [
+                    Command.create(
+                        {
+                            "payment_method_id": self.cash_payment_method.id,
+                            "amount": 0,
+                        }
+                    )
+                ],
+            }
         )
-        self.env["pos.order"].sync_from_ui([draft])
-        draft_refund = self.env["pos.order"].search([("uuid", "=", draft["uuid"])])
-        self._sync([(self.product, -2)], line)
 
-        with self.assertRaises(ValidationError):
-            self.make_payment(draft_refund, self.cash_pm1, draft_refund.amount_total)
+        self.env["pos.order"].sync_from_ui([values])
 
-        self.assertEqual(draft_refund.state, "draft")
+        self.assertEqual(order.state, "paid")
+        self.assertEqual(order.amount_paid, 0)
+        self.assertEqual(order.payment_ids.payment_method_id, self.cash_payment_method)
+
+        self.session.action_pos_session_closing_control()
+
+        self.assertEqual(self.session.state, "closed")
+        self.assertEqual(self.session.move_id.state, "posted")

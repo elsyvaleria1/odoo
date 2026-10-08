@@ -1,7 +1,11 @@
+import logging
+
 import odoo
 from odoo.exceptions import UserError, ValidationError
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -241,3 +245,41 @@ class TestPosInvoiceGuards(TestPoSCommon):
         self.assertEqual(payment.amount, 90)
         payment.unlink()
         self.assertFalse(order.payment_ids)
+
+    def test_a_cash_order_needs_no_invoice_journal(self):
+        self.config.invoice_journal_id = False
+        self._start_pos_session(self.cash_pm1, 0)
+        raised = None
+        try:
+            self._create_orders(
+                [
+                    {
+                        "pos_order_lines_ui_args": [(self.product, 1)],
+                        "payments": [(self.cash_pm1, 100)],
+                        "is_invoiced": False,
+                        "uuid": "audit-c1-0001",
+                    },
+                ]
+            )
+        except UserError as e:
+            raised = e
+        _logger.info("Order without invoice journal: raised=%r", raised)
+        self.assertIsNone(
+            raised,
+            "a normal non-invoiced cash order was rejected because "
+            "the config has no invoice journal: %s" % raised,
+        )
+
+    def test_a_cash_order_syncs_with_an_invoice_journal(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        orders = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product, 1)],
+                    "payments": [(self.cash_pm1, 100)],
+                    "is_invoiced": False,
+                    "uuid": "audit-c1b-0001",
+                },
+            ]
+        )
+        self.assertEqual(len(orders), 1)

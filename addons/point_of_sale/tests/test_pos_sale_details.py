@@ -165,6 +165,41 @@ class TestPosSaleDetails(TestPoSCommon):
             "a session straddling the window start must not be filtered out",
         )
 
+    def test_grand_totals_count_identical_rows_of_each_category(self):
+        report = self.env["report.point_of_sale.report_saledetails"]
+        row = {
+            "product_id": 1,
+            "product_name": "Widget",
+            "barcode": False,
+            "quantity": 3.0,
+            "price_unit": 10.0,
+            "discount": 0.0,
+            "uom": "Units",
+            "total_paid": 30.0,
+            "base_amount": 30.0,
+            "combo_products_label": False,
+        }
+        categories = [
+            {"name": "Cat A", "products": [dict(row)]},
+            {"name": "Cat B", "products": [dict(row)]},
+        ]
+        _, totals = report._get_total_and_qty_per_category(
+            categories, self.env.company.currency_id
+        )
+        _logger.info("Grand totals: %r", totals)
+        self.assertEqual(
+            totals["qty"],
+            6.0,
+            "grand total qty deduplicated identical rows "
+            "(got %s, expected 6.0)" % totals["qty"],
+        )
+        self.assertEqual(
+            totals["total"],
+            60.0,
+            "grand total amount deduplicated identical rows "
+            "(got %s, expected 60.0)" % totals["total"],
+        )
+
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosCategoryGuards(TestPoSCommon):
@@ -873,7 +908,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         self.assertEqual(report["products"][0]["total"], 0.125)
         self.assertEqual(report["taxes_info"]["base_amount"], 0.125)
 
-    def test_challenge_cash_reconciles_before_and_after_close(self):
+    def test_cash_reconciles_before_and_after_close(self):
         self.config.cash_control = True
         self.config.open_ui()
         session = self.config.current_session_id
@@ -892,7 +927,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
                 report = self.report.get_sale_details(session_ids=session.ids)
                 row = next(row for row in report["payments"] if row["cash"])
                 _logger.debug(
-                    "CHALLENGE drawer closed=%s model_expected=%s row=%s",
+                    "drawer closed=%s model_expected=%s row=%s",
                     closed,
                     session.cash_register_balance_end,
                     row,
@@ -905,7 +940,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
                 if closed:
                     self.assertEqual(row["money_difference"], -2)
 
-    def test_challenge_difference_survives_language_and_method_rename(self):
+    def test_difference_survives_language_and_method_rename(self):
         self.env["res.lang"]._activate_lang("fr_FR")
         session = self._open_session()
         product = self.create_product("Renamed method", self.categ_basic, 100)
@@ -923,11 +958,11 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         row = next(
             row for row in report["payments"] if row["id"] == self.bank_split_pm1.id
         )
-        _logger.debug("CHALLENGE renamed split method row=%s", row)
+        _logger.debug("renamed split method row=%s", row)
         self.assertEqual(row["money_counted"], 80)
         self.assertEqual(row["money_difference"], -20)
 
-    def test_challenge_zero_net_invoices_are_rendered(self):
+    def test_zero_net_invoices_are_rendered(self):
         product = self.create_product("Offset invoices", self.categ_basic, 100)
         product.type = "service"
         session = self._open_session()
@@ -949,7 +984,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         )[0]
 
         _logger.debug(
-            "CHALLENGE offset invoices rows=%s total=%s rendered=%s",
+            "offset invoices rows=%s total=%s rendered=%s",
             report["invoice_list"],
             report["invoice_total"],
             b'id="invoices"' in html,
@@ -959,14 +994,14 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         for move in (order | refund).account_move:
             self.assertIn(move.name.encode(), html)
 
-    def test_challenge_report_denies_public_user(self):
+    def test_report_denies_public_user(self):
         session = self._open_session()
         with self.assertRaises(AccessError):
             self.report.with_user(self.env.ref("base.public_user")).get_sale_details(
                 session_ids=session.ids
             )
 
-    def test_challenge_quiet_closed_drawer_uses_its_own_opening(self):
+    def test_quiet_closed_drawer_uses_its_own_opening(self):
         self.config.cash_control = True
         self.config.open_ui()
         previous = self.config.current_session_id
@@ -983,7 +1018,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
 
         row = next(row for row in report["payments"] if row["cash"])
         _logger.debug(
-            "CHALLENGE quiet drawer previous=%s opening=%s row=%s",
+            "quiet drawer previous=%s opening=%s row=%s",
             previous.cash_register_balance_end_real,
             current.cash_register_balance_start,
             row,
@@ -991,7 +1026,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         self.assertEqual(row["final_count"], 75)
         self.assertEqual(row["money_difference"], 0)
 
-    def test_challenge_same_currency_payment_fast_path(self):
+    def test_same_currency_payment_fast_path(self):
         product = self.create_product("Grouped payment", self.categ_basic, 100)
         session = self._open_session()
         orders = self._order(session, product, 100) | self._order(session, product, 100)
@@ -1006,10 +1041,10 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
                 payments, orders, session, session.currency_id
             )
 
-        _logger.debug("CHALLENGE grouped native payments=%s", payments)
+        _logger.debug("grouped native payments=%s", payments)
         self.assertEqual(sum(row["total"] for row in payments), 200)
 
-    def test_challenge_split_methods_sharing_journal_keep_separate_differences(self):
+    def test_split_methods_sharing_journal_keep_separate_differences(self):
         other = self.bank_split_pm1.copy({"name": "Second terminal"})
         self.config.payment_method_ids |= other
         session = self._open_session()
@@ -1025,11 +1060,11 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         report = self.report.get_sale_details(session_ids=session.ids)
 
         rows = {row["id"]: row for row in report["payments"]}
-        _logger.debug("CHALLENGE shared journal rows=%s", rows)
+        _logger.debug("shared journal rows=%s", rows)
         self.assertEqual(rows[self.bank_split_pm1.id]["money_difference"], -20)
         self.assertEqual(rows[other.id]["money_difference"], 10)
 
-    def test_challenge_legacy_difference_still_resolves(self):
+    def test_legacy_difference_still_resolves(self):
         session = self._open_session()
         product = self.create_product("Legacy difference", self.categ_basic, 100)
         order = self._order(session, product, 100)
@@ -1056,12 +1091,10 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
                     for row in report["payments"]
                     if row["id"] == self.bank_split_pm1.id
                 )
-                _logger.debug(
-                    "CHALLENGE legacy linked=%s row=%s", has_session_link, row
-                )
+                _logger.debug("legacy linked=%s row=%s", has_session_link, row)
                 self.assertEqual(row["money_difference"], -20)
 
-    def test_challenge_manual_expense_is_not_a_counting_difference(self):
+    def test_manual_expense_is_not_a_counting_difference(self):
         self.config.cash_control = True
         self.config.open_ui()
         session = self.config.current_session_id
@@ -1082,7 +1115,7 @@ class TestPosSaleDetailsCoherence(TestPoSCommon):
         report = self.report.get_sale_details(session_ids=session.ids)
 
         row = next(row for row in report["payments"] if row["cash"])
-        _logger.debug("CHALLENGE manual loss-account movement row=%s", row)
+        _logger.debug("manual loss-account movement row=%s", row)
         self.assertEqual(row["final_count"], 95)
         self.assertEqual(row["money_difference"], 0)
         self.assertEqual([move["amount"] for move in row["cash_moves"]], [100, -5])

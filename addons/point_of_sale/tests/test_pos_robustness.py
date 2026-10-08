@@ -8,7 +8,7 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import tagged
 
-from odoo.addons.point_of_sale.tests.common import CommonPosTest
+from odoo.addons.point_of_sale.tests.common import CommonPosTest, TestPoSCommon
 
 _logger = logging.getLogger(__name__)
 
@@ -295,3 +295,46 @@ class TestPosRobustness(CommonPosTest):
         config.company_id.country_id = self.env.ref("base.us")
         payload = config._load_pos_data_read(config, config)
         self.assertFalse(payload[0]["_IS_VAT"])
+
+
+@tagged("post_install", "-at_install")
+class TestPosOrderBatchWrite(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+        self.product = self.create_product(
+            "Batch write product", self.categ_basic, 100, 50
+        )
+
+    def test_a_batch_write_sets_has_deleted_line_on_every_order(self):
+        self._start_pos_session(self.cash_pm1, 0)
+        orders_map = self._create_orders(
+            [
+                {
+                    "pos_order_lines_ui_args": [(self.product, 1)],
+                    "payments": [(self.cash_pm1, 100)],
+                    "uuid": "audit-r3-a",
+                },
+                {
+                    "pos_order_lines_ui_args": [(self.product, 1)],
+                    "payments": [(self.cash_pm1, 100)],
+                    "uuid": "audit-r3-b",
+                },
+            ]
+        )
+        order_a = orders_map["audit-r3-a"]
+        order_b = orders_map["audit-r3-b"]
+        order_a.has_deleted_line = False
+        order_b.has_deleted_line = True
+        (order_a | order_b).write({"has_deleted_line": True})
+        _logger.info(
+            "has_deleted_line a=%s b=%s",
+            order_a.has_deleted_line,
+            order_b.has_deleted_line,
+        )
+        self.assertTrue(
+            order_a.has_deleted_line,
+            "batch write dropped has_deleted_line for order A "
+            "because a sibling order mutated the shared vals dict",
+        )
+        self.assertTrue(order_b.has_deleted_line)

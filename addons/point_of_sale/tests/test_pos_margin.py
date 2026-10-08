@@ -4,7 +4,10 @@ from unittest.mock import patch
 
 import odoo
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+from odoo.addons.point_of_sale.tests.common import (
+    PosCashRoundingSessionCommon,
+    TestPoSCommon,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -464,3 +467,37 @@ class TestPosMargin(TestPoSCommon):
             self.assertEqual(product_lines.mapped("price_cost"), [2 + index] * 10)
             self.assertEqual(product_lines.mapped("total_cost"), [2 + index] * 10)
             self.assertEqual(product_lines.mapped("margin"), [8 - index] * 10)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosOrderMarginPercent(PosCashRoundingSessionCommon):
+    def test_margin_percentage_refreshes_when_margin_stays_constant(self):
+        order = self._create_bare_order()
+        line = self._create_line(order)
+        line.write(
+            {"price_subtotal": 100, "total_cost": 50, "is_total_cost_computed": True}
+        )
+        self.assertEqual(order.margin, 50)
+        self.assertEqual(order.margin_percent, 0.5)
+
+        line.write({"price_subtotal": 200, "total_cost": 150})
+
+        self.assertEqual(order.margin, 50)
+        self.assertEqual(order.margin_percent, 0.25)
+
+    def test_margin_percentage_survives_flush_and_cache_invalidation(self):
+        order = self._create_bare_order()
+        line = self._create_line(order)
+        line.write(
+            {"price_subtotal": 100, "total_cost": 50, "is_total_cost_computed": True}
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertEqual(order.margin_percent, 0.5)
+
+        line.write({"price_subtotal": 200, "total_cost": 150})
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        self.assertEqual(order.margin, 50)
+        self.assertEqual(order.margin_percent, 0.25)

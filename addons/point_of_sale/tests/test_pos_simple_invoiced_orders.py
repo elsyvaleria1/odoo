@@ -1,6 +1,15 @@
-import odoo
+import os
+import time
+from datetime import date
+from unittest.mock import patch
 
-from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+import odoo
+from odoo import fields
+
+from odoo.addons.point_of_sale.tests.common import (
+    PosCashRoundingSessionCommon,
+    TestPoSCommon,
+)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -1984,3 +1993,38 @@ class TestPosSimpleInvoicedOrders(TestPoSCommon):
                 },
             }
         )
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosOrderInvoiceDate(PosCashRoundingSessionCommon):
+    def test_invoice_date_treats_order_datetime_as_utc(self):
+        order = self._create_bare_order(
+            partner_id=self.partner_mobt.id,
+            date_order=fields.Datetime.to_datetime("2026-09-13 01:00:00"),
+        ).with_context(tz="America/Mexico_City")
+        try:
+            with patch.dict(os.environ, TZ="America/Los_Angeles"):
+                time.tzset()
+                values = order._prepare_invoice_vals()
+        finally:
+            time.tzset()
+
+        self.assertEqual(values["invoice_date"], date(2026, 9, 12))
+
+    def test_invoice_date_under_normal_utc_process(self):
+        order = self._create_bare_order(
+            partner_id=self.partner_mobt.id, date_order="2026-09-13 01:00:00"
+        )
+        for timezone, expected in (
+            ("UTC", date(2026, 9, 13)),
+            ("America/Mexico_City", date(2026, 9, 12)),
+            ("Asia/Tokyo", date(2026, 9, 13)),
+        ):
+            with self.subTest(timezone=timezone):
+                self.assertEqual(os.environ.get("TZ"), "UTC")
+                self.assertEqual(
+                    order.with_context(tz=timezone)._prepare_invoice_vals()[
+                        "invoice_date"
+                    ],
+                    expected,
+                )

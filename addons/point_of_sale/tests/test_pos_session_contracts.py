@@ -1,11 +1,14 @@
+import logging
 from datetime import timedelta
 from unittest.mock import patch
 
 import odoo
 from odoo import fields
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -426,6 +429,59 @@ class TestPosSessionLoadContract(TestPoSCommon):
 
         self.assertNotIn(order, session.get_session_orders())
 
+    def test_duplicate_extension_models_are_loaded_once(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        payment_model = type(self.env["pos.payment"])
+        load = payment_model._load_pos_data_search_read
+        load_fields = payment_model._load_pos_data_fields
+        with patch.object(
+            type(session),
+            "_get_model_names_to_load",
+            return_value=["pos.order", "pos.payment", "pos.payment"],
+        ):
+            with patch.object(
+                payment_model,
+                "_load_pos_data_search_read",
+                autospec=True,
+                side_effect=load,
+            ) as reads:
+                data = session.load_data(["pos.order", "pos.payment"])
+            with patch.object(
+                payment_model,
+                "_load_pos_data_fields",
+                autospec=True,
+                side_effect=load_fields,
+            ) as field_reads:
+                params = session.load_data_params()
+
+        _logger.debug(
+            "Duplicate model calls: data=%d fields=%d",
+            reads.call_count,
+            field_reads.call_count,
+        )
+        self.assertEqual(list(data), ["pos.session", "pos.order", "pos.payment"])
+        self.assertEqual(list(params), ["pos.session", "pos.order", "pos.payment"])
+        self.assertEqual(reads.call_count, 1)
+        self.assertEqual(field_reads.call_count, 1)
+
+    def test_real_account_move_loader_runs_once(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        model_names = session._get_model_names_to_load(self.config)
+        model = type(self.env["account.move"])
+        load = model._load_pos_data_search_read
+        with patch.object(
+            model, "_load_pos_data_search_read", autospec=True, side_effect=load
+        ) as reads:
+            data = session.load_data(["account.move"])
+
+        _logger.debug(
+            "Actual extension chain: account.move declared=%d loaded=%d",
+            model_names.count("account.move"),
+            reads.call_count,
+        )
+        self.assertIn("account.move", data)
+        self.assertEqual(reads.call_count, 1)
+
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSessionRoundingLine(TestPoSCommon):
@@ -579,6 +635,42 @@ class TestPosSessionOldSessionAlert(TestPoSCommon):
             4,
             f"the already-alerted lookup should not scale with the batch"
             f" (5 sessions cost {second_run} queries; first run was {first_run})",
+        )
+
+    def test_unrelated_activity_does_not_suppress_old_session_alert(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        session.start_at = fields.Datetime.now() - timedelta(days=8)
+        session.activity_schedule("mail.mail_activity_data_todo")
+
+        session._alert_old_sessions()
+        session._alert_old_sessions()
+
+        alerts = session.activity_ids.filtered(
+            lambda activity: (
+                activity.activity_type_id
+                == self.env.ref("point_of_sale.mail_activity_old_session")
+            )
+        )
+        _logger.debug("Old session activities: %s", session.activity_ids)
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(len(session.activity_ids), 2)
+
+    def test_reminders_exclude_recent_and_closed_sessions(self):
+        closed = self._start_pos_session(self.cash_pm1, 0)
+        closed.start_at = fields.Datetime.now() - timedelta(days=8)
+        closed.action_pos_session_closing_control()
+        self.config.open_ui()
+        recent = self.config.current_session_id
+        recent.set_opening_control(0, "")
+
+        recent._alert_old_sessions()
+
+        self.assertFalse((closed | recent).activity_ids)
+        recent.start_at = fields.Datetime.now() - timedelta(days=8)
+        recent._alert_old_sessions()
+        self.assertEqual(len(recent.activity_ids), 1)
+        _logger.debug(
+            "Reminder excludes recent/closed sessions, includes newly aged one"
         )
 
 
@@ -837,4 +929,274 @@ class TestPosSessionDiffMoveLink(TestPoSCommon):
             impostor,
             session._get_other_related_moves(),
             "a same-ref entry in another journal is not this session's difference",
+        )
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSessionCashJournal(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+
+    def test_new_session_uses_replacement_journal_without_rewriting_history(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        session.action_pos_session_closing_control()
+        previous = session.cash_journal_id
+        replacement = previous.copy({"name": "Replacement cash", "code": "RPLC"})
+
+        self.cash_pm1.journal_id = replacement
+
+        # _start_pos_session also rewrites config.payment_method_ids, which is a
+        # separate historical reconfiguration path from opening a new register.
+        self.config.open_ui()
+        new_session = self.config.current_session_id
+        _logger.debug(
+            "Historical journal=%s new session journal=%s",
+            session.cash_journal_id,
+            new_session.cash_journal_id,
+        )
+        self.assertEqual(session.cash_journal_id, previous)
+        self.assertEqual(new_session.cash_journal_id, replacement)
+
+    def test_cash_journal_change_preserves_closed_session_cash_history(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        session.try_cash_in_out(
+            "in", 10, "Historical float", self.env.user.partner_id.id, {}
+        )
+        session.cash_register_balance_end_real = 10
+        session.action_pos_session_closing_control()
+        report = self.env["report.point_of_sale.report_saledetails"]
+        lines = {session.id: session.statement_line_ids}
+        before = report._prepare_uncounted_cash_row(session, lines)
+        previous_journal = session.cash_journal_id
+        replacement = previous_journal.copy({"name": "New drawer", "code": "NEWC"})
+
+        self.cash_pm1.journal_id = replacement
+
+        after = report._prepare_uncounted_cash_row(session, lines)
+        _logger.debug("Historical cash row before=%s after=%s", before, after)
+        self.assertEqual(after, before)
+
+    def test_cash_control_follows_payment_method_type(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        session.action_pos_session_closing_control()
+        self.assertTrue(session.cash_control)
+        self.assertTrue(self.config.cash_control)
+        previous_journal = session.cash_journal_id
+
+        self.cash_pm1.journal_id = self.bank_pm1.journal_id
+
+        _logger.debug(
+            "Cash -> bank: method=%s config=%s session=%s journal=%s",
+            self.cash_pm1.type,
+            self.config.cash_control,
+            session.cash_control,
+            session.cash_journal_id,
+        )
+        self.assertFalse(self.config.cash_control)
+        self.assertEqual(session.cash_journal_id, previous_journal)
+        self.assertFalse(session.cash_control)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSessionOpeningDate(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+
+    def test_opening_date_can_be_unset(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+
+        session.start_at = False
+
+        _logger.debug("Session %s has no opening date", session.id)
+        self.assertFalse(session.start_at)
+
+    def test_optional_opening_date_does_not_bypass_lock_dates(self):
+        session = self._start_pos_session(self.cash_pm1, 0)
+        session.start_at = False
+        lock_date = fields.Date.today() - timedelta(days=2)
+        session.company_id.account_config_id.fiscalyear_lock_date = lock_date
+
+        with self.assertRaises(ValidationError):
+            session.start_at = fields.Datetime.to_datetime(lock_date)
+
+        session.start_at = fields.Datetime.now()
+        _logger.debug("Optional date still enforces fiscal lock %s", lock_date)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSessionOpeningBalance(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+
+    def test_opening_balance_loads_only_latest_history_per_config(self):
+        configs = self.config | self.config.copy({"name": "Second register"})
+        self.config.payment_method_ids = self.cash_pm1
+        (configs - self.config).payment_method_ids = self.cash_split_pm1
+        history = self.env["pos.session"].create(
+            [
+                {
+                    "config_id": config.id,
+                    "name": f"History {config.id}/{index}",
+                    "state": "closed",
+                    "cash_register_balance_end_real": index + config.id,
+                }
+                for config in configs
+                for index in range(20)
+            ]
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+        search = type(history).search
+        fetch_query = type(history)._fetch_query
+        materialized = []
+        fetched_history = set()
+        history_ids = set(history.ids)
+
+        def measured_search(records, *args, **kwargs):
+            result = search(records, *args, **kwargs)
+            materialized.extend(result.ids)
+            return result
+
+        def measured_fetch(records, *args, **kwargs):
+            result = fetch_query(records, *args, **kwargs)
+            fetched_history.update(history_ids.intersection(result.ids))
+            return result
+
+        with (
+            patch.object(type(history), "search", measured_search),
+            patch.object(type(history), "_fetch_query", measured_fetch),
+        ):
+            sessions = self.env["pos.session"].create(
+                [{"config_id": config.id} for config in configs]
+            )
+
+        _logger.debug(
+            "Opening history: search returned %d sessions; fetched %d historical rows",
+            len(materialized),
+            len(fetched_history),
+        )
+        for session in sessions:
+            self.assertEqual(
+                session.cash_register_balance_start, 19 + session.config_id.id
+            )
+        self.assertLessEqual(len(materialized), len(configs))
+        self.assertLessEqual(len(fetched_history), len(configs))
+
+    def test_opening_history_takes_the_latest_session_and_starts_empty(self):
+        self.config.payment_method_ids = self.cash_pm1
+        first = self.env["pos.session"].create({"config_id": self.config.id})
+        self.assertEqual(first.cash_register_balance_start, 0)
+        first.action_pos_session_closing_control()
+        latest = self.env["pos.session"].create(
+            {
+                "config_id": self.config.id,
+                "state": "closed",
+                "cash_register_balance_end_real": 42,
+            }
+        )
+
+        regular = self.env["pos.session"].create({"config_id": self.config.id})
+
+        _logger.debug(
+            "Opening chose latest session %s with cash=%s",
+            latest.id,
+            regular.cash_register_balance_start,
+        )
+        self.assertEqual(regular.cash_register_balance_start, 42)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosSessionComputeBatching(TestPoSCommon):
+    def setUp(self):
+        super().setUp()
+        self.config = self.basic_config
+
+    def _make_configs_with_sessions(self, n):
+        sessions = self.env["pos.session"]
+        for i in range(n):
+            journal = self.env["account.journal"].create(
+                {
+                    "name": "AuditCash%d" % i,
+                    "code": "ACSH%d" % i,
+                    "type": "cash",
+                    "company_id": self.env.company.id,
+                }
+            )
+            cash_pm = self.env["pos.payment.method"].create(
+                {
+                    "name": "AuditCashPM%d" % i,
+                    "journal_id": journal.id,
+                    "receivable_account_id": self.pos_receivable_cash.id,
+                    "company_id": self.env.company.id,
+                }
+            )
+            cfg = self.env["pos.config"].create(
+                {
+                    "name": "AuditCfg%d" % i,
+                    "payment_method_ids": [(6, 0, cash_pm.ids)],
+                }
+            )
+            sessions |= self.env["pos.session"].create(
+                {
+                    "config_id": cfg.id,
+                    "user_id": self.env.uid,
+                }
+            )
+        sessions.invalidate_recordset()
+        return sessions
+
+    def test_cash_balances_of_many_sessions_read_payments_once(self):
+        sessions = self._make_configs_with_sessions(4)
+        calls = {"n": 0}
+        real = type(self.env["pos.payment"])._read_group
+
+        def counting(self2, *a, **k):
+            calls["n"] += 1
+            return real(self2, *a, **k)
+
+        with patch.object(type(self.env["pos.payment"]), "_read_group", counting):
+            sessions.mapped("cash_register_balance_end")
+        _logger.info(
+            "pos.payment _read_group calls for %d sessions: %d",
+            len(sessions),
+            calls["n"],
+        )
+        self.assertLessEqual(
+            calls["n"],
+            1,
+            "%d pos.payment._read_group calls for %d sessions "
+            "(expected batched into <=1)" % (calls["n"], len(sessions)),
+        )
+
+    def test_picking_counts_of_many_sessions_search_once(self):
+        sessions = self._make_configs_with_sessions(4)
+        calls = {"search": 0, "search_count": 0}
+        Picking = type(self.env["stock.picking"])
+        real_search = Picking.search
+        real_count = Picking.search_count
+
+        def c_search(self2, *a, **k):
+            calls["search"] += 1
+            return real_search(self2, *a, **k)
+
+        def c_count(self2, *a, **k):
+            calls["search_count"] += 1
+            return real_count(self2, *a, **k)
+
+        with (
+            patch.object(Picking, "search", c_search),
+            patch.object(Picking, "search_count", c_count),
+        ):
+            sessions.mapped("picking_count")
+            sessions.mapped("failed_pickings")
+        total = calls["search"] + calls["search_count"]
+        _logger.info("Picking queries for %d sessions: %r", len(sessions), calls)
+        self.assertLessEqual(
+            total,
+            2,
+            "%d stock.picking search/search_count calls for %d sessions"
+            % (total, len(sessions)),
         )
