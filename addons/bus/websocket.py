@@ -1031,14 +1031,33 @@ class Websocket:
                         exc_info=True,
                     )
 
-    def _dispatch_bus_notifications(self) -> None:
-        now = self._clock()
-        must_validate = (
+    def _session_check_due(self, now) -> bool:
+        return (
             now >= self._session_validated_until
             or self._session.sid != self._validated_session_sid
         )
-        if must_validate:
-            self._session = _follow_session_chain(self._session)
+
+    def _revalidate_session(self, cr, now) -> bool:
+        """Follow the session to its live successor and ask whether it is still
+        valid, on the caller's cursor; a valid one is trusted again for up to
+        SESSION_VALIDITY_TTL."""
+        self._session = _follow_session_chain(self._session)
+        session = self._session
+        if session.uid is not None and not is_session_valid(
+            session, self.new_env(cr, session), fresh_primary_cr=cr
+        ):
+            return False
+        # Up to SESSION_VALIDITY_TTL, never past it: connections that
+        # subscribed together must not all come due together.
+        self._session_validated_until = now + self.SESSION_VALIDITY_TTL * (
+            1 - self.SESSION_VALIDITY_JITTER * random.random()
+        )
+        self._validated_session_sid = session.sid
+        return True
+
+    def _dispatch_bus_notifications(self) -> None:
+        now = self._clock()
+        must_validate = self._session_check_due(now)
         session = self._session
         self._waiting_for_dispatch = False
         # Subscribers to a busy channel converge on one cursor, so a dispatch
@@ -1058,19 +1077,10 @@ class Websocket:
             cached = dispatch.poll_memo_get(poll_round, memo_key)
         if must_validate or cached is None:
             with acquire_cursor(session.db) as cr:
-                env = self.new_env(cr, session)
-                if must_validate:
-                    if session.uid is not None and not is_session_valid(
-                        session, env, fresh_primary_cr=cr
-                    ):
-                        raise SessionExpiredException
-                    # Up to SESSION_VALIDITY_TTL, never past it: connections
-                    # that subscribed together must not all come due together.
-                    self._session_validated_until = now + self.SESSION_VALIDITY_TTL * (
-                        1 - self.SESSION_VALIDITY_JITTER * random.random()
-                    )
-                    self._validated_session_sid = session.sid
+                if must_validate and not self._revalidate_session(cr, now):
+                    raise SessionExpiredException
                 if cached is None:
+                    env = self.new_env(cr, self._session)
                     cached = env["bus.bus"]._poll_batch(
                         self._channels,
                         self._dispatch_state.last_id,
@@ -1101,8 +1111,6 @@ class Websocket:
             and not self._waiting_for_dispatch
             and not self._lane
             and not self._opening
-            and self._clock() < self._session_validated_until
-            and self._session.sid == self._validated_session_sid
             and not self._dispatch_held()
         )
 
@@ -1482,7 +1490,8 @@ _BATCH_JOB = object()
 def _trigger_dispatch(websockets, poll_round) -> None:
     # The idle subscribers of one round that would ask the same question are
     # asked once, on one database thread, and handed the same encoded frame;
-    # the others, busy or due a session check, dispatch one by one.
+    # those due a session check are checked on that thread's cursor first. The
+    # busy ones dispatch one by one.
     batches = {}
     for websocket in websockets:
         if poll_round is not None and websocket._can_join_batch():
@@ -1501,14 +1510,26 @@ def _trigger_dispatch(websockets, poll_round) -> None:
 
 def _run_batch(hub, key, members, poll_round, woken_at) -> None:
     try:
+        now = members[0]._clock()
+        due = [websocket for websocket in members if websocket._session_check_due(now)]
         answer = dispatch.poll_memo_get(poll_round, key)
-        if answer is None:
+        expired = set()
+        if due or answer is None:
             db, channels, last_id, ignore_ids = key
             with acquire_cursor(db) as cr:
-                env = members[0].new_env(cr, members[0]._session)
-                answer = env["bus.bus"]._poll_batch(channels, last_id, list(ignore_ids))
-            dispatch.poll_memo_set(poll_round, key, answer)
-        notifications, truncated = answer
+                expired = {
+                    websocket
+                    for websocket in due
+                    if not websocket._revalidate_session(cr, now)
+                }
+                valid = [websocket for websocket in members if websocket not in expired]
+                if answer is None and valid:
+                    env = valid[0].new_env(cr, valid[0]._session)
+                    answer = env["bus.bus"]._poll_batch(
+                        channels, last_id, list(ignore_ids)
+                    )
+                    dispatch.poll_memo_set(poll_round, key, answer)
+        notifications, truncated = answer or ([], False)
         frame = Frame(Opcode.TEXT, notifications)
         data = encode_frame(frame) if notifications else None
     except Exception:
@@ -1525,11 +1546,12 @@ def _run_batch(hub, key, members, poll_round, woken_at) -> None:
         data,
         frame,
         woken_at,
+        expired,
     )
 
 
 def _deliver_batch(
-    hub, key, members, notifications, truncated, data, frame, woken_at
+    hub, key, members, notifications, truncated, data, frame, woken_at, expired
 ) -> None:
     ids = [notification["id"] for notification in notifications]
     latency = hub.now() - woken_at
@@ -1537,7 +1559,9 @@ def _deliver_batch(
         websocket._job = None
         try:
             rearm = False
-            if websocket.state is not ConnectionState.OPEN:
+            if websocket in expired:
+                websocket.on_loop_error(SessionExpiredException())
+            elif websocket.state is not ConnectionState.OPEN:
                 pass
             elif websocket._dispatch_key() != key:
                 rearm = True

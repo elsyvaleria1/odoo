@@ -256,6 +256,67 @@ class TestWebsocketHub(BaseCase):
         for ws, _peer, _gauge in idle:
             self.assertEqual(ws._dispatch_state.ignore_ids, [7])
 
+    def test_a_round_checks_its_due_sessions_on_its_cursor_and_closes_the_expired(self):
+        trusted, due, expired = (self._connect() for _ in range(3))
+        for index, (ws, _peer, _gauge) in enumerate((trusted, due, expired)):
+            ws._channels = {("db", "chan")}
+            ws._session = MagicMock(db="db", sid=f"sid{index}", uid=index + 1)
+            ws._validated_session_sid = ws._session.sid
+        trusted[0]._session_validated_until = float("inf")
+        due[0]._session_validated_until = 0.0
+        expired[0]._session_validated_until = 0.0
+        notifications = [{"id": 9, "message": {"type": "t", "payload": 1}}]
+        env = MagicMock()
+        poll = env.__getitem__.return_value._poll_batch
+        poll.return_value = (notifications, False)
+        cursor = MagicMock()
+        cursor.__enter__.return_value = MagicMock()
+        checked = []
+
+        def is_session_valid(session, _env, fresh_primary_cr=None):
+            checked.append((session.sid, fresh_primary_cr))
+            return session is not expired[0]._session
+
+        with (
+            patch(
+                "odoo.addons.bus.websocket.acquire_cursor", return_value=cursor
+            ) as acquire,
+            patch.object(Websocket, "new_env", return_value=env),
+            patch(
+                "odoo.addons.bus.websocket._follow_session_chain",
+                side_effect=lambda session: session,
+            ),
+            patch(
+                "odoo.addons.bus.websocket.is_session_valid",
+                side_effect=is_session_valid,
+            ),
+        ):
+            poll_round = dispatch.open_poll_round()
+            websocket_module._wake_websockets(
+                [trusted[0], due[0], expired[0]], poll_round
+            )
+            for _ws, peer, _gauge in (trusted, due):
+                opcode, payload = peer.frame()
+                self.assertEqual(opcode, Opcode.TEXT)
+                self.assertEqual(json_loads(payload), notifications)
+            opcode, payload = expired[1].frame()
+        self.assertEqual(opcode, Opcode.CLOSE)
+        self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.SESSION_EXPIRED)
+        self.assertEqual(
+            sorted(sid for sid, _cr in checked),
+            ["sid1", "sid2"],
+            "only the due sessions are checked, each once",
+        )
+        self.assertEqual(
+            {id(cr) for _sid, cr in checked},
+            {id(cursor.__enter__.return_value)},
+            "on the round's cursor",
+        )
+        self.assertEqual(acquire.call_count, 1, "one cursor for the round")
+        self.assertEqual(poll.call_count, 1, "one question for the round")
+        self.assertGreater(due[0]._session_validated_until, 0.0)
+        self.assertEqual(expired[0]._dispatch_state.ignore_ids, [])
+
     def test_dispatch_requests_coalesce_behind_a_running_job(self):
         self.release.clear()
         ws, peer, _gauge = self._connect()
