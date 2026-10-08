@@ -313,10 +313,10 @@
                                 name="tag_ids"
                                 widget="many2many_tags"
                                 context="{'project_id': project_id}"
-                                options="{'color_field': 'color', 'no_create': True, 'no_edit': True, 'no_edit_color': True}" />
+                                options="{'color_field': 'color', 'no_create': True, 'no_edit_color': True}" />
                             <field
                                 name="partner_id"
-                                options="{'no_open': True, 'no_create': True, 'no_edit': True}"
+                                options="{'no_open': True, 'no_create': True}"
                                 invisible="not project_id"
                                 readonly="not current_user_same_company_partner" />
                             <label
@@ -413,7 +413,7 @@
                                     <field
                                         name="partner_id"
                                         optional="hide"
-                                        options="{'no_open': True, 'no_create': True, 'no_edit': True}" />
+                                        options="{'no_open': True, 'no_create': True}" />
                                     <field name="user_ids" column_invisible="True" />
                                     <field
                                         name="portal_user_names"
@@ -494,7 +494,7 @@
                                     <field
                                         name="partner_id"
                                         optional="hide"
-                                        options="{'no_open': True, 'no_create': True, 'no_edit': True}"
+                                        options="{'no_open': True, 'no_create': True}"
                                         invisible="not project_id" />
                                     <field
                                         name="portal_user_names"
