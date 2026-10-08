@@ -45,16 +45,3 @@ class AppointmentType(models.Model):
 
     def _compute_connector_google(self) -> None:
         self.connector_google = "google" in self._get_calendars_possible_to_setup()
-
-    def _get_calendars_already_setup(self):
-        calendars = super()._get_calendars_already_setup()
-        if self.env.user._calendar_sync_connection("google"):
-            calendars.append("google")
-        return calendars
-
-    def _get_calendars_possible_to_setup(self):
-        calendars = super()._get_calendars_possible_to_setup()
-        Account = self.env["calendar.sync.account"]
-        if Account._has_client("google") and not Account._is_paused("google"):
-            calendars.append("google")
-        return calendars

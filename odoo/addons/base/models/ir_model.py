@@ -333,11 +333,22 @@ class IrModel(models.Model):
                         kind,
                     )
             else:
+                # nothing defines the model any more: its table, when the
+                # migration retiring it did not drop it, is left for want of
+                # knowing it is the model's
+                table = model.model.replace(".", "_")
+                if not sql.table_exists(self.env.cr, table):
+                    _debug.logic(
+                        "drop_table.skipped", model=model.model, reason="table_gone"
+                    )
+                    continue
                 _debug.logic(
                     "drop_table.skipped", model=model.model, reason="not_in_registry"
                 )
                 _logger.warning(
-                    "The model %s could not be dropped because it did not exist in the registry.",
+                    "The table %r of model %s, which no module defines any more, was "
+                    "left in place: the migration retiring the model drops it.",
+                    table,
                     model.model,
                 )
 

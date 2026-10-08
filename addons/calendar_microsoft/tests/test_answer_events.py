@@ -28,16 +28,13 @@ class TestAnswerEvents(TestCommon):
             [("name", "=", "simple_event")]
         )
         if not self.simple_event:
-            self.simple_event = (
+            self.simple_event = self.link_microsoft(
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
-                .create(
-                    dict(
-                        self.simple_event_values,
-                        microsoft_id="123",
-                        ms_universal_event_id="456",
-                    )
-                )
+                .create(self.simple_event_values),
+                self.organizer_user,
+                "123",
+                "456",
             )
 
     @patch.object(MicrosoftCalendarService, "_get_single_event")

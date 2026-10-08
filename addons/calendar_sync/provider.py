@@ -15,6 +15,10 @@ class CalendarSyncCapabilities:
     # an attendee answers in their own calendar, which tells the organizer;
     # otherwise the organizer's copy is sent again with the answers
     answer_endpoint: bool = False
+    # a new account sends the events that existed before it; otherwise only
+    # those created since, as the provider invites every attendee of what it
+    # receives
+    insert_history: bool = True
 
 
 @dataclasses.dataclass(frozen=True)
@@ -33,3 +37,5 @@ class CalendarSyncProvider:
     capabilities: CalendarSyncCapabilities = CalendarSyncCapabilities()
     # how many days around today a full synchronization reaches
     range_param: str | None = None
+    # the provider's calendar icon, as the interface shows it
+    icon: str | None = None

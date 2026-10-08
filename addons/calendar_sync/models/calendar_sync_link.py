@@ -145,8 +145,14 @@ class CalendarSyncLink(models.Model):
         def unmatched():
             return [remote for remote in remotes if remote.remote_id not in found]
 
-        # an insert in flight whose answer was lost: the item carries its id
-        if inserting := {r.remote_id: r for r in unmatched()}:
+        # an insert in flight whose answer was lost: the item carries the id
+        # the insert sent, as its own id or beside it
+        client_ids = account._provider(code).capabilities.client_insert_id
+        if inserting := {
+            insert_id: remote
+            for remote in unmatched()
+            if (insert_id := remote.insert_id or (client_ids and remote.remote_id))
+        }:
             for link in Link.search(
                 [
                     ("account_id", "=", account.id),

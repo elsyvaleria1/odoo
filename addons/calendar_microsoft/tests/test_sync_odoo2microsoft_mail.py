@@ -144,7 +144,7 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
             )
         )
 
-        self.assertFalse(event.microsoft_id)
+        self.assertFalse(self.held_id(event))
         self.assertTrue(event.active)
 
         event.write(

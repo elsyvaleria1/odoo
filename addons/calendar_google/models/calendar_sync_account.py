@@ -16,6 +16,7 @@ GOOGLE = CalendarSyncProvider(
     adapter="calendar.sync.adapter.google",
     capabilities=CalendarSyncCapabilities(shared_ids=True, client_insert_id=True),
     range_param="calendar_google.sync.range_days",
+    icon="/calendar/static/src/booking/img/google-calendar.svg",
 )
 
 

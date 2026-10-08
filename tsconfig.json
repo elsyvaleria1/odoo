@@ -74,8 +74,6 @@
             "@api_doc/*": ["./addons/api_doc/static/src/*"],
             "@appointment_account_payment/*": ["./addons/appointment_account_payment/static/src/*"],
             "@appointment_crm/*": ["./addons/appointment_crm/static/src/*"],
-            "@appointment_calendar_google/*": ["./addons/appointment_calendar_google/static/src/*"],
-            "@appointment_calendar_microsoft/*": ["./addons/appointment_calendar_microsoft/static/src/*"],
             "@approval/*": ["./addons/approval/static/src/*"],
             "@approval_analytics/*": ["./addons/approval_analytics/static/src/*"],
             "@approval_app/*": ["./addons/approval_app/static/src/*"],

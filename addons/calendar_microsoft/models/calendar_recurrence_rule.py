@@ -48,9 +48,6 @@ class CalendarRecurrence(models.Model):
                 dont_notify=True, microsoft_calendar_syncing=True
             ).write(values)
 
-    def _microsoft_organizer(self):
-        return self.base_event_id.user_id
-
     def _get_fields_microsoft_synced(self):
         return {"rrule"} | self.env["calendar.event"]._get_fields_microsoft_synced()
 
@@ -177,7 +174,9 @@ class CalendarRecurrence(models.Model):
             pattern["firstDayOfWeek"] = "sunday"
         return pattern
 
-    def _microsoft_values(self, fields_to_sync, initial_values=()):
+    def _microsoft_values(
+        self, fields_to_sync, initial_values=(), series_master_id=None
+    ):
         """
         Get values to update the whole Outlook event recurrence.
         (done through the first event of the Outlook recurrence).

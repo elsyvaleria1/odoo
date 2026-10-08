@@ -393,12 +393,11 @@ class TestMicrosoftService(TransactionCase):
 
         mock_do_request.return_value = self._do_request_result({"id": 1, "iCalUId": 2})
 
-        instance_id, event_id = self.service.insert(
+        event = self.service.insert(
             {"subject": "ev1"}, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
-        self.assertEqual(instance_id, 1)
-        self.assertEqual(event_id, 2)
+        self.assertEqual(event, {"id": 1, "iCalUId": 2})
         mock_do_request.assert_called_with(
             self.fake_connection,
             "POST",
@@ -436,7 +435,7 @@ class TestMicrosoftService(TransactionCase):
             event_id, values, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
-        self.assertFalse(res)
+        self.assertIsNone(res)
         mock_do_request.assert_called_with(
             self.fake_connection,
             "PATCH",
@@ -449,13 +448,13 @@ class TestMicrosoftService(TransactionCase):
     def test_patch_an_existing_event(self, mock_do_request):
         event_id = 123
         values = {"subject": "ev2"}
-        mock_do_request.return_value = (200, {})
+        mock_do_request.return_value = (200, {"id": "123", "changeKey": "ck2"})
 
         res = self.service.patch(
             event_id, values, connection=self.fake_connection, timeout=DEFAULT_TIMEOUT
         )
 
-        self.assertTrue(res)
+        self.assertEqual(res, {"id": "123", "changeKey": "ck2"})
         mock_do_request.assert_called_with(
             self.fake_connection,
             "PATCH",

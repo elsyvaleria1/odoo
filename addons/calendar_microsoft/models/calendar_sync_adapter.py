@@ -78,6 +78,7 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             cancelled=mevent.is_cancelled(),
             updated=mevent.lastModifiedDateTime and parse(mevent.lastModifiedDateTime),
             etag=mevent.changeKey,
+            insert_id=mevent.transactionId,
             payload={"event": mevent},
         )
 
@@ -96,12 +97,14 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
     @api.model
     def _insert(self, account, record, values, insert_id):
         # Outlook keeps the first item sent under a transaction id
-        remote_id, universal_id = self._service().insert(
+        event = self._service().insert(
             dict(values, transactionId=insert_id),
             connection=self._connection(account),
             timeout=self._timeout(),
         )
-        return RemoteEvent(remote_id, universal_id=universal_id)
+        return RemoteEvent(
+            event["id"], universal_id=event.get("iCalUId"), etag=event.get("changeKey")
+        )
 
     @api.model
     def _patch(self, account, remote_id, record, values):
@@ -112,13 +115,15 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             for key, value in values.items()
             if key not in ("isOnlineMeeting", "onlineMeetingProvider")
         }
-        if not self._service().patch(
+        event = self._service().patch(
             remote_id,
             values,
             connection=self._connection(account),
             timeout=self._timeout(),
-        ):
+        )
+        if event is None:
             raise CalendarSyncError(ErrorKind.GONE)
+        return RemoteEvent(remote_id, etag=event.get("changeKey"))
 
     @api.model
     def _delete(self, account, remote_id):
@@ -177,7 +182,14 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
 
     @api.model
     def _remote_values(self, record, account):
-        return record._microsoft_values(record._get_fields_microsoft_synced())
+        # an occurrence names its series by the id it has in this calendar
+        own = record._microsoft_links().filtered(
+            lambda link: link.account_id == account
+        )
+        return record._microsoft_values(
+            record._get_fields_microsoft_synced(),
+            series_master_id=own.remote_master_id,
+        )
 
     # -- conversion, Outlook to Odoo ------------------------------------------
 

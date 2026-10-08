@@ -12,11 +12,11 @@
             <group name="calendar_accounts" position="inside">
                 <group string="Outlook Calendar" invisible="share">
                     <button
-                        name="%(microsoft_calendar_reset_account_action)d"
+                        name="%(calendar_sync.wizard_calendar_sync_reset_action)d"
                         type="action"
                         string="Reset Account"
                         colspan="2"
-                        context="{'default_user_id': id}"
+                        context="{'default_user_id': id, 'default_provider': 'microsoft'}"
                         class="btn btn-secondary mt-3" />
                 </group>
             </group>

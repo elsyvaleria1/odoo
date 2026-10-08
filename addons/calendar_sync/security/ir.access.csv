@@ -3,3 +3,4 @@ access_calendar_sync_account_system,calendar.sync.account system,model_calendar_
 access_calendar_sync_link_system,calendar.sync.link system,model_calendar_sync_link,base.group_system,permission,crud,,,
 access_calendar_sync_account_engine,calendar.sync.account engine,model_calendar_sync_account,privilege_engine,permission,r,,,
 access_calendar_sync_link_engine,calendar.sync.link engine,model_calendar_sync_link,privilege_engine,permission,crud,,,
+access_wizard_calendar_sync_reset_system,wizard.calendar.sync.reset system,model_wizard_calendar_sync_reset,base.group_system,permission,cru,,,

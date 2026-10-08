@@ -76,6 +76,20 @@ class CalendarSyncAccount(models.Model):
         "A user synchronizes with a provider once.",
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # the transaction's time, which the records it creates carry
+        now = self.env.cr.now()
+        for vals in vals_list:
+            provider = self._calendar_sync_providers().get(vals.get("provider"))
+            if (
+                provider
+                and "insert_since" not in vals
+                and not provider.capabilities.insert_history
+            ):
+                vals["insert_since"] = now
+        return super().create(vals_list)
+
     @api.model
     def _calendar_sync_providers(self) -> dict:
         """{code: CalendarSyncProvider} of the installed adapters."""

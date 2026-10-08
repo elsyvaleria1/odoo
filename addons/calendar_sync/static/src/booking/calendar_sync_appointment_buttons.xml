@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="calendar_sync.AppointmentButtons">
+        <t t-foreach="this.connectors" t-as="connector" t-key="connector.code">
+            <AppointmentSyncButton
+                record="this.props.record"
+                calendarName="connector.label"
+                iconSrc="connector.icon"
+                syncRoute="this.routeOf(connector)"/>
+        </t>
+    </t>
+</templates>

@@ -125,7 +125,7 @@ class TestAppointmentNotificationsMicrosoftCalendar(
     def test_appointment_cancel_notification_msftcalendar(self):
         appointment = self.calendar_event
         # the organizer's calendar holds it
-        appointment.with_user(appointment.user_id).sudo().microsoft_id = "test_msft_id"
+        self.link_microsoft(appointment, appointment.user_id, "test_msft_id")
         with (
             self.mock_mail_gateway(),
             patch.object(MicrosoftCalendarService, "delete") as mock_delete,

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="appointment_type_view_form_calendar_sync" model="ir.ui.view">
+        <field name="name">appointment.type.view.form.inherit.calendar.sync</field>
+        <field name="model">appointment.type</field>
+        <field name="inherit_id" ref="calendar.appointment_type_view_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//div[hasclass('o_appointment_cal_sync_alert')]"
+                position="inside">
+                <field name="calendar_sync_connectors" invisible="1" />
+                <widget name="calendar_sync_appointment_buttons" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,6 +1,6 @@
 {
     "name": "Calendar Synchronization",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.4.0",
     "category": "Productivity/Calendar",
     "summary": "Synchronize users' calendars with external providers through one engine",
     "description": "Keeps one synchronization account per user and provider: the delta token, the stop flag and the last synchronization, beside the user's own connection to the provider. Links each event and recurrence to its copy in each account's calendar, and keeps a deleted one's link until its copy is deleted. Runs every provider's synchronization from one scheduled action and one route, answers the calendar view's status and its start, stop and pause buttons for every installed provider, and lets a provider adapter (Google, Outlook) supply only what is particular to it. Installs with the calendar and integration modules; synchronizes nothing until an adapter is installed and a user authorizes it.",
@@ -17,7 +17,9 @@
         "security/ir.access.csv",
         "data/ir_cron_data.xml",
         "views/calendar_event_views.xml",
+        "views/appointment_type_views.xml",
         "views/res_users_views.xml",
+        "wizards/wizard_calendar_sync_reset_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

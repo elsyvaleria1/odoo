@@ -3011,3 +3011,21 @@ class TestRefusedFieldRename(BaseCase):
             self.registry.reset_changes()
 
         self.assertIn("x_refused", self.registry["x_imf_refused"]._fields)
+
+
+@tagged("-at_install", "post_install")
+class TestDropRetiredModel(TransactionCase):
+    """A model no module defines any more leaves its table only when the
+    migration retiring it did not drop it; that is the one case worth saying."""
+
+    def test_a_retired_model_whose_table_is_gone_drops_quietly(self):
+        retired = self.env["ir.model"].new({"model": "x.retired.gone"})
+        with self.assertNoLogs("odoo.addons.base.models.ir_model", "WARNING"):
+            retired._drop_table()
+
+    def test_a_retired_model_whose_table_is_left_says_so(self):
+        self.env.cr.execute(SQL("CREATE TABLE x_retired_left (id integer)"))
+        retired = self.env["ir.model"].new({"model": "x.retired.left"})
+        with self.assertLogs("odoo.addons.base.models.ir_model", "WARNING") as logs:
+            retired._drop_table()
+        self.assertIn("x_retired_left", logs.output[0])

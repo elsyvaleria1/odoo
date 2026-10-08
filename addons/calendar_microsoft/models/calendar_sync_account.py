@@ -14,8 +14,11 @@ MICROSOFT = CalendarSyncProvider(
     scope=CALENDAR_SCOPE,
     paused_param="microsoft_calendar_sync_paused",
     adapter="calendar.sync.adapter.microsoft",
-    capabilities=CalendarSyncCapabilities(series_inserts=False, answer_endpoint=True),
+    capabilities=CalendarSyncCapabilities(
+        series_inserts=False, answer_endpoint=True, insert_history=False
+    ),
     range_param="calendar_microsoft.sync.range_days",
+    icon="/calendar/static/src/booking/img/outlook-calendar.svg",
 )
 
 

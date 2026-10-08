@@ -94,22 +94,6 @@ class TestMicrosoftEvent(TestCommon):
             )
         )
 
-    def test_searching_by_universal_id_reads_the_links(self):
-        synced = self.env["calendar.event"].search(
-            [("ms_universal_event_id", "!=", False)]
-        )
-        self.assertIn(self.simple_event, synced)
-
-        self.simple_event._microsoft_forget()
-        self.assertNotIn(
-            self.simple_event,
-            self.env["calendar.event"].search([("ms_universal_event_id", "!=", False)]),
-        )
-        self.assertIn(
-            self.simple_event,
-            self.env["calendar.event"].search([("ms_universal_event_id", "=", False)]),
-        )
-
     def test_microsoft_event_readonly(self):
         event = MicrosoftEvent()
         with self.assertRaises(TypeError):

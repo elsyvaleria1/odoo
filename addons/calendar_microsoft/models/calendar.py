@@ -38,23 +38,6 @@ class CalendarEvent(models.Model):
     _name = "calendar.event"
     _inherit = ["calendar.event", "mixin.microsoft.calendar.sync"]
 
-    microsoft_recurrence_master_id = fields.Char(
-        string="Microsoft Recurrence Master Id",
-        compute="_compute_microsoft_ids",
-        inverse="_inverse_microsoft_ids",
-        copy=False,
-    )
-
-    @api.model
-    def _microsoft_id_fields(self) -> dict[str, str]:
-        return {
-            **super()._microsoft_id_fields(),
-            "remote_master_id": "microsoft_recurrence_master_id",
-        }
-
-    def _microsoft_organizer(self):
-        return self.user_id
-
     @api.model
     def _get_fields_microsoft_synced(self):
         return {
@@ -198,7 +181,7 @@ class CalendarEvent(models.Model):
         error_msg = self.env._(
             "Due to an Outlook Calendar limitation, recurrence updates must be done directly in Outlook Calendar."
         )
-        if any(not record.ms_universal_event_id for record in self):
+        if self - self._microsoft_held():
             # If any event is not synced, suggest deleting it in Odoo and recreating it in Outlook.
             error_msg = self.env._(
                 "Due to an Outlook Calendar limitation, recurrence updates must be done directly in Outlook Calendar.\n"
@@ -242,22 +225,17 @@ class CalendarEvent(models.Model):
         change_from_microsoft = self._microsoft_applying()
         deactivated_events_ids = []
         new_user_id = values.get("user_id")
-        for event in self:
-            if (
-                new_user_id
-                and event.user_id.id != new_user_id
-                and not change_from_microsoft
-                and event.microsoft_id
-            ):
+        held = self._microsoft_held() if new_user_id else self.browse()
+        for event in held:
+            if event.user_id.id != new_user_id and not change_from_microsoft:
                 sender_user, partner_ids = event._get_organizer_user_change_info(values)
                 partner_included = (
                     sender_user.partner_id in event.attendee_ids.partner_id
                     or sender_user.partner_id.id in partner_ids
                 )
                 event._check_organizer_validation(sender_user, partner_included)
-                if event.microsoft_id:
-                    event._recreate_event_different_organizer(values, sender_user)
-                    deactivated_events_ids.append(event.id)
+                event._recreate_event_different_organizer(values, sender_user)
+                deactivated_events_ids.append(event.id)
 
         # check a Outlook limitation in overlapping the actual recurrence
         if recurrence_update_setting == "this" and "start" in values:
@@ -351,7 +329,7 @@ class CalendarEvent(models.Model):
     def action_mass_archive(self, recurrence_update_setting) -> None:
         # Do not allow archiving if recurrence is synced with Outlook. Suggest updating directly from Outlook.
         self.check_singleton()
-        if self._check_microsoft_sync_status() and self.microsoft_id:
+        if self._check_microsoft_sync_status() and self._microsoft_held():
             self._forbid_recurrence_update()
         super().action_mass_archive(recurrence_update_setting)
 
@@ -595,13 +573,15 @@ class CalendarEvent(models.Model):
             return "organizer"
         return ATTENDEE_CONVERTER_O2M.get(attendee.state, "None")
 
-    def _microsoft_values(self, fields_to_sync, initial_values=()):
+    def _microsoft_values(
+        self, fields_to_sync, initial_values=(), series_master_id=None
+    ):
         values = dict(initial_values)
         if not fields_to_sync:
             return values
 
-        if self.microsoft_recurrence_master_id and "type" not in values:
-            values["seriesMasterId"] = self.microsoft_recurrence_master_id
+        if series_master_id and "type" not in values:
+            values["seriesMasterId"] = series_master_id
             values["type"] = "exception"
 
         if "name" in fields_to_sync:

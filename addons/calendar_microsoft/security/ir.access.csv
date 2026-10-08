@@ -1,2 +1,0 @@
-id,name,model_id/id,group_id/id,kind,operation,domain
-microsoft_calendar_account_reset,microsoft_calendar_account_reset_access_right,model_wizard_res_users_reset_microsoft_calendar,base.group_system,permission,cru,

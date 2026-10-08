@@ -54,8 +54,12 @@ class TestGoogleCredentials(TransactionCase):
         connection = authorize_google_calendar(self.user)
         credential = connection.credential_id
 
-        self.env["wizard.res.users.reset.google.calendar"].create(
-            {"user_id": self.user.id, "delete_policy": "dont_delete"}
+        self.env["wizard.calendar.sync.reset"].create(
+            {
+                "provider": "google",
+                "user_id": self.user.id,
+                "delete_policy": "dont_delete",
+            }
         ).reset_account()
 
         self.assertFalse(credential.exists())

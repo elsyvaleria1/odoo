@@ -1,6 +1,6 @@
 {
     "name": "Google Calendar Synchronization",
-    "version": "19.0.2.5.0",
+    "version": "19.0.2.6.0",
     "oldest_upgradable_version": "19.0.2.1.1",
     "category": "Productivity",
     "summary": "Synchronize calendar events with authorized Google accounts",
@@ -12,8 +12,6 @@
         "integration_google",
     ],
     "data": [
-        "security/ir.access.csv",
-        "wizards/wizard_res_users_reset_google_calendar_views.xml",
         "views/res_config_settings_views.xml",
         "views/res_users_views.xml",
     ],

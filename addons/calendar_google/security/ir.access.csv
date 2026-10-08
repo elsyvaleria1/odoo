@@ -1,2 +1,0 @@
-id,name,model_id/id,group_id/id,kind,operation,domain
-google_calendar_account_reset,google_calendar_account_reset_access_right,model_wizard_res_users_reset_google_calendar,base.group_system,permission,cru,

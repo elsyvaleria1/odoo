@@ -12,11 +12,11 @@
             <group name="calendar_accounts" position="inside">
                 <group string="Google Calendar" invisible="share" class="text-break">
                     <button
-                        name="%(google_calendar_reset_account_action)d"
+                        name="%(calendar_sync.wizard_calendar_sync_reset_action)d"
                         type="action"
                         string="Reset Account"
                         colspan="2"
-                        context="{'default_user_id': id}"
+                        context="{'default_user_id': id, 'default_provider': 'google'}"
                         class="btn btn-secondary mt-3" />
                 </group>
             </group>

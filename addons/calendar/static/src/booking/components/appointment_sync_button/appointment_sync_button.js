@@ -11,6 +11,7 @@ export class AppointmentSyncButton extends Component {
         ...standardWidgetProps,
         calendarName: t.string(),
         iconSrc: t.string(),
+        syncRoute: t.string().optional(),
     };
     static template = "calendar.booking.AppointmentSyncButton";
     props = useProps(this.constructor.props);
@@ -60,8 +61,10 @@ export class AppointmentSyncButton extends Component {
     }
 
     _getCalendarSyncData() {
-        // This should be overriden to add specific calendar data used for the synchronization.
-        return false;
+        if (!this.props.syncRoute) {
+            return false;
+        }
+        return { noNewEventKey: "no_new_event", syncRoute: this.props.syncRoute };
     }
 }
 
@@ -70,6 +73,7 @@ export const appointmentSyncButton = {
     extractProps: ({ attrs }) => ({
         calendarName: attrs.calendarName,
         iconSrc: attrs.iconSrc,
+        syncRoute: attrs.syncRoute,
     }),
 };
 

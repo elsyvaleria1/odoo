@@ -196,21 +196,25 @@ class MicrosoftCalendarService:
         return events, next_sync_token
 
     @requires_connection
-    def insert(self, values, connection=None, timeout=TIMEOUT):
+    def insert(self, values, connection=None, timeout=TIMEOUT) -> dict:
+        """The event Outlook made of `values`."""
         url = "/v1.0/me/calendar/events"
         _dummy, data = self._request(
             connection, "POST", url, json=values, timeout=timeout
         )
-
-        return data["id"], data["iCalUId"]
+        return data
 
     @requires_connection
-    def patch(self, event_id, values, connection=None, timeout=TIMEOUT):
+    def patch(self, event_id, values, connection=None, timeout=TIMEOUT) -> dict | None:
+        """The event as Outlook holds it after the patch; None when Outlook
+        no longer has it."""
         url = "/v1.0/me/calendar/events/%s" % event_id
-        status, _dummy = self._request(
+        status, data = self._request(
             connection, "PATCH", url, json=values, timeout=timeout
         )
-        return status not in RESOURCE_NOT_FOUND_STATUSES
+        if status in RESOURCE_NOT_FOUND_STATUSES:
+            return None
+        return data
 
     @requires_connection
     def delete(self, event_id, connection=None, timeout=TIMEOUT):

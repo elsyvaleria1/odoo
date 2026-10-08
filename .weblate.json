@@ -372,11 +372,6 @@
                 "new_base": "addons/appointment_hr_recruitment/i18n/appointment_hr_recruitment.pot"
             },
             {
-                "name": "appointment_calendar_microsoft",
-                "filemask": "addons/appointment_calendar_microsoft/i18n/*.po",
-                "new_base": "addons/appointment_calendar_microsoft/i18n/appointment_calendar_microsoft.pot"
-            },
-            {
                 "name": "appointment_sms",
                 "filemask": "addons/appointment_sms/i18n/*.po",
                 "new_base": "addons/appointment_sms/i18n/appointment_sms.pot"

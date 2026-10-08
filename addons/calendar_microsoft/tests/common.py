@@ -20,7 +20,7 @@ def distinct_inserts(prefix):
 
     def insert(*args, **kwargs):
         number = next(numbers)
-        return f"{prefix}_{number}", f"{prefix}_uid_{number}"
+        return {"id": f"{prefix}_{number}", "iCalUId": f"{prefix}_uid_{number}"}
 
     return insert
 
@@ -571,16 +571,13 @@ class TestCommon(HttpCase):
             [("name", "=", "simple_event")]
         )
         if not self.simple_event:
-            self.simple_event = (
+            self.simple_event = self.link_microsoft(
                 self.env["calendar.event"]
                 .with_user(self.organizer_user)
-                .create(
-                    dict(
-                        self.simple_event_values,
-                        microsoft_id="123",
-                        ms_universal_event_id="456",
-                    )
-                )
+                .create(self.simple_event_values),
+                self.organizer_user,
+                "123",
+                "456",
             )
 
         # a group of events
@@ -593,16 +590,13 @@ class TestCommon(HttpCase):
                 .with_user(self.organizer_user)
                 .create(
                     [
-                        dict(
-                            self.simple_event_values,
-                            name=f"event{i}",
-                            microsoft_id=f"e{i}",
-                            ms_universal_event_id=f"u{i}",
-                        )
+                        dict(self.simple_event_values, name=f"event{i}")
                         for i in range(1, 4)
                     ]
                 )
             )
+            for i, event in enumerate(self.several_events, start=1):
+                self.link_microsoft(event, self.organizer_user, f"e{i}", f"u{i}")
 
         # a recurrent event with 7 occurrences
         self.recurrent_base_event = self.env["calendar.event"].search(
@@ -663,6 +657,7 @@ class TestCommon(HttpCase):
         for the keys present in expected_values.
         """
         self.assertTrue(expected_values)
+        expected_values = self._assert_held_ids(odoo_event, expected_values)
 
         odoo_event_values = odoo_event.read(list(expected_values.keys()))[0]
         for k, v in expected_values.items():
@@ -681,10 +676,28 @@ class TestCommon(HttpCase):
         Assert that an Odoo recurrence has the same values than in the expected_values dictionary,
         for the keys present in expected_values.
         """
+        expected_values = self._assert_held_ids(odoo_recurrence, expected_values)
         odoo_recurrence_values = odoo_recurrence.read(list(expected_values.keys()))[0]
 
         for k, v in expected_values.items():
             self.assertEqual(v, odoo_recurrence_values.get(k), msg=f"'{k}' mismatch")
+
+    def _assert_held_ids(self, record, expected_values):
+        """Check the Outlook ids among `expected_values` against `record`'s
+        links; the other values."""
+        held = {
+            "microsoft_id": "remote_id",
+            "ms_universal_event_id": "universal_id",
+            "microsoft_recurrence_master_id": "remote_master_id",
+        }
+        for key, field in held.items():
+            if key in expected_values:
+                self.assertEqual(
+                    self.held_id(record, field),
+                    expected_values[key],
+                    f"'{key}' mismatch",
+                )
+        return {k: v for k, v in expected_values.items() if k not in held}
 
     def assert_dict_equal(self, dict1, dict2):
 
@@ -740,6 +753,31 @@ class TestCommon(HttpCase):
         )
         record.invalidate_recordset()
         return record
+
+    def held_id(self, record, field="remote_id"):
+        """`field` of the link of `record` its organizer's calendar holds, or
+        of its only link."""
+        links = self.env["calendar.sync.link"]._of(record, "microsoft")
+        organizer = (
+            record.user_id
+            if record._name == "calendar.event"
+            else record.base_event_id.user_id
+        )
+        link = links.filtered(lambda link: link.account_id.user_id == organizer)
+        return (link or links)[:1][field]
+
+    def find_microsoft(self, model, operator, value, field="remote_id"):
+        """The records of `model` Outlook holds under `field` matching."""
+        Link = self.env["calendar.sync.link"]._engine()
+        fk = Link._field_of(self.env[model])
+        links = Link.search(
+            [
+                ("account_id.provider", "=", "microsoft"),
+                (field, operator, value),
+                (fk, "!=", False),
+            ]
+        )
+        return self.env[model].search([("id", "in", links[fk].ids)])
 
     def microsoft_id(self, record, user):
         """`record`'s id in `user`'s calendar."""

@@ -22,8 +22,9 @@ class TestResetAccount(TestCommon):
         self.create_events_for_tests()
 
     def _reset(self, delete_policy, sync_policy):
-        self.env["wizard.res.users.reset.microsoft.calendar"].create(
+        self.env["wizard.calendar.sync.reset"].create(
             {
+                "provider": "microsoft",
                 "user_id": self.organizer_user.id,
                 "delete_policy": delete_policy,
                 "sync_policy": sync_policy,
@@ -56,7 +57,7 @@ class TestResetAccount(TestCommon):
 
     @patch.object(MicrosoftCalendarService, "delete")
     def test_deleting_from_outlook_only_unlinks_the_kept_event(self, mock_delete):
-        self._reset("delete_microsoft", "new")
+        self._reset("delete_remote", "new")
         self.call_post_commit_hooks()
 
         mock_delete.assert_any_call("123", connection=ANY, timeout=ANY)

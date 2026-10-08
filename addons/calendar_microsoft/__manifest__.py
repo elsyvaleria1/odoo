@@ -1,6 +1,6 @@
 {
     "name": "Outlook Calendar Synchronization",
-    "version": "1.6",
+    "version": "1.7",
     "oldest_upgradable_version": "1.2",
     "category": "Productivity",
     "summary": "Synchronize calendar events with authorized Microsoft accounts",
@@ -12,10 +12,7 @@
         "integration_microsoft",
     ],
     "data": [
-        "security/ir.access.csv",
-        "wizards/wizard_res_users_reset_microsoft_calendar_views.xml",
         "views/res_config_settings_views.xml",
         "views/res_users_views.xml",
     ],
-    "post_init_hook": "init_initiating_microsoft_uuid",
 }
