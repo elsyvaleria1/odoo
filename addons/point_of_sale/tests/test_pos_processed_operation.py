@@ -114,6 +114,21 @@ class TestPosProcessedOperation(CommonPosTest):
         self.session.invalidate_recordset(["statement_line_ids"])
         self.assertEqual(len(self.session.statement_line_ids), lines_before + 1)
 
+    def test_a_result_is_replayed_exactly_as_first_answered(self):
+        operation = str(uuid4())
+        answer = {"zone": "a\u0000b", "after": [1.5, None, "\ud800"], "a": True}
+
+        first = self.Operation._call_once(
+            operation, "res.partner", "create", lambda: answer
+        )
+        second = self.Operation._call_once(
+            operation, "res.partner", "create", lambda: self.fail("replayed")
+        )
+
+        self.assertEqual(first, answer)
+        self.assertEqual(second, answer)
+        self.assertEqual(list(second), ["zone", "after", "a"])
+
     def test_processed_operations_are_forgotten_after_the_retention(self):
         old, recent = str(uuid4()), str(uuid4())
         self._cash_in(old)
@@ -185,6 +200,41 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
         self._call("remove_cash_in_out", args, operation)
 
         self.assertFalse(line.exists())
+
+    def test_a_read_carrying_an_operation_uuid_is_not_recorded(self):
+        Operation = self.env["pos.processed.operation"]
+        self.addCleanup(
+            self.set_registry_readonly_mode, type(self)._registry_readonly_enabled
+        )
+        for replica in (True, False):
+            # without a read replica a read-only route runs on a read/write cursor
+            self.set_registry_readonly_mode(replica)
+            with self.subTest(replica=replica):
+                operation = str(uuid4())
+                read = {
+                    "model": "pos.session",
+                    "method": "read",
+                    "args": [[self.pos_session.id], ["name"]],
+                    "kwargs": {"context": {"pos_operation_uuid": operation}},
+                }
+                self.call_jsonrpc("/web/dataset/call_kw/pos.session/read", read)
+                self.pos_session.sudo().name = f"Renamed, replica={replica}"
+                self.env.flush_all()
+
+                second = self.call_jsonrpc(
+                    "/web/dataset/call_kw/pos.session/read", read
+                )
+
+                self.assertEqual(second[0]["name"], f"Renamed, replica={replica}")
+                self.assertFalse(Operation.search([("operation_uuid", "=", operation)]))
+
+                written = str(uuid4())
+                self._call(
+                    "try_cash_in_out",
+                    [[self.pos_session.id], "in", 10, "float", False, {}],
+                    written,
+                )
+                self.assertTrue(Operation.search([("operation_uuid", "=", written)]))
 
     @mute_logger("odoo.http")
     def test_a_malformed_operation_uuid_is_refused(self):

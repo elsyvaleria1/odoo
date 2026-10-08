@@ -35,6 +35,7 @@ from . import test_pos_invoice_guards
 from . import test_pos_load_scoping
 from . import test_pos_lock_dates
 from . import test_pos_margin
+from . import test_pos_migrations
 from . import test_pos_multiple_receivable_accounts
 from . import test_pos_onboarding_scenarios
 from . import test_pos_order_batch

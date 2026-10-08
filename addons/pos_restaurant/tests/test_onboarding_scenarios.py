@@ -51,14 +51,13 @@ class TestPosRestaurantOnboardingScenarios(TestPoSCommon):
             [("module", "=", "base"), ("name", "=", "main_company")]
         ).unlink()
         self.env.registry.clear_cache()
+        sessions_before = self.env["pos.session"].search([])
         with (
             self._patch_journal_creation(),
             patch.object(type(Config), "_load_restaurant_demo_data", autospec=True),
         ):
             result = Config.load_onboarding_restaurant_scenario(with_demo_data=True)
-        self.assertTrue(Config.browse(result["config_id"]).exists())
-        self.assertFalse(
-            self.env.ref(
-                "pos_restaurant.pos_closed_session_3", raise_if_not_found=False
-            )
-        )
+        config = Config.browse(result["config_id"])
+        self.assertTrue(config.exists())
+        self.assertFalse(config.session_ids)
+        self.assertEqual(self.env["pos.session"].search([]), sessions_before)

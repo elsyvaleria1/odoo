@@ -300,7 +300,7 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return line.qty < 0
 
     def _get_line_quantity(self, line):
-        return abs(line.qty)
+        return -line.qty if self._is_refund_line(line) else line.qty
 
     def _get_product_total_amount(self, line):
         return line.currency_id.round(

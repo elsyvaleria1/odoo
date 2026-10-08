@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from odoo import http
+from odoo import api, http
 from odoo.http import ParameterError, request
 
 from odoo.addons.web.controllers.dataset import DataSet
@@ -26,7 +26,12 @@ class PosDataSet(DataSet):
         operation_uuid = context.pop(OPERATION_CONTEXT_KEY)
         kwargs = {**kwargs, "context": context}
         call_kw = super().call_kw
-        if not operation_uuid or request.env.cr.readonly:
+        model_class = request.registry.get(model)
+        if (
+            not operation_uuid
+            or model_class is None
+            or api.is_readonly(model_class, method)
+        ):
             return call_kw(model, method, args, kwargs, path=path)
         try:
             operation_uuid = str(UUID(operation_uuid))

@@ -5,6 +5,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
+from odoo.libs.json import loads as json_loads
 from odoo.tools import SQL, frozendict
 from odoo.tools.json import json_default
 
@@ -38,7 +39,7 @@ class PosProcessedOperation(models.Model):
         readonly=True,
         required=True,
     )
-    result = fields.Json(readonly=True)
+    result = fields.Text(readonly=True)
     processed_at = fields.Datetime(
         index=True,
         readonly=True,
@@ -74,7 +75,7 @@ class PosProcessedOperation(models.Model):
             result = call()
             self.env.cr.execute(
                 SQL(
-                    "UPDATE pos_processed_operation SET result = %s::jsonb WHERE id = %s",
+                    "UPDATE pos_processed_operation SET result = %s WHERE id = %s",
                     json_dumps(result, default=json_default),
                     claimed[0],
                 )
@@ -117,7 +118,7 @@ class PosProcessedOperation(models.Model):
             model=res_model,
             method=method,
         )
-        return result
+        return json_loads(result, lone_surrogates=True)
 
     @api.autovacuum
     def _gc_processed_operations(self) -> tuple:
