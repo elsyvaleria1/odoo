@@ -10,7 +10,6 @@ from odoo.libs.json import loads as json_loads
 from ..models.telegram_handler import (
     CALLBACK_CUSTOM,
     CALLBACK_ECMANAGER,
-    TelegramHandlerAccount,
 )
 from .common import PartnerLedgerTelegramTestCase
 from odoo.addons.telegram.models.telegram_bot import TelegramBot
@@ -25,7 +24,6 @@ class TestHandlerDeclarations(PartnerLedgerTelegramTestCase):
         self.assertEqual(
             {name: spec.tier for name, spec in commands.items()},
             {
-                "/estadoctapropio": "partner",
                 "/estadocuentaperiodo": "partner",
                 "/edocliente": "partner",
             },
@@ -33,7 +31,7 @@ class TestHandlerDeclarations(PartnerLedgerTelegramTestCase):
 
     def test_the_router_routes_the_commands_here(self):
         router = self.env["telegram.router"]
-        for command in ("/estadoctapropio", "/estadocuentaperiodo", "/edocliente"):
+        for command in ("/estadocuentaperiodo", "/edocliente"):
             handler, _spec = router._command_owner(self.test_bot, command)
             self.assertEqual(handler._name, "telegram.handler.account")
 
@@ -46,11 +44,20 @@ class TestHandlerDeclarations(PartnerLedgerTelegramTestCase):
 
     def test_the_renamed_commands_keep_their_xml_ids(self):
         # an upgrade renames the records the bots already carry
-        for xmlid, name in (
-            ("account_telegram.command_estadocuenta", "/estadoctapropio"),
-            ("account_telegram.command_ecmanager", "/edocliente"),
-        ):
-            self.assertEqual(self.env.ref(xmlid).name, name)
+        self.assertEqual(
+            self.env.ref("account_telegram.command_ecmanager").name, "/edocliente"
+        )
+
+    def test_the_own_statement_is_the_period_command_s_current_year(self):
+        # /estadoctapropio is gone: its current year heads the period menu
+        self.assertFalse(
+            self.env["telegram.command"].search([("name", "=", "/estadoctapropio")])
+        )
+        self.assertFalse(
+            self.env.ref(
+                "account_telegram.command_estadocuenta", raise_if_not_found=False
+            )
+        )
 
 
 class TestCalculatePeriodDates(PartnerLedgerTelegramTestCase):
@@ -93,6 +100,11 @@ class TestCalculatePeriodDates(PartnerLedgerTelegramTestCase):
         self.assertGreaterEqual(diff_months, 5)
         self.assertLessEqual(diff_months, 7)
 
+    def test_calculate_period_current_year(self):
+        self.assertEqual(
+            self.handler._get_period_dates("year", TODAY), ("2026-01-01", "2026-12-31")
+        )
+
     def test_calculate_period_1y(self):
         date_from, date_to = self.handler._get_period_dates("1y", TODAY)
 
@@ -132,42 +144,6 @@ class TestValidateDateFormat(PartnerLedgerTelegramTestCase):
     def test_invalid_date_values(self):
         self.assertFalse(self.handler._is_date_format_valid("2024-13-01"))
         self.assertFalse(self.handler._is_date_format_valid("2024-02-30"))
-
-
-class TestEstadoCuentaCommand(PartnerLedgerTelegramTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler = cls.env["telegram.handler.account"]
-
-    def test_estadocuenta_without_partner_validation_fails(self):
-        with self.mock_api_gateway_post():
-            TelegramHandlerAccount._handle_estadoctapropio_command(
-                self.handler,
-                self.test_bot,
-                self.test_chat,
-                args=[],
-                partner=self.test_partner,
-                internal_user=False,
-            )
-
-    def test_estadocuenta_with_args_shows_info_message(self):
-        with self.mock_api_gateway_post() as mock_post:
-            with patch.object(
-                type(self.handler), "_has_partner_access", return_value=True
-            ):
-                TelegramHandlerAccount._handle_estadoctapropio_command(
-                    self.handler,
-                    self.test_bot,
-                    self.test_chat,
-                    args=["2024-01-01", "2024-12-31"],
-                    partner=self.test_partner,
-                    internal_user=False,
-                )
-
-            mock_post.assert_called()
-            payload = mock_post.call_args.kwargs.get("json", {})
-            self.assertIn("estadocuentaperiodo", payload.get("text", ""))
 
 
 class TestEstadoCuentaPeriodoCommand(PartnerLedgerTelegramTestCase):
@@ -222,6 +198,7 @@ class TestEstadoCuentaPeriodoCommand(PartnerLedgerTelegramTestCase):
                 button.get("callback_data", "") for row in keyboard for button in row
             )
 
+            self.assertEqual(all_callbacks[0], "fin_period_year")
             self.assertIn("fin_period_1m", all_callbacks)
             self.assertIn("fin_period_3m", all_callbacks)
             self.assertIn("fin_period_6m", all_callbacks)
@@ -406,7 +383,7 @@ class TestHelpSections(PartnerLedgerTelegramTestCase):
 
         self.assertIsNotNone(financial_section)
         section_text = " ".join(financial_section)
-        self.assertIn("/estadoctapropio", section_text)
+        self.assertNotIn("/estadoctapropio", section_text)
         self.assertIn("/estadocuentaperiodo", section_text)
 
     def test_help_sections_without_partner(self):
@@ -469,7 +446,6 @@ class TestLedgerFlowGuard(PartnerLedgerTelegramTestCase):
     def test_ecmanager_is_registered_as_flow_starting(self):
         commands = self.handler._telegram_commands()
         self.assertTrue(commands["/edocliente"].starts_flow)
-        # /estadoctapropio is an extension's to turn into a flow (voice requests)
         self.assertFalse(commands["/estadocuentaperiodo"].starts_flow)
 
     def test_fin_custom_refused_while_another_flow_runs(self):
@@ -761,18 +737,19 @@ class TestRequesterClock(PartnerLedgerTelegramTestCase):
 
     def test_current_year_on_new_years_eve(self):
         self.test_partner.tz = "America/Mexico_City"
+        callback_query = self.mock_telegram_callback_query(
+            callback_data="fin_period_year"
+        )
         with (
             freeze_time("2027-01-01 03:00:00"),
             self.mock_api_gateway_post(),
-            patch.object(type(self.handler), "_has_partner_access", return_value=True),
             patch.object(type(self.handler), "_generate_and_send_report") as report,
         ):
-            TelegramHandlerAccount._handle_estadoctapropio_command(
-                self.handler,
+            self.handler._on_callback(
                 self.test_bot,
                 self.test_chat,
-                args=[],
-                partner=self.test_partner,
+                callback_query,
+                self.test_partner,
                 internal_user=False,
             )
         self.assertEqual(report.call_args[0][3:5], ("2026-01-01", "2026-12-31"))

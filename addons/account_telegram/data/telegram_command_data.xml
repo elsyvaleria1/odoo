@@ -2,13 +2,10 @@
 <odoo>
 
     <!--
-        The ids keep the commands' former names, /estadocuenta and /ecmanager,
-        so an upgrade renames the records the bots already carry.
+        The ids keep the commands' former names, /ecmanager among them, so an
+        upgrade renames the records the bots already carry. /estadoctapropio
+        (command_estadocuenta) became /estadocuentaperiodo's current year.
     -->
-    <record id="command_estadocuenta" model="telegram.command">
-        <field name="name">/estadoctapropio</field>
-    </record>
-
     <record id="command_estadocuentaperiodo" model="telegram.command">
         <field name="name">/estadocuentaperiodo</field>
     </record>

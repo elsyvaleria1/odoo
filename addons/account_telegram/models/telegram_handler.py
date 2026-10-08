@@ -31,7 +31,6 @@ RECEIVABLE_ACCOUNT_TYPES = [
     {"id": "non_trade_receivable", "selected": True},
 ]
 
-CMD_OWN_STATEMENT = "/estadoctapropio"
 CMD_PERIOD_STATEMENT = "/estadocuentaperiodo"
 CMD_CUSTOMER_STATEMENT = "/edocliente"
 
@@ -53,16 +52,10 @@ class TelegramHandlerAccount(models.AbstractModel):
 
     def _telegram_commands(self) -> dict:
         return {
-            CMD_OWN_STATEMENT: TelegramCommand(
-                "_handle_estadoctapropio_command",
-                "partner",
-                description=_lt("Get your account statement"),
-                company="choose",
-            ),
             CMD_PERIOD_STATEMENT: TelegramCommand(
                 "_handle_estadocuentaperiodo_command",
                 "partner",
-                description=_lt("Your account statement for a period"),
+                description=_lt("Get your account statement"),
                 company="choose",
             ),
             CMD_CUSTOMER_STATEMENT: TelegramCommand(
@@ -100,53 +93,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         super()._explain_command_refusal(bot, chat, command, partner, internal_user)
 
     @log_command_execution
-    def _handle_estadoctapropio_command(
-        self, bot, chat, args, partner=False, internal_user=False
-    ) -> None:
-        tr_env = translation_env(bot, chat)
-
-        if not self._has_partner_access(bot, chat, partner):
-            return
-
-        if args:
-            bot.send_message(
-                chat.chat_id,
-                tr_env._(
-                    "The /estadoctapropio command generates the current year "
-                    "report.\n\nTo choose a specific period, use /estadocuentaperiodo"
-                ),
-            )
-            return
-
-        try:
-            current_year = self._requester_today(chat).year
-            date_from = f"{current_year}-01-01"
-            date_to = f"{current_year}-12-31"
-
-            self._generate_and_send_report(bot, chat, partner, date_from, date_to)
-
-        except AccessError:
-            bot.send_message(
-                chat.chat_id,
-                tr_env._(
-                    "You do not have permission to generate this report. Contact the "
-                    "administrator."
-                ),
-            )
-        except Exception:
-            _logger.exception(
-                "Error generating partner ledger for partner %s",
-                partner.id if partner else "unknown",
-            )
-            bot.send_message(
-                chat.chat_id,
-                tr_env._(
-                    "An error occurred while generating the account statement. Please "
-                    "try again later."
-                ),
-            )
-
-    @log_command_execution
     def _handle_estadocuentaperiodo_command(
         self, bot, chat, args, partner=False, internal_user=False
     ) -> None:
@@ -155,36 +101,7 @@ class TelegramHandlerAccount(models.AbstractModel):
         if not self._has_partner_access(bot, chat, partner):
             return
 
-        keyboard = {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": tr_env._("Last month"),
-                        "callback_data": f"{CALLBACK_PREFIX}1m",
-                    },
-                    {
-                        "text": tr_env._("Last 3 months"),
-                        "callback_data": f"{CALLBACK_PREFIX}3m",
-                    },
-                ],
-                [
-                    {
-                        "text": tr_env._("Last 6 months"),
-                        "callback_data": f"{CALLBACK_PREFIX}6m",
-                    },
-                    {
-                        "text": tr_env._("Previous year"),
-                        "callback_data": f"{CALLBACK_PREFIX}1y",
-                    },
-                ],
-                [
-                    {
-                        "text": tr_env._("📆 Custom"),
-                        "callback_data": CALLBACK_CUSTOM,
-                    },
-                ],
-            ]
-        }
+        keyboard = self._period_keyboard(tr_env, CALLBACK_PREFIX, CALLBACK_CUSTOM)
 
         bot.send_message(
             chat.chat_id,
@@ -210,6 +127,29 @@ class TelegramHandlerAccount(models.AbstractModel):
             )
             + self._answer_hint(bot, chat),
         )
+
+    def _period_keyboard(self, tr_env, prefix, custom) -> dict:
+        """The periods a statement is asked for, the requester's own and a
+        customer's alike: the current year first, the year a statement covers
+        when nothing else is said."""
+
+        def button(text, period):
+            return {"text": text, "callback_data": f"{prefix}{period}"}
+
+        return {
+            "inline_keyboard": [
+                [button(tr_env._("Current year"), "year")],
+                [
+                    button(tr_env._("Last month"), "1m"),
+                    button(tr_env._("Last 3 months"), "3m"),
+                ],
+                [
+                    button(tr_env._("Last 6 months"), "6m"),
+                    button(tr_env._("Previous year"), "1y"),
+                ],
+                [{"text": tr_env._("📆 Custom"), "callback_data": custom}],
+            ]
+        }
 
     def _answer_hint(self, bot, chat):
         """A line appended to every prompt that waits for the requester's
@@ -271,6 +211,14 @@ class TelegramHandlerAccount(models.AbstractModel):
         if date_from and date_to:
             try:
                 self._generate_and_send_report(bot, chat, partner, date_from, date_to)
+            except AccessError:
+                bot.send_message(
+                    chat.chat_id,
+                    tr_env._(
+                        "You do not have permission to generate this report. "
+                        "Contact the administrator."
+                    ),
+                )
             except Exception:
                 _logger.exception("Error generating report")
                 bot.send_message(
@@ -293,7 +241,10 @@ class TelegramHandlerAccount(models.AbstractModel):
         return fields.Date.context_today(chat.with_context(tz=tz))
 
     def _get_period_dates(self, period, today) -> tuple:
-        if period == "1m":
+        if period == "year":
+            date_from = date(today.year, 1, 1)
+            date_to = date(today.year, 12, 31)
+        elif period == "1m":
             date_to = today.replace(day=1) - relativedelta(days=1)
             date_from = date_to.replace(day=1)
         elif period == "3m":
@@ -648,42 +599,9 @@ class TelegramHandlerAccount(models.AbstractModel):
 
         self._flow_start(chat, "ecmanager_period", {"target_partner_id": partner_id})
 
-        keyboard = {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": tr_env._("Last month"),
-                        "callback_data": f"{CALLBACK_ECM_PERIOD}1m",
-                    },
-                    {
-                        "text": tr_env._("Last 3 months"),
-                        "callback_data": f"{CALLBACK_ECM_PERIOD}3m",
-                    },
-                ],
-                [
-                    {
-                        "text": tr_env._("Last 6 months"),
-                        "callback_data": f"{CALLBACK_ECM_PERIOD}6m",
-                    },
-                    {
-                        "text": tr_env._("Current year"),
-                        "callback_data": f"{CALLBACK_ECM_PERIOD}year",
-                    },
-                ],
-                [
-                    {
-                        "text": tr_env._("Previous year"),
-                        "callback_data": f"{CALLBACK_ECM_PERIOD}1y",
-                    },
-                ],
-                [
-                    {
-                        "text": tr_env._("📆 Custom"),
-                        "callback_data": CALLBACK_ECM_CUSTOM,
-                    },
-                ],
-            ]
-        }
+        keyboard = self._period_keyboard(
+            tr_env, CALLBACK_ECM_PERIOD, CALLBACK_ECM_CUSTOM
+        )
 
         bot.send_message(
             chat.chat_id,
@@ -743,11 +661,7 @@ class TelegramHandlerAccount(models.AbstractModel):
 
         period = callback_data.replace(CALLBACK_ECM_PERIOD, "")
         today = self._requester_today(chat)
-        if period == "year":
-            date_from = f"{today.year}-01-01"
-            date_to = f"{today.year}-12-31"
-        else:
-            date_from, date_to = self._get_period_dates(period, today)
+        date_from, date_to = self._get_period_dates(period, today)
 
         if not date_from or not date_to:
             bot.send_message(
@@ -944,13 +858,12 @@ class TelegramHandlerAccount(models.AbstractModel):
             if self._offers_command(bot, chat, command, partner, internal_user)
         }
         estadocuenta_cmds = []
-        if CMD_OWN_STATEMENT in offered:
-            estadocuenta_cmds.append(
-                tr_env._("/estadoctapropio - Get your account statement for this year.")
-            )
         if CMD_PERIOD_STATEMENT in offered:
             estadocuenta_cmds.append(
-                tr_env._("/estadocuentaperiodo - Choose a specific period.")
+                tr_env._(
+                    "/estadocuentaperiodo - Get your account statement for the "
+                    "period you choose."
+                )
             )
         if CMD_CUSTOMER_STATEMENT in offered:
             estadocuenta_cmds.append(

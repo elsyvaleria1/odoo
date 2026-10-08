@@ -23,14 +23,11 @@ msgstr "/edocliente - Consulta el estado de cuenta de un cliente."
 #. module: account_telegram
 #. odoo-python
 #: code:addons/account_telegram/models/telegram_handler.py:0
-msgid "/estadoctapropio - Get your account statement for this year."
-msgstr "/estadoctapropio - Obtén tu estado de cuenta del año actual."
-
-#. module: account_telegram
-#. odoo-python
-#: code:addons/account_telegram/models/telegram_handler.py:0
-msgid "/estadocuentaperiodo - Choose a specific period."
-msgstr "/estadocuentaperiodo - Selecciona un periodo específico."
+msgid ""
+"/estadocuentaperiodo - Get your account statement for the period you "
+"choose."
+msgstr ""
+"/estadocuentaperiodo - Obtén tu estado de cuenta del periodo que elijas."
 
 #. module: account_telegram
 #. odoo-python
@@ -367,18 +364,6 @@ msgstr "Telegram: estados de cuenta"
 #. module: account_telegram
 #. odoo-python
 #: code:addons/account_telegram/models/telegram_handler.py:0
-msgid ""
-"The /estadoctapropio command generates the current year report.\n"
-"\n"
-"To choose a specific period, use /estadocuentaperiodo"
-msgstr ""
-"El comando /estadoctapropio genera el reporte del año actual.\n"
-"\n"
-"Para seleccionar un periodo específico, usa /estadocuentaperiodo"
-
-#. module: account_telegram
-#. odoo-python
-#: code:addons/account_telegram/models/telegram_handler.py:0
 msgid "The PDF file could not be generated"
 msgstr "No se pudo generar el archivo PDF"
 
@@ -464,12 +449,6 @@ msgstr ""
 "Tu cuenta de Telegram no está conectada a Odoo. En Odoo, abre Mis "
 "preferencias y pulsa Conectar Telegram, o pide una invitación a un "
 "administrador."
-
-#. module: account_telegram
-#. odoo-python
-#: code:addons/account_telegram/models/telegram_handler.py:0
-msgid "Your account statement for a period"
-msgstr "Tu estado de cuenta de un periodo"
 
 #. module: account_telegram
 #. odoo-python

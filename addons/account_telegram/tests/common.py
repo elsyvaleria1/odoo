@@ -8,9 +8,6 @@ class PartnerLedgerTelegramTestCase(TelegramBotTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.own_statement_command = cls.env["telegram.command"]._for_name(
-            "/estadoctapropio"
-        )
         cls.estadocuentaperiodo_command = cls.env["telegram.command"]._for_name(
             "/estadocuentaperiodo"
         )
@@ -20,7 +17,6 @@ class PartnerLedgerTelegramTestCase(TelegramBotTestCase):
         cls.test_bot.write(
             {
                 "command_ids": [
-                    Command.link(cls.own_statement_command.id),
                     Command.link(cls.estadocuentaperiodo_command.id),
                     Command.link(cls.customer_statement_command.id),
                 ]

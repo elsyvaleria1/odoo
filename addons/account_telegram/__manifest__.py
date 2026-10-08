@@ -1,6 +1,6 @@
 {
     "name": "Telegram Account Statements",
-    "version": "19.0.3.3.0",
+    "version": "19.0.3.4.0",
     "oldest_upgradable_version": "19.0.3.2.0",
     "category": "Accounting/Accounting",
     "summary": "Generate and deliver partner account statements through Telegram",
