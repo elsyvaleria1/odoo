@@ -209,6 +209,11 @@ def _confinement(tools: str) -> list[str]:
         tools,
         "--allowedTools",
         ",".join(rules),
+        # the clone's git is the runner's: a deny outranks the allow above
+        "--disallowedTools",
+        "Edit(./.git/**)",
+        # no MCP server: not the login's connectors, not one a file names
+        "--strict-mcp-config",
         "--permission-mode",
         "dontAsk",
         "--setting-sources",

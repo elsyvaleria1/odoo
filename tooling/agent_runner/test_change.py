@@ -78,6 +78,8 @@ def test_the_agent_reaches_its_clone_alone(world):
     rules = argv[argv.index("--allowedTools") + 1].split(",")
     assert rules and all(rule.endswith("(./**)") for rule in rules)
     assert argv[argv.index("--permission-mode") + 1] == "dontAsk"
+    assert argv[argv.index("--disallowedTools") + 1] == "Edit(./.git/**)"
+    assert "--strict-mcp-config" in argv
     assert argv[argv.index("--setting-sources") + 1] == ""
     assert json.loads(argv[argv.index("--settings") + 1]) == {"disableAllHooks": True}
 
