@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_recaptcha" model="integration.service">
+        <field name="name">reCAPTCHA</field>
+        <field name="code">google_recaptcha</field>
+        <field name="category">other</field>
+        <field name="provider">Google LLC</field>
+        <field name="website">https://www.google.com/recaptcha</field>
+        <field
+            name="documentation_url">https://developers.google.com/recaptcha/docs/verify</field>
+        <field name="environment">production</field>
+        <field name="endpoint_url">https://www.recaptcha.net</field>
+    </record>
+
+</odoo>

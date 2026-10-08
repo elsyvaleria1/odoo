@@ -13,7 +13,7 @@ High-level structure, data flow, and runtime organization for
 - **Name:** Website ("Enterprise website builder")
 - **Technical name:** `website`
 - **Category:** Website/Website
-- **Depends:** `digest`, `social_media`, `google_recaptcha`, `utm`, `html_builder`
+- **Depends:** `digest`, `social_media`, `captcha`, `utm`, `html_builder`
 - **External deps:** `geoip2` (python) — for visitor geolocation
 - **Role:** The multi-website CMS: public-facing rendered pages + the in-browser page builder/editor
 

@@ -1,10 +1,10 @@
 /** @odoo-module native */
+import { Captcha } from "@captcha/captcha";
 import { useBuilderContext } from "@html_builder/core/builder_context";
 import { BaseOptionComponent, useDomState } from "@html_builder/core/utils";
 import { selectElements } from "@html_editor/utils/dom_traversal";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { useLifecycleLog } from "@web/core/debug/logger_hooks";
-import { session } from "@web/session";
 
 import { FormActionFieldsOption } from "./form_action_fields_option.js";
 import { getModelName, getParsedDataFor } from "./utils.js";
@@ -63,7 +63,7 @@ export class FormOption extends BaseOptionComponent {
         useLifecycleLog(log);
         const { prepareFormModel, applyFormModel, fetchModels } =
             this.dependencies.websiteFormOption;
-        this.hasRecaptchaKey = !!session.recaptcha_public_key;
+        this.hasCaptchaLegal = !!new Captcha().legalTemplate;
 
         const el = this.builderContext.getEditingElement();
         this.messageEl = el.parentElement.querySelector(".s_website_form_end_message");

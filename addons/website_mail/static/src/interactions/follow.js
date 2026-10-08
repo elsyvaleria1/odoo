@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { ReCaptcha } from "@google_recaptcha/js/recaptcha";
+import { Captcha } from "@captcha/captcha";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
@@ -18,7 +18,7 @@ export class Follow extends Interaction {
 
     setup() {
         this.isUser = false;
-        this.recaptcha = new ReCaptcha();
+        this.captcha = new Captcha();
     }
 
     async willStart() {
@@ -35,7 +35,7 @@ export class Follow extends Interaction {
 
         const promises = [
             rpc("/website_mail/is_follower", { records: records }),
-            this.recaptcha.loadLibs(),
+            this.captcha.load(),
         ];
         const [data] = await this.waitFor(Promise.all(promises));
 
@@ -110,7 +110,7 @@ export class Follow extends Interaction {
         this.toggleEmailError(jsFollowEl, false);
         email = email ? email.value : false;
         if (email || this.isUser) {
-            const tokenCaptcha = await this.recaptcha.getToken("website_mail_follow");
+            const tokenCaptcha = await this.captcha.getToken("website_mail_follow");
             const token = tokenCaptcha.token;
 
             if (tokenCaptcha.error) {
@@ -121,19 +121,13 @@ export class Follow extends Interaction {
                 return false;
             }
 
-            const turnstileCaptcha = document.querySelector(
-                "input[name='turnstile_captcha']",
-            );
-            const turnstile = turnstileCaptcha ? turnstileCaptcha.value : "";
-
             const data = await this.waitFor(
                 rpc("/website_mail/follow", {
                     id: parseInt(jsFollowEl.dataset.id),
                     object: jsFollowEl.dataset.object,
                     message_is_follower: jsFollowEl.dataset.follow || "off",
                     email: email,
-                    ...(token ? { recaptcha_token_response: token } : {}),
-                    turnstile_captcha: turnstile,
+                    ...(token ? { captcha_token: token } : {}),
                 }),
             );
 

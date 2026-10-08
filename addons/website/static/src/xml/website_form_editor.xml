@@ -14,11 +14,12 @@
         </div>
     </t>
 
-    <t t-name="website.s_website_form_recaptcha_legal">
-        <div class="col-12 s_website_form_recaptcha" data-name="Recaptcha Legal">
+    <!-- the row's class is the one saved forms carry, whatever the provider -->
+    <t t-name="website.s_website_form_captcha_legal">
+        <div class="col-12 s_website_form_recaptcha" data-name="Captcha Legal">
             <div t-attf-style="width: #{labelWidth or '200px'}" class="s_website_form_label"/>
             <div class="col-sm">
-                <t t-call="google_recaptcha.recaptcha_legal_terms"/>
+                <t t-call="captcha.legal_terms"/>
             </div>
         </div>
     </t>

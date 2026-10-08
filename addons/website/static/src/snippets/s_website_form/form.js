@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { ReCaptcha } from "@google_recaptcha/js/recaptcha";
+import { Captcha } from "@captcha/captcha";
 import { scrollTo } from "@html_builder/utils/scrolling";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import {
@@ -82,7 +82,7 @@ export class Form extends Interaction {
     setup() {
         this.isHidden = false;
         this.datepickerInitialized = false;
-        this.recaptcha = new ReCaptcha();
+        this.captcha = new Captcha();
         this.initialValues = new Map();
         this.disabledStates = new Map();
         this.visibilityFunctionByFieldEl = new Map();
@@ -110,14 +110,15 @@ export class Form extends Interaction {
 
     async willStart() {
         log.logic("willStart", () => ({
-            recaptcha: !this.el.classList.contains("s_website_form_no_recaptcha"),
+            captcha: !this.el.classList.contains("s_website_form_no_recaptcha"),
             userPrefill: !!user.userId,
         }));
+        // the class is the one saved forms carry, whatever the provider
         if (!this.el.classList.contains("s_website_form_no_recaptcha")) {
-            this.recaptchaLoaded = true;
-            const endRecaptcha = log.perf("willStart recaptcha loadLibs");
-            await this.recaptcha.loadLibs();
-            endRecaptcha();
+            this.captchaLoaded = true;
+            const endCaptcha = log.perf("willStart captcha load");
+            await this.captcha.load();
+            endCaptcha();
         }
         if (user.userId) {
             const fields = this.getUserPreFillFields();
@@ -442,16 +443,14 @@ export class Form extends Interaction {
             }
         }
 
-        if (this.recaptchaLoaded) {
-            const endToken = log.perf("send recaptcha getToken");
-            const tokenObj = await this.waitFor(
-                this.recaptcha.getToken("website_form"),
-            );
+        if (this.captchaLoaded) {
+            const endToken = log.perf("send captcha getToken");
+            const tokenObj = await this.waitFor(this.captcha.getToken("website_form"));
             endToken(() => ({ token: !!tokenObj.token, error: !!tokenObj.error }));
             if (tokenObj.token) {
-                formValues["recaptcha_token_response"] = tokenObj.token;
+                formValues["captcha_token"] = tokenObj.token;
             } else if (tokenObj.error) {
-                log.logic("send: recaptcha token error, aborting", () => ({
+                log.logic("send: captcha token error, aborting", () => ({
                     error: tokenObj.error,
                 }));
                 this.updateStatus("error", tokenObj.error);

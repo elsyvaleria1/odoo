@@ -231,7 +231,7 @@ class Home(http.Controller):
                 )
                 if request.env["res.users"]._is_captcha_login_required(credential):
                     _debug.logic("login_captcha_required")
-                    request.env["ir.http"]._check_request_recaptcha_token("login")
+                    request.env["ir.http"]._check_request_captcha_token("login")
                 with _debug.perf("login_authenticate", cr=request.env.cr):
                     auth_info = request.session.authenticate(request.env, credential)
                 request.params["login_success"] = True

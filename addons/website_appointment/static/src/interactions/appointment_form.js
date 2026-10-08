@@ -1,29 +1,17 @@
 /** @odoo-module native */
 import { AppointmentForm } from "@calendar/booking/interactions/appointment_form";
-import { ReCaptcha } from "@google_recaptcha/js/recaptcha";
+import { Captcha } from "@captcha/captcha";
 import { patch } from "@web/core/utils/patch";
-import { session } from "@web/session";
 
 patch(AppointmentForm.prototype, {
     setup() {
         super.setup();
-        this.recaptcha = new ReCaptcha();
+        this.captcha = new Captcha();
         this.notification = this.services.notification;
     },
 
     async willStart() {
-        if (session.turnstile_site_key) {
-            const mod =
-                await import("@website_cf_turnstile/interactions/turnstile").catch(
-                    () => null,
-                );
-            if (mod?.TurnStile) {
-                this._turnstile = new mod.TurnStile("appointment_form_submission");
-                this._turnstile.turnstileEl.classList.add("float-start");
-            }
-        }
-        this.recaptcha.loadLibs();
-        this.addTurnstile(document.querySelector("form.appointment_submit_form"));
+        this.captcha.load();
         await super.willStart();
     },
 
@@ -33,7 +21,7 @@ patch(AppointmentForm.prototype, {
     async onConfirmAppointment(ev) {
         const button = ev.target;
         const form = button.closest("form");
-        if (!(await this.addRecaptchaToken(form))) {
+        if (!(await this.addCaptchaToken(form))) {
             button.setAttribute("disabled", true);
             setTimeout(() => button.removeAttribute("disabled"), 2000);
         } else {
@@ -44,8 +32,8 @@ patch(AppointmentForm.prototype, {
     /**
      * @returns {boolean}
      */
-    async addRecaptchaToken(form) {
-        const tokenObj = await this.recaptcha.getToken("appointment_form_submission");
+    async addCaptchaToken(form) {
+        const tokenObj = await this.captcha.getToken("appointment_form_submission");
         if (tokenObj.error) {
             this.notification.add(tokenObj.error, {
                 sticky: true,
@@ -53,28 +41,12 @@ patch(AppointmentForm.prototype, {
             });
             return false;
         } else if (tokenObj.token) {
-            const recaptchaTokenInput = document.createElement("input");
-            recaptchaTokenInput.setAttribute("name", "recaptcha_token_response");
-            recaptchaTokenInput.setAttribute("type", "hidden");
-            recaptchaTokenInput.setAttribute("value", tokenObj.token);
-            form.appendChild(recaptchaTokenInput);
+            const tokenInput = document.createElement("input");
+            tokenInput.setAttribute("name", "captcha_token");
+            tokenInput.setAttribute("type", "hidden");
+            tokenInput.setAttribute("value", tokenObj.token);
+            form.appendChild(tokenInput);
         }
-        return true;
-    },
-
-    addTurnstile(form) {
-        if (!this._turnstile) {
-            return false;
-        }
-
-        const submitButton = form.querySelector(
-            "button.o_appointment_form_confirm_btn",
-        );
-        this._turnstile.constructor.disableSubmit(submitButton);
-        submitButton.after(this._turnstile.turnstileEl);
-        this._turnstile.insertScripts(form);
-        this._turnstile.render();
-
         return true;
     },
 });

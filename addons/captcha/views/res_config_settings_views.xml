@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.captcha</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="web.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <setting position="after" id="captcha_turnstile">
+                <setting
+                    id="captcha_provider"
+                    string="Captcha Provider"
+                    help="Which installed provider checks the forms. Without one, nothing is checked.">
+                    <field name="captcha_provider" />
+                </setting>
+            </setting>
+        </field>
+    </record>
+
+</odoo>

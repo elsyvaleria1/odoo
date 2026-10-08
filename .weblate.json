@@ -827,9 +827,9 @@
                 "new_base": "addons/mail_google/i18n/mail_google.pot"
             },
             {
-                "name": "google_recaptcha",
-                "filemask": "addons/google_recaptcha/i18n/*.po",
-                "new_base": "addons/google_recaptcha/i18n/google_recaptcha.pot"
+                "name": "captcha_recaptcha",
+                "filemask": "addons/captcha_recaptcha/i18n/*.po",
+                "new_base": "addons/captcha_recaptcha/i18n/captcha_recaptcha.pot"
             },
             {
                 "name": "helpdesk",
@@ -3152,9 +3152,9 @@
                 "new_base": "addons/website_blog/i18n/website_blog.pot"
             },
             {
-                "name": "website_cf_turnstile",
-                "filemask": "addons/website_cf_turnstile/i18n/*.po",
-                "new_base": "addons/website_cf_turnstile/i18n/website_cf_turnstile.pot"
+                "name": "captcha_turnstile",
+                "filemask": "addons/captcha_turnstile/i18n/*.po",
+                "new_base": "addons/captcha_turnstile/i18n/captcha_turnstile.pot"
             },
             {
                 "name": "website_crm",

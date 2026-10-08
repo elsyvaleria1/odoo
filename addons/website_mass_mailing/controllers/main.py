@@ -71,11 +71,11 @@ class MassMailController(main.MassMailController):
     )
     def subscribe(self, list_id, value, subscription_type, **post):
         try:
-            request.env["ir.http"]._check_request_recaptcha_token(
+            request.env["ir.http"]._check_request_captcha_token(
                 "website_mass_mailing_subscribe"
             )
         except UserError as e:
-            _debug.logic("subscribe_recaptcha_refused", list_id=list_id, error=e)
+            _debug.logic("subscribe_captcha_refused", list_id=list_id, error=e)
             return {
                 "toast_type": "danger",
                 "toast_content": str(e),

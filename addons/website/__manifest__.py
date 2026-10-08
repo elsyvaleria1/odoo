@@ -13,7 +13,7 @@
         "credential",
         "digest",
         "social_media",
-        "google_recaptcha",
+        "captcha",
         "utm",
         "html_builder",
     ],
@@ -409,7 +409,7 @@
             "website/static/src/snippets/**/*.xml",
             "website/static/src/xml/**/*.xml",
             "website/static/src/snippets/s_table_of_content/000.scss",
-            "google_recaptcha/static/src/js/recaptcha.js",
+            "captcha/static/src/captcha.js",
             "website/static/src/js/content/generate_video_iframe.js",
         ],
         "web._assets_frontend_helpers": [

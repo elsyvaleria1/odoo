@@ -41,8 +41,8 @@
     <BuilderRow label.translate="URL">
         <WebsiteUrlPicker dataAttributeAction="'successPage'" default="'/contactus-thank-you'" id="'url_opt'" t-if="this.isActiveItem('show_redirect_opt')"/>
     </BuilderRow>
-    <BuilderRow t-if="this.hasRecaptchaKey" label.translate="Show reCaptcha Policy">
-        <BuilderCheckbox action="'formToggleRecaptchaLegal'" preview="false"/>
+    <BuilderRow t-if="this.hasCaptchaLegal" label.translate="Show Captcha Policy">
+        <BuilderCheckbox action="'formToggleCaptchaLegal'" preview="false"/>
     </BuilderRow>
 </t>
 

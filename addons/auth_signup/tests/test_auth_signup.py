@@ -24,14 +24,14 @@ class TestAuthSignupFlow(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
 
     @contextmanager
     def patch_captcha_signup(self):
-        def _check_request_recaptcha_token(self, captcha):
+        def _check_request_captcha_token(self, captcha):
             if captcha != "signup":
                 raise UserError("CAPTCHA test")
 
         with patch.object(
             self.env.registry["ir.http"],
-            "_check_request_recaptcha_token",
-            _check_request_recaptcha_token,
+            "_check_request_captcha_token",
+            _check_request_captcha_token,
         ):
             yield
 

@@ -21,7 +21,7 @@ class TestWebsiteMail(TransactionCase):
             request.session = {}
             with patch.object(
                 type(self.env["ir.http"]),
-                "_check_request_recaptcha_token",
+                "_check_request_captcha_token",
                 side_effect=ValidationError("The reCaptcha token is invalid."),
             ):
                 result = controller.website_message_subscribe(

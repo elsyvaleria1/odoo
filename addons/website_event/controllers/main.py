@@ -571,12 +571,12 @@ class WebsiteEventController(http.Controller):
     )
     def registration_confirm(self, event, **post):
         try:
-            request.env["ir.http"]._check_request_recaptcha_token(
+            request.env["ir.http"]._check_request_captcha_token(
                 "website_event_registration"
             )
         except UserError:
             return request.redirect(
-                "/event/%s/register?registration_error_code=recaptcha_failed" % event.id
+                "/event/%s/register?registration_error_code=captcha_failed" % event.id
             )
         registrations_data = self._process_attendees_form(event, post)
         if any(

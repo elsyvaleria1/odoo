@@ -1,0 +1,7 @@
+// a challenge Cloudflare asks the visitor to answer, above the page
+.o_captcha_turnstile {
+    position: fixed;
+    right: map-get($spacers, 3);
+    bottom: map-get($spacers, 3);
+    z-index: $zindex-modal;
+}

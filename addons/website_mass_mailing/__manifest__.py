@@ -9,7 +9,7 @@
     "depends": [
         "website",
         "mass_mailing",
-        "google_recaptcha",
+        "captcha",
     ],
     "data": [
         "security/ir.access.csv",

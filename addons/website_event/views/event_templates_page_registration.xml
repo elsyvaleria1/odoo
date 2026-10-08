@@ -292,7 +292,7 @@
             Registration failed! These tickets are not available anymore.
         </div>
         <div
-            t-if="registration_error_code == 'recaptcha_failed'"
+            t-if="registration_error_code == 'captcha_failed'"
             class="alert alert-danger my-3"
             role="alert">
             Registration failed! Suspicious activity detected by Google reCaptcha.

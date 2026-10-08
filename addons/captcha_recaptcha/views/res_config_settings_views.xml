@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+            name="name">res.config.settings.view.form.inherit.captcha.recaptcha</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="web.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <div id="captcha_recaptcha_warning" position="replace">
+                <div
+                    class="content-group"
+                    id="captcha_recaptcha_configuration"
+                    invisible="not module_captcha_recaptcha">
+                    <div class="mt16 row">
+                        <label
+                            for="captcha_recaptcha_site_key"
+                            class="col-3 o_light_label" />
+                        <field name="captcha_recaptcha_site_key" />
+                    </div>
+                    <div class="mt16 row">
+                        <label
+                            for="captcha_recaptcha_secret_key"
+                            class="col-3 o_light_label" />
+                        <field name="captcha_recaptcha_secret_key" />
+                    </div>
+                    <div class="mt16 row">
+                        <label
+                            for="captcha_recaptcha_min_score"
+                            class="col-3 o_light_label" />
+                        <field name="captcha_recaptcha_min_score" />
+                    </div>
+                    <div>
+                        <a
+                            href="https://www.google.com/recaptcha/admin/create"
+                            class="oe_link"
+                            target="_blank">
+                            <i class="oi oi-arrow-right" /> Generate reCAPTCHA v3 keys
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </field>
+    </record>
+
+</odoo>

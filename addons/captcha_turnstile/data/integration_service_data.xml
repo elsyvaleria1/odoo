@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="service_turnstile" model="integration.service">
+        <field name="name">Cloudflare Turnstile</field>
+        <field name="code">cloudflare_turnstile</field>
+        <field name="category">other</field>
+        <field name="provider">Cloudflare, Inc.</field>
+        <field name="website">https://www.cloudflare.com/products/turnstile</field>
+        <field
+            name="documentation_url">https://developers.cloudflare.com/turnstile/get-started/server-side-validation</field>
+        <field name="environment">production</field>
+        <field name="endpoint_url">https://challenges.cloudflare.com</field>
+    </record>
+
+</odoo>

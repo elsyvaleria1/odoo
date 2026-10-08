@@ -1,11 +1,10 @@
 /** @odoo-module native */
-import { ReCaptcha } from "@google_recaptcha/js/recaptcha";
+import { Captcha } from "@captcha/captcha";
 import { isVisible } from "@html_editor/utils/dom_info";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Modal } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
-import { session } from "@web/session";
 
 export class Subscribe extends Interaction {
     static selector = ".js_subscribe";
@@ -14,20 +13,11 @@ export class Subscribe extends Interaction {
     };
 
     setup() {
-        this._recaptcha = new ReCaptcha();
+        this.captcha = new Captcha();
         this.notification = this.services["notification"];
     }
 
     async willStart() {
-        if (session.turnstile_site_key) {
-            const mod =
-                await import("@website_cf_turnstile/interactions/turnstile").catch(
-                    () => null,
-                );
-            if (mod) {
-                this._turnstile = new mod.TurnStile("website_mass_mailing_subscribe");
-            }
-        }
         const inputName = this.el.querySelector("input").name;
         const data = await this.waitFor(
             rpc("/website_mass_mailing/is_subscriber", {
@@ -36,7 +26,7 @@ export class Subscribe extends Interaction {
             }),
         );
         this._updateView(data);
-        await this._recaptcha.loadLibs();
+        await this.captcha.load();
     }
 
     destroy() {
@@ -73,15 +63,6 @@ export class Subscribe extends Interaction {
             "input.js_subscribe_value, input.js_subscribe_email",
         );
         valueInputEl.disabled = isSubscriber;
-
-        if (!isSubscriber && this._turnstile && window.top === window) {
-            const turnstileEl = this._turnstile.turnstileEl;
-            this._turnstile.constructor.disableSubmit(subscribeBtnEl);
-            turnstileEl.classList.add("mt-3");
-            this.el.appendChild(turnstileEl);
-            this._turnstile.insertScripts(this.el);
-            this._turnstile.render();
-        }
     }
 
     _getListId() {
@@ -102,7 +83,7 @@ export class Subscribe extends Interaction {
         this.el.classList.remove("o_has_error");
         this.el.querySelector(".form-control").classList.remove("is-invalid");
         const tokenObj = await this.waitFor(
-            this._recaptcha.getToken("website_mass_mailing_subscribe"),
+            this.captcha.getToken("website_mass_mailing_subscribe"),
         );
         if (tokenObj.error) {
             this.notification.add(tokenObj.error, {
@@ -116,10 +97,7 @@ export class Subscribe extends Interaction {
                 list_id: this._getListId(),
                 value: input?.value ?? false,
                 subscription_type: inputName,
-                ...(tokenObj.token ? { recaptcha_token_response: tokenObj.token } : {}),
-                turnstile_captcha: this.el.parentElement.querySelector(
-                    'input[name="turnstile_captcha"]',
-                )?.value,
+                ...(tokenObj.token ? { captcha_token: tokenObj.token } : {}),
             }),
         );
         const toastType = result.toast_type;

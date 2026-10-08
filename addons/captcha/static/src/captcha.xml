@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="captcha.legal_terms">
+        <span class="o_captcha_legal_terms"><t t-call="{{ legalTemplate }}"/></span>
+    </t>
+
+</templates>

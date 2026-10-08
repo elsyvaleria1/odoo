@@ -1,9 +1,8 @@
 /** @odoo-module native */
-import { ReCaptcha } from "@google_recaptcha/js/recaptcha";
+import { Captcha } from "@captcha/captcha";
 import { registry } from "@web/core/registry";
 import { Modal } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
-import { session } from "@web/session";
 
 export class ModalRegistration extends Interaction {
     static selector =
@@ -18,21 +17,11 @@ export class ModalRegistration extends Interaction {
     };
 
     setup() {
-        this.recaptcha = new ReCaptcha();
+        this.captcha = new Captcha();
     }
 
     async willStart() {
-        if (session.turnstile_site_key) {
-            const mod =
-                await import("@website_cf_turnstile/interactions/turnstile").catch(
-                    () => null,
-                );
-            if (mod?.TurnStile) {
-                this._turnstile = new mod.TurnStile("website_event_registration");
-                this._turnstile.turnstileEl.classList.add("float-end");
-            }
-        }
-        await this.recaptcha.loadLibs();
+        await this.captcha.load();
     }
 
     start() {
@@ -41,29 +30,8 @@ export class ModalRegistration extends Interaction {
             keyboard: false,
         });
 
-        const form = this.el.querySelector("form#attendee_registration");
-        this.el.addEventListener("shown.bs.modal", () => {
-            this._addTurnstile(form);
-        });
-
         formModal.show();
         this.registerCleanup(() => formModal.dispose());
-    }
-
-    _addTurnstile(form) {
-        if (!this._turnstile) {
-            return false;
-        }
-
-        const modalFooter = form.querySelector("div.modal-footer");
-        const formButton = form.querySelector("button[type=submit]");
-
-        this._turnstile.constructor.disableSubmit(formButton);
-        modalFooter.appendChild(this._turnstile.turnstileEl);
-        this._turnstile.insertScripts(form);
-        this._turnstile.render();
-
-        return true;
     }
 
     enableRegistrationFormSubmit() {
@@ -82,11 +50,9 @@ export class ModalRegistration extends Interaction {
         ev.preventDefault();
 
         const form = ev.currentTarget;
-        this.recaptchaToken = await this.recaptcha.getToken(
-            "website_event_registration",
-        );
-        if (this.recaptchaToken.error) {
-            this.services.notification.add(this.recaptchaToken.error, {
+        const tokenObj = await this.captcha.getToken("website_event_registration");
+        if (tokenObj.error) {
+            this.services.notification.add(tokenObj.error, {
                 type: "danger",
                 sticky: true,
             });
@@ -96,11 +62,11 @@ export class ModalRegistration extends Interaction {
             this.services["public.interactions"].stopInteractions(this.el);
             return;
         }
-        if (this.recaptchaToken.token) {
+        if (tokenObj.token) {
             const tokenInput = document.createElement("input");
-            tokenInput.setAttribute("name", "recaptcha_token_response");
+            tokenInput.setAttribute("name", "captcha_token");
             tokenInput.setAttribute("type", "hidden");
-            tokenInput.setAttribute("value", this.recaptchaToken.token);
+            tokenInput.setAttribute("value", tokenObj.token);
             this.insert(tokenInput, form);
         }
         form.submit();

@@ -475,7 +475,7 @@ class IrHttp(models.AbstractModel):
             captcha := endpoint.routing.get("captcha")
         ) and request.httprequest.method not in SAFE_HTTP_METHODS:
             _debug.logic("captcha_checked", method=request.httprequest.method)
-            request.env["ir.http"]._check_request_recaptcha_token(captcha)
+            request.env["ir.http"]._check_request_captcha_token(captcha)
         with _debug.perf(
             "dispatch",
             cr=request.env.cr,
@@ -664,5 +664,7 @@ class IrHttp(models.AbstractModel):
         return cookie_type == "required" or bool(request.env.user)
 
     @api.model
-    def _check_request_recaptcha_token(self, action: str) -> None:
+    def _check_request_captcha_token(self, action: str) -> None:
+        """Refuse the current request unless its captcha proves a human asked
+        for `action`; without a captcha module there is nothing to check."""
         return

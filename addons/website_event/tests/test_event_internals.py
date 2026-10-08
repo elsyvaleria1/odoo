@@ -94,7 +94,7 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
             "0-simple_choice-%s" % self.event_question_2.id: "7",
             "0-text_box-%s" % self.event_question_3.id: "Free Text",
             "custom-field": "custom-value",
-            "recaptcha_token_response": "opaquetokenvalue",
+            "captcha_token": "opaquetokenvalue",
         }
 
         with MockRequest(self.env):

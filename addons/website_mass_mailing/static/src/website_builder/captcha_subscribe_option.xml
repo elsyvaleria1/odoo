@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="website_mass_mailing.CaptchaSubscribeOption">
+
+    <!-- the data attribute is the one saved pages carry -->
+    <BuilderRow label.translate="Show Captcha Policy" t-if="this.hasCaptchaLegal()">
+        <BuilderCheckbox dataAttributeAction="'toggleRecaptchaLegal'" dataAttributeActionValue="'true'" action="'toggleCaptchaLegal'"/>
+    </BuilderRow>
+
+</t>
+</templates>

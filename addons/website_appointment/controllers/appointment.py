@@ -62,10 +62,10 @@ class WebsiteAppointment(AppointmentController):
 
     @http.route()
     def appointment_form_submit(self, *args, **kwargs):
-        request.env["ir.http"]._check_request_recaptcha_token(
+        request.env["ir.http"]._check_request_captcha_token(
             "appointment_form_submission"
         )
-        _debug.lifecycle("form_submit_recaptcha_passed")
+        _debug.lifecycle("form_submit_captcha_passed")
         return super().appointment_form_submit(*args, **kwargs)
 
     def _get_appointment_type_resource_selection_view(

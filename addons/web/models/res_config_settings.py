@@ -71,8 +71,8 @@ class ResConfigSettings(models.TransientModel):
     module_sms = fields.Boolean(string="SMS")
     module_partner_autocomplete = fields.Boolean(string="Partner Autocomplete")
     module_geocoding = fields.Boolean(string="Geocoding")
-    module_google_recaptcha = fields.Boolean(string="reCAPTCHA")
-    module_website_cf_turnstile = fields.Boolean(string="Cloudflare Turnstile")
+    module_captcha_recaptcha = fields.Boolean(string="reCAPTCHA")
+    module_captcha_turnstile = fields.Boolean(string="Cloudflare Turnstile")
     module_google_address_autocomplete = fields.Boolean(
         string="Google Address Autocomplete"
     )

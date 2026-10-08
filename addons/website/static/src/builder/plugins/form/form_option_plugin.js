@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { Captcha } from "@captcha/captcha";
 import { BuilderAction } from "@html_builder/core/builder_action";
 import { BaseOptionComponent } from "@html_builder/core/utils";
 import { SyncCache } from "@html_builder/utils/sync_cache";
@@ -149,7 +150,7 @@ export class FormOptionPlugin extends Plugin {
             SetMarkAction,
             OnSuccessAction,
             ToggleEndMessageAction,
-            FormToggleRecaptchaLegalAction,
+            FormToggleCaptchaLegalAction,
             CustomFieldAction,
             ExistingFieldAction,
             SelectTypeAction,
@@ -1203,15 +1204,16 @@ export class ToggleEndMessageAction extends BuilderAction {
         return el.classList.contains("o_show_form_success_message");
     }
 }
-export class FormToggleRecaptchaLegalAction extends BuilderAction {
-    static id = "formToggleRecaptchaLegal";
+export class FormToggleCaptchaLegalAction extends BuilderAction {
+    static id = "formToggleCaptchaLegal";
     apply({ editingElement: el }) {
         const labelWidth = el.querySelector(".s_website_form_label").style.width;
-        const legalEl = renderToElement("website.s_website_form_recaptcha_legal", {
+        const legalEl = renderToElement("website.s_website_form_captcha_legal", {
             labelWidth: labelWidth,
+            legalTemplate: new Captcha().legalTemplate,
         });
         legalEl.setAttribute("contentEditable", true);
-        log.pipeline("FormToggleRecaptchaLegalAction apply: legal inserted", () => ({
+        log.pipeline("FormToggleCaptchaLegalAction apply: legal inserted", () => ({
             labelWidth,
         }));
         el.querySelector(".s_website_form_submit").insertAdjacentElement(
@@ -1220,13 +1222,12 @@ export class FormToggleRecaptchaLegalAction extends BuilderAction {
         );
     }
     clean({ editingElement: el }) {
-        const recaptchaLegalEl = el.querySelector(".s_website_form_recaptcha");
-        log.pipeline("FormToggleRecaptchaLegalAction clean: legal removed");
-        recaptchaLegalEl.remove();
+        const legalEl = el.querySelector(".s_website_form_recaptcha");
+        log.pipeline("FormToggleCaptchaLegalAction clean: legal removed");
+        legalEl.remove();
     }
     isApplied({ editingElement: el }) {
-        const recaptchaLegalEl = el.querySelector(".s_website_form_recaptcha");
-        return !!recaptchaLegalEl;
+        return !!el.querySelector(".s_website_form_recaptcha");
     }
 }
 export class CustomFieldAction extends BuilderAction {

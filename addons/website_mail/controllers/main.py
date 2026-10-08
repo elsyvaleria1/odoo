@@ -27,12 +27,12 @@ class WebsiteMail(http.Controller):
             partner_ids = request.env.user.partner_id.ids
         else:
             try:
-                self.env["ir.http"]._check_request_recaptcha_token(
+                self.env["ir.http"]._check_request_captcha_token(
                     "website_mail_follow"
                 )
             except (ValidationError, UserError) as e:
                 _logger.debug(
-                    "website_mail_follow recaptcha check failed, "
+                    "website_mail_follow captcha check failed, "
                     "falling back to no_create: %s",
                     e,
                 )
