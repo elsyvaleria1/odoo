@@ -1,6 +1,7 @@
+import threading
 from unittest.mock import patch
 
-from odoo.tests import HttpCase, tagged
+from odoo.tests import BaseCase, HttpCase, tagged
 
 from ..models.bus import ImDispatch
 
@@ -41,3 +42,35 @@ class TestDispatcherHealth(HttpCase):
         with patch("odoo.addons.bus.models.bus.stop_event") as stop_event:
             stop_event.is_set.return_value = True
             self.assertFalse(dispatch.is_healthy)
+
+
+@tagged("-at_install", "post_install")
+class TestDispatcherStartsOnce(BaseCase):
+    def test_racing_subscriptions_start_the_thread_once(self):
+        dispatch = ImDispatch()
+        release = threading.Event()
+        self.addCleanup(release.set)
+        starts = []
+        original_start = ImDispatch.start
+
+        def counting_start(self):
+            starts.append(1)
+            original_start(self)
+
+        barrier = threading.Barrier(8)
+
+        def race():
+            barrier.wait()
+            dispatch._start_if_stopped()
+
+        with (
+            patch.object(ImDispatch, "run", lambda self: release.wait(5)),
+            patch.object(ImDispatch, "start", counting_start),
+        ):
+            racers = [threading.Thread(target=race) for _ in range(8)]
+            for racer in racers:
+                racer.start()
+            for racer in racers:
+                racer.join(5)
+        self.assertEqual(len(starts), 1)
+        self.assertTrue(dispatch.is_alive())

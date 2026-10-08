@@ -356,6 +356,7 @@ class ImDispatch(threading.Thread):
         self._poll_round = 0
         self._poll_memo = {}
         self._poll_memo_lock = threading.Lock()
+        self._start_lock = threading.Lock()
         self._waker = None
 
     def set_waker(self, waker) -> None:
@@ -396,10 +397,13 @@ class ImDispatch(threading.Thread):
         )
 
     def _start_if_stopped(self) -> None:
-        with contextlib.suppress(RuntimeError):
-            if not self.is_alive():
-                self.start()
-        self._ever_started = True
+        # Subscriptions arrive on several threads at once, and two that both
+        # find the thread not alive would both start it.
+        with self._start_lock:
+            with contextlib.suppress(RuntimeError):
+                if not self.is_alive():
+                    self.start()
+            self._ever_started = True
 
     def subscribe(self, channels, last, db, websocket) -> None:
         channels = {hashable(channel_with_db(db, c)) for c in channels}
