@@ -28,7 +28,11 @@ class WizardAccountReturnPay(models.TransientModel):
     # so the flag would enforce nothing while reading as though it did. The reader's
     # own access domain is what scopes this now, via compute_sudo=False above.
     bank_account_id = fields.Many2one(comodel_name="res.partner.bank.account")
-    communication = fields.Char(compute="_compute_communication")
+    communication = fields.Char(
+        compute="_compute_communication",
+        store=True,
+        readonly=False,
+    )
 
     amount_to_pay = fields.Monetary(
         compute="_compute_amount_to_pay",
@@ -48,6 +52,7 @@ class WizardAccountReturnPay(models.TransientModel):
         required=True,
     )
     has_settlement = fields.Boolean(compute="_compute_has_settlement")
+    has_single_settlement = fields.Boolean(compute="_compute_has_settlement")
     journal_id = fields.Many2one(
         comodel_name="account.journal",
         string="Paid From",
@@ -73,6 +78,10 @@ class WizardAccountReturnPay(models.TransientModel):
     def _compute_has_settlement(self) -> None:
         for wizard in self:
             wizard.has_settlement = bool(wizard.return_id._get_settlement_lines())
+            wizard.has_single_settlement = (
+                wizard.has_settlement
+                and wizard.return_id._has_single_settlement_account()
+            )
 
     @api.depends("company_id")
     def _compute_communication(self) -> None:
@@ -115,6 +124,22 @@ class WizardAccountReturnPay(models.TransientModel):
             self._prepare_return_payment_vals()
         )
         return_payment.action_create_payment()
+        return {
+            "type": "ir.actions.client",
+            "tag": "action_return_refresh",
+            "params": {
+                "next_action": {"type": "ir.actions.act_window_close"},
+                "return_ids": self.return_id.ids,
+            },
+        }
+
+    @_debug.perf.timed
+    def action_record_reference(self) -> dict:
+        _debug.lifecycle("action_record_reference", records=self)
+        self.check_singleton()
+        self.env["account.return.payment"].create(
+            {**self._prepare_return_payment_vals(), "is_instructed": True}
+        )
         return {
             "type": "ir.actions.client",
             "tag": "action_return_refresh",

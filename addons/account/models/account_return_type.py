@@ -94,6 +94,14 @@ class AccountReturnType(models.Model):
         help="The authority the tax is owed to. It is the partner of the closing entry's "
         "settlement line and of the payments that settle it.",
     )
+    settle_per_concept = fields.Boolean(
+        string="Settle Each Tax on Its Account",
+        tracking=True,
+        help="The tax closing leaves each tax group's amount due on that group's payable "
+        "account, with the authority as partner, and the return is paid once those "
+        "lines are reconciled with money that left the bank. For an authority paid "
+        "once for several taxes whose accounts must stay apart.",
+    )
     filing_channel = fields.Selection(
         selection="_selection_filing_channel",
         tracking=True,

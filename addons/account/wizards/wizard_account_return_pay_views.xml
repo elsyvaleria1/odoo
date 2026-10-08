@@ -14,14 +14,25 @@
                 </h2>
                 <group invisible="not has_settlement">
                     <field name="company_id" invisible="1" />
-                    <field name="journal_id" required="has_settlement" />
+                    <field name="communication" string="Payment Reference" />
+                    <field
+                        name="journal_id"
+                        invisible="not has_single_settlement"
+                        required="has_single_settlement" />
                 </group>
                 <footer>
                     <button
                         name="action_create_payment"
                         type="object"
                         string="Create Payment"
-                        invisible="not has_settlement"
+                        invisible="not has_single_settlement"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        name="action_record_reference"
+                        type="object"
+                        string="Record Reference"
+                        invisible="not has_settlement or has_single_settlement"
                         class="btn-primary"
                         data-hotkey="q" />
                     <button

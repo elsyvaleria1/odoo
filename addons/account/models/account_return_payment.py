@@ -85,7 +85,7 @@ class AccountReturnPayment(models.Model):
         tracking=True,
     )
 
-    @api.depends("is_cancelled", "is_instructed", "payment_id.state")
+    @api.depends("is_cancelled", "is_instructed", "payment_id.state", "return_id.state")
     def _compute_state(self) -> None:
         for record in self:
             if record.is_cancelled or record.payment_id.state in (
@@ -93,7 +93,9 @@ class AccountReturnPayment(models.Model):
                 "rejected",
             ):
                 record.state = "cancelled"
-            elif record.payment_id.state == "paid":
+            elif record.payment_id.state == "paid" or (
+                not record.payment_id and record.return_id.state == "paid"
+            ):
                 record.state = "paid"
             elif record.payment_id.state == "in_process":
                 record.state = "in_process"

@@ -215,6 +215,48 @@ class TestAccountReturnPayment(TestAccountReportsCommon):
 
         self.assertEqual(tax_return.state, "submitted")
 
+    def test_settling_per_concept_keeps_each_tax_on_its_own_account(self):
+        per_concept_type = self.return_type.copy({"name": "Per-concept VAT"})
+        per_concept_type.settlement_account_id = False
+        per_concept_type.settle_per_concept = True
+        payable = self.env["account.account"].create(
+            {
+                "name": "VAT payable to remit",
+                "code": "test.tax.remit",
+                "account_type": "liability_payable",
+                "reconcile": True,
+            }
+        )
+        self.sale_tax.tax_group_id.tax_payable_account_id = payable
+        tax_return, wizard = self._submitted_return(per_concept_type)
+
+        self.assertRecordValues(
+            tax_return._get_settlement_lines(),
+            [
+                {
+                    "account_id": payable.id,
+                    "partner_id": self.authority.id,
+                    "balance": -210.0,
+                }
+            ],
+        )
+        self.assertTrue(wizard.has_settlement)
+        self.assertFalse(wizard.has_single_settlement)
+
+        wizard.communication = "0424 1234 5678 9012 3456"
+        wizard.action_record_reference()
+        return_payment = tax_return.payment_ids
+        self.assertRecordValues(
+            return_payment,
+            [{"state": "instructed", "reference": "0424 1234 5678 9012 3456"}],
+        )
+        self.assertEqual(tax_return.state, "submitted")
+
+        self._pay_from_bank(tax_return._get_settlement_lines(), -210.0)
+
+        self.assertEqual(tax_return.state, "paid")
+        self.assertEqual(return_payment.state, "paid")
+
     def test_a_settled_return_cannot_be_marked_paid_by_hand(self):
         _tax_return, wizard = self._submitted_return()
 

@@ -1074,6 +1074,10 @@ class AccountReturn(models.Model):
         return None
 
     def _get_tax_closing_payable_and_receivable_accounts(self) -> tuple:
+        payable_accounts, receivable_accounts = self._get_tax_group_closing_accounts()
+        return payable_accounts | self._get_settlement_accounts(), receivable_accounts
+
+    def _get_tax_group_closing_accounts(self) -> tuple:
         country = (
             self.type_id.report_id.country_id
             or self.company_id.tax_config_id.account_fiscal_country_id
@@ -1091,18 +1095,26 @@ class AccountReturn(models.Model):
             )[0][0]
         )
         return (
-            tax_groups_sudo.tax_payable_account_id | self._get_settlement_accounts(),
+            tax_groups_sudo.tax_payable_account_id,
             tax_groups_sudo.tax_receivable_account_id,
         )
 
     def _get_settlement_accounts(self):
         self.check_singleton()
-        return self.env["account.account"].union(
+        accounts = self.env["account.account"].union(
             *(
                 self.type_id.with_company(company).settlement_account_id
                 for company in self.company_ids
             )
         )
+        if accounts or not self.type_id.settle_per_concept:
+            return accounts
+        payable_accounts, _receivable_accounts = self._get_tax_group_closing_accounts()
+        return payable_accounts.filtered("reconcile")
+
+    def _has_single_settlement_account(self) -> bool:
+        self.check_singleton()
+        return bool(self.type_id.with_company(self.company_id).settlement_account_id)
 
     def _get_settlement_lines(self):
         self.check_singleton()
@@ -2196,6 +2208,12 @@ class AccountReturn(models.Model):
                     self.env._("Receivable tax amount"),
                     key[1],
                     False,
+                )
+            elif self.type_id.settle_per_concept and not settlement_account:
+                name, account, partner = (
+                    self.env._("Payable tax amount"),
+                    key[2],
+                    self.type_id.payment_partner_id.id,
                 )
             elif settlement_account:
                 name, account, partner = (
