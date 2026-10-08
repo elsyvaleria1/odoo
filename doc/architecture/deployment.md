@@ -355,7 +355,11 @@ control characters in a field, a missing or repeated `Host` on HTTP/1.1,
 (`400`), any other transfer coding (`501`), an unsupported `Expect` (`417`),
 HTTP/2 request lines (`505`), heads over 64 KiB or 100 fields (`431`). A request
 carrying both `Content-Length` and `chunked` is decoded as chunked and its
-connection closed afterwards. Header names containing `_` are dropped from the
+connection closed afterwards. A body whose framing breaks while the
+application reads it -- a malformed or over-long chunk line, trailers over
+16 KiB, a body cut short of its `Content-Length` -- is answered `400` in place
+of whatever the application built from the error, and the connection is closed.
+Header names containing `_` are dropped from the
 environ, because `X_Forwarded_For` and `X-Forwarded-For` would otherwise both
 become `HTTP_X_FORWARDED_FOR`. `100 Continue` is sent only when the application
 first reads the body.

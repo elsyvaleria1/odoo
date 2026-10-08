@@ -17,6 +17,7 @@ from werkzeug.urls import uri_to_iri
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.http1 import (
     LAST_CHUNK,
+    BodyError,
     BodyLimits,
     BodyReader,
     BufferedSource,
@@ -596,6 +597,8 @@ def _run_exchange(
     iterable: Iterable[bytes] | None = None
     try:
         iterable = app(environ, exchange.start_response)
+        if exchange.reader.error is not None:
+            raise exchange.reader.error
         for data in iterable:
             if data:
                 exchange.write(data)
@@ -603,6 +606,11 @@ def _run_exchange(
     except (TimeoutError, *_PEER_GONE) as exc:
         _debug.logic("httpd.peer_gone", error=type(exc).__name__, path=head.path)
         _close_iterable(iterable)
+        return Outcome.CLOSE
+    except BodyError as exc:
+        _close_iterable(iterable)
+        _refuse_body(exchange, exc)
+        conn.close(linger=limits.linger_seconds)
         return Outcome.CLOSE
     except Exception as exc:
         _logger.exception(
@@ -655,6 +663,30 @@ def _run_exchange(
         return Outcome.UPGRADED
     _close_iterable(iterable)
     return _settle(exchange, limits, allow_keep_alive=allow_keep_alive)
+
+
+def _refuse_body(exchange: Exchange, exc: BodyError) -> None:
+    # The application may have caught the error and built a response of its
+    # own -- Odoo's answers 500 -- but the fault is the client's framing, and
+    # whatever follows it on the connection is unreadable.
+    head = exchange.head
+    _debug.logic(
+        "httpd.body_refused",
+        status=exc.status.value,
+        detail=str(exc),
+        head_sent=exchange.response is not None,
+        path=head.path,
+    )
+    if exchange.response is not None:
+        return
+    size = _error_response(exchange.conn, exc.status, str(exc), method=head.method)
+    log_access(
+        exchange.conn,
+        f"{head.method} {head.target} {head.protocol}",
+        head.path,
+        exc.status.value,
+        size,
+    )
 
 
 def _log_exchange(exchange: Exchange) -> None:

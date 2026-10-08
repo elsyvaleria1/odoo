@@ -57,7 +57,7 @@ class ProtocolError(Exception):
 
 
 class BodyError(OSError):
-    pass
+    status = HTTPStatus.BAD_REQUEST
 
 
 @dataclass(frozen=True, slots=True)
@@ -350,6 +350,7 @@ class _BodyReader(io.RawIOBase):
         self._source = source
         self._on_first_read = on_first_read
         self.bytes_read = 0
+        self.error: BodyError | None = None
 
     @property
     def exhausted(self) -> bool:
@@ -365,10 +366,23 @@ class _BodyReader(io.RawIOBase):
         return True
 
     def _available(self, most: int) -> int:
+        if self.error is not None:
+            raise self.error
         if self._on_first_read is not None:
             callback, self._on_first_read = self._on_first_read, None
             callback()
-        return self._ready(most)
+        try:
+            return self._ready(most)
+        except BodyError as exc:
+            self.error = exc
+            raise
+
+    def _take(self, size: int) -> bytes:
+        try:
+            return self._consume(size)
+        except BodyError as exc:
+            self.error = exc
+            raise
 
     def readinto(self, buffer: memoryview | bytearray) -> int:  # type: ignore[override]
         view = memoryview(buffer).cast("B")
@@ -382,7 +396,7 @@ class _BodyReader(io.RawIOBase):
         if size == 0:
             return b""
         ready = self._available(size)
-        return self._consume(ready) if ready else b""
+        return self._take(ready) if ready else b""
 
     def readall(self) -> bytes:
         chunks = []
@@ -398,7 +412,7 @@ class _BodyReader(io.RawIOBase):
             if not ready:
                 break
             newline = self._source.buffer.find(b"\n", 0, ready)
-            out += self._consume(newline + 1 if newline >= 0 else ready)
+            out += self._take(newline + 1 if newline >= 0 else ready)
             if newline >= 0:
                 break
         return bytes(out)

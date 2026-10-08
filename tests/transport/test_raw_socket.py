@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import socket
 import threading
 import time
@@ -21,6 +22,12 @@ class Recorder:
         if environ["PATH_INFO"] == "/reject":
             start_response("413 Content Too Large", [("Content-Length", "0")])
             return [b""]
+        if environ["PATH_INFO"] == "/swallow":
+            try:
+                environ["wsgi.input"].read()
+            except OSError:
+                start_response("500 Internal Server Error", [("Content-Length", "4")])
+                return [b"oops"]
         body = environ["wsgi.input"].read()
         out = b"%d" % len(body)
         start_response("200 OK", [("Content-Length", str(len(out)))])
@@ -255,3 +262,82 @@ def test_a_large_refused_upload_still_reads_its_answer_whole(recorder):
     assert reply.status == 413
     assert reply.headers["content-length"] == "0"
     assert not failure, failure
+
+
+def _chunked(path: bytes, wire: bytes) -> bytes:
+    return (
+        b"POST "
+        + path
+        + b" HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n"
+        + wire
+    )
+
+
+def _trailers(size: int) -> bytes:
+    lengths = [4000] * (size // 4000) + [size % 4000]
+    out = b"".join(
+        b"X-T%04d: " % i + b"a" * (length - 11) + b"\r\n"
+        for i, length in enumerate(lengths)
+    )
+    assert len(out) == size
+    return out
+
+
+MALFORMED_CHUNKS = {
+    "17 hex digits": b"11111111111111111\r\nhello\r\n0\r\n\r\n",
+    "not hex": b"zz\r\nhello\r\n0\r\n\r\n",
+    "signed": b"+5\r\nhello\r\n0\r\n\r\n",
+    "bare LF after the size": b"5\nhello\r\n0\r\n\r\n",
+    "bare LF after the data": b"5\r\nhello\n0\r\n\r\n",
+    "data past its size": b"5\r\nhelloEXTRA\r\n0\r\n\r\n",
+    "line past 4096": b"5;" + b"e" * 4094 + b"\r\nhello\r\n0\r\n\r\n",
+    "trailers past 16 KiB": b"5\r\nhello\r\n0\r\n" + _trailers(16385) + b"\r\n",
+}
+
+
+@pytest.mark.parametrize("path", [b"/c", b"/swallow"])
+@pytest.mark.parametrize("wire", MALFORMED_CHUNKS.values(), ids=MALFORMED_CHUNKS)
+def test_a_malformed_chunked_body_is_a_400_and_nothing_behind_it_is_served(
+    server, recorder, caplog, path, wire
+):
+    with caplog.at_level(logging.ERROR, logger="odoo.service.server"):
+        raw = talk(server.server_port, _chunked(path, wire) + SMUGGLED)
+    assert not raw.endswith(STILL_OPEN)
+    [reply] = parse_responses(raw)
+    assert reply.status == 400, reply
+    assert reply.headers["connection"] == "close"
+    assert recorder.paths == [path.decode()]
+    assert not caplog.records, "a client's framing error is not a server error"
+
+
+@pytest.mark.parametrize(
+    "wire",
+    [
+        b"5;" + b"e" * 4093 + b"\r\nhello\r\n0\r\n\r\n",
+        b"5\r\nhello\r\n0\r\n" + _trailers(16384) + b"\r\n",
+    ],
+    ids=["line of 4096", "trailers of 16 KiB"],
+)
+def test_a_chunked_body_at_its_limits_is_read(server, wire):
+    raw = talk(
+        server.server_port,
+        _chunked(b"/c", wire).replace(b"\r\n\r\n", b"\r\nConnection: close\r\n\r\n", 1),
+    )
+    [reply] = parse_responses(raw)
+    assert (reply.status, reply.body) == (200, b"5")
+
+
+def test_a_content_length_body_cut_short_is_a_400():
+    recorder = Recorder()
+    with (
+        serving(recorder) as srv,
+        socket.create_connection(("127.0.0.1", srv.server_port)) as sock,
+    ):
+        sock.settimeout(5)
+        sock.sendall(b"POST /c HTTP/1.1\r\nHost: h\r\nContent-Length: 10\r\n\r\nabc")
+        sock.shutdown(socket.SHUT_WR)
+        buf = b""
+        while chunk := sock.recv(65536):
+            buf += chunk
+    [reply] = parse_responses(buf)
+    assert reply.status == 400

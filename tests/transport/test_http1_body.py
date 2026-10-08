@@ -137,3 +137,20 @@ def test_drain_respects_byte_and_time_budgets():
     assert reader.drain(max_bytes=2_000, deadline=time.monotonic() + 5)
     reader = LengthReader(source(b"x" * 500), 500)
     assert not reader.drain(max_bytes=2_000, deadline=time.monotonic() - 1)
+
+
+def test_a_framing_error_is_kept_and_raised_again_on_every_read():
+    reader = ChunkedReader(source(b"zz\r\nhello\r\n0\r\n\r\n"), BodyLimits())
+    with pytest.raises(BodyError) as first:
+        reader.read(1)
+    assert reader.error is first.value
+    assert first.value.status == 400
+    with pytest.raises(BodyError) as again:
+        reader.readline()
+    assert again.value is first.value
+
+
+def test_a_clean_body_records_no_error():
+    reader = LengthReader(source(b"abc"), 3)
+    assert reader.read() == b"abc"
+    assert reader.error is None
