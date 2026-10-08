@@ -1,5 +1,8 @@
 from odoo import api, fields, models
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_date
+
+_debug = DebugLog(__name__)
 
 
 class WizardSaleOrderInvoice(models.TransientModel):
@@ -9,6 +12,19 @@ class WizardSaleOrderInvoice(models.TransientModel):
         string="Warning Message",
         compute="_compute_postpaid_warning_message",
     )
+
+    def _default_advance_payment_method(self) -> str:
+        orders = self.env["sale.order"].browse(self.env.context.get("active_ids"))
+        subscriptions = orders.filtered("is_subscription")
+        if not subscriptions:
+            return super()._default_advance_payment_method()
+        _debug.logic(
+            "default_advance_payment_method",
+            orders=orders,
+            subscriptions=subscriptions,
+            method="delivered",
+        )
+        return "delivered"
 
     @api.depends("sale_order_ids")
     def _compute_postpaid_warning_message(self) -> None:

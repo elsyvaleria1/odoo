@@ -111,6 +111,76 @@ class TestSaleProjectServices(TestSaleProjectCommon):
         self.assertEqual(order.invoice_state, "done")
         self.assertFalse(self.project_global.has_any_so_to_invoice)
 
+    def _confirmed_service_order(self, product):
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": product.id,
+                            "product_qty": 5,
+                            "tax_ids": False,
+                        }
+                    ),
+                ],
+            }
+        )
+        order.action_confirm()
+        return order
+
+    def _project_invoice_wizard(self, project):
+        action = project.action_create_invoice()
+        return (
+            self.env[action["res_model"]]
+            .with_context(active_model="sale.order", **action["context"])
+            .create({})
+        )
+
+    def test_undelivered_orders_are_offered_a_down_payment_not_an_invoice(self):
+        project_order = self._confirmed_service_order(
+            self.product_service_delivered_manual
+        )
+        task_order = self._confirmed_service_order(
+            self.product_service_delivered_manual
+        )
+        self.project_global.sale_line_id = project_order.line_ids
+        self.env["project.task"].create(
+            {
+                "name": "Billed through another order",
+                "project_id": self.project_global.id,
+                "sale_line_id": task_order.line_ids.id,
+            }
+        )
+        self.env.invalidate_all()
+
+        wizard = self._project_invoice_wizard(self.project_global)
+
+        self.assertEqual(
+            (project_order | task_order).mapped("invoice_state"), ["to do"] * 2
+        )
+        self.assertFalse(self.project_global.has_any_so_to_invoice)
+        self.assertEqual(wizard.sale_order_ids, project_order | task_order)
+        self.assertEqual(wizard.advance_payment_method, "percentage")
+
+        task_order.line_ids.qty_transferred = 5
+        self.env.invalidate_all()
+
+        self.assertTrue(self.project_global.has_any_so_to_invoice)
+        self.assertEqual(
+            self._project_invoice_wizard(self.project_global).advance_payment_method,
+            "delivered",
+        )
+
+        manager_without_sales = new_test_user(
+            self.env,
+            login="sale_project_no_sales",
+            groups="base.group_user,project.group_project_manager",
+        )
+        self.assertTrue(
+            self.project_global.with_user(manager_without_sales).has_any_so_to_invoice
+        )
+
     def test_project_update_description_renders_for_a_billable_project(self):
         order = self.env["sale.order"].create(
             {

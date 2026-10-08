@@ -187,16 +187,57 @@ class ProjectProject(models.Model):
         )
         return self.env["project.project"].browse(id_ for (id_,) in result)
 
-    @api.depends("sale_order_id.invoice_state", "task_ids.sale_order_id.invoice_state")
+    def _get_order_ids_by_project_to_invoice(self) -> dict:
+        rows = self.env.execute_query(
+            SQL(
+                """
+            SELECT pt.project_id, so.id
+              FROM project_task pt
+              JOIN project_project pp ON pp.id = pt.project_id
+              JOIN sale_order so ON so.id = pt.sale_order_id
+             WHERE pp.active = true
+               AND pt.active = true
+               AND so.invoice_state IN ('to do', 'partial')
+               AND pp.id IN %(ids)s
+             UNION
+            SELECT pp.id, so.id
+              FROM project_project pp
+              JOIN sale_order_line sol ON sol.id = pp.sale_line_id
+              JOIN sale_order so ON so.id = sol.order_id
+             WHERE pp.active = true
+               AND so.invoice_state IN ('to do', 'partial')
+               AND pp.id IN %(ids)s""",
+                ids=tuple(self.ids),
+            )
+        )
+        order_ids_by_project = defaultdict(set)
+        for project_id, order_id in rows:
+            order_ids_by_project[project_id].add(order_id)
+        return order_ids_by_project
+
+    @api.depends(
+        "sale_order_id.is_invoiceable", "task_ids.sale_order_id.is_invoiceable"
+    )
     def _compute_has_any_so_to_invoice(self) -> None:
         if not self.ids:
             self.has_any_so_to_invoice = False
             return
 
-        project_to_invoice = self._get_projects_for_invoice_state("to do")
-        project_to_invoice |= self._get_projects_for_invoice_state("partial")
-        project_to_invoice.has_any_so_to_invoice = True
-        (self - project_to_invoice).has_any_so_to_invoice = False
+        order_ids_by_project = self._get_order_ids_by_project_to_invoice()
+        orders = self.env["sale.order"].browse(
+            set().union(*order_ids_by_project.values())
+        )
+        invoiceable_ids = set(orders.filtered("is_invoiceable").ids)
+        for project in self:
+            project.has_any_so_to_invoice = not invoiceable_ids.isdisjoint(
+                order_ids_by_project.get(project.id, ())
+            )
+        _debug.logic(
+            "projects_with_order_to_invoice",
+            projects=self,
+            candidates=orders,
+            invoiceable=len(invoiceable_ids),
+        )
 
     @api.depends("sale_order_id", "task_ids.sale_order_id")
     def _compute_sale_order_count(self) -> None:
@@ -489,18 +530,23 @@ class ProjectProject(models.Model):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sale.action_view_sale_advance_payment_inv"
         )
-        so_ids = (
-            (self.sale_order_id | self.task_ids.sale_order_id)
-            .filtered(lambda so: so.invoice_state in ["to do", "partial", "no"])
-            .ids
+        orders = (self.sale_order_id | self.task_ids.sale_order_id).filtered(
+            lambda so: so.invoice_state in ["to do", "partial", "no"]
         )
         action["context"] = {
-            "active_id": so_ids[0] if len(so_ids) == 1 else False,
-            "active_ids": so_ids,
+            "active_id": orders.id if len(orders) == 1 else False,
+            "active_ids": orders.ids,
         }
-        _debug.logic("project_invoice_action", project=self, orders=len(so_ids))
-        if not self.has_any_so_to_invoice:
+        # the wizard derives this default for one order, not for several
+        down_payment = not any(orders.mapped("is_invoiceable"))
+        if down_payment:
             action["context"]["default_advance_payment_method"] = "percentage"
+        _debug.logic(
+            "project_invoice_action",
+            project=self,
+            orders=len(orders),
+            down_payment=down_payment,
+        )
         return action
 
     def action_view_project_invoices(self):

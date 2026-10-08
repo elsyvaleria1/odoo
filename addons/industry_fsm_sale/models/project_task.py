@@ -459,8 +459,16 @@ class ProjectTask(models.Model):
                 "industry_fsm_message_post_task_id": so_task_mapping,
             }
         )
-        if not self.sale_order_id._get_invoiceable_lines(False):
+        # the wizard derives this default for one order, not for several
+        down_payment = not any(self.sale_order_id.mapped("is_invoiceable"))
+        if down_payment:
             context["default_advance_payment_method"] = "percentage"
+        _debug.logic(
+            "fsm_invoice_action",
+            tasks=self,
+            orders=self.sale_order_id,
+            down_payment=down_payment,
+        )
         action["context"] = context
         return action
 

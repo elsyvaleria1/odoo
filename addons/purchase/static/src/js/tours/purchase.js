@@ -74,7 +74,7 @@ registry.category("web_tour.tours").add("purchase_tour", {
             run: "click",
         },
         {
-            trigger: ".o_field_text[name='name'] textarea:value(DESK0001)",
+            trigger: ".o_field_widget[name='product_id'] input:value(DESK0001)",
         },
         {
             trigger: ".o_purchase_order",
@@ -116,6 +116,11 @@ registry.category("web_tour.tours").add("purchase_tour", {
                 "Once you get the price from the vendor, you can complete the purchase order with the right price.",
             ),
             tooltipPosition: "right",
+            run: "click",
+        },
+        {
+            isActive: ["auto"],
+            trigger: "tbody tr.o_data_row .o_list_number[name='price_unit'] input",
             run: "edit 200.00",
         },
         {

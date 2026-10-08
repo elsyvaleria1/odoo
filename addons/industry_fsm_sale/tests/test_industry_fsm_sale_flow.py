@@ -521,6 +521,41 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
             res["params"]["type"], "danger", "Expected a red toast notification"
         )
 
+    def test_invoicing_tasks_with_nothing_invoiceable_defaults_to_a_down_payment(self):
+        tasks = self.task | self.env["project.task"].create(
+            {
+                "name": "Second fsm task",
+                "project_id": self.fsm_project.id,
+                "partner_id": self.partner_1.id,
+            }
+        )
+        for task in tasks:
+            order = task._fsm_get_or_create_sale_order()
+            self.env["sale.order.line"].create(
+                [
+                    {
+                        "order_id": order.id,
+                        "product_id": self.consu_product_delivered.id,
+                        "product_qty": 1,
+                    },
+                    {
+                        "order_id": order.id,
+                        "display_type": "line_note",
+                        "name": "Bring a ladder",
+                    },
+                ]
+            )
+
+        invoice_ctx = tasks.action_create_invoice()["context"]
+        wizard = (
+            self.env["wizard.sale.order.invoice"].with_context(invoice_ctx).create({})
+        )
+
+        self.assertEqual(len(tasks.sale_order_id), 2)
+        self.assertFalse(any(tasks.sale_order_id.mapped("is_invoiceable")))
+        self.assertEqual(wizard.sale_order_ids, tasks.sale_order_id)
+        self.assertEqual(wizard.advance_payment_method, "percentage")
+
     def test_invoice_state_in_anglo_saxon(self):
         self.task.partner_id = self.partner_1.id
         # Case 1: Product price is zero and Anglo-Saxon accounting is enabled.

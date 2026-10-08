@@ -2,6 +2,7 @@
 import PurchaseAdditionalTourSteps from "@purchase/js/tours/purchase_steps";
 import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
+import { stepUtils } from "@web_tour/tour_utils";
 
 patch(PurchaseAdditionalTourSteps.prototype, {
     getPurchaseStockSteps() {
@@ -22,13 +23,8 @@ patch(PurchaseAdditionalTourSteps.prototype, {
                 run: "click",
             },
             {
-                trigger: ".modal-dialog",
-            },
-            {
-                trigger: ".modal-footer .btn-primary",
-                content: _t("Process all the receipt quantities."),
-                tooltipPosition: "bottom",
-                run: "click",
+                isActive: ["auto"],
+                trigger: ".o_statusbar_status .o_arrow_button_current:contains(Done)",
             },
             {
                 trigger: ".o_back_button a, .breadcrumb-item:not('.active'):last",
@@ -38,11 +34,25 @@ patch(PurchaseAdditionalTourSteps.prototype, {
                 tooltipPosition: "bottom",
                 run: "click",
             },
+            ...stepUtils.statusbarButtonsSteps(
+                "Down Payment",
+                _t("Bill the vendor for the received products."),
+            ),
             {
-                trigger: ".o_statusbar_buttons button[name='create_invoice']",
+                trigger:
+                    ".modal .o_field_widget[name='advance_payment_method'] input[data-value='delivered']",
+                content: _t("Bill the received quantities with a regular bill."),
+                tooltipPosition: "right",
+                run: "click",
+            },
+            {
+                trigger: ".modal-footer button[name='create_invoices']",
                 content: _t("Generate the draft vendor bill."),
                 tooltipPosition: "bottom",
                 run: "click",
+            },
+            {
+                trigger: ".o_form_view .o_field_widget[name='invoice_line_ids']",
             },
         ];
     },

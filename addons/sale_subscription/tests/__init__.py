@@ -18,3 +18,4 @@ from . import test_sale_subscription_product_template
 from . import test_sale_report
 from . import test_subscription_plan
 from . import test_subscription_invoice_payment
+from . import test_subscription_invoice_buttons
