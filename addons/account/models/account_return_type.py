@@ -102,6 +102,12 @@ class AccountReturnType(models.Model):
         "lines are reconciled with money that left the bank. For an authority paid "
         "once for several taxes whose accounts must stay apart.",
     )
+    is_informative = fields.Boolean(
+        string="Informative",
+        tracking=True,
+        help="The return files information and owes no tax: even on a tax report it posts "
+        "no tax closing, sets no tax lock date and has nothing to pay.",
+    )
     filing_channel = fields.Selection(
         selection="_selection_filing_channel",
         tracking=True,
@@ -191,15 +197,16 @@ class AccountReturnType(models.Model):
                     or return_type.default_deadline_days_delay
                 )
 
-    @api.depends("report_id")
+    @api.depends("report_id", "is_informative")
     def _compute_report_return_type(self) -> None:
         tax_report = self.env.ref("account.generic_tax_report")
         generic_ec_sales_report = self.env.ref("account.generic_ec_sales_report")
         for record in self:
             report = record.report_id
-            record.is_tax_return_type = report and tax_report in (
-                report,
-                report.root_report_id,
+            record.is_tax_return_type = (
+                report
+                and not record.is_informative
+                and tax_report in (report, report.root_report_id)
             )
             record.is_ec_sales_list_return_type = (
                 report and generic_ec_sales_report in (report, report.root_report_id)
@@ -244,7 +251,7 @@ class AccountReturnType(models.Model):
         for return_type in self:
             return_type.auto_generate = return_type.category == "account_return"
 
-    @api.depends("report_id", "category")
+    @api.depends("report_id", "category", "is_informative")
     def _compute_states_workflow(self) -> None:
         for return_type in self:
             if return_type.is_ec_sales_list_return_type:

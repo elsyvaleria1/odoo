@@ -250,3 +250,32 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
 
         self.assertEqual(submission.state, "accepted")
         self.assertEqual(tax_return.state, "submitted")
+
+    def test_an_informative_return_posts_no_closing_and_locks_nothing(self):
+        informative_type = self.env["account.return.type"].create(
+            {
+                "category": "account_return",
+                "default_deadline_periodicity": "monthly",
+                "default_deadline_start_date": "2024-01-01",
+                "name": "Third-party operations",
+                "report_id": self.env.ref("account.generic_tax_report").id,
+                "is_informative": True,
+            }
+        )
+        self.assertFalse(informative_type.is_tax_return_type)
+        self.assertEqual(informative_type.states_workflow, "generic_state_review")
+        lock_date = self.env.company.account_config_id.tax_lock_date
+        tax_return = informative_type.with_context(
+            forced_date_from=fields.Date.from_string("2024-02-01"),
+            forced_date_to=fields.Date.from_string("2024-02-29"),
+        )._try_create_returns_for_fiscal_year(self.env.company, False)
+
+        with patch.object(
+            self.registry["account.return"],
+            "_generate_locking_attachments",
+            lambda self, options: None,
+        ):
+            tax_return.action_validate()
+
+        self.assertFalse(tax_return.closing_move_ids)
+        self.assertEqual(self.env.company.account_config_id.tax_lock_date, lock_date)
