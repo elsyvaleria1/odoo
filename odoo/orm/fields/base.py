@@ -23,7 +23,7 @@ from odoo.libs.func import reset_cached_properties
 from odoo.libs.iteration import PENDING, SENTINEL, Sentinel
 
 from .._recordset import get_base_model, is_model_class
-from ..primitives import PREFETCH_MAX
+from ..primitives import PREFETCH_MAX, NewId
 from . import (
     _field_cache_miss as _cache_miss,
 )
@@ -829,6 +829,35 @@ class Field[T](
         keep_dirty: bool = False,
     ) -> None:
         env.core.invalidate(self, ids, keep_dirty=keep_dirty)
+
+    def _forget_draft_links(
+        self,
+        env: Environment,
+        drafts: Collection[IdType],
+        linked_ids: Collection[IdType],
+    ) -> None:
+        # the inverse update that linked linked_ids into drafts is undone; a
+        # many2one it overwrote is dropped, to be read again from its origin
+        core = env.core
+        caches = [cache for _key, cache in core.iter_context_caches(self)]
+        if (data := core.get_field_data_or_none(self)) is not None:
+            caches.append(data)
+        for cache in caches:
+            for draft in drafts:
+                value = cache.get(draft, SENTINEL)
+                if type(value) is tuple:
+                    kept = tuple(id_ for id_ in value if id_ not in linked_ids)
+                    if len(kept) < len(value):
+                        cache[draft] = kept
+                elif type(value) is NewId and value in linked_ids:
+                    del cache[draft]
+        if patches := core.get_patches(self):
+            for draft in drafts:
+                if ids := patches.get(draft):
+                    if kept_ids := [id_ for id_ in ids if id_ not in linked_ids]:
+                        patches[draft] = kept_ids
+                    else:
+                        del patches[draft]
 
     def _get_all_cache_ids(self, env: Environment) -> Mapping[IdType, typing.Any]:
         core = env.core

@@ -2484,6 +2484,18 @@ class TestOrmPrecomputeLine(models.Model):
     parent_id = fields.Many2one("test_orm.precompute")
     name = fields.Char(required=True)
     size = fields.Integer(compute="_compute_size", store=True, precompute=True)
+    predecessor_ids = fields.Many2many(
+        "test_orm.precompute.line",
+        "test_orm_precompute_line_dependency_rel",
+        "line_id",
+        "depends_on_id",
+    )
+    successor_ids = fields.Many2many(
+        "test_orm.precompute.line",
+        "test_orm_precompute_line_dependency_rel",
+        "depends_on_id",
+        "line_id",
+    )
 
     @api.depends("name")
     def _compute_size(self):

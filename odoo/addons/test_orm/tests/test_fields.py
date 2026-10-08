@@ -5864,6 +5864,21 @@ class TestPrecompute(TransactionCase):
         self.assertEqual(row["lowup"], "fooFOO")
         self.assertEqual(row["size"], 3)
 
+    def test_precompute_draft_links_no_draft_of_a_linked_row(self):
+        Line = self.env["test_orm.precompute.line"]
+        before = Line.create({"name": "before"})
+        after = Line.create(
+            {"name": "after", "predecessor_ids": [Command.set(before.ids)]}
+        )
+        successors = before.new(origin=before).successor_ids
+        self.assertEqual([id_.origin for id_ in successors._ids], [after.id])
+
+        line = Line.create({"name": "bar"})
+        record = self.env["test_orm.precompute"].create(
+            {"name": "Foo", "line_ids": [Command.set(line.ids)]}
+        )
+        self.assertEqual(line.new(origin=line).parent_id, record)
+
     def test_precompute_combo(self):
         model = self.env["test_orm.precompute.combo"]
 

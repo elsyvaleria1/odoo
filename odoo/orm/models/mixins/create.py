@@ -691,6 +691,9 @@ class CreateMixin(_ModelStubs):
         # drafts the scratch rows hold through relational values (lines from
         # Command.create, a many2one from a dict) were made for them alone
         scratch: dict[str, OrderedSet[NewId]] = defaultdict(OrderedSet)
+        # drafts of existing rows a scratch row was linked into, per inverse
+        linked: dict[Field[typing.Any], OrderedSet[NewId]] = defaultdict(OrderedSet)
+        field_inverses = self.pool.field_inverses
         todo: list[tuple[BaseModel, Collection[Field[typing.Any]]]] = [
             (typing.cast("BaseModel", records), fields)
         ]
@@ -701,11 +704,17 @@ class CreateMixin(_ModelStubs):
             for field in drafts_fields:
                 if field.relational and field.comodel_name:
                     cached = field._get_all_cache_ids(env)
+                    inverses = field_inverses[field]
                     for id_ in ids:
                         value = cached.get(id_)
                         for co_id in value if type(value) is tuple else (value,):
-                            if isinstance(co_id, NewId) and co_id.origin is None:
+                            if not isinstance(co_id, NewId):
+                                continue
+                            if co_id.origin is None:
                                 reached[field.comodel_name].append(co_id)
+                            else:
+                                for invf in inverses:
+                                    linked[invf].add(co_id)
                 field._invalidate_cache(env, ids)
             for model_name, co_ids in reached.items():
                 seen = scratch[model_name]
@@ -723,6 +732,9 @@ class CreateMixin(_ModelStubs):
                 reached={name: len(ids) for name, ids in scratch.items()},
             )
         scratch[self._name].update(typing.cast("Collection[NewId]", records._ids))
+        for invf, drafts_linked in linked.items():
+            if scratch_ids := scratch.get(invf.comodel_name):
+                invf._forget_draft_links(env, drafts_linked, scratch_ids)
         # Scratch rows never become database rows. Leaving their queued
         # computes behind makes a later flush recompute an empty NewId.
         if env.core.has_pending():
