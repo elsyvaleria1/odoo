@@ -34,6 +34,9 @@ class ResUsers(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
+        if "active" in vals and not vals["active"]:
+            # someone who left keeps no Telegram account acting as them
+            self.env["telegram.binding"]._revoke_for_departed(self.partner_id)
         if vals.keys() & {"group_ids", "company_ids", "active", "lang"}:
             self._sync_telegram_command_menus()
         return result

@@ -945,6 +945,12 @@ msgid "It seems you're having trouble. Type /ayuda to see available commands."
 msgstr ""
 
 #. module: telegram
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding__revoked_reason__departed
+#: model:ir.model.fields.selection,name:telegram.selection__telegram_binding_event__reason__departed
+msgid "Its person left"
+msgstr ""
+
+#. module: telegram
 #: model:ir.model.fields,field_description:telegram.field_telegram_bot__lang
 msgid "Language"
 msgstr ""

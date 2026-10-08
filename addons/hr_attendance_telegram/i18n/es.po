@@ -109,6 +109,11 @@ msgid "Display Name"
 msgstr "Nombre mostrado"
 
 #. module: hr_attendance_telegram
+#: model:ir.model,name:hr_attendance_telegram.model_hr_employee
+msgid "Employee"
+msgstr "Empleado"
+
+#. module: hr_attendance_telegram
 #. odoo-python
 #: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 #, python-format
@@ -173,6 +178,11 @@ msgstr "Ocurrió un error. Por favor, intenta de nuevo con /entrada"
 #: code:addons/hr_attendance_telegram/models/telegram_handler.py:0
 msgid "Start your lunch break"
 msgstr "Salir a comer"
+
+#. module: hr_attendance_telegram
+#: model:ir.model,name:hr_attendance_telegram.model_telegram_binding
+msgid "Telegram Binding"
+msgstr "Vínculo de Telegram"
 
 #. module: hr_attendance_telegram
 #: model:ir.model,name:hr_attendance_telegram.model_telegram_handler_attendance

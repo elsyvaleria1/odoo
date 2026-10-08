@@ -18,6 +18,7 @@ _REVOKE_REASONS = [
     ("admin", "Revoked by an administrator"),
     ("superseded", "Superseded by a newer binding"),
     ("expired", "Expired unconfirmed"),
+    ("departed", "Its person left"),
 ]
 
 
@@ -139,6 +140,28 @@ class TelegramBinding(models.Model):
             # a superseded binding's account is bound again at once, and the
             # new binding sends the menu its person has now
             operating(active.account_id.chat_ids)._sync_command_menu()
+
+    @api.model
+    def _revoke_for_departed(self, partners) -> None:
+        """Revoke the active bindings of those `partners` who left: whom
+        nothing still makes someone the bots act for (_is_present)."""
+        departed = partners.filtered(lambda partner: not self._is_present(partner))
+        if departed:
+            operating(self).search(
+                [("state", "=", "active"), ("partner_id", "in", departed.ids)]
+            )._revoke("departed")
+
+    @api.model
+    def _is_present(self, partner) -> bool:
+        """Whether `partner` is still someone the bots act for: an active user
+        of theirs remains. An extension counts more (an active employee)."""
+        # whoever archives a user may not read every user of the contact: who
+        # remains is the bindings' bookkeeping, not business data
+        return bool(
+            self.env["res.users"]
+            .sudo()
+            .search_count([("partner_id", "=", partner.id), ("active", "=", True)])
+        )
 
     def _journal(self, event, *, reason=None) -> None:
         self.env["telegram.binding.event"]._append(
