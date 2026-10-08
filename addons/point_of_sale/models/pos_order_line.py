@@ -10,7 +10,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import float_compare, frozendict
+from odoo.tools import SQL, float_compare, frozendict
 
 _debug = DebugLog(__name__)
 
@@ -241,6 +241,7 @@ class PosOrderLine(models.Model):
             orderline.refunded_qty = -sum(refund_order_line.mapped("qty"))
 
     def _get_over_refunded_lines(self, refund_order) -> Self:
+        self._serialize_refund_settlements()
         # a draft refund elsewhere has returned nothing yet, so only settled
         # refunds and this one count
         digits = self.env["decimal.precision"].get_precision("Product Unit")
@@ -266,6 +267,22 @@ class PosOrderLine(models.Model):
         _debug.logic("refunded_qty_check", lines=self, over_refunded=over_refunded)
         return over_refunded
 
+    def _serialize_refund_settlements(self) -> None:
+        if not self:
+            return
+        self.lock_for_update(allow_referencing=True, wait=True)
+        # A lock alone lets a settlement that waited on it count with the
+        # snapshot it took before this one committed; rewriting the rows makes
+        # it fail to serialise instead, and its retry counts this refund.
+        self.env.cr.execute(
+            SQL(
+                "UPDATE %s SET write_date = write_date WHERE id = ANY(%s)",
+                SQL.identifier(self._table),
+                self.ids,
+            )
+        )
+        _debug.logic("refund_settlements_serialized", lines=self)
+
     def _describe_for_refund(self) -> str:
         return ", ".join(
             f"{line.full_product_name or line.product_id.display_name}"
@@ -281,7 +298,7 @@ class PosOrderLine(models.Model):
             )
         )
 
-    def _prepare_refund_data(self, refund_order, refund_lots) -> dict:
+    def _prepare_refund_values(self, refund_order, refund_lots) -> dict:
         self.check_singleton()
         return {
             "name": self.env._("%(name)s REFUND", name=self.name),
@@ -585,17 +602,27 @@ class PosOrderLine(models.Model):
 
     @_debug.perf.timed
     def _update_total_cost(self, stock_moves) -> None:
+        moves_and_cost_by_product = {}
         for line in self.filtered(lambda l: not l.is_total_cost_computed):
             line = line.with_company(line.company_id)
             product = line.product_id
             cost_currency = product.sudo().cost_currency_id
-            moves = (
-                line._get_stock_moves_to_consider(stock_moves, product)
-                if stock_moves
-                else None
-            )
-            if moves and line._is_product_storable_fifo_avco():
-                product_cost = line._get_product_cost_with_moves(moves)
+            key = (product, line.company_id)
+            if key not in moves_and_cost_by_product:
+                moves = (
+                    line._get_stock_moves_to_consider(stock_moves, product)
+                    if stock_moves
+                    else None
+                )
+                moves_and_cost_by_product[key] = (
+                    moves,
+                    line._get_product_cost_with_moves(moves)
+                    if moves and line._is_product_storable_fifo_avco()
+                    else None,
+                )
+            moves, moves_cost = moves_and_cost_by_product[key]
+            if moves_cost is not None:
+                product_cost = moves_cost
                 source = "moves"
                 if cost_currency.is_zero(product_cost) and line.order_id.shipping_date:
                     refunded = line.refunded_orderline_id
@@ -627,15 +654,20 @@ class PosOrderLine(models.Model):
                 source=source,
                 moves=moves or None,
             )
-            line.total_cost = line.qty * cost_currency._convert(
-                from_amount=product_cost,
-                to_currency=line.currency_id,
-                company=line.company_id or self.env.company,
-                date=line.order_id.date_order or fields.Date.today(),
-                round=False,
+            line.write(
+                {
+                    "total_cost": line.qty
+                    * cost_currency._convert(
+                        from_amount=product_cost,
+                        to_currency=line.currency_id,
+                        company=line.company_id or self.env.company,
+                        date=line.order_id.date_order or fields.Date.today(),
+                        round=False,
+                    ),
+                    "price_cost": product_cost,
+                    "is_total_cost_computed": True,
+                }
             )
-            line.price_cost = product_cost
-            line.is_total_cost_computed = True
 
     def _get_stock_moves_to_consider(self, stock_moves, product):
         self.check_singleton()

@@ -1,6 +1,12 @@
+import logging
+import time
+from unittest.mock import patch
+
 import odoo
 
 from odoo.addons.point_of_sale.tests.common import TestPoSCommon
+
+_logger = logging.getLogger(__name__)
 
 
 @odoo.tests.tagged("post_install", "-at_install")
@@ -363,3 +369,98 @@ class TestPosMargin(TestPoSCommon):
         self.assertEqual(self._synced_orders()[1].margin_percent, 0.6)
 
         self.env.company.point_of_sale_config_id.point_of_sale_update_stock_quantities = "real"
+
+    def _receive(self, product, qty, price_unit):
+        move = (
+            self.env["stock.move"]
+            .create(
+                {
+                    "location_id": self.supplier_location.id,
+                    "location_dest_id": self.stock_location.id,
+                    "product_id": product.id,
+                    "product_uom_id": self.uom_unit.id,
+                    "product_uom_qty": qty,
+                    "value_manual": qty * price_unit,
+                    "price_unit": price_unit,
+                }
+            )
+            .sudo()
+        )
+        move._action_confirm()
+        move._action_assign()
+        move.move_line_ids.quantity = qty
+        move.picked = True
+        move._action_done()
+
+    def test_closing_costs_each_product_once(self):
+        self.categ_anglo.property_cost_method = "average"
+        products = [
+            self.create_product(f"Costed {index}", self.categ_anglo, 10, 4)
+            for index in range(5)
+        ]
+        for index, product in enumerate(products):
+            self._receive(product, 10, 2 + index)
+        company_config = self.env.company.point_of_sale_config_id
+        company_config.point_of_sale_update_stock_quantities = "closing"
+        self.addCleanup(
+            setattr, company_config, "point_of_sale_update_stock_quantities", "real"
+        )
+        self.open_new_session()
+        self.env["pos.order"].sync_from_ui(
+            [
+                self.create_ui_order_data([(product, 1) for product in products])
+                for _ in range(10)
+            ]
+        )
+        lines = self.pos_session.order_ids.lines
+        self.assertEqual(len(lines), 50)
+        self.assertFalse(any(lines.mapped("is_total_cost_computed")))
+
+        PosOrderLine = type(self.env["pos.order.line"])
+        PosOrder = type(self.env["pos.order"])
+        consider_moves = PosOrderLine._get_stock_moves_to_consider
+        update_at_closing = PosOrder._update_total_cost_at_session_closing
+        costed_products = []
+        queries = []
+        elapsed = []
+
+        def spy_moves(line, stock_moves, product):
+            costed_products.append(product.id)
+            return consider_moves(line, stock_moves, product)
+
+        def count_queries(orders, stock_moves):
+            orders.env.flush_all()
+            before = orders.env.cr.sql_statement_count
+            started = time.perf_counter()
+            update_at_closing(orders, stock_moves)
+            orders.env.flush_all()
+            queries.append(orders.env.cr.sql_statement_count - before)
+            elapsed.append(time.perf_counter() - started)
+
+        total_cash = sum(self.pos_session.order_ids.payment_ids.mapped("amount"))
+        with (
+            patch.object(PosOrderLine, "_get_stock_moves_to_consider", spy_moves),
+            patch.object(
+                PosOrder, "_update_total_cost_at_session_closing", count_queries
+            ),
+        ):
+            self.pos_session.update_closing_cash_details(total_cash)
+            self.pos_session.close_session_from_ui()
+        _logger.debug(
+            "closing cost update: %s queries in %s s for %s lines",
+            queries,
+            elapsed,
+            len(lines),
+        )
+
+        self.assertEqual(
+            sorted(costed_products),
+            sorted(product.id for product in products),
+            "the moves and their cost are computed once per product, not per line",
+        )
+        self.assertTrue(all(lines.mapped("is_total_cost_computed")))
+        for index, product in enumerate(products):
+            product_lines = lines.filtered(lambda l, p=product: l.product_id == p)
+            self.assertEqual(product_lines.mapped("price_cost"), [2 + index] * 10)
+            self.assertEqual(product_lines.mapped("total_cost"), [2 + index] * 10)
+            self.assertEqual(product_lines.mapped("margin"), [8 - index] * 10)

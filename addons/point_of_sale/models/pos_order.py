@@ -689,9 +689,6 @@ class PosOrder(models.Model):
         self.check_singleton()
         self.payment_ids.unlink()
 
-    def _get_amount_paid(self):
-        return sum(self.payment_ids.mapped("amount"))
-
     def _process_payment_lines(self, order_vals, order, draft) -> None:
         amount_return = order_vals.get("amount_return") or 0.0
         prec_acc = order.currency_id.decimal_places
@@ -1062,11 +1059,9 @@ class PosOrder(models.Model):
             lines._update_total_cost(stock_moves)
 
     def _update_total_cost_at_session_closing(self, stock_moves) -> None:
-        for order in self:
-            storable_fifo_avco_lines = order.lines.filtered(
-                lambda l: l._is_product_storable_fifo_avco()
-            )
-            storable_fifo_avco_lines._update_total_cost(stock_moves)
+        self.lines.filtered(
+            lambda l: l._is_product_storable_fifo_avco()
+        )._update_total_cost(stock_moves)
 
     @api.depends("lines.margin", "is_total_cost_computed")
     def _compute_margins(self) -> None:
@@ -1139,7 +1134,7 @@ class PosOrder(models.Model):
 
     def _get_payment_amounts(self, amount_total) -> dict:
         self.check_singleton()
-        amount_paid = self._get_amount_paid()
+        amount_paid = sum(self.payment_ids.mapped("amount"))
         return {
             "amount_paid": amount_paid,
             "amount_return": -sum(
@@ -2360,9 +2355,7 @@ class PosOrder(models.Model):
         return draft_orders
 
     def _get_open_order(self, order):
-        return self.env["pos.order"].search(
-            [("uuid", "=", order.get("uuid"))], limit=1, order="id desc"
-        )
+        return self.env["pos.order"].search([("uuid", "=", order.get("uuid"))], limit=1)
 
     @staticmethod
     def _get_order_log_representation(order) -> dict:
@@ -2447,7 +2440,6 @@ class PosOrder(models.Model):
 
         pos_order_ids = self.env["pos.order"].browse(list(dict.fromkeys(order_ids)))
         pos_order_ids |= pos_order_ids.lines.refunded_orderline_id.order_id
-        config = pos_order_ids.config_id[0] if pos_order_ids else False
 
         for order in pos_order_ids:
             order._pos_bus_get_or_create_token()
@@ -2463,13 +2455,30 @@ class PosOrder(models.Model):
 
         _logger.info("PoS synchronisation #%d finished", sync_token)
         with _debug.perf("sync_read_pos_data", cr=self.env.cr, sync=sync_token):
-            return pos_order_ids.read_pos_data(orders, config)
+            return pos_order_ids._read_pos_data_per_config(orders)
 
     @api.model
     def read_pos_orders(self, domain=False):
         orders = self.search(domain)
-        config_id = orders[0].config_id if orders else False
-        return orders.read_pos_data([], config_id) if config_id else {"pos.order": []}
+        return orders._read_pos_data_per_config([]) if orders else {"pos.order": []}
+
+    def _read_pos_data_per_config(self, data) -> dict:
+        if not self:
+            return self.read_pos_data(data, False)
+        result = {}
+        seen = set()
+        for config, orders in self.grouped("config_id").items():
+            for model, rows in orders.read_pos_data(data, config).items():
+                merged = result.setdefault(model, [])
+                for row in rows:
+                    key = (model, row.get("id"))
+                    if key in seen:
+                        continue
+                    if key[1] is not None:
+                        seen.add(key)
+                    merged.append(row)
+        _debug.logic("read_pos_data_per_config", orders=self, configs=self.config_id)
+        return result
 
     _READ_POS_DATA_MODELS = (
         "pos.order",
@@ -2656,7 +2665,7 @@ class PosOrder(models.Model):
             for line in order.lines._get_refundable_lines():
                 refund_lots = line.pack_lot_ids.copy()
                 refund_line = line.copy(
-                    line._prepare_refund_data(refund_order, refund_lots)
+                    line._prepare_refund_values(refund_order, refund_lots)
                 )
                 refund_line._onchange_amount_line_all()
             refund_orders |= refund_order
