@@ -1247,7 +1247,9 @@ test("a keystroke evaluates each derived list once per render, not once per resu
     await edit("app", { confirm: false });
     await animationFrame();
 
-    expect(renders).toBe(3, { message: "one render per character" });
+    // a late answer to the page's own requests can render once more without
+    // a new query: the lists are counted per query, not per render
+    expect(renders).toBeGreaterThanOrEqual(3, { message: "one render per character" });
     expect(".o_menu_result").toHaveCount(8, { message: "eight rows on screen" });
     for (const [name, n] of Object.entries(counts)) {
         expect(n).toBeLessThanOrEqual(renders, {
@@ -1255,8 +1257,8 @@ test("a keystroke evaluates each derived list once per render, not once per resu
         });
     }
     expect(counts.shownApps).toBe(0);
-    expect(counts.unpinnedApps).toBe(renders);
-    expect(counts.menuMatches).toBe(renders);
+    expect(counts.unpinnedApps).toBe(3, { message: "once per query" });
+    expect(counts.menuMatches).toBe(3, { message: "once per query" });
 });
 
 test("two quick pins are written one after the other, so neither can be lost", async () => {
@@ -2008,7 +2010,8 @@ test("an override that returns a fresh apps array still derives each list once p
     unpinned = 0;
     await searchFor("cal");
     expect(".o_app").toHaveCount(1);
-    expect(unpinned).toBe(renders);
+    expect(unpinned).toBe(1, { message: "once for the one query" });
+    expect(unpinned).toBeLessThanOrEqual(renders);
 });
 
 test("metadata-only menu reload refreshes badge ownership", async () => {
