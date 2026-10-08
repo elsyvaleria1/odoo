@@ -18,6 +18,7 @@ except ImportError:
     ABNF = WebSocketConnectionClosedException = None
 
 from .. import websocket as websocket_module
+from ..tools.websocket_codec import FrameParser, encode_frame
 from ..websocket import (
     MAX_TRY_ON_POOL_ERROR,
     CloseCode,
@@ -51,15 +52,21 @@ class _ManualClock:
 
 
 class _FakeSocket:
-    def __init__(self, data=b""):
-        self._buf = bytearray(data)
+    def __init__(self, chunks=()):
+        self._chunks = list(chunks)
         self.sent = bytearray()
 
+    @property
+    def exhausted(self):
+        return not self._chunks
+
     def recv(self, n):
-        if not self._buf:
+        if not self._chunks:
             return b""
-        chunk = bytes(self._buf[:n])
-        del self._buf[:n]
+        chunk = self._chunks.pop(0)
+        if len(chunk) > n:
+            chunk, rest = chunk[:n], chunk[n:]
+            self._chunks.insert(0, rest)
         return chunk
 
     def sendall(self, data):
@@ -103,6 +110,25 @@ def _client_frame(
         out += b"\x00\x00\x00\x00"
     out += payload
     return bytes(out)
+
+
+def _masked_client_frame(opcode, payload, mask=b"\x37\xfa\x21\x3d", *, fin=True):
+    head = bytearray([(0x80 if fin else 0) | int(opcode)])
+    if len(payload) < 126:
+        head.append(0x80 | len(payload))
+    elif len(payload) < 65536:
+        head += bytes([0x80 | 126]) + struct.pack("!H", len(payload))
+    else:
+        head += bytes([0x80 | 127]) + struct.pack("!Q", len(payload))
+    masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+    return bytes(head) + mask + masked
+
+
+def _wire_splits(data):
+    yield [data]
+    yield [data[i : i + 1] for i in range(len(data))]
+    for cut in range(1, len(data)):
+        yield [data[:cut], data[cut:]]
 
 
 @tagged("-at_install", "post_install")
@@ -530,41 +556,124 @@ class TestSessionValidityCache(BaseCase):
         self.assertFalse(ws._waiting_for_dispatch)
 
 
+def _make_receiving_ws(chunks=(), *, clock=None):
+    ws = Websocket.__new__(Websocket)
+    ws._clock = clock or time.monotonic
+    sock = _FakeSocket(chunks)
+    ws._Websocket__socket = sock
+    ws._timeout_manager = TimeoutManager()
+    ws.state = ConnectionState.OPEN
+    ws._close_sent = False
+    ws._close_received = False
+    ws._limit_rate = lambda opcode: None
+    ws._parser = FrameParser(ws.MESSAGE_MAX_SIZE, lambda opcode: None)
+    ws._fragments = None
+    ws._fragments_opcode = None
+    ws._frame_started_at = None
+    return ws, sock
+
+
+def _read_all(ws, sock):
+    messages = []
+    while not sock.exhausted:
+        messages.extend(ws._read_messages())
+    return messages
+
+
+@tagged("-at_install", "post_install")
+class TestFrameParser(BaseCase):
+    def _feed(self, parser, chunks):
+        frames = []
+        for chunk in chunks:
+            frames.extend(parser.feed(chunk))
+        return frames
+
+    def test_header_is_announced_once_per_frame_wherever_it_is_cut(self):
+        data = _client_frame(Opcode.TEXT, b"ab") + _client_frame(
+            Opcode.PING, b"", fin=True
+        )
+        for chunks in _wire_splits(data):
+            seen = []
+            parser = FrameParser(1024, seen.append)
+            frames = self._feed(parser, chunks)
+            self.assertEqual([f.opcode for f in frames], [Opcode.TEXT, Opcode.PING])
+            self.assertEqual(seen, [Opcode.TEXT, Opcode.PING])
+            self.assertFalse(parser.mid_frame)
+
+    def test_extended_lengths_survive_every_cut(self):
+        for size in (125, 126, 65535, 65536):
+            payload = bytes(range(256)) * (size // 256) + bytes(size % 256)
+            data = _masked_client_frame(Opcode.BINARY, payload)
+            for chunks in (
+                [data],
+                [data[:1], data[1:]],
+                [data[:3], data[3:]],
+                [data[:9], data[9:]],
+                [data[:-1], data[-1:]],
+            ):
+                frames = self._feed(FrameParser(2**20), chunks)
+                self.assertEqual(len(frames), 1, f"size {size}")
+                self.assertEqual(frames[0].payload, payload, f"size {size}")
+
+    def test_partial_frame_is_reported_mid_frame(self):
+        data = _client_frame(Opcode.TEXT, b"hello")
+        parser = FrameParser(1024)
+        self.assertEqual(parser.feed(data[:-1]), [])
+        self.assertTrue(parser.mid_frame)
+        self.assertEqual(len(parser.feed(data[-1:])), 1)
+        self.assertFalse(parser.mid_frame)
+
+    def test_encoded_frames_carry_the_shortest_length_field(self):
+        for size, header in ((125, 2), (126, 4), (65535, 4), (65536, 10)):
+            data = encode_frame(Frame(Opcode.BINARY, b"x" * size))
+            self.assertEqual(len(data), header + size)
+            opcode, payload = _parse_server_frame(data)
+            self.assertEqual(opcode, Opcode.BINARY)
+            self.assertEqual(len(payload), size)
+
+    def test_encoder_refuses_an_oversized_control_frame(self):
+        with self.assertRaises(ProtocolError):
+            encode_frame(Frame(Opcode.PING, b"x" * 126))
+
+
 @tagged("-at_install", "post_install")
 class TestFrameCodec(BaseCase):
     def test_decoded_frame_flags_are_boolean(self):
         for final in (False, True):
-            with self.subTest(final=final):
-                ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"hello", fin=final))
-                frame = ws._get_next_frame()
-                self.assertIs(frame.fin, final)
-                self.assertIs(frame.rsv1, False)
-                self.assertIs(frame.rsv2, False)
-                self.assertIs(frame.rsv3, False)
-                self.assertEqual(frame.payload, b"hello")
+            for chunks in _wire_splits(_client_frame(Opcode.TEXT, b"hello", fin=final)):
+                with self.subTest(final=final, chunks=len(chunks)):
+                    parser = FrameParser(Websocket.MESSAGE_MAX_SIZE)
+                    frames = [f for chunk in chunks for f in parser.feed(chunk)]
+                    self.assertEqual(len(frames), 1)
+                    frame = frames[0]
+                    self.assertIs(frame.fin, final)
+                    self.assertIs(frame.rsv1, False)
+                    self.assertIs(frame.rsv2, False)
+                    self.assertIs(frame.rsv3, False)
+                    self.assertEqual(frame.payload, b"hello")
 
-    def _make_ws(self, incoming=b""):
-        ws = Websocket.__new__(Websocket)
-        ws._clock = time.monotonic
-        sock = _FakeSocket(incoming)
-        ws._Websocket__socket = sock
-        ws._timeout_manager = TimeoutManager()
-        ws.state = ConnectionState.OPEN
-        ws._close_sent = False
-        ws._close_received = False
-        ws._limit_rate = lambda opcode: None
-        return ws, sock
+    def _assert_messages(self, data, expected):
+        for chunks in _wire_splits(data):
+            ws, sock = _make_receiving_ws(chunks)
+            self.assertEqual(_read_all(ws, sock), expected, f"cut as {chunks!r}")
+
+    def _assert_raises(self, exception, data, *, max_size=None):
+        for chunks in _wire_splits(data):
+            ws, sock = _make_receiving_ws(chunks)
+            if max_size is not None:
+                ws.MESSAGE_MAX_SIZE = max_size
+                ws._parser = FrameParser(max_size)
+            with self.assertRaises(exception, msg=f"cut as {chunks!r}"):
+                _read_all(ws, sock)
 
     def test_single_text_frame(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"hello"))
-        self.assertEqual(ws._process_next_message(), "hello")
+        self._assert_messages(_client_frame(Opcode.TEXT, b"hello"), ["hello"])
 
     def test_fragmented_text_message_is_reassembled(self):
         data = _client_frame(Opcode.TEXT, b"Hello ", fin=False) + _client_frame(
             Opcode.CONTINUE, b"World", fin=True
         )
-        ws, _ = self._make_ws(data)
-        self.assertEqual(ws._process_next_message(), "Hello World")
+        self._assert_messages(data, ["Hello World"])
 
     def test_control_frame_interleaved_in_fragmented_message(self):
         data = (
@@ -572,36 +681,30 @@ class TestFrameCodec(BaseCase):
             + _client_frame(Opcode.PING, b"ka", fin=True)
             + _client_frame(Opcode.CONTINUE, b"World", fin=True)
         )
-        ws, sock = self._make_ws(data)
-        self.assertEqual(ws._process_next_message(), "Hello World")
-        self.assertTrue(sock.sent)
-        self.assertEqual(sock.sent[0] & 0x0F, int(Opcode.PONG))
+        for chunks in _wire_splits(data):
+            ws, sock = _make_receiving_ws(chunks)
+            self.assertEqual(_read_all(ws, sock), ["Hello World"])
+            self.assertTrue(sock.sent)
+            self.assertEqual(sock.sent[0] & 0x0F, int(Opcode.PONG))
 
     def test_reserved_bit_set_raises(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"x", rsv1=True))
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(ProtocolError, _client_frame(Opcode.TEXT, b"x", rsv1=True))
 
     def test_unmasked_client_frame_raises(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"x", masked=False))
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(
+            ProtocolError, _client_frame(Opcode.TEXT, b"x", masked=False)
+        )
 
     def test_invalid_opcode_raises(self):
-        frame = bytes([0x80 | 0x03, 0x80, 0, 0, 0, 0])
-        ws, _ = self._make_ws(frame)
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(ProtocolError, bytes([0x80 | 0x03, 0x80, 0, 0, 0, 0]))
 
     def test_oversized_control_frame_raises(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.CLOSE, b"", seven_bit_len=126))
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(
+            ProtocolError, _client_frame(Opcode.CLOSE, b"", seven_bit_len=126)
+        )
 
     def test_fragmented_control_frame_raises(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.PING, b"x", fin=False))
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(ProtocolError, _client_frame(Opcode.PING, b"x", fin=False))
 
     def test_payload_too_large_single_frame_raises(self):
         frame = (
@@ -609,42 +712,32 @@ class TestFrameCodec(BaseCase):
             + struct.pack("!Q", Websocket.MESSAGE_MAX_SIZE + 1)
             + b"\x00\x00\x00\x00"
         )
-        ws, _ = self._make_ws(frame)
-        with self.assertRaises(PayloadTooLargeError):
-            ws._process_next_message()
+        self._assert_raises(PayloadTooLargeError, frame)
 
     def test_unexpected_top_level_continuation_raises(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.CONTINUE, b"x", fin=True))
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(
+            ProtocolError, _client_frame(Opcode.CONTINUE, b"x", fin=True)
+        )
 
     def test_data_frame_where_continuation_expected_raises(self):
         data = _client_frame(Opcode.TEXT, b"a", fin=False) + _client_frame(
             Opcode.TEXT, b"b", fin=True
         )
-        ws, _ = self._make_ws(data)
-        with self.assertRaises(ProtocolError):
-            ws._process_next_message()
+        self._assert_raises(ProtocolError, data)
 
     def test_payload_too_large_during_reassembly_raises(self):
-        ws, _ = self._make_ws(
-            _client_frame(Opcode.TEXT, b"12345", fin=False)
-            + _client_frame(Opcode.CONTINUE, b"67890", fin=True)
+        data = _client_frame(Opcode.TEXT, b"12345", fin=False) + _client_frame(
+            Opcode.CONTINUE, b"67890", fin=True
         )
-        ws.MESSAGE_MAX_SIZE = 8
-        with self.assertRaises(PayloadTooLargeError):
-            ws._process_next_message()
+        self._assert_raises(PayloadTooLargeError, data, max_size=8)
 
     def test_stalled_frame_is_abandoned_at_the_deadline(self):
         header = struct.pack("!BBH", 0x81, 0x80 | 126, 1000) + b"\x00\x00\x00\x00"
         sock = _StallingSocket(header)
         clock = _ManualClock()
-        ws = Websocket.__new__(Websocket)
-        ws._clock = clock
+        ws, _ = _make_receiving_ws(clock=clock)
         ws._Websocket__socket = sock
         ws._timeout_manager = TimeoutManager(clock=clock)
-        ws.state = ConnectionState.OPEN
-        ws._limit_rate = lambda opcode: None
 
         original_recv = sock.recv
 
@@ -655,38 +748,46 @@ class TestFrameCodec(BaseCase):
         sock.recv = ticking_recv
 
         with self.assertRaises(ConnectionClosedError):
-            ws._get_next_frame()
+            while True:
+                list(ws._read_messages())
+                ws._check_frame_deadline()
         self.assertLess(sock.recv_calls, 1000)
         self.assertGreaterEqual(clock.now, Websocket.FRAME_RECEIVE_TIMEOUT)
 
     def test_frame_deadline_does_not_disturb_a_prompt_peer(self):
         clock = _ManualClock()
-        ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"hello"))
-        ws._clock = clock
-        self.assertEqual(ws._process_next_message(), "hello")
+        for chunks in _wire_splits(_client_frame(Opcode.TEXT, b"hello")):
+            ws, sock = _make_receiving_ws(chunks, clock=clock)
+            self.assertEqual(_read_all(ws, sock), ["hello"])
+            clock.now += Websocket.FRAME_RECEIVE_TIMEOUT * 2
+            ws._check_frame_deadline()
 
     def test_truncated_frame_raises_connection_closed(self):
         truncated = _client_frame(Opcode.TEXT, b"hello")[:-3]
-        ws, _ = self._make_ws(truncated)
-        with self.assertRaises(ConnectionClosedError):
-            ws._process_next_message()
+        for chunks in _wire_splits(truncated):
+            ws, sock = _make_receiving_ws(chunks)
+            self.assertEqual(_read_all(ws, sock), [])
+            with self.assertRaises(ConnectionClosedError):
+                ws._read_messages()
 
     def test_close_interleaved_in_fragmented_message_abandons_message(self):
         data = _client_frame(Opcode.TEXT, b"Hello ", fin=False) + _client_frame(
             Opcode.CLOSE, struct.pack("!H", CloseCode.CLEAN)
         )
-        ws, sock = self._make_ws(data)
-        ws._terminate = MagicMock()
-        self.assertIsNone(ws._process_next_message())
-        opcode, payload = _parse_server_frame(sock.sent)
-        self.assertEqual(opcode, Opcode.CLOSE)
-        self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.CLEAN)
-        ws._terminate.assert_called_once()
+        for chunks in _wire_splits(data):
+            ws, sock = _make_receiving_ws(chunks)
+            ws._terminate = MagicMock()
+            self.assertEqual(_read_all(ws, sock), [])
+            opcode, payload = _parse_server_frame(sock.sent)
+            self.assertEqual(opcode, Opcode.CLOSE)
+            self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.CLEAN)
+            ws._terminate.assert_called_once()
 
     def test_data_frame_received_while_closing_is_discarded(self):
-        ws, _ = self._make_ws(_client_frame(Opcode.TEXT, b"late data"))
-        ws.state = ConnectionState.CLOSING
-        self.assertIsNone(ws._process_next_message())
+        for chunks in _wire_splits(_client_frame(Opcode.TEXT, b"late data")):
+            ws, sock = _make_receiving_ws(chunks)
+            ws.state = ConnectionState.CLOSING
+            self.assertEqual(_read_all(ws, sock), [])
 
 
 def _parse_server_frame(data):
@@ -705,18 +806,12 @@ def _parse_server_frame(data):
 
 @tagged("-at_install", "post_install")
 class TestCloseFrameHandling(BaseCase):
-    def _make_ws(self, incoming=b""):
-        ws = Websocket.__new__(Websocket)
-        ws._clock = time.monotonic
-        sock = _FakeSocket(incoming)
-        ws._Websocket__socket = sock
-        ws._timeout_manager = TimeoutManager()
-        ws.state = ConnectionState.OPEN
-        ws._close_sent = False
-        ws._close_received = False
-        ws._limit_rate = lambda opcode: None
-        ws._terminate = MagicMock()
-        return ws, sock
+    def _receive_close(self, payload):
+        for chunks in _wire_splits(_client_frame(Opcode.CLOSE, payload)):
+            ws, sock = _make_receiving_ws(chunks)
+            ws._terminate = MagicMock()
+            _read_all(ws, sock)
+            yield ws, sock
 
     def _assert_close_answer(self, sock, expected_code, expected_reason=None):
         opcode, payload = _parse_server_frame(sock.sent)
@@ -727,41 +822,32 @@ class TestCloseFrameHandling(BaseCase):
 
     def test_legal_close_is_echoed(self):
         payload = struct.pack("!H", CloseCode.CLEAN) + b"bye"
-        ws, sock = self._make_ws(_client_frame(Opcode.CLOSE, payload))
-        ws._process_next_message()
-        self._assert_close_answer(sock, CloseCode.CLEAN, "bye")
-        ws._terminate.assert_called_once()
+        for ws, sock in self._receive_close(payload):
+            self._assert_close_answer(sock, CloseCode.CLEAN, "bye")
+            ws._terminate.assert_called_once()
 
     def test_reserved_range_close_code_is_echoed(self):
-        payload = struct.pack("!H", 4242)
-        ws, sock = self._make_ws(_client_frame(Opcode.CLOSE, payload))
-        ws._process_next_message()
-        self._assert_close_answer(sock, 4242)
+        for _ws, sock in self._receive_close(struct.pack("!H", 4242)):
+            self._assert_close_answer(sock, 4242)
 
     def test_invalid_close_code_answered_with_protocol_error(self):
         for bad_code in (999, 1005, 1006, 1015, 2999):
-            ws, sock = self._make_ws(
-                _client_frame(Opcode.CLOSE, struct.pack("!H", bad_code))
-            )
-            ws._process_next_message()
-            self._assert_close_answer(sock, CloseCode.PROTOCOL_ERROR)
-            ws._terminate.assert_called_once()
+            for ws, sock in self._receive_close(struct.pack("!H", bad_code)):
+                self._assert_close_answer(sock, CloseCode.PROTOCOL_ERROR)
+                ws._terminate.assert_called_once()
 
     def test_one_byte_close_payload_answered_with_protocol_error(self):
-        ws, sock = self._make_ws(_client_frame(Opcode.CLOSE, b"\x01"))
-        ws._process_next_message()
-        self._assert_close_answer(sock, CloseCode.PROTOCOL_ERROR)
+        for _ws, sock in self._receive_close(b"\x01"):
+            self._assert_close_answer(sock, CloseCode.PROTOCOL_ERROR)
 
     def test_invalid_utf8_close_reason_answered_with_inconsistent_data(self):
         payload = struct.pack("!H", CloseCode.CLEAN) + b"\xff\xfe"
-        ws, sock = self._make_ws(_client_frame(Opcode.CLOSE, payload))
-        ws._process_next_message()
-        self._assert_close_answer(sock, CloseCode.INCONSISTENT_DATA)
+        for _ws, sock in self._receive_close(payload):
+            self._assert_close_answer(sock, CloseCode.INCONSISTENT_DATA)
 
     def test_empty_close_payload_answered_with_clean(self):
-        ws, sock = self._make_ws(_client_frame(Opcode.CLOSE))
-        ws._process_next_message()
-        self._assert_close_answer(sock, CloseCode.CLEAN)
+        for _ws, sock in self._receive_close(b""):
+            self._assert_close_answer(sock, CloseCode.CLEAN)
 
 
 @tagged("-at_install", "post_install")

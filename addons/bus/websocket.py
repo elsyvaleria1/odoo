@@ -7,11 +7,11 @@ import os
 import random
 import selectors
 import socket
-import struct
 import sys
 import threading
 import time
 from collections import defaultdict, deque
+from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from enum import IntEnum
 from itertools import count
@@ -44,6 +44,21 @@ from odoo.tools import config
 
 from .models.bus import NOTIFICATION_HOLD_BACK_SECONDS, dispatch
 from .tools import orjson
+from .tools.websocket_codec import (
+    CTRL_OP,
+    DATA_OP,
+    CloseCode,
+    CloseFrame,
+    Frame,
+    FrameParser,
+    InvalidCloseCodeError,
+    Opcode,
+    PayloadTooLargeError,
+    ProtocolError,
+    WebsocketError,
+    encode_frame,
+    parse_close_payload,
+)
 
 if TYPE_CHECKING:
     from odoo.http.session import Session
@@ -93,17 +108,8 @@ class UpgradeRequired(HTTPException):
         return headers
 
 
-class WebsocketError(Exception):
-    pass
-
-
 class ConnectionClosedError(WebsocketError):
     pass
-
-
-class InvalidCloseCodeError(WebsocketError):
-    def __init__(self, code) -> None:
-        super().__init__(f"Invalid close code: {code}")
 
 
 class InvalidDatabaseError(WebsocketError):
@@ -115,14 +121,6 @@ class InvalidStateError(WebsocketError):
 
 
 class InvalidWebsocketRequestError(WebsocketError):
-    pass
-
-
-class PayloadTooLargeError(WebsocketError):
-    pass
-
-
-class ProtocolError(WebsocketError):
     pass
 
 
@@ -156,34 +154,6 @@ class LifecycleEvent(IntEnum):
     CLOSE = 1
 
 
-class Opcode(IntEnum):
-    CONTINUE = 0x00
-    TEXT = 0x01
-    BINARY = 0x02
-    CLOSE = 0x08
-    PING = 0x09
-    PONG = 0x0A
-
-
-class CloseCode(IntEnum):
-    CLEAN = 1000
-    GOING_AWAY = 1001
-    PROTOCOL_ERROR = 1002
-    INCORRECT_DATA = 1003
-    ABNORMAL_CLOSURE = 1006
-    INCONSISTENT_DATA = 1007
-    MESSAGE_VIOLATING_POLICY = 1008
-    MESSAGE_TOO_BIG = 1009
-    EXTENSION_NEGOTIATION_FAILED = 1010
-    SERVER_ERROR = 1011
-    RESTART = 1012
-    TRY_LATER = 1013
-    BAD_GATEWAY = 1014
-    SESSION_EXPIRED = 4001
-    KEEP_ALIVE_TIMEOUT = 4002
-    KILL_NOW = 4003
-
-
 class ConnectionState(IntEnum):
     OPEN = 0
     CLOSING = 1
@@ -196,54 +166,6 @@ _command_uid = count(0)
 class ControlCommand(IntEnum):
     CLOSE = 0
     DISPATCH = 1
-
-
-DATA_OP = {Opcode.TEXT, Opcode.BINARY}
-CTRL_OP = {Opcode.CLOSE, Opcode.PING, Opcode.PONG}
-HEARTBEAT_OP = {Opcode.PING, Opcode.PONG}
-
-VALID_CLOSE_CODES = {
-    code for code in CloseCode if code is not CloseCode.ABNORMAL_CLOSURE
-}
-RESERVED_CLOSE_CODES = range(3000, 5000)
-
-_XOR_TABLE = [bytes(a ^ b for a in range(256)) for b in range(256)]
-
-
-class Frame:
-    __slots__ = ("fin", "opcode", "payload", "rsv1", "rsv2", "rsv3")
-
-    def __init__(
-        self, opcode, payload=b"", fin=True, rsv1=False, rsv2=False, rsv3=False
-    ) -> None:
-        self.opcode = opcode
-        self.payload = payload
-        self.fin = fin
-        self.rsv1 = rsv1
-        self.rsv2 = rsv2
-        self.rsv3 = rsv3
-
-
-class CloseFrame(Frame):
-    __slots__ = ("code", "reason")
-
-    MAX_REASON_LENGTH = 123
-
-    def __init__(self, code, reason) -> None:
-        if code not in VALID_CLOSE_CODES and code not in RESERVED_CLOSE_CODES:
-            raise InvalidCloseCodeError(code)
-        payload = struct.pack("!H", code)
-        if reason:
-            encoded_reason = reason.encode("utf-8")
-            if len(encoded_reason) > self.MAX_REASON_LENGTH:
-                reason = encoded_reason[: self.MAX_REASON_LENGTH].decode(
-                    "utf-8", errors="ignore"
-                )
-                encoded_reason = reason.encode("utf-8")
-            payload += encoded_reason
-        self.code = code
-        self.reason = reason
-        super().__init__(Opcode.CLOSE, payload)
 
 
 _public_session_lock = threading.Lock()
@@ -370,6 +292,7 @@ class Websocket:
     RL_CONTROL_FACTOR = 10
     SESSION_VALIDITY_TTL = 60
     FRAME_RECEIVE_TIMEOUT = 15
+    RECEIVE_SIZE = 65536
 
     # The dispatch round a batched wake authorised this connection to share an
     # answer in, None otherwise. Declared on the class so a connection that
@@ -390,6 +313,10 @@ class Websocket:
         self._incoming_control_frame_timestamps = deque(
             maxlen=self.RL_BURST * self.RL_CONTROL_FACTOR
         )
+        self._parser = FrameParser(self.MESSAGE_MAX_SIZE, self._limit_rate)
+        self._fragments = None
+        self._fragments_opcode = None
+        self._frame_started_at = None
         self.__cmd_queue = PollablePriorityQueue()
         self._waiting_for_dispatch = False
         self._channels = set()
@@ -431,9 +358,10 @@ class Websocket:
                     if self.state is ConnectionState.CLOSED:
                         continue
                 if self.__socket in readables:
-                    message = self._process_next_message()
-                    if message is not None:
-                        yield message
+                    for message in self._read_messages():
+                        if self.state is ConnectionState.OPEN:
+                            yield message
+                self._check_frame_deadline()
             except Exception as exc:
                 self._handle_transport_error(exc)
 
@@ -470,99 +398,58 @@ class Websocket:
         with suppress(OSError):
             self._send_control_command(ControlCommand.DISPATCH)
 
-    def _get_next_frame(self):
-        frame_deadline = self._clock() + self.FRAME_RECEIVE_TIMEOUT
+    def _read_messages(self) -> Iterator:
+        data = self.__socket.recv(self.RECEIVE_SIZE)
+        if not data:
+            raise ConnectionClosedError
+        return self._receive(data)
 
-        def recv_bytes(n):
-            data = bytearray()
-            while len(data) < n:
-                if self._clock() > frame_deadline:
-                    raise ConnectionClosedError(
-                        "Peer did not complete the frame within "
-                        f"{self.FRAME_RECEIVE_TIMEOUT}s"
-                    )
-                received_data = self.__socket.recv(n - len(data))
-                if not received_data:
-                    raise ConnectionClosedError
-                data.extend(received_data)
-            return data
+    def _receive(self, data) -> Iterator:
+        # A generator, so that a message is served before the control frames
+        # behind it are answered: a client may send a message, then a ping, and
+        # read the pong as proof the message was handled.
+        for frame in self._parser.feed(data):
+            self._timeout_manager.acknowledge_frame_receipt(frame)
+            message = self._on_frame(frame)
+            if message is not None:
+                yield message
+        if not self._parser.mid_frame:
+            self._frame_started_at = None
+        elif self._frame_started_at is None:
+            self._frame_started_at = self._clock()
 
-        def is_bit_set(byte: int, n: int) -> bool:
-            return bool(byte & (1 << (7 - n)))
+    def _check_frame_deadline(self) -> None:
+        started = self._frame_started_at
+        if started is not None and self._clock() > started + self.FRAME_RECEIVE_TIMEOUT:
+            raise ConnectionClosedError(
+                f"Peer did not complete the frame within {self.FRAME_RECEIVE_TIMEOUT}s"
+            )
 
-        def apply_mask(payload, mask):
-            a, b, c, d = (_XOR_TABLE[n] for n in mask)
-            payload[::4] = payload[::4].translate(a)
-            payload[1::4] = payload[1::4].translate(b)
-            payload[2::4] = payload[2::4].translate(c)
-            payload[3::4] = payload[3::4].translate(d)
-            return payload
-
-        first_byte, second_byte = recv_bytes(2)
-        fin, rsv1, rsv2, rsv3 = (is_bit_set(first_byte, n) for n in range(4))
-        try:
-            opcode = Opcode(first_byte & 0b00001111)
-        except ValueError as exc:
-            raise ProtocolError(exc) from exc
-        self._limit_rate(opcode)
-        payload_length = second_byte & 0b01111111
-
-        if rsv1 or rsv2 or rsv3:
-            raise ProtocolError("Reserved bits must be unset")
-        if not is_bit_set(second_byte, 0):
-            raise ProtocolError("Frame must be masked")
-        if opcode in CTRL_OP:
-            if not fin:
-                raise ProtocolError("Control frames cannot be fragmented")
-            if payload_length > 125:
-                raise ProtocolError("Control frames payload must be smaller than 126")
-        if payload_length == 126:
-            payload_length = struct.unpack("!H", recv_bytes(2))[0]
-        elif payload_length == 127:
-            payload_length = struct.unpack("!Q", recv_bytes(8))[0]
-        if payload_length > self.MESSAGE_MAX_SIZE:
-            raise PayloadTooLargeError
-
-        mask = recv_bytes(4)
-        payload = apply_mask(recv_bytes(payload_length), mask)
-        frame = Frame(opcode, bytes(payload), fin, rsv1, rsv2, rsv3)
-        self._timeout_manager.acknowledge_frame_receipt(frame)
-        return frame
-
-    def _process_next_message(self):
-        frame = self._get_next_frame()
+    def _on_frame(self, frame):
         if frame.opcode in CTRL_OP:
             self._handle_control_frame(frame)
             return None
         if self.state is not ConnectionState.OPEN:
             return None
         if frame.opcode is Opcode.CONTINUE:
-            raise ProtocolError("Unexpected continuation frame")
-        message = frame.payload
-        if not frame.fin:
-            message = self._recover_fragmented_message(frame)
-        return (
-            message.decode("utf-8")
-            if message is not None and frame.opcode is Opcode.TEXT
-            else message
-        )
-
-    def _recover_fragmented_message(self, initial_frame):
-        message_fragments = bytearray(initial_frame.payload)
-        while True:
-            frame = self._get_next_frame()
-            if frame.opcode in CTRL_OP:
-                self._handle_control_frame(frame)
-                if self.state is not ConnectionState.OPEN:
-                    return None
-                continue
-            if frame.opcode is not Opcode.CONTINUE:
-                raise ProtocolError("A continuation frame was expected")
-            message_fragments.extend(frame.payload)
-            if len(message_fragments) > self.MESSAGE_MAX_SIZE:
+            if self._fragments is None:
+                raise ProtocolError("Unexpected continuation frame")
+            self._fragments.extend(frame.payload)
+            if len(self._fragments) > self.MESSAGE_MAX_SIZE:
                 raise PayloadTooLargeError
-            if frame.fin:
-                return bytes(message_fragments)
+            if not frame.fin:
+                return None
+            message, opcode = bytes(self._fragments), self._fragments_opcode
+            self._fragments = self._fragments_opcode = None
+        elif self._fragments is not None:
+            raise ProtocolError("A continuation frame was expected")
+        elif not frame.fin:
+            self._fragments = bytearray(frame.payload)
+            self._fragments_opcode = frame.opcode
+            return None
+        else:
+            message, opcode = frame.payload, frame.opcode
+        return message.decode("utf-8") if opcode is Opcode.TEXT else message
 
     def _send(self, message):
         if self.state is not ConnectionState.OPEN:
@@ -573,32 +460,7 @@ class Websocket:
         self._send_frame(Frame(opcode, message))
 
     def _send_frame(self, frame) -> None:
-        if frame.opcode in CTRL_OP and len(frame.payload) > 125:
-            raise ProtocolError(
-                "Control frames should have a payload length smaller than 126"
-            )
-        if isinstance(frame.payload, str):
-            frame.payload = frame.payload.encode("utf-8")
-        elif not isinstance(frame.payload, (bytes, bytearray)):
-            frame.payload = orjson.dumps(frame.payload)
-
-        output = bytearray()
-        first_byte = (
-            (0b10000000 if frame.fin else 0)
-            | (0b01000000 if frame.rsv1 else 0)
-            | (0b00100000 if frame.rsv2 else 0)
-            | (0b00010000 if frame.rsv3 else 0)
-            | frame.opcode
-        )
-        payload_length = len(frame.payload)
-        if payload_length < 126:
-            output.extend(struct.pack("!BB", first_byte, payload_length))
-        elif payload_length < 65536:
-            output.extend(struct.pack("!BBH", first_byte, 126, payload_length))
-        else:
-            output.extend(struct.pack("!BBQ", first_byte, 127, payload_length))
-        output.extend(frame.payload)
-        self.__socket.sendall(output)
+        self.__socket.sendall(encode_frame(frame))
         self._timeout_manager.acknowledge_frame_sent(frame)
         if not isinstance(frame, CloseFrame):
             return
@@ -666,19 +528,7 @@ class Websocket:
         elif frame.opcode is Opcode.CLOSE:
             self.state = ConnectionState.CLOSING
             self._close_received = True
-            code, reason = CloseCode.CLEAN, None
-            if len(frame.payload) >= 2:
-                code = struct.unpack("!H", frame.payload[:2])[0]
-                if code not in VALID_CLOSE_CODES and code not in RESERVED_CLOSE_CODES:
-                    code, reason = CloseCode.PROTOCOL_ERROR, "Invalid close code"
-                else:
-                    try:
-                        reason = frame.payload[2:].decode("utf-8")
-                    except UnicodeDecodeError:
-                        code = CloseCode.INCONSISTENT_DATA
-                        reason = "Malformed close reason"
-            elif frame.payload:
-                code, reason = CloseCode.PROTOCOL_ERROR, "Malformed closing frame"
+            code, reason = parse_close_payload(frame.payload)
             if not self._close_sent:
                 self._send_close_frame(code, reason)
             else:
