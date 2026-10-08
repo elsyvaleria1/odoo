@@ -462,7 +462,7 @@
                         type="action"
                         string="Create Invoice"
                         groups="sale.group_sale_salesman"
-                        invisible="invoice_state not in ('to do', 'partial')"
+                        invisible="not is_invoiceable"
                         class="btn-primary"
                         data-hotkey="q" />
                     <button
@@ -472,7 +472,7 @@
                         string="Create Invoice"
                         context="{'default_advance_payment_method': 'percentage'}"
                         groups="sale.group_sale_salesman"
-                        invisible="invoice_state != 'no' or state != 'done'"
+                        invisible="is_invoiceable or state != 'done' or invoice_state in ('draft', 'done', 'over done')"
                         data-hotkey="q" />
                     <separator name="workflow" />
                     <button

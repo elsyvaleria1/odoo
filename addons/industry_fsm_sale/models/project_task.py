@@ -308,15 +308,12 @@ class ProjectTask(models.Model):
         "timer_start",
         "task_to_invoice",
         "invoice_state",
-        "sale_order_id.line_ids.invoice_state",
+        "sale_order_id.is_invoiceable",
     )
     def _compute_display_create_invoice_buttons(self) -> None:
         for task in self:
             primary, secondary = True, True
-            invoiceable = (
-                task.invoice_state in ("to do", "partial")
-                and task._has_sale_lines_to_invoice()
-            )
+            invoiceable = task.sale_order_id.sudo().is_invoiceable
             if (
                 not task.is_fsm
                 or not task.fsm_done
@@ -350,19 +347,6 @@ class ProjectTask(models.Model):
                     "display_create_invoice_secondary": secondary,
                 }
             )
-
-    def _has_sale_lines_to_invoice(self) -> bool:
-        self.check_singleton()
-        order = self.sale_order_id.sudo()
-        # an order reads "to do" while a line is still owed (undelivered) and a
-        # down payment line reads "to do" while its deduction is open: neither
-        # is something an invoice can be raised for now
-        return any(
-            state in ("to do", "partial")
-            for state in order.line_ids.filtered_domain(
-                order._get_domain_rollup_lines()
-            ).mapped("invoice_state")
-        )
 
     @api.depends("sale_line_id")
     def _compute_warning_message(self) -> None:

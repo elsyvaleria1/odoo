@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from freezegun import freeze_time
+
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import new_test_user, tagged
@@ -234,6 +236,7 @@ class TestPurchaseAuditFixes(AccountTestInvoicingCommon):
             "averaging the unselected company would report (2 + 40) / 2",
         )
 
+    @freeze_time("2026-03-02 10:00:00")
     def test_dashboard_counts_agree_with_searching_the_same_domains(self):
         buyer = new_test_user(
             self.env,
@@ -259,6 +262,7 @@ class TestPurchaseAuditFixes(AccountTestInvoicingCommon):
             ],
         )
         orders[0].action_confirm()
+        orders[1].date_order = fields.Datetime.now() - timedelta(days=1)
         self.env.flush_all()
 
         purchase_order = self.env["purchase.order"].with_user(buyer)

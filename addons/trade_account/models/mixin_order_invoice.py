@@ -53,6 +53,11 @@ class MixinOrderInvoice(models.AbstractModel):
         copy=False,
         help="Report this order as fully invoiced regardless of its lines.",
     )
+    is_invoiceable = fields.Boolean(
+        compute="_compute_is_invoiceable",
+        help="Something on the order can be invoiced now. An order still owed "
+        'an undelivered quantity reads "To invoice" without it.',
+    )
 
     journal_id = fields.Many2one(
         comodel_name="account.journal",
@@ -230,6 +235,27 @@ class MixinOrderInvoice(models.AbstractModel):
                 order=order,
                 state=order.invoice_state,
                 line_states=",".join(sorted(states)),
+            )
+
+    @api.depends(
+        "invoice_state",
+        "line_ids.invoice_state",
+        "line_ids.is_downpayment",
+        "line_ids.display_type",
+    )
+    def _compute_is_invoiceable(self) -> None:
+        lines_to_invoice = Domain(self._get_domain_rollup_lines()) & Domain(
+            "invoice_state", "in", ("to do", "partial")
+        )
+        for order in self:
+            order.is_invoiceable = order.invoice_state in ("to do", "partial") and bool(
+                order.line_ids.filtered_domain(lines_to_invoice)
+            )
+            _debug.logic(
+                "is_invoiceable",
+                order=order,
+                invoice_state=order.invoice_state,
+                invoiceable=order.is_invoiceable,
             )
 
     def _resolve_invoice_state(self, states, nothing_is_pending):

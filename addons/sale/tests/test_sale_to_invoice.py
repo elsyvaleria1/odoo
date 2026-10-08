@@ -4,6 +4,7 @@ from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, tagged
 from odoo.tools import float_is_zero
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.sale.tests.common import TestSaleCommon
 
@@ -2475,3 +2476,94 @@ class TestSaleToInvoice(TestSaleCommon):
                 },
             ],
         )
+
+
+@tagged("-at_install", "post_install")
+class TestSaleInvoiceButtons(TestSaleCommon):
+    def _confirmed_order(self, product_key):
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_a.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.company_data[product_key].id,
+                            "product_qty": 2,
+                            "tax_ids": False,
+                        }
+                    ),
+                ],
+            }
+        )
+        order.action_confirm()
+        return order
+
+    def _shown_invoice_buttons(self, order):
+        form = Form(order)
+        eval_context = form._prepare_eval_context()
+        return sorted(
+            button.get("id")
+            for button in form._view["tree"].iter("button")
+            if button.get("id") in ("create_invoice", "create_invoice_percentage")
+            and not safe_eval(button.get("invisible") or "False", eval_context)
+        )
+
+    def _wizard_form(self, order):
+        return Form(
+            self.env["wizard.sale.order.invoice"].with_context(
+                active_model="sale.order",
+                active_ids=order.ids,
+                active_id=order.id,
+            )
+        )
+
+    def test_an_undelivered_order_offers_a_down_payment_not_a_regular_invoice(self):
+        order = self._confirmed_order("product_delivery_no")
+        self.assertEqual(
+            order.invoice_state,
+            "to do",
+            "the undelivered quantity is still expected to be invoiced",
+        )
+        self.assertEqual(
+            self._shown_invoice_buttons(order), ["create_invoice_percentage"]
+        )
+
+        wizard_form = self._wizard_form(order)
+        self.assertEqual(wizard_form.advance_payment_method, "percentage")
+        wizard_form.amount = 10
+        wizard_form.save().create_invoices()
+        self.assertEqual(len(order.invoice_ids), 1)
+        self.assertTrue(order.invoice_ids.line_ids.sale_line_ids.is_downpayment)
+
+    def test_a_delivered_order_offers_the_regular_invoice(self):
+        order = self._confirmed_order("product_delivery_no")
+        order.line_ids.qty_transferred = 2
+
+        self.assertEqual(self._shown_invoice_buttons(order), ["create_invoice"])
+        wizard_form = self._wizard_form(order)
+        self.assertEqual(wizard_form.advance_payment_method, "delivered")
+        invoice = wizard_form.save().create_invoices()
+        self.assertTrue(invoice)
+
+    def test_a_posted_down_payment_alone_does_not_make_the_order_invoiceable(self):
+        order = self._confirmed_order("product_delivery_no")
+        self.env["wizard.sale.order.invoice"].with_context(
+            active_model="sale.order", active_ids=order.ids
+        ).create(
+            {"advance_payment_method": "fixed", "fixed_amount": 50}
+        ).create_invoices()
+        order.invoice_ids.action_post()
+
+        down_payment_line = order.line_ids.filtered(
+            lambda line: line.is_downpayment and not line.display_type
+        )
+        self.assertEqual(down_payment_line.invoice_state, "to do")
+        self.assertEqual(
+            self._shown_invoice_buttons(order), ["create_invoice_percentage"]
+        )
+        self.assertEqual(self._wizard_form(order).advance_payment_method, "percentage")
+
+    def test_an_ordered_policy_order_offers_the_regular_invoice(self):
+        order = self._confirmed_order("product_order_no")
+        self.assertEqual(self._shown_invoice_buttons(order), ["create_invoice"])
+        self.assertEqual(self._wizard_form(order).advance_payment_method, "delivered")

@@ -1,6 +1,7 @@
 from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.purchase.tests.test_purchase_invoice import TestPurchaseToInvoiceCommon
 
@@ -342,6 +343,42 @@ class TestPurchaseDownpaymentWizard(TestPurchaseToInvoiceCommon):
         dp_bill.action_draft()
         dp_bill.action_cancel()
         self.assertEqual(dp_line.name, "Down Payment (Cancelled)")
+
+    def _wizard_form(self, po):
+        return Form(
+            self.env["wizard.purchase.order.bill"].with_context(
+                active_model="purchase.order", active_ids=po.ids, active_id=po.id
+            )
+        )
+
+    def _is_down_payment_button_shown(self, po):
+        form = Form(po)
+        eval_context = form._prepare_eval_context()
+        (button,) = (
+            button
+            for button in form._view["tree"].iter("button")
+            if button.get("string") == "Down Payment"
+        )
+        return not safe_eval(button.get("invisible") or "False", eval_context)
+
+    def test_the_wizard_defaults_to_a_down_payment_until_something_is_received(self):
+        po = self.init_purchase(
+            confirm=True,
+            products=[self.product_deliver],
+            taxes=self.env["account.tax"],
+        )
+        self.assertEqual(
+            po.invoice_state,
+            "to do",
+            "the unreceived quantity is still expected to be billed",
+        )
+        self.assertTrue(self._is_down_payment_button_shown(po))
+        self.assertEqual(self._wizard_form(po).advance_payment_method, "percentage")
+
+        po.line_ids.qty_transferred = 1
+        self.assertTrue(self._is_down_payment_button_shown(po))
+        self.assertEqual(self._wizard_form(po).advance_payment_method, "delivered")
+        self.assertTrue(self._wizard_form(po).save().create_invoices())
 
 
 @tagged("-at_install", "post_install")

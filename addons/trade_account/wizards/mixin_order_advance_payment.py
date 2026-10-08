@@ -27,7 +27,7 @@ class MixinOrderAdvancePayment(models.AbstractModel):
             ("fixed", "Down payment (fixed amount)"),
         ],
         string="Create Invoice",
-        default="delivered",
+        default=lambda self: self._default_advance_payment_method(),
         required=True,
         help="A standard invoice is issued with all the order lines ready for invoicing,"
         "according to their invoicing policy (based on ordered or delivered quantity).",
@@ -74,6 +74,15 @@ class MixinOrderAdvancePayment(models.AbstractModel):
 
     def _get_orders(self):
         return self[self._order_field]
+
+    def _default_advance_payment_method(self) -> str:
+        comodel_name = self._fields[self._order_field].comodel_name
+        orders = self.env[comodel_name].browse(self.env.context.get("active_ids"))
+        method = "delivered"
+        if len(orders) == 1 and orders.state == "done" and not orders.is_invoiceable:
+            method = "percentage"
+        _debug.logic("default_advance_payment_method", orders=orders, method=method)
+        return method
 
     @api.depends(_depends_on_orders)
     def _compute_has_down_payments(self) -> None:
