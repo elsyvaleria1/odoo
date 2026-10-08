@@ -64,6 +64,14 @@ class TestCalendarSyncLink(TransactionCase):
         self._link(self.other_account, event_id=self.event.id, remote_id="e1")
         self.assertEqual(len(self.event.calendar_sync_link_ids), 2)
 
+    def test_a_remote_item_is_linked_to_one_event_per_account(self):
+        other_event = self.event.copy()
+        self._link(event_id=self.event.id, remote_id="r1")
+        self._refused(UniqueViolation, event_id=other_event.id, remote_id="r1")
+        self._link(self.other_account, event_id=other_event.id, remote_id="r1")
+        # an event that became a series under its own id
+        self._link(recurrence_id=self.recurrence.id, remote_id="r1")
+
     def test_a_deleted_record_leaves_a_tombstone(self):
         link = self._link(event_id=self.event.id, remote_id="gone")
         self._link(remote_id="earlier tombstone")

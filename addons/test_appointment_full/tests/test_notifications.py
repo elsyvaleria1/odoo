@@ -76,7 +76,7 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, TestAppointmentNotificationCommon)
     def test_appointment_cancel_notification_gcalendar(self):
         self.env["res.users.settings"].create({"user_id": self.env.user.id})
         appointment = self.calendar_event
-        appointment.google_id = "test_google_id"
+        self.link_google(appointment, "test_google_id")
         self.env.flush_all()
         self.cr.precommit.run()
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_google_sync():

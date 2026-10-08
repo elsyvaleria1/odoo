@@ -152,3 +152,49 @@ def pend_links(env, code, column) -> None:
         )
         _logger.info("%s calendar: %s links of %s pending", code, cr.rowcount, table)
         schema.drop_columns(cr, table, [column])
+
+
+def settle_duplicate_links(cr) -> None:
+    """Of the records linked to one remote item in one calendar, the active,
+    then the latest, keeps the link; the others keep a link with no remote id
+    and the refusal of a duplicate, which no push sends again."""
+    if not schema.table_exists(cr, "calendar_sync_link"):
+        return
+    for field, table in (
+        ("event_id", "calendar_event"),
+        ("recurrence_id", "calendar_recurrence"),
+    ):
+        cr.execute(
+            SQL(
+                """WITH ranked AS (
+                       SELECT link.id, link.%(field)s AS record_id,
+                              first_value(link.%(field)s) OVER same AS kept,
+                              row_number() OVER same AS rank
+                         FROM calendar_sync_link link
+                         JOIN %(table)s rec ON rec.id = link.%(field)s
+                       WINDOW same AS (
+                           PARTITION BY link.account_id, link.remote_id
+                           ORDER BY rec.active DESC,
+                                    rec.write_date DESC NULLS LAST, rec.id
+                       )
+                   )
+                   UPDATE calendar_sync_link link
+                      SET remote_id = NULL,
+                          pending = false,
+                          error = 'duplicate of ' || %(table_name)s || ' ' || ranked.kept
+                     FROM ranked
+                    WHERE ranked.id = link.id AND ranked.rank > 1
+                RETURNING link.id, ranked.record_id""",
+                field=SQL.identifier(field),
+                table=SQL.identifier(table),
+                table_name=table,
+            )
+        )
+        if settled := cr.fetchall():
+            _logger.warning(
+                "calendar sync: %s links of %s duplicating another record's "
+                "remote id set aside: %s",
+                len(settled),
+                table,
+                settled,
+            )

@@ -94,6 +94,9 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
             recurrence.with_env(Recurrence.env)._write_from_google(gevent, values)
         else:
             recurrence = Recurrence._create_from_google(gevent, [values])
+        # the series' instances take their ids from the series' own
+        self.env["calendar.sync.link"]._engine()._adopt(account, recurrence, master)
+        recurrence.calendar_event_ids._google_link_instances()
         return recurrence, {}
 
     # -- sending -------------------------------------------------------------

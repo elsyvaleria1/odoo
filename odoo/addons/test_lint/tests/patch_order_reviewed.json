@@ -189,7 +189,6 @@
   "@account/helpers/account_tax:accountTaxHelpers :: round_tax_details_tax_amounts :: l10n_mx | l10n_pt",
   "@account/services/account_move_service:AccountMoveService.prototype :: downloadPdf :: l10n_cl_edi_pos | pos_iot",
   "@calendar/views/attendee_calendar/attendee_calendar_model:AttendeeCalendarModel.prototype :: updateData :: hr_calendar | hr_homeworking_calendar",
-  "@calendar/views/attendee_calendar/common/attendee_calendar_common_popover:AttendeeCalendarCommonPopover.prototype :: isEventArchivable :: calendar_google | calendar_microsoft",
   "@calendar/views/attendee_calendar/common/attendee_calendar_common_renderer:AttendeeCalendarCommonRenderer.prototype :: options :: hr_calendar | hr_homeworking_calendar",
   "@calendar/views/attendee_calendar/common/attendee_calendar_common_renderer:AttendeeCalendarCommonRenderer.prototype :: setup :: hr_calendar | hr_homeworking_calendar",
   "@document/views/activity/document_activity_controller:DocumentsActivityController.prototype :: getTopBarActionMenuItems :: ai_document | document_spreadsheet",

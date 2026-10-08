@@ -143,6 +143,43 @@ class TestSyncGoogle(HttpCase):
                 account.with_env(owner.env).with_context(**self.env.context)._push(only)
         self.env.invalidate_all()
 
+    def google_id(self, record):
+        """`record`'s id in Google; its links must agree on one."""
+        return record._google_id()
+
+    def find_google(self, model, value, operator="="):
+        """The records of `model` Google holds under ids matching `value`."""
+        field = model._google_link_field()
+        links = (
+            self.env["calendar.sync.link"]
+            ._engine()
+            .search(
+                [
+                    ("account_id.provider", "=", "google"),
+                    ("remote_id", operator, value),
+                    (field, "!=", False),
+                ]
+            )
+        )
+        return model.search([("id", "in", links[field].ids)])
+
+    def link_google(self, records, google_ids, user=None):
+        """Link `records` to `google_ids`, one for all or one per record (a
+        falsy one unlinks), in `user`'s calendar, the current user's by
+        default; `records`."""
+        if not isinstance(google_ids, list):
+            google_ids = [google_ids] * len(records)
+        account = self.env["calendar.sync.account"]._for(
+            user or self.env.user, "google"
+        )
+        for record, google_id in zip(records, google_ids, strict=True):
+            record._google_unlink()
+            if google_id:
+                record._google_link(account, {record.id: google_id})
+        if records._name == "calendar.recurrence":
+            records.calendar_event_ids._google_link_instances()
+        return records
+
     def google_pending(self, record):
         """Whether Google has yet to hear of `record`: a link of it waits to be
         sent, or it has none and is active."""

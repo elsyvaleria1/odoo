@@ -140,7 +140,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             }
         )
         partner_model = self.env.ref("base.model_res_partner")
-        with self.assertQueryCount(__system__=78):
+        with self.assertQueryCount(__system__=80):
             event = self.env["calendar.event"].create(
                 {
                     "name": "Event",
@@ -280,14 +280,16 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         google_id = "aaaaaaaaa"
         # writing on synced event will put it in a need_sync state.
         # Delete api will not be called but the state of the event will be set as 'cancelled'
-        event = self.env["calendar.event"].create(
-            {
-                "google_id": google_id,
-                "name": "Event",
-                "start": datetime(2020, 1, 15),
-                "stop": datetime(2020, 1, 15),
-                "active": False,
-            }
+        event = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event",
+                    "start": datetime(2020, 1, 15),
+                    "stop": datetime(2020, 1, 15),
+                    "active": False,
+                }
+            ),
+            google_id,
         )
         self.send_google(event)
         self.assertGoogleEventDeleted(google_id)
@@ -295,14 +297,16 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     @patch_api
     def test_recurrence(self):
         google_id = "aaaaaaaaa"
-        event = self.env["calendar.event"].create(
-            {
-                "google_id": google_id,
-                "name": "Event",
-                "start": datetime(2020, 1, 15),
-                "stop": datetime(2020, 1, 15),
-                "allday": True,
-            }
+        event = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event",
+                    "start": datetime(2020, 1, 15),
+                    "stop": datetime(2020, 1, 15),
+                    "allday": True,
+                }
+            ),
+            google_id,
         )
         recurrence = self.env["calendar.recurrence"].create(
             {
@@ -386,14 +390,16 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     @patch_api
     def test_event_added_to_recurrence(self):
         google_id = "aaaaaaaaa"
-        event = self.env["calendar.event"].create(
-            {
-                "google_id": google_id,
-                "name": "Event",
-                "start": datetime(2020, 1, 15),
-                "stop": datetime(2020, 1, 15),
-                "allday": True,
-            }
+        event = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event",
+                    "start": datetime(2020, 1, 15),
+                    "stop": datetime(2020, 1, 15),
+                    "allday": True,
+                }
+            ),
+            google_id,
         )
         event.write(
             {
@@ -409,7 +415,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         self.assertTrue(tombstone, "the event's own Google copy is to be deleted")
         self.assertFalse(tombstone.event_id)
         self.assertFalse(
-            event.google_id, "The google id will be set after the API call"
+            self.google_id(event), "The google id will be set after the API call"
         )
         self.assertGoogleEventInserted(
             {
@@ -457,12 +463,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "allday": True,
             }
         )
-        self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
-                "calendar_event_ids": [(4, event_1.id), (4, event_2.id)],
-            }
+        self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
+                    "calendar_event_ids": [(4, event_1.id), (4, event_2.id)],
+                }
+            ),
+            google_id,
         )
         event = event_2
 
@@ -538,25 +546,26 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             }
         )
         user.calendar_sync_stop("google")
-        event = (
+        event = self.link_google(
             self.env["calendar.event"]
             .with_user(user)
             .create(
                 {
-                    "google_id": google_id,
                     "name": "Event",
                     "start": datetime(2020, 1, 15, 8, 0),
                     "stop": datetime(2020, 1, 15, 18, 0),
                     "partner_ids": [(4, partner.id)],
                 }
-            )
+            ),
+            google_id,
+            user=user,
         )
 
         user.with_user(user).calendar_sync_restart("google")
         self.assertGoogleEventPatched(
-            event.google_id,
+            self.google_id(event),
             {
-                "id": event.google_id,
+                "id": self.google_id(event),
                 "start": {"dateTime": "2020-01-15T08:00:00+00:00", "date": None},
                 "end": {"dateTime": "2020-01-15T18:00:00+00:00", "date": None},
                 "summary": "Event",
@@ -586,12 +595,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "allday": True,
             }
         )
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
-                "base_event_id": event.id,
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
+                    "base_event_id": event.id,
+                }
+            ),
+            google_id,
         )
         recurrence._apply_recurrence()
         event.write(
@@ -641,12 +652,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             }
         )
 
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": False,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
-                "base_event_id": event.id,
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
+                    "base_event_id": event.id,
+                }
+            ),
+            False,
         )
         self.env["calendar.event"].create(
             {
@@ -676,12 +689,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "allday": True,
             }
         )
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=DAILY;UNTIL=20200117T235959",
-                "base_event_id": event.id,
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=DAILY;UNTIL=20200117T235959",
+                    "base_event_id": event.id,
+                }
+            ),
+            google_id,
         )
         recurrence._apply_recurrence()
         self.assertEqual(
@@ -717,12 +732,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "allday": True,
             }
         )
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
-                "base_event_id": event.id,
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
+                    "base_event_id": event.id,
+                }
+            ),
+            google_id,
         )
         recurrence._apply_recurrence()
         event.write(
@@ -748,15 +765,17 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
         )
-        event = self.env["calendar.event"].create(
-            {
-                "name": "Event with attendees",
-                "start": datetime(2020, 1, 15),
-                "stop": datetime(2020, 1, 15),
-                "allday": True,
-                "partner_ids": [(4, partner.id)],
-                "google_id": "aaaaaaaaa",
-            }
+        event = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event with attendees",
+                    "start": datetime(2020, 1, 15),
+                    "stop": datetime(2020, 1, 15),
+                    "allday": True,
+                    "partner_ids": [(4, partner.id)],
+                }
+            ),
+            "aaaaaaaaa",
         )
         self.assertEqual(
             event.attendee_ids.state,
@@ -766,9 +785,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
         event.attendee_ids.do_decline()
         self.assertGoogleEventPatched(
-            event.google_id,
+            self.google_id(event),
             {
-                "id": event.google_id,
+                "id": self.google_id(event),
                 "start": {"date": str(event.start_date), "dateTime": None},
                 "end": {
                     "date": str(event.stop_date + relativedelta(days=1)),
@@ -801,12 +820,14 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "stop": datetime(2020, 1, 15, 9, 0),
             }
         )
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
-                "base_event_id": event.id,
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=WE",
+                    "base_event_id": event.id,
+                }
+            ),
+            google_id,
         )
         recurrence._apply_recurrence()
         event.write(
@@ -869,16 +890,18 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "stop": datetime(2023, 6, 22, 10, 0),
             }
         )
-        recurrence = self.env["calendar.recurrence"].create(
-            {
-                "google_id": google_id,
-                "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=TH",
-                "base_event_id": event_1.id,
-                "calendar_event_ids": [(4, event_1.id), (4, event_2.id)],
-            }
+        recurrence = self.link_google(
+            self.env["calendar.recurrence"].create(
+                {
+                    "rrule": "FREQ=WEEKLY;COUNT=2;BYDAY=TH",
+                    "base_event_id": event_1.id,
+                    "calendar_event_ids": [(4, event_1.id), (4, event_2.id)],
+                }
+            ),
+            google_id,
         )
         # Delete base_event and assert that its Google instance was deleted.
-        instance_id = event_1.google_id
+        instance_id = self.google_id(event_1)
         event_1.action_mass_archive("this")
         self.assertGoogleEventDeleted(instance_id)
         # Assert that deleted event is not active anymore and the recurrence updated its calendar_event_ids.
@@ -932,13 +955,15 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         self.env["calendar.sync.account"]._set_paused("google", False)
 
         # Setup synced record in Calendar.
-        record = self.env["calendar.event"].create(
-            {
-                "google_id": "aaaaaaaaa",
-                "name": "Event",
-                "start": datetime(2023, 6, 29, 8, 0),
-                "stop": datetime(2023, 6, 29, 18, 0),
-            }
+        record = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event",
+                    "start": datetime(2023, 6, 29, 8, 0),
+                    "stop": datetime(2023, 6, 29, 18, 0),
+                }
+            ),
+            "aaaaaaaaa",
         )
 
         # Pause synchronization and update synced event. It will only update it locally.
@@ -971,13 +996,15 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         self.env["calendar.sync.account"]._set_paused("google", False)
 
         # Setup synced record in Calendar.
-        record = self.env["calendar.event"].create(
-            {
-                "google_id": "aaaaaaaaa",
-                "name": "Event",
-                "start": datetime(2023, 6, 29, 8, 0),
-                "stop": datetime(2023, 6, 29, 18, 0),
-            }
+        record = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Event",
+                    "start": datetime(2023, 6, 29, 8, 0),
+                    "stop": datetime(2023, 6, 29, 18, 0),
+                }
+            ),
+            "aaaaaaaaa",
         )
 
         # Pause synchronization and delete synced event.
@@ -1449,14 +1476,16 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             {"name": "Name", "email": "email@emailprovider.com"}
         )
         google_id = "nicegoogleid"
-        event = self.env["calendar.event"].create(
-            {
-                "google_id": google_id,
-                "name": "Awesome event",
-                "start": datetime(2020, 1, 15, 8, 0),
-                "stop": datetime(2020, 1, 15, 18, 0),
-                "partner_ids": [(4, partner.id)],
-            }
+        event = self.link_google(
+            self.env["calendar.event"].create(
+                {
+                    "name": "Awesome event",
+                    "start": datetime(2020, 1, 15, 8, 0),
+                    "stop": datetime(2020, 1, 15, 18, 0),
+                    "partner_ids": [(4, partner.id)],
+                }
+            ),
+            google_id,
         )
         event.write({"videocall_location": False})
         self.assertGoogleEventPatched(google_id, {"conferenceData": None}, timeout=3)

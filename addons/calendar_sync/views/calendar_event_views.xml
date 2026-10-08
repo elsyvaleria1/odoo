@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="view_google_calendar_event" model="ir.ui.view">
-        <field name="name">calendar_google.event.calendar</field>
+    <record id="calendar_event_view_calendar" model="ir.ui.view">
+        <field name="name">calendar.event.calendar.inherit.calendar.sync</field>
         <field name="model">calendar.event</field>
         <field name="inherit_id" ref="calendar.view_calendar_event_calendar" />
         <field name="arch" type="xml">
             <field name="location" position="after">
-                <field name="google_id" invisible="1" />
+                <field name="calendar_sync_linked" invisible="1" />
             </field>
         </field>
     </record>

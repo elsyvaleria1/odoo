@@ -30,48 +30,44 @@ class CalendarRecurrence(models.Model):
         next push, and the series is sent for it."""
         Link = self.env["calendar.sync.link"]
         for recurrence in self:
-            if (links := Link._of(recurrence, "google")) and not links.filtered(
-                "pending"
-            ):
+            series = Link._of(recurrence, "google")
+            if series and not series.filtered("pending"):
                 # Google holds the series as it is: its events' ids are its own
                 continue
-            events = recurrence.calendar_event_ids.filtered(
-                lambda event, recurrence=recurrence: (
-                    event.active
-                    and event.google_id
-                    and event.google_id != recurrence._get_event_google_id(event)
+            series_id = series[:1].remote_id
+            retired = recurrence.calendar_event_ids._google_links().filtered(
+                lambda link, series_id=series_id: (
+                    link.remote_id
+                    and link.event_id.active
+                    and link.remote_id
+                    != self._instance_google_id(series_id, link.event_id)
                 )
             )
-            if not events:
-                continue
-            retired = Link._of(events, "google")
-            retired.write({"event_id": False})
-            retired.account_id._queue_push(events.browse())
-
-    def _inverse_google_id(self) -> None:
-        super()._inverse_google_id()
-        self.filtered("google_id").calendar_event_ids._google_link_instances()
+            if retired:
+                events = retired.event_id
+                retired.write({"event_id": False})
+                retired.account_id._queue_push(events.browse())
 
     def _get_event_google_id(self, event):
-        """Return the Google id of recurring event.
-        Google ids of recurrence instances are formatted as: {recurrence google_id}_{UTC starting time in compacted ISO8601}
-        """
-        if self.google_id:
-            if event.allday:
-                time_id = event.start_date.isoformat().replace("-", "")
-            else:
-                # '-' and ':' are optional in ISO8601
-                start_compacted_iso8601 = (
-                    event.start.isoformat().replace("-", "").replace(":", "")
-                )
-                # Z at the end for UTC
-                time_id = "%sZ" % start_compacted_iso8601
-            return "%s_%s" % (self.google_id, time_id)
-        return False
+        """The id Google gives `event` as an instance of this series."""
+        return self._instance_google_id(self._google_id(), event)
 
-    def _write_events(self, values, dtstart=None):
-        values.pop("google_id", False)
-        return super()._write_events(values, dtstart=dtstart)
+    @api.model
+    def _instance_google_id(self, series_id, event):
+        """Google ids of recurrence instances are formatted as:
+        {series id}_{UTC starting time in compacted ISO8601}"""
+        if not series_id:
+            return False
+        if event.allday:
+            time_id = event.start_date.isoformat().replace("-", "")
+        else:
+            # '-' and ':' are optional in ISO8601
+            start_compacted_iso8601 = (
+                event.start.isoformat().replace("-", "").replace(":", "")
+            )
+            # Z at the end for UTC
+            time_id = "%sZ" % start_compacted_iso8601
+        return "%s_%s" % (series_id, time_id)
 
     def _get_fields_google_synced(self):
         return {"rrule"}
@@ -170,11 +166,12 @@ class CalendarRecurrence(models.Model):
             _logger.info(log_msg)
             # We archive the old events to recompute the recurrence. These events are already deleted on Google side.
             # We can't call _cancel because events without user_id would not be deleted
-            (self.calendar_event_ids - base_event_id).google_id = False
+            (self.calendar_event_ids - base_event_id)._google_unlink()
             (self.calendar_event_ids - base_event_id).unlink()
+            base_event_id._google_unlink()
             base_event_id.with_context(
                 dont_notify=True, google_calendar_syncing=True
-            ).write(dict(new_event_values, google_id=False))
+            ).write(new_event_values)
             if new_parsed_rrule == current_parsed_rrule:
                 # if the rrule has changed, it will be recalculated below
                 # There is no detached event now
@@ -199,7 +196,7 @@ class CalendarRecurrence(models.Model):
         # to base_event start datetime.
         if new_parsed_rrule != current_parsed_rrule:
             detached_events = self._apply_recurrence()
-            detached_events.google_id = False
+            detached_events._google_unlink()
             log_msg = f"Recurrence #{self.id} | current rule: {current_rrule} | new rule: {self.rrule} | remaining: {len(self.calendar_event_ids)} | removed: {len(detached_events)}"
             _logger.info(log_msg)
             detached_events.unlink()
@@ -210,9 +207,7 @@ class CalendarRecurrence(models.Model):
             base_values = self.env["calendar.event"]._odoo_values(gevent)
             # If we convert a single event into a recurrency on Google, we should reuse this event on Odoo
             # Google reuse the event google_id to identify the recurrence in that case
-            base_event = self.env["calendar.event"].search(  # noqa: E8507 - one lookup per synced recurrence, on its google id
-                [("google_id", "=", vals["google_id"])]
-            )
+            base_event = self.env["calendar.event"]._google_records([gevent.id])
             if not base_event:
                 base_event = (
                     self.env["calendar.event"]
@@ -222,7 +217,8 @@ class CalendarRecurrence(models.Model):
             else:
                 # We override the base_event values because they could have been changed in Google interface
                 # The event google_id will be recalculated once the recurrence is created
-                base_event.write(dict(base_values, google_id=False))
+                base_event._google_unlink()
+                base_event.write(base_values)
             vals["base_event_id"] = base_event.id
             vals["calendar_event_ids"] = [Command.link(base_event.id)]
             # event_tz is written on event in Google but on recurrence in Odoo
@@ -249,7 +245,6 @@ class CalendarRecurrence(models.Model):
     def _odoo_values(self, google_recurrence, default_reminders=()):
         return {
             "rrule": google_recurrence.rrule,
-            "google_id": google_recurrence.id,
         }
 
     def _google_values(self):
@@ -257,7 +252,7 @@ class CalendarRecurrence(models.Model):
         if not event:
             return {}
         values = event._google_values()
-        values["id"] = self.google_id
+        values["id"] = self._google_id()
         if not self._is_allday():
             values["start"]["timeZone"] = self.event_tz or "Etc/UTC"
             values["end"]["timeZone"] = self.event_tz or "Etc/UTC"

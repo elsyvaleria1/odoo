@@ -83,6 +83,15 @@ class CalendarSyncLink(models.Model):
         "(account_id, recurrence_id) WHERE recurrence_id IS NOT NULL",
         "A recurrence is linked to an account's calendar once.",
     )
+    _account_event_remote_unique = models.UniqueIndex(
+        "(account_id, remote_id) WHERE remote_id IS NOT NULL AND event_id IS NOT NULL",
+        "An item of an account's calendar is linked to one event.",
+    )
+    _account_recurrence_remote_unique = models.UniqueIndex(
+        "(account_id, remote_id) WHERE remote_id IS NOT NULL"
+        " AND recurrence_id IS NOT NULL",
+        "An item of an account's calendar is linked to one recurrence.",
+    )
     _remote_id_idx = models.Index("(remote_id) WHERE remote_id IS NOT NULL")
     _universal_id_idx = models.Index("(universal_id) WHERE universal_id IS NOT NULL")
 
@@ -133,6 +142,20 @@ class CalendarSyncLink(models.Model):
         def unmatched():
             return [remote for remote in remotes if remote.remote_id not in found]
 
+        # an insert in flight whose answer was lost: the item carries its id
+        if inserting := {r.remote_id: r for r in unmatched()}:
+            for link in Link.search(
+                [
+                    ("account_id", "=", account.id),
+                    ("remote_id", "=", False),
+                    ("insert_id", "in", list(inserting)),
+                ]
+            ):
+                remote = inserting[link.insert_id]
+                found[remote.remote_id] = Link._adopt(
+                    account, link._record(), remote, link
+                )
+
         by_universal_id = {r.universal_id: r for r in unmatched() if r.universal_id}
         if by_universal_id:
             for link in Link.search(
@@ -164,9 +187,15 @@ class CalendarSyncLink(models.Model):
                 else "calendar.event"
             )
             record = self.env[model].browse(remote.odoo_hint).exists()
-            # a record linked already is another item's: a split series
-            # carries the properties of the one it was split from
-            if record and not Link._of(record, code):
+            if not record:
+                continue
+            links = Link._of(record, code)
+            # a record linked already is another item's (a split series carries
+            # the properties of the one it was split from), unless this
+            # calendar's link of it waits for the answer to its insert
+            if not links or links.filtered(
+                lambda link: link.account_id == account and not link.remote_id
+            ):
                 found[remote.remote_id] = Link._adopt(account, record, remote)
         return found
 

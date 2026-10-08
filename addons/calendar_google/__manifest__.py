@@ -16,11 +16,5 @@
         "wizards/wizard_res_users_reset_google_calendar_views.xml",
         "views/res_config_settings_views.xml",
         "views/res_users_views.xml",
-        "views/google_calendar_views.xml",
     ],
-    "assets": {
-        "web.assets_backend": [
-            "calendar_google/static/src/views/**/*",
-        ],
-    },
 }

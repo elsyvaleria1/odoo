@@ -31,17 +31,22 @@ class CalendarEvent(models.Model):
         """Give the events of a series Google knows the ids Google built for its
         instances, from the series id and the start: once, so that an event moved
         later keeps its id."""
-        series = self.recurrence_id.filtered("google_id")
-        if not series:
+        links = self.recurrence_id._google_links().grouped("recurrence_id")
+        if not links:
             return
-        links = series._google_links().grouped("recurrence_id")
+        linked = self._google_links().event_id
         unlinked = self.filtered(
-            lambda event: event.recurrence_id in series and not event.google_id
+            lambda event: event.recurrence_id in links and event not in linked
         )
+        Recurrence = self.env["calendar.recurrence"]
         for recurrence, events in unlinked.grouped("recurrence_id").items():
+            series = links[recurrence][:1]
             self._google_link(
-                links[recurrence].account_id,
-                {event.id: recurrence._get_event_google_id(event) for event in events},
+                series.account_id,
+                {
+                    event.id: Recurrence._instance_google_id(series.remote_id, event)
+                    for event in events
+                },
             )
 
     @api.depends("videocall_location")
@@ -76,12 +81,6 @@ class CalendarEvent(models.Model):
         synced_fields = self._get_fields_google_synced()
         return any(key in synced_fields for key in values)
 
-    @api.model
-    def _prepare_remove_sync_id_values(self) -> dict:
-        """Add parameters for removing event synchronization while updating the events in super class."""
-        remove_sync_id_values = super()._prepare_remove_sync_id_values()
-        return {**remove_sync_id_values, "google_id": False}
-
     def write(self, vals):
         syncing = self.env.context.get("google_calendar_syncing") or (
             self.env.context.get("calendar_sync_applying") == "google"
@@ -92,7 +91,7 @@ class CalendarEvent(models.Model):
 
     def _check_modify_event_permission(self, values) -> None:
         """Check if event modification attempt by attendee is valid to avoid duplicate events creation."""
-        # Edge case: when resetting an account, we must be able to erase the event's google_id.
+        # Edge case: when resetting an account, we must be able to erase the event's Google id.
         skip_event_permission = self.env.context.get("skip_event_permission", False)
         # Edge case 2: check if event is synchronizable in order to make sure the error is worth it.
         is_synchronizable = self._has_values_to_sync(values)
@@ -125,7 +124,7 @@ class CalendarEvent(models.Model):
         attendee_commands, partner_commands = self._odoo_attendee_commands(
             google_event, event or self.browse()
         )
-        related_event = self.search([("google_id", "=", google_event.id)], limit=1)
+        related_event = self._google_records([google_event.id])[:1]
         name = (
             google_event.summary
             or (related_event and related_event.name)
@@ -152,8 +151,6 @@ class CalendarEvent(models.Model):
             # Add partner_commands only if set from Google. The write method on calendar_events will
             # override attendee commands if the partner_ids command is set but empty.
             values["partner_ids"] = partner_commands
-        if not google_event.is_recurrence():
-            values["google_id"] = google_event.id
         if google_event.is_recurrent() and not google_event.is_recurrence():
             # Propagate the follow_recurrence according to the google result
             values["follow_recurrence"] = google_event.is_recurrence_follower()
@@ -406,8 +403,9 @@ class CalendarEvent(models.Model):
             }
             for alarm in self.alarm_ids
         ]
+        google_id = self._google_id()
         values = {
-            "id": self.google_id,
+            "id": google_id,
             "start": start,
             "end": end,
             "summary": self.name,
@@ -429,9 +427,9 @@ class CalendarEvent(models.Model):
                 "useDefault": False,
             },
         }
-        if not self.google_id and not self.videocall_location and not self.location:
+        if not google_id and not self.videocall_location and not self.location:
             values["conferenceData"] = {"createRequest": {"requestId": uuid4().hex}}
-        if self.google_id and not self.videocall_location:
+        if google_id and not self.videocall_location:
             values["conferenceData"] = None
         if self.privacy:
             values["visibility"] = self.privacy

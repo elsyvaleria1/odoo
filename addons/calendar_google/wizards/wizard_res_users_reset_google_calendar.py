@@ -33,20 +33,21 @@ class WizardResUsersResetGoogleCalendar(models.TransientModel):
 
     def reset_account(self) -> None:
         account = self.user_id._calendar_sync_account("google")._as_engine()
-        events = self.env["calendar.event"].search(
-            [("user_id", "=", self.user_id.id), ("google_id", "!=", False)]
-        )
-        recurrences = self.env["calendar.recurrence"].search(
-            [("base_event_id", "in", events.ids), ("google_id", "!=", False)]
-        )
-        Link = self.env["calendar.sync.link"]
+        Link = self.env["calendar.sync.link"]._engine()
+        google = [("account_id.provider", "=", "google"), ("remote_id", "!=", False)]
+        events = Link.search(
+            [*google, ("event_id.user_id", "=", self.user_id.id)]
+        ).event_id
+        recurrences = Link.search(
+            [*google, ("recurrence_id.base_event_id", "in", events.ids)]
+        ).recurrence_id
         links = Link._of(events, "google") | Link._of(recurrences, "google")
 
         # deleted now, while the account the user leaves can still be reached
         if self.delete_policy in ("delete_google", "delete_both"):
             adapter = self.env["calendar.sync.adapter.google"]
-            for google_id in set(Link._of(events, "google").mapped("remote_id")):
-                adapter._delete(account, google_id)
+            for remote_id in set(Link._of(events, "google").mapped("remote_id")):
+                adapter._delete(account, remote_id)
 
         # the user's events forget their Google ids, or go with them
         if self.delete_policy in ("delete_odoo", "delete_both", "delete_google"):

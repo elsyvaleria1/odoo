@@ -2404,10 +2404,10 @@ class CalendarEvent(models.Model):
         """
         self.check_singleton()
         if recurrence_update_setting == "all":
-            self.recurrence_id.calendar_event_ids.write(self._prepare_archive_values())
+            self.recurrence_id.calendar_event_ids.write({"active": False})
         elif recurrence_update_setting == "subsequent":
             detached_events = self.recurrence_id._stop_at(self)
-            detached_events.write(self._prepare_archive_values())
+            detached_events.write({"active": False})
         elif recurrence_update_setting == "this":
             self.write({"active": False, "recurrence_update": "this"})
             if len(self.recurrence_id.calendar_event_ids) == 0:
@@ -2703,24 +2703,14 @@ class CalendarEvent(models.Model):
         return update_dict
 
     @api.model
-    def _prepare_archive_values(self) -> dict:
-        """Return parameters for archiving events in calendar module."""
-        return {"active": False}
-
-    @api.model
     def _has_values_to_sync(self, values) -> bool:
         """Method to be overriden: return candidate values to be synced within rewrite_recurrence function scope."""
         return False
 
-    @api.model
-    def _prepare_update_future_events_values(self) -> dict:
-        """Return parameters for updating future events within _update_future_events function scope."""
-        return {}
-
-    @api.model
-    def _prepare_remove_sync_id_values(self) -> dict:
-        """Return parameters for removing event synchronization id within _update_future_events function scope."""
-        return {}
+    def _forget_sync_ids(self) -> None:
+        """Make these events forget the ids external calendars hold them under:
+        they leave the series those calendars know. For synchronization
+        modules to implement."""
 
     def _prepare_updated_recurrence_vals(self, new_start_date) -> ValuesType:
         """Copy values from current recurrence and update the start date weekday."""
@@ -2748,12 +2738,12 @@ class CalendarEvent(models.Model):
 
         # Trim previous recurrence at current event, deleting following events except for the updated event.
         detached_events_split = self.recurrence_id._stop_at(self)
-        (detached_events_split - self).write(
-            {"active": False, **self._prepare_remove_sync_id_values()}
-        )
+        (detached_events_split - self)._forget_sync_ids()
+        (detached_events_split - self).write({"active": False})
 
         # Update the current event with the new recurrence information.
         if values or time_values:
+            self._forget_sync_ids()
             # `skip_attendee_notification`, as `_rewrite_recurrence` already
             # does on its own inner write: this is a nested `write` carrying the
             # new `start`, so it announces the move a second time on top of the
@@ -2764,8 +2754,6 @@ class CalendarEvent(models.Model):
                 {
                     **time_values,
                     **values,
-                    **self._prepare_remove_sync_id_values(),
-                    **self._prepare_update_future_events_values(),
                 }
             )
             if time_values:

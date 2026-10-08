@@ -2,7 +2,6 @@ import logging
 
 from odoo import api, fields, models
 from odoo.api import ValuesType
-from odoo.fields import NEGATIVE_CONDITION_OPERATORS, Domain
 from odoo.tools import email_normalize
 
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
@@ -14,21 +13,14 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     _name = "mixin.google.calendar.sync"
     _description = "Synchronize a record with Google Calendar"
 
-    google_id = fields.Char(
-        string="Google Calendar Id",
-        compute="_compute_google_id",
-        inverse="_inverse_google_id",
-        search="_search_google_id",
-        copy=False,
-    )
     active = fields.Boolean(default=True)
 
     def _google_link_field(self) -> str:
         return "event_id" if self._name == "calendar.event" else "recurrence_id"
 
     def _google_links(self):
-        """The Google links of these records, elevated: one per record, in the
-        calendar of whoever gave it its Google id."""
+        """The Google links of these records, elevated: one per calendar holding
+        a record, each under the record's one Google id."""
         fk = self._google_link_field()
         return (
             self.env["calendar.sync.link"]
@@ -39,28 +31,34 @@ class MixinGoogleCalendarSync(models.AbstractModel):
             )
         )
 
-    @api.depends("calendar_sync_link_ids.remote_id")
-    def _compute_google_id(self) -> None:
-        fk = self._google_link_field()
-        remote_ids = {link[fk].id: link.remote_id for link in self._google_links()}
-        for record in self:
-            record.google_id = remote_ids.get(record.id, False)
+    def _google_id(self) -> str | bool:
+        """This record's id in Google, the same in every calendar holding it;
+        False while Google does not hold it."""
+        self.check_singleton()
+        google_ids = set(self._google_links().mapped("remote_id")) - {False}
+        if len(google_ids) > 1:
+            raise ValueError(
+                f"{self} is held by Google under several ids: {google_ids}"
+            )
+        return next(iter(google_ids), False)
 
-    def _inverse_google_id(self) -> None:
+    @api.model
+    def _google_records(self, google_ids):
+        """The records of this model Google holds under `google_ids`."""
         fk = self._google_link_field()
-        links = self._google_links().grouped(fk)
-        for record in self:
-            link = links.get(record)
-            if not record.google_id:
-                if link:
-                    link.unlink()
-            elif link:
-                link.remote_id = record.google_id
-            else:
-                self._google_link(
-                    self.env["calendar.sync.account"]._for(self.env.user, "google"),
-                    {record.id: record.google_id},
-                )
+        links = (
+            self.env["calendar.sync.link"]
+            ._engine()
+            .search_fetch(
+                [
+                    ("remote_id", "in", list(google_ids)),
+                    ("account_id.provider", "=", "google"),
+                    (fk, "!=", False),
+                ],
+                [fk],
+            )
+        )
+        return self.browse(links[fk].ids)
 
     def _google_link(self, account, google_ids) -> None:
         """Link records to their Google id in `account`'s calendar, given as
@@ -73,40 +71,12 @@ class MixinGoogleCalendarSync(models.AbstractModel):
             ]
         )
 
+    def _google_unlink(self) -> None:
+        """These records forget their Google id."""
+        self._google_links().unlink()
+
     def _google_link_instances(self) -> None:
         """Link the records Google identifies through another record's id."""
-
-    def _search_google_id(self, operator, value):
-        fk = self._google_link_field()
-        Link = self.env["calendar.sync.link"]._engine()
-        google = Domain("account_id.provider", "=", "google")
-        if operator == "=":
-            operator, value = "in", [value]
-        if operator in NEGATIVE_CONDITION_OPERATORS:
-            return NotImplemented
-        if operator != "in":
-            return Domain(
-                "id",
-                "in",
-                Link._search(google & Domain("remote_id", operator, value)).subselect(
-                    fk
-                ),
-            )
-        values = [v for v in value if v]
-        domain = Domain.FALSE
-        if values:
-            domain |= Domain(
-                "id",
-                "in",
-                Link._search(google & Domain("remote_id", "in", values)).subselect(fk),
-            )
-        if len(values) < len(value):
-            domain |= Domain(
-                "id",
-                "not in",
-                Link._search(google & Domain(fk, "!=", False)).subselect(fk),
-            )
-        return domain
 
     def write(self, vals):
         result = super().write(vals)

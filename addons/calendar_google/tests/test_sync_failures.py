@@ -89,9 +89,9 @@ class TestSyncFailures(TestSyncGoogle):
         with patch.object(GoogleCalendarService, "insert", insert):
             event = self._event()
             self.push_google()
-            self.assertFalse(event.google_id)
+            self.assertFalse(self.google_id(event))
             self._run()
 
         self.assertEqual(len(sent), 2)
         self.assertEqual(sent[0], sent[1], "the retry sends the same id")
-        self.assertEqual(event.google_id, sent[0])
+        self.assertEqual(self.google_id(event), sent[0])

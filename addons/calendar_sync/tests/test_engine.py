@@ -450,6 +450,11 @@ class TestCalendarSyncEngine(TransactionCase):
         self.assertEqual(
             list(server.calendar(account)), [self._links(event, code).remote_id]
         )
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("name", "=", event.name)]),
+            1,
+            "reading the item back does not make a second event of it",
+        )
 
     def test_an_insert_whose_answer_was_lost_is_not_made_twice(self):
         self._assert_inserted_once_after_a_lost_answer("fake_outlook")

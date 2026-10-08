@@ -44,7 +44,7 @@ class CalendarEvent(models.Model):
         if self.appointment_type_id.sudo().event_videocall_source != "google_meet":
             values.pop("conferenceData", None)
         elif (
-            not self.google_id
+            not self._google_id()
             and not self.videocall_location
             and not values.get("conferenceData")
         ):

@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class CalendarEvent(models.Model):
@@ -12,6 +12,32 @@ class CalendarEvent(models.Model):
         classification="calendar_sync.state",
         groups="base.group_system",
     )
+    calendar_sync_linked = fields.Boolean(
+        string="Held by an External Calendar",
+        compute="_compute_calendar_sync_linked",
+        help="An external calendar synchronized through the engine holds this event.",
+    )
+
+    @api.depends_context("uid")
+    def _compute_calendar_sync_linked(self) -> None:
+        codes = list(self.env["calendar.sync.account"]._engine_providers())
+        linked = set()
+        if codes and self.ids:
+            linked = set(
+                self.env["calendar.sync.link"]
+                ._engine()
+                .search_fetch(
+                    [
+                        ("event_id", "in", self.ids),
+                        ("remote_id", "!=", False),
+                        ("account_id.provider", "in", codes),
+                    ],
+                    ["event_id"],
+                )
+                .event_id.ids
+            )
+        for event in self:
+            event.calendar_sync_linked = event.id in linked
 
     def _skip_send_mail_status_update(self):
         """A provider the event goes out through invites its attendees itself:
@@ -23,3 +49,9 @@ class CalendarEvent(models.Model):
         ):
             return True
         return super()._skip_send_mail_status_update()
+
+    def _forget_sync_ids(self) -> None:
+        super()._forget_sync_ids()
+        Link = self.env["calendar.sync.link"]
+        for code in self.env["calendar.sync.account"]._engine_providers():
+            Link._of(self, code).unlink()
