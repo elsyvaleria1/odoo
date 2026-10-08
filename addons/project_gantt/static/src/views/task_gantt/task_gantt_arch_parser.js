@@ -5,7 +5,10 @@ export class TaskGanttArchParser extends TaskGanttArchParserCommon {
     parse() {
         const archInfo = super.parse(...arguments);
         if (archInfo.dependencyEnabled) {
-            archInfo.decorationFields.push("display_warning_dependency_in_gantt");
+            archInfo.decorationFields.push(
+                "display_warning_dependency_in_gantt",
+                "gantt_dependency_types",
+            );
         }
         return archInfo;
     }

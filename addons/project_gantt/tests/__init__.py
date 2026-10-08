@@ -1,4 +1,5 @@
 from . import test_gantt_reschedule_dates
+from . import test_gantt_reschedule_dependency_types
 from . import test_smart_schedule_common
 from . import test_smart_schedule
 from . import test_task_dependencies

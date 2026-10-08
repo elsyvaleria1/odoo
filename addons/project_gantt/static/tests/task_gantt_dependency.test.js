@@ -197,3 +197,102 @@ test("Hovering a connector should cause the connected pills to get highlighted i
 
     expect(SELECTORS.highlightedPill).toHaveCount(2);
 });
+
+test("A typed dependency sets the connector's alert and the pill sides it joins.", async () => {
+    mockDate("2021-10-10 7:00:00");
+    const predecessor = {
+        date_start: "2021-10-18 06:30:00",
+        date_end: "2021-10-19 07:30:00",
+        project_id: 1,
+        user_ids: [2],
+        predecessor_ids: [],
+    };
+    projectModels.ProjectTask._records = [
+        { ...predecessor, id: 1, name: "Task 1" },
+        {
+            id: 2,
+            name: "Task 2",
+            date_start: "2021-10-18 08:00:00",
+            date_end: "2021-10-20 07:30:00",
+            project_id: 1,
+            user_ids: [2],
+            predecessor_ids: [1],
+            gantt_dependency_types: { 1: { type: "ss", lag: 0 } },
+        },
+        { ...predecessor, id: 3, name: "Task 3" },
+        {
+            id: 4,
+            name: "Task 4",
+            date_start: "2021-10-18 06:00:00",
+            date_end: "2021-10-19 06:00:00",
+            project_id: 1,
+            user_ids: [2],
+            predecessor_ids: [3],
+            gantt_dependency_types: { 3: { type: "ff", lag: 0 } },
+        },
+        { ...predecessor, id: 5, name: "Task 5" },
+        {
+            id: 6,
+            name: "Task 6",
+            date_start: "2021-10-19 08:30:00",
+            date_end: "2021-10-20 07:30:00",
+            project_id: 1,
+            user_ids: [2],
+            predecessor_ids: [5],
+            gantt_dependency_types: { 5: { type: "fs", lag: 2 } },
+        },
+    ];
+
+    const view = await mountGanttView(ganttViewParams);
+    const renderer = findComponent(view, (c) => c instanceof TaskGanttRenderer);
+    const connectorMap = getConnectorMap(renderer);
+    const startToStart = connectorMap.get("[1,2,2,2]");
+    const finishToFinish = connectorMap.get("[3,2,4,2]");
+    const finishToStartWithLag = connectorMap.get("[5,2,6,2]");
+
+    expect(getConnectorStroke(startToStart.id)).toHaveAttribute(
+        "stroke",
+        COLORS.default.color,
+        { message: "starting inside a start-to-start predecessor is allowed" },
+    );
+    expect(getConnectorStroke(finishToFinish.id)).toHaveAttribute(
+        "stroke",
+        COLORS.warning.color,
+        {
+            message:
+                "ending inside a finish-to-finish predecessor is a warning; starting before it is no error",
+        },
+    );
+    expect(getConnectorStroke(finishToStartWithLag.id)).toHaveAttribute(
+        "stroke",
+        COLORS.warning.color,
+        { message: "an hour after the predecessor, before its two hours of lag" },
+    );
+
+    const pointsOf = (connector) => {
+        const { sourcePillId, targetPillId } =
+            renderer.mappingConnectorToPills[connector.id];
+        return { sourcePillId, targetPillId };
+    };
+    const ss = pointsOf(startToStart);
+    expect(startToStart.sourcePoint()).toEqual(
+        renderer.getPoint(ss.sourcePillId, false),
+    );
+    expect(startToStart.targetPoint()).toEqual(
+        renderer.getPoint(ss.targetPillId, false),
+    );
+    const ff = pointsOf(finishToFinish);
+    expect(finishToFinish.sourcePoint()).toEqual(
+        renderer.getPoint(ff.sourcePillId, true),
+    );
+    expect(finishToFinish.targetPoint()).toEqual(
+        renderer.getPoint(ff.targetPillId, true),
+    );
+    const fs = pointsOf(finishToStartWithLag);
+    expect(finishToStartWithLag.sourcePoint()).toEqual(
+        renderer.getPoint(fs.sourcePillId, true),
+    );
+    expect(finishToStartWithLag.targetPoint()).toEqual(
+        renderer.getPoint(fs.targetPillId, false),
+    );
+});

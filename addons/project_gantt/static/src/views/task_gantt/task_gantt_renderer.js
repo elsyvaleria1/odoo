@@ -3,12 +3,16 @@ import { Avatar } from "@mail/views/web/fields/avatar/avatar";
 import { markup } from "@odoo/owl";
 import { TaskGanttRendererCommon } from "@project_gantt/views/project_task_common/task_gantt_renderer_common";
 import { SelectCreateAutoPlanDialog } from "@project_gantt/views/view_dialogs/select_auto_plan_create_dialog";
+import { compareDates, toDateTime } from "@web/core/l10n/dates";
 import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 import { FormViewDialog } from "@web/views/view_dialogs";
 
 import { TaskGanttRendererControls } from "./task_gantt_renderer_controls.js";
+
+const FINISH_ANCHORED_TYPES = ["fs", "ff"];
+const START_CONSTRAINED_TYPES = ["fs", "ss"];
 
 export class TaskGanttRenderer extends TaskGanttRendererCommon {
     static components = {
@@ -40,12 +44,64 @@ export class TaskGanttRenderer extends TaskGanttRendererCommon {
         return enrichedPill;
     }
 
+    getDependencyLink(masterRecord, slaveRecord) {
+        return (
+            slaveRecord.gantt_dependency_types?.[masterRecord.id] ?? {
+                type: "fs",
+                lag: 0,
+            }
+        );
+    }
+
     getConnectorAlert(masterRecord, slaveRecord) {
         if (
-            masterRecord.display_warning_dependency_in_gantt &&
-            slaveRecord.display_warning_dependency_in_gantt
+            !masterRecord.display_warning_dependency_in_gantt ||
+            !slaveRecord.display_warning_dependency_in_gantt
         ) {
+            return;
+        }
+        const { type, lag } = this.getDependencyLink(masterRecord, slaveRecord);
+        if (type === "fs" && !lag) {
             return super.getConnectorAlert(...arguments);
+        }
+        const { dateStartField, dateStopField } = this.model.metaData;
+        const shifted = (value) =>
+            toDateTime(value).add({ seconds: Math.round(lag * 3600) });
+        const anchorField = FINISH_ANCHORED_TYPES.includes(type)
+            ? dateStopField
+            : dateStartField;
+        const constrainedField = START_CONSTRAINED_TYPES.includes(type)
+            ? dateStartField
+            : dateStopField;
+        const constrained = toDateTime(slaveRecord[constrainedField]);
+        if (compareDates(constrained, shifted(masterRecord[anchorField])) >= 0) {
+            return null;
+        }
+        return compareDates(constrained, shifted(masterRecord[dateStartField])) < 0
+            ? "error"
+            : "warning";
+    }
+
+    generateConnectors() {
+        super.generateConnectors();
+        for (const [connectorId, { sourcePillId, targetPillId }] of Object.entries(
+            this.mappingConnectorToPills,
+        )) {
+            const connector = this.connectors[connectorId];
+            if (!connector || !sourcePillId || !targetPillId) {
+                continue;
+            }
+            const { type } = this.getDependencyLink(
+                this.pills[sourcePillId].record,
+                this.pills[targetPillId].record,
+            );
+            if (type === "fs") {
+                continue;
+            }
+            connector.sourcePoint = () =>
+                this.getPoint(sourcePillId, FINISH_ANCHORED_TYPES.includes(type));
+            connector.targetPoint = () =>
+                this.getPoint(targetPillId, !START_CONSTRAINED_TYPES.includes(type));
         }
     }
 

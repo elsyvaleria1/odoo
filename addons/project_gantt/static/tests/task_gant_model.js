@@ -10,6 +10,7 @@ export class ProjectTask extends projectModels.ProjectTask {
         string: "Display warning dependency in Gantt",
         default: true,
     });
+    gantt_dependency_types = fields.Json();
     is_closed = fields.Boolean();
 
     get_all_deadlines() {

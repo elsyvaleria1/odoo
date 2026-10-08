@@ -3,10 +3,47 @@ from datetime import UTC, datetime, timedelta
 
 from odoo import api, fields, models
 from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
 from odoo.libs.intervals import Intervals
+from odoo.tools import SQL
 from odoo.tools.date_utils import get_intervals_hours, get_timedelta
 
+from odoo.addons.project.models.project_task import (
+    FINISH_ANCHORED_TYPES,
+    START_CONSTRAINED_TYPES,
+)
 from odoo.addons.resource.models.utils import filter_domain_leaf
+
+_debug = DebugLog(__name__)
+
+FS_LINK = ("fs", timedelta(0))
+
+
+def _link_anchor_field(dependency_type, start_date_field_name, stop_date_field_name):
+    if dependency_type in FINISH_ANCHORED_TYPES:
+        return stop_date_field_name
+    return start_date_field_name
+
+
+def _link_constrained_field(
+    dependency_type, start_date_field_name, stop_date_field_name
+):
+    if dependency_type in START_CONSTRAINED_TYPES:
+        return start_date_field_name
+    return stop_date_field_name
+
+
+def _is_link_violated(
+    links, predecessor, successor, start_date_field_name, stop_date_field_name
+) -> bool:
+    dependency_type, lag = links.get((predecessor.id, successor.id), FS_LINK)
+    anchor = _link_anchor_field(
+        dependency_type, start_date_field_name, stop_date_field_name
+    )
+    constrained = _link_constrained_field(
+        dependency_type, start_date_field_name, stop_date_field_name
+    )
+    return successor[constrained] < predecessor[anchor] + lag
 
 
 class ProjectTask(models.Model):
@@ -18,6 +55,11 @@ class ProjectTask(models.Model):
         compute="_compute_display_warning_dependency_in_gantt",
     )
 
+    gantt_dependency_types = fields.Json(
+        export_string_translation=False,
+        compute="_compute_gantt_dependency_types",
+    )
+
     user_ids = fields.Many2many(group_expand="_group_expand_user_ids")
     partner_id = fields.Many2one(group_expand="_group_expand_partner_ids")
     project_id = fields.Many2one(group_expand="_group_expand_project_ids")
@@ -26,6 +68,20 @@ class ProjectTask(models.Model):
     def _compute_display_warning_dependency_in_gantt(self) -> None:
         for task in self:
             task.display_warning_dependency_in_gantt = not task.is_closed
+
+    @api.depends(
+        "predecessor_ids", "dependency_ids.dependency_type", "dependency_ids.lag_hours"
+    )
+    def _compute_gantt_dependency_types(self) -> None:
+        links_per_successor = defaultdict(dict)
+        links = self._web_gantt_get_dependency_links()
+        for (predecessor_id, successor_id), (dependency_type, lag) in links.items():
+            links_per_successor[successor_id][str(predecessor_id)] = {
+                "type": dependency_type,
+                "lag": lag / timedelta(hours=1),
+            }
+        for task in self:
+            task.gantt_dependency_types = links_per_successor.get(task._origin.id, {})
 
     def _get_additional_users(self, domain):
         return self.env["res.users"]
@@ -339,23 +395,177 @@ class ProjectTask(models.Model):
             compute_end_date,
         )
 
+    def _web_gantt_get_dependency_links(self) -> dict:
+        # The linked tasks are read through the access-checked many2many; only
+        # their type and lag come from here, which project sharing may not read.
+        ids = self._origin.ids
+        if not ids:
+            return {}
+        self.env["project.task.dependency"].flush_model(
+            ["task_id", "depends_on_id", "dependency_type", "lag_hours"]
+        )
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT depends_on_id, task_id, dependency_type, lag_hours
+                  FROM project_task_dependency
+                 WHERE task_id = ANY(%s)
+                    OR depends_on_id = ANY(%s)
+                """,
+                ids,
+                ids,
+            )
+        )
+        return {
+            (predecessor_id, successor_id): (dependency_type, timedelta(hours=lag))
+            for predecessor_id, successor_id, dependency_type, lag in (
+                self.env.cr.fetchall()
+            )
+        }
+
+    def _web_gantt_is_candidate_in_conflict(
+        self,
+        start_date_field_name,
+        stop_date_field_name,
+        dependency_field_name,
+        dependency_inverted_field_name,
+    ) -> bool:
+        links = self._web_gantt_get_dependency_links()
+        return any(
+            predecessor[start_date_field_name]
+            and predecessor[stop_date_field_name]
+            and _is_link_violated(
+                links, predecessor, self, start_date_field_name, stop_date_field_name
+            )
+            for predecessor in self[dependency_field_name]
+        ) or any(
+            successor[start_date_field_name]
+            and successor[stop_date_field_name]
+            and _is_link_violated(
+                links, self, successor, start_date_field_name, stop_date_field_name
+            )
+            for successor in self[dependency_inverted_field_name]
+        )
+
+    def _web_gantt_get_possible_dates_per_candidate(
+        self,
+        links,
+        dependency_field_name,
+        dependency_inverted_field_name,
+        search_forward,
+        start_date_field_name,
+        stop_date_field_name,
+    ) -> dict:
+        # forward: the earliest start and end each candidate's predecessors
+        # outside the cascade allow; backward: the latest end and start its
+        # successors outside the cascade allow
+        dates_per_field = {start_date_field_name: {}, stop_date_field_name: {}}
+        for candidate in self:
+            neighbours = (
+                candidate[dependency_field_name]
+                if search_forward
+                else candidate[dependency_inverted_field_name]
+            ).filtered(
+                lambda pill: pill[start_date_field_name] and pill[stop_date_field_name]
+            ) - self
+            for neighbour in neighbours:
+                if search_forward:
+                    dependency_type, lag = links.get(
+                        (neighbour.id, candidate.id), FS_LINK
+                    )
+                    field = _link_constrained_field(
+                        dependency_type, start_date_field_name, stop_date_field_name
+                    )
+                    date = (
+                        neighbour[
+                            _link_anchor_field(
+                                dependency_type,
+                                start_date_field_name,
+                                stop_date_field_name,
+                            )
+                        ]
+                        + lag
+                    )
+                    dates = dates_per_field[field]
+                    dates[candidate.id] = max(dates.get(candidate.id, date), date)
+                else:
+                    dependency_type, lag = links.get(
+                        (candidate.id, neighbour.id), FS_LINK
+                    )
+                    field = _link_anchor_field(
+                        dependency_type, start_date_field_name, stop_date_field_name
+                    )
+                    date = (
+                        neighbour[
+                            _link_constrained_field(
+                                dependency_type,
+                                start_date_field_name,
+                                stop_date_field_name,
+                            )
+                        ]
+                        - lag
+                    )
+                    dates = dates_per_field[field]
+                    dates[candidate.id] = min(dates.get(candidate.id, date), date)
+        return {
+            field: {
+                candidate_id: date.astimezone(UTC)
+                for candidate_id, date in dates.items()
+            }
+            for field, dates in dates_per_field.items()
+        }
+
+    def _web_gantt_get_typed_window_edge(
+        self, links, search_forward, start_date_field_name, stop_date_field_name, edge
+    ):
+        # A finish-to-start link without lead places the next task after the
+        # moved one; any other link can place it before the moved task's end
+        # (forward) or after its start (backward), outside the default window.
+        records = {record.id: record for record in self}
+        for (predecessor_id, successor_id), (dependency_type, lag) in links.items():
+            if dependency_type == "fs" and lag >= timedelta(0):
+                continue
+            if predecessor_id not in records or successor_id not in records:
+                continue
+            pair = (records[predecessor_id], records[successor_id])
+            lead = min(lag, timedelta(0))
+            if search_forward:
+                edge = min(
+                    edge, *(record[start_date_field_name] + lead for record in pair)
+                )
+            else:
+                edge = max(
+                    edge, *(record[stop_date_field_name] - lead for record in pair)
+                )
+        return edge
+
     def _web_gantt_update_next_candidates_dates(
         self,
+        cascade,
         dependency_field_name,
         dependency_inverted_field_name,
         search_forward,
         consume_buffer,
         start_date_field_name,
         stop_date_field_name,
-        first_possible_start_date_per_candidate,
-        last_possible_end_date_per_candidate,
         old_planned_date_begin,
         old_date_deadline,
         compute_start_date,
         compute_end_date,
-        valid_intervals_per_user,
-        valid_intervals_per_user_for_buffer_computes,
     ) -> bool:
+        links = cascade["links"]
+        valid_intervals_per_user = cascade["valid_intervals_per_user"]
+        valid_intervals_per_user_for_buffer_computes = cascade[
+            "valid_intervals_per_user_for_buffer_computes"
+        ]
+        old_dates = {
+            start_date_field_name: old_planned_date_begin,
+            stop_date_field_name: old_date_deadline,
+        }
+        new_dates = {
+            start_date_field_name: compute_start_date.astimezone(UTC),
+            stop_date_field_name: compute_end_date.astimezone(UTC),
+        }
         next_candidates = self[
             dependency_inverted_field_name if search_forward else dependency_field_name
         ]
@@ -366,116 +576,111 @@ class ProjectTask(models.Model):
                 continue
 
             if search_forward:
-                compute_end_date = compute_end_date.astimezone(UTC)
-                first_possible_start_date_per_candidate[task.id] = max(
-                    first_possible_start_date_per_candidate.get(
-                        task.id, compute_end_date
-                    ),
-                    compute_end_date,
+                dependency_type, lag = links.get((self.id, task.id), FS_LINK)
+                anchor = _link_anchor_field(
+                    dependency_type, start_date_field_name, stop_date_field_name
                 )
-                if (
-                    not consume_buffer
-                    and task[start_date_field_name] > old_date_deadline
-                ):
-                    # follow users calendar if both taks belong to same users or follow company calendar
-                    calendar_owner = (
-                        tuple(self.user_ids.ids)
-                        if self.user_ids and self.user_ids == task.user_ids
-                        else False
-                    )
-                    seconds_between_tasks = (
-                        get_intervals_hours(
-                            Intervals(
-                                [
-                                    (
-                                        old_date_deadline.astimezone(UTC),
-                                        task[start_date_field_name].astimezone(UTC),
-                                        self.env["resource.calendar.attendance"],
-                                    )
-                                ]
-                            )
-                            & valid_intervals_per_user_for_buffer_computes.get(
-                                calendar_owner, Intervals()
-                            )
-                        )
-                        * 3600
-                    )
-                    if seconds_between_tasks > 0:
-                        _dummy, buffer_duration, _dummy, buffer_end_date = (
-                            task._get_new_dates(
-                                valid_intervals_per_user,
-                                calendar_owner,
-                                search_forward,
-                                first_possible_start_date_per_candidate,
-                                last_possible_end_date_per_candidate,
-                                seconds_between_tasks,
-                            )
-                        )
-                        if (
-                            not buffer_end_date
-                            or buffer_duration < seconds_between_tasks
-                        ):
-                            return False
-                        first_possible_start_date_per_candidate[task.id] = max(
-                            first_possible_start_date_per_candidate[task.id],
-                            buffer_end_date,
-                        )
+                constrained = _link_constrained_field(
+                    dependency_type, start_date_field_name, stop_date_field_name
+                )
+                bounds = cascade[
+                    "first_possible_start_date_per_candidate"
+                    if constrained == start_date_field_name
+                    else "first_possible_end_date_per_candidate"
+                ]
+                bound = new_dates[anchor] + lag
+                bounds[task.id] = max(bounds.get(task.id, bound), bound)
+                gap_start, gap_end = old_dates[anchor] + lag, task[constrained]
             else:
-                compute_start_date = compute_start_date.astimezone(UTC)
-                last_possible_end_date_per_candidate[task.id] = min(
-                    last_possible_end_date_per_candidate.get(
-                        task.id, compute_start_date
-                    ),
-                    compute_start_date,
+                dependency_type, lag = links.get((task.id, self.id), FS_LINK)
+                anchor = _link_anchor_field(
+                    dependency_type, start_date_field_name, stop_date_field_name
                 )
-                if (
-                    not consume_buffer
-                    and task[stop_date_field_name] < old_planned_date_begin
-                ):
-                    # follow users calendar if both taks belong to same users or follow company calendar
-                    calendar_owner = (
-                        tuple(self.user_ids.ids)
-                        if self.user_ids and self.user_ids == task.user_ids
-                        else False
-                    )
-                    seconds_between_tasks = (
-                        get_intervals_hours(
-                            Intervals(
-                                [
-                                    (
-                                        task[stop_date_field_name].astimezone(UTC),
-                                        old_planned_date_begin.astimezone(UTC),
-                                        self.env["resource.calendar.attendance"],
-                                    )
-                                ]
-                            )
-                            & valid_intervals_per_user_for_buffer_computes.get(
-                                calendar_owner, Intervals()
-                            )
-                        )
-                        * 3600
-                    )
+                constrained = _link_constrained_field(
+                    dependency_type, start_date_field_name, stop_date_field_name
+                )
+                bounds = cascade[
+                    "last_possible_end_date_per_candidate"
+                    if anchor == stop_date_field_name
+                    else "last_possible_start_date_per_candidate"
+                ]
+                bound = new_dates[constrained] - lag
+                bounds[task.id] = min(bounds.get(task.id, bound), bound)
+                gap_start, gap_end = task[anchor] + lag, old_dates[constrained]
+            _debug.logic(
+                "link_bound",
+                task=task,
+                moved=self,
+                dependency_type=dependency_type,
+                lag=lag,
+                field=constrained if search_forward else anchor,
+                bound=bounds[task.id],
+            )
 
-                    if seconds_between_tasks > 0:
-                        _dummy, buffer_duration, buffer_start_date, _dummy = (
-                            task._get_new_dates(
-                                valid_intervals_per_user,
-                                calendar_owner,
-                                search_forward,
-                                first_possible_start_date_per_candidate,
-                                last_possible_end_date_per_candidate,
-                                seconds_between_tasks,
+            if consume_buffer or gap_end <= gap_start:
+                continue
+            # follow users calendar if both taks belong to same users or follow company calendar
+            calendar_owner = (
+                tuple(self.user_ids.ids)
+                if self.user_ids and self.user_ids == task.user_ids
+                else False
+            )
+            seconds_between_tasks = (
+                get_intervals_hours(
+                    Intervals(
+                        [
+                            (
+                                gap_start.astimezone(UTC),
+                                gap_end.astimezone(UTC),
+                                self.env["resource.calendar.attendance"],
                             )
-                        )
-                        if (
-                            not buffer_start_date
-                            or buffer_duration < seconds_between_tasks
-                        ):
-                            return False
-                        last_possible_end_date_per_candidate[task.id] = min(
-                            last_possible_end_date_per_candidate[task.id],
-                            buffer_start_date,
-                        )
+                        ]
+                    )
+                    & valid_intervals_per_user_for_buffer_computes.get(
+                        calendar_owner, Intervals()
+                    )
+                )
+                * 3600
+            )
+            if seconds_between_tasks <= 0:
+                continue
+            if search_forward:
+                _dummy, buffer_duration, _dummy, buffer_date = task._get_new_dates(
+                    valid_intervals_per_user,
+                    calendar_owner,
+                    search_forward,
+                    bounds,
+                    {},
+                    seconds_between_tasks,
+                )
+            else:
+                _dummy, buffer_duration, buffer_date, _dummy = task._get_new_dates(
+                    valid_intervals_per_user,
+                    calendar_owner,
+                    search_forward,
+                    {},
+                    bounds,
+                    seconds_between_tasks,
+                )
+            if not buffer_date or buffer_duration < seconds_between_tasks:
+                _debug.logic(
+                    "buffer_not_kept",
+                    task=task,
+                    buffer_seconds=seconds_between_tasks,
+                    found_seconds=buffer_duration,
+                )
+                return False
+            bounds[task.id] = (
+                max(bounds[task.id], buffer_date)
+                if search_forward
+                else min(bounds[task.id], buffer_date)
+            )
+            _debug.logic(
+                "buffer_kept",
+                task=task,
+                buffer_seconds=seconds_between_tasks,
+                bound=bounds[task.id],
+            )
 
         return True
 
@@ -546,35 +751,73 @@ class ProjectTask(models.Model):
             )
         )
         self.write(vals)
+        links = (self | candidates)._web_gantt_get_dependency_links()
 
         if search_forward:
             start_date = self[stop_date_field_name]
             # 53 weeks = 1 year is estimated enough to plan a project (no valid proof)
             end_date = start_date + timedelta(weeks=53)
+            start_date = max(
+                fields.Datetime.now(),
+                (self | candidates)._web_gantt_get_typed_window_edge(
+                    links,
+                    search_forward,
+                    start_date_field_name,
+                    stop_date_field_name,
+                    start_date,
+                ),
+            )
         else:
             end_date = self[start_date_field_name]
             start_date = max(datetime.now(), end_date - timedelta(weeks=53))
             if end_date <= start_date:
                 return {"error": "past_error"}
+            end_date = (self | candidates)._web_gantt_get_typed_window_edge(
+                links,
+                search_forward,
+                start_date_field_name,
+                stop_date_field_name,
+                end_date,
+            )
+        _debug.logic(
+            "cascade_window",
+            moved=self,
+            forward=search_forward,
+            start=start_date,
+            end=end_date,
+            links=len(links),
+        )
 
         valid_intervals_per_user, _dummy, _dummy = (
             candidates._scheduling_get_valid_intervals(
                 start_date, end_date, users, candidates.ids
             )
         )
-        (
-            first_possible_start_date_per_candidate,
-            last_possible_end_date_per_candidate,
-        ) = candidates._web_gantt_get_first_and_last_possible_dates(
+        possible_dates = candidates._web_gantt_get_possible_dates_per_candidate(
+            links,
             dependency_field_name,
             dependency_inverted_field_name,
             search_forward,
-            stop_date_field_name,
             start_date_field_name,
+            stop_date_field_name,
         )
         cascade = {
-            "first_possible_start_date_per_candidate": first_possible_start_date_per_candidate,
-            "last_possible_end_date_per_candidate": last_possible_end_date_per_candidate,
+            "links": links,
+            "window": (start_date, end_date),
+            "users": users,
+            "candidates": candidates,
+            "first_possible_start_date_per_candidate": (
+                possible_dates[start_date_field_name] if search_forward else {}
+            ),
+            "first_possible_end_date_per_candidate": (
+                possible_dates[stop_date_field_name] if search_forward else {}
+            ),
+            "last_possible_end_date_per_candidate": (
+                {} if search_forward else possible_dates[stop_date_field_name]
+            ),
+            "last_possible_start_date_per_candidate": (
+                {} if search_forward else possible_dates[start_date_field_name]
+            ),
             "valid_intervals_per_user": valid_intervals_per_user,
             "initial_valid_intervals_per_user": dict(valid_intervals_per_user.items()),
             "valid_intervals_per_user_for_buffer_computes": valid_intervals_per_user_for_buffer_computes,
@@ -587,23 +830,151 @@ class ProjectTask(models.Model):
             "moved_with_conflicts": False,
         }
         if not self._web_gantt_update_next_candidates_dates(
+            cascade,
             dependency_field_name,
             dependency_inverted_field_name,
             search_forward,
             consume_buffer,
             start_date_field_name,
             stop_date_field_name,
-            first_possible_start_date_per_candidate,
-            last_possible_end_date_per_candidate,
             old_vals_per_pill_id[self.id][start_date_field_name],
             old_vals_per_pill_id[self.id][stop_date_field_name],
             self[start_date_field_name],
             self[stop_date_field_name],
-            valid_intervals_per_user,
-            valid_intervals_per_user_for_buffer_computes,
         ):
             return {"error": "no_intervals_error"}
         return cascade
+
+    def _web_gantt_place_candidate(
+        self,
+        cascade,
+        search_forward,
+        users_ids,
+        candidate_duration,
+        start_date_field_name,
+        stop_date_field_name,
+    ) -> tuple:
+        valid_intervals_per_user = cascade["valid_intervals_per_user"]
+        move_in_conflicts_users = cascade["move_in_conflicts_users"]
+        if search_forward:
+            pushed_by = "first_possible_end_date_per_candidate"
+            held_by = "first_possible_start_date_per_candidate"
+        else:
+            pushed_by = "last_possible_start_date_per_candidate"
+            held_by = "last_possible_end_date_per_candidate"
+        pushed_bound = cascade[pushed_by].get(self.id)
+        if pushed_bound is None:
+            return self._get_new_dates(
+                valid_intervals_per_user,
+                users_ids,
+                search_forward,
+                cascade["first_possible_start_date_per_candidate"],
+                cascade["last_possible_end_date_per_candidate"],
+                candidate_duration,
+                move_in_conflicts_users,
+            )
+
+        # The bound is on the date the cascade does not lead with (the end
+        # going forward, the start going backward): lay the candidate against
+        # it from the other side, never moving its leading date against the
+        # cascade. A date the work stops short of reaches the bound when only
+        # non-working time lies between; time booked by another task does not
+        # count as such, and then the candidate starts (ends) at the bound.
+        own_date = self[
+            start_date_field_name if search_forward else stop_date_field_name
+        ].astimezone(UTC)
+        held_bound = cascade[held_by].get(self.id)
+        if search_forward:
+            held_bound = max(held_bound or own_date, own_date)
+            laid = self._get_new_dates(
+                valid_intervals_per_user,
+                users_ids,
+                False,
+                {},
+                {self.id: pushed_bound},
+                candidate_duration,
+                move_in_conflicts_users,
+            )
+            used_intervals, placed, laid_start, laid_end = laid
+            fits = bool(
+                placed == candidate_duration and laid_start and laid_start >= held_bound
+            )
+        else:
+            held_bound = min(held_bound or own_date, own_date)
+            laid = self._get_new_dates(
+                valid_intervals_per_user,
+                users_ids,
+                True,
+                {self.id: pushed_bound},
+                {},
+                candidate_duration,
+                move_in_conflicts_users,
+            )
+            used_intervals, placed, laid_start, laid_end = laid
+            fits = bool(
+                placed == candidate_duration and laid_end and laid_end <= held_bound
+            )
+        if not fits:
+            _debug.logic(
+                "candidate_held_by_bound",
+                task=self,
+                forward=search_forward,
+                pushed_by=pushed_bound,
+                held_by=held_bound,
+            )
+            return self._get_new_dates(
+                valid_intervals_per_user,
+                users_ids,
+                search_forward,
+                {self.id: held_bound},
+                {self.id: held_bound},
+                candidate_duration,
+                move_in_conflicts_users,
+            )
+
+        gap = (laid_end, pushed_bound) if search_forward else (pushed_bound, laid_start)
+        if gap[0] < gap[1] and self._web_gantt_has_working_time(
+            cascade, users_ids, *gap
+        ):
+            _debug.logic(
+                "candidate_past_booked_time",
+                task=self,
+                forward=search_forward,
+                pushed_by=pushed_bound,
+                gap=gap,
+            )
+            return self._get_new_dates(
+                valid_intervals_per_user,
+                users_ids,
+                search_forward,
+                {self.id: pushed_bound},
+                {self.id: pushed_bound},
+                candidate_duration,
+                move_in_conflicts_users,
+            )
+        _debug.logic(
+            "candidate_laid_on_bound",
+            task=self,
+            forward=search_forward,
+            pushed_by=pushed_bound,
+            start=laid_start,
+            end=laid_end,
+        )
+        if search_forward:
+            return used_intervals, placed, laid_start, pushed_bound
+        return used_intervals, placed, pushed_bound, laid_end
+
+    def _web_gantt_has_working_time(self, cascade, users_ids, start, end) -> bool:
+        if "calendar_intervals_per_user" not in cascade:
+            cascade["calendar_intervals_per_user"] = cascade[
+                "candidates"
+            ]._scheduling_get_valid_intervals(
+                *cascade["window"], cascade["users"], [], False
+            )[0]
+        gap = Intervals([(start, end, self.env["resource.calendar.attendance"])])
+        return bool(
+            gap & cascade["calendar_intervals_per_user"].get(users_ids, Intervals())
+        )
 
     def _web_gantt_cascade_dates(
         self, cascade, search_forward, start_date_field_name, stop_date_field_name
@@ -619,14 +990,13 @@ class ProjectTask(models.Model):
             intervals_durations,
             compute_start_date,
             compute_end_date,
-        ) = self._get_new_dates(
-            valid_intervals_per_user,
-            users_ids,
+        ) = self._web_gantt_place_candidate(
+            cascade,
             search_forward,
-            cascade["first_possible_start_date_per_candidate"],
-            cascade["last_possible_end_date_per_candidate"],
+            users_ids,
             candidate_duration,
-            cascade["move_in_conflicts_users"],
+            start_date_field_name,
+            stop_date_field_name,
         )
         cascade["used_intervals"][self.id] = (users_ids, used_intervals)
 
@@ -705,20 +1075,17 @@ class ProjectTask(models.Model):
     ) -> str | None:
         valid_intervals_per_user = cascade["valid_intervals_per_user"]
         if not self._web_gantt_update_next_candidates_dates(
+            cascade,
             dependency_field_name,
             dependency_inverted_field_name,
             search_forward,
             consume_buffer,
             start_date_field_name,
             stop_date_field_name,
-            cascade["first_possible_start_date_per_candidate"],
-            cascade["last_possible_end_date_per_candidate"],
             old_start_date,
             old_end_date,
             start_date,
             end_date,
-            valid_intervals_per_user,
-            cascade["valid_intervals_per_user_for_buffer_computes"],
         ):
             return "no_intervals_error"
 
