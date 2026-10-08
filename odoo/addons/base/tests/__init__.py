@@ -46,6 +46,7 @@ from . import test_ir_cron_audit
 from . import test_ir_job
 from . import test_ir_filters
 from . import test_ir_http
+from . import test_json_default
 from . import test_ir_model
 from . import test_table_object_conversion
 from . import test_ir_model_data
