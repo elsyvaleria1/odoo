@@ -3,6 +3,7 @@ import ssl
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+import psycopg
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -229,6 +230,34 @@ class TestStream(TransactionCase):
             [state for state, _m in heard], ["connecting", "open", "backoff"]
         )
         self.assertEqual(heard[-1][1], "the connection dropped")
+
+    def test_a_conflict_writing_the_state_reaches_the_retry(self):
+        # it used to pass for the subject refusing the state, and left the
+        # wire thread's transaction aborted, which killed the MQTT loop
+        stream = self._stream()
+        conflict = psycopg.errors.SerializationFailure("concurrent update")
+        with (
+            patch.object(type(stream), "flush_recordset", side_effect=conflict),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            stream._set_state("open", None)
+
+    def test_a_conflict_in_the_subject_is_no_refusal_either(self):
+        stream = self._stream()
+
+        def on_stream_state(partner, stream_record, state, message):
+            raise psycopg.errors.SerializationFailure("concurrent update")
+
+        with (
+            patch.object(
+                type(self.env["res.partner"]),
+                "_on_stream_state",
+                on_stream_state,
+                create=True,
+            ),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            stream._set_state("open", None)
 
     def test_the_outbox_is_sent_through_the_open_stream(self):
         stream = self._stream()

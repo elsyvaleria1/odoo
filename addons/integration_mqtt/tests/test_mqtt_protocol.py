@@ -76,6 +76,25 @@ class TestMqttProtocol(BaseCase):
         host, port = self.client.connect.call_args.args
         self.assertEqual((host, port), ("broker.example", 8883))
 
+    def test_a_failing_callback_leaves_the_network_thread_running(self):
+        def on_state(state, message):
+            raise RuntimeError("the stream's transaction is aborted")
+
+        self.protocol.open(_snapshot(), lambda payload, meta: None, on_state)
+
+        # paho's thread would die with an exception out of the callback
+        self.client.on_connect(self.client, None, None, 0, None)
+        self.client.on_disconnect(self.client, None, None, 1, None)
+
+    def test_a_dead_network_thread_is_not_alive(self):
+        handle = self._open()
+        self.client._thread = MagicMock()
+        self.client._thread.is_alive.return_value = False
+        self.assertFalse(self.protocol.alive(handle))
+
+        self.client._thread.is_alive.return_value = True
+        self.assertTrue(self.protocol.alive(handle))
+
     def test_connecting_subscribes_the_topics_and_says_open(self):
         handle = self._open()
         self.client.on_connect(self.client, None, MagicMock(), 0, None)

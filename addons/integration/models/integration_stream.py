@@ -6,6 +6,7 @@ from datetime import timedelta
 from urllib.parse import urlsplit
 
 from odoo import SUPERUSER_ID, api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs import backoff, redact
 from odoo.modules.registry import Registry
@@ -232,8 +233,12 @@ class IntegrationStream(models.Model):
         registry = Registry(db_name)
         with registry.cursor() as cr:
             env = api.Environment(cr, SUPERUSER_ID, {})
-            env["integration.stream"]._reconcile_with(db_name, runtime)
-            cr.commit()
+            # the wire's threads write the rows the sweep holds: a conflict is
+            # replayed, and a stream already dialled is found held, not redialled
+            retrying(
+                lambda: env["integration.stream"]._reconcile_with(db_name, runtime),
+                env,
+            )
 
     def _reconcile_with(self, db_name, runtime) -> None:
         wanted = self.sudo().search([("active", "=", True)])
@@ -364,7 +369,8 @@ class IntegrationStream(models.Model):
         )
 
     def _set_state(self, state, message, **vals) -> None:
-        self.sudo().write(
+        stream = self.sudo()
+        stream.write(
             {
                 "state": state,
                 "state_message": (message or "")[:256] or False,
@@ -372,12 +378,19 @@ class IntegrationStream(models.Model):
                 **vals,
             }
         )
+        # the stream's own row is written here, before the subject's
+        # savepoint: a concurrent writer's conflict must reach the caller's
+        # retry, not pass for the subject refusing and leave the transaction
+        # aborted
+        stream.flush_recordset()
         subject = self._subject()
         told = getattr(subject, "_on_stream_state", None) if subject else None
         if told is not None:
             try:
                 with self.env.cr.savepoint():
                     told(self, state, message)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.warning(
                     "Stream %s: the subject refused the state %s",
@@ -458,9 +471,13 @@ class IntegrationStream(models.Model):
             else payload
         )
         exchange = self._record_exchange(text, meta, direction="inbound")
-        self.sudo().write(
+        stream = self.sudo()
+        stream.write(
             {"frames_in": self.frames_in + 1, "date_last_frame": fields.Datetime.now()}
         )
+        # as in _set_state: the stream's row is written before the subject's
+        # savepoint, so a conflict on it is retried and not charged to the frame
+        stream.flush_recordset()
         subject = self._subject()
         handler = getattr(subject, "_on_stream_frame", None) if subject else None
         if handler is None:
@@ -468,6 +485,8 @@ class IntegrationStream(models.Model):
         try:
             with self.env.cr.savepoint():
                 handler(self, payload, meta)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.warning(
                 "Stream %s: the subject refused a frame: %s",

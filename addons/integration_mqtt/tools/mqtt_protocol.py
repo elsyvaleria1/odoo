@@ -51,6 +51,19 @@ class MqttProtocol(StreamProtocol):
         ]
         handle = MqttHandle(client, stream, topics)
 
+        def guarded(callback):
+            # paho runs the callbacks on its network thread, which dies with
+            # any exception they raise: no keepalive, no frame, while the
+            # stream still reads open
+            def run(*args):
+                try:
+                    callback(*args)
+                except Exception:
+                    _logger.exception("Stream %s: an MQTT callback failed", stream.id)
+
+            return run
+
+        @guarded
         def on_connect(client, userdata, flags, reason_code, properties):
             if reason_code == 0:
                 for topic, qos in topics:
@@ -61,11 +74,13 @@ class MqttProtocol(StreamProtocol):
                 on_state("error", f"connection refused: {reason_code}")
                 client.disconnect()
 
+        @guarded
         def on_disconnect(client, userdata, flags, reason_code, properties):
             handle.connected.clear()
             if reason_code != 0:
                 on_state("backoff", f"disconnected: {reason_code}")
 
+        @guarded
         def on_message(client, userdata, message):
             on_frame(
                 message.payload,
@@ -108,7 +123,9 @@ class MqttProtocol(StreamProtocol):
         info.wait_for_publish(timeout=10)
 
     def alive(self, handle):
-        return handle.client.is_connected()
+        # a dead network thread leaves the client reading connected
+        thread = getattr(handle.client, "_thread", None)
+        return handle.client.is_connected() and (thread is None or thread.is_alive())
 
     def close(self, handle):
         with handle.lock:
