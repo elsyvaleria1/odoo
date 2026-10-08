@@ -51,7 +51,7 @@ except ImportError:  # run as a script beside runner.py
     from runner import Outcome, Permanent, Reporter, Stopped
 
 READ_TOOLS = "Read,Grep,Glob"
-EDIT_TOOLS = "Read,Grep,Glob,Edit,MultiEdit,Write"
+EDIT_TOOLS = "Read,Grep,Glob,Edit,Write"
 MAX_DIFF = 200_000
 _JSON_BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 _REF = re.compile(r"\A(?!-)[A-Za-z0-9._/-]{1,250}\Z")
@@ -152,10 +152,7 @@ def _agent(
         payload["model"],
         "--output-format",
         "json",
-        "--allowedTools",
-        tools,
-        "--permission-mode",
-        "acceptEdits" if tools == EDIT_TOOLS else "default",
+        *_confinement(tools),
     ]
     # a session of its own: the agent is ended with everything it started, so
     # nothing of it is alive when git next runs with the repository's token
@@ -193,7 +190,7 @@ def _agent(
             f"the agent exited {process.returncode}: {stderr.strip()[-500:]}"
         )
     try:
-        answer = json.loads(stdout)
+        answer = _result_of(json.loads(stdout))
     except ValueError as error:
         raise RuntimeError("the agent's output is not JSON") from error
     usage = answer.get("usage") or {}
@@ -208,6 +205,49 @@ def _agent(
         if answer.get("is_error"):
             raise RuntimeError(f"the agent failed: {str(answer.get('result'))[:500]}")
         return _verdict(answer.get("result", "")), spend
+
+
+def _confinement(tools: str) -> list[str]:
+    """The agent's tools reach its clone and nothing else. A tool named in
+    `--allowedTools` without a path reaches every file the runner's user can
+    read or write -- its state directory, where a settings file the agent wrote
+    would run hooks in every later run. `dontAsk` refuses whatever the rules do
+    not allow, and the rules allow the clone alone (a symlink out of it is
+    resolved and refused). No settings file is read: not the runner's, not
+    one the repository or an earlier agent left."""
+    rules = ["Read(./**)"]
+    if "Edit" in tools.split(","):
+        rules.append("Edit(./**)")
+    return [
+        "--tools",
+        tools,
+        "--allowedTools",
+        ",".join(rules),
+        "--permission-mode",
+        "dontAsk",
+        "--setting-sources",
+        "",
+        "--settings",
+        json.dumps({"disableAllHooks": True}),
+    ]
+
+
+def _result_of(output: object) -> dict[str, Any]:
+    """The agent's result message. Claude Code prints that message alone, or
+    every message of the session ending with it when `verbose` is set in the
+    settings of the home it runs under."""
+    if isinstance(output, list):
+        output = next(
+            (
+                message
+                for message in reversed(output)
+                if isinstance(message, dict) and message.get("type") == "result"
+            ),
+            None,
+        )
+    if not isinstance(output, dict):
+        raise ValueError("no result message")
+    return output
 
 
 def _end_session(process: subprocess.Popen) -> None:

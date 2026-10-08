@@ -34,8 +34,11 @@ FAKE_CLAUDE = textwrap.dedent(
         sys.exit(behaviour["exit"])
     verdict = behaviour.get("verdict")
     text = "I looked." + (f"\\n```json\\n{{json.dumps(verdict)}}\\n```" if verdict else "")
-    print(json.dumps({{"result": text, "is_error": False, "total_cost_usd": behaviour.get("cost", 0.25),
-                      "usage": {{"input_tokens": 100, "output_tokens": 20, "cache_read_input_tokens": 5}}}}))
+    result = {{"type": "result", "result": text, "is_error": False, "total_cost_usd": behaviour.get("cost", 0.25),
+              "usage": {{"input_tokens": 100, "output_tokens": 20, "cache_read_input_tokens": 5}}}}
+    if behaviour.get("verbose"):
+        result = [{{"type": "system", "subtype": "init"}}, {{"type": "assistant", "message": {{}}}}, result]
+    print(json.dumps(result))
     """
 )
 

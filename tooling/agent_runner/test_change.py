@@ -1,3 +1,4 @@
+import json
 import time
 from pathlib import Path
 from unittest import mock
@@ -61,8 +62,22 @@ def test_a_change_is_committed_with_its_trailers_and_pushed(world):
     assert log.startswith("Ana <ana@agromarin.mx>\nFix x\n\nx was broken\n")
     assert "Task: 12" in log and "Agent-Run: 21" in log
     argv = world.calls()[0]["argv"]
-    assert argv[argv.index("--allowedTools") + 1] == change.EDIT_TOOLS
-    assert "Bash" not in argv[argv.index("--allowedTools") + 1]
+    assert argv[argv.index("--tools") + 1] == change.EDIT_TOOLS
+    assert "Bash" not in argv[argv.index("--tools") + 1]
+    assert argv[argv.index("--allowedTools") + 1] == "Read(./**),Edit(./**)"
+
+
+def test_the_agent_reaches_its_clone_alone(world):
+    world.behave(verdict={"verdict": "declined"})
+    change.change(_lease(), StubReporter())
+    argv = world.calls()[0]["argv"]
+    # every tool rule names a path under the clone: a bare tool name would
+    # reach the whole machine as the runner's user
+    rules = argv[argv.index("--allowedTools") + 1].split(",")
+    assert rules and all(rule.endswith("(./**)") for rule in rules)
+    assert argv[argv.index("--permission-mode") + 1] == "dontAsk"
+    assert argv[argv.index("--setting-sources") + 1] == ""
+    assert json.loads(argv[argv.index("--settings") + 1]) == {"disableAllHooks": True}
 
 
 def test_every_section_reaches_the_agent_fenced_off_as_data(world):
@@ -196,6 +211,14 @@ def test_a_run_stopped_while_its_agent_worked_commits_nothing(world):
         change.change(_lease(), reporter)
     assert world.branches() == ["19.0-marin"]
     assert stopped.value.usage["cost"] == pytest.approx(0.25)
+
+
+def test_a_verbose_agent_is_read_by_its_result_message(world):
+    # `verbose` in the settings of the agent's home prints the whole session
+    world.behave(verbose=True, edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
+    outcome = change.change(_lease(), StubReporter())
+    assert outcome.result["pushed"]
+    assert outcome.usage["cost"] == pytest.approx(0.25)
 
 
 def _alive(pid):

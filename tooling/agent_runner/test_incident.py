@@ -54,8 +54,9 @@ def test_a_diagnosis_reads_with_read_tools_and_reports_its_verdict_and_cost(worl
     assert outcome.usage == {"input_tokens": 105, "output_tokens": 20, "cost": 0.25}
     [call] = world.calls()
     argv = call["argv"]
-    assert argv[argv.index("--allowedTools") + 1] == incident.READ_TOOLS
-    assert argv[argv.index("--permission-mode") + 1] == "default"
+    assert argv[argv.index("--tools") + 1] == incident.READ_TOOLS
+    assert argv[argv.index("--allowedTools") + 1] == "Read(./**)"
+    assert argv[argv.index("--permission-mode") + 1] == "dontAsk"
     assert argv[argv.index("--model") + 1] == "claude-fable-5-1"
     assert call["env"]["ANTHROPIC_API_KEY"] == "sk-run"
     assert "PYTHONPATH" not in call["env"] and "HOME" in call["env"]
@@ -87,7 +88,8 @@ def test_a_shadow_fix_commits_locally_and_pushes_nothing(world):
     assert result["commit"]
     assert world.branches() == ["19.0-marin"]
     argv = world.calls()[0]["argv"]
-    assert argv[argv.index("--allowedTools") + 1] == incident.EDIT_TOOLS
+    assert argv[argv.index("--tools") + 1] == incident.EDIT_TOOLS
+    assert argv[argv.index("--allowedTools") + 1] == "Read(./**),Edit(./**)"
 
 
 def test_a_live_fix_pushes_its_branch_with_the_incidents_trailers(world):

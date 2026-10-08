@@ -44,9 +44,14 @@ services, each of which systemd gives a user of its own (`DynamicUser=`).
 The agent writes files. Over the tree it wrote, git runs without hooks or fsmonitor and
 reads no configuration but the clone's own -- not a `.gitconfig` the agent left in the tree
 or a home directory -- and a run whose agent touched `.git/` fails before anything is
-committed. What the agent's file tools may read is the runner user's to limit: the sandbox
-service gives that user nothing but its state directory, and a company key spares the runner
-a model login of its own there.
+committed. Its tools reach its clone alone: each tool rule names `./**`, `dontAsk` refuses
+whatever no rule allows -- a path outside the clone, a symlink out of it -- and no settings
+file is read, so no hook runs. A bare tool name would reach every file the runner's user can
+read or write, the state directory included, where a settings file an agent wrote would run
+its hooks in every later run. This needs a Claude Code that knows `--tools`,
+`--setting-sources` and the `dontAsk` mode (2.1.293 was verified); an older one refuses the
+options and the run fails. The sandbox service gives the runner's user nothing but its state
+directory beyond that, and a company key spares the runner a model login of its own there.
 
 ## Configuration
 
