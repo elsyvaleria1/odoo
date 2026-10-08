@@ -760,6 +760,10 @@ _SESSION_READ_SQL = "SELECT payload, mtime FROM http_session WHERE sid = %s"
 _SESSION_INDEX_DDL = (
     "CREATE INDEX IF NOT EXISTS http_session_family_idx ON http_session (family)"
 )
+_SESSION_MTIME_INDEX_DDL = (
+    "CREATE INDEX IF NOT EXISTS http_session_mtime_idx ON http_session (mtime)"
+)
+_VACUUM_BATCH = 10_000
 
 
 class PostgresSessionStore(SessionStore):
@@ -777,6 +781,7 @@ class PostgresSessionStore(SessionStore):
         cr.execute("SELECT pg_advisory_xact_lock(%s)", (_SCHEMA_LOCK_KEY,))
         cr.execute(_SESSION_TABLE_DDL)
         cr.execute(_SESSION_INDEX_DDL)
+        cr.execute(_SESSION_MTIME_INDEX_DDL)
         return True
 
     @contextlib.contextmanager
@@ -925,28 +930,39 @@ class PostgresSessionStore(SessionStore):
 
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None:
         threshold = time.time() - max_lifetime
-        with self._cursor() as cr:
-            cr.execute(
-                "SELECT DISTINCT left(sid, 2) FROM http_session WHERE mtime < %s",
-                (threshold,),
-            )
-            stripes = [row[0] for row in cr.fetchall()]
-        removed = 0
-        # Stripe by stripe under the lock every save holds, as the filesystem
-        # vacuum does: a save that read a session cannot then write it back
-        # after the vacuum removed it without seeing the removal.
-        for stripe in stripes:
-            with (
-                self._lock(stripe.ljust(_SESSION_KEY_LENGTH, "_")),
-                self._cursor() as cr,
-            ):
+        removed = stripes = 0
+        while True:
+            # http_session_mtime_idx finds the expired rows; the deletes then
+            # go by primary key, never a scan per stripe
+            with self._cursor() as cr:
                 cr.execute(
-                    "DELETE FROM http_session WHERE left(sid, 2) = %s AND mtime < %s",
-                    (stripe, threshold),
+                    "SELECT sid FROM http_session WHERE mtime < %s LIMIT %s",
+                    (threshold, _VACUUM_BATCH),
                 )
-                removed += cr.rowcount
+                expired = [row[0] for row in cr.fetchall()]
+            by_stripe: dict[str, list[str]] = {}
+            for sid in expired:
+                by_stripe.setdefault(sid[:2], []).append(sid)
+            # Stripe by stripe under the lock every save holds, as the
+            # filesystem vacuum does: a save that read a session cannot then
+            # write it back after the vacuum removed it without seeing the
+            # removal; the mtime is re-read under the lock, so a session
+            # kept alive since the select stays.
+            for stripe, sids in by_stripe.items():
+                with (
+                    self._lock(stripe.ljust(_SESSION_KEY_LENGTH, "_")),
+                    self._cursor() as cr,
+                ):
+                    cr.execute(
+                        "DELETE FROM http_session WHERE sid = ANY(%s) AND mtime < %s",
+                        (sids, threshold),
+                    )
+                    removed += cr.rowcount
+            stripes += len(by_stripe)
+            if len(expired) < _VACUUM_BATCH:
+                break
         _debug.perf.count(
-            "http.session.vacuum", removed=removed, stripes=len(stripes), postgres=True
+            "http.session.vacuum", removed=removed, stripes=stripes, postgres=True
         )
 
     def clear(self) -> None:

@@ -1,5 +1,7 @@
+import contextlib
 import datetime
 import os
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -17,9 +19,9 @@ from odoo.http import (
     Session,
     root,
 )
-from odoo.http._session_store import _session_identifier_re
+from odoo.http._session_store import PostgresSessionStore, _session_identifier_re
 from odoo.libs.json import dumps as json_dumps
-from odoo.tests import get_db_name, tagged
+from odoo.tests import BaseCase, get_db_name, tagged
 from odoo.tests.utils import HOST
 from odoo.tools import config, mute_logger, reset_cached_properties
 
@@ -816,3 +818,66 @@ class TestSessionRotation(HttpCase):
 
         self.assertFalse(result, "lookup of a non-existent user must return falsy")
         mock_clear.assert_not_called()
+
+
+@tagged("post_install", "-at_install")
+class TestPostgresSessionStore(BaseCase):
+    def setUp(self):
+        super().setUp()
+        self.store = PostgresSessionStore(get_db_name())
+        self.addCleanup(self._drop_table)
+
+    def _drop_table(self):
+        with self.store._cursor() as cr:
+            cr.execute("DROP TABLE IF EXISTS http_session")
+
+    def _stored(self, age):
+        session = self.store.new()
+        session["k"] = "v"
+        self.store.save(session)
+        with self.store._cursor() as cr:
+            cr.execute(
+                "UPDATE http_session SET mtime = %s WHERE sid = %s",
+                (time.time() - age, session.sid),
+            )
+        return session.sid
+
+    def _sids(self):
+        with self.store._cursor() as cr:
+            cr.execute("SELECT sid FROM http_session")
+            return {row[0] for row in cr.fetchall()}
+
+    def test_the_schema_indexes_the_mtime_the_vacuum_reads(self):
+        self._stored(0)
+        with self.store._cursor() as cr:
+            cr.execute(
+                "SELECT indexname FROM pg_indexes WHERE tablename = 'http_session'"
+            )
+            indexes = {row[0] for row in cr.fetchall()}
+        self.assertIn("http_session_mtime_idx", indexes)
+        self.assertIn("http_session_family_idx", indexes)
+
+    def test_vacuum_removes_only_the_expired(self):
+        expired = {self._stored(3600) for _ in range(5)}
+        fresh = {self._stored(10) for _ in range(3)}
+        with patch("odoo.http._session_store._VACUUM_BATCH", 2):
+            self.store.vacuum(max_lifetime=600)
+        self.assertEqual(self._sids(), fresh)
+        self.assertFalse(expired & self._sids())
+
+    def test_vacuum_keeps_a_session_kept_alive_since_its_select(self):
+        kept, gone = self._stored(3600), self._stored(3600)
+        lock = PostgresSessionStore._lock
+        store = self.store
+
+        @contextlib.contextmanager
+        def touching_lock(self, sid):
+            with lock(self, sid):
+                store._touch(kept)
+                yield
+
+        with patch.object(PostgresSessionStore, "_lock", touching_lock):
+            self.store.vacuum(max_lifetime=600)
+        remaining = self._sids()
+        self.assertIn(kept, remaining)
+        self.assertNotIn(gone, remaining)
