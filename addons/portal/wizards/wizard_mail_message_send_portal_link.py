@@ -1,3 +1,5 @@
+from typing import Any
+
 from markupsafe import Markup
 
 from odoo import api, fields, models
@@ -6,6 +8,10 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_list
 
 _debug = DebugLog(__name__)
+
+# anyone holding the copied link reads the document and speaks as nobody: it is
+# not the customer's link, which posts as the customer and rides their e-mails
+SHARE_LINK = {"role": "view", "cause": "share"}
 
 
 class WizardMailMessageSendPortalLink(models.TransientModel):
@@ -55,12 +61,13 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
     partner_ids = fields.Many2many(
         comodel_name="res.partner",
         string="Recipients",
-        required=True,
     )
     note = fields.Text(help="Add extra content to display in the email")
     share_link = fields.Char(
         string="Link",
         compute="_compute_share_link",
+        help="Anyone with this link can view the document, without commenting, "
+        "for 30 days.",
     )
     access_warning = fields.Text(
         string="Access warning",
@@ -89,13 +96,42 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
 
     @api.depends("res_model", "res_id")
     def _compute_share_link(self) -> None:
-        for rec in self:
-            record = rec._get_portal_record()
-            rec.share_link = (
-                record.get_base_url() + record._get_share_url(redirect=True)
-                if record
+        for wizard in self:
+            record = wizard._get_portal_record()
+            link, token = (
+                self.env["access.link"]._find_reusable(record, **SHARE_LINK)
+                if record and record.has_access("read")
+                else (self.env["access.link"], None)
+            )
+            _debug.logic(
+                "share_link_shown",
+                model=record._name,
+                record=record.id,
+                link=link.id or None,
+            )
+            wizard.share_link = (
+                record.get_base_url()
+                + record._get_share_url(redirect=True, token=token)
+                if token
                 else False
             )
+
+    def action_issue_share_link(self) -> dict[str, Any]:
+        self.check_singleton()
+        record = self._get_shared_record()
+        link, __ = self.env["access.link"]._issue(record, **SHARE_LINK)
+        _debug.lifecycle(
+            "share_link_issued", model=record._name, record=record.id, link=link.id
+        )
+        self.invalidate_recordset(["share_link"])
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "res_id": self.id,
+            "views": [(False, "form")],
+            "target": "new",
+            "context": self.env.context,
+        }
 
     @api.depends("res_model", "res_id")
     def _compute_access_warning(self) -> None:
@@ -197,6 +233,9 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
     def action_send_mail(self):
         self.check_singleton()
         record = self._get_shared_record()
+        if not self.partner_ids:
+            _debug.logic("share_refused", reason="no_recipient")
+            raise UserError(self.env._("Add the contacts to send the document to."))
         invited = self._send_share_links(self.partner_ids)
         self._log_share_invitations(invited, record=record)
 

@@ -15,10 +15,21 @@
                 <group name="share_link">
                     <field name="res_model" invisible="1" />
                     <field name="res_id" invisible="1" />
-                    <field
-                        name="share_link"
-                        widget="CopyClipboardChar"
-                        options="{'string': 'Copy Link'}" />
+                    <label for="share_link" />
+                    <div name="share_link_box">
+                        <field
+                            name="share_link"
+                            widget="CopyClipboardChar"
+                            options="{'string': 'Copy Link'}"
+                            invisible="not share_link" />
+                        <button
+                            name="action_issue_share_link"
+                            type="object"
+                            string="Create Link"
+                            icon="fa-link"
+                            invisible="share_link or access_warning"
+                            class="btn-link p-0" />
+                    </div>
                     <field
                         name="partner_ids"
                         placeholder="Add contacts to share the document..."

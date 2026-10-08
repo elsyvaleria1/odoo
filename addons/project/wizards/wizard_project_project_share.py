@@ -6,10 +6,6 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# anyone holding it reads the project and its tasks and speaks as nobody: it is
-# not the customer's link, which posts as the customer and rides their e-mails
-PUBLIC_LINK = {"role": "view", "cause": "share"}
-
 
 class WizardProjectProjectShare(models.TransientModel):
     _name = "wizard.project.project.share"
@@ -100,36 +96,6 @@ class WizardProjectProjectShare(models.TransientModel):
     def _compute_existing_partner_ids(self) -> None:
         for wizard in self:
             wizard.existing_partner_ids = wizard.collaborator_ids.partner_id
-
-    @api.depends("res_model", "res_id")
-    def _compute_share_link(self) -> None:
-        for wizard in self:
-            project = wizard._get_portal_record()
-            link, token = (
-                self.env["access.link"]._find_reusable(project, **PUBLIC_LINK)
-                if project and project.has_access("read")
-                else (self.env["access.link"], None)
-            )
-            _debug.logic("public_link_shown", project=project.id, link=link.id or None)
-            wizard.share_link = token and (
-                project.get_base_url()
-                + project._get_share_url(redirect=True, token=token)
-            )
-
-    def action_issue_share_link(self) -> dict[str, Any]:
-        self.check_singleton()
-        project = self._get_shared_record()
-        link, __ = self.env["access.link"]._issue(project, **PUBLIC_LINK)
-        _debug.lifecycle("share_link_issued", project=project.id, link=link.id)
-        self.invalidate_recordset(["share_link"])
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": self._name,
-            "res_id": self.id,
-            "views": [(False, "form")],
-            "target": "new",
-            "context": self.env.context,
-        }
 
     @api.model
     def _live_partner_collaborators(self, project: models.Model) -> models.Model:
