@@ -21,8 +21,8 @@ class TestMonetaryAccess(TransactionCaseWithUserDemo):
         )
         self.assertEqual(
             new_user.test_access_monetary,
-            1 / 3,
-            "the value cached before the currency existed stays as it was cached",
+            0.33,
+            "a delegated value reads through the partner, rounded once the currency exists",
         )
 
         self.env.invalidate_all()
