@@ -355,7 +355,7 @@ class Websocket:
         self._cookies = cookies
         self._db = session.db
         self._request_db = request_db if request_db is not None else session.db
-        self._httprequest = (
+        self._handshake = (
             HandshakeFacts.of(httprequest, cookies) if httprequest is not None else None
         )
         self._outdated = outdated
@@ -689,7 +689,7 @@ class Websocket:
 
     def _message_job(self, message) -> None:
         WebsocketConnectionHandler._serve_message(
-            self._request_db, self._httprequest, self, message
+            self._request_db, self._handshake, self, message
         )
 
     def _dispatch_job(self) -> None:
@@ -1004,9 +1004,12 @@ class Websocket:
     def _limit_rate(self, opcode) -> None:
         # GCRA: each frame is due one interval after the one before; a burst of
         # RL_BURST may come early, and one more is refused. Two floats per
-        # connection where the last RL_BURST timestamps took two deques. The
+        # connection where the last RL_BURST timestamps took two deques. Unlike
+        # that window, the bucket refills continuously: a window of T admits
+        # up to RL_BURST + T / interval frames, the same rate over time. The
         # bound sits half an interval past the burst so that the sum of float
-        # intervals cannot refuse the burst's last frame.
+        # intervals cannot refuse the burst's last frame; after a full burst
+        # the next frame is admitted half an interval later.
         now = self._clock()
         if opcode in DATA_OP:
             interval = self.RL_DELAY
@@ -1045,8 +1048,12 @@ class Websocket:
     def _revalidate_session(self, cr, now) -> bool:
         """Follow the session to its live successor and ask whether it is still
         valid, on the caller's cursor; a valid one is trusted again for up to
-        SESSION_VALIDITY_TTL."""
-        session = _follow_session_chain(self._session)
+        SESSION_VALIDITY_TTL. A session logged out or revoked since is gone
+        from the store, and as invalid as an expired one."""
+        try:
+            session = _follow_session_chain(self._session)
+        except SessionExpiredException:
+            return False
         self._session = SessionView.of(session)
         if session.uid is not None and not is_session_valid(
             session, self.new_env(cr, session), fresh_primary_cr=cr
@@ -1249,7 +1256,7 @@ class SessionView:
         )
 
 
-def _follow_session_chain(initial_session: Session) -> Session:
+def _follow_session_chain(initial_session: SessionView) -> Session:
     return root.session_store.get_live(initial_session.sid)
 
 

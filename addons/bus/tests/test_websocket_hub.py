@@ -5,6 +5,7 @@ import threading
 import time
 from unittest.mock import MagicMock, PropertyMock, patch
 
+from odoo.http import SessionExpiredException
 from odoo.libs.json import loads as json_loads
 from odoo.service.metrics import render_prometheus_exposition
 from odoo.service.server import WebsocketServer
@@ -319,6 +320,50 @@ class TestWebsocketHub(BaseCase):
         self.assertGreater(due[0]._session_validated_until, 0.0)
         self.assertEqual(expired[0]._dispatch_state.ignore_ids, [])
 
+    def test_a_session_gone_from_the_store_closes_alone_in_its_round(self):
+        kept, gone = self._connect(), self._connect()
+        for index, (ws, _peer, _gauge) in enumerate((kept, gone)):
+            ws._channels = {("db", "chan")}
+            ws._session = MagicMock(db="db", sid=f"sid{index}", uid=index + 1)
+            ws._validated_session_sid = ws._session.sid
+            ws._session_validated_until = 0.0
+        notifications = [{"id": 11, "message": {"type": "t", "payload": 1}}]
+        env = MagicMock()
+        poll = env.__getitem__.return_value._poll_batch
+        poll.return_value = (notifications, False)
+        cursor = MagicMock()
+        cursor.__enter__.return_value = MagicMock()
+        gone_sid = gone[0]._session.sid
+
+        def follow_session_chain(session):
+            if session.sid == gone_sid:
+                raise SessionExpiredException
+            return session
+
+        with (
+            patch(
+                "odoo.addons.bus.websocket.acquire_cursor", return_value=cursor
+            ) as acquire,
+            patch.object(Websocket, "new_env", return_value=env),
+            patch(
+                "odoo.addons.bus.websocket._follow_session_chain",
+                side_effect=follow_session_chain,
+            ),
+            patch("odoo.addons.bus.websocket.is_session_valid", return_value=True),
+            self.assertNoLogs("odoo.addons.bus.websocket", "WARNING"),
+        ):
+            websocket_module._wake_websockets(
+                [kept[0], gone[0]], dispatch.open_poll_round()
+            )
+            opcode, payload = kept[1].frame()
+            self.assertEqual(opcode, Opcode.TEXT)
+            self.assertEqual(json_loads(payload), notifications)
+            opcode, payload = gone[1].frame()
+        self.assertEqual(opcode, Opcode.CLOSE)
+        self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.SESSION_EXPIRED)
+        self.assertEqual(acquire.call_count, 1, "the round kept its one cursor")
+        self.assertEqual(poll.call_count, 1)
+
     def test_a_connection_keeps_a_view_of_its_session_not_the_session(self):
         ws, _peer, _gauge = self._connect()
         self.assertIsInstance(ws._session, websocket_module.SessionView)
@@ -339,7 +384,7 @@ class TestWebsocketHub(BaseCase):
         httprequest.user_agent.platform = "linux"
         httprequest.user_agent.browser = "firefox"
         ws, _peer, _gauge = self._connect(httprequest=httprequest)
-        facts = ws._httprequest
+        facts = ws._handshake
         self.assertIsInstance(facts, websocket_module.HandshakeFacts)
         self.assertFalse(hasattr(facts, "__dict__"))
         request = websocket_module.WebsocketRequest("db", facts, ws)
@@ -439,7 +484,8 @@ class TestWebsocketHub(BaseCase):
                 _wait_until(lambda: slow.state is ConnectionState.CLOSED, timeout=5)
             )
         self.assertIs(fast.state, ConnectionState.OPEN)
-        self.assertEqual(slow_gauge.count, 0)
+        # CLOSED is set a few statements before the loop releases the slot
+        self.assertTrue(_wait_until(lambda: slow_gauge.count == 0))
         self.assertEqual(self.hub.write_stalls, 1)
 
     def test_the_process_outbound_budget_holds_every_dispatch(self):

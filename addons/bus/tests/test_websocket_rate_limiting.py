@@ -97,10 +97,16 @@ class TestWebsocketRateLimiting(WebsocketCase):
             time.sleep(Websocket.RL_DELAY * 1.25)
         self.assert_alive(ws)
 
+    def _flood(self, ws, opcode, count, payload=b""):
+        # one write, read in one go: the bucket refills while frames trickle
+        # in, so a flood sent frame by frame on a busy machine can stay under
+        # the limit; the exact burst is pinned against a fake clock above
+        ws.sock.sendall(b"".join(_client_frame(opcode, payload) for _ in range(count)))
+
     def test_rate_limiting_base_ko(self):
         ws = self.websocket_connect()
-        for _ in range(Websocket.RL_BURST + 1):
-            ws.send(json_dumps({"event_name": "test_rate_limiting"}))
+        message = json_dumps_bytes({"event_name": "test_rate_limiting"})
+        self._flood(ws, Opcode.TEXT, Websocket.RL_BURST * 4, message)
         self.assert_rate_limited(ws)
 
     def test_rate_limiting_opening_burst(self):
@@ -122,8 +128,8 @@ class TestWebsocketRateLimiting(WebsocketCase):
             ws.send(json_dumps({"event_name": "test_rate_limiting"}))
             time.sleep(Websocket.RL_DELAY)
 
-        for _ in range(Websocket.RL_BURST * 2):
-            ws.send(json_dumps({"event_name": "test_rate_limiting"}))
+        message = json_dumps_bytes({"event_name": "test_rate_limiting"})
+        self._flood(ws, Opcode.TEXT, Websocket.RL_BURST * 4, message)
         self.assert_rate_limited(ws)
 
     def test_control_frames_do_not_count_against_data_budget(self):
@@ -147,6 +153,7 @@ class TestWebsocketRateLimiting(WebsocketCase):
 
     def test_control_frame_flood_is_rate_limited(self):
         ws = self.websocket_connect()
-        for _ in range(Websocket.RL_BURST * Websocket.RL_CONTROL_FACTOR + 1):
-            ws.ping()
+        self._flood(
+            ws, Opcode.PING, Websocket.RL_BURST * Websocket.RL_CONTROL_FACTOR * 4
+        )
         self.assert_rate_limited(ws)
