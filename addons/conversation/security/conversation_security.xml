@@ -33,4 +33,13 @@
         <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]" />
     </record>
 
+    <record id="privilege_extract_conversation" model="res.groups">
+        <field
+            name="name">Privilege: a conversation's transcript is analysed, whoever recorded it</field>
+        <field
+            name="comment">Held by a conversation's transcript callbacks and the analysis they queue, whoever queued the transcript (a phone, a meeting room, a colleague): the conversation's attendees and analysis, its findings and recommendations, and the note that says it was analysed. Every write under it is logged.</field>
+        <field name="audit_privilege" eval="True" />
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

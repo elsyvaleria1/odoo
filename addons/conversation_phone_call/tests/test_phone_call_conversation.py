@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from odoo import fields
 from odoo.libs.documents import (
@@ -229,6 +230,36 @@ class TestCallVoices(TransactionCase):
         call.partner_id = self.customer
         call._on_call_details_completed()
         self.assertEqual(self._named(recording)["SPEAKER_2"], self.customer)
+
+    def test_voices_are_named_when_the_phones_user_asks_for_the_transcript(self):
+        engine = register_reader(_HearsVoices(self.ANSWER_THEN_TALK))
+        self.addCleanup(unregister_reader, engine)
+        call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "direction": "outgoing",
+                "channel": "mobile",
+                "user_id": self.seller.id,
+                "partner_id": self.customer.id,
+            }
+        )
+        recording = self.env["ir.attachment"].create(
+            {
+                "name": "call.mp3",
+                "mimetype": "audio/mpeg",
+                "raw": b"ID3-call",
+                "res_model": "phone.call",
+                "res_id": call.id,
+            }
+        )
+        with patch.object(type(recording), "_transcribe_later", autospec=True):
+            call._file_recording(recording, 0, 6000)
+        self.assertFalse(call.with_user(self.seller).has_access("write"))
+        recording.with_user(self.seller)._transcribe()
+        self.assertEqual(
+            self._named(recording),
+            {"SPEAKER_2": self.customer, "SPEAKER_1": self.seller.partner_id},
+        )
 
     def test_the_named_voices_join_the_conversation(self):
         call, _recording = self._heard(self.ANSWER_THEN_TALK)

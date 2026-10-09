@@ -266,36 +266,36 @@ class IrAttachment(models.Model):
 
     def _transcript_owner_options(self) -> dict[str, Any]:
         self.check_singleton()
-        segment = (
-            self.env["media.segment"]
-            .sudo()
-            .search([("attachment_id", "=", self.id)], limit=1)
-        )
+        segment = self._transcript_segments(limit=1)
         owner = segment._owner() if segment else None
-        if owner is None or not hasattr(owner, "_media_transcription_options"):
+        if owner is None or not hasattr(owner, "_as_transcript_owner"):
             return {}
-        return owner._media_transcription_options()
+        return owner._as_transcript_owner()._media_transcription_options()
+
+    def _transcript_segments(self, limit: int | None = None):
+        # whoever queued the transcript, the timeline it was heard on is told
+        return (
+            self.env["media.segment"]
+            .with_privilege(
+                "speech.privilege_find_transcript_owner",
+                reason="a transcript tells the timeline it was heard on",
+            )
+            .search([("attachment_id", "=", self.id)], limit=limit)
+        )
 
     def _notify_transcript_owner(self, transcribed: bool) -> None:
         self.check_singleton()
-        segments = (
-            self.env["media.segment"].sudo().search([("attachment_id", "=", self.id)])
-        )
-        for segment in segments:
+        for segment in self._transcript_segments():
             owner = segment._owner()
-            if owner is None:
+            if owner is None or not hasattr(owner, "_as_transcript_owner"):
                 continue
+            owner = owner._as_transcript_owner()
             if transcribed:
-                done = getattr(owner, "_on_media_transcribed", None)
-                if done is None:
-                    continue
-                done(self)
+                owner._on_media_transcribed(self)
                 if owner.timeline_transcript_state == "done":
                     owner._on_media_fully_transcribed()
             else:
-                failed = getattr(owner, "_on_media_transcription_failed", None)
-                if failed is not None:
-                    failed(self)
+                owner._on_media_transcription_failed(self)
 
     @api.model
     def _speech_synthesize(

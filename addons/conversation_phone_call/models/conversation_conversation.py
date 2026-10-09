@@ -65,11 +65,11 @@ class ConversationConversation(models.Model):
         answerer = {"outgoing": contact, "incoming": owner}.get(call.direction)
         if not answerer or not owner or not contact or owner == contact:
             return
-        # in this conversation's environment: the transcript's owner is
-        # reached elevated, as is the call whose entry completes it
         voices = attachment.with_env(self.env).speaker_ids.filtered("turns")
         if len(voices) != 2 or voices.partner_id:
             return
-        first, second = voices.sorted("first_spoke_s")
+        # a voice is written where its recording is, on the call: whoever had
+        # the call heard, its user or the phone's receiver, need not write it
+        first, second = voices.sorted("first_spoke_s").sudo()
         first.partner_id = answerer
         second.partner_id = (owner | contact) - answerer

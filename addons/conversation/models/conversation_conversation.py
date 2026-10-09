@@ -240,6 +240,14 @@ class ConversationConversation(models.Model):
                 raise UserError(self.env._("Attach a recording first."))
         return self.action_transcribe_media()
 
+    def _as_transcript_owner(self):
+        # whoever queued the transcript, a phone or a colleague who only reads
+        # the conversation, it is analysed: the analysis job keeps this too
+        return self.with_privilege(
+            "conversation.privilege_extract_conversation",
+            reason="a conversation's transcript is analysed",
+        )
+
     def _media_transcription_options(self):
         self.check_singleton()
         return {"purpose": transcription_purpose(self.kind), "language": self.language}

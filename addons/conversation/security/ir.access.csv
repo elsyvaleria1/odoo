@@ -15,3 +15,7 @@ access_conversation_retention_policy_manager,conversation.retention.policy manag
 access_ai_tool_model_access_conversation_manager,ai.tool.model.access conversation manager,ai_tool_approval.model_ai_tool_model_access,group_manager,permission,cud,,,
 rule_conversation_config_company,Conversation configuration: the reader's companies,model_conversation_config,base.group_everyone,guard,crud,company,,
 rule_conversation_retention_policy_company,Audio retention: company,model_conversation_retention_policy,base.group_everyone,guard,crud,company,,
+privilege_find_transcript_owner_conversation,Find a transcript's owner: the conversation it was heard on,model_conversation_conversation,speech.privilege_find_transcript_owner,permission,r,,,
+privilege_extract_conversation_conversation,Analyse a conversation: the conversation,model_conversation_conversation,privilege_extract_conversation,permission,ru,,,
+privilege_extract_conversation_recommendation,Analyse a conversation: its recommendations,model_conversation_recommendation,privilege_extract_conversation,permission,crud,,,
+privilege_extract_conversation_config,Analyse a conversation: its company's analysis context,model_conversation_config,privilege_extract_conversation,permission,r,,,

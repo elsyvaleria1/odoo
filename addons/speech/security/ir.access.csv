@@ -8,3 +8,4 @@ rule_speech_vocabulary_company,Speech vocabulary: shared or the reader's compani
 rule_speech_dictation_own,Dictation: the speaker's own,model_speech_dictation,base.group_everyone,guard,crud,own,,
 access_speech_vocabulary_form_user,speech.vocabulary.form: the forms of the user's companies,model_speech_vocabulary_form,base.group_user,permission,r,company,,
 access_speech_vocabulary_form_system,speech.vocabulary.form: every form for an administrator,model_speech_vocabulary_form,base.group_system,permission,crud,,,
+privilege_find_transcript_owner_segment,Find a transcript's owner: the segment that files it,media.model_media_segment,privilege_find_transcript_owner,permission,r,,,

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_find_transcript_owner" model="res.groups">
+        <field
+            name="name">Privilege: a finished transcript finds the timeline it was heard on</field>
+        <field
+            name="comment">Held while a transcript tells its owner it was heard, whoever queued it: the segment that files the recording on a timeline. A timeline's module adds the read of its own records, so the owner is reached; what the owner then does is its own module's privilege.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

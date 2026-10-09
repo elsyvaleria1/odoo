@@ -159,6 +159,12 @@ class MixinMediaTimeline(models.AbstractModel):
     def _media_transcription_options(self) -> dict:
         return {}
 
+    def _as_transcript_owner(self):
+        """This timeline as its transcripts' callbacks run on it, whoever
+        queued the transcript: a module whose callbacks write what the caller
+        may not grants its own privilege here."""
+        return self
+
     def _on_media_transcribed(self, attachment: IrAttachment) -> None:
         pass
 

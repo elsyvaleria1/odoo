@@ -1,9 +1,11 @@
 import base64
 from datetime import date
+from unittest.mock import MagicMock, patch
 
 from odoo.tests import tagged
 
-from .common import ANALYSIS, ConversationCase
+from .common import ANALYSIS, ROUTER, ConversationCase
+from odoo.addons.integration_machine_learning.tools import MlResult
 
 
 @tagged("post_install", "-at_install")
@@ -146,3 +148,38 @@ class TestConversation(ConversationCase):
         self.assertEqual(len(configs), 2)
         action = self.env["conversation.config"].action_open_configs()
         self.assertEqual(action["res_model"], "conversation.config")
+
+    def test_a_transcript_its_responsible_queued_is_analysed_without_su(self):
+        conversation = self._conversation()
+        Attachment = type(self.env["ir.attachment"])
+        with patch.object(Attachment, "_transcribe_later", autospec=True):
+            segment = conversation._file_recording(b"not-really-audio", "call.m4a")
+        recording = segment.attachment_id.with_user(self.rep)
+        Job = self.env["ir.job"]
+        recording._transcribe_later()
+        heard = Job.search([("identity_key", "=", f"reading.cues.{recording.id}")])
+        self.assertEqual(heard.user_id, self.rep)
+        self.assertFalse(heard.elevated)
+        heard.action_run_now()
+        self.assertEqual(heard.state, "done")
+        analysis = Job.search(
+            [("identity_key", "=", f"extract.{conversation._name}.{conversation.id}")]
+        )
+        self.assertEqual(analysis.user_id, self.rep)
+        self.assertFalse(analysis.elevated, "the transcript reached its owner")
+        self.assertIn(
+            self.env.ref("conversation.privilege_extract_conversation").id,
+            analysis.privileges,
+        )
+        router = MagicMock()
+        router.select_model.return_value = MagicMock(code="a-model")
+        router.run.return_value = MlResult(model=None, data=dict(ANALYSIS))
+        with patch(ROUTER, return_value=router):
+            analysis.action_run_now()
+        self.assertEqual(analysis.state, "done")
+        self.assertEqual(conversation.state, "analyzed")
+        self.assertEqual(len(conversation.commitment_ids), 2)
+        note = conversation.message_ids.filtered(
+            lambda message: "Analyzed:" in (message.body or "")
+        )
+        self.assertEqual(note.author_id, self.rep.partner_id)
