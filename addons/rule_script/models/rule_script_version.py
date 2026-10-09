@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import OrderedDict
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -11,8 +12,10 @@ from ..tools.runtime import compile_rule
 _logger = logging.getLogger(__name__)
 
 # digest -> (header, function); a version's source never changes once it can
-# run, so its digest names one compiled function for the life of the process
-_COMPILED = {}
+# run, so its digest names one compiled function for the life of the process.
+# Bounded: authors running the tests of many drafts must not grow it forever.
+_COMPILED = OrderedDict()
+COMPILED_CACHE_SIZE = 512
 
 
 class RuleScriptVersion(models.Model):
@@ -254,6 +257,10 @@ class RuleScriptVersion(models.Model):
             header, module = parse_rule(self.source_code)
             compiled = (header, compile_rule(module, f"<rule {header.code}>"))
             _COMPILED[header.digest] = compiled
+            while len(_COMPILED) > COMPILED_CACHE_SIZE:
+                _COMPILED.popitem(last=False)
+        else:
+            _COMPILED.move_to_end(self.digest)
         return compiled
 
     def _get_applicable_tests(self):

@@ -1,22 +1,57 @@
 import builtins
 import calendar
+import contextvars
 import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from .grammar import (
     ENTRY_POINT,
     GUARDED_ATTRIBUTE,
+    GUARDED_ITERATE,
     GUARDED_MULTIPLY,
+    GUARDED_POWER,
     SAFE_BUILTIN_NAMES,
 )
 from .types import RuleValueError, coerce
 
 MAX_RANGE = 10_000
 MAX_CALL_DEPTH = 32
+# One evaluation, the rules it calls included, iterates at most MAX_STEPS
+# times and calls at most MAX_CALLS rules; an integer it builds by * or **
+# holds at most MAX_INT_BITS bits. Nested loops multiply, a range cap alone
+# does not bound them.
+MAX_STEPS = 1_000_000
+MAX_CALLS = 1_000
+MAX_INT_BITS = 4_096
 
 
 class RuleRuntimeError(RuntimeError):
     pass
+
+
+class RuleBudget:
+    """What one evaluation may still spend, shared by the rules it calls."""
+
+    __slots__ = ("calls", "steps")
+
+    def __init__(self) -> None:
+        self.steps = MAX_STEPS
+        self.calls = MAX_CALLS
+
+    def step(self) -> None:
+        self.steps -= 1
+        if self.steps < 0:
+            raise RuleRuntimeError(
+                f"a rule evaluation iterates at most {MAX_STEPS} times"
+            )
+
+    def call(self) -> None:
+        self.calls -= 1
+        if self.calls < 0:
+            raise RuleRuntimeError(f"a rule evaluation calls at most {MAX_CALLS} rules")
+
+
+_BUDGET = contextvars.ContextVar("rule_budget", default=None)
 
 
 class RuleInputs:
@@ -63,7 +98,37 @@ def _rule_attribute(value, name):
     return result
 
 
+def _check_int_size(value):
+    if isinstance(value, int) and value.bit_length() > MAX_INT_BITS:
+        raise RuleRuntimeError(f"an integer is limited to {MAX_INT_BITS} bits")
+    return value
+
+
+def _rule_power(base, exponent):
+    if (
+        isinstance(base, int)
+        and isinstance(exponent, int)
+        and exponent > 0
+        and base.bit_length() * exponent > MAX_INT_BITS
+    ):
+        raise RuleRuntimeError(f"an integer is limited to {MAX_INT_BITS} bits")
+    return base**exponent
+
+
+def _rule_iterate(iterable):
+    budget = _BUDGET.get() or RuleBudget()
+    for item in iterable:
+        budget.step()
+        yield item
+
+
 def _rule_multiply(left, right):
+    if (
+        isinstance(left, int)
+        and isinstance(right, int)
+        and left.bit_length() + right.bit_length() > MAX_INT_BITS
+    ):
+        raise RuleRuntimeError(f"an integer is limited to {MAX_INT_BITS} bits")
     for sequence, count in ((left, right), (right, left)):
         if (
             isinstance(sequence, (str, list, tuple))
@@ -89,6 +154,8 @@ def compile_rule(module, filename):
         "__builtins__": SAFE_BUILTINS,
         GUARDED_ATTRIBUTE: _rule_attribute,
         GUARDED_MULTIPLY: _rule_multiply,
+        GUARDED_POWER: _rule_power,
+        GUARDED_ITERATE: _rule_iterate,
     }
     exec(compile(module, filename, "exec"), namespace)  # noqa: S102  the module was parsed and rewritten by parse_rule
     return namespace[ENTRY_POINT]
@@ -109,6 +176,7 @@ class RuleContext:
         return self.call_at(self.on_date, code, **inputs)
 
     def call_at(self, date, code, **inputs):
+        (_BUDGET.get() or RuleBudget()).call()
         if self._depth >= MAX_CALL_DEPTH:
             raise RuleRuntimeError(f"rule calls nest deeper than {MAX_CALL_DEPTH}")
         return self._resolve(code, date, inputs, self._depth + 1, self._trace)
@@ -144,6 +212,8 @@ def run_rule(function, header, inputs, context):
     """Evaluate a compiled rule on a mapping of inputs; the result is checked
     against the rule's OUTPUT type."""
     rule_inputs = RuleInputs(header.inputs, inputs)
+    # the outermost evaluation opens the budget its nested calls share
+    token = _BUDGET.set(RuleBudget()) if _BUDGET.get() is None else None
     try:
         result = function(rule_inputs, context)
     except RuleRuntimeError, RuleValueError:
@@ -152,6 +222,9 @@ def run_rule(function, header, inputs, context):
         raise RuleRuntimeError(
             f"{header.code}: {type(error).__name__}: {error}"
         ) from error
+    finally:
+        if token is not None:
+            _BUDGET.reset(token)
     try:
         return coerce(header.output, result)
     except RuleValueError as error:

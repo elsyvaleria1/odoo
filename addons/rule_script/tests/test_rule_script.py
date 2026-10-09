@@ -221,6 +221,21 @@ class TestRuleScript(TransactionCase):
         with self.assertRaises(UserError):
             pong_version._activate()
 
+    def test_an_evaluation_calls_a_bounded_number_of_rules(self):
+        many = (
+            'RULE = "test.many"\nVALID_FROM = "2026-01-01"\nINPUTS = {}\n'
+            'OUTPUT = "number"\n'
+            "def evaluate(inputs, rules):\n"
+            "    total = 0\n"
+            "    for _ in range(2000):\n"
+            '        total += rules.call("test.round", amount=1.5)\n'
+            "    return total\n"
+        )
+        self._load({"rules/round.py": round_rule(), "rules/many.py": many})
+
+        with self.assertRaises(UserError):
+            self.Script._evaluate("test.many", "2026-03-01")
+
     def test_a_figure_keeps_the_versions_that_computed_it(self):
         self._load(
             {

@@ -63,6 +63,12 @@ class TestRuleGrammar(BaseCase):
             + "def other(inputs, rules):\n    return 2\n",
             "lowercase constant": "rate = 1\n" + rule("return 1"),
             "missing header": "RULE = 'x'\ndef evaluate(inputs, rules):\n    return 1\n",
+            "bound method as key": rule("return sorted([1], key=inputs.d.replace)"),
+            "format method as key": rule("return sorted([1], key='{0}'.format)"),
+            "callable from a subscript as key": rule(
+                "f = {'f': len}\nreturn sorted([1], key=f['f'])"
+            ),
+            "augmented variable exponent": rule("x = 2\nx **= inputs.n\nreturn x"),
         }
         for label, source in refused.items():
             with self.subTest(label), self.assertRaises(RuleSyntaxError):
@@ -70,10 +76,25 @@ class TestRuleGrammar(BaseCase):
 
     def test_the_runtime_refuses_methods_and_unbounded_sizes(self):
         refused = {
-            "bound method as key": rule("return sorted([1], key=inputs.d.replace)"),
-            "format method": rule("return sorted([1], key='{0}'.format)"),
             "huge range": rule("return [x for x in range(10 ** 9)]"),
             "huge repetition": rule("return 'x' * 10 ** 9"),
+            "nested loops": rule(
+                "t = 0\nfor a in range(10000):\n    for b in range(10000):\n"
+                "        t += 1\nreturn t"
+            ),
+            "nested comprehension": rule(
+                "return sum(1 for a in range(10000) for b in range(10000))"
+            ),
+            "chained power": rule("x = 10\nx = x ** 64\nx = x ** 64\nreturn x"),
+            "augmented power": rule(
+                "x = 10\nfor _ in range(5):\n    x **= 64\nreturn x"
+            ),
+            "squared integer": rule(
+                "x = 2 ** 64\nfor _ in range(100):\n    x = x * x\nreturn x"
+            ),
+            "augmented repetition": rule(
+                "x = 'ab'\nfor _ in range(30):\n    x *= 2\nreturn x"
+            ),
         }
         for label, source in refused.items():
             with self.subTest(label), self.assertRaises(RuleRuntimeError):

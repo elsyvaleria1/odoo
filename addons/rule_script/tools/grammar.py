@@ -9,6 +9,8 @@ ENTRY_POINT = "evaluate"
 ENTRY_ARGUMENTS = ("inputs", "rules")
 GUARDED_ATTRIBUTE = "_rule_attribute"
 GUARDED_MULTIPLY = "_rule_multiply"
+GUARDED_POWER = "_rule_power"
+GUARDED_ITERATE = "_rule_iterate"
 
 HEADER_REQUIRED = ("RULE", "VALID_FROM", "INPUTS", "OUTPUT")
 HEADER_OPTIONAL = ("NAME", "VALID_TO", "SOURCES", "EXAMPLES")
@@ -316,6 +318,13 @@ class _BodyValidator(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
+    def visit_AugAssign(self, node) -> None:
+        self.visit_BinOp(
+            ast.BinOp(
+                left=node.target, op=node.op, right=node.value, lineno=node.lineno
+            )
+        )
+
     def visit_Call(self, node) -> None:
         function = node.func
         if isinstance(function, ast.Name) and function.id in SAFE_BUILTIN_NAMES:
@@ -324,6 +333,15 @@ class _BodyValidator(ast.NodeVisitor):
                 if keyword.arg not in allowed:
                     raise RuleSyntaxError(
                         f"{function.id}() takes no keyword {keyword.arg!r}",
+                        node.lineno,
+                    )
+                # key= is called on every element: only a builtin, by name
+                if keyword.arg == "key" and not (
+                    isinstance(keyword.value, ast.Name)
+                    and keyword.value.id in SAFE_BUILTIN_NAMES
+                ):
+                    raise RuleSyntaxError(
+                        f"{function.id}(key=...) takes the name of an allowed builtin",
                         node.lineno,
                     )
         elif (
@@ -367,18 +385,68 @@ class _RuntimeGuard(ast.NodeTransformer):
     rules.<helper> a call names, and a * b into _rule_multiply(a, b), so the
     runtime decides what a read returns and how long a repeated sequence gets."""
 
-    def visit_BinOp(self, node):
-        node = self.generic_visit(node)
-        if not isinstance(node.op, ast.Mult):
-            return node
+    GUARDED_OPERATORS = {ast.Mult: GUARDED_MULTIPLY, ast.Pow: GUARDED_POWER}
+
+    def _guarded(self, guard, left, right, node):
         return ast.copy_location(
             ast.Call(
-                func=ast.Name(id=GUARDED_MULTIPLY, ctx=ast.Load()),
-                args=[node.left, node.right],
+                func=ast.Name(id=guard, ctx=ast.Load()),
+                args=[left, right],
                 keywords=[],
             ),
             node,
         )
+
+    def visit_BinOp(self, node):
+        node = self.generic_visit(node)
+        guard = self.GUARDED_OPERATORS.get(type(node.op))
+        if not guard:
+            return node
+        return self._guarded(guard, node.left, node.right, node)
+
+    def visit_AugAssign(self, node):
+        # x *= y and x **= y run through the same guards as x * y and x ** y
+        guard = self.GUARDED_OPERATORS.get(type(node.op))
+        if not guard:
+            return self.generic_visit(node)
+        target = self.visit(node.target)
+        load = ast.copy_location(
+            ast.Name(id=node.target.id, ctx=ast.Load())
+            if isinstance(node.target, ast.Name)
+            else ast.Subscript(
+                value=self.visit(node.target.value),
+                slice=self.visit(node.target.slice),
+                ctx=ast.Load(),
+            ),
+            node,
+        )
+        return ast.copy_location(
+            ast.Assign(
+                targets=[target],
+                value=self._guarded(guard, load, self.visit(node.value), node),
+            ),
+            node,
+        )
+
+    def _iterate(self, iterable):
+        return ast.copy_location(
+            ast.Call(
+                func=ast.Name(id=GUARDED_ITERATE, ctx=ast.Load()),
+                args=[iterable],
+                keywords=[],
+            ),
+            iterable,
+        )
+
+    def visit_For(self, node):
+        node = self.generic_visit(node)
+        node.iter = self._iterate(node.iter)
+        return node
+
+    def visit_comprehension(self, node):
+        node = self.generic_visit(node)
+        node.iter = self._iterate(node.iter)
+        return node
 
     def visit_Call(self, node):
         function = node.func
