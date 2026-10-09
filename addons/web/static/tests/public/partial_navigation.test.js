@@ -100,6 +100,27 @@ test("a link under data-no-partial-navigation navigates as usual, even in scope"
     expect.verifySteps([]);
 });
 
+test("a Bootstrap toggle or an in-page anchor in scope is left to the browser", async () => {
+    await startInteraction(
+        PartialNavigation,
+        region("").replace(
+            "</nav>",
+            '<div class="dropdown"><a class="o_toggle" href="/my/orders" data-bs-toggle="dropdown">Sort</a><div class="dropdown-menu"></div></div><a class="o_anchor" href="#top">Top</a></nav>',
+        ),
+    );
+    serve(() => page(""));
+    // keeps the anchor from moving the test runner's own URL
+    const preventDefault = (ev) => ev.preventDefault();
+    document.addEventListener("click", preventDefault);
+    after(() => document.removeEventListener("click", preventDefault));
+
+    await click(".o_toggle");
+    await click(".o_anchor");
+    await animationFrame();
+
+    expect.verifySteps([]);
+});
+
 test("an answer without the region falls back to a full navigation", async () => {
     await startInteraction(PartialNavigation, region("<tr><td>SO1</td></tr>"));
     serve(() => "<html><body><form class='o_login'></form></body></html>");

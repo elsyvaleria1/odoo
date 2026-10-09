@@ -120,8 +120,15 @@ export class PartialNavigation extends Interaction {
         ) {
             return;
         }
-        const url = new URL(link.getAttribute("href"), browser.location.href);
-        if (url.origin !== browser.location.origin) {
+        const href = link.getAttribute("href");
+        const url = new URL(href, browser.location.href);
+        const current = new URL(browser.location.href);
+        if (
+            url.origin !== current.origin ||
+            (href.includes("#") &&
+                url.pathname === current.pathname &&
+                url.search === current.search)
+        ) {
             return;
         }
         ev.preventDefault();
