@@ -1310,10 +1310,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "על ידי הגדרת תיקיה, פעילויות ההעלאה ייצרו מסמך"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr ""
 
@@ -1336,10 +1334,8 @@ msgid "Can move it"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr ""
 
@@ -3255,10 +3251,8 @@ msgid "No linked record"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "אף אחד באינטרנט לא יכול לגשת"
 
@@ -3409,10 +3403,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "רק אנשים עם גישה יכולים לפתוח את הלינק"
 

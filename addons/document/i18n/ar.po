@@ -1852,10 +1852,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "بتحديدك لمجلد، سوف تقوم الأنشطة المرفوعة بإنشاء مستند"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "يمكن إضافة ملفات وتعديلها وحذفها داخل هذا المجلد."
 
@@ -1880,10 +1878,8 @@ msgid "Can move it"
 msgstr "يمكن نقلها"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr "يمكن فقط عرض المحتويات. لا يمكن إضافة أو تعديل أو حذف العناصر."
 
@@ -3810,10 +3806,8 @@ msgid "No linked record"
 msgstr "لا يوجد سجل مرتبط"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "لا يمكن لأي شخص على الإنترنت الوصول"
 
@@ -3964,10 +3958,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "يمكن فقط للأشخاص الذين يملكون صلاحية الوصول الفتح بالرابط"
 

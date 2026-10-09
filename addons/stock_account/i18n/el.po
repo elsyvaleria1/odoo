@@ -405,10 +405,8 @@ msgid "Display Serial & Lot Number on Invoices"
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Ending Stock"
 msgstr ""
 
@@ -450,8 +448,8 @@ msgid "For Perpetual Continental Only"
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/buttons_bar/buttons_bar.xml:0
+#. odoo-python
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Generate Entry"
 msgstr ""
 
@@ -498,10 +496,8 @@ msgid "If checked, the valuation will be specific by Lot/Serial number."
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Initial Balance"
 msgstr "Αρχικό Ισοζύγιο"
 
@@ -522,11 +518,8 @@ msgid "Inventory Locations"
 msgstr "Τοποθεσίες Αποθέματος"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Inventory Loss"
 msgstr "Απώλεια Αποθέματος"
 

@@ -188,6 +188,8 @@ msgstr "En progreso"
 #. odoo-javascript
 #: code:addons/automation/static/src/workflow_graph.js:0
 #: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__paused
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_form
+#: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
 msgid "Paused"
 msgstr "En pausa"
 

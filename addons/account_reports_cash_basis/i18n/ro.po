@@ -33,9 +33,11 @@ msgstr "Bază de acumulare"
 
 #. module: account_reports_cash_basis
 #. odoo-javascript
+#. odoo-python
 #: code:addons/account_reports_cash_basis/static/src/components/cash_basis_report/filters.js:0
 #: model:ir.model.fields,field_description:account_reports_cash_basis.field_account_report__filter_cash_basis
 #: model_terms:ir.ui.view,arch_db:account_reports_cash_basis.pdf_export_filter_extra_options_template
+#: code:addons/account_reports_cash_basis/models/account_report.py:0
 msgid "Cash Basis"
 msgstr "Bază de numerar"
 

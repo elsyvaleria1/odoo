@@ -1856,10 +1856,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "При указании папки действия по выгрузке сгенерируют документ"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "Можно добавлять, изменять и удалять файлы в этой папке."
 
@@ -1884,10 +1882,8 @@ msgid "Can move it"
 msgstr "Можно переместить"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr ""
 "Можно только просматривать содержимое. Нельзя добавлять, изменять или "
@@ -3828,10 +3824,8 @@ msgid "No linked record"
 msgstr "Нет связанной записи"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "Никто в интернете не имеет доступа"
 
@@ -3990,10 +3984,8 @@ msgstr ""
 "одно значение"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "Только пользователи с доступом смогут открыть ссылку"
 

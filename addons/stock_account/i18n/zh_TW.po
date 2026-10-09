@@ -406,10 +406,8 @@ msgid "Display Serial & Lot Number on Invoices"
 msgstr "在發票上顯示序號和批號"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Ending Stock"
 msgstr ""
 
@@ -451,8 +449,8 @@ msgid "For Perpetual Continental Only"
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/buttons_bar/buttons_bar.xml:0
+#. odoo-python
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Generate Entry"
 msgstr ""
 
@@ -499,10 +497,8 @@ msgid "If checked, the valuation will be specific by Lot/Serial number."
 msgstr "若勾選，估值將按個別批次/序號獨立進行。"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Initial Balance"
 msgstr "初始餘額"
 
@@ -523,11 +519,8 @@ msgid "Inventory Locations"
 msgstr "盤點位置"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Inventory Loss"
 msgstr "盤點損失"
 

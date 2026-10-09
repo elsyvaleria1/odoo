@@ -1660,10 +1660,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "通過定義資料夾，上載活動將生成一個文件"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "可新增、修改及刪除此資料夾內的檔案。"
 
@@ -1686,10 +1684,8 @@ msgid "Can move it"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr "只可檢視內容，不可新增、修改或刪除項目。"
 
@@ -3603,10 +3599,8 @@ msgid "No linked record"
 msgstr "沒有已連結記錄"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "互聯網上任何人都不可存取"
 
@@ -3757,10 +3751,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "只限擁有存取權限的人，才可使用該連結開啟"
 

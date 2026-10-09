@@ -1330,10 +1330,8 @@ msgstr ""
 "genereren"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "Kan bestanden in deze map toevoegen, wijzigen en verwijderen."
 
@@ -1358,10 +1356,8 @@ msgid "Can move it"
 msgstr "Kan het verplaatsen"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr ""
 "Kan alleen de inhoud bekijken. Kan geen items toevoegen, wijzigen of "
@@ -3303,10 +3299,8 @@ msgid "No linked record"
 msgstr "Geen gekoppeld record"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "Niemand op het internet heeft toegang"
 
@@ -3463,10 +3457,8 @@ msgstr ""
 "`user_folder_id`"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "Alleen mensen met toegang kunnen de link openen"
 

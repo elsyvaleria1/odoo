@@ -6123,15 +6123,19 @@ msgstr "Camada superior de um painel de madeira."
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Components"
 msgstr ""
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Operations"
 msgstr ""
 
@@ -6317,9 +6321,11 @@ msgstr "Unidade"
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Unit Cost"
 msgstr "Custo unitário"
 

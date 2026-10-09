@@ -1337,10 +1337,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "Bir klasör tanımlayarak, yükleme etkinlikleri bir belge oluşturur"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "Bu klasördeki dosyaları ekleyebilir, değiştirebilir ve silebilir."
 
@@ -1363,10 +1361,8 @@ msgid "Can move it"
 msgstr "Taşıyabilir"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr ""
 "Yalnızca içerikleri görüntüleyebilir. Öğe ekleyemez, değiştiremez veya "
@@ -3298,10 +3294,8 @@ msgid "No linked record"
 msgstr "Bağlantılı kayıt yok"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "İnternetten hiç kimse erişemez"
 
@@ -3452,10 +3446,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "Yalnızca erişim izni olan kişiler bağlantı ile açabilir"
 

@@ -1832,10 +1832,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "폴더를 정의하면 업로드 활동이 문서를 생성합니다"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "이 폴더에서 파일을 추가, 수정 및 삭제할 수 있습니다."
 
@@ -1858,10 +1856,8 @@ msgid "Can move it"
 msgstr "이동 가능 여부"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr "내용 보기만 가능합니다. 항목을 추가, 수정 또는 삭제할 수 없습니다."
 
@@ -3778,10 +3774,8 @@ msgid "No linked record"
 msgstr "연결된 레코드 없음"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "인터넷에서 아무도 액세스할 수 없음"
 
@@ -3932,10 +3926,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr ""
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "액세스 권한이 있는 사용자만 링크를 통해 문서를 열 수 있습니다."
 

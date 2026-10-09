@@ -771,6 +771,7 @@ msgstr "ECO"
 
 #. module: mrp_plm
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp_plm/static/src/components/bom_overview_line/mrp_bom_overview_line.js:0
 #: code:addons/mrp_plm/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_type__nb_ecos
@@ -783,6 +784,7 @@ msgstr "ECO"
 #: model_terms:ir.ui.view,arch_db:mrp_plm.product_product_view_form_inherit_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.product_template_view_form_inherit_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.report_mrp_bom_inherit_mrp_plm
+#: code:addons/mrp_plm/reports/mrp_bom_overview_handler.py:0
 msgid "ECOs"
 msgstr "ECO"
 

@@ -1330,10 +1330,8 @@ msgid "By defining a folder, the upload activities will generate a document"
 msgstr "Definováním složky budou nahrávací aktivity generovat dokument"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can add, modify, and delete files within this folder."
 msgstr "Může přidávat, upravovat a mazat soubory v této složce."
 
@@ -1358,10 +1356,8 @@ msgid "Can move it"
 msgstr "Může přesunout"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Can only view contents. Cannot add, modify, or delete items."
 msgstr ""
 "Může pouze prohlížet obsah. Nemůže přidávat, upravovat ani mazat položky."
@@ -3291,10 +3287,8 @@ msgid "No linked record"
 msgstr "Žádný propojený záznam"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "No one on the internet can access"
 msgstr "Nikdo na internetu nemá přístup"
 
@@ -3447,10 +3441,8 @@ msgid "Only one value can be searched for children of `user_folder_id`"
 msgstr "Lze vyhledat pouze jednu hodnotu pro podsložku `user_folder_id`"
 
 #. module: document
-#. odoo-javascript
 #. odoo-python
-#: code:addons/document/static/src/owl/components/access_update_confirmation_dialog/access_update_confirmation_dialog.xml:0
-#: code:addons/document/wizard/document_sharing.py:0
+#: code:addons/document/wizards/wizard_document_document_share_hints.py:0
 msgid "Only people with access can open with the link"
 msgstr "Pouze osoby s přístupem mohou otevřít odkaz"
 

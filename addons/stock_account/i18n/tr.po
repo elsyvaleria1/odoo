@@ -427,10 +427,8 @@ msgid "Display Serial & Lot Number on Invoices"
 msgstr "Faturalarda Seri Numara & Lotları Göster"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Ending Stock"
 msgstr "Bitiş Stoku"
 
@@ -474,8 +472,8 @@ msgid "For Perpetual Continental Only"
 msgstr "Sadece Daimi Kıta için"
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/buttons_bar/buttons_bar.xml:0
+#. odoo-python
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Generate Entry"
 msgstr "Giriş Oluştur"
 
@@ -524,10 +522,8 @@ msgid "If checked, the valuation will be specific by Lot/Serial number."
 msgstr "İşaretlenirse, değerleme Lot/Seri numarasına göre spesifik olacaktır."
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Initial Balance"
 msgstr "Başlangıç Bakiyesi"
 
@@ -548,11 +544,8 @@ msgid "Inventory Locations"
 msgstr "Stok Konumları"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Inventory Loss"
 msgstr "Envanter Zararı"
 

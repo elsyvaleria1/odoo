@@ -413,10 +413,8 @@ msgid "Display Serial & Lot Number on Invoices"
 msgstr "청구서에 일련번호 및 로트 번호 표시"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Ending Stock"
 msgstr "기말 재고"
 
@@ -458,8 +456,8 @@ msgid "For Perpetual Continental Only"
 msgstr "대륙식 영구 재고법에만 적용"
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/buttons_bar/buttons_bar.xml:0
+#. odoo-python
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Generate Entry"
 msgstr "항목 생성"
 
@@ -506,10 +504,8 @@ msgid "If checked, the valuation will be specific by Lot/Serial number."
 msgstr "이 옵션을 선택하면 평가가 로트/일련번호에만 적용됩니다."
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Initial Balance"
 msgstr "기초 잔고"
 
@@ -530,11 +526,8 @@ msgid "Inventory Locations"
 msgstr "재고 공간"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Inventory Loss"
 msgstr "재고 손실"
 

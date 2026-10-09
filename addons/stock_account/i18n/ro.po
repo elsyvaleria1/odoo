@@ -422,10 +422,8 @@ msgid "Display Serial & Lot Number on Invoices"
 msgstr "Afișare serie și număr lot pe facturi"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Ending Stock"
 msgstr "Stoc final"
 
@@ -469,8 +467,8 @@ msgid "For Perpetual Continental Only"
 msgstr "Doar pentru metoda continentală perpetuă"
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/buttons_bar/buttons_bar.xml:0
+#. odoo-python
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Generate Entry"
 msgstr "Generează înregistrare"
 
@@ -519,10 +517,8 @@ msgid "If checked, the valuation will be specific by Lot/Serial number."
 msgstr "Dacă este bifat, evaluarea va fi specifică pe lot/număr de serie."
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Initial Balance"
 msgstr "Soldul inițial"
 
@@ -543,11 +539,8 @@ msgid "Inventory Locations"
 msgstr "Locații inventar"
 
 #. module: stock_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Inventory Loss"
 msgstr "Pierdere la inventar"
 

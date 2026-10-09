@@ -6279,15 +6279,19 @@ msgstr "Deckschicht einer Holzplatte."
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Components"
 msgstr "Gesamtkosten der Komponenten"
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Operations"
 msgstr "Gesamtbetriebskosten"
 
@@ -6474,9 +6478,11 @@ msgstr "Einheit"
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Unit Cost"
 msgstr "Stückpreis"
 

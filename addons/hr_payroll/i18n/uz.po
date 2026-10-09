@@ -4475,6 +4475,7 @@ msgstr "To‘lov davri:"
 
 #. module: hr_payroll
 #. odoo-javascript
+#. odoo-python
 #: code:addons/hr_payroll/static/src/views/payslip_list/hr_payslip_list_controller.xml:0
 #: model:ir.model,name:hr_payroll.model_hr_payslip_run
 #: model:ir.model.fields,field_description:hr_payroll.field_hr_payslip__payslip_run_id
@@ -4482,6 +4483,7 @@ msgstr "To‘lov davri:"
 #: model_terms:ir.ui.view,arch_db:hr_payroll.view_hr_payslip_filter
 #: model_terms:ir.ui.view,arch_db:hr_payroll.view_hr_payslip_form
 #, fuzzy
+#: code:addons/hr_payroll/models/hr_payslip.py:0
 msgid "Pay Run"
 msgstr "Ish haqi davri"
 

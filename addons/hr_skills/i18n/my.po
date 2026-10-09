@@ -1442,6 +1442,7 @@ msgstr "စနစ်တကျ စီစဉ်နိုင်စွမ်း"
 #. odoo-python
 #: code:addons/hr_skills/report/hr_employee_cv_report.py:0
 #: code:addons/hr_skills/static/src/views/skills_list_renderer.js:0
+#: model_terms:ir.ui.view,arch_db:hr_skills.report_employee_cv_main_panel
 msgid "Other"
 msgstr "အခြား"
 

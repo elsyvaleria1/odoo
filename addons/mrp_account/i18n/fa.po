@@ -189,11 +189,8 @@ msgstr ""
 "برای محصولات تولیدی محاسبه کنید."
 
 #. module: mrp_account
-#. odoo-javascript
 #. odoo-python
-#: code:addons/mrp_account/report/stock_valuation_report.py:0
-#: code:addons/mrp_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/mrp_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/mrp_account/reports/stock_valuation_report.py:0
 msgid "Cost of Production"
 msgstr "هزینه تولید"
 

@@ -6245,15 +6245,19 @@ msgstr "Strato superiore di un pannello di legno."
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Components"
 msgstr "Costo totale dei componenti"
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Total Cost of Operations"
 msgstr "Costo totale delle operazioni"
 
@@ -6439,9 +6443,11 @@ msgstr "Unità"
 
 #. module: mrp
 #. odoo-javascript
+#. odoo-python
 #: code:addons/mrp/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
 #: code:addons/mrp/static/src/components/mo_overview/mrp_mo_overview.xml:0
 #: model_terms:ir.ui.view,arch_db:mrp.mo_overview_content
+#: code:addons/mrp/reports/mrp_mo_overview_handler.py:0
 msgid "Unit Cost"
 msgstr "Costo unitario"
 
