@@ -84,6 +84,22 @@ test("a link outside the scopes navigates as usual", async () => {
     expect.verifySteps([]);
 });
 
+test("a link under data-no-partial-navigation navigates as usual, even in scope", async () => {
+    await startInteraction(
+        PartialNavigation,
+        region("").replace(
+            "</form>",
+            '<div data-no-partial-navigation=""><a class="o_hit" href="#hit">SO7</a></div></form>',
+        ),
+    );
+    serve(() => page(""));
+
+    await click(".o_hit");
+    await animationFrame();
+
+    expect.verifySteps([]);
+});
+
 test("an answer without the region falls back to a full navigation", async () => {
     await startInteraction(PartialNavigation, region("<tr><td>SO1</td></tr>"));
     serve(() => "<html><body><form class='o_login'></form></body></html>");

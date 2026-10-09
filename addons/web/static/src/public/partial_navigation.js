@@ -65,8 +65,10 @@ export function requestNavigation(
  * the target URL is fetched as a whole page, the region carrying the same
  * `data-fragment` key is morphed in from it, and the URL goes into the
  * history. Only links and forms inside the scopes listed by
- * `data-partial-navigation` (a CSS selector) are taken; anything else, and
- * any answer without the region, navigates as usual. An interaction that
+ * `data-partial-navigation` (a CSS selector) are taken, except under a
+ * `data-no-partial-navigation` element (htmx's `hx-boost="false"`): an
+ * autocomplete menu inside a scoped search form links to other pages.
+ * Anything else, and any answer without the region, navigates as usual. An interaction that
  * builds its URL itself dispatches a cancelable, bubbling `o-navigate` event
  * with `detail.url`, and navigates on its own when nobody took it. After each
  * in-place navigation, `window` receives an `o-partial-navigation` event
@@ -247,7 +249,7 @@ export class PartialNavigation extends Interaction {
 
     /** @param {Element} el */
     _isInScope(el) {
-        if (!this.scopes) {
+        if (!this.scopes || el.closest("[data-no-partial-navigation]")) {
             return false;
         }
         const scope = el.closest(this.scopes);
