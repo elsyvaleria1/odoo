@@ -355,7 +355,9 @@ class Websocket:
         self._cookies = cookies
         self._db = session.db
         self._request_db = request_db if request_db is not None else session.db
-        self._httprequest = httprequest
+        self._httprequest = (
+            HandshakeFacts.of(httprequest, cookies) if httprequest is not None else None
+        )
         self._outdated = outdated
         self._gauge = gauge
         self.__socket = sock
@@ -1190,6 +1192,38 @@ class TimeoutManager:
         if pinging:
             deadlines += (self._keep_alive_expiration_time, self._next_ping_time)
         return min(deadlines, default=float("inf"))
+
+
+class HandshakeUserAgent:
+    __slots__ = ("browser", "platform", "string")
+
+    def __init__(self, string, platform, browser) -> None:
+        self.string = string
+        self.platform = platform
+        self.browser = browser
+
+
+class HandshakeFacts:
+    """What a connection keeps of its handshake request, read while the request
+    is alive: serving a message reads the cookies, and the session's device
+    trace the address and the user agent. A handler wanting another field of
+    the handshake adds it here."""
+
+    __slots__ = ("cookies", "remote_addr", "user_agent")
+
+    def __init__(self, cookies, remote_addr, user_agent) -> None:
+        self.cookies = cookies
+        self.remote_addr = remote_addr
+        self.user_agent = user_agent
+
+    @classmethod
+    def of(cls, httprequest, cookies=None) -> HandshakeFacts:
+        agent = httprequest.user_agent
+        return cls(
+            cookies if cookies is not None else ImmutableMultiDict(httprequest.cookies),
+            httprequest.remote_addr,
+            HandshakeUserAgent(agent.string, agent.platform, agent.browser),
+        )
 
 
 class SessionView:

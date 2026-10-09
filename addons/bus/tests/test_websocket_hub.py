@@ -333,6 +333,23 @@ class TestWebsocketHub(BaseCase):
         self.assertEqual((ws._session.sid, ws._session.uid), ("sid1", 7))
         self.assertEqual(ws._session.context, {"lang": "en_US"})
 
+    def test_a_connection_keeps_its_handshake_facts_not_the_request(self):
+        httprequest = MagicMock(remote_addr="203.0.113.7", cookies={"tz": "UTC"})
+        httprequest.user_agent.string = "Mozilla/5.0 (X11; Linux x86_64)"
+        httprequest.user_agent.platform = "linux"
+        httprequest.user_agent.browser = "firefox"
+        ws, _peer, _gauge = self._connect(httprequest=httprequest)
+        facts = ws._httprequest
+        self.assertIsInstance(facts, websocket_module.HandshakeFacts)
+        self.assertFalse(hasattr(facts, "__dict__"))
+        request = websocket_module.WebsocketRequest("db", facts, ws)
+        self.assertEqual(request.httprequest.remote_addr, "203.0.113.7")
+        self.assertEqual(
+            (facts.user_agent.platform, facts.user_agent.browser), ("linux", "firefox")
+        )
+        with self.assertRaises(AttributeError):
+            facts.headers
+
     def test_dispatch_requests_coalesce_behind_a_running_job(self):
         self.release.clear()
         ws, peer, _gauge = self._connect()
