@@ -26,6 +26,22 @@ class TestSaleTour(AccountTestInvoicingCommon, HttpCase):
         )
         self.start_tour("/odoo", "sale_tour", login="admin")
 
+    def test_portal_list_sorts_in_place(self):
+        admin_partner = self.env.ref("base.user_admin").partner_id
+        for name in ("PN Alpha", "PN Zulu"):
+            self.env["sale.order"].sudo().create(
+                {
+                    "name": name,
+                    "company_id": self.env.ref("base.main_company").id,
+                    "partner_id": admin_partner.id,
+                    "sent": True,
+                    "line_ids": [
+                        Command.create({"product_id": self.product.id}),
+                    ],
+                }
+            )
+        self.start_tour("/my/quotes", "portal_partial_navigation", login="admin")
+
     def test_04_portal_sale_signature_without_name_tour(self):
         self.agrolait.name = ""
 

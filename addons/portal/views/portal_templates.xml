@@ -281,9 +281,13 @@
                             </div>
                         </div>
                     </t>
-                    <t t-else="">
+                    <div
+                        t-else=""
+                        class="d-contents"
+                        data-fragment="portal.portal_layout"
+                        data-partial-navigation="#o_portal_navbar_content, .o_portal_pager">
                         <t t-out="0" />
-                    </t>
+                    </div>
                 </div>
             </div>
         </t>

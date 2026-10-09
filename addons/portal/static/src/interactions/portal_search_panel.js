@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
@@ -29,7 +30,7 @@ export class PortalSearchPanel extends Interaction {
     }
 
     search() {
-        const url = new URL(window.location);
+        const url = new URL(browser.location.href);
         url.searchParams.set(
             "search_in",
             this.el
@@ -42,7 +43,14 @@ export class PortalSearchPanel extends Interaction {
             this.el.querySelector("input[name=search]")?.value || "",
         );
         url.pathname = url.pathname.replace(/\/page\/\d+\/?$/, "");
-        window.location.href = url.toString();
+        const navigate = new CustomEvent("o-navigate", {
+            bubbles: true,
+            cancelable: true,
+            detail: { url: url.toString() },
+        });
+        if (this.el.dispatchEvent(navigate)) {
+            browser.location.assign(url.toString());
+        }
     }
 
     onDropdownItemClick(ev, currentTargetEl) {

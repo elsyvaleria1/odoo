@@ -85,7 +85,12 @@ export class Interaction {
         this.__colibri__.updateContent();
     }
 
-    waitFor(promise = Promise.resolve()) {
+    /**
+     * @template T
+     * @param {Promise<T>} [promise]
+     * @returns {Promise<T>}
+     */
+    waitFor(promise = /** @type {Promise<any>} */ (Promise.resolve())) {
         const prom = new Promise((resolve, reject) => {
             const updateAfterCaller = () => this._settleContent();
             promise.then(
