@@ -719,6 +719,8 @@ class TestCreateEvents(TestCommon):
             {
                 "id": "portalUserEventID",
                 "iCalUId": "portalUserEventICalUId",
+                # the portal user's event, as its attendee's calendar holds it
+                "isOrganizer": False,
                 "organizer": {
                     "emailAddress": {
                         "address": portal_user.login,

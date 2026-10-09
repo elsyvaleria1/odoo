@@ -472,6 +472,10 @@ class CalendarEvent(models.Model):
                 attendee_microsoft_status = microsoft_event.responseStatus.get(
                     "response", "none"
                 )
+            elif microsoft_event.isOrganizer is False and email in attendees_by_emails:
+                # an attendee's copy says none for the others' answers, which
+                # Outlook tracks on the organizer's item alone: Odoo's stand
+                continue
             else:
                 attendee_microsoft_status = attendee_info.get("status").get("response")
             state = ATTENDEE_CONVERTER_M2O.get(attendee_microsoft_status, "needsAction")

@@ -80,15 +80,31 @@ class CalendarSyncAccount(models.Model):
     def create(self, vals_list):
         # the transaction's time, which the records it creates carry
         now = self.env.cr.now()
+        floors = {}
         for vals in vals_list:
-            provider = self._calendar_sync_providers().get(vals.get("provider"))
+            code = vals.get("provider")
+            provider = self._calendar_sync_providers().get(code)
             if (
                 provider
                 and "insert_since" not in vals
                 and not provider.capabilities.insert_history
             ):
-                vals["insert_since"] = now
+                if code not in floors:
+                    floors[code] = self._first_floor(code) or now
+                vals["insert_since"] = floors[code]
         return super().create(vals_list)
+
+    @api.model
+    def _first_floor(self, code: str):
+        """The provider's first synchronization in this database, which a new
+        account sends the events created since: the earliest floor its
+        accounts hold (Microsoft kept it as one database-wide date, which the
+        upgrade carried onto them); None before any account."""
+        [(floor,)] = self._as_engine()._read_group(
+            [("provider", "=", code), ("insert_since", "!=", False)],
+            aggregates=["insert_since:min"],
+        )
+        return floor or None
 
     @api.model
     def _calendar_sync_providers(self) -> dict:

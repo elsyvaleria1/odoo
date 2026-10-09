@@ -26,6 +26,14 @@ class FakeCalendarServer:
         self.refusals: dict[str, int] = {}
         # inserts that land and then lose their answer
         self.lost_answers = 0
+        # when the provider says its changes happened: far ahead by default,
+        # so they read as newer than anything Odoo wrote; a scenario sets it
+        # to put a change before or after one of Odoo's
+        self.clock = datetime(2100, 1, 1)
+
+    def stamp(self, version: int) -> datetime:
+        """The time of the provider's `version`th change, naive UTC."""
+        return self.clock + timedelta(seconds=version)
 
     @staticmethod
     def connection(user) -> str:
@@ -503,3 +511,55 @@ class CalendarSyncContract:
         self.sync(self.organizer)
         self.assertEqual(event.name, "V2")
         self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "V2")
+
+    def _owe_an_edit_while_the_organizer_renames(self, provider_change_at):
+        """Odoo owes the edit "Odoo's" while the organizer renames the item
+        in the provider "Theirs", at `provider_change_at` relative to Odoo's
+        edit; then the synchronization resumes."""
+        event = self.event(name="Before")
+        self.push()
+        remote_id = self.link(event, self.organizer).remote_id
+        self.env["calendar.sync.account"]._set_paused(self.code, True)
+        event.with_user(self.organizer).name = "Odoo's"
+        self.push()
+        self.env.flush_all()
+        self.server.clock = event.write_date + provider_change_at
+        self.server.rename(self.organizer, remote_id, "Theirs")
+        self.env["calendar.sync.account"]._set_paused(self.code, False)
+        self.sync(self.organizer)
+        return event, remote_id
+
+    def test_a_provider_change_older_than_an_edit_odoo_owes_loses_to_it(self):
+        event, remote_id = self._owe_an_edit_while_the_organizer_renames(
+            timedelta(hours=-1)
+        )
+        self.assertEqual(event.name, "Odoo's")
+        self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "Odoo's")
+
+    def test_a_provider_change_newer_than_an_edit_odoo_owes_wins(self):
+        event, remote_id = self._owe_an_edit_while_the_organizer_renames(
+            timedelta(hours=1)
+        )
+        self.assertEqual(event.name, "Theirs")
+        self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "Theirs")
+
+    def test_an_attendees_read_keeps_the_other_attendees_answers(self):
+        """An attendee's copy may hide the others' answers (Outlook's does):
+        reading it must not reset them."""
+        event = self.event(
+            partner_ids=[
+                (6, 0, (self.organizer | self.attendee | self.outsider).partner_id.ids)
+            ]
+        )
+        self.push()
+        event.attendee_ids.filtered(
+            lambda attendee: attendee.partner_id == self.outsider.partner_id
+        ).with_user(self.outsider).do_accept()
+        self.push()
+        self.sync(self.attendee)
+        self.assertEqual(
+            event.attendee_ids.filtered(
+                lambda attendee: attendee.partner_id == self.outsider.partner_id
+            ).state,
+            "accepted",
+        )

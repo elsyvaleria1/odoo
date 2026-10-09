@@ -26,7 +26,7 @@ def distinct_inserts(prefix):
 
 
 def mock_get_connection(user, code=None):
-    return f"TOKEN_FOR_USER_{user.id}"
+    return code in (None, "microsoft") and f"TOKEN_FOR_USER_{user.id}"
 
 
 def authorize_microsoft_calendar(
@@ -292,10 +292,9 @@ class TestCommon(HttpCase):
             },
         }
 
-        self.simple_event_from_outlook_attendee = (
-            self.simple_event_from_outlook_organizer
+        self.simple_event_from_outlook_attendee = dict(
+            self.simple_event_from_outlook_organizer, isOrganizer=False
         )
-        self.simple_event_from_outlook_attendee.update(isOrganizer=False)
 
         # -----------------------------------------------------------------------------------------
         # Expected values for Outlook events converted to Odoo events

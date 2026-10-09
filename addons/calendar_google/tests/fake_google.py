@@ -3,7 +3,6 @@ every invited calendar shows."""
 
 import itertools
 import re
-from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import requests
@@ -136,9 +135,7 @@ class FakeGoogle(FakeCalendarServer):
         event = self.events[remote_id]
         version = next(self._versions)
         event["etag"] = f'"{version}"'
-        event["updated"] = (
-            datetime(2100, 1, 1) + timedelta(seconds=version)
-        ).isoformat() + "Z"
+        event["updated"] = self.stamp(version).isoformat() + "Z"
         for user_id in self.env["res.users"].search([]).ids:
             self.changed.setdefault(user_id, set()).add(remote_id)
 

@@ -51,3 +51,18 @@ class TestUpgradeToEngineFloors(TransactionCase):
         self.assertEqual(self.accounts["reset"].insert_since, datetime(2026, 6, 1))
         self.assertFalse(self.accounts["synced"].insert_since)
         self.assertTrue(self.accounts["never"].insert_since)
+
+    def test_a_new_account_sends_what_was_created_since_the_first_synchronization(self):
+        """Microsoft's floor was one date for the database, its first
+        synchronization: a user who connects later still gets the events
+        created since."""
+        self._migrate("2025-01-01 00:00:00")
+        user = (
+            self.env["res.users"]
+            .with_context(no_reset_password=True)
+            .create({"name": "late", "login": "upgrade_floor_late"})
+        )
+        account = self.env["calendar.sync.account"].create(
+            {"user_id": user.id, "provider": "microsoft"}
+        )
+        self.assertEqual(account.insert_since, datetime(2025, 1, 1))

@@ -4,7 +4,7 @@ iCalendar UID."""
 
 import itertools
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import requests
@@ -227,9 +227,9 @@ class FakeOutlook(FakeCalendarServer):
         version = next(self._versions)
         meeting = self.meetings[uid]
         meeting["changeKey"] = f"ck{version}"
-        meeting["lastModifiedDateTime"] = (
-            datetime(2100, 1, 1) + timedelta(seconds=version)
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        meeting["lastModifiedDateTime"] = self.stamp(version).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         for user_id, calendar in self.calendars.items():
             for copy_id, copy_uid in calendar.items():
                 if copy_uid == uid:
@@ -259,7 +259,9 @@ class FakeOutlook(FakeCalendarServer):
             "attendees": [
                 {
                     "type": "required",
-                    "status": {"response": response},
+                    # Graph tracks the answers on the organizer's item: an
+                    # attendee's copy says none for everyone
+                    "status": {"response": response if is_organizer else "none"},
                     "emailAddress": {"address": email, "name": email},
                 }
                 for email, response in meeting["attendees"].items()
