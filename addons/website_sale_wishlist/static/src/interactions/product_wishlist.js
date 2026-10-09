@@ -1,74 +1,55 @@
 /** @odoo-module native */
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
-import { redirect } from "@web/core/utils/urls";
 import { Interaction } from "@web/public/interaction";
 import wishlistUtils from "@website_sale_wishlist/js/website_sale_wishlist_utils";
 
+/**
+ * The wishlist page. Removing an item is its own post form, answered by the
+ * page, swapped in place; this keeps the wishlist the tab remembers and the
+ * header's count in step with what the server rendered, and puts a product
+ * in the cart before removing it.
+ */
 export class ProductWishlist extends Interaction {
     static selector = ".wishlist-section";
     dynamicContent = {
-        ".o_wish_rm": { "t-on-click": this.removeProduct },
         ".o_wish_add": { "t-on-click": this.addToCart },
     };
 
-    /**
-     * @param {Event} ev
-     */
-    async removeProduct(ev) {
-        await this._removeProduct(ev.currentTarget);
+    start() {
+        wishlistUtils.setWishlistProductIds(
+            JSON.parse(this.el.dataset.wishlistProductIds || "[]"),
+        );
+        wishlistUtils.updateWishlistNavBar();
     }
 
     /**
      * @param {Event} ev
      */
     async addToCart(ev) {
-        const button = ev.currentTarget;
-        const productId = parseInt(button.dataset.productProductId);
-        const productTemplateId = parseInt(button.dataset.productTemplateId);
-        const isCombo = button.dataset.productType === "combo";
-        const ptavs = JSON.parse(button.dataset.ptavIds || "[]");
-        const showQuantity = Boolean(button.dataset.showQuantity);
-
+        const button = /** @type {HTMLElement} */ (ev.currentTarget);
         const quantity = await this.waitFor(
             this.services["cart"].add(
                 {
-                    productTemplateId: productTemplateId,
-                    productId: productId,
-                    isCombo: isCombo,
-                    ptavs: ptavs,
+                    productTemplateId: parseInt(button.dataset.productTemplateId),
+                    productId: parseInt(button.dataset.productProductId),
+                    isCombo: button.dataset.productType === "combo",
+                    ptavs: JSON.parse(button.dataset.ptavIds || "[]"),
                 },
                 {
                     isConfigured: false,
                     redirectToCart: false,
-                    showQuantity: showQuantity,
+                    showQuantity: Boolean(button.dataset.showQuantity),
                 },
             ),
         );
-
         if (quantity > 0) {
-            await this._removeProduct(button, "/shop/cart");
+            // the item leaves the wishlist; the last one leads to the cart
+            const form = /** @type {HTMLFormElement} */ (
+                button.closest("article").querySelector("form[action*='/remove/']")
+            );
+            form.elements.namedItem("empty_redirect").value = "/shop/cart";
+            form.requestSubmit();
         }
-    }
-
-    /**
-     * @param {Element} button
-     * @param {String} emptyRedirectUrl
-     */
-    async _removeProduct(button, emptyRedirectUrl) {
-        const article = button.closest("article");
-        const wish = article.dataset.wishId;
-        const productId = parseInt(article.dataset.productId);
-
-        await this.waitFor(rpc(`/shop/wishlist/remove/${wish}`));
-        article.style.display = "none";
-
-        wishlistUtils.removeWishlistProduct(productId);
-        wishlistUtils.updateWishlistView();
-        if (!wishlistUtils.getWishlistProductIds().length && emptyRedirectUrl) {
-            redirect(emptyRedirectUrl);
-        }
-        wishlistUtils.updateWishlistNavBar();
     }
 }
 

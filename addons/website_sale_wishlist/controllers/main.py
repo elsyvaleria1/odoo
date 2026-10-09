@@ -63,11 +63,12 @@ class WebsiteSaleWishlist(Controller):
 
     @route(
         "/shop/wishlist/remove/<int:wish_id>",
-        type="jsonrpc",
+        type="http",
         auth="public",
+        methods=["POST"],
         website=True,
     )
-    def remove_from_wishlist(self, wish_id, **kw):
+    def remove_from_wishlist(self, wish_id, empty_redirect=None, **kw):
         wish = request.env["product.wishlist"].browse(wish_id)
         _debug.lifecycle(
             "wishlist_remove", wish=wish, anonymous=request.env.user._is_public()
@@ -80,7 +81,9 @@ class WebsiteSaleWishlist(Controller):
                 wish.sudo().unlink()
         else:
             wish.unlink()
-        return True
+        if empty_redirect and not request.env["product.wishlist"].current():
+            return request.redirect(empty_redirect)
+        return request.redirect("/shop/wishlist")
 
     @route(
         "/shop/wishlist/get_product_ids",

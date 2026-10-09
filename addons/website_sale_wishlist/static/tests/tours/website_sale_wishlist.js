@@ -109,7 +109,7 @@ registry.category("web_tour.tours").add("shop_wishlist", {
         },
         {
             content: "add last item to cart",
-            trigger: ".o_wish_add:eq(1)",
+            trigger: ".o_wishlist_item:only-of-type .o_wish_add",
             run: "click",
         },
         {

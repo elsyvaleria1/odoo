@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from odoo import http
 from odoo.fields import Command
 from odoo.tests import HttpCase, new_test_user, tagged
 
@@ -121,3 +122,49 @@ class TestWishlistPublicUsers(HttpCase):
             response = self.url_open("/no-such-page-for-the-wishlist-header")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(searches), 1, searches)
+
+
+@tagged("-at_install", "post_install")
+class TestWishlistRemove(HttpCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = new_test_user(cls.env, "unwisher", groups="base.group_user")
+        cls.products = cls.env["product.product"].create(
+            [
+                {"name": name, "is_published": True, "sale_ok": True}
+                for name in ("Wished first", "Wished second")
+            ]
+        )
+        website = cls.env["website"].get_current_website()
+        cls.wishes = cls.env["product.wishlist"].create(
+            [
+                {
+                    "partner_id": cls.user.partner_id.id,
+                    "product_id": product.id,
+                    "website_id": website.id,
+                }
+                for product in cls.products
+            ]
+        )
+
+    def _remove(self, wish, **values):
+        return self.url_open(
+            f"/shop/wishlist/remove/{wish.id}",
+            data={"csrf_token": http.Request.csrf_token(self), **values},
+            allow_redirects=False,
+        )
+
+    def test_removing_returns_to_the_wishlist_until_it_is_empty(self):
+        self.authenticate("unwisher", "unwisher")
+
+        first = self._remove(self.wishes[0], empty_redirect="/shop/cart")
+        page = self.url_open("/shop/wishlist")
+        last = self._remove(self.wishes[1], empty_redirect="/shop/cart")
+
+        self.assertEqual(first.status_code, 303)
+        self.assertTrue(first.headers["Location"].endswith("/shop/wishlist"))
+        # the page tells the tab which products remain, for its header count
+        self.assertIn(f'data-wishlist-product-ids="[{self.products[1].id}]"', page.text)
+        self.assertTrue(last.headers["Location"].endswith("/shop/cart"))
+        self.assertFalse(self.wishes.exists())

@@ -379,7 +379,10 @@
                     class="oe_structure"
                     id="oe_structure_website_sale_wishlist_product_wishlist_1" />
                 <div class="container oe_website_sale">
-                    <section class="container wishlist-section pb-5">
+                    <section
+                        class="container wishlist-section pb-5"
+                        data-fragment="website_sale_wishlist.wishlist"
+                        t-att-data-wishlist-product-ids="json.dumps(wishes.product_id.ids)">
                         <div class="o_wishlist_products_header pt-4 pb-3">
                             <h1 class="h4-fs mb-0">My Wishlist</h1>
                         </div>
@@ -420,6 +423,20 @@
                                     class="o_wishlist_item"
                                     t-att-data-wish-id="wish.id"
                                     t-att-data-product-id="product_variant.id">
+                                    <form
+                                        t-attf-id="o_wish_rm_#{wish.id}"
+                                        method="post"
+                                        t-attf-action="/shop/wishlist/remove/#{wish.id}"
+                                        data-fragment-form="">
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            t-att-value="request.csrf_token()" />
+                                        <input
+                                            type="hidden"
+                                            name="empty_redirect"
+                                            value="" />
+                                    </form>
                                     <t t-call="website_sale.products_item">
                                         <t t-set="show_variations" t-value="False" />
                                         <t t-set="show_ribbons" t-value="False" />
@@ -473,7 +490,8 @@
                                         </t>
                                         <t t-set="extra_actions">
                                             <button
-                                                type="button"
+                                                type="submit"
+                                                t-attf-form="o_wish_rm_#{wish.id}"
                                                 class="btn btn-light o_wish_rm z-3 rounded-pill lh-1"
                                                 title="Remove from wishlist">
                                                 <i

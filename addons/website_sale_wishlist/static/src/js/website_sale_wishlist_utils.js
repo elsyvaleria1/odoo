@@ -29,15 +29,6 @@ function addWishlistProduct(productId) {
     setWishlistProductIds(productIds);
 }
 
-/**
- * @param {number} productId
- */
-function removeWishlistProduct(productId) {
-    const productIds = new Set(getWishlistProductIds());
-    productIds.delete(productId);
-    setWishlistProductIds(productIds);
-}
-
 function updateWishlistNavBar() {
     const wishlistProductIds = getWishlistProductIds();
     const wishButtons = document.querySelectorAll(".o_wsale_my_wish");
@@ -54,12 +45,6 @@ function updateWishlistNavBar() {
     });
 }
 
-function updateWishlistView() {
-    const wishlistProductIDs = getWishlistProductIds();
-    const wishlistEmptyEl = document.getElementById("empty-wishlist-message");
-    wishlistEmptyEl.classList.toggle("d-none", wishlistProductIDs.length > 0);
-}
-
 /**
  * @param {Element} el
  * @param {boolean} isDisabled
@@ -73,8 +58,6 @@ export default {
     getWishlistProductIds: getWishlistProductIds,
     setWishlistProductIds: setWishlistProductIds,
     addWishlistProduct: addWishlistProduct,
-    removeWishlistProduct: removeWishlistProduct,
     updateWishlistNavBar: updateWishlistNavBar,
     updateDisabled: updateDisabled,
-    updateWishlistView: updateWishlistView,
 };
