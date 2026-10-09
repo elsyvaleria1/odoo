@@ -474,6 +474,7 @@ class DeviceDevice(models.Model):
                 "message": message,
                 "type": kind,
                 "sticky": sticky,
+                "className": "o_notification_line_breaks",
             },
         }
 

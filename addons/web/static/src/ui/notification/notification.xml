@@ -29,7 +29,7 @@
                 <div class="o_notification_body d-flex align-items-center">
                     <span class="me-auto o_notification_content w-100">
                         <t t-if="this.props.title"><t t-out="this.props.title"/>. </t>
-                        <t t-out="this.props.message"/>
+                        <span class="o_notification_message" t-out="this.props.message"/>
                     </span>
                     <div t-if="this.props.buttons.length" class="o_notification_buttons justify-content-end w-50">
                         <button t-foreach="this.props.buttons" t-as="button" type="button" t-key="button_index" t-attf-class="btn btn-link" t-on-click="button.onClick">

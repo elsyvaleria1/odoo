@@ -114,6 +114,7 @@ class AgentRunner(models.Model):
                 ),
                 "type": "warning",
                 "sticky": True,
+                "className": "o_notification_line_breaks",
             },
         }
 

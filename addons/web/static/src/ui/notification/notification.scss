@@ -23,6 +23,12 @@
     .o_notification_bar {
         width: $o-notification-bar-width;
     }
+
+    // a plain-text message whose line breaks carry meaning (a secret shown once
+    // on a line of its own) opts in; HTML messages keep collapsing theirs
+    .o_notification_line_breaks .o_notification_message {
+        white-space: pre-line;
+    }
 }
 
 @include owl-fade(0.5s, "o_notification");
