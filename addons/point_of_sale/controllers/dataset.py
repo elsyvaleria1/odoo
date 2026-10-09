@@ -22,7 +22,7 @@ class PosDataSet(DataSet):
         kwargs: dict[str, Any],
         path: str | None = None,
     ) -> Any:
-        context = kwargs.get("context") if isinstance(kwargs, dict) else None
+        context = kwargs.get("context")
         if not isinstance(context, dict) or OPERATION_CONTEXT_KEY not in context:
             return super().call_kw(model, method, args, kwargs, path=path)
         context = dict(context)

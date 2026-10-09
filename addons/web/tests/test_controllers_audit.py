@@ -996,6 +996,32 @@ class TestMalformedRequestsAreClientErrors(HttpCase):
                     error = self._rpc("/web/dataset/call_kw", params)["error"]
                     self.assertEqual(error["code"], 400)
 
+    def test_call_kw_arguments_of_the_wrong_shape_are_a_json_rpc_bad_request(self):
+        partner = self.env.ref("base.partner_admin")
+        with mute_logger("odoo.http"):
+            for route, method in (
+                ("/web/dataset/call_kw", "read"),
+                ("/web/dataset/call_button", "action_archive"),
+            ):
+                for args, kwargs in (
+                    ([[partner.id]], [1, 2]),
+                    ([[partner.id]], "context"),
+                    ({"ids": [partner.id]}, {}),
+                    (f"{partner.id}", {}),
+                ):
+                    with self.subTest(route=route, args=args, kwargs=kwargs):
+                        error = self._rpc(
+                            route,
+                            {
+                                "model": "res.partner",
+                                "method": method,
+                                "args": args,
+                                "kwargs": kwargs,
+                            },
+                        )["error"]
+                        self.assertEqual(error["code"], 400)
+        self.assertTrue(partner.active)
+
     def test_a_failed_report_download_answers_a_server_error_status(self):
         with mute_logger("odoo.addons.web.controllers.report", "odoo.http"):
             resp = self.url_open(

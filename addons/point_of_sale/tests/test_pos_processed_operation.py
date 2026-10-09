@@ -423,22 +423,22 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
         self.assertEqual(str(refused.exception), "odoo.exceptions.AccessError")
 
     @mute_logger("odoo.http")
-    def test_malformed_kwargs_get_the_plain_call_kw_answer(self):
+    def test_malformed_kwargs_are_refused_before_the_dedup(self):
         for kwargs in ([1, 2], "context"):
             with (
                 self.subTest(kwargs=kwargs),
-                self.assertRaises(JsonRpcException) as refused,
+                self.assertRaises(requests.HTTPError) as refused,
             ):
                 self.call_jsonrpc(
-                    "/web/dataset/call_kw/pos.session/read",
+                    "/web/dataset/call_kw/pos.session/try_cash_in_out",
                     {
                         "model": "pos.session",
-                        "method": "read",
-                        "args": [[self.pos_session.id], ["name"]],
+                        "method": "try_cash_in_out",
+                        "args": [[self.pos_session.id], "in", 10, "float", False, {}],
                         "kwargs": kwargs,
                     },
                 )
-            self.assertNotEqual(str(refused.exception), "builtins.AttributeError")
+            self.assertEqual(refused.exception.response.status_code, 400)
 
     @mute_logger("odoo.http")
     def test_a_malformed_operation_uuid_is_refused(self):

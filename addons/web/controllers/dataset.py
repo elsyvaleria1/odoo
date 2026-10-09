@@ -36,6 +36,13 @@ class DataSet(http.Controller):
         if not isinstance(model_name, str) or not isinstance(method_name, str):
             _debug.logic("rpc_readonly_probe_not_strings")
             raise ParameterError("call_kw expects the model and method as strings")
+        if not isinstance(params.get("args", []), list) or not isinstance(
+            params.get("kwargs", {}), dict
+        ):
+            _debug.logic("rpc_readonly_probe_malformed_arguments")
+            raise ParameterError(
+                "call_kw expects args as a list and kwargs as an object"
+            )
         try:
             model_class = request.registry[model_name]
         except KeyError:
