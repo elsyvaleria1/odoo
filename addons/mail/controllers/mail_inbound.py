@@ -1,6 +1,10 @@
 from odoo.http import Controller, request, route
 
-from ..tools.inbound_delivery import InboundDelivery, MailRouteNotFound
+from ..tools.inbound_delivery import (
+    InboundDelivery,
+    MailRouteMisconfigured,
+    MailRouteNotFound,
+)
 
 
 class MailInboundController(Controller):
@@ -30,6 +34,9 @@ class MailInboundController(Controller):
                 thread_id = server._deliver_inbound_message(delivery)
         except MailRouteNotFound as error:
             admission.refuse(422, str(error), "no_route")
+        except MailRouteMisconfigured as error:
+            # the MTA keeps a 5xx in its queue while the configuration is fixed
+            admission.refuse(503, str(error), "route_misconfigured")
         except Exception as error:
             admission.settle(f"{type(error).__name__}: {error}")
             raise

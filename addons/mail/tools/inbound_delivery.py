@@ -14,6 +14,10 @@ class MailRouteNotFound(ValueError):
     pass
 
 
+class MailRouteMisconfigured(ValueError):
+    pass
+
+
 @dataclass(frozen=True)
 class InboundDelivery:
     sender: str

@@ -124,7 +124,7 @@ a `local` `fetchmail.server`. `auth="receiver"` admits it through that server's
 
 | Route | Type | Auth | Handler | Purpose |
 |-------|------|------|---------|---------|
-| `/mail/inbound/<int:server_id>` | http POST | receiver | `deliver` | Route one message (`message_process`); 422 `no_route` is the only permanent refusal, a resent envelope is 409 `duplicate_event` |
+| `/mail/inbound/<int:server_id>` | http POST | receiver | `deliver` | Route one message (`message_process`); 422 `no_route` is the only permanent refusal, 503 `route_misconfigured` (a target model or alias defaults that cannot take mail) waits in the MTA for the fix, a resent envelope is 409 `duplicate_event` |
 
 ### controllers/webmanifest.py — `WebManifest`
 **0 routes.** Overrides `_get_service_worker_content` only — injects web-push code into the

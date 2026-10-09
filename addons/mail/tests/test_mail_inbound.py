@@ -294,7 +294,9 @@ class TestMailInbound(HttpCase):
         )
 
     @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
-    def test_a_message_no_document_can_take_is_refused_for_good(self):
+    def test_a_server_whose_fallback_takes_no_document_defers_the_message(self):
+        """A fallback model that takes no mail is the configuration's fault,
+        which an administrator fixes: the MTA keeps the message meanwhile."""
         self.server.object_id = self.env.ref("base.model_res_country")
         response = self._post(
             _envelope(
@@ -302,8 +304,15 @@ class TestMailInbound(HttpCase):
                 ["nobody@inbound.example.com"],
             )
         )
-        self.assertEqual(response.status_code, 422, response.text)
-        self.assertEqual(response.json()["error"], "no_route")
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(response.json()["error"], "route_misconfigured")
+        self.env.invalidate_all()
+        self.assertFalse(
+            self.env["mail.gateway.receipt"].search(
+                [("message_id", "=", "<unusable@x>")]
+            ),
+            "a claimed Message-Id would drop the retried message as a duplicate",
+        )
 
     @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
     def test_a_bounce_of_an_unknown_message_is_taken_not_retried(self):

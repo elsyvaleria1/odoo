@@ -35,7 +35,10 @@ from odoo.tools.mail import (
 )
 
 from odoo.addons.mail.tools import mime
-from odoo.addons.mail.tools.inbound_delivery import MailRouteNotFound
+from odoo.addons.mail.tools.inbound_delivery import (
+    MailRouteMisconfigured,
+    MailRouteNotFound,
+)
 
 if typing.TYPE_CHECKING:
     from .mail_alias import MailAlias
@@ -173,7 +176,7 @@ class MixinMailGateway(models.AbstractModel):
             error_message,
         )
         if raise_exception:
-            raise MailRouteNotFound(f"Mailbox unavailable - {error_message}")
+            raise MailRouteMisconfigured(f"Mailbox unavailable - {error_message}")
 
     def _routing_create_bounce_email(
         self, email_from: str, body_html: Markup, message: EmailMessage, **mail_values
@@ -1572,7 +1575,7 @@ class MixinMailGateway(models.AbstractModel):
             mail_create_nosubscribe=True, mail_create_nolog=True
         )
         if not self._mail_is_gateway_target(Model):
-            raise MailRouteNotFound(
+            raise MailRouteMisconfigured(
                 "Undeliverable mail with Message-Id %s, model %s does not accept incoming emails"
                 % (message_dict["message_id"], model)
             )

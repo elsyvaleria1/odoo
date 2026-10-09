@@ -13,6 +13,7 @@ from odoo.tools.misc import mute_logger
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 from odoo.addons.mail.models.mixin_mail_gateway import RouteVerdict
 from odoo.addons.mail.tests.common import MailCommon
+from odoo.addons.mail.tools.inbound_delivery import MailRouteMisconfigured
 from odoo.addons.test_mimetypes.tests.test_guess_mimetypes import contents
 
 
@@ -425,6 +426,26 @@ class TestAccountIncomingSupplierInvoice(
             bounce.email_from,
             f"bounce sent as {bounce.email_from!r}, not as the journal alias' company",
         )
+
+    def test_an_alias_whose_company_default_is_no_id_defers_its_mail(self):
+        """The alias defaults are the configuration's fault, as a gateway
+        model that takes no document is: the mail waits for the fix."""
+        message = message_from_string(
+            "From: someone@example.com\n"
+            "To: bills@example.com\n"
+            "Subject: a bill with nothing attached\n"
+            "Message-Id: <gateway-misconfigured-test>\n"
+            "\n"
+            "body\n"
+        )
+        message_dict = {
+            "from": "someone@example.com",
+            "message_id": "<gateway-misconfigured-test>",
+            "attachments": [],
+        }
+        route = ("account.move", 0, {"company_id": "not-an-id"}, self.env.uid, None)
+        with self.assertRaises(MailRouteMisconfigured):
+            self.env["account.move"]._routing_check_route(message, message_dict, route)
 
     def test_supplier_invoice_forwarded_by_internal_user_without_supplier(self):
         message_parsed = {

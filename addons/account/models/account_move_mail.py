@@ -7,6 +7,7 @@ from odoo.tools import format_amount, format_date
 from odoo.tools.mail import email_re, email_split, generate_tracking_message_id
 
 from odoo.addons.mail.models.mixin_mail_gateway import RouteVerdict
+from odoo.addons.mail.tools.inbound_delivery import MailRouteMisconfigured
 
 _debug = DebugLog(__name__)
 
@@ -27,7 +28,7 @@ class AccountMove(models.Model):
         ):
             company_id = (route[2] or {}).get("company_id", self.env.company.id)
             if not isinstance(company_id, int):
-                raise ValueError(
+                raise MailRouteMisconfigured(
                     f"Default value for 'company_id' for {route[4]} is not an integer"
                 )
             journal_alias_company = self.env["res.company"].search(
