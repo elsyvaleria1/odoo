@@ -29,7 +29,7 @@ class PaymentTransaction(models.Model):
     _inherit = "payment.transaction"
 
     @api.model
-    def _receiver_for_razorpay_return(self, reference=None, **path_args) -> tuple:
+    def _receiver_for_razorpay_return(self, **path_args) -> tuple:
         data = request.get_http_params()
         if not all(
             f"razorpay_{key}" in data for key in ("order_id", "payment_id", "signature")
@@ -40,7 +40,7 @@ class PaymentTransaction(models.Model):
         # The same key as for webhook notifications' data.
         tx, _extra = self._resolve_notification(
             "razorpay",
-            {"description": reference},
+            {"description": data.get("reference")},
             Acknowledged.redirect("/payment/status"),
         )
         return tx, {"data": data}

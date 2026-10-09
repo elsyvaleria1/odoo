@@ -1,6 +1,7 @@
 import pprint
 
 from odoo import http
+from odoo.exceptions import ValidationError
 from odoo.http import request
 
 from odoo.addons.payment.logging import get_payment_logger
@@ -34,13 +35,38 @@ class RazorpayController(http.Controller):
         satisfy any specification of the `SameSite` attribute, the session of the user will be
         retrieved and with it the transaction which will be immediately post-processed.
 
-        :param str reference: The transaction reference embedded in the return URL.
+        The payment is fetched back from Razorpay: the signature covers the order and payment ids,
+        not the reference of the return URL nor the amount.
+
+        :param str reference: The transaction reference, a query parameter of the return URL.
         :param dict data: The payment data.
         """
         _logger.info(
             "Handling redirection from Razorpay with data:\n%s", pprint.pformat(data)
         )
-        request.admission.subject._process("razorpay", request.admission.extra["data"])
+        admission = request.admission
+        tx_sudo = admission.subject
+        return_data = admission.extra["data"]
+        try:
+            payment = tx_sudo._send_api_request(
+                "GET", f"payments/{return_data['razorpay_payment_id']}"
+            )
+        except ValidationError as error:
+            tx_sudo._set_error(str(error))
+        else:
+            if (
+                payment.get("order_id") != return_data["razorpay_order_id"]
+                or payment.get("description") != tx_sudo.reference
+            ):
+                _logger.warning(
+                    "Payment %s does not belong to transaction %s.",
+                    return_data["razorpay_payment_id"],
+                    tx_sudo.reference,
+                )
+                admission.refuse(
+                    403, "the payment belongs to another transaction", "forbidden"
+                )
+            tx_sudo._process("razorpay", payment)
         return request.redirect("/payment/status")
 
     # csrf=False: auth="receiver" admits the caller through its inbound gate

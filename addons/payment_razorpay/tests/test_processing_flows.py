@@ -1,9 +1,11 @@
 from unittest.mock import patch
+from urllib.parse import urlencode
 
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
+from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.tests.http_common import PaymentHttpCommon
 from odoo.addons.payment_razorpay.controllers.main import RazorpayController
 from odoo.addons.payment_razorpay.tests.common import RazorpayCommon
@@ -232,3 +234,53 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
         self.assertEqual(len(refund_tx), 1)
         self.assertEqual(refund_tx.provider_reference, self.refund_id)
         self.assertEqual(refund_tx.state, "done")
+
+    def _return_from_checkout(self, tx, payment_entity):
+        url = self._build_url(
+            f"{RazorpayController._return_url}?{urlencode({'reference': tx.reference})}"
+        )
+        data = dict(
+            self.redirect_payment_data,
+            razorpay_signature=tx.provider_id._get_razorpay_signature(
+                self.redirect_payment_data
+            ),
+        )
+        with patch(
+            "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
+            return_value=payment_entity,
+        ):
+            response = self._make_http_post_request(url, data=data)
+        tx.invalidate_recordset()
+        return response
+
+    def _get_captured_payment_entity(self, tx, description):
+        return dict(
+            self.payment_data,
+            description=description,
+            order_id=self.order_id,
+            amount=payment_utils.major_to_minor_currency_units(
+                tx.amount, tx.currency_id
+            ),
+            currency=tx.currency_id.name,
+        )
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_return_from_checkout_processes_the_payment_of_its_transaction(self):
+        tx = self._create_transaction("redirect")
+        response = self._return_from_checkout(
+            tx, self._get_captured_payment_entity(tx, tx.reference)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(tx.state, "done")
+        self.assertEqual(tx.provider_reference, self.payment_id)
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_return_from_checkout_with_the_payment_of_another_transaction_is_refused(
+        self,
+    ):
+        tx = self._create_transaction("redirect")
+        response = self._return_from_checkout(
+            tx, self._get_captured_payment_entity(tx, "another-reference")
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(tx.state, "draft")
