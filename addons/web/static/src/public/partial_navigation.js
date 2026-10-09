@@ -70,7 +70,9 @@ export function requestNavigation(
  * builds its URL itself dispatches a cancelable, bubbling `o-navigate` event
  * with `detail.url`, and navigates on its own when nobody took it. After each
  * in-place navigation, `window` receives an `o-partial-navigation` event
- * (`detail.key`, `detail.url`) for code that otherwise runs on page load.
+ * (`detail.key`, `detail.url`, and `detail.page`, the fetched page as a
+ * Document) for code that otherwise runs on page load or reads what the
+ * server rendered outside the region.
  */
 export class PartialNavigation extends Interaction {
     static selector = "[data-fragment][data-partial-navigation]";
@@ -238,7 +240,7 @@ export class PartialNavigation extends Interaction {
         }
         window.dispatchEvent(
             new CustomEvent("o-partial-navigation", {
-                detail: { key: this.key, url: response.url },
+                detail: { key: this.key, url: response.url, page },
             }),
         );
     }

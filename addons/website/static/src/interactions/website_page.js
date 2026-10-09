@@ -26,6 +26,9 @@ export class WebsitePage extends Interaction {
         this.addListener(document.body, "shown.bs.modal", (ev) => {
             ev.target.classList.add("modal_shown");
         });
+        this.addListener(window, "o-partial-navigation", (ev) =>
+            this._onPartialNavigation(ev),
+        );
 
         const endZoom = log.perf("WebsitePage start: init zoomable images");
         for (const imgEl of document.body.querySelectorAll(
@@ -59,6 +62,24 @@ export class WebsitePage extends Interaction {
         };
         log.pipeline("WebsitePage lang change: redirect", () => ({ redirect }));
         browser.location.href = `/website/lang/${redirect.lang}?r=${redirect.url}${redirect.hash}`;
+    }
+
+    /**
+     * The language links outside the swapped region point at the page the
+     * server rendered them for; after an in-place navigation they take the
+     * new page's targets.
+     *
+     * @param {CustomEvent<{ page: Document }>} ev
+     */
+    _onPartialNavigation(ev) {
+        for (const link of document.querySelectorAll(".js_change_lang")) {
+            const next = ev.detail.page.querySelector(
+                `.js_change_lang[data-url_code="${CSS.escape(link.dataset.url_code)}"]`,
+            );
+            if (next) {
+                link.setAttribute("href", next.getAttribute("href"));
+            }
+        }
     }
 
     /**

@@ -194,7 +194,7 @@ test("window hears o-partial-navigation once the region is swapped", async () =>
     serve(() => page("<tr><td>SO7</td></tr>"));
     const listener = (ev) =>
         expect.step(
-            `navigated ${ev.detail.key} ${document.querySelectorAll("tbody tr").length}`,
+            `navigated ${ev.detail.key} ${document.querySelectorAll("tbody tr").length} ${ev.detail.page.querySelectorAll("tbody tr").length}`,
         );
     window.addEventListener("o-partial-navigation", listener);
     after(() => window.removeEventListener("o-partial-navigation", listener));
@@ -205,7 +205,7 @@ test("window hears o-partial-navigation once the region is swapped", async () =>
     expect.verifySteps([
         "fetch /my/orders?sortby=name",
         "push portal.list /my/orders",
-        "navigated portal.list 1",
+        "navigated portal.list 1 1",
     ]);
 });
 
