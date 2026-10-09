@@ -3373,6 +3373,61 @@ class TestUi(TestPointOfSaleHttpCommon):
             login="pos_user",
         )
 
+    def test_pricelist_rule_on_unoffered_pricelist(self):
+        self.env["product.product"].create(
+            {
+                "name": "Product priced on a base pricelist",
+                "list_price": 100,
+                "taxes_id": False,
+                "available_in_pos": True,
+            }
+        )
+        retail = self.env["product.pricelist"].create(
+            {
+                "name": "Retail Probe",
+                "item_ids": [
+                    Command.create(
+                        {
+                            "applied_on": "3_global",
+                            "compute_price": "percentage",
+                            "percent_price": 50,
+                        }
+                    )
+                ],
+            }
+        )
+        wholesale = self.env["product.pricelist"].create(
+            {
+                "name": "Wholesale Probe",
+                "item_ids": [
+                    Command.create(
+                        {
+                            "applied_on": "3_global",
+                            "base": "pricelist",
+                            "base_pricelist_id": retail.id,
+                            "compute_price": "percentage",
+                            "percent_price": 10,
+                        }
+                    )
+                ],
+            }
+        )
+        other = self.env["product.pricelist"].create({"name": "Other Probe"})
+        self.main_pos_config.write(
+            {
+                "use_pricelist": True,
+                "pricelist_id": wholesale.id,
+                "available_pricelist_ids": [Command.set((wholesale | other).ids)],
+            }
+        )
+        self.assertNotIn(retail, self.main_pos_config._get_pos_pricelists())
+        self.main_pos_config.with_user(self.pos_user).open_ui()
+        self.start_tour(
+            f"/pos/ui?config_id={self.main_pos_config.id}",
+            "test_pricelist_rule_on_unoffered_pricelist",
+            login="pos_user",
+        )
+
     def test_product_create_update_from_frontend(self):
         self.pos_admin.group_ids |= (
             self.env.ref("base.group_system") | self._pos_catalog_editor_groups()

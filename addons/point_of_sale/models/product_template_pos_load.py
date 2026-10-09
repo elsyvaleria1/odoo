@@ -246,7 +246,7 @@ class ProductTemplatePosLoad(models.Model):
     def _get_pos_pricelist_data(self, product_tmpls, products, config) -> dict:
         Item = self.env["product.pricelist.item"]
         items = Item.search(
-            Domain("pricelist_id", "in", config._get_pos_pricelists().ids)
+            Domain("pricelist_id", "in", config._get_pos_pricing_pricelists().ids)
             & Domain(Item._check_company_domain(config.company_id))
             & (
                 (

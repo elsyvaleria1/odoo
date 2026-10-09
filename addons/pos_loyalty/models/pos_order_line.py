@@ -25,6 +25,25 @@ class PosOrderLine(models.Model):
     )
     points_cost = fields.Float(help="How many point this reward cost on the coupon.")
 
+    def _get_pricing_exemptions(self):
+        exemptions = super()._get_pricing_exemptions()
+        topped_up = (
+            self.env["loyalty.program"]
+            .search(
+                [
+                    ("program_type", "in", ("gift_card", "ewallet")),
+                    ("trigger_product_ids", "in", self.product_id.ids),
+                ]
+            )
+            .trigger_product_ids
+        )
+        for line in self:
+            if line.is_reward_line:
+                exemptions[line] |= {"price_unit", "discount", "tax_ids"}
+            elif line.product_id in topped_up:
+                exemptions[line].add("price_unit")
+        return exemptions
+
     @api.model
     def _load_pos_data_fields(self, config):
         params = super()._load_pos_data_fields(config)

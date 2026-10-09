@@ -336,12 +336,110 @@ class PosOrderLine(models.Model):
         )
         _debug.logic("refund_settlements_serialized", lines=self)
 
-    def _describe_for_refund(self) -> str:
+    def _describe_with_order(self) -> str:
         return ", ".join(
             f"{line.full_product_name or line.product_id.display_name}"
             f" ({line.order_id.name})"
             for line in self
         )
+
+    def _get_pricing_breach_labels(self) -> dict[str, str]:
+        return {
+            "discount": self.env._("a discount the point of sale does not allow"),
+            "price_unit": self.env._("a price other than the pricelist's"),
+            "tax_ids": self.env._("taxes other than the product's"),
+        }
+
+    def _get_pricing_exemptions(self) -> dict[Self, set[str]]:
+        """The pricing fields something other than the cashier sets, per line."""
+        tip_products = self.order_id.config_id.tip_product_id
+        return {
+            line: (
+                {"price_unit"}
+                if line.combo_parent_id
+                or line.combo_line_ids
+                or line.product_id in tip_products
+                else set()
+            )
+            for line in self
+        }
+
+    def _get_pricing_breaches(self) -> dict[str, Self]:
+        if not self:
+            return {}
+        order = self.order_id
+        order.check_singleton()
+        checks = {
+            "discount": (
+                not order._may_cashier_set_discounts(),
+                "_has_allowed_discount",
+            ),
+            "price_unit": (not order._may_cashier_set_prices(), "_has_allowed_price"),
+            "tax_ids": (True, "_has_allowed_taxes"),
+        }
+        checks = {name: check for name, (applies, check) in checks.items() if applies}
+        exemptions = self._get_pricing_exemptions()
+        breaches = defaultdict(self.browse)
+        for line in self:
+            for name in checks.keys() - exemptions[line]:
+                if not getattr(line, checks[name])():
+                    breaches[name] |= line
+        return {name: breaches[name] for name in checks if name in breaches}
+
+    def _has_allowed_discount(self) -> bool:
+        self.check_singleton()
+        # a refund gives back the discount it was sold with
+        allowed = self.refunded_orderline_id.discount
+        digits = self.env["decimal.precision"].get_precision("Discount")
+        return not float_compare(self.discount, allowed, precision_digits=digits)
+
+    def _has_allowed_price(self) -> bool:
+        self.check_singleton()
+        digits = self.env["decimal.precision"].get_precision("Product Price")
+        allowed = (
+            [self.refunded_orderline_id.price_unit]
+            if self.refunded_orderline_id
+            else self._get_pricelist_prices()
+        )
+        return any(
+            not float_compare(self.price_unit, price, precision_digits=digits)
+            for price in allowed
+        )
+
+    def _has_allowed_taxes(self) -> bool:
+        self.check_singleton()
+        if self.refunded_orderline_id:
+            return self.tax_ids == self.refunded_orderline_id.tax_ids
+        fiscal_position = self.order_id.fiscal_position_id
+        product_taxes = self.product_id.taxes_id.filtered_domain(
+            self.env["account.tax"]._check_company_domain(self.company_id)
+        )
+        return fiscal_position.map_tax(self.tax_ids) == fiscal_position.map_tax(
+            product_taxes
+        )
+
+    def _get_pricelist_prices(self) -> list[float]:
+        self.check_singleton()
+        order = self.order_id
+        product = self.product_id.with_context(
+            **self.product_id._prepare_product_price_context(self.attribute_value_ids)
+        )
+        # the till prices a tracked product on its quantity across the order
+        quantities = {self.qty}
+        if product.tracking != "none":
+            quantities.add(
+                sum(
+                    order.lines.filtered(
+                        lambda line: line.product_id == product
+                    ).mapped("qty")
+                )
+            )
+        return [
+            order.pricelist_id._get_product_price(
+                product, quantity, currency=order.currency_id, date=order.date_order
+            )
+            for quantity in quantities
+        ]
 
     def _get_refundable_lines(self) -> Self:
         digits = self.env["decimal.precision"].get_precision("Product Unit")
@@ -491,26 +589,67 @@ class PosOrderLine(models.Model):
 
     @api.onchange("price_unit", "tax_ids", "qty", "discount", "product_id")
     def _onchange_amount_line_all(self) -> None:
-        for line in self:
-            res = line._get_amount_line_all()
-            line.update(res)
+        priced = self.filtered("product_id")
+        for line, subtotals in priced._get_subtotals().items():
+            line.update(subtotals)
 
-    def _get_amount_line_all(self) -> dict:
-        self.check_singleton()
-        fpos = self.order_id.fiscal_position_id
-        tax_ids_after_fiscal_position = fpos.map_tax(self.tax_ids)
-        price = self.price_unit * (1 - (self.discount or 0.0) / 100.0)
-        taxes = tax_ids_after_fiscal_position.compute_all(
-            price,
-            self.order_id.currency_id,
-            self.qty,
-            product=self.product_id,
-            partner=self.order_id.partner_id,
-        )
-        return {
-            "price_subtotal_incl": taxes["total_included"],
-            "price_subtotal": taxes["total_excluded"],
-        }
+    def _get_subtotals(self) -> dict[Self, dict[str, float]]:
+        AccountTax = self.env["account.tax"]
+        subtotals = {}
+        for order, lines in self.grouped("order_id").items():
+            base_lines = [
+                line._prepare_base_line_for_taxes_computation() for line in lines
+            ]
+            AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
+            AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
+            subtotals |= lines._get_subtotals_from_base_lines(base_lines)
+        return subtotals
+
+    def _get_subtotals_from_base_lines(
+        self, base_lines
+    ) -> dict[Self, dict[str, float]]:
+        # as the till: each line after the engine spread the order's rounding
+        AccountTax = self.env["account.tax"]
+        subtotals = {}
+        for base_line in base_lines:
+            line = base_line["record"].with_env(self.env)
+            if line not in self:
+                continue
+            tax_details = base_line["tax_details"]
+            # a refund order's base lines are priced on the opposite quantity
+            sign = -1 if line.order_id._is_refund_order() else 1
+            subtotals[line] = {
+                "price_subtotal": sign
+                * (
+                    tax_details["total_excluded_currency"]
+                    + tax_details["delta_total_excluded_currency"]
+                ),
+                "price_subtotal_incl": sign
+                * AccountTax._measure_base_lines_total([base_line])[0],
+            }
+        return subtotals
+
+    def _write_subtotals(self, base_lines) -> None:
+        subtotals = self._get_subtotals_from_base_lines(base_lines)
+        if len(subtotals) < len(self):
+            # the rounding is spread over every line the till priced together
+            subtotals = self._get_subtotals()
+        for line, values in subtotals.items():
+            currency = line.currency_id
+            stale = {
+                name: value
+                for name, value in values.items()
+                if not currency or currency.compare_amounts(line[name], value)
+            }
+            if stale:
+                _debug.logic(
+                    "line_subtotals_recomputed",
+                    order=line.order_id.uuid,
+                    line=line.uuid,
+                    sent={name: line[name] for name in stale},
+                    computed=stale,
+                )
+                line.update(stale)
 
     @api.onchange("product_id")
     def _onchange_product_id(self):

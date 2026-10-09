@@ -83,6 +83,7 @@ class PosSelfOrderController(http.Controller):
         )
 
         self._update_combo_line_prices(line_ids, pos_config, preset_id)
+        order_ids._recompute_amounts()
 
         amount_total, amount_untaxed = self._get_order_prices(order_ids.lines)
         order_ids.write(

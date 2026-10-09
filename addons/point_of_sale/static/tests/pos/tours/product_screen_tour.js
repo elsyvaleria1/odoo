@@ -863,6 +863,34 @@ registry.category("web_tour.tours").add("test_pricelist_parent_category_rule", {
         ].flat(),
 });
 
+registry.category("web_tour.tours").add("test_pricelist_rule_on_unoffered_pricelist", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            Dialog.confirm("Open Register"),
+            ProductScreen.clickDisplayedProduct("Product priced on a base pricelist"),
+            ProductScreen.selectedOrderlineHas(
+                "Product priced on a base pricelist",
+                "1",
+                "45.0",
+            ),
+            inLeftSide([
+                ...ProductScreen.clickControlButtonMore(),
+                { trigger: ".o_pricelist_button", run: "click" },
+                {
+                    content: "the base pricelist prices, it is not offered",
+                    trigger:
+                        '.modal-body:has(.selection-item:contains("Other Probe")):not(:has(.selection-item:contains("Retail Probe")))',
+                },
+                {
+                    trigger: '.selection-item:contains("Wholesale Probe")',
+                    run: "click",
+                },
+            ]),
+            Chrome.endTour(),
+        ].flat(),
+});
+
 registry.category("web_tour.tours").add("test_product_create_update_from_frontend", {
     steps: () =>
         [

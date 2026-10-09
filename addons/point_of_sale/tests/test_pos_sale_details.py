@@ -1767,7 +1767,11 @@ class TestPosSaleDetailsCurrencies(PosLazySessionCommon):
         self.assertEqual(report["currency"]["total_paid"], 297)
         self.assertEqual(report["products_info"]["total"], 270)
         self.assertEqual(report["taxes_info"]["tax_amount"], 27)
-        self.assertEqual(report["discount_amount"], 30)
+        self.assertEqual(
+            report["discount_amount"],
+            33,
+            msg="the discount is measured taxes included: 110 - 99 per 100 sold",
+        )
         self.assertEqual(report["total_paid"], 297)
 
     def test_report_payments_use_the_order_exchange_date(self):

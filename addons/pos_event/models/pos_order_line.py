@@ -11,6 +11,12 @@ class PosOrderLine(models.Model):
         string="Event Registrations",
     )
 
+    def _get_pricing_exemptions(self):
+        exemptions = super()._get_pricing_exemptions()
+        for line in self.filtered("event_ticket_id"):
+            exemptions[line].add("price_unit")
+        return exemptions
+
     @api.model
     def _load_pos_data_fields(self, config):
         fields = super()._load_pos_data_fields(config)

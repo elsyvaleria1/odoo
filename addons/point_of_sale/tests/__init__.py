@@ -46,6 +46,7 @@ from . import test_pos_order_line_combo_share
 from . import test_pos_order_line_pricing
 from . import test_pos_order_lookup
 from . import test_pos_order_preparation_change
+from . import test_pos_order_pricing_trust
 from . import test_pos_order_receipt_mail
 from . import test_pos_order_refund
 from . import test_pos_order_settlement

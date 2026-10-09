@@ -2013,6 +2013,31 @@ class PosConfig(models.Model):
         presets = self.available_preset_ids | self.default_preset_id
         return self._get_available_pricelists() | presets.pricelist_id
 
+    def _get_pos_pricing_pricelists(self):
+        # a rule priced on another pricelist needs that one in the till too, as
+        # data: without it the till falls back to the list price
+        pricelists = self._get_pos_pricelists()
+        Item = self.env["product.pricelist.item"]
+        frontier = pricelists
+        while frontier:
+            frontier = (
+                Item.search(  # noqa: E8507 - one query per level of the base chain
+                    [
+                        ("pricelist_id", "in", frontier.ids),
+                        ("base", "=", "pricelist"),
+                        ("base_pricelist_id", "not in", pricelists.ids),
+                    ]
+                ).base_pricelist_id
+                - pricelists
+            )
+            pricelists |= frontier
+        _debug.logic(
+            "pos_pricing_pricelists",
+            config=self,
+            pricelists=pricelists,
+        )
+        return pricelists
+
     @api.model
     def _set_default_pos_load_limit(self) -> None:
         param_model = self.env["ir.config_parameter"]

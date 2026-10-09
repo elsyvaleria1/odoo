@@ -26,6 +26,13 @@ class PosOrderLine(models.Model):
         lines = self.filtered(lambda line: not line._is_settle_or_deposit())
         return super(PosOrderLine, lines)._prepare_tax_base_line_values()
 
+    def _get_pricing_exemptions(self):
+        exemptions = super()._get_pricing_exemptions()
+        for line in self:
+            if line._is_settle_or_deposit():
+                exemptions[line].add("price_unit")
+        return exemptions
+
     def _is_settle_or_deposit(self) -> bool:
         self.check_singleton()
         return bool(

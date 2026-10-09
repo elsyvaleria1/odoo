@@ -266,6 +266,13 @@ class PosOrderLine(models.Model):
         readonly=False,
     )
 
+    def _get_pricing_exemptions(self):
+        exemptions = super()._get_pricing_exemptions()
+        for line in self:
+            if line.sale_order_origin_id or line.sale_order_line_id:
+                exemptions[line] |= {"price_unit", "discount", "tax_ids"}
+        return exemptions
+
     @api.model_create_multi
     def create(self, vals_list):
         refunded_ids = {

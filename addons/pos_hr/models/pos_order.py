@@ -39,6 +39,18 @@ class PosOrder(models.Model):
     def _load_pos_data_fields(self, config):
         return [*super()._load_pos_data_fields(config), "employee_id"]
 
+    def _may_cashier_set_prices(self) -> bool:
+        if not self.employee_id:
+            return super()._may_cashier_set_prices()
+        # the till's manager role: a PoS manager's employee, or an advanced one
+        config = self.config_id
+        employee = self.employee_id
+        return (
+            not config.restrict_price_control
+            or employee in config.advanced_employee_ids
+            or config.group_pos_manager_id in employee.user_id.all_group_ids
+        )
+
     def _prepare_pos_log(self, body):
         return (
             super()._prepare_pos_log(body)

@@ -8,7 +8,7 @@ class ProductPricelist(models.Model):
 
     @api.model
     def _load_pos_data_domain(self, data, config):
-        return [("id", "in", config._get_pos_pricelists().ids)]
+        return [("id", "in", config._get_pos_pricing_pricelists().ids)]
 
     @api.model
     def _load_pos_data_fields(self, config):

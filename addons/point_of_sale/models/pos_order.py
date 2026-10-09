@@ -32,7 +32,9 @@ class PosOrder(models.Model):
     ]
     _description = "Point of Sale Orders"
     _order = "date_order desc, name desc, id desc"
-    _pos_data_till_writes = frozendict({"is_over_refund": False})
+    _pos_data_till_writes = frozendict(
+        {"is_over_refund": False, "has_pricing_breach": False}
+    )
     _mailing_enabled = True
 
     # the POS bus's and self-order's credential: a device's (decision G1),
@@ -171,6 +173,13 @@ class PosOrder(models.Model):
         string="Refunds More Than Sold",
         copy=False,
         readonly=True,
+    )
+    has_pricing_breach = fields.Boolean(
+        string="Breaks a Pricing Rule",
+        copy=False,
+        readonly=True,
+        help="A paid line carries a discount, a price or taxes its point of sale "
+        "does not let the cashier set.",
     )
     state = fields.Selection(
         selection=[
@@ -425,6 +434,7 @@ class PosOrder(models.Model):
             "is_edited",
             "is_invoiced",
             "is_over_refund",
+            "has_pricing_breach",
             "is_refund",
             "is_tipped",
             "is_total_cost_computed",
@@ -607,6 +617,7 @@ class PosOrder(models.Model):
         result = pos_order._process_saved_order(draft)
         if not draft:
             pos_order._flag_over_refund()
+            pos_order._flag_pricing_breaches()
         return result
 
     @api.model
@@ -1114,6 +1125,7 @@ class PosOrder(models.Model):
             base_lines = order.lines._prepare_tax_base_line_values()
             AccountTax._add_tax_details_in_base_lines(base_lines, order.company_id)
             AccountTax._round_base_lines_tax_details(base_lines, order.company_id)
+            order.lines._write_subtotals(base_lines)
 
             cash_rounding = None
             if (
@@ -1755,7 +1767,7 @@ class PosOrder(models.Model):
             raise ValidationError(
                 self.env._(
                     "You cannot refund more than was sold: %(lines)s",
-                    lines=over_refunded._describe_for_refund(),
+                    lines=over_refunded._describe_with_order(),
                 )
             )
 
@@ -1774,9 +1786,53 @@ class PosOrder(models.Model):
             self.message_post(
                 body=self.env._(
                     "This refund returns more than was sold: %(lines)s",
-                    lines=over_refunded._describe_for_refund(),
+                    lines=over_refunded._describe_with_order(),
                 )
             )
+
+    def _may_cashier_set_discounts(self) -> bool:
+        self.check_singleton()
+        return self.config_id.manual_discount
+
+    def _may_cashier_set_prices(self) -> bool:
+        self.check_singleton()
+        config = self.config_id
+        return (
+            not config.restrict_price_control
+            or config.group_pos_manager_id in self.env.user.all_group_ids
+        )
+
+    def _flag_pricing_breaches(self) -> None:
+        # the till has already taken the money: record the sale as made and say so
+        self.check_singleton()
+        breaches = self.lines._get_pricing_breaches()
+        _debug.logic(
+            "pricing_breaches",
+            order=self.uuid,
+            breaches={name: lines.ids for name, lines in breaches.items()} or None,
+        )
+        if not breaches:
+            return
+        _logger.warning(
+            "PoS order %s breaks its pricing rules: %s",
+            self.name,
+            {name: lines.ids for name, lines in breaches.items()},
+        )
+        self.has_pricing_breach = True
+        labels = self.lines._get_pricing_breach_labels()
+        self.message_post(
+            body=self.env._("This order breaks its point of sale's pricing rules:")
+            + self._markup_list_message(
+                [
+                    self.env._(
+                        "%(rule)s: %(lines)s",
+                        rule=labels[name],
+                        lines=lines._describe_with_order(),
+                    )
+                    for name, lines in breaches.items()
+                ]
+            )
+        )
 
     def action_pos_order_paid(self):
         self.check_singleton()
@@ -2683,10 +2739,7 @@ class PosOrder(models.Model):
             )
             for line in order.lines._get_refundable_lines():
                 refund_lots = line.pack_lot_ids.copy()
-                refund_line = line.copy(
-                    line._prepare_refund_values(refund_order, refund_lots)
-                )
-                refund_line._onchange_amount_line_all()
+                line.copy(line._prepare_refund_values(refund_order, refund_lots))
             refund_orders |= refund_order
             refund_order.config_id.notify_synchronisation(current_session.id, 0)
         refund_orders._recompute_amounts()

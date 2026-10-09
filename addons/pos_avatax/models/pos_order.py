@@ -89,3 +89,14 @@ class PosOrder(models.Model):
             )
 
         return results
+
+
+class PosOrderLine(models.Model):
+    _inherit = "pos.order.line"
+
+    def _get_pricing_exemptions(self):
+        exemptions = super()._get_pricing_exemptions()
+        for line in self:
+            if line.order_id.is_tax_computed_externally:
+                exemptions[line].add("tax_ids")
+        return exemptions
