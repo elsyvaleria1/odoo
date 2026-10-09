@@ -74,13 +74,16 @@ class RoomController(http.Controller):
         auth="public",
     )
     def room_booking_update(self, access_token, booking_id, **kwargs):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
-        return self._get_booking(booking_id, access_token).write(
-            {
-                fname: kwargs[key]
-                for key, fname in BOOKING_FIELDS.items()
-                if kwargs.get(key)
-            }
-        )
+        booking = self._get_booking(booking_id, access_token)
+        vals = {
+            fname: kwargs[key]
+            for key, fname in BOOKING_FIELDS.items()
+            if kwargs.get(key)
+        }
+        if booking._prepare_room_booking_data()["name"] != booking.name:
+            # the kiosk was shown a placeholder, and sends it back
+            vals.pop("name", None)
+        return booking.write(vals)
 
     def _get_booking(self, booking_id, access_token):
         room_sudo = self._get_room_from_access_token(access_token)

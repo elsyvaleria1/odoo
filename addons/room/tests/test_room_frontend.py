@@ -38,6 +38,28 @@ class TestRoomFrontend(RoomCommon, HttpCase):
         self.assertEqual(blocks[0]["start_datetime"], "2023-05-16 08:00:00")
         self.assertTrue(blocks[0]["readonly"])
 
+    @freeze_time("2023-05-15 07:00:00")
+    def test_a_private_meeting_is_busy_on_the_public_kiosk(self):
+        self.bookings[0].privacy = "private"
+        self.bookings[1].privacy = "confidential"
+        public = self.env["calendar.event"].create(
+            self._booking_vals("Board review", self.resources[0], 12, 13)
+        )
+        public.privacy = "public"
+        self.authenticate(None, None)
+        bookings = self.call_jsonrpc(
+            f"/room/{self.resources[0].access_token}/get_existing_bookings", {}
+        )
+        self.assertEqual(
+            [booking["name"] for booking in bookings], ["Busy", "Busy", "Board review"]
+        )
+        self.call_jsonrpc(
+            f"/room/{self.resources[0].access_token}/booking/{self.bookings[0].id}/update",
+            {"name": "Busy", "stop_datetime": "2023-05-15 10:30:00"},
+        )
+        self.assertEqual(self.bookings[0].name, "Booking 1")
+        self.assertEqual(self.bookings[0].stop, datetime(2023, 5, 15, 10, 30))
+
     @freeze_time("2023-05-15 11:15:00")
     def test_room_frontend(self):
         self.authenticate(None, None)

@@ -17,10 +17,13 @@ class CalendarEvent(models.Model):
     _inherit = "calendar.event"
 
     def _prepare_room_booking_data(self) -> RoomBookingData:
+        # A kiosk is public and reads its bookings elevated, past the masking
+        # calendar applies to a private event's name for anyone not invited.
         self.check_singleton()
+        hidden = self.effective_privacy in ("private", "confidential")
         return {
             "id": self.id,
-            "name": self.name,
+            "name": self.env._("Busy") if hidden else self.name,
             "start_datetime": fields.Datetime.to_string(self.start),
             "stop_datetime": fields.Datetime.to_string(self.stop),
         }
