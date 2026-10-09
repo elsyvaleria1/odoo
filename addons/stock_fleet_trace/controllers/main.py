@@ -197,7 +197,7 @@ class StockFleetTraceOffline(http.Controller):
     @http.route(DRIVER_PAGE, methods=["GET"], type="http", auth="user", readonly=True)
     def driver_screen(self, **kwargs):
         env = request.env
-        terms = _driver_terms(env)
+        terms = self._get_driver_terms(env)
         boot = {
             "terms": terms,
             "user_name": env.user.name,
@@ -210,9 +210,20 @@ class StockFleetTraceOffline(http.Controller):
             {
                 "boot": json.dumps(boot, ensure_ascii=False),
                 "terms": terms,
+                "plugins": self._get_driver_plugins(),
                 "lang": (env.lang or "en_US").replace("_", "-"),
             },
         )
+
+    def _get_driver_terms(self, env):
+        """Every text the driver screen shows, a plugin's included."""
+        return _driver_terms(env)
+
+    def _get_driver_plugins(self):
+        """Scripts of other modules the driver screen loads after its own: each
+        registers in ``window.sftDriverPlugins``. They need a connection; the
+        service worker does not keep them."""
+        return []
 
     @http.route(
         f"{DRIVER_PAGE}/manifest.webmanifest",

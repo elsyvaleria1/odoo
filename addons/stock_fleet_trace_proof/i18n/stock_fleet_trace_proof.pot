@@ -1,0 +1,52 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_trace_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 21:20+0000\n"
+"PO-Revision-Date: 2026-10-09 21:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "Code sent to %(sent_to)s. Type the code they read you."
+msgstr ""
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "Confirm"
+msgstr ""
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "Customer is here: confirm with a code"
+msgstr ""
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "Needs signal: capture the signature instead."
+msgstr ""
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "Send the customer a code"
+msgstr ""
+
+#. module: stock_fleet_trace_proof
+#. odoo-python
+#: code:addons/stock_fleet_trace_proof/controllers/main.py:0
+msgid "The customer confirmed this delivery."
+msgstr ""

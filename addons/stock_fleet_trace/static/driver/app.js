@@ -1006,6 +1006,12 @@ function actionForm(kind, stop) {
             };
         };
     }
+    for (const plugin of window.sftDriverPlugins || []) {
+        const extra = plugin.actionFields?.(kind, stop, pluginApi);
+        if (extra) {
+            fields.push(extra);
+        }
+    }
     const titles = {
         deliver: T.action_deliver,
         partial: T.action_partial,
@@ -1058,6 +1064,21 @@ function actionForm(kind, stop) {
         ),
     );
 }
+
+/**
+ * What a plugin of another module (window.sftDriverPlugins) works with: its
+ * ``actionFields(kind, stop, api)`` returns an element added to the form of a
+ * stop action, or nothing.
+ */
+const pluginApi = {
+    h,
+    fmt,
+    rpc,
+    field,
+    showMessage: (kind, text) => showMessage(kind, text),
+    terms: T,
+    isOnline: () => state.online,
+};
 
 // ---------------------------------------------------------------------------
 // Rendering

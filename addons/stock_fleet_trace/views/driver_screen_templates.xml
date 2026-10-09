@@ -28,6 +28,11 @@
                     rel="stylesheet"
                     href="/stock_fleet_trace/static/driver/driver.css" />
                 <script type="module" src="/stock_fleet_trace/static/driver/app.js" />
+                <script
+                    type="module"
+                    t-foreach="plugins"
+                    t-as="plugin"
+                    t-att-src="plugin" />
             </head>
             <body t-att-data-boot="boot">
                 <div id="sft-app">
