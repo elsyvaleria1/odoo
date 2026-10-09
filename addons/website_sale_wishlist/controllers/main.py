@@ -6,7 +6,7 @@ _debug = DebugLog(__name__)
 
 class WebsiteSaleWishlist(Controller):
     @route("/shop/wishlist/add", type="jsonrpc", auth="public", website=True)
-    def add_to_wishlist(self, product_id, **kw):
+    def add_to_wishlist(self, product_id, **kw) -> int:
         product = request.env["product.product"].browse(product_id)
 
         price = product._get_combination_info_variant()["price"]
@@ -39,7 +39,7 @@ class WebsiteSaleWishlist(Controller):
             price=price,
             anonymous=not partner_id,
         )
-        return wish
+        return wish.id
 
     @route("/shop/wishlist", type="http", auth="public", website=True, sitemap=False)
     def get_wishlist(self, **kw):
