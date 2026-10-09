@@ -57,9 +57,13 @@ class RuleScriptTrace(models.Model):
     )
 
     def write(self, vals):
-        raise UserError(
-            self.env._("A rule trace records what was computed; it does not change.")
-        )
+        if self:
+            raise UserError(
+                self.env._(
+                    "A rule trace records what was computed; it does not change."
+                )
+            )
+        return super().write(vals)
 
     def _record(self, record, purpose, code, on_date, inputs, value, trace) -> None:
         """Keep the evaluation behind a figure of `record`: the version in force,

@@ -37,6 +37,7 @@ class RuleScriptVersion(models.Model):
     script_id = fields.Many2one(
         comodel_name="rule.script",
         string="Rule",
+        index=True,
         required=True,
         ondelete="cascade",
     )
