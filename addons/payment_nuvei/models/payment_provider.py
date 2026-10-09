@@ -75,7 +75,13 @@ class PaymentProvider(models.Model):
         :rtype: str
         """
         self.check_singleton()
-        signature_keys = const.SIGNATURE_KEYS if incoming else data.keys()
+        if incoming:
+            data = dict(
+                data, productId=const.normalize_product_id(data.get("productId"))
+            )
+            signature_keys = const.SIGNATURE_KEYS
+        else:
+            signature_keys = data.keys()
         sign_data = "".join([str(data.get(k, "")) for k in signature_keys])
         key = self.nuvei_secret_key
         signing_string = f"{key}{sign_data}"

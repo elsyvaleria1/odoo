@@ -47,6 +47,12 @@ PAYMENT_METHODS_MAPPING = {
     "webpay": "apmgw_Webpay",
 }
 
+
+# Nuvei signs productId with its spaces, which a DMN may carry as `+`.
+def normalize_product_id(product_id):
+    return str(product_id or "").replace("+", " ")
+
+
 # The keys of the values to use in the calculation of the signature.
 SIGNATURE_KEYS = [
     "totalAmount",

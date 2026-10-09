@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 from uuid import uuid4
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.http import request
 from odoo.tools import consteq, float_round
@@ -17,6 +17,17 @@ _logger = get_payment_logger(__name__)
 
 class PaymentTransaction(models.Model):
     _inherit = "payment.transaction"
+
+    nuvei_ppp_transaction_id = fields.Char(
+        string="Nuvei Payment Page Transaction ID",
+        readonly=True,
+        copy=False,
+    )
+
+    _nuvei_ppp_transaction_id_unique = models.UniqueIndex(
+        "(nuvei_ppp_transaction_id) WHERE nuvei_ppp_transaction_id IS NOT NULL",
+        "A Nuvei payment page transaction confirms one transaction only.",
+    )
 
     @api.model
     def _receiver_for_nuvei_return(self, **path_args) -> tuple:
@@ -75,6 +86,34 @@ class PaymentTransaction(models.Model):
         )
         if not consteq(received_signature, expected_signature):
             _logger.warning("Received payment data with invalid signature")
+            return False
+        return self._is_nuvei_payment_data_own(payment_data)
+
+    def _is_nuvei_payment_data_own(self, payment_data) -> bool:
+        # The checksum covers neither invoice_id nor TransactionID: productId,
+        # which is signed, names the transaction, and the payment page
+        # transaction id, also signed, confirms one transaction only.
+        product_id = const.normalize_product_id(payment_data.get("productId"))
+        if product_id and product_id != const.normalize_product_id(self.reference):
+            _logger.warning(
+                "Received signed payment data of %s for transaction %s.",
+                product_id,
+                self.reference,
+            )
+            return False
+        ppp_transaction_id = payment_data.get("PPP_TransactionID")
+        if ppp_transaction_id and self.search_count(
+            [
+                ("provider_code", "=", "nuvei"),
+                ("nuvei_ppp_transaction_id", "=", str(ppp_transaction_id)),
+                ("id", "!=", self.id),
+            ],
+            limit=1,
+        ):
+            _logger.warning(
+                "Payment page transaction %s already confirmed another transaction.",
+                ppp_transaction_id,
+            )
             return False
         return True
 
@@ -135,6 +174,7 @@ class PaymentTransaction(models.Model):
             "first_name": first_name[:30],
             "item_amount_1": rounded_amount,
             "item_name_1": self.reference,
+            "productId": self.reference,
             "item_quantity_1": 1,
             "invoice_id": self.reference,
             "last_name": last_name[:40],
@@ -209,6 +249,9 @@ class PaymentTransaction(models.Model):
 
         # Update the provider reference.
         self.provider_reference = payment_data.get("TransactionID")
+        self.nuvei_ppp_transaction_id = (
+            payment_data.get("PPP_TransactionID") or self.nuvei_ppp_transaction_id
+        )
 
         # Update the payment method.
         payment_option = payment_data.get("payment_method", "")
@@ -218,7 +261,8 @@ class PaymentTransaction(models.Model):
         self.payment_method_id = payment_method or self.payment_method_id
 
         # Update the payment state.
-        status = payment_data.get("Status") or payment_data.get("ppp_status")
+        # `Status` is signed; `ppp_status` is not.
+        status = payment_data.get("Status")
         if not status:
             self._set_error(self.env._("Received data with missing payment state."))
             return None

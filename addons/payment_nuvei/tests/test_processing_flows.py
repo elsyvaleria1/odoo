@@ -135,3 +135,89 @@ class TestProcessingFlows(NuveiCommon):
         tx.invalidate_recordset()
         self.assertEqual(response.status_code, 401)
         self.assertEqual(tx.state, "draft")
+
+    def _get_signed_payment_data(self, tx, **values):
+        payment_data = {
+            **self.payment_data,
+            "invoice_id": tx.reference,
+            "productId": tx.reference,
+            "currency": tx.currency_id.name,
+            **values,
+        }
+        payment_data["advanceResponseChecksum"] = self.provider._get_nuvei_signature(
+            payment_data, incoming=True
+        )
+        return payment_data
+
+    def _return_from_payment_page(self, payment_data):
+        response = self._make_http_get_request(
+            self._build_url(NuveiController._return_url), params=payment_data
+        )
+        self.env["payment.transaction"].invalidate_model()
+        return response
+
+    @mute_logger("odoo.addons.payment_nuvei.controllers.main")
+    def test_a_signed_return_confirms_its_transaction(self):
+        tx = self._create_transaction("redirect")
+        self._return_from_payment_page(self._get_signed_payment_data(tx))
+        self.assertEqual(tx.state, "done")
+        self.assertEqual(tx.nuvei_ppp_transaction_id, "489616878")
+
+    @mute_logger("odoo.addons.payment_nuvei.controllers.main")
+    def test_a_product_id_whose_spaces_arrive_as_plus_signs_is_the_reference(self):
+        tx = self._create_transaction("redirect")
+        payment_data = self._get_signed_payment_data(tx)
+        payment_data["productId"] = tx.reference.replace(" ", "+")
+        self._return_from_payment_page(payment_data)
+        self.assertEqual(tx.state, "done")
+
+    @mute_logger(
+        "odoo.addons.payment_nuvei.controllers.main",
+        "odoo.addons.payment_nuvei.models.payment_transaction",
+        "odoo.addons.payment.models.payment_transaction",
+    )
+    def test_the_signed_data_of_another_transaction_confirms_nothing(self):
+        paid_tx = self._create_transaction("redirect", reference="Nuvei paid")
+        other_tx = self._create_transaction("redirect", reference="Nuvei other")
+        payment_data = dict(
+            self._get_signed_payment_data(paid_tx), invoice_id=other_tx.reference
+        )
+        for send in (
+            lambda: self._return_from_payment_page(payment_data),
+            lambda: self._make_http_post_request(
+                self._build_url(NuveiController._webhook_url), data=payment_data
+            ),
+        ):
+            response = send()
+            other_tx.invalidate_recordset()
+            self.assertEqual(response.status_code, 401)
+            self.assertEqual(other_tx.state, "draft")
+
+    @mute_logger(
+        "odoo.addons.payment_nuvei.controllers.main",
+        "odoo.addons.payment_nuvei.models.payment_transaction",
+        "odoo.addons.payment.models.payment_transaction",
+    )
+    def test_a_payment_page_transaction_confirms_one_transaction_only(self):
+        # A payment page rendered before productId was sent signs an empty one.
+        paid_tx = self._create_transaction("redirect", reference="Nuvei paid")
+        other_tx = self._create_transaction("redirect", reference="Nuvei other")
+        payment_data = self._get_signed_payment_data(paid_tx, productId="")
+        self._return_from_payment_page(payment_data)
+        self.assertEqual(paid_tx.state, "done")
+        response = self._return_from_payment_page(
+            dict(payment_data, invoice_id=other_tx.reference)
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(other_tx.state, "draft")
+
+    @mute_logger(
+        "odoo.addons.payment_nuvei.controllers.main",
+        "odoo.addons.payment_nuvei.models.payment_transaction",
+    )
+    def test_the_unsigned_ppp_status_is_not_read(self):
+        tx = self._create_transaction("redirect")
+        payment_data = self._get_signed_payment_data(tx, Status="")
+        payment_data["ppp_status"] = "OK"
+        self._return_from_payment_page(payment_data)
+        self.assertNotEqual(tx.state, "done")
