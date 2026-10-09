@@ -1,12 +1,14 @@
 import time
-from types import SimpleNamespace
 from unittest.mock import patch
 
+from odoo import SUPERUSER_ID, api
+from odoo.db import db_connect
 from odoo.libs.json import loads as json_loads
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import BaseCase, TransactionCase, tagged
+from odoo.tests.common import get_db_name
 
-from ..models import bus as bus_module
 from ..models.bus import NOTIFICATION_HOLD_BACK_SECONDS
+from ..websocket import NotificationDispatchState
 
 
 @tagged("-at_install", "post_install")
@@ -184,37 +186,75 @@ class TestEnsureHooks(TransactionCase):
 
 
 @tagged("-at_install", "post_install")
-class TestSlowTransactionWarning(TransactionCase):
-    def test_warns_when_held_longer_than_the_hold_back_window(self):
-        self.env["bus.bus"]._sendone("slow_chan", "type", "message")
-        self.env.cr.precommit.run()
-        self.env.cr.postcommit.data["bus.bus.first_insert"] = (
-            time.monotonic() - NOTIFICATION_HOLD_BACK_SECONDS - 5
-        )
-        with (
-            patch("odoo.addons.bus.models.bus._send_pg_notify"),
-            self.assertLogs("odoo.addons.bus.models.bus", level="WARNING") as log,
-        ):
-            self.env.cr.postcommit.run()
-        self.assertIn("beyond the", log.output[0])
-        self.assertIn("slow_chan", log.output[0])
+class TestIdsDrawnAtCommit(BaseCase):
+    # Real transactions, committed: the redraw is a deferred trigger, and the
+    # test cursor never commits.
+    CHANNEL = "bus_ids_drawn_at_commit"
 
-    def test_the_window_opens_at_the_insert_not_at_the_send(self):
+    def setUp(self):
+        super().setUp()
+        self.db = db_connect(get_db_name())
+        self.addCleanup(self._delete_rows)
+
+    def _env(self, cr):
+        return api.Environment(cr, SUPERUSER_ID, {})
+
+    def _delete_rows(self):
+        with self.db.cursor() as cr:
+            cr.execute(
+                "DELETE FROM bus_bus WHERE channel LIKE %s", [f"%{self.CHANNEL}%"]
+            )
+
+    def _send_and_commit(self, payload):
+        with self.db.cursor() as cr:
+            self._env(cr)["bus.bus"]._sendone(self.CHANNEL, "t", payload)
+
+    def _ids(self):
+        with self.db.cursor() as cr:
+            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=1)
+        return {n["message"]["payload"]: n["id"] for n in notifications}
+
+    def test_a_long_transaction_flushed_by_a_savepoint_is_still_delivered(self):
+        with self.db.cursor() as cr:
+            last = self._env(cr)["bus.bus"]._bus_last_id()
         now = [0.0]
-        with (
-            patch.object(bus_module, "time", SimpleNamespace(monotonic=lambda: now[0])),
-            patch("odoo.addons.bus.models.bus._send_pg_notify"),
-        ):
-            self.env["bus.bus"]._sendone("late_chan", "type", "message")
-            now[0] = 100.0
-            self.env.cr.precommit.run()
-            now[0] = 101.0
-            with self.assertNoLogs("odoo.addons.bus.models.bus", level="WARNING"):
-                self.env.cr.postcommit.run()
+        state = NotificationDispatchState(
+            NOTIFICATION_HOLD_BACK_SECONDS, clock=lambda: now[0]
+        )
+        state.initialize_last_id(last)
+        delivered = []
 
-    def test_no_warning_for_a_prompt_transaction(self):
-        self.env["bus.bus"]._sendone("fast_chan", "type", "message")
-        with patch("odoo.addons.bus.models.bus._send_pg_notify"):
-            self.env.cr.precommit.run()
-            with self.assertNoLogs("odoo.addons.bus.models.bus", level="WARNING"):
-                self.env.cr.postcommit.run()
+        def dispatch():
+            with self.db.cursor() as cr:
+                notifications, _truncated = self._env(cr)["bus.bus"]._poll_batch(
+                    [self.CHANNEL], state.last_id, state.ignore_ids
+                )
+            if notifications:
+                state.record_dispatched([n["id"] for n in notifications])
+                delivered.extend(n["message"]["payload"] for n in notifications)
+
+        with self.db.cursor() as long_cr:
+            self._env(long_cr)["bus.bus"]._sendone(self.CHANNEL, "t", "long")
+            with long_cr.savepoint():
+                pass
+            time.sleep(1.1)
+            self._send_and_commit("first")
+            dispatch()
+            now[0] = NOTIFICATION_HOLD_BACK_SECONDS + 1
+            self._send_and_commit("second")
+            dispatch()
+        dispatch()
+        self.assertEqual(delivered, ["first", "second", "long"])
+        ids = self._ids()
+        self.assertGreater(ids["long"], ids["second"], "its id was drawn at commit")
+
+    def test_a_prompt_transaction_keeps_the_ids_it_drew(self):
+        with self.db.cursor() as cr:
+            Bus = self._env(cr)["bus.bus"]
+            Bus._sendone(self.CHANNEL, "t", "prompt")
+            cr.flush()
+            cr.execute(
+                "SELECT id FROM bus_bus WHERE channel LIKE %s", [f"%{self.CHANNEL}%"]
+            )
+            drawn = cr.fetchone()[0]
+        self.assertEqual(self._ids(), {"prompt": drawn})

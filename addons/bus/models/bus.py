@@ -174,6 +174,30 @@ def get_notify_payloads(channels):
     return payloads
 
 
+# A websocket's watermark moves past an id once that id has been dispatched for
+# NOTIFICATION_HOLD_BACK_SECONDS, so an id drawn long before the commit that
+# makes its row visible is skipped for good. A flush (every savepoint) inserts
+# the pending bus rows and draws their ids mid-transaction. Deferred to the
+# commit, this redraws, in insertion order, the ids of a transaction older than
+# a second -- well inside the hold-back window.
+# (A plain string: its plpgsql has no query parameters.)
+DRAW_IDS_AT_COMMIT = """
+    CREATE OR REPLACE FUNCTION bus_bus_draw_id_at_commit() RETURNS trigger
+    LANGUAGE plpgsql AS $$
+    BEGIN
+        IF clock_timestamp() - transaction_timestamp() > interval '1 second' THEN
+            UPDATE bus_bus SET id = nextval('bus_bus_id_seq') WHERE id = NEW.id;
+        END IF;
+        RETURN NULL;
+    END
+    $$;
+    DROP TRIGGER IF EXISTS bus_bus_draw_id_at_commit ON bus_bus;
+    CREATE CONSTRAINT TRIGGER bus_bus_draw_id_at_commit
+        AFTER INSERT ON bus_bus DEFERRABLE INITIALLY DEFERRED
+        FOR EACH ROW EXECUTE FUNCTION bus_bus_draw_id_at_commit();
+"""
+
+
 class BusBus(models.Model):
     _name = "bus.bus"
 
@@ -184,6 +208,10 @@ class BusBus(models.Model):
 
     _channel_id_idx = models.Index("(channel, id)")
     _create_date_idx = models.Index("(create_date)")
+
+    def init(self) -> None:
+        super().init()
+        self.env.cr.execute(DRAW_IDS_AT_COMMIT)
 
     @api.autovacuum
     def _gc_messages(self) -> tuple:
@@ -244,9 +272,6 @@ class BusBus(models.Model):
 
             @cr.precommit.add
             def create_bus():
-                # A row's id is drawn here, and a flush (a savepoint) can run
-                # this long before the commit that makes the row visible.
-                cr.postcommit.data.setdefault("bus.bus.first_insert", time.monotonic())
                 self.sudo().create(cr.precommit.data.pop("bus.bus.values"))
 
         if "bus.bus.channels" not in cr.postcommit.data:
@@ -255,22 +280,6 @@ class BusBus(models.Model):
             @cr.postcommit.add
             def notify():
                 channels = list(cr.postcommit.data.pop("bus.bus.channels"))
-                inserted_at = cr.postcommit.data.pop("bus.bus.first_insert", None)
-                held_for = (
-                    0.0 if inserted_at is None else time.monotonic() - inserted_at
-                )
-                if held_for > NOTIFICATION_HOLD_BACK_SECONDS:
-                    _logger.warning(
-                        "Bus notification inserted %.1fs before its commit, "
-                        "beyond the %ds hold-back window: it may never be "
-                        "dispatched to clients that received other "
-                        "notifications meanwhile. A savepoint flushes pending "
-                        "bus notifications; send them after the transaction's "
-                        "long-running part. Channels: %.300s",
-                        held_for,
-                        NOTIFICATION_HOLD_BACK_SECONDS,
-                        channels,
-                    )
                 payloads = get_notify_payloads(channels)
                 if len(payloads) > 1:
                     _logger.info(
