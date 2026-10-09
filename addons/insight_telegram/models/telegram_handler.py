@@ -1,8 +1,11 @@
 from odoo import models
+from odoo.tools.translate import LazyTranslate
 
 from ..services.insight_assistant import InsightAssistant
 from odoo.addons.telegram.tools import format as tg
-from odoo.addons.telegram.tools.dispatch import translation_env
+from odoo.addons.telegram.tools.dispatch import TelegramCommand, translation_env
+
+_lt = LazyTranslate(__name__)
 
 GROUP = "insight_telegram.group_insight_telegram"
 AUTHORIZE = "ins_ok"
@@ -18,8 +21,36 @@ class TelegramHandlerInsight(models.AbstractModel):
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Ask Odoo"
 
-    # no command: on a bot that answers questions, whatever a member writes or
-    # says is a question
+    # no command asks: on a bot that answers questions, whatever a member
+    # writes or says is a question; /clear only starts the conversation over
+    def _telegram_commands(self) -> dict:
+        return {
+            "/clear": TelegramCommand(
+                "_handle_clear_command",
+                "internal",
+                builtin=True,
+                description=_lt("Forget this conversation and start over"),
+            ),
+        }
+
+    def _feature_enabled(self, bot):
+        return bool(bot.insight_ai_enabled)
+
+    def _handle_clear_command(
+        self, bot, chat, args, partner=False, internal_user=False
+    ) -> None:
+        """Forget the chat's conversation: its history, the files it sent
+        and the changes waiting for authorization."""
+        tr_env = translation_env(bot, chat)
+        if not self._may_ask(bot, internal_user):
+            return
+        chat._insight_forget()
+        bot.send_message(
+            chat.chat_id,
+            tr_env._("Done, I forgot our conversation: we start from zero."),
+            parse_mode=None,
+        )
+
     def _telegram_intakes(self):
         return frozenset({"text", "voice", "photo", "document", "audio", "video"})
 

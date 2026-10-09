@@ -565,9 +565,36 @@ class TestInsightHandler(TelegramBotTestCase):
         self.test_bot.insight_ai_enabled = False
         self.assertFalse(may_ask(self.test_bot, self.test_user))
 
-    def test_no_command_is_needed(self):
-        self.assertFalse(self.handler._telegram_commands())
+    def test_no_command_is_needed_and_clear_starts_over(self):
+        commands = self.handler._telegram_commands()
+        self.assertEqual(list(commands), ["/clear"], "only /clear, no command asks")
         self.assertFalse(self.test_bot.command_ids)
+        self.assertTrue(
+            self.router._is_command_enabled(
+                self.test_bot, self.handler, "/clear", commands["/clear"]
+            ),
+            "a builtin of an answering bot, with nothing to link",
+        )
+        self.test_user.group_ids = [Command.link(self.group.id)]
+        self.test_chat._set_context(
+            "telegram_insight_history",
+            [{"question": "q", "answer": "a", "at": "2999-01-01 00:00:00"}],
+        )
+        self.test_chat._insight_set_pending({"operations": [], "at": "2999-01-01"})
+        with self.mock_api_gateway_post(self.mock_ok) as post:
+            self.handler._handle_clear_command(
+                self.test_bot, self.test_chat, "", self.test_partner, self.test_user
+            )
+        self.assertFalse(self.test_chat._insight_history())
+        self.assertFalse(self.test_chat._insight_pending())
+        self.assertIn("sendMessage", str(post.call_args_list))
+        self.test_bot.insight_ai_enabled = False
+        self.assertFalse(
+            self.router._is_command_enabled(
+                self.test_bot, self.handler, "/clear", commands["/clear"]
+            ),
+            "a bot that answers no questions has no /clear",
+        )
 
     def test_a_member_question_is_answered_by_a_job(self):
         self.test_user.group_ids = [Command.link(self.group.id)]

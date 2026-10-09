@@ -1121,3 +1121,15 @@ msgstr "¿En qué empresa? Elígela abajo; «cancelar» los descarta."
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "There is nothing waiting for a company."
 msgstr "No hay cambios esperando una empresa."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Forget this conversation and start over"
+msgstr "Olvidar esta conversación y empezar de cero"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Done, I forgot our conversation: we start from zero."
+msgstr "Listo, olvidé nuestra conversación: empezamos de cero."

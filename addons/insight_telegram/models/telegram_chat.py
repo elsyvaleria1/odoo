@@ -506,6 +506,12 @@ class TelegramChat(models.Model):
     def _insight_set_pending(self, pending) -> None:
         self._set_context(PENDING_KEY, pending)
 
+    def _insight_forget(self) -> None:
+        """Start the conversation over: no history, files or pending changes."""
+        self._set_context(HISTORY_KEY, [])
+        self._set_context(FILES_KEY, None)
+        self._set_context(PENDING_KEY, None)
+
     def _insight_history(self) -> list:
         """The recent questions of this chat and how each was read, oldest
         first."""
