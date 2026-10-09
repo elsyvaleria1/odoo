@@ -3,10 +3,9 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PosPayment.prototype, {
     _load_pos_data_fields() {
-        return [
-            ...super._load_pos_data_fields(),
-            "razorpay_reverse_ref_no",
-            "razorpay_p2p_request_id",
-        ];
+        const fields = super._load_pos_data_fields();
+        return fields.length
+            ? [...fields, "razorpay_reverse_ref_no", "razorpay_p2p_request_id"]
+            : fields;
     },
 });

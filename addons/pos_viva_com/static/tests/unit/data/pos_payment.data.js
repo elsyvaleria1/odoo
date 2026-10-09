@@ -3,6 +3,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PosPayment.prototype, {
     _load_pos_data_fields() {
-        return [...super._load_pos_data_fields(), "viva_com_session_id"];
+        const fields = super._load_pos_data_fields();
+        return fields.length ? [...fields, "viva_com_session_id"] : fields;
     },
 });

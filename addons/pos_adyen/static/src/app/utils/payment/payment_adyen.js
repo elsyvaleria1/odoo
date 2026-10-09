@@ -233,16 +233,38 @@ export class PaymentAdyen extends PaymentInterface {
      * confirmation from Adyen is received via the webhook.
      */
     async handleAdyenStatusResponse() {
-        const notification = await this.pos.data.silentCall(
-            "pos.payment.method",
-            "get_latest_adyen_status",
-            [[this.payment_method_id.id]],
-        );
-
+        const notification = await this._fetchLatestAdyenStatus();
         if (!notification) {
             this._handleOdooConnectionFailure();
             return;
         }
+        this._handleAdyenNotification(notification);
+    }
+
+    _fetchLatestAdyenStatus() {
+        return this.pos.data.silentCall(
+            "pos.payment.method",
+            "get_latest_adyen_status",
+            [[this.payment_method_id.id]],
+        );
+    }
+
+    async resumePendingPayment(line) {
+        this.setMostRecentServiceId(line.terminalServiceId);
+        if (line.getPaymentStatus() !== "waitingCard" || !line.terminalServiceId) {
+            return;
+        }
+        const notification = await this._fetchLatestAdyenStatus();
+        if (
+            notification?.SaleToPOIResponse?.MessageHeader?.ServiceID ===
+                line.terminalServiceId &&
+            this.pendingAdyenline() === line
+        ) {
+            this._handleAdyenNotification(notification);
+        }
+    }
+
+    _handleAdyenNotification(notification) {
         const line = this.pendingAdyenline();
         const response = notification.SaleToPOIResponse.PaymentResponse.Response;
         const additional_response = new URLSearchParams(response.AdditionalResponse);

@@ -23,7 +23,7 @@
             "pos_razorpay/static/tests/tours/**/*",
         ],
         "web.assets_unit_tests": [
-            "pos_razorpay/static/tests/unit/data/**/*",
+            "pos_razorpay/static/tests/unit/**/*",
         ],
     },
 }

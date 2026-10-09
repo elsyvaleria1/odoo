@@ -15,8 +15,8 @@ patch(PaymentScreen.prototype, {
             if (!pendingPaymentLine) {
                 return;
             }
-            pendingPaymentLine.payment_method_id.payment_terminal.setMostRecentServiceId(
-                pendingPaymentLine.terminalServiceId,
+            pendingPaymentLine.payment_method_id.payment_terminal.resumePendingPayment(
+                pendingPaymentLine,
             );
         });
     },

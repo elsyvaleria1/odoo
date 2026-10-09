@@ -23,7 +23,7 @@
             "pos_viva_com/static/tests/tours/**/*",
         ],
         "web.assets_unit_tests": [
-            "pos_viva_com/static/tests/unit/data/**/*",
+            "pos_viva_com/static/tests/unit/**/*",
         ],
     },
 }
