@@ -42,16 +42,16 @@ msgstr "%s (nusxa)"
 #: model_terms:ir.ui.view,arch_db:esg.emission_factor_form_view
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-2\"/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle me-2\"/>\n"
 "                    You are modifying an emission factor already assigned to "
 "emissions.\n"
 "                    Changing it will update these emissions. To keep the old "
 "value, duplicate the factor."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-2\"/> Siz chiqindilarga allaqachon "
-"biriktirilgan emissiya koeffitsientini o‘zgartirmoqdasiz. Uni o‘zgartirish "
-"ushbu chiqindilarni yangilaydi. Eski qiymatni saqlab qolish uchun "
-"koeffitsientni takrorlang."
+"<i class=\"fa-solid fa-exclamation-triangle me-2\"/> Siz chiqindilarga "
+"allaqachon biriktirilgan emissiya koeffitsientini o‘zgartirmoqdasiz. Uni "
+"o‘zgartirish ushbu chiqindilarni yangilaydi. Eski qiymatni saqlab qolish "
+"uchun koeffitsientni takrorlang."
 
 #. module: esg
 #: model_terms:ir.ui.view,arch_db:esg.carbon_emission_report_kanban_view

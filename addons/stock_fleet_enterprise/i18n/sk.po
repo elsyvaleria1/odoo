@@ -20,8 +20,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:stock_fleet_enterprise.stock_picking_batch_view_kanban
 msgid ""
 "<span class=\"mx-2\">\n"
-"                                    <i class=\"fa fa-long-arrow-right mx-2\" "
-"title=\"Arrow\"/>\n"
+"                                    <i class=\"fa-solid fa-right-long mx-2\" title=\"Arrow\"/>\n"
 "                                </span>"
 msgstr ""
 

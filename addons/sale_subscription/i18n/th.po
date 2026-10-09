@@ -466,13 +466,13 @@ msgstr ""
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_sidebar
-msgid "<i class=\"fa fa-download me-1\"/> Download"
-msgstr "<i class=\"fa fa-download me-1\"/> ดาวน์โหลด"
+msgid "<i class=\"fa-solid fa-download me-1\"/> Download"
+msgstr "<i class=\"fa-solid fa-download me-1\"/> ดาวน์โหลด"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-check\"/> In Progress"
-msgstr "<i class=\"fa fa-fw fa-check\"/> อยู่ระหว่าดำเนินการ"
+msgid "<i class=\"fa-solid fa-check\"/> In Progress"
+msgstr "<i class=\"fa-solid fa-check\"/> อยู่ระหว่าดำเนินการ"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -491,7 +491,7 @@ msgstr "<i class=\"fa fa-fw fa-remove\"/> ปิด"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-remove\"/> Closing"
+msgid "<i class=\"fa-solid fa-xmark\"/> Closing"
 msgstr ""
 
 #. module: sale_subscription
@@ -501,7 +501,7 @@ msgstr "<i class=\"fa fa-fw fa-repeat\"/> ต่ออายุการใช�
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
-msgid "<i class=\"fa fa-plus\"/> Create address"
+msgid "<i class=\"fa-solid fa-plus\"/> Create address"
 msgstr ""
 
 #. module: sale_subscription
@@ -525,20 +525,20 @@ msgstr ""
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> To Renew</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> To Renew</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> ต่ออายุการใช้งาน</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> ต่ออายุการใช้งาน</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Closed</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Closed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> ปิดแล้ว</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> ปิดแล้ว</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
@@ -551,37 +551,37 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
 msgid ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Upsell</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> ขายต่อยอด</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Renewed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> ต่ออายุแล้ว</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> In Progress</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/>กำลังดำเนินการ</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Paused</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> หยุดชั่วคราว</span>"
 
 #. module: sale_subscription

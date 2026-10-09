@@ -264,45 +264,44 @@ msgstr ""
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"Mahsulot domeni\"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"Mahsulot domeni\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Products\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"Mahsulotlar\"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"Mahsulotlar\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
 #, fuzzy
-msgid ""
-"<i class=\"fa fa-cube fa-fw\" title=\"Products\"/><span>All Products</span>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/><span>All Products</span>"
 msgstr ""
-"<i class=\"fa fa-cube fa-fw\" title=\"Mahsulotlar\"/><span>Barcha "
+"<i class=\"fa-solid fa-cube\" title=\"Mahsulotlar\"/><span>Barcha "
 "mahsulotlar</span>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-cubes fa-fw\" title=\"Product Categories\"/>"
-msgstr "<i class=\"fa fa-cubes fa-fw\" title=\"Mahsulot turkumlari\"/>"
+msgid "<i class=\"fa-solid fa-cubes\" title=\"Product Categories\"/>"
+msgstr "<i class=\"fa-solid fa-cubes\" title=\"Mahsulot turkumlari\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-search fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-search fa-fw\" title=\"Mahsulot domeni\"/>"
+msgid "<i class=\"fa-solid fa-search\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-search\" title=\"Mahsulot domeni\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-tags fa-fw\" title=\"Product Tags\"/>"
-msgstr "<i class=\"fa fa-tags fa-fw\" title=\"Mahsulot teglari\"/>"
+msgid "<i class=\"fa-solid fa-tags\" title=\"Product Tags\"/>"
+msgstr "<i class=\"fa-solid fa-tags\" title=\"Mahsulot teglari\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_program_view_form

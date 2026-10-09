@@ -27,10 +27,10 @@ msgstr "+1 555-555-1234"
 #. module: website_mass_mailing_sms
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing_sms.s_newsletter_sms_notifications
 msgid ""
-"<i class=\"fa fa-check-circle-o fa-lg\" role=\"img\"/> Thanks for "
+"<i class=\"fa-regular fa-circle-check fa-lg\" role=\"img\"/> Thanks for "
 "registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o fa-lg\" role=\"img\"/>Bedankt voor je "
+"<i class=\"fa-regular fa-circle-check fa-lg\" role=\"img\"/>Bedankt voor je "
 "registratie!"
 
 #. module: website_mass_mailing_sms

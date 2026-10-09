@@ -32,37 +32,37 @@ msgstr "<font class=\"text-white\">|</font>"
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Ausgewählte "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Ausgewählte "
 "Einblicke in die Branche"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Tipps und "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Tipps und "
 "Empfehlungen von Experten"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Leitfäden &amp; "
-"Ressourcen"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Leitfäden &amp;"
+" Ressourcen"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Danke für die Registrierung!"
+"<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Danke für die "
+"Registrierung!"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template

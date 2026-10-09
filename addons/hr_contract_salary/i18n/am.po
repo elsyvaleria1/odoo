@@ -41,7 +41,7 @@ msgstr ""
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_thank_you
-msgid "<i class=\"fa fa-check-circle-o mr8\"/>Congratulations"
+msgid "<i class=\"fa-regular fa-circle-check mr8\"/>Congratulations"
 msgstr ""
 
 #. module: hr_contract_salary

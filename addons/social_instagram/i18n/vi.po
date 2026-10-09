@@ -31,8 +31,8 @@ msgstr "34 GIÂY TRƯỚC"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Bình luận\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Bình luận\"/>"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
@@ -64,8 +64,8 @@ msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-heart me-1\" title=\"Likes\"/>"
-msgstr "<i class=\"fa fa-heart me-1\" title=\"Lượt thích\"/>"
+msgid "<i class=\"fa-solid fa-heart me-1\" title=\"Likes\"/>"
+msgstr "<i class=\"fa-solid fa-heart me-1\" title=\"Lượt thích\"/>"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview

@@ -112,11 +112,11 @@ msgstr ""
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.im_livechat_channel_view_kanban
 msgid ""
-"<i class=\"fa fa-smile-o text-success\" title=\"Percentage of happy "
-"ratings\" role=\"img\" aria-label=\"Happy face\"/>"
+"<i class=\"fa-regular fa-face-smile text-success\" title=\"Percentage of "
+"happy ratings\" role=\"img\" aria-label=\"Happy face\"/>"
 msgstr ""
-"<i class=\"fa fa-smile-o text-success\" title=\"درصد امتیازات خوشحال\" "
-"role=\"img\" aria-label=\"چهره خوشحال\"/>"
+"<i class=\"fa-regular fa-face-smile text-success\" title=\"درصد امتیازات "
+"خوشحال\" role=\"img\" aria-label=\"چهره خوشحال\"/>"
 
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.chatbot_test_script_page
@@ -125,8 +125,8 @@ msgstr "<i class=\"oi oi-fw oi-arrow-right\"/>بازگشت به حالت ویر�
 
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.im_livechat_channel_view_form
-msgid "<i title=\"Remove operator\" class=\"fa fa-fw fa-lg fa-close\"/>"
-msgstr "<i title=\"حذف اپراتور\" class=\"fa fa-fw fa-lg fa-close\"/>"
+msgid "<i title=\"Remove operator\" class=\"fa-solid fa-xmark fa-lg\"/>"
+msgstr "<i title=\"حذف اپراتور\" class=\"fa-solid fa-xmark fa-lg\"/>"
 
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.discuss_channel_view_kanban

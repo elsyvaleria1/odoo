@@ -72,21 +72,21 @@ msgstr "%(partner_name)s telefon raqami talab qilinadi"
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> To‘g‘ri sozlash uchun SendCloud "
-"yuk tashish mahsulotlarini yuklashni unutmang."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> To‘g‘ri sozlash uchun "
+"SendCloud yuk tashish mahsulotlarini yuklashni unutmang."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Sinov muhitida to‘lovlardan "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Sinov muhitida to‘lovlardan "
 "qochish uchun, yorliq yaratilgandan so‘ng yuklaringiz avtomatik ravishda "
 "<b>bekor qilinadi</b>."
 
@@ -94,20 +94,20 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Ochiq va maxfiy kalitlarni faqat "
-"administratorlar sozlashi mumkin."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Ochiq va maxfiy kalitlarni "
+"faqat administratorlar sozlashi mumkin."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Mavjud yetkazib berish mahsulotlari "
+"<i class=\"fa-solid fa-info-circle\"/> Mavjud yetkazib berish mahsulotlari "
 "Sendcloud hisobingizdagi faollashtirilgan tashuvchilarga bog‘liq."
 
 #. module: delivery_sendcloud

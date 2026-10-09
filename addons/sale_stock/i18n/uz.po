@@ -42,32 +42,32 @@ msgstr "1 ta narx taklifi"
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-clock-o\"/> Awaiting arrival"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/> Yetib kelishi kutilmoqda"
+msgid "<i class=\"fa-regular fa-clock\"/> Awaiting arrival"
+msgstr "<i class=\"fa-regular fa-clock\"/> Yetib kelishi kutilmoqda"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-clock-o\"/>Preparation"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/>Tayyorgarlik"
+msgid "<i class=\"fa-regular fa-clock\"/>Preparation"
+msgstr "<i class=\"fa-regular fa-clock\"/>Tayyorgarlik"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-times\"/> Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/> Bekor qilindi"
+msgid "<i class=\"fa-solid fa-times\"/> Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/> Bekor qilindi"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-times\"/>Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/>Bekor qilindi"
+msgid "<i class=\"fa-solid fa-times\"/>Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/>Bekor qilindi"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-truck\"/> Received"
-msgstr "<i class=\"fa fa-fw fa-truck\"/> Qabul qilindi"
+msgid "<i class=\"fa-solid fa-truck\"/> Received"
+msgstr "<i class=\"fa-solid fa-truck\"/> Qabul qilindi"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.stock_production_lot_view_form
@@ -81,13 +81,12 @@ msgstr "<span class=\"o_stat_text\">Savdolar</span>"
 msgid ""
 "<span class=\"small badge rounded-pill text-bg-success "
 "orders_label_text_align\">\n"
-"                                        <i class=\"fa fa-fw fa-truck\"/> "
-"Shipped\n"
+"                                        <i class=\"fa-solid fa-truck\"/> Shipped\n"
 "                                    </span>"
 msgstr ""
 "<span class=\"small badge rounded-pill text-bg-success "
-"orders_label_text_align\"> <i class=\"fa fa-fw fa-truck\"/> Jo‘natildi </"
-"span>"
+"orders_label_text_align\"> <i class=\"fa-solid fa-truck\"/> Jo‘natildi "
+"</span>"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.report_delivery_document_inherit_sale_stock

@@ -117,11 +117,11 @@ msgstr "22 okt 24 14:20:10"
 #: model_terms:ir.ui.view,arch_db:frontdesk.frontdesk_visitor_check_out
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
 "                    The visitor has been successfully <br/> checked out"
 msgstr ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/> Tashrif "
-"buyuruvchi muvaffaqiyatli <br/> ro‘yxatdan chiqarildi"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/> "
+"Tashrif buyuruvchi muvaffaqiyatli <br/> ro‘yxatdan chiqarildi"
 
 #. module: frontdesk
 #: model_terms:web_tour.tour,rainbow_man_message:frontdesk.frontdesk_tour

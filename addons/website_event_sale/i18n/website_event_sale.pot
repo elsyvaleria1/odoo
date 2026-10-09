@@ -27,7 +27,7 @@ msgstr ""
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.event_confirmation
-msgid "<i class=\"fa fa-check me-2\" role=\"img\"/>Registered"
+msgid "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registered"
 msgstr ""
 
 #. module: website_event_sale

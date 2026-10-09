@@ -41,11 +41,11 @@ msgstr ". Bu havola sizga shaxsiy e'tibor va pastroq narxlarni taqdim etadi."
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_shipping_method_envia
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Envia account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Envia account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Mavjud yetkazib berish xizmatlari Envia "
-"hisobingizdagi faollashtirilgan tashuvchilarga bog‘liq."
+"<i class=\"fa-solid fa-info-circle\"/> Mavjud yetkazib berish xizmatlari "
+"Envia hisobingizdagi faollashtirilgan tashuvchilarga bog‘liq."
 
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_delivery_carrier_form_inherit_delivery_envia

@@ -33,12 +33,12 @@ msgstr ""
 
 #. module: website_helpdesk_slides
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.channel_search_result
-msgid "<i class=\"fa fa-2x fa-mortar-board\" title=\"eLearning Course\"/>"
+msgid "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"eLearning Course\"/>"
 msgstr ""
 
 #. module: website_helpdesk_slides
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.search_result
-msgid "<i class=\"fa fa-2x fa-mortar-board\" title=\"eLearning\"/>"
+msgid "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"eLearning\"/>"
 msgstr ""
 
 #. module: website_helpdesk_slides
@@ -50,7 +50,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.search_result
 msgid ""
 "Comments\n"
-"                    | <i class=\"fa fa-folder-open-o\"/>"
+"                    | <i class=\"fa-regular fa-folder-open\"/>"
 msgstr ""
 
 #. module: website_helpdesk_slides

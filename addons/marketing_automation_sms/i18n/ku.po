@@ -36,36 +36,30 @@ msgstr ""
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
 msgstr ""
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
 msgstr ""
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
 msgstr ""
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
 msgstr ""
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"sms_click\" class=\"fa fa-hand-pointer-o "
-"o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" "
-"role=\"img\" aria-label=\"Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_bounce\" class=\"fa fa fa-"
-"exclamation-circle o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
+"<i data-trigger-type=\"sms_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" role=\"img\" aria-label=\"Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_bounce\" class=\"fa-solid fa-exclamation-circle fa o_ma_text_rejected o_add_child_activity text-danger\" title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
 msgstr ""
 
 #. module: marketing_automation_sms

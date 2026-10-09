@@ -45,7 +45,7 @@ msgstr ""
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.portal_breadcrumb
-msgid "<i class=\"fa fa-home\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
+msgid "<i class=\"fa-solid fa-house\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
 msgstr ""
 
 #. module: payment

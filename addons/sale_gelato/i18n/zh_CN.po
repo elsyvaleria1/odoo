@@ -113,17 +113,11 @@ msgstr ""
 #. module: sale_gelato
 #: model_terms:ir.ui.view,arch_db:sale_gelato.product_template_form
 msgid ""
-"<i title=\"All print images are set\" invisible=\"gelato_missing_images\" "
-"class=\"fa fa-check-circle text-success fs-3 me-3\"/>\n"
-"                        <i title=\"Some print images are missing\" "
-"invisible=\"not gelato_missing_images\" class=\"fa fa-question-circle text-"
-"danger fs-3 me-3\"/>"
+"<i title=\"All print images are set\" invisible=\"gelato_missing_images\" class=\"fa-solid fa-check-circle text-success fs-3 me-3\"/>\n"
+"                        <i title=\"Some print images are missing\" invisible=\"not gelato_missing_images\" class=\"fa-solid fa-question-circle text-danger fs-3 me-3\"/>"
 msgstr ""
-"<i title=\"设置所有打印图像\" invisible=\"gelato_missing_images\" class=\"fa "
-"fa-check-circle text-success fs-3 me-3\"/>\n"
-"                        <i title=\"Some print images are missing\" "
-"invisible=\"not gelato_missing_images\" class=\"fa fa-question-circle text-"
-"danger fs-3 me-3\"/>"
+"<i title=\"设置所有打印图像\" invisible=\"gelato_missing_images\" class=\"fa-solid fa-check-circle text-success fs-3 me-3\"/>\n"
+"                        <i title=\"Some print images are missing\" invisible=\"not gelato_missing_images\" class=\"fa-solid fa-question-circle text-danger fs-3 me-3\"/>"
 
 #. module: sale_gelato
 #: model_terms:ir.ui.view,arch_db:sale_gelato.res_config_settings_form

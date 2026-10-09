@@ -35,10 +35,10 @@ msgstr "(Muhrlar: %s)"
 #: model_terms:ir.ui.view,arch_db:snailmail_account.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-lg fa-building-o\" title=\"Values set here are company-"
-"specific.\"/>"
+"<span class=\"fa-regular fa-building fa-lg\" title=\"Values set here are "
+"company-specific.\"/>"
 msgstr ""
-"<span class=\"fa fa-lg fa-building-o\" title=\"Bu yerda belgilangan "
+"<span class=\"fa-regular fa-building fa-lg\" title=\"Bu yerda belgilangan "
 "qiymatlar kompaniyaga xos.\"/>"
 
 #. module: snailmail_account

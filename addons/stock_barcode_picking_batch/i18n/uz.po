@@ -27,17 +27,17 @@ msgstr ""
 #. module: stock_barcode_picking_batch
 #: model_terms:ir.ui.view,arch_db:stock_barcode_picking_batch.stock_move_line_product_selector_inherit
 #, fuzzy
-msgid "<i class=\"fa fa-lg fa-truck\" title=\"Transfer\"/>"
-msgstr "<i class=\"fa fa-lg fa-truck\" title=\"O‘tkazma\"/>"
+msgid "<i class=\"fa-solid fa-truck fa-lg\" title=\"Transfer\"/>"
+msgstr "<i class=\"fa-solid fa-truck fa-lg\" title=\"O‘tkazma\"/>"
 
 #. module: stock_barcode_picking_batch
 #: model_terms:ir.ui.view,arch_db:stock_barcode_picking_batch.stock_picking_view_kanban
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-external-link-square ms-1\" title=\"Open Batch Picking\"/"
-">"
+"<span class=\"fa-solid fa-square-up-right ms-1\" title=\"Open Batch "
+"Picking\"/>"
 msgstr ""
-"<span class=\"fa fa-external-link-square ms-1\" title=\"Ommaviy terish "
+"<span class=\"fa-solid fa-square-up-right ms-1\" title=\"Ommaviy terish "
 "oynasini ochish\"/>"
 
 #. module: stock_barcode_picking_batch

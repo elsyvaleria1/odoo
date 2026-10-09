@@ -25,13 +25,13 @@ msgstr ""
 
 #. module: website_sale_slides
 #: model_terms:ir.ui.view,arch_db:website_sale_slides.course_option_buy_course_now
-msgid "<i class=\"fa fa-bolt\"/> Buy Now"
-msgstr "<i class=\"fa fa-bolt\"/> Køb nu"
+msgid "<i class=\"fa-solid fa-bolt\"/> Buy Now"
+msgstr "<i class=\"fa-solid fa-bolt\"/> Køb nu"
 
 #. module: website_sale_slides
 #: model_terms:ir.ui.view,arch_db:website_sale_slides.course_buy_course_button
-msgid "<i class=\"fa fa-shopping-cart\"/> Add to Cart"
-msgstr "<i class=\"fa fa-shopping-cart\"/> Læg i kurv"
+msgid "<i class=\"fa-solid fa-shopping-cart\"/> Add to Cart"
+msgstr "<i class=\"fa-solid fa-shopping-cart\"/> Læg i kurv"
 
 #. module: website_sale_slides
 #. odoo-python

@@ -118,44 +118,47 @@ msgstr ""
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-briefcase\" title=\"Opportunity Name\"/>"
-msgstr "<i class=\"fa fa-briefcase\" title=\"Nom de l'opportunité\"/>"
+msgid "<i class=\"fa-solid fa-briefcase\" title=\"Opportunity Name\"/>"
+msgstr "<i class=\"fa-solid fa-briefcase\" title=\"Nom de l'opportunité\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-building\" title=\"Company\"/>"
-msgstr "<i class=\"fa fa-building\" title=\"Société\"/>"
+msgid "<i class=\"fa-solid fa-building\" title=\"Company\"/>"
+msgstr "<i class=\"fa-solid fa-building\" title=\"Société\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-envelope\" title=\"Contact Email\"/>"
-msgstr "<i class=\"fa fa-envelope\" title=\"E-mail contact\"/>"
+msgid "<i class=\"fa-solid fa-envelope\" title=\"Contact Email\"/>"
+msgstr "<i class=\"fa-solid fa-envelope\" title=\"E-mail contact\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.sales_team_form_view_in_crm
-msgid "<i class=\"fa fa-info-circle me-2\" title=\"Assigned Lead Count\"/>"
+msgid "<i class=\"fa-solid fa-info-circle me-2\" title=\"Assigned Lead Count\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle me-2\" title=\"Nombre de pistes assignées\"/>"
+"<i class=\"fa-solid fa-info-circle me-2\" title=\"Nombre de pistes "
+"assignées\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-mobile fa-lg\" title=\"Contact Phone\"/>"
-msgstr "<i class=\"fa fa-mobile fa-lg\" title=\"Téléphone contact\"/>"
+msgid "<i class=\"fa-solid fa-mobile-screen-button fa-lg\" title=\"Contact Phone\"/>"
+msgstr ""
+"<i class=\"fa-solid fa-mobile-screen-button fa-lg\" title=\"Téléphone "
+"contact\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-money\" title=\"Expected Revenue\"/>"
-msgstr "<i class=\"fa fa-money\" title=\"Revenus attendus\"/>"
+msgid "<i class=\"fa-solid fa-money-bill-1\" title=\"Expected Revenue\"/>"
+msgstr "<i class=\"fa-solid fa-money-bill-1\" title=\"Revenus attendus\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-refresh\" title=\"Recurring Revenue\"/>"
-msgstr "<i class=\"fa fa-refresh\" title=\"Revenus récurrents\"/>"
+msgid "<i class=\"fa-solid fa-arrows-rotate\" title=\"Recurring Revenue\"/>"
+msgstr "<i class=\"fa-solid fa-arrows-rotate\" title=\"Revenus récurrents\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.quick_create_opportunity_form
-msgid "<i class=\"fa fa-user\" title=\"Contact\"/>"
-msgstr "<i class=\"fa fa-user\" title=\"Contact\"/>"
+msgid "<i class=\"fa-solid fa-user\" title=\"Contact\"/>"
+msgstr "<i class=\"fa-solid fa-user\" title=\"Contact\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.res_config_settings_view_form
@@ -169,33 +172,33 @@ msgstr ""
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.res_config_settings_view_form
 msgid ""
-"<i title=\"Update now\" role=\"img\" aria-label=\"Update now\" class=\"fa fa-"
-"fw fa-refresh\"/>"
+"<i title=\"Update now\" role=\"img\" aria-label=\"Update now\" class=\"fa-"
+"solid fa-arrows-rotate\"/>"
 msgstr ""
 "<i title=\"Mettre à jour maintenant\" role=\"img\" aria-label=\"Mettre à "
-"jour maintenant\" class=\"fa fa-fw fa-refresh\"/>"
+"jour maintenant\" class=\"fa-solid fa-arrows-rotate\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.crm_lead_view_form
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning oe_edit_only\" "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning oe_edit_only\" "
 "title=\"By saving this change, the customer email will also be updated.\" "
 "invisible=\"not partner_email_update\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning oe_edit_only\" "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning oe_edit_only\" "
 "title=\"En enregistrant cette modificiation, l'e-mail du client sera "
 "également mis à jour.\" invisible=\"not partner_email_update\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.crm_lead_view_form
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning oe_edit_only\" "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning oe_edit_only\" "
 "title=\"By saving this change, the customer phone number will also be "
 "updated.\" invisible=\"not partner_phone_update\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning oe_edit_only\" "
-"title=\"En enregistrant cette modification, le numéro de téléphone du client "
-"sera également mis à jour.\" invisible=\"not partner_phone_update\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning oe_edit_only\" "
+"title=\"En enregistrant cette modification, le numéro de téléphone du client"
+" sera également mis à jour.\" invisible=\"not partner_phone_update\"/>"
 
 #. module: crm
 #: model_terms:ir.ui.view,arch_db:crm.crm_lead_view_form

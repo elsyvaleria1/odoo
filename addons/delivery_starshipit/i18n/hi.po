@@ -34,34 +34,32 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> एक सही कॉन्फ़िगरेशन के लिए, सर्विस चुनना "
-"न भूलें।"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> एक सही कॉन्फ़िगरेशन के लिए, "
+"सर्विस चुनना न भूलें।"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> <b>टेस्ट एनवायरमेंट</b> में, लेबल बनाने के "
-"बाद आपकी शिपिंग अपने-आप <b>आर्काइव</b> हो जाती है. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> <b>टेस्ट एनवायरमेंट</b> में, लेबल बनाने के बाद आपकी शिपिंग अपने-आप <b>आर्काइव</b> हो जाती है. <br/>\n"
 "                        कृपया ध्यान दें कि लेबल बनाने के लिए शुल्क अभी भी लग सकता है "
 "और कुछ शिपिंग कैरियर, लेबल प्रिंट करते समय शिपमेंट को अपने-आप प्रमाणित कर सकते हैं।"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> उपलब्ध शिपिंग सेवाएं आपके Starshipit खाते में चालू "
-"किए गए कैरियर पर निर्भर करती हैं।"
+"<i class=\"fa-solid fa-info-circle\"/> उपलब्ध शिपिंग सेवाएं आपके Starshipit "
+"खाते में चालू किए गए कैरियर पर निर्भर करती हैं।"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.choose_delivery_carrier_view_form

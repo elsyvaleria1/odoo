@@ -27,14 +27,14 @@ msgstr ""
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-address-card text-primary mt-1\"/>\n"
+"<i class=\"fa-solid fa-address-card me-2 text-primary mt-1\"/>\n"
 "                    <b>Address</b>"
 msgstr ""
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-building mt-1 text-primary\"/>\n"
+"<i class=\"fa-solid fa-building me-2 mt-1 text-primary\"/>\n"
 "                    <b>Type</b>"
 msgstr ""
 
@@ -42,36 +42,35 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-building text-primary\"/>\n"
+"<i class=\"fa-solid fa-building me-2 text-primary\"/>\n"
 "                    <b>Company type</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-building text-primary\"/> <b>Kompaniya turi</b>"
+"<i class=\"fa-solid fa-building me-2 text-primary\"/> <b>Kompaniya turi</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-calendar text-primary\"/>\n"
+"<i class=\"fa-solid fa-calendar-days me-2 text-primary\"/>\n"
 "                    <b>Founded</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-calendar text-primary\"/> <b>Asos solingan sana</"
-"b>"
+"<i class=\"fa-solid fa-calendar-days me-2 text-primary\"/> <b>Asos solingan "
+"sana</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-cube text-primary\"/>\n"
+"<i class=\"fa-solid fa-cube me-2 text-primary\"/>\n"
 "                    <b>Technologies Used</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-cube text-primary\"/> <b>Qo‘llaniladigan "
+"<i class=\"fa-solid fa-cube me-2 text-primary\"/> <b>Qo‘llaniladigan "
 "texnologiyalar</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-envelope text-primary\" style=\"margin-top: 3px;"
-"\"/>\n"
+"<i class=\"fa-solid fa-envelope me-2 text-primary\" style=\"margin-top: 3px;\"/>\n"
 "                    <b>Email</b>"
 msgstr ""
 
@@ -79,15 +78,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-envelope text-primary\"/>\n"
+"<i class=\"fa-solid fa-envelope me-2 text-primary\"/>\n"
 "                    <b>Email</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-envelope text-primary\"/> <b>Elektron pochta</b>"
+"<i class=\"fa-solid fa-envelope me-2 text-primary\"/> <b>Elektron pochta</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-folder mt-1 text-primary\"/>\n"
+"<i class=\"fa-solid fa-folder me-2 mt-1 text-primary\"/>\n"
 "                    <b>Tax ID</b>"
 msgstr ""
 
@@ -102,10 +101,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-globe text-primary\"/>\n"
+"<i class=\"fa-solid fa-earth-americas me-2 text-primary\"/>\n"
 "                    <b>Timezone</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-globe text-primary\"/> <b>Vaqt mintaqasi</b>"
+"<i class=\"fa-solid fa-earth-americas me-2 text-primary\"/> <b>Vaqt "
+"mintaqasi</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
@@ -118,16 +118,16 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-industry text-primary\"/>\n"
+"<i class=\"fa-solid fa-industry me-2 text-primary\"/>\n"
 "                    <b>Sectors</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-industry text-primary\"/> <b>Faoliyat "
+"<i class=\"fa-solid fa-industry me-2 text-primary\"/> <b>Faoliyat "
 "yo‘nalishlari</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-money mt-1 text-primary\"/>\n"
+"<i class=\"fa-solid fa-money-bill-1 me-2 mt-1 text-primary\"/>\n"
 "                    <b>Estimated revenue</b>"
 msgstr ""
 
@@ -135,15 +135,16 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-money text-primary\"/>\n"
+"<i class=\"fa-solid fa-money-bill-1 me-2 text-primary\"/>\n"
 "                    <b>Estimated revenue</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-money text-primary\"/> <b>Taxminiy daromad</b>"
+"<i class=\"fa-solid fa-money-bill-1 me-2 text-primary\"/> <b>Taxminiy "
+"daromad</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-phone mt-1 text-primary\"/>\n"
+"<i class=\"fa-solid fa-phone me-2 mt-1 text-primary\"/>\n"
 "                    <b>Phone</b>"
 msgstr ""
 
@@ -151,10 +152,9 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-phone text-primary\"/>\n"
+"<i class=\"fa-solid fa-phone me-2 text-primary\"/>\n"
 "                    <b>Phone</b>"
-msgstr ""
-"<i class=\"fa fa-fw me-2 fa-phone text-primary\"/> <b>Telefon raqami</b>"
+msgstr "<i class=\"fa-solid fa-phone me-2 text-primary\"/> <b>Telefon raqami</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
@@ -169,10 +169,9 @@ msgstr "<i class=\"fa fa-fw me-2 fa-twitter text-primary\"/> <b>X</b>"
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-users text-primary\"/>\n"
+"<i class=\"fa-solid fa-users me-2 text-primary\"/>\n"
 "                    <b>Employees</b>"
-msgstr ""
-"<i class=\"fa fa-fw me-2 fa-users text-primary\"/> <b>Xodimlar soni</b>"
+msgstr "<i class=\"fa-solid fa-users me-2 text-primary\"/> <b>Xodimlar soni</b>"
 
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company

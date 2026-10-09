@@ -43,13 +43,13 @@ msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
-msgid "<i class=\"fa fa-map-o me-1\"/>View Plan"
-msgstr "<i class=\"fa fa-map-o me-1\"/>查看平面图"
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr "<i class=\"fa-regular fa-map me-1\"/>查看平面图"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_layout
-msgid "<span class=\"fa fa-gear me-1\"/> Configure Booths"
-msgstr "<span class=\"fa fa-gear me-1\"/> 设置展位"
+msgid "<span class=\"fa-solid fa-gear me-1\"/> Configure Booths"
+msgstr "<span class=\"fa-solid fa-gear me-1\"/> 设置展位"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
@@ -69,10 +69,10 @@ msgstr "<span>预订我的展位</span>"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"<span>Booth Selection</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Booth Selection</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"<span>展位选择</span><span class=\"fa fa-angle-right d-inline-block align-"
+"<span>展位选择</span><span class=\"fa-solid fa-angle-right d-inline-block align-"
 "middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
@@ -155,11 +155,11 @@ msgstr "联系人细节"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"Contact Details<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
+"Contact Details<span class=\"fa-solid fa-angle-right d-inline-block align-"
+"middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"联络资料<span class=\"fa fa-angle-right d-inline-block align-middle mx-2 mx-"
-"lg-3 opacity-75\"/>"
+"联络资料<span class=\"fa-solid fa-angle-right d-inline-block align-middle mx-2 "
+"mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration

@@ -26,8 +26,8 @@ msgstr "<b class=\"d-block mb-2\">Página de Facebook</b>"
 
 #. module: social_facebook
 #: model_terms:ir.ui.view,arch_db:social_facebook.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Comentarios\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Comentarios\"/>"
 
 #. module: social_facebook
 #: model:ir.model.fields,field_description:social_facebook.field_social_live_post__facebook_post_id
@@ -425,5 +425,5 @@ msgstr "agregó un evento"
 
 #. module: social_facebook
 #: model_terms:ir.ui.view,arch_db:social_facebook.facebook_preview
-msgid "• <i class=\"fa fa-globe\"/>"
-msgstr "• <i class=\"fa fa-globe\"/>"
+msgid "• <i class=\"fa-solid fa-earth-americas\"/>"
+msgstr "• <i class=\"fa-solid fa-earth-americas\"/>"

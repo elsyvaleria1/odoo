@@ -37,8 +37,9 @@ msgstr ""
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
 
 #. module: delivery_shiprocket
@@ -62,10 +63,10 @@ msgstr ""
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 "
-"days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
 
 #. module: delivery_shiprocket

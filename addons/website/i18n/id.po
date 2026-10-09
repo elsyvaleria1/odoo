@@ -849,20 +849,20 @@ msgstr "<a class=\"o_translate_inline\" href=\"#\">Link</a>"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_faq_horizontal
 msgid ""
-"<a class=\"o_translate_inline\" href=\"#\">Read More <i class=\"fa fa-angle-"
-"right\" role=\"img\"/></a>"
+"<a class=\"o_translate_inline\" href=\"#\">Read More <i class=\"fa-solid fa-"
+"angle-right\" role=\"img\"/></a>"
 msgstr ""
-"<a class=\"o_translate_inline\" href=\"#\">Baca Lebih <i class=\"fa fa-angle-"
-"right\" role=\"img\"/></a>"
+"<a class=\"o_translate_inline\" href=\"#\">Baca Lebih <i class=\"fa-solid "
+"fa-angle-right\" role=\"img\"/></a>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_references
 msgid ""
 "<a class=\"o_translate_inline\" href=\"#\">See our case studies <i "
-"class=\"fa fa-long-arrow-right ms-2\"/></a>"
+"class=\"fa-solid fa-right-long ms-2\"/></a>"
 msgstr ""
 "<a class=\"o_translate_inline\" href=\"#\">Lihat studi kasus kami <i "
-"class=\"fa fa-long-arrow-right ms-2\"/></a>"
+"class=\"fa-solid fa-right-long ms-2\"/></a>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_contact_info
@@ -1383,11 +1383,11 @@ msgstr "<head> dan >/body>"
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-1x fa-fw fa-envelope me-2\"/"
-"><span>info@yourcompany.example.com</span>"
+"<i class=\"fa-solid fa-envelope fa-1x "
+"me-2\"/><span>info@yourcompany.example.com</span>"
 msgstr ""
-"<i class=\"fa fa-1x fa-fw fa-envelope me-2\"/"
-"><span>info@yourcompany.example.com</span>"
+"<i class=\"fa-solid fa-envelope fa-1x "
+"me-2\"/><span>info@yourcompany.example.com</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.header_text_element
@@ -1407,97 +1407,107 @@ msgstr "<i class=\"fa fa-1x fa-fw fa-phone me-1\"/>͏"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_controller_pages_kanban_view
-msgid "<i class=\"fa fa-2x fa-arrow-right text-primary\" title=\"URL\"/>"
-msgstr "<i class=\"fa fa-2x fa-arrow-right text-primary\" title=\"URL\"/>"
+msgid "<i class=\"fa-solid fa-arrow-right fa-2x text-primary\" title=\"URL\"/>"
+msgstr "<i class=\"fa-solid fa-arrow-right fa-2x text-primary\" title=\"URL\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
-msgid "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Complete access"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Akses lengkap"
+msgid "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Complete access"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Akses lengkap"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
-msgid "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Quick support"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Bantuan cepat"
+msgid "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Quick support"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Bantuan cepat"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Wonderful experience"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Wonderful "
+"experience"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Pengalaman luar biasa"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Pengalaman "
+"luar biasa"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  24/7 toll-free support"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  24/7 toll-free "
+"support"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  24/7 bantuan gratis"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  24/7 bantuan "
+"gratis"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Access all modules"
+msgstr ""
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Akses semua "
+"modul-modul"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Account management"
+msgstr "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Manajemen akun"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Access all modules"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  All modules "
+"&amp; features"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Akses semua modul-modul"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Semua modul "
+"&amp; fitur"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Account management"
-msgstr "<i class=\"fa fa-check text-success\" role=\"img\"/>  Manajemen akun"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Complete CRM for"
+" any team"
+msgstr ""
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Selesaikan CRM "
+"untuk tim apa pun"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Email support"
+msgstr "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Bantuan email"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  All modules &amp; "
-"features"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Limited "
+"customization"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Semua modul &amp; fitur"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Kustomisasi "
+"terbatas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Complete CRM for any "
-"team"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"marketing for 2"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Selesaikan CRM untuk "
-"tim apa pun"
-
-#. module: website
-#: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-check text-success\" role=\"img\"/>  Email support"
-msgstr "<i class=\"fa fa-check text-success\" role=\"img\"/>  Bantuan email"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"marketing untuk 2"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Limited customization"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Unlimited CRM "
+"support"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Kustomisasi terbatas"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Bantuan CRM "
+"tanpa batas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; marketing "
-"for 2"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Unlimited "
+"customization"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; marketing "
-"untuk 2"
-
-#. module: website
-#: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Unlimited CRM support"
-msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Bantuan CRM tanpa batas"
-
-#. module: website
-#: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Unlimited customization"
-msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Kustomisasi tanpa batas"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Kustomisasi "
+"tanpa batas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_contact_info
@@ -1551,11 +1561,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website.s_discovery
 #: model_terms:ir.ui.view,arch_db:website.s_empowerment
 msgid ""
-"<i class=\"fa fa-fw fa-info-circle o_not-animable\" role=\"img\"/>  What do "
+"<i class=\"fa-solid fa-info-circle o_not-animable\" role=\"img\"/>  What do "
 "you want to promote&amp;nbsp;?"
 msgstr ""
-"<i class=\"fa fa-fw fa-info-circle o_not-animable\" role=\"img\"/>  Apa yang "
-"ingin Anda promosikan&amp;nbsp;?"
+"<i class=\"fa-solid fa-info-circle o_not-animable\" role=\"img\"/>  Apa yang"
+" ingin Anda promosikan&amp;nbsp;?"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_contact_info
@@ -1568,24 +1578,22 @@ msgstr ""
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_visitor_view_form
-msgid ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-danger\" title=\"Offline\"/>"
-msgstr ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-danger\" title=\"Offline\"/>"
+msgid "<i class=\"fa-solid fa-circle o_button_icon text-danger\" title=\"Offline\"/>"
+msgstr "<i class=\"fa-solid fa-circle o_button_icon text-danger\" title=\"Offline\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_visitor_view_form
 msgid ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-success\" "
+"<i class=\"fa-solid fa-circle o_button_icon text-success\" "
 "title=\"Connected\"/>"
 msgstr ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-success\" "
+"<i class=\"fa-solid fa-circle o_button_icon text-success\" "
 "title=\"Terhubung\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_pages_kanban_view
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
-msgstr "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
+msgstr "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.protected_403
@@ -1611,32 +1619,33 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-map-marker fa-fw me-2\"/><span class=\"o_force_ltr\">3575 "
-"Fake Buena Vista Avenue</span>"
+"<i class=\"fa-solid fa-location-dot me-2\"/><span class=\"o_force_ltr\">3575"
+" Fake Buena Vista Avenue</span>"
 msgstr ""
-"<i class=\"fa fa-map-marker fa-fw me-2\"/><span class=\"o_force_ltr\">3575 "
-"Fake Buena Vista Avenue</span>"
+"<i class=\"fa-solid fa-location-dot me-2\"/><span class=\"o_force_ltr\">3575"
+" Fake Buena Vista Avenue</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-phone fa-fw me-2\"/><span class=\"o_force_ltr\">+1 "
+"<i class=\"fa-solid fa-phone me-2\"/><span class=\"o_force_ltr\">+1 "
 "555-555-5556</span>"
 msgstr ""
-"<i class=\"fa fa-phone fa-fw me-2\"/><span class=\"o_force_ltr\">+1 "
+"<i class=\"fa-solid fa-phone me-2\"/><span class=\"o_force_ltr\">+1 "
 "555-555-5556</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-times text-danger\" role=\"img\"/>  No customization"
+msgid "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No customization"
 msgstr ""
-"<i class=\"fa fa-times text-danger\" role=\"img\"/>  Tidak ada kustomisasi"
+"<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  Tidak ada "
+"kustomisasi"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-times text-danger\" role=\"img\"/>  No support"
-msgstr "<i class=\"fa fa-times text-danger\" role=\"img\"/>  Tidak ada bantuan"
+msgid "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No support"
+msgstr "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  Tidak ada bantuan"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_mega_menu_little_icons
@@ -1987,10 +1996,10 @@ msgstr ""
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.header_text_element
 msgid ""
-"<small><i class=\"fa fa-1x fa-fw fa-envelope me-1\"/> "
+"<small><i class=\"fa-solid fa-envelope fa-1x me-1\"/> "
 "info@yourcompany.example.com</small>"
 msgstr ""
-"<small><i class=\"fa fa-1x fa-fw fa-envelope me-1\"/> "
+"<small><i class=\"fa-solid fa-envelope fa-1x me-1\"/> "
 "info@yourcompany.example.com</small>"
 
 #. module: website
@@ -2120,49 +2129,50 @@ msgstr ""
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  24/7 Support"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Bantuan 24/7"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  24/7 Support"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Bantuan 24/7"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Access all modules"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Akses semua modul"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Access all modules"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Akses semua modul"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  All modules &amp; features"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Semua modul &amp; fitur"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  All modules &amp; features"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Semua modul &amp; fitur"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Complete CRM for any team"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Complete CRM for any team"
 msgstr ""
-"<span class=\"fa fa-check-circle-o\"/>  Selesaikan CRM untuk tim apa pun"
+"<span class=\"fa-regular fa-circle-check\"/>  Selesaikan CRM untuk tim apa "
+"pun"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Email support"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Email bantuan"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Email support"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Email bantuan"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Limited Customization"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Kustomisasi Terbatas"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Limited Customization"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Kustomisasi Terbatas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  PaaS Access"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Akses PaaS"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  PaaS Access"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Akses PaaS"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Unlimited CRM support"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Bantuan CRM Tanpa Batas"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Unlimited CRM support"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Bantuan CRM Tanpa Batas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Unlimited customization"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  Kustomisasi tanpa batas"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Unlimited customization"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  Kustomisasi tanpa batas"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_accordion
@@ -5937,10 +5947,8 @@ msgstr "Lanjutkan"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_media_list
-msgid ""
-"Continue reading <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr ""
-"Teruskan membaca <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Continue reading <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "Teruskan membaca <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: website
 #: model:ir.model.fields,field_description:website.field_ir_ui_view__controller_page_ids
@@ -6893,8 +6901,8 @@ msgstr "Temukan lebih lanjut"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_media_list
-msgid "Discover more <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr "Discover more <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Discover more <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "Discover more <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_services_s_image_text
@@ -15359,8 +15367,8 @@ msgstr "Lihat Google Trends mengenai '%(keyword)s'"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_dynamic_snippet_template
-msgid "See all<span class=\"fa fa-long-arrow-right ms-2\"/>"
-msgstr "Lihat semua<span class=\"fa fa-long-arrow-right ms-2\"/>"
+msgid "See all<span class=\"fa-solid fa-right-long ms-2\"/>"
+msgstr "Lihat semua<span class=\"fa-solid fa-right-long ms-2\"/>"
 
 #. module: website
 #. odoo-javascript
@@ -15374,8 +15382,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website.s_cta_badge
 #: model_terms:ir.ui.view,arch_db:website.s_discovery
 #: model_terms:ir.ui.view,arch_db:website.s_empowerment
-msgid "See more <i class=\"fa fa-long-arrow-right\" role=\"img\"/>"
-msgstr "Lihat lebih <i class=\"fa fa-long-arrow-right\" role=\"img\"/>"
+msgid "See more <i class=\"fa-solid fa-right-long\" role=\"img\"/>"
+msgstr "Lihat lebih <i class=\"fa-solid fa-right-long\" role=\"img\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_references_grid

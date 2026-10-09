@@ -107,69 +107,69 @@ msgstr "<i class=\"fa fa-check-circle\"/> Beantwoord"
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Select time\" "
-"title=\"Select time\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Select "
+"time\" title=\"Select time\"/>"
 msgstr ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Selecteer tijd\" "
-"title=\"Selecteer tijd\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Selecteer "
+"tijd\" title=\"Selecteer tijd\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Not opened within"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> Niet geopend binnen"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Not opened within"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> Niet geopend binnen"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Opened after"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> Geopend na"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Opened after"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> Geopend na"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Bounced na"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced na"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> Geklikt na"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> Geklikt na"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> Niet geklikt binnen"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> Niet geklikt binnen"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> Details"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> Details"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-plus-circle\"/> Add child activity"
-msgstr "<i class=\"fa fa-plus-circle\"/> Onderliggende activiteit toevoegen"
+msgid "<i class=\"fa-solid fa-plus-circle\"/> Add child activity"
+msgstr "<i class=\"fa-solid fa-plus-circle\"/> Onderliggende activiteit toevoegen"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Not replied within"
-msgstr "<i class=\"fa fa-reply\"/> Niet beantwoord binnen"
+msgid "<i class=\"fa-solid fa-reply\"/> Not replied within"
+msgstr "<i class=\"fa-solid fa-reply\"/> Niet beantwoord binnen"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Replied after"
-msgstr "<i class=\"fa fa-reply\"/> Beantwoord na"
+msgid "<i class=\"fa-solid fa-reply\"/> Replied after"
+msgstr "<i class=\"fa-solid fa-reply\"/> Beantwoord na"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Add Another Activity\" role=\"img\" aria-label=\"Add Another "
-"Activity\"/>"
-msgstr ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Voeg een andere activiteit toe\" role=\"img\" aria-label=\"Add "
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Add Another Activity\" role=\"img\" aria-label=\"Add "
 "Another Activity\"/>"
+msgstr ""
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Voeg een andere activiteit toe\" role=\"img\" aria-"
+"label=\"Add Another Activity\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_activity_view_form
@@ -186,26 +186,22 @@ msgstr "<span class=\"o_form_label\">Record</span>"
 msgid ""
 "<span role=\"img\" title=\"Graph\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 msgstr ""
 "<span role=\"img\" title=\"Grafiek\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 
 #. module: marketing_automation

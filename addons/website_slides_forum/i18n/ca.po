@@ -145,10 +145,10 @@ msgstr ""
 #. module: website_slides_forum
 #: model_terms:ir.ui.view,arch_db:website_slides_forum.slide_fullscreen
 msgid ""
-"<i class=\"fa fa-comments\"/><span class=\"ms-1 d-none d-md-inline-"
+"<i class=\"fa-solid fa-comments\"/><span class=\"ms-1 d-none d-md-inline-"
 "block\">Forum</span>"
 msgstr ""
-"<i class=\"fa fa-comments\"/><span class=\"ms-1 d-none d-md-inline-"
+"<i class=\"fa-solid fa-comments\"/><span class=\"ms-1 d-none d-md-inline-"
 "block\">Fòrum</span>"
 
 #. module: website_slides_forum
@@ -190,7 +190,7 @@ msgstr "Bàsics de la jardineria"
 
 #. module: website_slides_forum
 #: model_terms:ir.ui.view,arch_db:website_slides_forum.forum_all_all_entries
-msgid "Check out our courses <i class=\"fa fa-long-arrow-right\"/>"
+msgid "Check out our courses <i class=\"fa-solid fa-right-long\"/>"
 msgstr ""
 
 #. module: website_slides_forum

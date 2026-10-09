@@ -38,17 +38,17 @@ msgstr "4 hores per finalitzar"
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this ticket has been cancelled. We recommend either "
-"updating the sales order item or cancelling this ticket in alignment with "
-"the cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this ticket has been cancelled. We recommend "
+"either updating the sales order item or cancelling this ticket in alignment "
+"with the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"La comanda "
-"de venda associada a aquest tiquet ha estat cancel·lada. Et recomanem "
-"actualitzar l'article de la comanda de venda o cancel·lar aquest tiquet "
-"d'acord amb l'anul·lació de la comanda.\" invisible=\"sale_order_state != "
-"'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"La "
+"comanda de venda associada a aquest tiquet ha estat cancel·lada. Et "
+"recomanem actualitzar l'article de la comanda de venda o cancel·lar aquest "
+"tiquet d'acord amb l'anul·lació de la comanda.\" "
+"invisible=\"sale_order_state != 'cancel'\"/>"
 
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet

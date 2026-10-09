@@ -42,136 +42,106 @@ msgstr "# Whatsapp"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Epäonnistui sen jälkeen, kun"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr ""
+"<i class=\"fa-solid fa-exclamation-circle\"/> Epäonnistui sen jälkeen, kun"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Clicked within"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Klikattu"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Clicked within"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Klikattu"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Not Clicked within"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Ei klikattu"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Not Clicked within"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Ei klikattu"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Not Opened after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Ei avattu sen jälkeen, kun"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Not Opened after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Ei avattu sen jälkeen, kun"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Not Replied within"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Ei vastattu"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Not Replied within"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Ei vastattu"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Opened after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Avattiin sen jälkeen, kun"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Opened after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Avattiin sen jälkeen, kun"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Replied within"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Vastattu"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Replied within"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Vastattu"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> Yksityiskohdat"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> Yksityiskohdat"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"whatsapp_read\" class=\"fa fa-check-circle "
-"o_ma_text_read o_add_child_activity text-info\" title=\"Opened\" "
-"role=\"img\" aria-label=\"Opened\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_read\" class=\"fa fa-"
-"check-circle o_ma_text_read o_add_child_activity text-danger\" title=\"Not "
-"Opened\" role=\"img\" aria-label=\"Not Opened\"/>\n"
-"                <i data-trigger-type=\"whatsapp_replied\" class=\"fa fa-"
-"reply o_ma_text_replied o_add_child_activity text-success\" "
-"title=\"replied\" role=\"img\" aria-label=\"replied\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_replied\" class=\"fa fa-"
-"reply o_ma_text_replied o_add_child_activity text-danger\" title=\"not "
-"replied\" role=\"img\" aria-label=\"not replied\"/>\n"
-"                <i data-trigger-type=\"whatsapp_click\" class=\"fa fa-hand-"
-"pointer-o o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Clicked\" role=\"img\" aria-label=\"Clicked\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
-"                <i data-trigger-type=\"whatsapp_bounced\" class=\"fa fa-"
-"exclamation-circle o_ma_text_error o_add_child_activity text-danger\" "
-"title=\"Bounced\" role=\"img\" aria-label=\"Error\"/>"
+"<i data-trigger-type=\"whatsapp_read\" class=\"fa-solid fa-check-circle o_ma_text_read o_add_child_activity text-info\" title=\"Opened\" role=\"img\" aria-label=\"Opened\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_read\" class=\"fa-solid fa-check-circle o_ma_text_read o_add_child_activity text-danger\" title=\"Not Opened\" role=\"img\" aria-label=\"Not Opened\"/>\n"
+"                <i data-trigger-type=\"whatsapp_replied\" class=\"fa-solid fa-reply o_ma_text_replied o_add_child_activity text-success\" title=\"replied\" role=\"img\" aria-label=\"replied\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_replied\" class=\"fa-solid fa-reply o_ma_text_replied o_add_child_activity text-danger\" title=\"not replied\" role=\"img\" aria-label=\"not replied\"/>\n"
+"                <i data-trigger-type=\"whatsapp_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" role=\"img\" aria-label=\"Clicked\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
+"                <i data-trigger-type=\"whatsapp_bounced\" class=\"fa-solid fa-exclamation-circle o_ma_text_error o_add_child_activity text-danger\" title=\"Bounced\" role=\"img\" aria-label=\"Error\"/>"
 msgstr ""
-"<i data-trigger-type=\"whatsapp_read\" class=\"fa fa-check-circle "
-"o_ma_text_read o_add_child_activity text-info\" title=\"Avattu\" "
-"role=\"img\" aria-label=\"Avattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_read\" class=\"fa fa-"
-"check-circle o_ma_text_read o_add_child_activity text-danger\" title=\"Ei "
-"avattu\" role=\"img\" aria-label=\"Ei avattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_replied\" class=\"fa fa-"
-"reply o_ma_text_replied o_add_child_activity text-success\" "
-"title=\"vastattu\" role=\"img\" aria-label=\"vastattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_replied\" class=\"fa fa-"
-"reply o_ma_text_replied o_add_child_activity text-danger\" title=\"ei "
-"vastattu\" role=\"img\" aria-label=\"ei vastattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_click\" class=\"fa fa-hand-"
-"pointer-o o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Klikattu\" role=\"img\" aria-label=\"Klikattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Ei klikattu\" role=\"img\" aria-label=\"Ei klikattu\"/>\n"
-"                <i data-trigger-type=\"whatsapp_bounced\" class=\"fa fa-"
-"exclamation-circle o_ma_text_error o_add_child_activity text-danger\" "
-"title=\"Kimposi takaisin\" role=\"img\" aria-label=\"Virhe\"/>"
+"<i data-trigger-type=\"whatsapp_read\" class=\"fa-solid fa-check-circle o_ma_text_read o_add_child_activity text-info\" title=\"Avattu\" role=\"img\" aria-label=\"Avattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_read\" class=\"fa-solid fa-check-circle o_ma_text_read o_add_child_activity text-danger\" title=\"Ei avattu\" role=\"img\" aria-label=\"Ei avattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_replied\" class=\"fa-solid fa-reply o_ma_text_replied o_add_child_activity text-success\" title=\"vastattu\" role=\"img\" aria-label=\"vastattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_replied\" class=\"fa-solid fa-reply o_ma_text_replied o_add_child_activity text-danger\" title=\"ei vastattu\" role=\"img\" aria-label=\"ei vastattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Klikattu\" role=\"img\" aria-label=\"Klikattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"Ei klikattu\" role=\"img\" aria-label=\"Ei klikattu\"/>\n"
+"                <i data-trigger-type=\"whatsapp_bounced\" class=\"fa-solid fa-exclamation-circle o_ma_text_error o_add_child_activity text-danger\" title=\"Kimposi takaisin\" role=\"img\" aria-label=\"Virhe\"/>"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_participant_view_form
 msgid ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-check-circle\"/> Not opened yet\n"
+"                        <i class=\"fa-solid fa-check-circle\"/> Not opened yet\n"
 "                    </span>"
 msgstr ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-check-circle\"/> Ei vielä avattu\n"
+"                        <i class=\"fa-solid fa-check-circle\"/> Ei vielä avattu\n"
 "                    </span>"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_participant_view_form
 msgid ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-exclamation-circle\"/> Didn't "
-"bounce yet\n"
+"                        <i class=\"fa-solid fa-exclamation-circle\"/> Didn't bounce yet\n"
 "                    </span>"
 msgstr ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-exclamation-circle\"/> Ei vielä "
-"palautunut takaisin epäonnistumisen jälkeen\n"
+"                        <i class=\"fa-solid fa-exclamation-circle\"/> Ei vielä palautunut takaisin epäonnistumisen jälkeen\n"
 "                    </span>"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_participant_view_form
 msgid ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-hand-pointer-o\"/> Not clicked yet\n"
+"                        <i class=\"fa-regular fa-hand-pointer\"/> Not clicked yet\n"
 "                    </span>"
 msgstr ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-hand-pointer-o\"/> Ei klikattu "
-"vielä\n"
+"                        <i class=\"fa-regular fa-hand-pointer\"/> Ei klikattu vielä\n"
 "                    </span>"
 
 #. module: marketing_automation_whatsapp
 #: model_terms:ir.ui.view,arch_db:marketing_automation_whatsapp.marketing_participant_view_form
 msgid ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-reply\"/> Not replied\n"
+"                        <i class=\"fa-solid fa-reply\"/> Not replied\n"
 "                    </span>"
 msgstr ""
 "<span class=\"text-primary\">\n"
-"                        <i class=\"fa fa-reply\"/> Ei vastausta\n"
+"                        <i class=\"fa-solid fa-reply\"/> Ei vastausta\n"
 "                    </span>"
 
 #. module: marketing_automation_whatsapp

@@ -69,23 +69,22 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Your Google Reserve Synchronization "
+"<span class=\"fa-solid fa-check me-1\"/>Your Google Reserve Synchronization "
 "is active."
 msgstr ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Google Reserve sinxronizatsiyangiz "
+"<span class=\"fa-solid fa-check me-1\"/>Google Reserve sinxronizatsiyangiz "
 "faol."
 
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Your Appointment Type is "
-"being synchronized with Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Your Appointment Type is being synchronized with Google Reserve.<br/>\n"
 "                                This can take up to 24 hours to be active."
 msgstr ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Uchrashuv turingiz Google "
-"Reserve bilan sinxronlanmoqda.<br/> Bu jarayon faol bo‘lishi uchun 24 "
-"soatgacha vaqt ketishi mumkin."
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Uchrashuv turingiz "
+"Google Reserve bilan sinxronlanmoqda.<br/> Bu jarayon faol bo‘lishi uchun 24"
+" soatgacha vaqt ketishi mumkin."
 
 #. module: appointment_google_reserve
 #: model:ir.model.fields,field_description:appointment_google_reserve.field_google_reserve_merchant__message_needaction

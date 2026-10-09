@@ -24,18 +24,18 @@ msgstr ""
 
 #. module: sale_mrp
 #: model_terms:ir.ui.view,arch_db:sale_mrp.sale_order_portal_content_inherit_sale_mrp
-msgid "<i class=\"fa fa-fw fa-check\"/> <b>Manufactured</b>"
-msgstr "<i class=\"fa fa-fw fa-check\"/><b>已生產</b>"
+msgid "<i class=\"fa-solid fa-check\"/> <b>Manufactured</b>"
+msgstr "<i class=\"fa-solid fa-check\"/><b>已生產</b>"
 
 #. module: sale_mrp
 #: model_terms:ir.ui.view,arch_db:sale_mrp.sale_order_portal_content_inherit_sale_mrp
-msgid "<i class=\"fa fa-fw fa-clock-o\"/> <b>Confirmed</b>"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/><b>已確認</b>"
+msgid "<i class=\"fa-regular fa-clock\"/> <b>Confirmed</b>"
+msgstr "<i class=\"fa-regular fa-clock\"/><b>已確認</b>"
 
 #. module: sale_mrp
 #: model_terms:ir.ui.view,arch_db:sale_mrp.sale_order_portal_content_inherit_sale_mrp
-msgid "<i class=\"fa fa-fw fa-clock-o\"/> <b>In progress</b>"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/><b>進行中</b>"
+msgid "<i class=\"fa-regular fa-clock\"/> <b>In progress</b>"
+msgstr "<i class=\"fa-regular fa-clock\"/><b>進行中</b>"
 
 #. module: sale_mrp
 #: model_terms:ir.ui.view,arch_db:sale_mrp.sale_order_portal_content_inherit_sale_mrp

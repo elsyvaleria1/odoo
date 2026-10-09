@@ -34,37 +34,36 @@ msgstr "<font class=\"text-white\">|</font>"
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Informations "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Informations "
 "sectorielles sélectionnées"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Conseils "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Conseils "
 "d’experts&amp; tutoriels"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "ressources"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Merci pour votre "
+"<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Merci pour votre "
 "inscription !"
 
 #. module: website_mass_mailing

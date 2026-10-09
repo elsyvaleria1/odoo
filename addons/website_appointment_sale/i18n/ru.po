@@ -24,12 +24,12 @@ msgstr ""
 
 #. module: website_appointment_sale
 #: model_terms:ir.ui.view,arch_db:website_appointment_sale.appointment_sale_confirmation_cards
-msgid "<i class=\"fa fa-check me-1\" role=\"img\"/>Booked"
+msgid "<i class=\"fa-solid fa-check me-1\" role=\"img\"/>Booked"
 msgstr ""
 
 #. module: website_appointment_sale
 #: model_terms:ir.ui.view,arch_db:website_appointment_sale.appointment_sale_confirmation_cards
-msgid "<i class=\"fa fa-clock-o me-1\" role=\"img\"/>Awaiting Payment"
+msgid "<i class=\"fa-regular fa-clock me-1\" role=\"img\"/>Awaiting Payment"
 msgstr ""
 
 #. module: website_appointment_sale
@@ -41,7 +41,7 @@ msgstr ""
 
 #. module: website_appointment_sale
 #: model_terms:ir.ui.view,arch_db:website_appointment_sale.appointment_sale_confirmation_cards
-msgid "<i class=\"fa fa-thumbs-up me-1\"/>Reserved"
+msgid "<i class=\"fa-solid fa-thumbs-up me-1\"/>Reserved"
 msgstr ""
 
 #. module: website_appointment_sale

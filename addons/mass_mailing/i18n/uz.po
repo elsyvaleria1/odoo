@@ -328,13 +328,12 @@ msgstr ""
 msgid ""
 "<br/>\n"
 "                                    <span class=\"text-muted\">\n"
-"                                        <i class=\"fa fa-envelope-o\"/> "
-"Contacts\n"
+"                                        <i class=\"fa-regular fa-envelope\"/> Contacts\n"
 "                                    </span>"
 msgstr ""
-"<br/>                                     <span class=\"text-"
-"muted\">                                         <i class=\"fa fa-envelope-"
-"o\"/> Kontaktlar                                     </span>"
+"<br/>                                     <span class=\"text-muted\">"
+"                                         <i class=\"fa-regular fa-"
+"envelope\"/> Kontaktlar                                     </span>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_list_view_kanban
@@ -585,30 +584,30 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
 #, fuzzy
-msgid "<i class=\"fa fa-bar-chart\"/> Compare Version"
-msgstr "<i class=\"fa fa-bar-chart\"/> Versiyalarni taqqoslash"
+msgid "<i class=\"fa-solid fa-chart-column\"/> Compare Version"
+msgstr "<i class=\"fa-solid fa-chart-column\"/> Versiyalarni taqqoslash"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"Lead/"
-"Opportunity\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"Lead/Opportunity\"/>"
 msgstr ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"Yetakchi/"
-"Imkoniyat\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"Yetakchi/Imkoniyat\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
 #, fuzzy
-msgid "<i class=\"fa fa-copy\"/> Create an Alternative"
-msgstr "<i class=\"fa fa-copy\"/> Muqobil nusxa yaratish"
+msgid "<i class=\"fa-solid fa-copy\"/> Create an Alternative"
+msgstr "<i class=\"fa-solid fa-copy\"/> Muqobil nusxa yaratish"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
 #, fuzzy
-msgid "<i class=\"fa fa-envelope\"/> Send this as winner"
-msgstr "<i class=\"fa fa-envelope\"/> Buni g‘olib sifatida jo‘natish"
+msgid "<i class=\"fa-solid fa-envelope\"/> Send this as winner"
+msgstr "<i class=\"fa-solid fa-envelope\"/> Buni g‘olib sifatida jo‘natish"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
@@ -636,10 +635,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_contact_view_kanban
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Warning\" "
-"title=\"Warning\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
+"label=\"Warning\" title=\"Warning\"/>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
 "label=\"Ogohlantirish\" title=\"Ogohlantirish\"/>"
 
 #. module: mass_mailing
@@ -673,81 +672,84 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Access all modules"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Access all "
+"modules"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> Barcha modullarga "
-"kirish imkoniyati"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> Barcha "
+"modullarga kirish imkoniyati"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Account management"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Account "
+"management"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> Hisob boshqaruvi"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> Hisob "
+"boshqaruvi"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Complete CRM for "
-"any team"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Complete CRM "
+"for any team"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> Har qanday jamoa "
-"uchun to‘liq CRM"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> Har qanday "
+"jamoa uchun to‘liq CRM"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
-msgid "<span class=\"fa fa-check text-success\" role=\"img\"/>  Email support"
+msgid "<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Email support"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> Elektron pochta "
-"orqali qo‘llab-quvvatlash"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> Elektron "
+"pochta orqali qo‘llab-quvvatlash"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Limited "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Limited "
 "customization"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> Cheklangan "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> Cheklangan "
 "moslashtiruv"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
 "marketing for 2"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> 2 kishi uchun savdo "
-"va marketing"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> 2 kishi uchun "
+"savdo va marketing"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_badge
 #, fuzzy
-msgid "<span class=\"fa fa-fw fa-folder\"/>Category"
-msgstr "<span class=\"fa fa-fw fa-folder\"/>Toifa"
+msgid "<span class=\"fa-solid fa-folder\"/>Category"
+msgstr "<span class=\"fa-solid fa-folder\"/>Toifa"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-fw fa-info-circle\" role=\"img\"/>  What do you want to "
+"<span class=\"fa-solid fa-info-circle\" role=\"img\"/>  What do you want to "
 "promote&amp;nbsp;?"
 msgstr ""
-"<span class=\"fa fa-fw fa-info-circle\" role=\"img\"/> Nimani targ‘ib "
+"<span class=\"fa-solid fa-info-circle\" role=\"img\"/> Nimani targ‘ib "
 "qilmoqchisiz&amp;nbsp;?"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"Scheduled date\"/>"
 msgstr ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"Rejalashtirilgan sana\"/>"
 
 #. module: mass_mailing
@@ -765,8 +767,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-paper-plane me-2 small my-auto\" aria-label=\"Sent "
-"date\"/>"
+"<span class=\"fa-solid fa-paper-plane me-2 small my-auto\" aria-label=\"Sent"
+" date\"/>"
 msgstr ""
 "<span class=\"fa-paper-plane me-2 small my-auto\" aria-label=\"Yuborilgan "
 "sana\"/>"
@@ -774,18 +776,18 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
-msgid ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/>  No customization"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No customization"
 msgstr ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/> Moslashtirish yo‘q"
+"<span class=\"fa-solid fa-times text-danger\" role=\"img\"/> Moslashtirish "
+"yo‘q"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 #, fuzzy
-msgid "<span class=\"fa fa-times text-danger\" role=\"img\"/>  No support"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No support"
 msgstr ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/> Qo‘llab-quvvatlash "
-"yo‘q"
+"<span class=\"fa-solid fa-times text-danger\" role=\"img\"/> Qo‘llab-"
+"quvvatlash yo‘q"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
@@ -1181,8 +1183,8 @@ msgstr "<strong>[speaker] va [speaker]ning konferensiyasi</strong>"
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
 #, fuzzy
-msgid "<u>Refresh <i class=\"fa fa-refresh ms-1\"/></u>"
-msgstr "<u>Yangilash <i class=\"fa fa-refresh ms-1\"/></u>"
+msgid "<u>Refresh <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
+msgstr "<u>Yangilash <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
 
 #. module: mass_mailing
 #. odoo-python
@@ -2449,9 +2451,9 @@ msgstr "Kontent foni"
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
 #, fuzzy
 msgid ""
-"Continue reading <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+"Continue reading <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 msgstr ""
-"O‘qishni davom ettirish <span class=\"fa fa-long-arrow-right align-middle "
+"O‘qishni davom ettirish <span class=\"fa-solid fa-right-long align-middle "
 "ms-1\"/>"
 
 #. module: mass_mailing
@@ -2764,10 +2766,9 @@ msgstr "Barcha xususiyatlar bilan tanishing"
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
 #, fuzzy
-msgid ""
-"Discover more <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Discover more <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 msgstr ""
-"Ko‘proq ma'lumot <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+"Ko‘proq ma'lumot <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: mass_mailing
 #: model:ir.model.fields,field_description:mass_mailing.field_ir_http__display_name
@@ -5677,8 +5678,8 @@ msgstr "Xavfsiz to‘lov"
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
 #, fuzzy
-msgid "See more <span class=\"fa fa-long-arrow-right\" role=\"img\"/>"
-msgstr "Ko‘proq ko‘rish <span class=\"fa fa-long-arrow-right\" role=\"img\"/>"
+msgid "See more <span class=\"fa-solid fa-right-long\" role=\"img\"/>"
+msgstr "Ko‘proq ko‘rish <span class=\"fa-solid fa-right-long\" role=\"img\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_filter_view_form

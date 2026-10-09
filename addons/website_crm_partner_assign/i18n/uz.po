@@ -58,17 +58,17 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.ref_country
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Open map\" "
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Open map\" "
 "title=\"Open map\"/>"
 msgstr ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Xaritani ochish\" "
-"title=\"Xaritani ochish\"/>"
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Xaritani "
+"ochish\" title=\"Xaritani ochish\"/>"
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_opportunity
 #, fuzzy
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
-msgstr "<i class=\"fa fa-pencil me-1\"/>Tahrirlash"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>Tahrirlash"
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.partner
@@ -92,20 +92,18 @@ msgstr "<option>Viloyatlar...</option>"
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_lead
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-envelope\" role=\"img\" aria-label=\"Email\" "
+"<span class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Email\" "
 "title=\"Email\"/>"
 msgstr ""
-"<span class=\"fa fa-envelope\" role=\"img\" aria-label=\"Elektron pochta\" "
-"title=\"Elektron pochta\"/>"
+"<span class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Elektron "
+"pochta\" title=\"Elektron pochta\"/>"
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_lead
 #, fuzzy
-msgid ""
-"<span class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" "
-"title=\"Phone\"/>"
+msgid "<span class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
 msgstr ""
-"<span class=\"fa fa-phone\" role=\"img\" aria-label=\"Telefon\" "
+"<span class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Telefon\" "
 "title=\"Telefon\"/>"
 
 #. module: website_crm_partner_assign
@@ -113,24 +111,23 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span class=\"input-group-text o_input_group_date_icon\">\n"
-"                                                        <span class=\"fa fa-"
-"calendar\" role=\"img\" aria-label=\"Calendar\" title=\"Calendar\"/>\n"
+"                                                        <span class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Calendar\" title=\"Calendar\"/>\n"
 "                                                    </span>"
 msgstr ""
-"<span class=\"input-group-text o_input_group_date_icon\"> <span class=\"fa "
-"fa-calendar\" role=\"img\" aria-label=\"Taqvim\" title=\"Taqvim\"/> </span>"
+"<span class=\"input-group-text o_input_group_date_icon\"> <span class=\"fa-"
+"solid fa-calendar-days\" role=\"img\" aria-label=\"Taqvim\" "
+"title=\"Taqvim\"/> </span>"
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_opportunity
 #, fuzzy
 msgid ""
 "<span class=\"input-group-text o_input_group_date_icon\">\n"
-"                                                        <span class=\"fa fa-"
-"calendar\" role=\"img\" aria-label=\"Calendar\"/>\n"
+"                                                        <span class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Calendar\"/>\n"
 "                                                    </span>"
 msgstr ""
-"<span class=\"input-group-text o_input_group_date_icon\"> <span class=\"fa "
-"fa-calendar\" role=\"img\" aria-label=\"Taqvim\"/> </span>"
+"<span class=\"input-group-text o_input_group_date_icon\"> <span class=\"fa-"
+"solid fa-calendar-days\" role=\"img\" aria-label=\"Taqvim\"/> </span>"
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.crm_lead_view_kanban

@@ -60,21 +60,19 @@ msgstr ""
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Your Google Reserve Synchronization "
+"<span class=\"fa-solid fa-check me-1\"/>Your Google Reserve Synchronization "
 "is active."
 msgstr ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Ihre Synchronisierung für Mit Google "
-"reservieren ist aktiv."
+"<span class=\"fa-solid fa-check me-1\"/>Ihre Synchronisierung für Mit Google"
+" reservieren ist aktiv."
 
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Your Appointment Type is "
-"being synchronized with Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Your Appointment Type is being synchronized with Google Reserve.<br/>\n"
 "                                This can take up to 24 hours to be active."
 msgstr ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Ihre Terminart wird mit „Mit "
-"Google reservieren“ synchronisieren.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Ihre Terminart wird mit „Mit Google reservieren“ synchronisieren.<br/>\n"
 "                                Es kann bis zu 24 Stunden bis zur "
 "Aktivierung dauern."
 

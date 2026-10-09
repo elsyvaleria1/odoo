@@ -28,17 +28,17 @@ msgstr "<b>销售订单行：</b>"
 #. module: sale_planning
 #: model_terms:ir.ui.view,arch_db:sale_planning.planning_slot_view_form_inherit_sale_planning
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this shift has been cancelled. We recommend either "
-"updating the sales order item or unscheduling this shift in line with the "
-"cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this shift has been cancelled. We recommend "
+"either updating the sales order item or unscheduling this shift in line with"
+" the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this shift has been cancelled. We recommend either "
-"updating the sales order item or unscheduling this shift in line with the "
-"cancellation of the sales order.\" invisible=\"sale_order_state != 'cancel' "
-"\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this shift has been cancelled. We recommend "
+"either updating the sales order item or unscheduling this shift in line with"
+" the cancellation of the sales order.\" invisible=\"sale_order_state != "
+"'cancel' \"/>"
 
 #. module: sale_planning
 #: model_terms:ir.ui.view,arch_db:sale_planning.view_order_form_inherit_sale_planning

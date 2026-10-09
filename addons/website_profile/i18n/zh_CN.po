@@ -58,23 +58,23 @@ msgstr "<a class=\"o_translate_inline\" t-attf-href=\"/\">返回网站</a>。"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges
-msgid "<i class=\"fa fa-arrow-right\"/> Get Badges"
-msgstr "<i class=\"fa fa-arrow-right\"/> 获取奖章"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Get Badges"
+msgstr "<i class=\"fa-solid fa-arrow-right\"/> 获取奖章"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-1\"/>EDIT"
-msgstr "<i class=\"fa fa-pencil me-1\"/>编辑"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>EDIT"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>编辑"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_content
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
-msgstr "<i class=\"fa fa-pencil me-1\"/> 编辑"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/> 编辑"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-2\"/>EDIT PROFILE"
-msgstr "<i class=\"fa fa-pencil me-2\"/>编辑个人资料"
+msgid "<i class=\"fa-solid fa-pencil me-2\"/>EDIT PROFILE"
+msgstr "<i class=\"fa-solid fa-pencil me-2\"/>编辑个人资料"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges

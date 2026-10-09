@@ -25,8 +25,8 @@ msgstr ""
 #. module: mail_microsoft
 #: model_terms:ir.ui.view,arch_db:mail_microsoft.fetchmail_server_view_form
 #: model_terms:ir.ui.view,arch_db:mail_microsoft.ir_mail_server_view_form
-msgid "<i class=\"fa fa-cog\" title=\"Edit Settings\"/>"
-msgstr "<i class=\"fa fa-cog\" title=\"Edit Settings\"/>"
+msgid "<i class=\"fa-solid fa-cog\" title=\"Edit Settings\"/>"
+msgstr "<i class=\"fa-solid fa-cog\" title=\"Edit Settings\"/>"
 
 #. module: mail_microsoft
 #: model_terms:ir.ui.view,arch_db:mail_microsoft.fetchmail_server_view_form

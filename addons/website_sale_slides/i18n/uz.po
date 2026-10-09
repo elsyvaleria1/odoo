@@ -27,14 +27,14 @@ msgstr ""
 #. module: website_sale_slides
 #: model_terms:ir.ui.view,arch_db:website_sale_slides.course_option_buy_course_now
 #, fuzzy
-msgid "<i class=\"fa fa-bolt\"/> Buy Now"
-msgstr "<i class=\"fa fa-bolt\"/> Hozir sotib olish"
+msgid "<i class=\"fa-solid fa-bolt\"/> Buy Now"
+msgstr "<i class=\"fa-solid fa-bolt\"/> Hozir sotib olish"
 
 #. module: website_sale_slides
 #: model_terms:ir.ui.view,arch_db:website_sale_slides.course_buy_course_button
 #, fuzzy
-msgid "<i class=\"fa fa-shopping-cart\"/> Add to Cart"
-msgstr "<i class=\"fa fa-shopping-cart\"/> Savatga qo‘shish"
+msgid "<i class=\"fa-solid fa-shopping-cart\"/> Add to Cart"
+msgstr "<i class=\"fa-solid fa-shopping-cart\"/> Savatga qo‘shish"
 
 #. module: website_sale_slides
 #. odoo-python

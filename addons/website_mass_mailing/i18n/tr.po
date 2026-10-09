@@ -39,37 +39,36 @@ msgstr "<font class=\"text-white\">|</font>"
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Seçilmiş Sektör "
-"İçgörüleri"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Seçilmiş Sektör"
+" İçgörüleri"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Uzman İpuçları &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Uzman İpuçları "
+"&amp; How-Tos"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Kılavuzlar &amp; "
-"Kaynaklar"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Kılavuzlar "
+"&amp; Kaynaklar"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Kaydolduğunuz için "
+"<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Kaydolduğunuz için "
 "teşekkürler!"
 
 #. module: website_mass_mailing

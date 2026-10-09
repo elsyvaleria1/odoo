@@ -40,10 +40,9 @@ msgstr "%(names)s a solicitat timp liber %(leaves)s. \n"
 
 #. module: project_holidays
 #: model_terms:ir.ui.view,arch_db:project_holidays.view_task_form2_inherit_holidays
-msgid ""
-"<i class=\"fa fa-user-times me-2\" role=\"img\" title=\"Leave warning\"/>"
+msgid "<i class=\"fa-solid fa-user-times me-2\" role=\"img\" title=\"Leave warning\"/>"
 msgstr ""
-"<i class=\"fa fa-user-times me-2\" role=\"img\" title=\"Avertizare "
+"<i class=\"fa-solid fa-user-times me-2\" role=\"img\" title=\"Avertizare "
 "concediu\"/>"
 
 #. module: project_holidays

@@ -19,9 +19,9 @@ msgstr ""
 #. module: stock_barcode_picking_batch
 #: model_terms:ir.ui.view,arch_db:stock_barcode_picking_batch.stock_picking_view_kanban
 msgid ""
-"<span class=\"fa fa-external-link-square ms-1\" title=\"Open Batch Picking\"/"
-">"
-msgstr "<span class=\"fa fa-external-link-square ms-1\" title=\"Abrir BATCH\"/>"
+"<span class=\"fa-solid fa-square-up-right ms-1\" title=\"Open Batch "
+"Picking\"/>"
+msgstr "<span class=\"fa-solid fa-square-up-right ms-1\" title=\"Abrir BATCH\"/>"
 
 #. module: stock_barcode_picking_batch
 #: model:ir.actions.client,name:stock_barcode_picking_batch.stock_barcode_picking_batch_client_action

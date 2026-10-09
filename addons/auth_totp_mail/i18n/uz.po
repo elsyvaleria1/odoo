@@ -155,12 +155,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:auth_totp_mail.auth_totp_mail_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-envelope-o\"/>\n"
+"<i class=\"fa-regular fa-envelope\"/>\n"
 "                To login, enter below the six-digit authentication code just "
 "sent via email to"
 msgstr ""
-"<i class=\"fa fa-envelope-o\"/> Kirish uchun quyida elektron pochta orqali "
-"yuborilgan olti xonali tasdiqlash kodini kiriting"
+"<i class=\"fa-regular fa-envelope\"/> Kirish uchun quyida elektron pochta "
+"orqali yuborilgan olti xonali tasdiqlash kodini kiriting"
 
 #. module: auth_totp_mail
 #: model_terms:ir.ui.view,arch_db:auth_totp_mail.res_users_view_form

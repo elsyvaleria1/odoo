@@ -39,56 +39,46 @@ msgstr ""
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax "
-"portal\" class=\"fa fa-external-link-square fa-fw\"/>\n"
+"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax portal\" class=\"fa-solid fa-square-up-right\"/>\n"
 "                                Avatax portal"
 msgstr ""
-"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax "
-"portal\" class=\"fa fa-external-link-square fa-fw\"/>\n"
+"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax portal\" class=\"fa-solid fa-square-up-right\"/>\n"
 "                                Avatax portalı"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa fa-"
-"file-text-o\"/>\n"
+"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Show logs"
 msgstr ""
-"<i title=\"Kayıtları göster\" role=\"img\" aria-label=\"Show logs\" "
-"class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Kayıtları göster\" role=\"img\" aria-label=\"Show logs\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Kayıtları göster"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start "
-"logging for 30 minutes\" class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start logging for 30 minutes\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Start logging for 30 minutes"
 msgstr ""
-"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start "
-"logging for 30 minutes\" class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start logging for 30 minutes\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                30 dakika boyunca günlük kaydını başlat"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" "
-"class=\"fa fa-refresh\"/>\n"
+"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" class=\"fa-solid fa-arrows-rotate\"/>\n"
 "                                Sync Parameters"
 msgstr ""
-"<i title=\"Parametreleri Eşitle\" role=\"img\" aria-label=\"Sync "
-"Parameters\" class=\"fa fa-refresh\"/>\n"
+"<i title=\"Parametreleri Eşitle\" role=\"img\" aria-label=\"Sync Parameters\" class=\"fa-solid fa-arrows-rotate\"/>\n"
 "                                Parametreleri Eşitle"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" "
-"class=\"fa fa-plug fa-fw\"/>\n"
+"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" class=\"fa-solid fa-plug\"/>\n"
 "                                Test connection"
 msgstr ""
-"<i title=\"Bağlantıyı test et\" role=\"img\" aria-label=\"Test connection\" "
-"class=\"fa fa-plug fa-fw\"/>\n"
+"<i title=\"Bağlantıyı test et\" role=\"img\" aria-label=\"Test connection\" class=\"fa-solid fa-plug\"/>\n"
 "                                Bağlantıyı test et"
 
 #. module: account_avatax

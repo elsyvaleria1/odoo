@@ -28,8 +28,8 @@ msgstr " - Nos produtos com os seguintes impostos: %(taxes)s"
 
 #. module: sale_loyalty
 #: model_terms:ir.ui.view,arch_db:sale_loyalty.sale_purchased_gift_card
-msgid "<span class=\"fa fa-clipboard\"/> Copy"
-msgstr "<span class=\"fa fa-clipboard\"/> Cópia"
+msgid "<span class=\"fa-solid fa-paste\"/> Copy"
+msgstr "<span class=\"fa-solid fa-paste\"/> Cópia"
 
 #. module: sale_loyalty
 #: model_terms:ir.ui.view,arch_db:sale_loyalty.sale_order_portal_loyalty_content

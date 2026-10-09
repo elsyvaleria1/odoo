@@ -44,11 +44,13 @@ msgstr "<b>Điền thông tin và nhấp vào nút Lưu Kênh &amp; kiểm tra k
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
-"<b>Trong cấu hình Odoo, nhấp vào biểu tượng <i class=\"fa fa-refresh "
-"oe_inline\"/> gần Kênh Shiprocket để đồng bộ các kênh mới được tạo.</b>"
+"<b>Trong cấu hình Odoo, nhấp vào biểu tượng <i class=\"fa-solid fa-arrows-"
+"rotate oe_inline\"/> gần Kênh Shiprocket để đồng bộ các kênh mới được "
+"tạo.</b>"
 
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
@@ -77,13 +79,14 @@ msgstr "<b>Để tạo một kênh, hãy đi đến Kênh Shiprocket.</b>"
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>Để tránh bị tính phí, thì trong môi "
-"trường kiểm thử, các lô hàng của bạn sẽ tự động <b>bị hủy</b> sau khi tạo "
-"nhãn. Lượng hàng bị hủy sẽ được hoàn lại trong 3-4 ngày sau đó."
+"<i class=\"fa-solid fa-exclamation-triangle\"/>Để tránh bị tính phí, thì "
+"trong môi trường kiểm thử, các lô hàng của bạn sẽ tự động <b>bị hủy</b> sau "
+"khi tạo nhãn. Lượng hàng bị hủy sẽ được hoàn lại trong 3-4 ngày sau đó."
 
 #. module: delivery_shiprocket
 #: model:ir.model.fields,help:delivery_shiprocket.field_delivery_carrier__shiprocket_manifests_generate

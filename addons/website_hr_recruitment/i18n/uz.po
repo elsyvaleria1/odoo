@@ -81,17 +81,17 @@ msgstr ""
 #. module: website_hr_recruitment
 #: model_terms:ir.ui.view,arch_db:website_hr_recruitment.detail
 #, fuzzy
-msgid "<i class=\"fa fa-long-arrow-left text-primary me-2\"/>All Jobs"
-msgstr "<i class=\"fa fa-long-arrow-left text-primary me-2\"/>Barcha ishlar"
+msgid "<i class=\"fa-solid fa-left-long text-primary me-2\"/>All Jobs"
+msgstr "<i class=\"fa-solid fa-left-long text-primary me-2\"/>Barcha ishlar"
 
 #. module: website_hr_recruitment
 #: model_terms:ir.ui.view,arch_db:website_hr_recruitment.index
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-suitcase fa-fw\" title=\"Employment type\" role=\"img\" "
+"<i class=\"fa-solid fa-suitcase\" title=\"Employment type\" role=\"img\" "
 "aria-label=\"Employment type\"/>"
 msgstr ""
-"<i class=\"fa fa-suitcase fa-fw\" title=\"Ish turi\" role=\"img\" aria-"
+"<i class=\"fa-solid fa-suitcase\" title=\"Ish turi\" role=\"img\" aria-"
 "label=\"Ish turi\"/>"
 
 #. module: website_hr_recruitment

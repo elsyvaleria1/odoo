@@ -52,72 +52,70 @@ msgstr "6 件三文魚壽司卷、6 件吞拿魚壽司卷、6 件牛油果蝦壽
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"<i class=\"fa-solid fa-check\" role=\"img\" aria-label=\"Receive button\" "
 "title=\"Receive button\"/>"
 msgstr ""
-"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"<i class=\"fa-solid fa-check\" role=\"img\" aria-label=\"Receive button\" "
 "title=\"Receive button\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_report_kanban
-msgid ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
-msgstr ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"日期\" title=\"日期\"/>"
+msgid "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
+msgstr "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"日期\" title=\"日期\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"Send notification\" "
-"title=\"Send notification\"/>"
-msgstr ""
-"<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"傳送通知\" title=\"傳送"
-"通知\"/>"
+"<i class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Send "
+"notification\" title=\"Send notification\"/>"
+msgstr "<i class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"傳送通知\" title=\"傳送通知\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_report_kanban
 msgid ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/"
-">"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Amount\" "
+"title=\"Amount\"/>"
 msgstr ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/"
-">"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Amount\" "
+"title=\"Amount\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Money\"/>"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Money\" "
+"title=\"Money\"/>"
 msgstr ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Money\"/>"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Money\" "
+"title=\"Money\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-paper-plane\" role=\"img\" aria-label=\"Send button\" "
-"title=\"Send button\"/>"
+"<i class=\"fa-solid fa-paper-plane\" role=\"img\" aria-label=\"Send button\""
+" title=\"Send button\"/>"
 msgstr ""
-"<i class=\"fa fa-paper-plane\" role=\"img\" aria-label=\"傳送按鈕\" "
+"<i class=\"fa-solid fa-paper-plane\" role=\"img\" aria-label=\"傳送按鈕\" "
 "title=\"傳送按鈕\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"<i class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Order button\" "
 "title=\"Order button\"/>"
 msgstr ""
-"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"<i class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Order button\" "
 "title=\"Order button\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"<i class=\"fa-solid fa-times\" role=\"img\" aria-label=\"Cancel button\" "
 "title=\"Cancel button\"/>"
 msgstr ""
-"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"<i class=\"fa-solid fa-times\" role=\"img\" aria-label=\"Cancel button\" "
 "title=\"Cancel button\"/>"
 
 #. module: lunch

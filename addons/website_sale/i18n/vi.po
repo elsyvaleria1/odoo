@@ -244,23 +244,23 @@ msgstr ""
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.navigation_buttons
 msgid ""
-"<i class=\"fa fa-angle-left me-2 fw-light\"/>\n"
+"<i class=\"fa-solid fa-angle-left me-2 fw-light\"/>\n"
 "                    Continue shopping"
 msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_buy_now
 msgid ""
-"<i class=\"fa fa-bolt me-2\"/>\n"
+"<i class=\"fa-solid fa-bolt me-2\"/>\n"
 "                Buy now"
 msgstr ""
-"<i class=\"fa fa-bolt me-2\"/>\n"
+"<i class=\"fa-solid fa-bolt me-2\"/>\n"
 "                Mua ngay"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.s_add_to_cart
-msgid "<i class=\"fa fa-cart-plus me-2\"/>Add to Cart"
-msgstr "<i class=\"fa fa-cart-plus me-2\"/>Thêm vào giỏ hàng"
+msgid "<i class=\"fa-solid fa-cart-plus me-2\"/>Add to Cart"
+msgstr "<i class=\"fa-solid fa-cart-plus me-2\"/>Thêm vào giỏ hàng"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.shop_product_buttons
@@ -272,32 +272,32 @@ msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_pages_kanban_view
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
-msgstr "<i class=\"fa fa-globe me-1\" title=\"Trang web\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
+msgstr "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Trang web\"/>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.template_footer_website_sale
-msgid "<i class=\"fa fa-long-arrow-right\"/> All Products"
+msgid "<i class=\"fa-solid fa-right-long\"/> All Products"
 msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.address_edit_button
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
-msgstr "<i class=\"fa fa-pencil me-1\"/>Chỉnh sửa"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>Chỉnh sửa"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.address_edit_button
-msgid "<i class=\"fa fa-pencil me-1\"/>Want an invoice?"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Want an invoice?"
 msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.confirmation
-msgid "<i class=\"fa fa-print me-2\"/>Print"
-msgstr "<i class=\"fa fa-print me-2\"/>In"
+msgid "<i class=\"fa-solid fa-print me-2\"/>Print"
+msgstr "<i class=\"fa-solid fa-print me-2\"/>In"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.quick_reorder_button
-msgid "<i class=\"fa fa-rotate-left me-2\"/>Quick reorder"
+msgid "<i class=\"fa-solid fa-arrow-rotate-left me-2\"/>Quick reorder"
 msgstr ""
 
 #. module: website_sale
@@ -312,14 +312,14 @@ msgstr ""
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.dynamic_filter_template_product_product_products_item
 msgid ""
-"<i class=\"fa fa-shopping-cart fa-fw\" role=\"presentation\"/><span "
+"<i class=\"fa-solid fa-shopping-cart\" role=\"presentation\"/><span "
 "class=\"o_label small ms-1\">Add to Cart</span>"
 msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.cta_wrapper
 msgid ""
-"<i class=\"fa fa-shopping-cart me-2\"/>\n"
+"<i class=\"fa-solid fa-shopping-cart me-2\"/>\n"
 "                    Add to cart"
 msgstr ""
 
@@ -477,36 +477,30 @@ msgstr "<span class=\"px-3\">hoặc</span>"
 msgid ""
 "<span class=\"s_badge badge text-bg-primary o_animable\" data-"
 "name=\"Badge\">\n"
-"                                    <i class=\"fa fa-dollar fa-fw o_not-"
-"animable\"/> Low Prices\n"
+"                                    <i class=\"fa-solid fa-dollar-sign o_not-animable\"/> Low Prices\n"
 "                                </span>\n"
 "                                <span class=\"s_badge badge text-bg-primary "
 "o_animable\" data-name=\"Badge\">\n"
-"                                    <i class=\"fa fa-shopping-basket fa-fw "
-"o_not-animable\"/>\n"
+"                                    <i class=\"fa-solid fa-shopping-basket o_not-animable\"/>\n"
 "                                    Easy Returns\n"
 "                                </span>\n"
 "                                <span class=\"s_badge badge text-bg-primary "
 "o_animable\" data-name=\"Badge\">\n"
-"                                    <i class=\"fa fa-truck fa-fw o_not-"
-"animable\"/> Fast Shipping\n"
+"                                    <i class=\"fa-solid fa-truck o_not-animable\"/> Fast Shipping\n"
 "                                </span>"
 msgstr ""
 "<span class=\"s_badge badge text-bg-primary o_animable\" data-"
 "name=\"Badge\">\n"
-"                                    <i class=\"fa fa-dollar fa-fw o_not-"
-"animable\"/> Giá rẻ\n"
+"                                    <i class=\"fa-solid fa-dollar-sign o_not-animable\"/> Giá rẻ\n"
 "                               </span>\n"
 "                                <span class=\"s_badge badge text-bg-primary "
 "o_animable\" data-name=\"Badge\"> \n"
-"                                   <i class=\"fa fa-shopping-basket fa-fw "
-"o_not-animable\"/> \n"
+"                                   <i class=\"fa-solid fa-shopping-basket o_not-animable\"/> \n"
 "                                    Đổi trả dễ dàng\n"
 "                               </span>\n"
 "                                <span class=\"s_badge badge text-bg-primary "
 "o_animable\" data-name=\"Badge\"> \n"
-"                                   <i class=\"fa fa-truck fa-fw o_not-"
-"animable\"/> Giao hàng nhanh    \n"
+"                                   <i class=\"fa-solid fa-truck o_not-animable\"/> Giao hàng nhanh    \n"
 "</span>"
 
 #. module: website_sale

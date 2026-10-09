@@ -51,14 +51,14 @@ msgstr ""
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
 #, fuzzy
-msgid "<i class=\"fa fa-map-o me-1\"/>View Plan"
-msgstr "<i class=\"fa fa-map-o me-1\"/>Rejani ko‘rish"
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr "<i class=\"fa-regular fa-map me-1\"/>Rejani ko‘rish"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_layout
 #, fuzzy
-msgid "<span class=\"fa fa-gear me-1\"/> Configure Booths"
-msgstr "<span class=\"fa fa-gear me-1\"/> Stendlarni sozlash"
+msgid "<span class=\"fa-solid fa-gear me-1\"/> Configure Booths"
+msgstr "<span class=\"fa-solid fa-gear me-1\"/> Stendlarni sozlash"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
@@ -82,11 +82,11 @@ msgstr "<span>Stendlarimni band qiling</span>"
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 #, fuzzy
 msgid ""
-"<span>Booth Selection</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Booth Selection</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"<span>Stend tanlash</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Stend tanlash</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
@@ -177,11 +177,11 @@ msgstr "Aloqa ma'lumotlari"
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 #, fuzzy
 msgid ""
-"Contact Details<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
-msgstr ""
-"Aloqa ma'lumotlari<span class=\"fa fa-angle-right d-inline-block align-"
+"Contact Details<span class=\"fa-solid fa-angle-right d-inline-block align-"
 "middle mx-2 mx-lg-3 opacity-75\"/>"
+msgstr ""
+"Aloqa ma'lumotlari<span class=\"fa-solid fa-angle-right d-inline-block "
+"align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration

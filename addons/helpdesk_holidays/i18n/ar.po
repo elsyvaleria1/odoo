@@ -23,11 +23,11 @@ msgstr ""
 #. module: helpdesk_holidays
 #: model_terms:ir.ui.view,arch_db:helpdesk_holidays.helpdesk_team_view_form
 msgid ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">Team members on time "
-"off are not assigned any tickets</span>"
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">Team members on "
+"time off are not assigned any tickets</span>"
 msgstr ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">لا يتم إسناد أي تذاكر "
-"إلى أعضاء الفريق الذين ذهبوا في إجازة</span>"
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">لا يتم إسناد أي "
+"تذاكر إلى أعضاء الفريق الذين ذهبوا في إجازة</span>"
 
 #. module: helpdesk_holidays
 #: model:ir.model.fields,field_description:helpdesk_holidays.field_res_users__display_name

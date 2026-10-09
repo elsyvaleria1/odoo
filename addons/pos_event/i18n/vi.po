@@ -36,15 +36,16 @@ msgstr "--- Chọn ---"
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Badges"
-msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>In thẻ sự kiện"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Badges"
+msgstr "<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>In thẻ sự kiện"
 
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Tickets"
-msgstr "<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>In vé sự kiện"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Tickets"
+msgstr "<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>In vé sự kiện"
 
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.event_registration_ticket_view_form

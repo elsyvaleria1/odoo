@@ -24,8 +24,10 @@ msgstr ""
 
 #. module: hr_work_entry_enterprise
 #: model_terms:ir.ui.view,arch_db:hr_work_entry_enterprise.hr_work_entry_gantt
-msgid "<i class=\"fa fa-lock me-1\"/> You cannot edit a validated work entry"
-msgstr "<i class=\"fa fa-lock me-1\"/> لا يمكنك تعديل قيد عمل تم تصديقه بالفعل"
+msgid ""
+"<i class=\"fa-solid fa-lock me-1\"/> You cannot edit a validated work entry"
+msgstr ""
+"<i class=\"fa-solid fa-lock me-1\"/> لا يمكنك تعديل قيد عمل تم تصديقه بالفعل"
 
 #. module: hr_work_entry_enterprise
 #: model_terms:ir.ui.view,arch_db:hr_work_entry_enterprise.hr_work_entry_gantt

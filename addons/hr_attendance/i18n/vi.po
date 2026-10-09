@@ -58,16 +58,16 @@ msgstr ""
 #. module: hr_attendance
 #: model_terms:ir.ui.view,arch_db:hr_attendance.view_hr_attendance_kanban
 msgid ""
-"<i class=\"fa fa-calendar me-1\" aria-label=\"Period\" role=\"img\" "
-"title=\"Period\"/>"
+"<i class=\"fa-solid fa-calendar-days me-1\" aria-label=\"Period\" "
+"role=\"img\" title=\"Period\"/>"
 msgstr ""
-"<i class=\"fa fa-calendar me-1\" aria-label=\"Giai đoạn\" role=\"img\" "
-"title=\"Giai đoạn\"/>"
+"<i class=\"fa-solid fa-calendar-days me-1\" aria-label=\"Giai đoạn\" "
+"role=\"img\" title=\"Giai đoạn\"/>"
 
 #. module: hr_attendance
 #: model_terms:ir.ui.view,arch_db:hr_attendance.res_config_settings_view_form
-msgid "<i class=\"fa fa-fw fa-arrow-right\"/>Installation Manual"
-msgstr "<i class=\"fa fa-fw fa-arrow-right\"/>Cài đặt thủ công"
+msgid "<i class=\"fa-solid fa-arrow-right\"/>Installation Manual"
+msgstr "<i class=\"fa-solid fa-arrow-right\"/>Cài đặt thủ công"
 
 #. module: hr_attendance
 #: model_terms:ir.ui.view,arch_db:hr_attendance.hr_employees_view_kanban

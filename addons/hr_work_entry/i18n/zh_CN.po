@@ -58,16 +58,17 @@ msgstr "%s工作条目"
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>Employees in "
-"red will be skipped because they have at least one validated work entry."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>Employees in red will be skipped because they have at "
+"least one validated work entry."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>红色员工将被"
-"跳过，因为他们至少有一项经过验证的工作条目。"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>红色员工将被跳过，因为他们至少有一项经过验证的工作条目。"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
-msgid "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
-msgstr "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
+msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
+msgstr "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form

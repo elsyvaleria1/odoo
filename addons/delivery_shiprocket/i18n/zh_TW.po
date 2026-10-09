@@ -43,10 +43,11 @@ msgstr "<b>填寫詳細資料，然後按一下「儲存頻道並測試連線」
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
-"<b>在 Odoo 設定中，按一下 Shiprocket 頻道附近的 <i class=\"fa fa-refresh "
+"<b>在 Odoo 設定中，按一下 Shiprocket 頻道附近的 <i class=\"fa-solid fa-arrows-rotate "
 "oe_inline\"/> 圖示，以同步新建立的頻道。</b>"
 
 #. module: delivery_shiprocket
@@ -75,12 +76,13 @@ msgstr "<b>要建立頻道，請前往 Shiprocket 頻道</b>"
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>在測試環境中，為避免產生費用，您的發"
-"貨將在建立標籤後自動<b>取消</b>。取消發貨的金額將在其後 3 至 4 天內退還。"
+"<i class=\"fa-solid fa-exclamation-"
+"triangle\"/>在測試環境中，為避免產生費用，您的發貨將在建立標籤後自動<b>取消</b>。取消發貨的金額將在其後 3 至 4 天內退還。"
 
 #. module: delivery_shiprocket
 #: model:ir.model.fields,help:delivery_shiprocket.field_delivery_carrier__shiprocket_manifests_generate

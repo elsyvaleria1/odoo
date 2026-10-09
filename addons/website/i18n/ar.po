@@ -877,20 +877,20 @@ msgstr "<a class=\"o_translate_inline\" href=\"#\">الرابط</a>"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_faq_horizontal
 msgid ""
-"<a class=\"o_translate_inline\" href=\"#\">Read More <i class=\"fa fa-angle-"
-"right\" role=\"img\"/></a>"
-msgstr ""
-"<a class=\"o_translate_inline\" href=\"#\">اقرأ المزيد <i class=\"fa fa-"
+"<a class=\"o_translate_inline\" href=\"#\">Read More <i class=\"fa-solid fa-"
 "angle-right\" role=\"img\"/></a>"
+msgstr ""
+"<a class=\"o_translate_inline\" href=\"#\">اقرأ المزيد <i class=\"fa-solid "
+"fa-angle-right\" role=\"img\"/></a>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_references
 msgid ""
 "<a class=\"o_translate_inline\" href=\"#\">See our case studies <i "
-"class=\"fa fa-long-arrow-right ms-2\"/></a>"
+"class=\"fa-solid fa-right-long ms-2\"/></a>"
 msgstr ""
 "<a class=\"o_translate_inline\" href=\"#\">ألقِ نظرة على حالات الاستخدام <i "
-"class=\"fa fa-long-arrow-right ms-2\"/></a>"
+"class=\"fa-solid fa-right-long ms-2\"/></a>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_contact_info
@@ -1416,11 +1416,11 @@ msgstr "<head> و </body>"
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-1x fa-fw fa-envelope me-2\"/"
-"><span>info@yourcompany.example.com</span>"
+"<i class=\"fa-solid fa-envelope fa-1x "
+"me-2\"/><span>info@yourcompany.example.com</span>"
 msgstr ""
-"<i class=\"fa fa-1x fa-fw fa-envelope me-2\"/"
-"><span>info@yourcompany.example.com</span>"
+"<i class=\"fa-solid fa-envelope fa-1x "
+"me-2\"/><span>info@yourcompany.example.com</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.header_text_element
@@ -1440,100 +1440,105 @@ msgstr "<i class=\"fa fa-1x fa-fw fa-phone me-1\"/>͏"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_controller_pages_kanban_view
-msgid "<i class=\"fa fa-2x fa-arrow-right text-primary\" title=\"URL\"/>"
-msgstr ""
-"<i class=\"fa fa-2x fa-arrow-right text-primary\" title=\"رابط URL \"/>"
+msgid "<i class=\"fa-solid fa-arrow-right fa-2x text-primary\" title=\"URL\"/>"
+msgstr "<i class=\"fa-solid fa-arrow-right fa-2x text-primary\" title=\"رابط URL \"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
-msgid "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Complete access"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> الوصول الكامل"
+msgid "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Complete access"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> الوصول الكامل"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
-msgid "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Quick support"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> الدعم السريع"
+msgid "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Quick support"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> الدعم السريع"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_cta_card
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Wonderful experience"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  تجربة مذهلة"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Wonderful "
+"experience"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  تجربة مذهلة"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  24/7 toll-free support"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  24/7 toll-free "
+"support"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/> دعم مجاني على مدار "
-"الساعة"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/> دعم مجاني على "
+"مدار الساعة"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Access all modules"
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Access all modules"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  صلاحية الوصول إلى كافة "
-"التطبيقات"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  صلاحية الوصول "
+"إلى كافة التطبيقات"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Account management"
+msgstr "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  إدارة الحساب"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Account management"
-msgstr "<i class=\"fa fa-check text-success\" role=\"img\"/>  إدارة الحساب"
-
-#. module: website
-#: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  All modules &amp; "
-"features"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  All modules "
+"&amp; features"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  كافة التطبيقات والخصائص"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  كافة التطبيقات "
+"والخصائص"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Complete CRM for any "
-"team"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Complete CRM for"
+" any team"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  نظام إدارة علاقات "
-"العملاء الكامل لأي فريق"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  نظام إدارة "
+"علاقات العملاء الكامل لأي فريق"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-check text-success\" role=\"img\"/>  Email support"
+msgid "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Email support"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  الدعم عبر البريد "
-"الإلكتروني"
-
-#. module: website
-#: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Limited customization"
-msgstr "<i class=\"fa fa-check text-success\" role=\"img\"/>  التخصيص المحدود"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  الدعم عبر البريد"
+" الإلكتروني"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; marketing "
-"for 2"
-msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  المبيعات والتسويق لـ 2"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Limited "
+"customization"
+msgstr "<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  التخصيص المحدود"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Unlimited CRM support"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"marketing for 2"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  الدعم غير المحدود "
-"لإدارة علاقات العملاء"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  المبيعات "
+"والتسويق لـ 2"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  Unlimited customization"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Unlimited CRM "
+"support"
 msgstr ""
-"<i class=\"fa fa-check text-success\" role=\"img\"/>  التخصيص غير المحدود"
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  الدعم غير "
+"المحدود لإدارة علاقات العملاء"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
+msgid ""
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  Unlimited "
+"customization"
+msgstr ""
+"<i class=\"fa-solid fa-check text-success\" role=\"img\"/>  التخصيص غير "
+"المحدود"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_contact_info
@@ -1587,10 +1592,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website.s_discovery
 #: model_terms:ir.ui.view,arch_db:website.s_empowerment
 msgid ""
-"<i class=\"fa fa-fw fa-info-circle o_not-animable\" role=\"img\"/>  What do "
+"<i class=\"fa-solid fa-info-circle o_not-animable\" role=\"img\"/>  What do "
 "you want to promote&amp;nbsp;?"
 msgstr ""
-"<i class=\"fa fa-fw fa-info-circle o_not-animable\" role=\"img\"/>  ما الذي "
+"<i class=\"fa-solid fa-info-circle o_not-animable\" role=\"img\"/>  ما الذي "
 "ترغب في الترويج له؟"
 
 #. module: website
@@ -1604,24 +1609,22 @@ msgstr ""
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_visitor_view_form
-msgid ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-danger\" title=\"Offline\"/>"
+msgid "<i class=\"fa-solid fa-circle o_button_icon text-danger\" title=\"Offline\"/>"
 msgstr ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-danger\" title=\"غير متصل "
+"<i class=\"fa-solid fa-circle o_button_icon text-danger\" title=\"غير متصل "
 "\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_visitor_view_form
 msgid ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-success\" "
+"<i class=\"fa-solid fa-circle o_button_icon text-success\" "
 "title=\"Connected\"/>"
-msgstr ""
-"<i class=\"fa fa-fw o_button_icon fa-circle text-success\" title=\"متصل \"/>"
+msgstr "<i class=\"fa-solid fa-circle o_button_icon text-success\" title=\"متصل \"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.website_pages_kanban_view
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
-msgstr "<i class=\"fa fa-globe me-1\" title=\"الموقع الإلكتروني \"/>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
+msgstr "<i class=\"fa-solid fa-earth-americas me-1\" title=\"الموقع الإلكتروني \"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.protected_403
@@ -1647,31 +1650,31 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-map-marker fa-fw me-2\"/><span class=\"o_force_ltr\">3575 "
-"Fake Buena Vista Avenue</span>"
+"<i class=\"fa-solid fa-location-dot me-2\"/><span class=\"o_force_ltr\">3575"
+" Fake Buena Vista Avenue</span>"
 msgstr ""
-"<i class=\"fa fa-map-marker fa-fw me-2\"/><span class=\"o_force_ltr\">3575 "
-"Fake Buena Vista Avenue</span>"
+"<i class=\"fa-solid fa-location-dot me-2\"/><span class=\"o_force_ltr\">3575"
+" Fake Buena Vista Avenue</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.contactus
 #: model_terms:ir.ui.view,arch_db:website.contactus_thanks_ir_ui_view
 msgid ""
-"<i class=\"fa fa-phone fa-fw me-2\"/><span class=\"o_force_ltr\">+1 "
+"<i class=\"fa-solid fa-phone me-2\"/><span class=\"o_force_ltr\">+1 "
 "555-555-5556</span>"
 msgstr ""
-"<i class=\"fa fa-phone fa-fw me-2\"/><span class=\"o_force_ltr\">+1 "
+"<i class=\"fa-solid fa-phone me-2\"/><span class=\"o_force_ltr\">+1 "
 "555-555-5556</span>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-times text-danger\" role=\"img\"/>  No customization"
-msgstr "<i class=\"fa fa-times text-danger\" role=\"img\"/>  بلا تخصيص"
+msgid "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No customization"
+msgstr "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  بلا تخصيص"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons
-msgid "<i class=\"fa fa-times text-danger\" role=\"img\"/>  No support"
-msgstr "<i class=\"fa fa-times text-danger\" role=\"img\"/>  بلا دعم"
+msgid "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No support"
+msgstr "<i class=\"fa-solid fa-times text-danger\" role=\"img\"/>  بلا دعم"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_mega_menu_little_icons
@@ -2032,10 +2035,10 @@ msgstr ""
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.header_text_element
 msgid ""
-"<small><i class=\"fa fa-1x fa-fw fa-envelope me-1\"/> "
+"<small><i class=\"fa-solid fa-envelope fa-1x me-1\"/> "
 "info@yourcompany.example.com</small>"
 msgstr ""
-"<small><i class=\"fa fa-1x fa-fw fa-envelope me-1\"/> "
+"<small><i class=\"fa-solid fa-envelope fa-1x me-1\"/> "
 "info@yourcompany.example.com</small>"
 
 #. module: website
@@ -2165,53 +2168,54 @@ msgstr ""
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  24/7 Support"
-msgstr "<span class=\"fa fa-check-circle-o\"/> الدعم على مدار الساعة"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  24/7 Support"
+msgstr "<span class=\"fa-regular fa-circle-check\"/> الدعم على مدار الساعة"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Access all modules"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Access all modules"
 msgstr ""
-"<span class=\"fa fa-check-circle-o\"/>  تمكن من الوصول إلى كافة التطبيقات"
+"<span class=\"fa-regular fa-circle-check\"/>  تمكن من الوصول إلى كافة "
+"التطبيقات"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  All modules &amp; features"
-msgstr "<span class=\"fa fa-check-circle-o\"/>  كافة التطبيقات والخصائص"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  All modules &amp; features"
+msgstr "<span class=\"fa-regular fa-circle-check\"/>  كافة التطبيقات والخصائص"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Complete CRM for any team"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Complete CRM for any team"
 msgstr ""
-"<span class=\"fa fa-check-circle-o\"/>  نظام إدارة علاقات العملاء الكامل لأي "
-"فريق"
+"<span class=\"fa-regular fa-circle-check\"/>  نظام إدارة علاقات العملاء "
+"الكامل لأي فريق"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Email support"
-msgstr "<span class=\"fa fa-check-circle-o\"/> الدعم عبر البريد الإلكتروني"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Email support"
+msgstr "<span class=\"fa-regular fa-circle-check\"/> الدعم عبر البريد الإلكتروني"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Limited Customization"
-msgstr "<span class=\"fa fa-check-circle-o\"/> تخصيصات محدودة"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Limited Customization"
+msgstr "<span class=\"fa-regular fa-circle-check\"/> تخصيصات محدودة"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  PaaS Access"
-msgstr "<span class=\"fa fa-check-circle-o\"/> صلاحيات وصول PaaS"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  PaaS Access"
+msgstr "<span class=\"fa-regular fa-circle-check\"/> صلاحيات وصول PaaS"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Unlimited CRM support"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Unlimited CRM support"
 msgstr ""
-"<span class=\"fa fa-check-circle-o\"/> الدعم غير المحدود في تطبيق إدارة "
-"علاقات العملاء"
+"<span class=\"fa-regular fa-circle-check\"/> الدعم غير المحدود في تطبيق "
+"إدارة علاقات العملاء"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_comparisons_horizontal
-msgid "<span class=\"fa fa-check-circle-o\"/>  Unlimited customization"
-msgstr "<span class=\"fa fa-check-circle-o\"/> تخصيصات غير محدودة"
+msgid "<span class=\"fa-regular fa-circle-check\"/>  Unlimited customization"
+msgstr "<span class=\"fa-regular fa-circle-check\"/> تخصيصات غير محدودة"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_accordion
@@ -5979,9 +5983,8 @@ msgstr "استمرار"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_media_list
-msgid ""
-"Continue reading <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr "متابعة القراءة <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Continue reading <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "متابعة القراءة <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: website
 #: model:ir.model.fields,field_description:website.field_ir_ui_view__controller_page_ids
@@ -6928,8 +6931,8 @@ msgstr "اكتشف المزيد"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_media_list
-msgid "Discover more <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr "اكتشف المزيد <i class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Discover more <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "اكتشف المزيد <i class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_services_s_image_text
@@ -15317,8 +15320,8 @@ msgstr ""
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_dynamic_snippet_template
-msgid "See all<span class=\"fa fa-long-arrow-right ms-2\"/>"
-msgstr "مشاهدة الكل<span class=\"fa fa-long-arrow-right ms-2\"/>"
+msgid "See all<span class=\"fa-solid fa-right-long ms-2\"/>"
+msgstr "مشاهدة الكل<span class=\"fa-solid fa-right-long ms-2\"/>"
 
 #. module: website
 #. odoo-javascript
@@ -15330,8 +15333,8 @@ msgstr "شاهد كيف ستبدو هذه الصفحة في نتائج البح�
 #: model_terms:ir.ui.view,arch_db:website.s_cta_badge
 #: model_terms:ir.ui.view,arch_db:website.s_discovery
 #: model_terms:ir.ui.view,arch_db:website.s_empowerment
-msgid "See more <i class=\"fa fa-long-arrow-right\" role=\"img\"/>"
-msgstr "اطلع على المزيد <i class=\"fa fa-long-arrow-right\" role=\"img\"/>"
+msgid "See more <i class=\"fa-solid fa-right-long\" role=\"img\"/>"
+msgstr "اطلع على المزيد <i class=\"fa-solid fa-right-long\" role=\"img\"/>"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_references_grid

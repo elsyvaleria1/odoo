@@ -51,28 +51,28 @@ msgstr ""
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-clock-o\"/> Awaiting arrival"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/> ממתין להגעה"
+msgid "<i class=\"fa-regular fa-clock\"/> Awaiting arrival"
+msgstr "<i class=\"fa-regular fa-clock\"/> ממתין להגעה"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-clock-o\"/>Preparation"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/> הכנה"
+msgid "<i class=\"fa-regular fa-clock\"/>Preparation"
+msgstr "<i class=\"fa-regular fa-clock\"/> הכנה"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-times\"/> Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/> בוטל"
+msgid "<i class=\"fa-solid fa-times\"/> Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/> בוטל"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-times\"/>Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/> בוטל"
+msgid "<i class=\"fa-solid fa-times\"/>Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/> בוטל"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-truck\"/> Received"
-msgstr "<i class=\"fa fa-fw fa-truck\"/> התקבל"
+msgid "<i class=\"fa-solid fa-truck\"/> Received"
+msgstr "<i class=\"fa-solid fa-truck\"/> התקבל"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.stock_production_lot_view_form
@@ -84,8 +84,7 @@ msgstr "<span class=\"o_stat_text\">מכירות</span>"
 msgid ""
 "<span class=\"small badge rounded-pill text-bg-success "
 "orders_label_text_align\">\n"
-"                                        <i class=\"fa fa-fw fa-truck\"/> "
-"Shipped\n"
+"                                        <i class=\"fa-solid fa-truck\"/> Shipped\n"
 "                                    </span>"
 msgstr ""
 

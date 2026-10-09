@@ -56,23 +56,23 @@ msgstr ""
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges
-msgid "<i class=\"fa fa-arrow-right\"/> Get Badges"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Get Badges"
 msgstr ""
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-1\"/>EDIT"
-msgstr "<i class=\"fa fa-pencil me-1\"/>UREJANJE"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>EDIT"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>UREJANJE"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_content
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
 msgstr ""
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-2\"/>EDIT PROFILE"
-msgstr "<i class=\"fa fa-pencil me-2\"/>UREJANJE PROFILA"
+msgid "<i class=\"fa-solid fa-pencil me-2\"/>EDIT PROFILE"
+msgstr "<i class=\"fa-solid fa-pencil me-2\"/>UREJANJE PROFILA"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges

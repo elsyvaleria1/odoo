@@ -39,8 +39,9 @@ msgstr ""
 
 #. module: event_sale
 #: model_terms:ir.ui.view,arch_db:event_sale.event_configurator_view_form
-msgid "<i class=\"fa fa-arrow-right\"/> Configure Events &amp; Tickets"
-msgstr "<i class=\"fa fa-arrow-right\"/> Configurează Evenimente &amp; Bilete"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Configure Events &amp; Tickets"
+msgstr ""
+"<i class=\"fa-solid fa-arrow-right\"/> Configurează Evenimente &amp; Bilete"
 
 #. module: event_sale
 #: model_terms:ir.ui.view,arch_db:event_sale.event_registration_ticket_view_form

@@ -121,12 +121,16 @@ msgstr ""
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_complete
-msgid "<i class=\"fa fa-angle-down fa-3x text-white\" aria-label=\"To blog content\" title=\"To blog content\"/>"
+msgid ""
+"<i class=\"fa-solid fa-angle-down fa-3x text-white\" aria-label=\"To blog "
+"content\" title=\"To blog content\"/>"
 msgstr ""
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_view_kanban
-msgid "<i class=\"fa fa-clock-o me-1\" role=\"img\" aria-label=\"Post date\" title=\"Post date\"/>"
+msgid ""
+"<i class=\"fa-regular fa-clock me-1\" role=\"img\" aria-label=\"Post date\" "
+"title=\"Post date\"/>"
 msgstr ""
 
 #. module: website_blog
@@ -136,7 +140,7 @@ msgstr ""
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_view_kanban
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_blog
@@ -147,7 +151,9 @@ msgstr ""
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.opt_blog_post_share_links_display
 #: model_terms:ir.ui.view,arch_db:website_blog.opt_sidebar_blog_index_follow_us
-msgid "<i class=\"fa fa-linkedin text-linkedin\" aria-label=\"LinkedIn\" title=\"LinkedIn\"/>"
+msgid ""
+"<i class=\"fa-brands fa-linkedin-in text-linkedin\" aria-label=\"LinkedIn\" "
+"title=\"LinkedIn\"/>"
 msgstr ""
 
 #. module: website_blog

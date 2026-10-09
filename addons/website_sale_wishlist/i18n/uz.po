@@ -137,23 +137,23 @@ msgstr "6 ustun"
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_wishlist
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
 "                                                    <span class=\"o_label "
 "small ms-1\">Add to Cart</span>"
 msgstr ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-"> <span class=\"o_label small ms-1\">Savatga qo‘shish</span>"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" "
+"role=\"presentation\"/> <span class=\"o_label small ms-1\">Savatga "
+"qo‘shish</span>"
 
 #. module: website_sale_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_add_to_wishlist
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-heart-o me-2 me-lg-0\" role=\"img\" aria-label=\"Add to "
-"wishlist\"/>"
+"<i class=\"fa-regular fa-heart me-2 me-lg-0\" role=\"img\" aria-label=\"Add "
+"to wishlist\"/>"
 msgstr ""
-"<i class=\"fa fa-heart-o me-2 me-lg-0\" role=\"img\" aria-label=\"Istaklar "
-"ro‘yxatiga qo‘shish\"/>"
+"<i class=\"fa-regular fa-heart me-2 me-lg-0\" role=\"img\" aria-"
+"label=\"Istaklar ro‘yxatiga qo‘shish\"/>"
 
 #. module: website_sale_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_cart_lines

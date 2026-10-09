@@ -110,8 +110,8 @@ msgstr "5 лет"
 
 #. module: sale_renting
 #: model_terms:ir.ui.view,arch_db:sale_renting.rental_order_view_kanban
-msgid "<i class=\"fa fa-warning\"/> Late"
-msgstr "<i class=\"fa fa-warning\"/> Поздно"
+msgid "<i class=\"fa-solid fa-triangle-exclamation\"/> Late"
+msgstr "<i class=\"fa-solid fa-triangle-exclamation\"/> Поздно"
 
 #. module: sale_renting
 #: model_terms:ir.ui.view,arch_db:sale_renting.product_product_form_view_rental_gantt

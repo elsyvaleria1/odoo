@@ -52,10 +52,10 @@ msgstr "2023"
 #. module: hr_skills
 #: model_terms:ir.ui.view,arch_db:hr_skills.resume_line_view_form
 msgid ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 msgstr ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 
 #. module: hr_skills

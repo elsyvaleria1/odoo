@@ -29,12 +29,11 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span class=\"mx-2\">\n"
-"                                    <i class=\"fa fa-long-arrow-right mx-2\" "
-"title=\"Arrow\"/>\n"
+"                                    <i class=\"fa-solid fa-right-long mx-2\" title=\"Arrow\"/>\n"
 "                                </span>"
 msgstr ""
-"<span class=\"mx-2\"> <i class=\"fa fa-long-arrow-right mx-2\" title=\"O‘q\"/"
-"> </span>"
+"<span class=\"mx-2\"> <i class=\"fa-solid fa-right-long mx-2\" "
+"title=\"O‘q\"/> </span>"
 
 #. module: stock_fleet_enterprise
 #: model:ir.model,name:stock_fleet_enterprise.model_stock_picking_batch

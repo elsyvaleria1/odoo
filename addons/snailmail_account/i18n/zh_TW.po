@@ -32,11 +32,9 @@ msgstr "（郵票：%s）"
 #. module: snailmail_account
 #: model_terms:ir.ui.view,arch_db:snailmail_account.res_config_settings_view_form
 msgid ""
-"<span class=\"fa fa-lg fa-building-o\" title=\"Values set here are company-"
-"specific.\"/>"
-msgstr ""
-"<span class=\"fa fa-lg fa-building-o\" title=\"此處設定的值是特定於每間公司"
-"的。\"/>"
+"<span class=\"fa-regular fa-building fa-lg\" title=\"Values set here are "
+"company-specific.\"/>"
+msgstr "<span class=\"fa-regular fa-building fa-lg\" title=\"此處設定的值是特定於每間公司的。\"/>"
 
 #. module: snailmail_account
 #: model:ir.model,name:snailmail_account.model_account_move_send

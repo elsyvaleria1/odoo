@@ -42,10 +42,10 @@ msgstr ""
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.opt_country
 msgid ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Open map\" "
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Open map\" "
 "title=\"Open map\"/>"
 msgstr ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Open map\" "
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Open map\" "
 "title=\"Open map\"/>"
 
 #. module: website_customer
@@ -56,8 +56,8 @@ msgstr ""
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.index
 #: model_terms:ir.ui.view,arch_db:website_customer.opt_tag_list
-msgid "<span class=\"fa fa-1x fa-tags\"/> All"
-msgstr "<span class=\"fa fa-1x fa-tags\"/> Visi"
+msgid "<span class=\"fa-solid fa-tags fa-1x\"/> All"
+msgstr "<span class=\"fa-solid fa-tags fa-1x\"/> Visi"
 
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.implemented_by_block

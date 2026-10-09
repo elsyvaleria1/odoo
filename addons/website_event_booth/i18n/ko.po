@@ -43,13 +43,13 @@ msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
-msgid "<i class=\"fa fa-map-o me-1\"/>View Plan"
-msgstr "<i class=\"fa fa-map-o me-1\"/>플랜 보기"
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr "<i class=\"fa-regular fa-map me-1\"/>플랜 보기"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_layout
-msgid "<span class=\"fa fa-gear me-1\"/> Configure Booths"
-msgstr "<span class=\"fa fa-gear me-1\"/> 부스 설정"
+msgid "<span class=\"fa-solid fa-gear me-1\"/> Configure Booths"
+msgstr "<span class=\"fa-solid fa-gear me-1\"/> 부스 설정"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
@@ -69,11 +69,11 @@ msgstr "<span>부스 예약하기</span>"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"<span>Booth Selection</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Booth Selection</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"<span>부스 선택</span><span class=\"fa fa-angle-right d-inline-block align-"
-"middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>부스 선택</span><span class=\"fa-solid fa-angle-right d-inline-block "
+"align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
@@ -155,11 +155,11 @@ msgstr "연락처 상세 내용"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"Contact Details<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
+"Contact Details<span class=\"fa-solid fa-angle-right d-inline-block align-"
+"middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"연락처 정보<span class=\"fa fa-angle-right d-inline-block align-middle mx-2 "
-"mx-lg-3 opacity-75\"/>"
+"연락처 정보<span class=\"fa-solid fa-angle-right d-inline-block align-middle mx-2"
+" mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration

@@ -108,69 +108,69 @@ msgstr "<i class=\"fa fa-check-circle\"/> 회신함"
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Select time\" "
-"title=\"Select time\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Select "
+"time\" title=\"Select time\"/>"
 msgstr ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Select time\" "
-"title=\"Select time\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Select "
+"time\" title=\"Select time\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Not opened within"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> 다음 기간이 되어야 열림"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Not opened within"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> 다음 기간이 되어야 열림"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Opened after"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> 다음 이후에 열림"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Opened after"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> 다음 이후에 열림"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> 다음 이후 반송됨"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> 다음 이후 반송됨"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> 다음 이후에 클릭됨"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> 다음 이후에 클릭됨"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> 다음 기간이 되어야 클리할 수 있음"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> 다음 기간이 되어야 클리할 수 있음"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> 세부사항"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> 세부사항"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-plus-circle\"/> Add child activity"
-msgstr "<i class=\"fa fa-plus-circle\"/> 하위 활동 추가"
+msgid "<i class=\"fa-solid fa-plus-circle\"/> Add child activity"
+msgstr "<i class=\"fa-solid fa-plus-circle\"/> 하위 활동 추가"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Not replied within"
-msgstr "<i class=\"fa fa-reply\"/> 다음 이유로 회신 안됨"
+msgid "<i class=\"fa-solid fa-reply\"/> Not replied within"
+msgstr "<i class=\"fa-solid fa-reply\"/> 다음 이유로 회신 안됨"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Replied after"
-msgstr "<i class=\"fa fa-reply\"/> 다음 이후에 회신됨"
+msgid "<i class=\"fa-solid fa-reply\"/> Replied after"
+msgstr "<i class=\"fa-solid fa-reply\"/> 다음 이후에 회신됨"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Add Another Activity\" role=\"img\" aria-label=\"Add Another "
-"Activity\"/>"
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Add Another Activity\" role=\"img\" aria-label=\"Add "
+"Another Activity\"/>"
 msgstr ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Add Another Activity\" role=\"img\" aria-label=\"Add Another "
-"Activity\"/>"
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Add Another Activity\" role=\"img\" aria-label=\"Add "
+"Another Activity\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_activity_view_form
@@ -187,26 +187,22 @@ msgstr "<span class=\"o_form_label\">레코드</span>"
 msgid ""
 "<span role=\"img\" title=\"Graph\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 msgstr ""
 "<span role=\"img\" title=\"Graph\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 
 #. module: marketing_automation

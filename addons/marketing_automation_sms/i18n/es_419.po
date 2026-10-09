@@ -36,46 +36,34 @@ msgstr "# Envíos por SMS"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Devuelto después de"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Devuelto después de"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> Se hizo clic después de"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> Se hizo clic después de"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> No se hizo clic en"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> No se hizo clic en"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> Detalles"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> Detalles"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"sms_click\" class=\"fa fa-hand-pointer-o "
-"o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" "
-"role=\"img\" aria-label=\"Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_bounce\" class=\"fa fa fa-"
-"exclamation-circle o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
+"<i data-trigger-type=\"sms_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" role=\"img\" aria-label=\"Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_bounce\" class=\"fa-solid fa-exclamation-circle fa o_ma_text_rejected o_add_child_activity text-danger\" title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
 msgstr ""
-"<i data-trigger-type=\"sms_click\" class=\"fa fa-hand-pointer-o "
-"o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Seleccionado\" role=\"img\" aria-label=\"Seleccionado\"/>\n"
-"                    <i data-trigger-type=\"sms_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"No seleccionado\" role=\"img\" aria-label=\"No seleccionado\"/>\n"
-"                    <i data-trigger-type=\"sms_bounce\" class=\"fa fa fa-"
-"exclamation-circle o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Rebotado\" role=\"img\" aria-label=\"Rebotado\"/>"
+"<i data-trigger-type=\"sms_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Seleccionado\" role=\"img\" aria-label=\"Seleccionado\"/>\n"
+"                    <i data-trigger-type=\"sms_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"No seleccionado\" role=\"img\" aria-label=\"No seleccionado\"/>\n"
+"                    <i data-trigger-type=\"sms_bounce\" class=\"fa-solid fa-exclamation-circle fa o_ma_text_rejected o_add_child_activity text-danger\" title=\"Rebotado\" role=\"img\" aria-label=\"Rebotado\"/>"
 
 #. module: marketing_automation_sms
 #: model:ir.model.fields,field_description:marketing_automation_sms.field_marketing_activity__activity_type

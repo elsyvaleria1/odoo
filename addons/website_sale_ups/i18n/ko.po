@@ -32,10 +32,9 @@ msgstr "(본인 지불 계좌)"
 #. module: website_sale_ups
 #: model_terms:ir.ui.view,arch_db:website_sale_ups.ups_delivery_method
 msgid ""
-"<i class=\"fa fa-trash-o\" role=\"img\" aria-label=\"Delete\" "
+"<i class=\"fa-regular fa-trash-can\" role=\"img\" aria-label=\"Delete\" "
 "title=\"Delete\"/>"
-msgstr ""
-"<i class=\"fa fa-trash-o\" role=\"img\" aria-label=\"삭제\" title=\"삭제\"/>"
+msgstr "<i class=\"fa-regular fa-trash-can\" role=\"img\" aria-label=\"삭제\" title=\"삭제\"/>"
 
 #. module: website_sale_ups
 #: model_terms:ir.ui.view,arch_db:website_sale_ups.ups_delivery_method

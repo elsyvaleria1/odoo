@@ -34,8 +34,8 @@ msgstr "123 次觀看 •"
 
 #. module: social_youtube
 #: model_terms:ir.ui.view,arch_db:social_youtube.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-thumbs-o-up me-1\" title=\"Likes\"/>"
-msgstr "<i class=\"fa fa-thumbs-o-up me-1\" title=\"讚好\"/>"
+msgid "<i class=\"fa-regular fa-thumbs-up me-1\" title=\"Likes\"/>"
+msgstr "<i class=\"fa-regular fa-thumbs-up me-1\" title=\"讚好\"/>"
 
 #. module: social_youtube
 #: model_terms:ir.ui.view,arch_db:social_youtube.youtube_preview

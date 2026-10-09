@@ -117,28 +117,28 @@ msgstr ""
 #. module: website_sale_renting
 #: model_terms:ir.ui.view,arch_db:website_sale_renting.rental_product
 msgid ""
-"<i class=\"fa fa-warning\" role=\"img\" aria-label=\"Warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation\" role=\"img\" aria-label=\"Warning\"/>\n"
 "                            <span name=\"renting_warning_message\"/>"
 msgstr ""
 
 #. module: website_sale_renting
 #: model_terms:ir.ui.view,arch_db:website_sale_renting.cart
 msgid ""
-"<i class=\"fa fa-warning\" role=\"img\" aria-label=\"Warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation\" role=\"img\" aria-label=\"Warning\"/>\n"
 "                        <span name=\"renting_warning_message\"/>"
 msgstr ""
 
 #. module: website_sale_renting
 #: model_terms:ir.ui.view,arch_db:website_sale_renting.s_rental_search
 msgid ""
-"<i class=\"fa fa-warning\" role=\"img\" aria-label=\"Warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation\" role=\"img\" aria-label=\"Warning\"/>\n"
 "                    <span name=\"renting_warning_message\"/>"
 msgstr ""
 
 #. module: website_sale_renting
 #: model_terms:ir.ui.view,arch_db:website_sale_renting.datepicker
 msgid ""
-"<i class=\"fa fa-warning\" role=\"img\" aria-label=\"Warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation\" role=\"img\" aria-label=\"Warning\"/>\n"
 "                <span name=\"renting_warning_message\"/>"
 msgstr ""
 

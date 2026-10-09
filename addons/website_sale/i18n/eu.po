@@ -133,7 +133,7 @@ msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.s_add_to_cart
-msgid "<i class=\"fa fa-cart-plus me-2\"/>Add to Cart"
+msgid "<i class=\"fa-solid fa-cart-plus me-2\"/>Add to Cart"
 msgstr ""
 
 #. module: website_sale
@@ -155,7 +155,7 @@ msgstr ""
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_pages_kanban_view
-msgid "<i class=\"fa fa-globe me-1\" title=\"Website\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_sale

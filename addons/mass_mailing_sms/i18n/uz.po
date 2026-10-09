@@ -66,11 +66,11 @@ msgstr ""
 msgid ""
 "<br/>\n"
 "                    <span class=\"text-muted\">\n"
-"                        <i class=\"fa fa-phone\"/> Contacts\n"
+"                        <i class=\"fa-solid fa-phone\"/> Contacts\n"
 "                    </span>"
 msgstr ""
-"<br/> <span class=\"text-muted\"> <i class=\"fa fa-phone\"/> Kontaktlar </"
-"span>"
+"<br/> <span class=\"text-muted\"> <i class=\"fa-solid fa-phone\"/> "
+"Kontaktlar </span>"
 
 #. module: mass_mailing_sms
 #: model_terms:ir.ui.view,arch_db:mass_mailing_sms.mailing_mailing_view_form_sms

@@ -66,10 +66,10 @@ msgstr "100 ad./birim"
 #. module: account_intrastat
 #: model_terms:ir.ui.view,arch_db:account_intrastat.res_config_settings_view_form
 msgid ""
-"<span class=\"fa fa-lg fa-building-o ms-2\" title=\"Values set here are "
-"company-specific.\"/>"
+"<span class=\"fa-regular fa-building fa-lg ms-2\" title=\"Values set here "
+"are company-specific.\"/>"
 msgstr ""
-"<span class=\"fa fa-lg fa-building-o ms-2\" title=\"Burada ayarlanan "
+"<span class=\"fa-regular fa-building fa-lg ms-2\" title=\"Burada ayarlanan "
 "değerler şirkete özeldir.\"/>"
 
 #. module: account_intrastat

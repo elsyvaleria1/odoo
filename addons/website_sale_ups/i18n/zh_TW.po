@@ -28,10 +28,9 @@ msgstr "（記賬至我的帳戶）"
 #. module: website_sale_ups
 #: model_terms:ir.ui.view,arch_db:website_sale_ups.ups_delivery_method
 msgid ""
-"<i class=\"fa fa-trash-o\" role=\"img\" aria-label=\"Delete\" "
+"<i class=\"fa-regular fa-trash-can\" role=\"img\" aria-label=\"Delete\" "
 "title=\"Delete\"/>"
-msgstr ""
-"<i class=\"fa fa-trash-o\" role=\"img\" aria-label=\"刪除\" title=\"刪除\"/>"
+msgstr "<i class=\"fa-regular fa-trash-can\" role=\"img\" aria-label=\"刪除\" title=\"刪除\"/>"
 
 #. module: website_sale_ups
 #: model_terms:ir.ui.view,arch_db:website_sale_ups.ups_delivery_method

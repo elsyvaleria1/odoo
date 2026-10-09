@@ -740,37 +740,28 @@ msgstr ""
 #. module: knowledge
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_invite_view_form
 msgid ""
-"<i class=\"fa fa-w fa-info-circle\"/> All external users you selected won't "
-"be added to the members."
+"<i class=\"fa-solid fa-w fa-info-circle\"/> All external users you selected "
+"won't be added to the members."
 msgstr ""
-"<i class=\"fa fa-w fa-info-circle\"/> 선택하신 모든 외부 사용자는 구성원에 추"
-"가되지 않습니다."
+"<i class=\"fa-solid fa-w fa-info-circle\"/> 선택하신 모든 외부 사용자는 구성원에 추가되지 않습니다."
 
 #. module: knowledge
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_kanban_items
 msgid ""
-"<i invisible=\"not is_user_favorite\" class=\"fa fa-star\" title=\"Remove "
-"from favorites\"/>\n"
-"                                    <i invisible=\"is_user_favorite\" "
-"class=\"fa fa-star-o\" title=\"Add to favorites\"/>"
+"<i invisible=\"not is_user_favorite\" class=\"fa-solid fa-star\" title=\"Remove from favorites\"/>\n"
+"                                    <i invisible=\"is_user_favorite\" class=\"fa-regular fa-star\" title=\"Add to favorites\"/>"
 msgstr ""
-"<i invisible=\"not is_user_favorite\" class=\"fa fa-star\" title=\"Remove "
-"from favorites\"/>\n"
-"                                    <i invisible=\"is_user_favorite\" "
-"class=\"fa fa-star-o\" title=\"Add to favorites\"/>"
+"<i invisible=\"not is_user_favorite\" class=\"fa-solid fa-star\" title=\"Remove from favorites\"/>\n"
+"                                    <i invisible=\"is_user_favorite\" class=\"fa-regular fa-star\" title=\"Add to favorites\"/>"
 
 #. module: knowledge
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_kanban
 msgid ""
-"<i invisible=\"not is_user_favorite\" class=\"fa fa-star\" title=\"Remove "
-"from favorites\"/>\n"
-"                                <i invisible=\"is_user_favorite\" class=\"fa "
-"fa-star-o\" title=\"Add to favorites\"/>"
+"<i invisible=\"not is_user_favorite\" class=\"fa-solid fa-star\" title=\"Remove from favorites\"/>\n"
+"                                <i invisible=\"is_user_favorite\" class=\"fa-regular fa-star\" title=\"Add to favorites\"/>"
 msgstr ""
-"<i invisible=\"not is_user_favorite\" class=\"fa fa-star\" title=\"즐겨찾기에"
-"서 삭제\"/>\n"
-"                                <i invisible=\"is_user_favorite\" class=\"fa "
-"fa-star-o\" title=\"즐겨찾기에 추가\"/>"
+"<i invisible=\"not is_user_favorite\" class=\"fa-solid fa-star\" title=\"즐겨찾기에서 삭제\"/>\n"
+"                                <i invisible=\"is_user_favorite\" class=\"fa-regular fa-star\" title=\"즐겨찾기에 추가\"/>"
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_account_management

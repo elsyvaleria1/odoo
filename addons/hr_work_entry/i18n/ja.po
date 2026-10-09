@@ -55,17 +55,17 @@ msgstr "%s勤務記録"
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>Employees in "
-"red will be skipped because they have at least one validated work entry."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>Employees in red will be skipped because they have at "
+"least one validated work entry."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>赤色で表示さ"
-"れている従業員は、少なくとも1件の確定済み勤務実績があるため、処理対象から除外"
-"されます。"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>赤色で表示されている従業員は、少なくとも1件の確定済み勤務実績があるため、処理対象から除外されます。"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
-msgid "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
-msgstr "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
+msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
+msgstr "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form

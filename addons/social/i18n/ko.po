@@ -43,20 +43,20 @@ msgstr "<b>계정을 연결하는 중에 오류가 발생했습니다</b>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
-msgid "<i class=\"fa fa-calendar me-1 small fw-bold\" title=\"Calendar\"/>"
-msgstr "<i class=\"fa fa-calendar me-1 small fw-bold\" title=\"캘린더\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-1 small fw-bold\" title=\"Calendar\"/>"
+msgstr "<i class=\"fa-solid fa-calendar-days me-1 small fw-bold\" title=\"캘린더\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
 msgid ""
-"<i class=\"fa fa-calendar-check-o me-1 small fw-bold\" title=\"Calendar\"/>"
-msgstr ""
-"<i class=\"fa fa-calendar-check-o me-1 small fw-bold\" title=\"캘린더\"/>"
+"<i class=\"fa-regular fa-calendar-check me-1 small fw-bold\" "
+"title=\"Calendar\"/>"
+msgstr "<i class=\"fa-regular fa-calendar-check me-1 small fw-bold\" title=\"캘린더\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_form
-msgid "<i class=\"fa fa-globe ms-1\" title=\"See the post\"/>"
-msgstr "<i class=\"fa fa-globe ms-1\" title=\"See the post\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas ms-1\" title=\"See the post\"/>"
+msgstr "<i class=\"fa-solid fa-earth-americas ms-1\" title=\"See the post\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_http_error_view

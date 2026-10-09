@@ -109,68 +109,69 @@ msgstr "<i class=\"fa fa-check-circle\"/> ตอบกลับ"
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Select time\" "
-"title=\"Select time\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Select "
+"time\" title=\"Select time\"/>"
 msgstr ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"รูปภาพ\" aria-label=\"เลือกเวลา\" "
-"title=\"เลือกเวลา\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"รูปภาพ\" aria-"
+"label=\"เลือกเวลา\" title=\"เลือกเวลา\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Not opened within"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> ไม่เปิดภายใน"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Not opened within"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> ไม่เปิดภายใน"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Opened after"
-msgstr "<i class=\"fa fa-envelope-open-o\"/> เปิดหลัง"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Opened after"
+msgstr "<i class=\"fa-regular fa-envelope-open\"/> เปิดหลัง"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> เด้งออกหลังจาก"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> เด้งออกหลังจาก"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> คลิกหลังจาก"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> คลิกหลังจาก"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> ไม่ได้คลิกภายใน"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> ไม่ได้คลิกภายใน"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> รายละเอียด"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> รายละเอียด"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-plus-circle\"/> Add child activity"
-msgstr "<i class=\"fa fa-plus-circle\"/> เพิ่มกิจกรรมสำหรับเด็ก"
+msgid "<i class=\"fa-solid fa-plus-circle\"/> Add child activity"
+msgstr "<i class=\"fa-solid fa-plus-circle\"/> เพิ่มกิจกรรมสำหรับเด็ก"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Not replied within"
-msgstr "<i class=\"fa fa-reply\"/> ไม่ตอบภายใน"
+msgid "<i class=\"fa-solid fa-reply\"/> Not replied within"
+msgstr "<i class=\"fa-solid fa-reply\"/> ไม่ตอบภายใน"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Replied after"
-msgstr "<i class=\"fa fa-reply\"/> ตอบกลับเมื่อ"
+msgid "<i class=\"fa-solid fa-reply\"/> Replied after"
+msgstr "<i class=\"fa-solid fa-reply\"/> ตอบกลับเมื่อ"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Add Another Activity\" role=\"img\" aria-label=\"Add Another "
-"Activity\"/>"
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Add Another Activity\" role=\"img\" aria-label=\"Add "
+"Another Activity\"/>"
 msgstr ""
-"<i data-trigger-type=\"กิจกรรม\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"เพิ่มกิจกรรมอื่น\" role=\"รูปภาพ\" aria-label=\"เพิ่มกิจกรรมอื่น\"/>"
+"<i data-trigger-type=\"กิจกรรม\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"เพิ่มกิจกรรมอื่น\" role=\"รูปภาพ\" aria-"
+"label=\"เพิ่มกิจกรรมอื่น\"/>"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_activity_view_form
@@ -187,26 +188,22 @@ msgstr "<span class=\"o_form_label\">บันทึก</span>"
 msgid ""
 "<span role=\"img\" title=\"Graph\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 msgstr ""
 "<span role=\"รูปภาพ\" title=\"แผนภูมิ\" aria-label=\"แผนภูมิ\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"แผนภูมิ\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"ตัวกรอง\" role=\"รูปภาพ\" aria-label=\"ตัวกรอง\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"ตัวกรอง\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 
 #. module: marketing_automation

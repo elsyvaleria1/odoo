@@ -56,17 +56,18 @@ msgstr "%s työkirjaukset"
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>Employees in "
-"red will be skipped because they have at least one validated work entry."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>Employees in red will be skipped because they have at "
+"least one validated work entry."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Varoitus\"/>Punaisella "
-"merkityt työntekijät ohitetaan, koska heillä on vähintään yksi vahvistettu "
-"työmerkintä."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Varoitus\"/>Punaisella merkityt työntekijät ohitetaan, koska heillä "
+"on vähintään yksi vahvistettu työmerkintä."
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
-msgid "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
-msgstr "<i class=\"fa fa-info-circle me-1\" title=\"Vihje\"/>"
+msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
+msgstr "<i class=\"fa-solid fa-info-circle me-1\" title=\"Vihje\"/>"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form

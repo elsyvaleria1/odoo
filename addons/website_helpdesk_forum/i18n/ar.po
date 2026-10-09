@@ -32,25 +32,25 @@ msgstr "، بواسطة"
 
 #. module: website_helpdesk_forum
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_forum.search_result
-msgid "<i class=\"fa fa-fw fa-2x fa-comments\" title=\"Forum Post\"/>"
-msgstr "<i class=\"fa fa-fw fa-2x fa-comments\" title=\"منشور المنتدى \"/>"
+msgid "<i class=\"fa-solid fa-comments fa-2x\" title=\"Forum Post\"/>"
+msgstr "<i class=\"fa-solid fa-comments fa-2x\" title=\"منشور المنتدى \"/>"
 
 #. module: website_helpdesk_forum
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_forum.question_dropdown
 msgid ""
-"<i class=\"fa fa-life-ring fa-fw\"/>\n"
+"<i class=\"fa-solid fa-life-ring\"/>\n"
 "                    Create Ticket"
 msgstr ""
-"<i class=\"fa fa-life-ring fa-fw\"/>\n"
+"<i class=\"fa-solid fa-life-ring\"/>\n"
 "                    إنشاء تذكرة"
 
 #. module: website_helpdesk_forum
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_forum.question_dropdown
 msgid ""
-"<i class=\"fa fa-life-ring fa-fw\"/>\n"
+"<i class=\"fa-solid fa-life-ring\"/>\n"
 "                    View Ticket"
 msgstr ""
-"<i class=\"fa fa-life-ring fa-fw\"/>\n"
+"<i class=\"fa-solid fa-life-ring\"/>\n"
 "                    عرض التذكرة"
 
 #. module: website_helpdesk_forum

@@ -28,10 +28,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:helpdesk_holidays.helpdesk_team_view_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">Team members on time "
-"off are not assigned any tickets</span>"
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">Team members on "
+"time off are not assigned any tickets</span>"
 msgstr ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">Ta'tildagi jamoa "
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">Ta'tildagi jamoa "
 "a'zolariga hech qanday topshiriq berilmaydi</span>"
 
 #. module: helpdesk_holidays

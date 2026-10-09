@@ -21,18 +21,16 @@ msgstr ""
 
 #. module: website_sale_collect_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_collect_wishlist.unavailable_products_warning
-msgid "<i class=\"fa fa-fw fa-heart\"/> In wishlist"
-msgstr "<i class=\"fa fa-fw fa-heart\"/> 위시리스트"
+msgid "<i class=\"fa-solid fa-heart\"/> In wishlist"
+msgstr "<i class=\"fa-solid fa-heart\"/> 위시리스트"
 
 #. module: website_sale_collect_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_collect_wishlist.unavailable_products_warning
 msgid ""
-"<i class=\"fa fa-fw fa-heart-o\" role=\"presentation\" aria-label=\"Add to "
-"Wishlist\"/>\n"
+"<i class=\"fa-regular fa-heart\" role=\"presentation\" aria-label=\"Add to Wishlist\"/>\n"
 "                        Wishlist"
 msgstr ""
-"<i class=\"fa fa-fw fa-heart-o\" role=\"presentation\" aria-label=\"Add to "
-"Wishlist\"/>\n"
+"<i class=\"fa-regular fa-heart\" role=\"presentation\" aria-label=\"Add to Wishlist\"/>\n"
 "                        위시리스트"
 
 #. module: website_sale_collect_wishlist

@@ -61,21 +61,19 @@ msgstr ""
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Your Google Reserve Synchronization "
+"<span class=\"fa-solid fa-check me-1\"/>Your Google Reserve Synchronization "
 "is active."
 msgstr ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Je Google Reserve-synchronisatie is "
+"<span class=\"fa-solid fa-check me-1\"/>Je Google Reserve-synchronisatie is "
 "actief."
 
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Your Appointment Type is "
-"being synchronized with Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Your Appointment Type is being synchronized with Google Reserve.<br/>\n"
 "                                This can take up to 24 hours to be active."
 msgstr ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Je afspraaktype wordt "
-"gesynchroniseerd met Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Je afspraaktype wordt gesynchroniseerd met Google Reserve.<br/>\n"
 "                                Dit kan tot 24 uur duren."
 
 #. module: appointment_google_reserve

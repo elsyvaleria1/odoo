@@ -33,11 +33,11 @@ msgstr ". Este enlace le ofrecerá atención personalizada y precios más bajos.
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_shipping_method_envia
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Envia account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Envia account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Los servicios de envío disponibles dependen "
-"de los transportistas habilitados en su cuenta de Envia."
+"<i class=\"fa-solid fa-info-circle\"/> Los servicios de envío disponibles "
+"dependen de los transportistas habilitados en su cuenta de Envia."
 
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_delivery_carrier_form_inherit_delivery_envia

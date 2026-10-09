@@ -48,7 +48,7 @@ msgstr "7Eleven"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_method_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> These properties are set to\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> These properties are set to\n"
 "                                match the behavior of providers and that of "
 "their integration with\n"
 "                                Odoo regarding this payment method. Any "
@@ -56,8 +56,7 @@ msgid ""
 "                                and should be tested on a test database "
 "first."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Dessa egenskaper är inställda för "
-"att\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Dessa egenskaper är inställda för att\n"
 "                                matcha beteendet hos leverantörer och deras "
 "integration med Odoo\n"
 "                                när det gäller denna betalningsmetod. Alla "
@@ -66,20 +65,18 @@ msgstr ""
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.portal_breadcrumb
-msgid ""
-"<i class=\"fa fa-home\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
-msgstr ""
-"<i class=\"fa fa-home\" role=\"img\" title=\"Home\" aria-label=\"Hem\"/>"
+msgid "<i class=\"fa-solid fa-house\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
+msgstr "<i class=\"fa-solid fa-house\" role=\"img\" title=\"Home\" aria-label=\"Hem\"/>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_capture_wizard_view_form
 msgid ""
-"<i class=\"fa fa-info-circle oe_inline\" "
+"<i class=\"fa-solid fa-info-circle oe_inline\" "
 "invisible=\"support_partial_capture != 'full_only'\" title=\"Some of the "
 "transactions you intend to capture can only be captured in full. Handle the "
 "transactions individually to capture a partial amount.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle oe_inline\" "
+"<i class=\"fa-solid fa-info-circle oe_inline\" "
 "invisible=\"support_partial_capture != 'full_only'\" title=\"Vissa av de "
 "transaktioner som du avser att fånga kan bara fångas i sin helhet. Hantera "
 "transaktionerna individuellt för att fånga en del av beloppet.\"/>"
@@ -87,11 +84,11 @@ msgstr ""
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.token_form
 msgid ""
-"<i class=\"fa fa-trash\" title=\"Delete payment method\" data-bs-"
+"<i class=\"fa-solid fa-trash-can\" title=\"Delete payment method\" data-bs-"
 "toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
 msgstr ""
-"<i class=\"fa fa-trash\" title=\"Ta bort betalningsmetod\" data-bs-"
-"toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
+"<i class=\"fa-solid fa-trash-can\" title=\"Ta bort betalningsmetod\" data-"
+"bs-toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
 
 #. module: payment
 #: model_terms:ir.actions.act_window,help:payment.action_payment_method
@@ -153,15 +150,17 @@ msgstr ""
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.method_form
 #: model_terms:ir.ui.view,arch_db:payment.token_form
-msgid "<span><i class=\"fa fa-lock\"/> Secured by</span>"
-msgstr "<span><i class=\"fa fa-lock\"/> Säkerställd av</span>"
+msgid "<span><i class=\"fa-solid fa-lock\"/> Secured by</span>"
+msgstr "<span><i class=\"fa-solid fa-lock\"/> Säkerställd av</span>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.no_pms_available_warning
 msgid ""
-"<strong><i class=\"fa fa-file-text\"/> Show availability report</strong>"
+"<strong><i class=\"fa-solid fa-file-lines\"/> Show availability "
+"report</strong>"
 msgstr ""
-"<strong><i class=\"fa fa-file-text\"/> Visa tillgänglighetsrapport</strong>"
+"<strong><i class=\"fa-solid fa-file-lines\"/> Visa "
+"tillgänglighetsrapport</strong>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.no_pms_available_warning

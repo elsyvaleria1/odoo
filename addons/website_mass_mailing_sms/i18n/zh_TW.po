@@ -29,9 +29,9 @@ msgstr "+852 2632 9300"
 #. module: website_mass_mailing_sms
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing_sms.s_newsletter_sms_notifications
 msgid ""
-"<i class=\"fa fa-check-circle-o fa-lg\" role=\"img\"/> Thanks for "
+"<i class=\"fa-regular fa-circle-check fa-lg\" role=\"img\"/> Thanks for "
 "registering!"
-msgstr "<i class=\"fa fa-check-circle-o fa-lg\" role=\"img\"/> 感謝你註冊！"
+msgstr "<i class=\"fa-regular fa-circle-check fa-lg\" role=\"img\"/> 感謝你註冊！"
 
 #. module: website_mass_mailing_sms
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing_sms.s_newsletter_block_sms_template

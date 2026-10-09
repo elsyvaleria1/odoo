@@ -26,7 +26,9 @@ msgstr ""
 
 #. module: website_sale_ups
 #: model_terms:ir.ui.view,arch_db:website_sale_ups.payment_delivery_methods
-msgid "<i class=\"fa fa-trash-o\" role=\"img\" aria-label=\"Delete\" title=\"Delete\"/>"
+msgid ""
+"<i class=\"fa-regular fa-trash-can\" role=\"img\" aria-label=\"Delete\" "
+"title=\"Delete\"/>"
 msgstr ""
 
 #. module: website_sale_ups

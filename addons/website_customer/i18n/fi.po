@@ -46,11 +46,11 @@ msgstr ""
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.opt_country
 msgid ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Open map\" "
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Open map\" "
 "title=\"Open map\"/>"
 msgstr ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Avaa kartta\" "
-"title=\"Avaa kartta\"/>"
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Avaa "
+"kartta\" title=\"Avaa kartta\"/>"
 
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.details
@@ -60,8 +60,8 @@ msgstr "<i class=\"oi oi-chevron-left me-2\"/>Takaisin viittauksiin"
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.index
 #: model_terms:ir.ui.view,arch_db:website_customer.opt_tag_list
-msgid "<span class=\"fa fa-1x fa-tags\"/> All"
-msgstr "<span class=\"fa fa-1x fa-tags\"/> Kaikki"
+msgid "<span class=\"fa-solid fa-tags fa-1x\"/> All"
+msgstr "<span class=\"fa-solid fa-tags fa-1x\"/> Kaikki"
 
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.implemented_by_block

@@ -31,8 +31,8 @@ msgstr "<b>Inicio</b>"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.event_confirmation
-msgid "<i class=\"fa fa-check me-2\" role=\"img\"/>Registered"
-msgstr "<i class=\"fa fa-check me-2\" role=\"img\"/>Registrado"
+msgid "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registered"
+msgstr "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registrado"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_attendee_details

@@ -91,42 +91,40 @@ msgstr ""
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
-msgid "<i class=\"fa fa-arrow-right\"/> Get Certified"
-msgstr "<i class=\"fa fa-arrow-right\"/> Dapatkan Sertifikat"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Get Certified"
+msgstr "<i class=\"fa-solid fa-arrow-right\"/> Dapatkan Sertifikat"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
 msgid ""
-"<i class=\"fa fa-download\" aria-label=\"Download certification\" "
+"<i class=\"fa-solid fa-download\" aria-label=\"Download certification\" "
 "title=\"Download Certification\"/>"
 msgstr ""
-"<i class=\"fa fa-download\" aria-label=\"Download certification\" "
+"<i class=\"fa-solid fa-download\" aria-label=\"Download certification\" "
 "title=\"Unduh Sertifikasi\"/>"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.slide_content_detailed
 msgid ""
-"<i class=\"fa fa-fw fa-trophy\" role=\"img\" aria-label=\"Download "
+"<i class=\"fa-solid fa-trophy\" role=\"img\" aria-label=\"Download "
 "certification\" title=\"Download certification\"/> Download certification"
 msgstr ""
-"<i class=\"fa fa-fw fa-trophy\" role=\"img\" aria-label=\"Download "
+"<i class=\"fa-solid fa-trophy\" role=\"img\" aria-label=\"Download "
 "certification\" title=\"Unduh sertifikasi\"/> Unduh sertifikasi"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.survey_fill_form_done_inherit_website_slides
 msgid ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share certification\" "
-"title=\"Share certification\"/>\n"
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Share certification\" title=\"Share certification\"/>\n"
 "                        Share your certification"
 msgstr ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share certification\" "
-"title=\"Share certification\"/>\n"
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Share certification\" title=\"Share certification\"/>\n"
 "                        Bagikan sertifikasi Anda"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
-msgid "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
-msgstr "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
+msgid "<i class=\"fa-solid fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
+msgstr "<i class=\"fa-solid fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.slide_content_detailed

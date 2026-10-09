@@ -45,28 +45,28 @@ msgstr ""
 #. module: crm_iap_mine
 #: model_terms:ir.ui.view,arch_db:crm_iap_mine.enrich_company
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-address-book text-primary\"/>\n"
+"<i class=\"fa-solid fa-address-book me-2 text-primary\"/>\n"
 "                    <b>Address</b>"
 msgstr ""
 
 #. module: crm_iap_mine
 #: model_terms:ir.ui.view,arch_db:crm_iap_mine.enrich_company
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-cube text-primary\"/>\n"
+"<i class=\"fa-solid fa-cube me-2 text-primary\"/>\n"
 "                    <b>Industries</b>"
 msgstr ""
 
 #. module: crm_iap_mine
 #: model_terms:ir.ui.view,arch_db:crm_iap_mine.enrich_company
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-globe text-primary\"/>\n"
+"<i class=\"fa-solid fa-earth-americas me-2 text-primary\"/>\n"
 "                    <b>Website</b>"
 msgstr ""
 
 #. module: crm_iap_mine
 #: model_terms:ir.ui.view,arch_db:crm_iap_mine.enrich_company
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-solid fa-id-card text-primary\"/>\n"
+"<i class=\"fa-solid fa-solid me-2 fa-id-card text-primary\"/>\n"
 "                    <b>Tax ID</b>"
 msgstr ""
 

@@ -35,8 +35,8 @@ msgstr "<b>開始</b>"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.event_confirmation
-msgid "<i class=\"fa fa-check me-2\" role=\"img\"/>Registered"
-msgstr "<i class=\"fa fa-check me-2\" role=\"img\"/> 已登記"
+msgid "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registered"
+msgstr "<i class=\"fa-solid fa-check me-2\" role=\"img\"/> 已登記"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_attendee_details

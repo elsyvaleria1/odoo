@@ -255,39 +255,37 @@ msgstr ""
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"نطاق المنتج \"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"نطاق المنتج \"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Products\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"المنتجات \"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"المنتجات \"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid ""
-"<i class=\"fa fa-cube fa-fw\" title=\"Products\"/><span>All Products</span>"
-msgstr ""
-"<i class=\"fa fa-cube fa-fw\" title=\"المنتجات \"/><span>كافة المنتجات</span>"
-
-#. module: loyalty
-#: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
-#: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-cubes fa-fw\" title=\"Product Categories\"/>"
-msgstr "<i class=\"fa fa-cubes fa-fw\" title=\"فئات المنتجات \"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/><span>All Products</span>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"المنتجات \"/><span>كافة المنتجات</span>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-search fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-search fa-fw\" title=\"نطاق المنتج \"/>"
+msgid "<i class=\"fa-solid fa-cubes\" title=\"Product Categories\"/>"
+msgstr "<i class=\"fa-solid fa-cubes\" title=\"فئات المنتجات \"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-tags fa-fw\" title=\"Product Tags\"/>"
-msgstr "<i class=\"fa fa-tags fa-fw\" title=\"علامات تصنيف المنتجات \"/>"
+msgid "<i class=\"fa-solid fa-search\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-search\" title=\"نطاق المنتج \"/>"
+
+#. module: loyalty
+#: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
+#: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
+msgid "<i class=\"fa-solid fa-tags\" title=\"Product Tags\"/>"
+msgstr "<i class=\"fa-solid fa-tags\" title=\"علامات تصنيف المنتجات \"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_program_view_form

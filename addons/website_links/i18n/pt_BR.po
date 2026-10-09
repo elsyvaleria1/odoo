@@ -46,15 +46,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_links.create_shorten_url
 msgid ""
 "<a class=\"copy-to-clipboard btn btn-success text-nowrap "
-"o_translate_inline\"><i class=\"fa fa-copy me-2\"/>Copy</a>"
+"o_translate_inline\"><i class=\"fa-solid fa-copy me-2\"/>Copy</a>"
 msgstr ""
 "<a class=\"copy-to-clipboard btn btn-success text-nowrap "
-"o_translate_inline\"><i class=\"fa fa-copy me-2\"/>Copiar</a>"
+"o_translate_inline\"><i class=\"fa-solid fa-copy me-2\"/>Copiar</a>"
 
 #. module: website_links
 #: model_terms:ir.ui.view,arch_db:website_links.graphs
-msgid "<i class=\"fa fa-copy me-2\"/>Copy"
-msgstr "<i class=\"fa fa-copy me-2\"/>Copiar"
+msgid "<i class=\"fa-solid fa-copy me-2\"/>Copy"
+msgstr "<i class=\"fa-solid fa-copy me-2\"/>Copiar"
 
 #. module: website_links
 #: model_terms:ir.ui.view,arch_db:website_links.graphs

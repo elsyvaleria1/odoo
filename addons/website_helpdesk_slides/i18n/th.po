@@ -36,13 +36,13 @@ msgstr "โดย"
 
 #. module: website_helpdesk_slides
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.channel_search_result
-msgid "<i class=\"fa fa-2x fa-mortar-board\" title=\"eLearning Course\"/>"
-msgstr "<i class=\"fa fa-2x fa-mortar-board\" title=\"หลักสูตรอีเลิร์นนิง\"/>"
+msgid "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"eLearning Course\"/>"
+msgstr "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"หลักสูตรอีเลิร์นนิง\"/>"
 
 #. module: website_helpdesk_slides
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.search_result
-msgid "<i class=\"fa fa-2x fa-mortar-board\" title=\"eLearning\"/>"
-msgstr "<i class=\"fa fa-2x fa-mortar-board\" title=\"การอบรมออนไลน์\"/>"
+msgid "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"eLearning\"/>"
+msgstr "<i class=\"fa-solid fa-graduation-cap fa-2x\" title=\"การอบรมออนไลน์\"/>"
 
 #. module: website_helpdesk_slides
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.view_slide_channel_form_inherit_website_helpdesk_slides
@@ -53,10 +53,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_slides.search_result
 msgid ""
 "Comments\n"
-"                    | <i class=\"fa fa-folder-open-o\"/>"
+"                    | <i class=\"fa-regular fa-folder-open\"/>"
 msgstr ""
 "ความคิดเห็น\n"
-"                    | <i class=\"fa fa-folder-open-o\"/>"
+"                    | <i class=\"fa-regular fa-folder-open\"/>"
 
 #. module: website_helpdesk_slides
 #: model:ir.model,name:website_helpdesk_slides.model_slide_channel

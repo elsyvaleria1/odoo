@@ -42,28 +42,28 @@ msgstr "1 preventivo"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-clock-o\"/> Awaiting arrival"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/> In attesa dell'arrivo"
+msgid "<i class=\"fa-regular fa-clock\"/> Awaiting arrival"
+msgstr "<i class=\"fa-regular fa-clock\"/> In attesa dell'arrivo"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-clock-o\"/>Preparation"
-msgstr "<i class=\"fa fa-fw fa-clock-o\"/>Preparazione"
+msgid "<i class=\"fa-regular fa-clock\"/>Preparation"
+msgstr "<i class=\"fa-regular fa-clock\"/>Preparazione"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-times\"/> Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/> Annullato"
+msgid "<i class=\"fa-solid fa-times\"/> Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/> Annullato"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-times\"/>Cancelled"
-msgstr "<i class=\"fa fa-fw fa-times\"/>Annullato"
+msgid "<i class=\"fa-solid fa-times\"/>Cancelled"
+msgstr "<i class=\"fa-solid fa-times\"/>Annullato"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.sale_order_portal_content_inherit_sale_stock
-msgid "<i class=\"fa fa-fw fa-truck\"/> Received"
-msgstr "<i class=\"fa fa-fw fa-truck\"/> Ricevuto"
+msgid "<i class=\"fa-solid fa-truck\"/> Received"
+msgstr "<i class=\"fa-solid fa-truck\"/> Ricevuto"
 
 #. module: sale_stock
 #: model_terms:ir.ui.view,arch_db:sale_stock.stock_production_lot_view_form
@@ -75,14 +75,12 @@ msgstr "<span class=\"o_stat_text\">Vendite</span>"
 msgid ""
 "<span class=\"small badge rounded-pill text-bg-success "
 "orders_label_text_align\">\n"
-"                                        <i class=\"fa fa-fw fa-truck\"/> "
-"Shipped\n"
+"                                        <i class=\"fa-solid fa-truck\"/> Shipped\n"
 "                                    </span>"
 msgstr ""
 "<span class=\"small badge rounded-pill text-bg-success "
 "orders_label_text_align\">\n"
-"                                        <i class=\"fa fa-fw fa-truck\"/> "
-"Spedito\n"
+"                                        <i class=\"fa-solid fa-truck\"/> Spedito\n"
 "                                    </span>"
 
 #. module: sale_stock

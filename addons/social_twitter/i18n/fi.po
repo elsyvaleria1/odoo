@@ -37,13 +37,13 @@ msgstr "<b class=\"text-900\">X Tili</b>"
 
 #. module: social_twitter
 #: model_terms:ir.ui.view,arch_db:social_twitter.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Kommentit\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Kommentit\"/>"
 
 #. module: social_twitter
 #: model_terms:ir.ui.view,arch_db:social_twitter.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-heart me-1\" title=\"Likes\"/>"
-msgstr "<i class=\"fa fa-heart me-1\" title=\"Tykkäyksiä\"/>"
+msgid "<i class=\"fa-solid fa-heart me-1\" title=\"Likes\"/>"
+msgstr "<i class=\"fa-solid fa-heart me-1\" title=\"Tykkäyksiä\"/>"
 
 #. module: social_twitter
 #: model_terms:ir.ui.view,arch_db:social_twitter.social_stream_post_view_kanban
@@ -56,8 +56,8 @@ msgstr ""
 
 #. module: social_twitter
 #: model_terms:ir.ui.view,arch_db:social_twitter.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-retweet me-1\" title=\"Repost a post\"/>"
-msgstr "<i class=\"fa fa-retweet me-1\" title=\"Uudelleentweettaa\"/>"
+msgid "<i class=\"fa-solid fa-retweet me-1\" title=\"Repost a post\"/>"
+msgstr "<i class=\"fa-solid fa-retweet me-1\" title=\"Uudelleentweettaa\"/>"
 
 #. module: social_twitter
 #. odoo-python

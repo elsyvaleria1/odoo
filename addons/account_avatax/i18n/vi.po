@@ -37,56 +37,46 @@ msgstr ""
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax "
-"portal\" class=\"fa fa-external-link-square fa-fw\"/>\n"
+"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax portal\" class=\"fa-solid fa-square-up-right\"/>\n"
 "                                Avatax portal"
 msgstr ""
-"<i title=\"Đi đến cổng thông tin Avatax\" role=\"img\" aria-label=\"Đi đến "
-"cổng thông tin Avatax\" class=\"fa fa-external-link-square fa-fw\"/>\n"
+"<i title=\"Đi đến cổng thông tin Avatax\" role=\"img\" aria-label=\"Đi đến cổng thông tin Avatax\" class=\"fa-solid fa-square-up-right\"/>\n"
 "                                Cổng thông tin Avatax"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa fa-"
-"file-text-o\"/>\n"
+"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Show logs"
 msgstr ""
-"<i title=\"Hiển thị nhật ký\" role=\"img\" aria-label=\"Hiển thị nhật ký\" "
-"class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Hiển thị nhật ký\" role=\"img\" aria-label=\"Hiển thị nhật ký\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Hiển thị nhật ký"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start "
-"logging for 30 minutes\" class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start logging for 30 minutes\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Start logging for 30 minutes"
 msgstr ""
-"<i title=\"Bắt đầu ghi trong 30 phút\" role=\"img\" aria-label=\"Bắt đầu ghi "
-"trong 30 phút\" class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Bắt đầu ghi trong 30 phút\" role=\"img\" aria-label=\"Bắt đầu ghi trong 30 phút\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Bắt đầu ghi trong 30 phút"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" "
-"class=\"fa fa-refresh\"/>\n"
+"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" class=\"fa-solid fa-arrows-rotate\"/>\n"
 "                                Sync Parameters"
 msgstr ""
-"<i title=\"Đồng bộ tham số\" role=\"img\" aria-label=\"Đồng bộ tham số\" "
-"class=\"fa fa-refresh\"/>\n"
+"<i title=\"Đồng bộ tham số\" role=\"img\" aria-label=\"Đồng bộ tham số\" class=\"fa-solid fa-arrows-rotate\"/>\n"
 "                                Đồng bộ tham số"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 msgid ""
-"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" "
-"class=\"fa fa-plug fa-fw\"/>\n"
+"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" class=\"fa-solid fa-plug\"/>\n"
 "                                Test connection"
 msgstr ""
-"<i title=\"Kiểm tra kết nối\" role=\"img\" aria-label=\"Kiểm tra kết nối\" "
-"class=\"fa fa-plug fa-fw\"/>\n"
+"<i title=\"Kiểm tra kết nối\" role=\"img\" aria-label=\"Kiểm tra kết nối\" class=\"fa-solid fa-plug\"/>\n"
 "                                Kiểm tra kết nối"
 
 #. module: account_avatax

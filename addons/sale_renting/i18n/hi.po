@@ -102,7 +102,7 @@ msgstr "5 साल"
 
 #. module: sale_renting
 #: model_terms:ir.ui.view,arch_db:sale_renting.rental_order_view_kanban
-msgid "<i class=\"fa fa-warning\"/> Late"
+msgid "<i class=\"fa-solid fa-triangle-exclamation\"/> Late"
 msgstr ""
 
 #. module: sale_renting

@@ -109,62 +109,62 @@ msgstr ""
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i class=\"fa fa-clock-o pe-1\" role=\"img\" aria-label=\"Select time\" "
-"title=\"Select time\"/>"
+"<i class=\"fa-regular fa-clock pe-1\" role=\"img\" aria-label=\"Select "
+"time\" title=\"Select time\"/>"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Not opened within"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Not opened within"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-envelope-open-o\"/> Opened after"
+msgid "<i class=\"fa-regular fa-envelope-open\"/> Opened after"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-plus-circle\"/> Add child activity"
+msgid "<i class=\"fa-solid fa-plus-circle\"/> Add child activity"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Not replied within"
+msgid "<i class=\"fa-solid fa-reply\"/> Not replied within"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
-msgid "<i class=\"fa fa-reply\"/> Replied after"
+msgid "<i class=\"fa-solid fa-reply\"/> Replied after"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form
 msgid ""
-"<i data-trigger-type=\"activity\" class=\"fa fa-code-fork fa-rotate-180 fa-"
-"flip-vertical o_ma_text_processed o_add_child_activity text-success\" "
-"title=\"Add Another Activity\" role=\"img\" aria-label=\"Add Another "
-"Activity\"/>"
+"<i data-trigger-type=\"activity\" class=\"fa-solid fa-code-branch fa-"
+"rotate-180 fa-flip-vertical o_ma_text_processed o_add_child_activity text-"
+"success\" title=\"Add Another Activity\" role=\"img\" aria-label=\"Add "
+"Another Activity\"/>"
 msgstr ""
 
 #. module: marketing_automation
@@ -182,14 +182,12 @@ msgstr ""
 msgid ""
 "<span role=\"img\" title=\"Graph\" aria-label=\"Graph\" "
 "class=\"o_ma_activity_tab active\" data-tab-type=\"graph\">\n"
-"                                                            <i class=\"fa fa-"
-"pie-chart\"/>\n"
+"                                                            <i class=\"fa-solid fa-chart-pie\"/>\n"
 "                                                        </span>\n"
 "                                                        <span "
 "title=\"Filter\" role=\"img\" aria-label=\"Filter\" "
 "class=\"o_ma_activity_tab\" data-tab-type=\"filter\">\n"
-"                                                            <i class=\"fa fa-"
-"filter\"/>\n"
+"                                                            <i class=\"fa-solid fa-filter\"/>\n"
 "                                                        </span>"
 msgstr ""
 

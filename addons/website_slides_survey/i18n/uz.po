@@ -89,27 +89,27 @@ msgstr ""
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
 #, fuzzy
-msgid "<i class=\"fa fa-arrow-right\"/> Get Certified"
-msgstr "<i class=\"fa fa-arrow-right\"/> Sertifikat olish"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Get Certified"
+msgstr "<i class=\"fa-solid fa-arrow-right\"/> Sertifikat olish"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-download\" aria-label=\"Download certification\" "
+"<i class=\"fa-solid fa-download\" aria-label=\"Download certification\" "
 "title=\"Download Certification\"/>"
 msgstr ""
-"<i class=\"fa fa-download\" aria-label=\"Sertifikatni yuklab olish\" "
+"<i class=\"fa-solid fa-download\" aria-label=\"Sertifikatni yuklab olish\" "
 "title=\"Sertifikatni yuklab olish\"/>"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.slide_content_detailed
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw fa-trophy\" role=\"img\" aria-label=\"Download "
+"<i class=\"fa-solid fa-trophy\" role=\"img\" aria-label=\"Download "
 "certification\" title=\"Download certification\"/> Download certification"
 msgstr ""
-"<i class=\"fa fa-fw fa-trophy\" role=\"img\" aria-label=\"Sertifikatni "
+"<i class=\"fa-solid fa-trophy\" role=\"img\" aria-label=\"Sertifikatni "
 "yuklab olish\" title=\"Sertifikatni yuklab olish\"/> Sertifikatni yuklab "
 "olish"
 
@@ -117,19 +117,17 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.survey_fill_form_done_inherit_website_slides
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Share certification\" "
-"title=\"Share certification\"/>\n"
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Share certification\" title=\"Share certification\"/>\n"
 "                        Share your certification"
 msgstr ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Sertifikatni ulashish\" "
+"<i class=\"fa-solid fa-share-alt\" aria-label=\"Sertifikatni ulashish\" "
 "title=\"Sertifikatni ulashish\"/> Sertifikatingizni ulashing"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.display_certificate
 #, fuzzy
-msgid "<i class=\"fa fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
-msgstr ""
-"<i class=\"fa fa-share-alt\" aria-label=\"Ulashish\" title=\"Ulashish\"/>"
+msgid "<i class=\"fa-solid fa-share-alt\" aria-label=\"Share\" title=\"Share\"/>"
+msgstr "<i class=\"fa-solid fa-share-alt\" aria-label=\"Ulashish\" title=\"Ulashish\"/>"
 
 #. module: website_slides_survey
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.slide_content_detailed

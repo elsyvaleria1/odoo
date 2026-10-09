@@ -27,14 +27,14 @@ msgstr ""
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail
 msgid ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
 "title=\"The letter will be sent using the IAP service from Odoo.&#10;Make "
 "sure you have enough credits on your account or proceed to a recharge.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Waarschuwing\" "
-"title=\"De brief wordt verstuurd door middel van de IAP-dienst van "
-"Odoo.&amp;#10;Zorg ervoor dat je genoeg krediet op je rekening hebt of koop "
-"nieuwe kredieten aan.\"/>"
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-"
+"label=\"Waarschuwing\" title=\"De brief wordt verstuurd door middel van de "
+"IAP-dienst van Odoo.&amp;#10;Zorg ervoor dat je genoeg krediet op je "
+"rekening hebt of koop nieuwe kredieten aan.\"/>"
 
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail

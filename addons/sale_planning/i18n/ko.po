@@ -28,16 +28,15 @@ msgstr "<b>판매 주문 항목:</b>"
 #. module: sale_planning
 #: model_terms:ir.ui.view,arch_db:sale_planning.planning_slot_view_form_inherit_sale_planning
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this shift has been cancelled. We recommend either "
-"updating the sales order item or unscheduling this shift in line with the "
-"cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this shift has been cancelled. We recommend "
+"either updating the sales order item or unscheduling this shift in line with"
+" the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"이 근무조와 "
-"관련된 판매 주문이 취소되었습니다. 판매 주문 항목을 업데이트하거나 판매 주문 "
-"취소에 맞춰 이 교대근무 일정을 취소하는 것이 좋습니다.\" "
-"invisible=\"sale_order_state != 'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"이 근무조와"
+" 관련된 판매 주문이 취소되었습니다. 판매 주문 항목을 업데이트하거나 판매 주문 취소에 맞춰 이 교대근무 일정을 취소하는 것이 "
+"좋습니다.\" invisible=\"sale_order_state != 'cancel'\"/>"
 
 #. module: sale_planning
 #: model_terms:ir.ui.view,arch_db:sale_planning.view_order_form_inherit_sale_planning

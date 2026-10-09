@@ -45,47 +45,42 @@ msgstr "# SMS xabarlar"
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 #, fuzzy
-msgid "<i class=\"fa fa-exclamation-circle\"/> Bounced after"
-msgstr "<i class=\"fa fa-exclamation-circle\"/> Qaytarilgandan so‘ng"
+msgid "<i class=\"fa-solid fa-exclamation-circle\"/> Bounced after"
+msgstr "<i class=\"fa-solid fa-exclamation-circle\"/> Qaytarilgandan so‘ng"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 #, fuzzy
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Clicked after"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> Bosilgandan so‘ng"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Clicked after"
+msgstr "<i class=\"fa-regular fa-hand-pointer\"/> Bosilgandan so‘ng"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 #, fuzzy
-msgid "<i class=\"fa fa-hand-pointer-o\"/> Not clicked within"
-msgstr "<i class=\"fa fa-hand-pointer-o\"/> Belgilangan vaqt ichida bosilmagan"
+msgid "<i class=\"fa-regular fa-hand-pointer\"/> Not clicked within"
+msgstr ""
+"<i class=\"fa-regular fa-hand-pointer\"/> Belgilangan vaqt ichida bosilmagan"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 #, fuzzy
-msgid "<i class=\"fa fa-pie-chart\"/> Details"
-msgstr "<i class=\"fa fa-pie-chart\"/> Tafsilotlar"
+msgid "<i class=\"fa-solid fa-chart-pie\"/> Details"
+msgstr "<i class=\"fa-solid fa-chart-pie\"/> Tafsilotlar"
 
 #. module: marketing_automation_sms
 #: model_terms:ir.ui.view,arch_db:marketing_automation_sms.marketing_campaign_view_form
 #, fuzzy
 msgid ""
-"<i data-trigger-type=\"sms_click\" class=\"fa fa-hand-pointer-o "
-"o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" "
-"role=\"img\" aria-label=\"Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_not_click\" class=\"fa fa-"
-"hand-pointer-o o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
-"                    <i data-trigger-type=\"sms_bounce\" class=\"fa fa fa-"
-"exclamation-circle o_ma_text_rejected o_add_child_activity text-danger\" "
-"title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
+"<i data-trigger-type=\"sms_click\" class=\"fa-regular fa-hand-pointer o_ma_text_processed o_add_child_activity text-success\" title=\"Clicked\" role=\"img\" aria-label=\"Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_not_click\" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity text-danger\" title=\"Not Clicked\" role=\"img\" aria-label=\"Not Clicked\"/>\n"
+"                    <i data-trigger-type=\"sms_bounce\" class=\"fa-solid fa-exclamation-circle fa o_ma_text_rejected o_add_child_activity text-danger\" title=\"Bounced\" role=\"img\" aria-label=\"Bounced\"/>"
 msgstr ""
-"<i data-trigger-type=\"sms_click\" class=\"fa fa-hand-pointer-o "
+"<i data-trigger-type=\"sms_click\" class=\"fa-regular fa-hand-pointer "
 "o_ma_text_processed o_add_child_activity text-success\" title=\"Bosildi\" "
-"role=\"img\" aria-label=\"Bosildi\"/> <i data-trigger-type=\"sms_not_click\" "
-"class=\"fa fa-hand-pointer-o o_ma_text_rejected o_add_child_activity text-"
-"danger\" title=\"Bosilmadi\" role=\"img\" aria-label=\"Bosilmadi\"/> <i data-"
-"trigger-type=\"sms_bounce\" class=\"fa fa fa-exclamation-circle "
+"role=\"img\" aria-label=\"Bosildi\"/> <i data-trigger-type=\"sms_not_click\""
+" class=\"fa-regular fa-hand-pointer o_ma_text_rejected o_add_child_activity "
+"text-danger\" title=\"Bosilmadi\" role=\"img\" aria-label=\"Bosilmadi\"/> <i"
+" data-trigger-type=\"sms_bounce\" class=\"fa-solid fa-exclamation-circle fa "
 "o_ma_text_rejected o_add_child_activity text-danger\" title=\"Qaytarildi\" "
 "role=\"img\" aria-label=\"Qaytarildi\"/>"
 

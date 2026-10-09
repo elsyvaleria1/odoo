@@ -100,10 +100,10 @@ msgstr "2024 年 10 月 22 日 14:20:10"
 #. module: frontdesk
 #: model_terms:ir.ui.view,arch_db:frontdesk.frontdesk_visitor_check_out
 msgid ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
 "                    The visitor has been successfully <br/> checked out"
 msgstr ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
 "                    訪客已被成功<br/>登記離開"
 
 #. module: frontdesk

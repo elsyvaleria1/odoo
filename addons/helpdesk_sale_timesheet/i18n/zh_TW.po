@@ -30,15 +30,15 @@ msgstr "4 小時內要完成"
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this ticket has been cancelled. We recommend either "
-"updating the sales order item or cancelling this ticket in alignment with "
-"the cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this ticket has been cancelled. We recommend "
+"either updating the sales order item or cancelling this ticket in alignment "
+"with the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"與此支援請求"
-"關聯的銷售單已被取消。我們建議更新銷售單項目，或依照銷售單的取消動作取消此支"
-"援請求。\" invisible=\"sale_order_state != 'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" "
+"title=\"與此支援請求關聯的銷售單已被取消。我們建議更新銷售單項目，或依照銷售單的取消動作取消此支援請求。\" "
+"invisible=\"sale_order_state != 'cancel'\"/>"
 
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet

@@ -87,14 +87,12 @@ msgstr ""
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
-"<i class=\"fa fa-2x fa-envelope-o\" role=\"img\" aria-label=\"Send by Mail\"/"
-">\n"
+"<i class=\"fa-regular fa-envelope fa-2x\" role=\"img\" aria-label=\"Send by Mail\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"Send by Mail\">Send "
 "Email</span>"
 msgstr ""
-"<i class=\"fa fa-2x fa-envelope-o\" role=\"img\" aria-label=\"Send by Mail\"/"
-">\n"
+"<i class=\"fa-regular fa-envelope fa-2x\" role=\"img\" aria-label=\"Send by Mail\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"Send by Mail\">Eメール"
 "を送信</span>"
@@ -102,12 +100,12 @@ msgstr ""
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
-"<i class=\"fa fa-2x fa-globe\" role=\"img\" aria-label=\"Job Page\"/>\n"
+"<i class=\"fa-solid fa-earth-americas fa-2x\" role=\"img\" aria-label=\"Job Page\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"More info\">Job Page</"
 "span>"
 msgstr ""
-"<i class=\"fa fa-2x fa-globe\" role=\"img\" aria-label=\"Job Page\"/>\n"
+"<i class=\"fa-solid fa-earth-americas fa-2x\" role=\"img\" aria-label=\"Job Page\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"More info\">求人ページ"
 "</span>"
@@ -115,20 +113,20 @@ msgstr ""
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
-"<i class=\"fa fa-2x fa-mobile\" role=\"img\" aria-label=\"Send by SMS\"/>\n"
+"<i class=\"fa-solid fa-mobile-screen-button fa-2x\" role=\"img\" aria-label=\"Send by SMS\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"Send by SMS\">Send "
 "SMS</span>"
 msgstr ""
-"<i class=\"fa fa-2x fa-mobile\" role=\"img\" aria-label=\"Send by SMS\"/>\n"
+"<i class=\"fa-solid fa-mobile-screen-button fa-2x\" role=\"img\" aria-label=\"Send by SMS\"/>\n"
 "                                        <br/>\n"
 "                                        <span title=\"Send by SMS\">SMSを送信"
 "</span>"
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
-msgid "<i class=\"fa fa-square-o\" title=\"Open\"/>"
-msgstr "<i class=\"fa fa-square-o\" title=\"Open\"/>"
+msgid "<i class=\"fa-regular fa-square\" title=\"Open\"/>"
+msgstr "<i class=\"fa-regular fa-square\" title=\"Open\"/>"
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
@@ -160,36 +158,32 @@ msgstr ""
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_referral_reward_kanban
 msgid ""
-"<span title=\"Buy\"><i class=\"fa fa-shopping-basket me-3\" role=\"img\" "
-"aria-label=\"Buy\"/>Buy</span>"
+"<span title=\"Buy\"><i class=\"fa-solid fa-shopping-basket me-3\" "
+"role=\"img\" aria-label=\"Buy\"/>Buy</span>"
 msgstr ""
-"<span title=\"Buy\"><i class=\"fa fa-shopping-basket me-3\" role=\"img\" "
-"aria-label=\"Buy\"/>購入</span>"
+"<span title=\"Buy\"><i class=\"fa-solid fa-shopping-basket me-3\" "
+"role=\"img\" aria-label=\"Buy\"/>購入</span>"
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
 "<span title=\"Share on Facebook\">\n"
-"                                            <i class=\"fa fa-2x fa-"
-"facebook\" role=\"img\" aria-label=\"Share on facebook\"/>\n"
+"                                            <i class=\"fa-brands fa-facebook-f fa-2x\" role=\"img\" aria-label=\"Share on facebook\"/>\n"
 "                                        </span>"
 msgstr ""
 "<span title=\"Share on Facebook\">\n"
-"                                            <i class=\"fa fa-2x fa-"
-"facebook\" role=\"img\" aria-label=\"facebookでシェア\"/>\n"
+"                                            <i class=\"fa-brands fa-facebook-f fa-2x\" role=\"img\" aria-label=\"facebookでシェア\"/>\n"
 "                                        </span>"
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
 "<span title=\"Share on Linkedin\">\n"
-"                                            <i class=\"fa fa-2x fa-"
-"linkedin\" role=\"img\" aria-label=\"Share on linkedin\"/>\n"
+"                                            <i class=\"fa-brands fa-linkedin-in fa-2x\" role=\"img\" aria-label=\"Share on linkedin\"/>\n"
 "                                        </span>"
 msgstr ""
 "<span title=\"Share on Linkedin\">\n"
-"                                            <i class=\"fa fa-2x fa-"
-"linkedin\" role=\"img\" aria-label=\"linkedinで共有\"/>\n"
+"                                            <i class=\"fa-brands fa-linkedin-in fa-2x\" role=\"img\" aria-label=\"linkedinで共有\"/>\n"
 "                                        </span>"
 
 #. module: hr_referral

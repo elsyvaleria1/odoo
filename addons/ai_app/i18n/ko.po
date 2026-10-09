@@ -24,11 +24,11 @@ msgstr ""
 #. module: ai_app
 #: model_terms:ir.ui.view,arch_db:ai_app.ai_agent_view_form
 msgid ""
-"<i class=\"fa fa-clock-o me-2\"/>\n"
+"<i class=\"fa-regular fa-clock me-2\"/>\n"
 "                            <span>Processing your sources, it might take a "
 "few minutes...</span>"
 msgstr ""
-"<i class=\"fa fa-clock-o me-2\"/>\n"
+"<i class=\"fa-regular fa-clock me-2\"/>\n"
 "                            <span>소스를 처리하는 중이며, 몇 분 정도 소요될 "
 "수 있습니다...</span>"
 
@@ -36,10 +36,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:ai_app.ai_agent_view_form
 msgid ""
 "<span class=\"me-1\">Refresh</span>\n"
-"                            <i class=\"fa fa-refresh me-1\"/>"
+"                            <i class=\"fa-solid fa-arrows-rotate me-1\"/>"
 msgstr ""
 "<span class=\"me-1\">새로고침</span>\n"
-"                            <i class=\"fa fa-refresh me-1\"/>"
+"                            <i class=\"fa-solid fa-arrows-rotate me-1\"/>"
 
 #. module: ai_app
 #: model_terms:ir.ui.view,arch_db:ai_app.ai_composer_form

@@ -192,39 +192,39 @@ msgstr ""
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"โดเมนผลิตภัณฑ์\"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"โดเมนผลิตภัณฑ์\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-cube fa-fw\" title=\"Products\"/>"
-msgstr "<i class=\"fa fa-cube fa-fw\" title=\"ผลิตภัณฑ์\"/>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/>"
+msgstr "<i class=\"fa-solid fa-cube\" title=\"ผลิตภัณฑ์\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid ""
-"<i class=\"fa fa-cube fa-fw\" title=\"Products\"/><span>All Products</span>"
+msgid "<i class=\"fa-solid fa-cube\" title=\"Products\"/><span>All Products</span>"
 msgstr ""
-"<i class=\"fa fa-cube fa-fw\" title=\"ผลิตภัณฑ์\"/><span>ผลิตภัณฑ์ทั้งหมด</span>"
+"<i class=\"fa-solid fa-cube\" "
+"title=\"ผลิตภัณฑ์\"/><span>ผลิตภัณฑ์ทั้งหมด</span>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-cubes fa-fw\" title=\"Product Categories\"/>"
-msgstr "<i class=\"fa fa-cubes fa-fw\" title=\"หมวดหมู่ผลิตภัณฑ์\"/>"
+msgid "<i class=\"fa-solid fa-cubes\" title=\"Product Categories\"/>"
+msgstr "<i class=\"fa-solid fa-cubes\" title=\"หมวดหมู่ผลิตภัณฑ์\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-search fa-fw\" title=\"Product Domain\"/>"
-msgstr "<i class=\"fa fa-search fa-fw\" title=\"โดเมนผลิตภัณฑ์\"/>"
+msgid "<i class=\"fa-solid fa-search\" title=\"Product Domain\"/>"
+msgstr "<i class=\"fa-solid fa-search\" title=\"โดเมนผลิตภัณฑ์\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_reward_view_kanban
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_rule_view_kanban
-msgid "<i class=\"fa fa-tags fa-fw\" title=\"Product Tags\"/>"
-msgstr "<i class=\"fa fa-tags fa-fw\" title=\"แท็กผลิตภัณฑ์\"/>"
+msgid "<i class=\"fa-solid fa-tags\" title=\"Product Tags\"/>"
+msgstr "<i class=\"fa-solid fa-tags\" title=\"แท็กผลิตภัณฑ์\"/>"
 
 #. module: loyalty
 #: model_terms:ir.ui.view,arch_db:loyalty.loyalty_program_view_form

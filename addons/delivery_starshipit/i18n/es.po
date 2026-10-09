@@ -41,24 +41,21 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> No olvide seleccionar un servicio "
-"para una configuración válida."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> No olvide seleccionar un "
+"servicio para una configuración válida."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> En el <b>entorno de prueba</b>, "
-"sus envíos se <b>archivan</b> automáticamente después de crear las "
-"etiquetas. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> En el <b>entorno de prueba</b>, sus envíos se <b>archivan</b> automáticamente después de crear las etiquetas. <br/>\n"
 "                        Tenga en cuenta que aún se pueden realizar cargos al "
 "crear etiquetas y que algunos transportistas pueden validar automáticamente "
 "el envío al imprimir las etiquetas."
@@ -66,11 +63,11 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Los servicios de envío disponibles dependen "
-"de los transportistas habilitados en su cuenta de Starshipit."
+"<i class=\"fa-solid fa-info-circle\"/> Los servicios de envío disponibles "
+"dependen de los transportistas habilitados en su cuenta de Starshipit."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.choose_delivery_carrier_view_form

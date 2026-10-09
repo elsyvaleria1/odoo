@@ -34,11 +34,9 @@ msgstr "。此連結將為你提供個人化的關注，還有更低價格。"
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_shipping_method_envia
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Envia account."
-msgstr ""
-"<i class=\"fa fa-info-circle\"/> 可用運送服務取決於你 Envia 帳戶中已啟用的物"
-"流商。"
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Envia account."
+msgstr "<i class=\"fa-solid fa-info-circle\"/> 可用運送服務取決於你 Envia 帳戶中已啟用的物流商。"
 
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_delivery_carrier_form_inherit_delivery_envia

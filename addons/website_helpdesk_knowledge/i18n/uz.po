@@ -33,8 +33,8 @@ msgstr ", tomonidan"
 #. module: website_helpdesk_knowledge
 #: model_terms:ir.ui.view,arch_db:website_helpdesk_knowledge.search_result
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-2x fa-book\" title=\"Knowledge Article\"/>"
-msgstr "<i class=\"fa fa-fw fa-2x fa-book\" title=\"Bilim maqolasi\"/>"
+msgid "<i class=\"fa-solid fa-book fa-2x\" title=\"Knowledge Article\"/>"
+msgstr "<i class=\"fa-solid fa-book fa-2x\" title=\"Bilim maqolasi\"/>"
 
 #. module: website_helpdesk_knowledge
 #: model:ir.model.fields,field_description:website_helpdesk_knowledge.field_helpdesk_team__website_article_id

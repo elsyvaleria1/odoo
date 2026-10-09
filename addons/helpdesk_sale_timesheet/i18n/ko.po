@@ -32,16 +32,15 @@ msgstr "완료까지 4시간"
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this ticket has been cancelled. We recommend either "
-"updating the sales order item or cancelling this ticket in alignment with "
-"the cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this ticket has been cancelled. We recommend "
+"either updating the sales order item or cancelling this ticket in alignment "
+"with the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"이 티켓과 관"
-"련된 판매 주문이 취소되었습니다. 판매 주문 항목을 업데이트하거나 판매 주문 취"
-"소에 맞춰 이 티켓을 취소하는 것이 좋습니다.\" invisible=\"sale_order_state !"
-"= 'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"이 티켓과 "
+"관련된 판매 주문이 취소되었습니다. 판매 주문 항목을 업데이트하거나 판매 주문 취소에 맞춰 이 티켓을 취소하는 것이 좋습니다.\" "
+"invisible=\"sale_order_state != 'cancel'\"/>"
 
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet

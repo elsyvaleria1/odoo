@@ -56,19 +56,17 @@ msgstr "<i class=\"ms-2 fa fa-info-circle\" title=\"Google 預訂功能所要求
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Your Google Reserve Synchronization "
+"<span class=\"fa-solid fa-check me-1\"/>Your Google Reserve Synchronization "
 "is active."
-msgstr "<span class=\"fa fa-check fa-fw me-1\"/> 你的 Google 預訂同步現已生效。"
+msgstr "<span class=\"fa-solid fa-check me-1\"/> 你的 Google 預訂同步現已生效。"
 
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Your Appointment Type is "
-"being synchronized with Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Your Appointment Type is being synchronized with Google Reserve.<br/>\n"
 "                                This can take up to 24 hours to be active."
 msgstr ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>你的預約類型正在與 Google 預訂"
-"功能進行同步。<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>你的預約類型正在與 Google 預訂功能進行同步。<br/>\n"
 "                                這可能需要長達 24 小時後才可生效。"
 
 #. module: appointment_google_reserve

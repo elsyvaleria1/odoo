@@ -75,8 +75,8 @@ msgstr "Сгенерировать"
 
 #. module: hr_recruitment_integration_website
 #: model_terms:ir.ui.view,arch_db:hr_recruitment_integration_website.hr_recruitment_post_job_wizard_view_form
-msgid "Generate Description (<i class=\"fa fa-fw fa-magic\"/>AI)"
-msgstr "Сгенерировать описание (<i class=\"fa fa-fw fa-magic\"/>ИИ)"
+msgid "Generate Description (<i class=\"fa-solid fa-wand-magic-sparkles\"/>AI)"
+msgstr "Сгенерировать описание (<i class=\"fa-solid fa-wand-magic-sparkles\"/>ИИ)"
 
 #. module: hr_recruitment_integration_website
 #: model:ir.model.fields,field_description:hr_recruitment_integration_website.field_hr_job__id

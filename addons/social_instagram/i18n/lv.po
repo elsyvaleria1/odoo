@@ -33,8 +33,8 @@ msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Komentāri\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Komentāri\"/>"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
@@ -60,7 +60,7 @@ msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-heart me-1\" title=\"Likes\"/>"
+msgid "<i class=\"fa-solid fa-heart me-1\" title=\"Likes\"/>"
 msgstr ""
 
 #. module: social_instagram

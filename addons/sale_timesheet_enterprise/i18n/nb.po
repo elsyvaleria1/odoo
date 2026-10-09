@@ -56,18 +56,17 @@ msgstr ""
 
 #. module: sale_timesheet_enterprise
 #: model_terms:ir.ui.view,arch_db:sale_timesheet_enterprise.view_edit_billable_time_target_update_kanban
-msgid ""
-"<i class=\"fa fa-fw me-2 fa-birthday-cake text-primary\" title=\"Birthday\"/>"
+msgid "<i class=\"fa-solid fa-birthday-cake me-2 text-primary\" title=\"Birthday\"/>"
 msgstr ""
 
 #. module: sale_timesheet_enterprise
 #: model_terms:ir.ui.view,arch_db:sale_timesheet_enterprise.view_edit_billable_time_target_update_kanban
-msgid "<i class=\"fa fa-fw me-2 fa-envelope text-primary\" title=\"Email\"/>"
+msgid "<i class=\"fa-solid fa-envelope me-2 text-primary\" title=\"Email\"/>"
 msgstr ""
 
 #. module: sale_timesheet_enterprise
 #: model_terms:ir.ui.view,arch_db:sale_timesheet_enterprise.view_edit_billable_time_target_update_kanban
-msgid "<i class=\"fa fa-fw me-2 fa-phone text-primary\" title=\"Phone\"/>"
+msgid "<i class=\"fa-solid fa-phone me-2 text-primary\" title=\"Phone\"/>"
 msgstr ""
 
 #. module: sale_timesheet_enterprise

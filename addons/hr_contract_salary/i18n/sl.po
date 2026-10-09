@@ -123,26 +123,26 @@ msgstr ""
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_sidebar
-msgid "<i class=\"fa fa-check\"/> Your message was successfully sent!"
-msgstr "<i class=\"fa fa-check\"/> Vaše sporočilo je bilo uspešno poslano!"
+msgid "<i class=\"fa-solid fa-check\"/> Your message was successfully sent!"
+msgstr "<i class=\"fa-solid fa-check\"/> Vaše sporočilo je bilo uspešno poslano!"
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_thank_you
-msgid "<i class=\"fa fa-check-circle-o mr8\"/>Congratulations"
-msgstr "<i class=\"fa fa-check-circle-o mr8\"/>Čestitke"
+msgid "<i class=\"fa-regular fa-circle-check mr8\"/>Congratulations"
+msgstr "<i class=\"fa-regular fa-circle-check mr8\"/>Čestitke"
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_sidebar
-msgid "<i class=\"fa fa-comment\"/> Feedback"
-msgstr "<i class=\"fa fa-comment\"/> Povratne informacije"
+msgid "<i class=\"fa-solid fa-comment\"/> Feedback"
+msgstr "<i class=\"fa-solid fa-comment\"/> Povratne informacije"
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_offer_view_form
 msgid ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 msgstr ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 
 #. module: hr_contract_salary

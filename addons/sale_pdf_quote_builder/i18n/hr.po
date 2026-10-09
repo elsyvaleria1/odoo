@@ -29,7 +29,7 @@ msgstr ""
 
 #. module: sale_pdf_quote_builder
 #: model_terms:ir.ui.view,arch_db:sale_pdf_quote_builder.sale_order_template_form
-msgid "<i class=\"fa fa-arrow-right\"/> Link to the demo video"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Link to the demo video"
 msgstr ""
 
 #. module: sale_pdf_quote_builder

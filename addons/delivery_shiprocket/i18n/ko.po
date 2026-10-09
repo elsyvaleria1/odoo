@@ -43,11 +43,12 @@ msgstr "<b>세부 정보 입력 후 채널 저장 및 테스트 연결 버튼을
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
-"<b>Odoo 환경 설정에서<i class=\"fa fa-refresh oe_inline\"/> Shiprocket 채널 "
-"옆에 있는 아이콘을 클릭하면 새로 생성된 채널이 동기화됩니다.</b>"
+"<b>Odoo 환경 설정에서<i class=\"fa-solid fa-arrows-rotate oe_inline\"/> Shiprocket"
+" 채널 옆에 있는 아이콘을 클릭하면 새로 생성된 채널이 동기화됩니다.</b>"
 
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
@@ -76,13 +77,13 @@ msgstr "<b>채널을 생성하려면 Shiprocket 채널로 이동하세요.</b>"
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 테스트 환경에서 요금이 부과되지 않"
-"도록 라벨 생성 후 배송이 자동으로 <b>취소</b>됩니다. 취소된 배송 요금은 3-4 "
-"일 이후에 환불됩니다."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> 테스트 환경에서 요금이 부과되지 않도록 라벨 생성 "
+"후 배송이 자동으로 <b>취소</b>됩니다. 취소된 배송 요금은 3-4 일 이후에 환불됩니다."
 
 #. module: delivery_shiprocket
 #: model:ir.model.fields,help:delivery_shiprocket.field_delivery_carrier__shiprocket_manifests_generate

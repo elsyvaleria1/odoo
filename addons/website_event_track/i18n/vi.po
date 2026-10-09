@@ -171,12 +171,12 @@ msgstr ""
 
 #. module: website_event_track
 #: model_terms:ir.ui.view,arch_db:website_event_track.track_card
-msgid "<i class=\"fa fa-ban me-2\"/>Unpublished"
-msgstr "<i class=\"fa fa-ban me-2\"/>Đã huỷ đăng"
+msgid "<i class=\"fa-solid fa-ban me-2\"/>Unpublished"
+msgstr "<i class=\"fa-solid fa-ban me-2\"/>Đã huỷ đăng"
 
 #. module: website_event_track
 #: model_terms:ir.ui.view,arch_db:website_event_track.tracks_search
-msgid "<i class=\"fa fa-bell mx-2 text-muted\"/> Favorite Talks"
+msgid "<i class=\"fa-solid fa-bell mx-2 text-muted\"/> Favorite Talks"
 msgstr ""
 
 #. module: website_event_track
@@ -187,7 +187,7 @@ msgstr ""
 #. module: website_event_track
 #: model_terms:ir.ui.view,arch_db:website_event_track.agenda_online
 #: model_terms:ir.ui.view,arch_db:website_event_track.tracks_main
-msgid "<span class=\"fa fa-plus me-1\"/> Schedule Tracks"
+msgid "<span class=\"fa-solid fa-plus me-1\"/> Schedule Tracks"
 msgstr ""
 
 #. module: website_event_track

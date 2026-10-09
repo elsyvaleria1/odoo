@@ -52,72 +52,72 @@ msgstr "6 maki cá hồi - 6 maki cá ngừ - 6 maki tôm/bơ"
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"<i class=\"fa-solid fa-check\" role=\"img\" aria-label=\"Receive button\" "
 "title=\"Receive button\"/>"
 msgstr ""
-"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"<i class=\"fa-solid fa-check\" role=\"img\" aria-label=\"Receive button\" "
 "title=\"Nút nhận\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_report_kanban
-msgid ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
-msgstr ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Date\" title=\"Ngày\"/>"
+msgid "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
+msgstr "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"Date\" title=\"Ngày\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"Send notification\" "
-"title=\"Send notification\"/>"
+"<i class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Send "
+"notification\" title=\"Send notification\"/>"
 msgstr ""
-"<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"Gửi thông báo\" "
+"<i class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Gửi thông báo\" "
 "title=\"Gửi thông báo\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_report_kanban
 msgid ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/"
-">"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Amount\" "
+"title=\"Amount\"/>"
 msgstr ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/"
-">"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Amount\" "
+"title=\"Amount\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Money\"/>"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Money\" "
+"title=\"Money\"/>"
 msgstr ""
-"<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Tiền\"/>"
+"<i class=\"fa-solid fa-money-bill-1\" role=\"img\" aria-label=\"Money\" "
+"title=\"Tiền\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-paper-plane\" role=\"img\" aria-label=\"Send button\" "
-"title=\"Send button\"/>"
+"<i class=\"fa-solid fa-paper-plane\" role=\"img\" aria-label=\"Send button\""
+" title=\"Send button\"/>"
 msgstr ""
-"<i class=\"fa fa-paper-plane\" role=\"img\" aria-label=\"Nút gửi\" "
+"<i class=\"fa-solid fa-paper-plane\" role=\"img\" aria-label=\"Nút gửi\" "
 "title=\"Nút gửi\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"<i class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Order button\" "
 "title=\"Order button\"/>"
 msgstr ""
-"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"<i class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Order button\" "
 "title=\"Nút Đặt\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_kanban
 msgid ""
-"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"<i class=\"fa-solid fa-times\" role=\"img\" aria-label=\"Cancel button\" "
 "title=\"Cancel button\"/>"
 msgstr ""
-"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"<i class=\"fa-solid fa-times\" role=\"img\" aria-label=\"Cancel button\" "
 "title=\"Nút Hủy\"/>"
 
 #. module: lunch

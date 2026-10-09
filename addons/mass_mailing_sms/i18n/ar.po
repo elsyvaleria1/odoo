@@ -61,12 +61,12 @@ msgstr "إحصائيات الـ24 ساعة لـ %(mailing_type)s \"%(mailing_nam
 msgid ""
 "<br/>\n"
 "                    <span class=\"text-muted\">\n"
-"                        <i class=\"fa fa-phone\"/> Contacts\n"
+"                        <i class=\"fa-solid fa-phone\"/> Contacts\n"
 "                    </span>"
 msgstr ""
 "<br/>\n"
 "                    <span class=\"text-muted\">\n"
-"                        <i class=\"fa fa-phone\"/> جهات الاتصال\n"
+"                        <i class=\"fa-solid fa-phone\"/> جهات الاتصال\n"
 "                    </span>"
 
 #. module: mass_mailing_sms

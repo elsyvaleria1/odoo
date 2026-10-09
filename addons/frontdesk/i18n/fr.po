@@ -103,10 +103,10 @@ msgstr "22 Oct 24 14:20:10"
 #. module: frontdesk
 #: model_terms:ir.ui.view,arch_db:frontdesk.frontdesk_visitor_check_out
 msgid ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
 "                    The visitor has been successfully <br/> checked out"
 msgstr ""
-"<i class=\"fa fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
+"<i class=\"fa-solid fa-check-circle fa-3x d-block mb-3 text-success\"/>\n"
 "                    Le départ du visiteur a été enregistré <br/> avec succès"
 
 #. module: frontdesk

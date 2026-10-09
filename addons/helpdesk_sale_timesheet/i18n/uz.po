@@ -34,17 +34,17 @@ msgstr "Tugatish uchun 4 soat"
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet
 #, fuzzy
 msgid ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"The sales "
-"order associated with this ticket has been cancelled. We recommend either "
-"updating the sales order item or cancelling this ticket in alignment with "
-"the cancellation of the sales order.\" invisible=\"sale_order_state != "
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"The "
+"sales order associated with this ticket has been cancelled. We recommend "
+"either updating the sales order item or cancelling this ticket in alignment "
+"with the cancellation of the sales order.\" invisible=\"sale_order_state != "
 "'cancel'\"/>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle text-warning\" title=\"Ushbu chipta "
-"bilan bog‘liq savdo buyurtmasi bekor qilingan. Savdo buyurtmasi bandini "
-"yangilashni yoki savdo buyurtmasining bekor qilinishiga muvofiq ushbu "
-"chiptani bekor qilishni tavsiya etamiz.\" invisible=\"sale_order_state != "
-"'cancel'\"/>"
+"<span class=\"fa-solid fa-exclamation-triangle text-warning\" title=\"Ushbu "
+"chipta bilan bog‘liq savdo buyurtmasi bekor qilingan. Savdo buyurtmasi "
+"bandini yangilashni yoki savdo buyurtmasining bekor qilinishiga muvofiq "
+"ushbu chiptani bekor qilishni tavsiya etamiz.\" invisible=\"sale_order_state"
+" != 'cancel'\"/>"
 
 #. module: helpdesk_sale_timesheet
 #: model_terms:ir.ui.view,arch_db:helpdesk_sale_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_sale_timesheet

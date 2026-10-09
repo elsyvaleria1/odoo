@@ -66,40 +66,41 @@ msgstr "Cần có số điện thoại của %(partner_name)s"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Hãy nhớ tải các sản phẩm vận "
-"chuyển SendCloud của bạn để có cấu hình hợp lệ."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Hãy nhớ tải các sản phẩm vận"
+" chuyển SendCloud của bạn để có cấu hình hợp lệ."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>Để tránh bị tính phí, thì trong môi "
-"trường kiểm thử, các đơn vận chuyển của bạn sẽ tự động <b>bị hủy</b> sau khi "
-"tạo nhãn."
+"<i class=\"fa-solid fa-exclamation-triangle\"/>Để tránh bị tính phí, thì "
+"trong môi trường kiểm thử, các đơn vận chuyển của bạn sẽ tự động <b>bị "
+"hủy</b> sau khi tạo nhãn."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Chỉ quản trị viên mới có thể cấu "
-"hình mã khóa công khai và mã khóa riêng."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Chỉ quản trị viên mới có thể"
+" cấu hình mã khóa công khai và mã khóa riêng."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/>Các sản phẩm vận chuyển có sẵn phụ thuộc vào "
-"đơn vị vận chuyển đã được kích hoạt trong tài khoản Sendcloud của bạn."
+"<i class=\"fa-solid fa-info-circle\"/>Các sản phẩm vận chuyển có sẵn phụ "
+"thuộc vào đơn vị vận chuyển đã được kích hoạt trong tài khoản Sendcloud của "
+"bạn."
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

@@ -36,7 +36,7 @@ msgstr "7-Eleven 便利店"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_method_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> These properties are set to\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> These properties are set to\n"
 "                                match the behavior of providers and that of "
 "their integration with\n"
 "                                Odoo regarding this payment method. Any "
@@ -44,7 +44,7 @@ msgid ""
 "                                and should be tested on a test database "
 "first."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 設定這些屬性是為了\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> 設定這些屬性是為了\n"
 "                                配對服務提供者的行為，以及他們就此付款方式"
 "與\n"
 "                                Odoo 的整合功能的行為。任何變更都可能引致錯"
@@ -53,31 +53,29 @@ msgstr ""
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.portal_breadcrumb
-msgid ""
-"<i class=\"fa fa-home\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
-msgstr ""
-"<i class=\"fa fa-home\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
+msgid "<i class=\"fa-solid fa-house\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
+msgstr "<i class=\"fa-solid fa-house\" role=\"img\" title=\"Home\" aria-label=\"Home\"/>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_capture_wizard_view_form
 msgid ""
-"<i class=\"fa fa-info-circle oe_inline\" "
+"<i class=\"fa-solid fa-info-circle oe_inline\" "
 "invisible=\"support_partial_capture != 'full_only'\" title=\"Some of the "
 "transactions you intend to capture can only be captured in full. Handle the "
 "transactions individually to capture a partial amount.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle oe_inline\" "
-"invisible=\"support_partial_capture != 'full_only'\" title=\"你想捕捉的某些交"
-"易，只能捕捉完整金額。若要捕捉非完整金額，請單獨處理各項交易。\"/>"
+"<i class=\"fa-solid fa-info-circle oe_inline\" "
+"invisible=\"support_partial_capture != 'full_only'\" "
+"title=\"你想捕捉的某些交易，只能捕捉完整金額。若要捕捉非完整金額，請單獨處理各項交易。\"/>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.token_form
 msgid ""
-"<i class=\"fa fa-trash\" title=\"Delete payment method\" data-bs-"
+"<i class=\"fa-solid fa-trash-can\" title=\"Delete payment method\" data-bs-"
 "toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
 msgstr ""
-"<i class=\"fa fa-trash\" title=\"刪除付款方式\" data-bs-toggle=\"tooltip\" "
-"data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
+"<i class=\"fa-solid fa-trash-can\" title=\"刪除付款方式\" data-bs-"
+"toggle=\"tooltip\" data-bs-placement=\"top\" data-bs-delay=\"0\"/>"
 
 #. module: payment
 #: model_terms:ir.actions.act_window,help:payment.action_payment_method
@@ -138,14 +136,15 @@ msgstr ""
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.method_form
 #: model_terms:ir.ui.view,arch_db:payment.token_form
-msgid "<span><i class=\"fa fa-lock\"/> Secured by</span>"
-msgstr "<span><i class=\"fa fa-lock\"/> 保安由</span>"
+msgid "<span><i class=\"fa-solid fa-lock\"/> Secured by</span>"
+msgstr "<span><i class=\"fa-solid fa-lock\"/> 保安由</span>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.no_pms_available_warning
 msgid ""
-"<strong><i class=\"fa fa-file-text\"/> Show availability report</strong>"
-msgstr "<strong><i class=\"fa fa-file-text\"/> 顯示可用性報告</strong>"
+"<strong><i class=\"fa-solid fa-file-lines\"/> Show availability "
+"report</strong>"
+msgstr "<strong><i class=\"fa-solid fa-file-lines\"/> 顯示可用性報告</strong>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.no_pms_available_warning

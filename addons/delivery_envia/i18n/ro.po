@@ -36,11 +36,11 @@ msgstr ". Acest link vă va oferi atenție personalizată și prețuri mai mici.
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_shipping_method_envia
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Envia account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Envia account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Serviciile de livrare disponibile depind de "
-"transportatorii activați în contul dvs. Envia."
+"<i class=\"fa-solid fa-info-circle\"/> Serviciile de livrare disponibile "
+"depind de transportatorii activați în contul dvs. Envia."
 
 #. module: delivery_envia
 #: model_terms:ir.ui.view,arch_db:delivery_envia.view_delivery_carrier_form_inherit_delivery_envia

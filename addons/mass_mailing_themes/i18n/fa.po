@@ -263,14 +263,14 @@ msgstr ""
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template
 msgid ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> London, United "
-"Kingdom"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> London, "
+"United Kingdom"
 msgstr ""
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_blogging_template
-msgid "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
-msgstr "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;تماشای ویدئو"
+msgid "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
+msgstr "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;تماشای ویدئو"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -477,10 +477,10 @@ msgstr "<span style=\"font-weight: bolder;\">اکنون ثبت‌نام کنید
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_promotion_template
 msgid ""
 "<span style=\"font-weight: bolder;\">View online</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 msgstr ""
 "<span style=\"font-weight: bolder;\">مشاهده آنلاین</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coffeebreak_template
@@ -735,10 +735,10 @@ msgstr "دستور پخت‌های خوشمزه از سراسر جهان"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Delicious recipes from around the world&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "وصفات خوشمزه از سراسر جهان&nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -749,10 +749,10 @@ msgstr "مقاصد برای یک تعطیلات سازگار با محیط زی�
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Destinations for an eco-holiday&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "مقاصدی برای تعطیلات زیست‌محیطی&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -825,8 +825,8 @@ msgstr "کشف بیشتر"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Find out more&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "کشف کنید بیشتر&nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Find out more&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "کشف کنید بیشتر&nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -1020,10 +1020,10 @@ msgstr "دموی تعاملی اودوو"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Interview with Janet James&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "مصاحبه با جنت جیمز&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -1214,16 +1214,17 @@ msgstr "بیشتر بخوانید"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Rainy day ideas&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "ایده‌های روز بارانی&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Read More&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Read More&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
-"<p dir=\"rtl\">بیشتر بخوانید&amp;nbsp;<span class=\"fa fa-angle-right\"/></p>"
+"<p dir=\"rtl\">بیشتر بخوانید&amp;nbsp;<span class=\"fa-solid fa-angle-"
+"right\"/></p>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coupon_template
@@ -1472,10 +1473,10 @@ msgstr "برترین ۵ عادات صبحگاهی برای افزایش انرژ
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Top 5 energy-boosting morning routines&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "برترین ۵ روال صبحگاهی افزایش‌دهنده انرژی&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template

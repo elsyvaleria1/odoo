@@ -42,7 +42,7 @@ msgstr ""
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
-msgid "<i class=\"fa fa-square-o\" title=\"Open\"/>"
+msgid "<i class=\"fa-regular fa-square\" title=\"Open\"/>"
 msgstr ""
 
 #. module: hr_referral
@@ -71,7 +71,9 @@ msgstr ""
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_referral_reward_kanban
-msgid "<span title=\"Buy\"><i class=\"fa fa-shopping-basket me-3\" role=\"img\" aria-label=\"Buy\"/>Buy</span>"
+msgid ""
+"<span title=\"Buy\"><i class=\"fa-solid fa-shopping-basket me-3\" "
+"role=\"img\" aria-label=\"Buy\"/>Buy</span>"
 msgstr ""
 
 #. module: hr_referral

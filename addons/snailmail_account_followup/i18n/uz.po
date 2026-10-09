@@ -28,12 +28,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
 "title=\"The letter will be sent using the IAP service from Odoo.&#10;Make "
 "sure you have enough credits on your account or proceed to a recharge.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Ogohlantirish\" "
-"title=\"Xat Odoo kompaniyasining IAP xizmati orqali "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-"
+"label=\"Ogohlantirish\" title=\"Xat Odoo kompaniyasining IAP xizmati orqali "
 "yuboriladi.&#10;Hisobingizda yetarli mablag‘ borligiga ishonch hosil qiling "
 "yoki hisobni to‘ldiring.\"/>"
 

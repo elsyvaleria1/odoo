@@ -65,39 +65,39 @@ msgstr "%(partner_name)s 전화번호 필요"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>SendCloud 배송 품목을 불러와서 알맞"
-"게 설정하시기 바랍니다."
+"<i class=\"fa-solid fa-exclamation-triangle\"/>SendCloud 배송 품목을 불러와서 알맞게 "
+"설정하시기 바랍니다."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 테스트 환경에서 청구되는 것을 피하"
-"기 위해서 배송 항목은 라벨 생성 후 자동으로 <b>취소됩니다</b>."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> 테스트 환경에서 청구되는 것을 피하기 위해서 배송 "
+"항목은 라벨 생성 후 자동으로 <b>취소됩니다</b>."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 관리자만 공개 키와 비공개 키를 설정"
-"할 수 있습니다."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> 관리자만 공개 키와 비공개 키를 설정할 수 "
+"있습니다."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> 사용할 수 있는 배송 상품은 Sendcloud 계정에 "
-"활성화되어 있는 운송업체에 따라 다릅니다."
+"<i class=\"fa-solid fa-info-circle\"/> 사용할 수 있는 배송 상품은 Sendcloud 계정에 활성화되어 "
+"있는 운송업체에 따라 다릅니다."
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

@@ -50,20 +50,20 @@ msgstr "<b>在尝试链接您的账户时发生了错误</b>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
-msgid "<i class=\"fa fa-calendar me-1 small fw-bold\" title=\"Calendar\"/>"
-msgstr "<i class=\"fa fa-calendar me-1 small fw-bold\" title=\"日历\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-1 small fw-bold\" title=\"Calendar\"/>"
+msgstr "<i class=\"fa-solid fa-calendar-days me-1 small fw-bold\" title=\"日历\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
 msgid ""
-"<i class=\"fa fa-calendar-check-o me-1 small fw-bold\" title=\"Calendar\"/>"
-msgstr ""
-"<i class=\"fa fa-calendar-check-o me-1 small fw-bold\" title=\"日历\"/>"
+"<i class=\"fa-regular fa-calendar-check me-1 small fw-bold\" "
+"title=\"Calendar\"/>"
+msgstr "<i class=\"fa-regular fa-calendar-check me-1 small fw-bold\" title=\"日历\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_form
-msgid "<i class=\"fa fa-globe ms-1\" title=\"See the post\"/>"
-msgstr "<i class=\"fa fa-globe ms-1\" title=\"查看帖文\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas ms-1\" title=\"See the post\"/>"
+msgstr "<i class=\"fa-solid fa-earth-americas ms-1\" title=\"查看帖文\"/>"
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_http_error_view

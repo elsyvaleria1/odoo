@@ -265,22 +265,22 @@ msgstr ""
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.view_event_slot_form
-msgid "<i class=\"fa fa-arrow-right mx-2\" title=\"to\"/>"
+msgid "<i class=\"fa-solid fa-arrow-right mx-2\" title=\"to\"/>"
 msgstr ""
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_registration_view_kanban
-msgid "<i class=\"fa fa-building\" title=\"Attendee Company\"/>"
+msgid "<i class=\"fa-solid fa-building\" title=\"Attendee Company\"/>"
 msgstr ""
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_registration_view_kanban
-msgid "<i class=\"fa fa-calendar\" title=\"Slot\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days\" title=\"Slot\"/>"
 msgstr ""
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.view_event_kanban
-msgid "<i class=\"fa fa-group mt-1 me-2 text-center\" title=\"Attendees\"/>"
+msgid "<i class=\"fa-solid fa-users mt-1 me-2 text-center\" title=\"Attendees\"/>"
 msgstr ""
 
 #. module: event
@@ -293,12 +293,13 @@ msgstr ""
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.view_event_kanban
 msgid ""
-"<i class=\"fa fa-map-marker mt-1 me-2 text-center ps-1\" title=\"Location\"/>"
+"<i class=\"fa-solid fa-location-dot mt-1 me-2 text-center ps-1\" "
+"title=\"Location\"/>"
 msgstr ""
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_registration_view_kanban
-msgid "<i class=\"fa fa-ticket\" title=\"Ticket type\"/>"
+msgid "<i class=\"fa-solid fa-ticket\" title=\"Ticket type\"/>"
 msgstr ""
 
 #. module: event

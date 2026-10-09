@@ -33,36 +33,36 @@ msgstr "<font class=\"text-white\">|</font>"
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Informações "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Informações "
 "selecionadas sobre o setor"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Instruções e dicas de "
-"especialistas"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Instruções e "
+"dicas de especialistas"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guias e Recursos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guias e "
+"Recursos"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Agradecemos por seu "
+"<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Agradecemos por seu "
 "cadastro!"
 
 #. module: website_mass_mailing

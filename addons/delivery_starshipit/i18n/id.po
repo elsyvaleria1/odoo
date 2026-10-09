@@ -35,24 +35,21 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Jangan lupa untuk memilih layanan "
-"untuk konfigurasi valid."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Jangan lupa untuk memilih "
+"layanan untuk konfigurasi valid."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Di <b>Test Environment</b>, "
-"pengiriman Anda secara otomatis <b>diarsip</b> setelah pembuatan label. <br/"
-">\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Di <b>Test Environment</b>, pengiriman Anda secara otomatis <b>diarsip</b> setelah pembuatan label. <br/>\n"
 "                        Mohon dicatat bahwa biaya dapat tetap terjadi untuk "
 "pembuatan label dan beberapa kurir pengirim mungkin secara otomatis "
 "memvalidasi pengiriman saat mencetak label."
@@ -60,11 +57,11 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Layanan pengiriman yang tersedia tergantung "
-"pada arrier yang diaktifkan di akun Starshipit Anda."
+"<i class=\"fa-solid fa-info-circle\"/> Layanan pengiriman yang tersedia "
+"tergantung pada arrier yang diaktifkan di akun Starshipit Anda."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.choose_delivery_carrier_view_form

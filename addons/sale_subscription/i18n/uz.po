@@ -439,14 +439,14 @@ msgstr ""
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_sidebar
 #, fuzzy
-msgid "<i class=\"fa fa-download me-1\"/> Download"
-msgstr "<i class=\"fa fa-download me-1\"/> Yuklab olish"
+msgid "<i class=\"fa-solid fa-download me-1\"/> Download"
+msgstr "<i class=\"fa-solid fa-download me-1\"/> Yuklab olish"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-check\"/> In Progress"
-msgstr "<i class=\"fa fa-fw fa-check\"/> Jarayonda"
+msgid "<i class=\"fa-solid fa-check\"/> In Progress"
+msgstr "<i class=\"fa-solid fa-check\"/> Jarayonda"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -469,8 +469,8 @@ msgstr "<i class=\"fa fa-fw fa-remove\"/> Yopilgan"
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
 #, fuzzy
-msgid "<i class=\"fa fa-fw fa-remove\"/> Closing"
-msgstr "<i class=\"fa fa-fw fa-remove\"/> Yopilmoqda"
+msgid "<i class=\"fa-solid fa-xmark\"/> Closing"
+msgstr "<i class=\"fa-solid fa-xmark\"/> Yopilmoqda"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -481,8 +481,8 @@ msgstr "<i class=\"fa fa-fw fa-repeat\"/> Yangilash kerak"
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
 #, fuzzy
-msgid "<i class=\"fa fa-plus\"/> Create address"
-msgstr "<i class=\"fa fa-plus\"/> Manzil kiritish"
+msgid "<i class=\"fa-solid fa-plus\"/> Create address"
+msgstr "<i class=\"fa-solid fa-plus\"/> Manzil kiritish"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_so_portal_template
@@ -511,21 +511,21 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> To Renew</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> To Renew</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> Yangilash kerak</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> Yangilash kerak</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Closed</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Closed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Yopilgan</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Yopilgan</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
@@ -540,40 +540,40 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Upsell</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Yangilash</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Renewed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Yangilangan</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> In Progress</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Jarayonda</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #, fuzzy
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Paused</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> To‘xtatilgan</span>"
 
 #. module: sale_subscription

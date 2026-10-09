@@ -23,11 +23,11 @@ msgstr ""
 #. module: website_mail_group
 #: model_terms:ir.ui.view,arch_db:website_mail_group.mail_group_view_form
 msgid ""
-"<i class=\"fa fa-fw o_button_icon fa-globe text-success\" title=\"Mail group "
-"accessible on website\"/>"
+"<i class=\"fa-solid fa-earth-americas o_button_icon text-success\" "
+"title=\"Mail group accessible on website\"/>"
 msgstr ""
-"<i class=\"fa fa-fw o_button_icon fa-globe text-success\" title=\"يمكن "
-"الوصول إلى مجموعة البريد على الموقع الإلكتروني \"/>"
+"<i class=\"fa-solid fa-earth-americas o_button_icon text-success\" "
+"title=\"يمكن الوصول إلى مجموعة البريد على الموقع الإلكتروني \"/>"
 
 #. module: website_mail_group
 #: model_terms:ir.ui.view,arch_db:website_mail_group.mail_group_view_form

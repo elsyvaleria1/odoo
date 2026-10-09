@@ -57,18 +57,19 @@ msgstr ""
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
-msgid "<i class=\"fa fa-calendar me-1 small fw-bold\" title=\"Calendar\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-1 small fw-bold\" title=\"Calendar\"/>"
 msgstr ""
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_kanban
 msgid ""
-"<i class=\"fa fa-calendar-check-o me-1 small fw-bold\" title=\"Calendar\"/>"
+"<i class=\"fa-regular fa-calendar-check me-1 small fw-bold\" "
+"title=\"Calendar\"/>"
 msgstr ""
 
 #. module: social
 #: model_terms:ir.ui.view,arch_db:social.social_post_view_form
-msgid "<i class=\"fa fa-globe ms-1\" title=\"See the post\"/>"
+msgid "<i class=\"fa-solid fa-earth-americas ms-1\" title=\"See the post\"/>"
 msgstr ""
 
 #. module: social

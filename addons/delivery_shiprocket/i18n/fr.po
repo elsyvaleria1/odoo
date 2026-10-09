@@ -45,12 +45,13 @@ msgstr ""
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
-"<b>Dans la configuration d'Odoo, cliquez sur l'icône <i class=\"fa fa-"
-"refresh oe_inline\"/> à côté du Canal Shiprocket pour synchroniser les "
-"canaux nouvellement créés.</b>"
+"<b>Dans la configuration d'Odoo, cliquez sur l'icône <i class=\"fa-solid fa-"
+"arrows-rotate oe_inline\"/> à côté du Canal Shiprocket pour synchroniser les"
+" canaux nouvellement créés.</b>"
 
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
@@ -80,14 +81,15 @@ msgstr "<b>Pour créer un canal, allez aux Canaux Shiprocket</b>"
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> En environnement de test, pour "
-"éviter des frais, vos envois sont automatiquement <b>annulés</b> après la "
-"création de l'étiquette. Le montant de l'envoi annulé sera remboursé dans "
-"les 3-4 jours suivants."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> En environnement de test, "
+"pour éviter des frais, vos envois sont automatiquement <b>annulés</b> après "
+"la création de l'étiquette. Le montant de l'envoi annulé sera remboursé dans"
+" les 3-4 jours suivants."
 
 #. module: delivery_shiprocket
 #: model:ir.model.fields,help:delivery_shiprocket.field_delivery_carrier__shiprocket_manifests_generate

@@ -43,13 +43,13 @@ msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
-msgid "<i class=\"fa fa-map-o me-1\"/>View Plan"
-msgstr "<i class=\"fa fa-map-o me-1\"/>ดูแผน"
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr "<i class=\"fa-regular fa-map me-1\"/>ดูแผน"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_layout
-msgid "<span class=\"fa fa-gear me-1\"/> Configure Booths"
-msgstr "<span class=\"fa fa-gear me-1\"/> กำหนดค่าบูธ"
+msgid "<span class=\"fa-solid fa-gear me-1\"/> Configure Booths"
+msgstr "<span class=\"fa-solid fa-gear me-1\"/> กำหนดค่าบูธ"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
@@ -69,11 +69,11 @@ msgstr "<span>จองบูธของฉัน</span>"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"<span>Booth Selection</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Booth Selection</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"<span>การเลือกบูธ</span><span class=\"fa fa-angle-right d-inline-block align-"
-"middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>การเลือกบูธ</span><span class=\"fa-solid fa-angle-right d-inline-block"
+" align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
@@ -152,11 +152,11 @@ msgstr "รายละเอียดการติดต่อ"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"Contact Details<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
+"Contact Details<span class=\"fa-solid fa-angle-right d-inline-block align-"
+"middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"รายละเอียดการติดต่อ<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
+"รายละเอียดการติดต่อ<span class=\"fa-solid fa-angle-right d-inline-block "
+"align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration

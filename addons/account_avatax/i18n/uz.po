@@ -45,59 +45,53 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax "
-"portal\" class=\"fa fa-external-link-square fa-fw\"/>\n"
+"<i title=\"Go to Avatax portal\" role=\"img\" aria-label=\"Go to Avatax portal\" class=\"fa-solid fa-square-up-right\"/>\n"
 "                                Avatax portal"
 msgstr ""
 "<i title=\"Avatax portaliga o‘tish\" role=\"img\" aria-label=\"Avatax "
-"portaliga o‘tish\" class=\"fa fa-external-link-square fa-fw\"/> Avatax "
-"portali"
+"portaliga o‘tish\" class=\"fa-solid fa-square-up-right\"/> Avatax portali"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa fa-"
-"file-text-o\"/>\n"
+"<i title=\"Show logs\" role=\"img\" aria-label=\"Show logs\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Show logs"
 msgstr ""
 "<i title=\"Jurnallarni ko‘rsatish\" role=\"img\" aria-label=\"Jurnallarni "
-"ko‘rsatish\" class=\"fa fa-file-text-o\"/> Jurnallarni ko‘rsatish"
+"ko‘rsatish\" class=\"fa-regular fa-file-lines\"/> Jurnallarni ko‘rsatish"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start "
-"logging for 30 minutes\" class=\"fa fa-file-text-o\"/>\n"
+"<i title=\"Start logging for 30 minutes\" role=\"img\" aria-label=\"Start logging for 30 minutes\" class=\"fa-regular fa-file-lines\"/>\n"
 "                                Start logging for 30 minutes"
 msgstr ""
 "<i title=\"30 daqiqalik qayd qilishni boshlash\" role=\"img\" aria-"
-"label=\"30 daqiqalik qayd qilishni boshlash\" class=\"fa fa-file-text-o\"/> "
-"30 daqiqalik qayd qilishni boshlash"
+"label=\"30 daqiqalik qayd qilishni boshlash\" class=\"fa-regular fa-file-"
+"lines\"/> 30 daqiqalik qayd qilishni boshlash"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" "
-"class=\"fa fa-refresh\"/>\n"
+"<i title=\"Sync Parameters\" role=\"img\" aria-label=\"Sync Parameters\" class=\"fa-solid fa-arrows-rotate\"/>\n"
 "                                Sync Parameters"
 msgstr ""
 "<i title=\"Parametrlarni sinxronlash\" role=\"img\" aria-"
-"label=\"Parametrlarni sinxronlash\" class=\"fa fa-refresh\"/> Parametrlarni "
-"sinxronlash"
+"label=\"Parametrlarni sinxronlash\" class=\"fa-solid fa-arrows-rotate\"/> "
+"Parametrlarni sinxronlash"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form
 #, fuzzy
 msgid ""
-"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" "
-"class=\"fa fa-plug fa-fw\"/>\n"
+"<i title=\"Test connection\" role=\"img\" aria-label=\"Test connection\" class=\"fa-solid fa-plug\"/>\n"
 "                                Test connection"
 msgstr ""
 "<i title=\"Ulanishni sinab ko‘rish\" role=\"img\" aria-label=\"Ulanishni "
-"sinab ko‘rish\" class=\"fa fa-plug fa-fw\"/> Ulanishni sinab ko‘rish"
+"sinab ko‘rish\" class=\"fa-solid fa-plug\"/> Ulanishni sinab ko‘rish"
 
 #. module: account_avatax
 #: model_terms:ir.ui.view,arch_db:account_avatax.res_config_settings_view_form

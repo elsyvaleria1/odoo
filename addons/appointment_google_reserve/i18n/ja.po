@@ -57,19 +57,17 @@ msgstr ""
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-fw me-1\"/>Your Google Reserve Synchronization "
+"<span class=\"fa-solid fa-check me-1\"/>Your Google Reserve Synchronization "
 "is active."
-msgstr "<span class=\"fa fa-check fa-fw me-1\"/>Google予約の同期は有効です。"
+msgstr "<span class=\"fa-solid fa-check me-1\"/>Google予約の同期は有効です。"
 
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>Your Appointment Type is "
-"being synchronized with Google Reserve.<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>Your Appointment Type is being synchronized with Google Reserve.<br/>\n"
 "                                This can take up to 24 hours to be active."
 msgstr ""
-"<span class=\"fa fa-check fa-hourglass me-1\"/>アポイントメントタイプをGoogle"
-"予約と同期しています。<br/>\n"
+"<span class=\"fa-solid fa-check fa-hourglass me-1\"/>アポイントメントタイプをGoogle予約と同期しています。<br/>\n"
 "                                この処理が有効になるまで、最大で24時間かかる"
 "場合があります。"
 

@@ -28,13 +28,13 @@ msgstr ""
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail
 msgid ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
 "title=\"The letter will be sent using the IAP service from Odoo.&#10;Make "
 "sure you have enough credits on your account or proceed to a recharge.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Cảnh báo\" "
-"title=\"Thư sẽ được gửi bằng dịch vụ IAP từ Odoo.&amp;#10;Hãy đảm bảo bạn có "
-"đủ tín dụng trong tài khoản của mình hoặc tiến hành nạp tiền.\"/>"
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Cảnh báo\" "
+"title=\"Thư sẽ được gửi bằng dịch vụ IAP từ Odoo.&amp;#10;Hãy đảm bảo bạn có"
+" đủ tín dụng trong tài khoản của mình hoặc tiến hành nạp tiền.\"/>"
 
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail

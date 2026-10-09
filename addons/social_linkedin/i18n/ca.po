@@ -27,13 +27,13 @@ msgstr "<b>Publicació LinkedIn</b>"
 
 #. module: social_linkedin
 #: model_terms:ir.ui.view,arch_db:social_linkedin.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
 
 #. module: social_linkedin
 #: model_terms:ir.ui.view,arch_db:social_linkedin.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-thumbs-up me-1\" title=\"Likes\"/>"
-msgstr "<i class=\"fa fa-thumbs-up me-1\" title=\"Likes\"/>"
+msgid "<i class=\"fa-solid fa-thumbs-up me-1\" title=\"Likes\"/>"
+msgstr "<i class=\"fa-solid fa-thumbs-up me-1\" title=\"Likes\"/>"
 
 #. module: social_linkedin
 #: model:ir.model.fields,field_description:social_linkedin.field_social_live_post__linkedin_post_id

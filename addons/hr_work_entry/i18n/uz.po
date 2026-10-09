@@ -58,18 +58,19 @@ msgstr "%s ta ish yozuvi"
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Warning\"/>Employees in "
-"red will be skipped because they have at least one validated work entry."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>Employees in red will be skipped because they have at "
+"least one validated work entry."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Ogohlantirish\"/>Qizil "
-"rangdagi xodimlar o‘tkazib yuboriladi, chunki ularda kamida bitta "
-"tasdiqlangan ish yozuvi mavjud."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Ogohlantirish\"/>Qizil rangdagi xodimlar o‘tkazib yuboriladi, chunki"
+" ularda kamida bitta tasdiqlangan ish yozuvi mavjud."
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
 #, fuzzy
-msgid "<i class=\"fa fa-info-circle me-1\" title=\"Hint\"/>"
-msgstr "<i class=\"fa fa-info-circle me-1\" title=\"Maslahat\"/>"
+msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
+msgstr "<i class=\"fa-solid fa-info-circle me-1\" title=\"Maslahat\"/>"
 
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form

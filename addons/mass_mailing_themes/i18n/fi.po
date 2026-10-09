@@ -275,14 +275,14 @@ msgstr ""
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template
 msgid ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> London, United "
-"Kingdom"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> London, "
+"United Kingdom"
 msgstr ""
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_blogging_template
-msgid "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
-msgstr "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;KATSO VIDEO"
+msgid "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
+msgstr "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;KATSO VIDEO"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -518,10 +518,10 @@ msgstr "<span style=\"font-weight: bolder;\">Rekisteröidy nyt</span>"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_promotion_template
 msgid ""
 "<span style=\"font-weight: bolder;\">View online</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 msgstr ""
 "<span style=\"font-weight: bolder;\">Näytä verkossa&amp;nbsp</span>;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coffeebreak_template
@@ -780,10 +780,10 @@ msgstr "Herkullisia reseptejä eri puolilta maailmaa"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Delicious recipes from around the world&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Herkullisia reseptejä eri puolilta maailmaa&amp;nbsp;\n"
-"                               <span class=\"fa fa-angle-right\"/>"
+"                               <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -794,10 +794,10 @@ msgstr "Kohteet ekologista lomaa varten"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Destinations for an eco-holiday&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Kohteet ekologista lomaa varten&amp;nbsp;\n"
-"                               <span class=\"fa fa-angle-right\"/>"
+"                               <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -872,8 +872,8 @@ msgstr "Näytä enemmän"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Find out more&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Lisätietoja&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Find out more&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Lisätietoja&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -1070,10 +1070,10 @@ msgstr "Interaktiivinen Odoo-demo"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Interview with Janet James&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Janet Jamesin haastattelu&amp;nbsp;\n"
-"                               <span class=\"fa fa-angle-right\"/>"
+"                               <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -1266,15 +1266,15 @@ msgstr "LUE LISÄÄ"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Rainy day ideas&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Sadepäivän ideoita&amp;nbsp;\n"
-"                               <span class=\"fa fa-angle-right\"/>"
+"                               <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Read More&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Lue lisää&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Read More&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Lue lisää&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coupon_template
@@ -1527,10 +1527,10 @@ msgstr "Top 5 energiaa lisäävää aamurutiinia"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Top 5 energy-boosting morning routines&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Top 5 energiaa lisäävää aamurutiinia&amp;nbsp;\n"
-"                               <span class=\"fa fa-angle-right\"/>"
+"                               <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template

@@ -67,40 +67,39 @@ msgstr "%(partner_name)s telefon potreben"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Ne pozabite naložiti svojih "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Ne pozabite naložiti svojih "
 "izdelkov za pošiljanje SendCloud za veljavno konfiguracijo."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> V testnem okolju se vaše pošiljke "
-"samodejno obračunajo, da se izognete stroškom. <b>preklicano\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> V testnem okolju se vaše pošiljke samodejno obračunajo, da se izognete stroškom. <b>preklicano\n"
 "</b> po izdelavi etikete."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Javne in zasebne ključe lahko "
-"konfigurirajo samo skrbniki."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Javne in zasebne ključe "
+"lahko konfigurirajo samo skrbniki."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Razpoložljivi izdelki za pošiljanje so "
-"odvisni od omogočenih prevoznikov v vašem računu Sendcloud."
+"<i class=\"fa-solid fa-info-circle\"/> Razpoložljivi izdelki za pošiljanje "
+"so odvisni od omogočenih prevoznikov v vašem računu Sendcloud."
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

@@ -64,38 +64,33 @@ msgstr "%(partner_name)s 电话是必须的"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
-msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 不要忘记加载您的发送云运输产品以获"
-"得有效的配置。"
+msgstr "<i class=\"fa-solid fa-exclamation-triangle\"/> 不要忘记加载您的发送云运输产品以获得有效的配置。"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 在测试环境中，为避免产生费用，您的"
-"发货会在创建标签后自动<b>取消</b>。"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> "
+"在测试环境中，为避免产生费用，您的发货会在创建标签后自动<b>取消</b>。"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
-msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>只有管理员才能配置公钥和私钥。"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
+msgstr "<i class=\"fa-solid fa-exclamation-triangle\"/>只有管理员才能配置公钥和私钥。"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
-msgstr ""
-"<i class=\"fa fa-info-circle\"/> 可用的运输产品取决于您 Sendcloud 账户中已启"
-"用的运营商。"
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
+msgstr "<i class=\"fa-solid fa-info-circle\"/> 可用的运输产品取决于您 Sendcloud 账户中已启用的运营商。"
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

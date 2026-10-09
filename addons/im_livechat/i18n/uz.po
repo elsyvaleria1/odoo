@@ -118,11 +118,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:im_livechat.im_livechat_channel_view_kanban
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-smile-o text-success\" title=\"Percentage of happy "
-"ratings\" role=\"img\" aria-label=\"Happy face\"/>"
+"<i class=\"fa-regular fa-face-smile text-success\" title=\"Percentage of "
+"happy ratings\" role=\"img\" aria-label=\"Happy face\"/>"
 msgstr ""
-"<i class=\"fa fa-smile-o text-success\" title=\"Mamnun reytinglar foizi\" "
-"role=\"img\" aria-label=\"Tabassum qilayotgan yuz\"/>"
+"<i class=\"fa-regular fa-face-smile text-success\" title=\"Mamnun reytinglar"
+" foizi\" role=\"img\" aria-label=\"Tabassum qilayotgan yuz\"/>"
 
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.chatbot_test_script_page
@@ -133,9 +133,8 @@ msgstr "<i class=\"oi oi-fw oi-arrow-right\"/>Tahrirlash rejimiga qaytish"
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.im_livechat_channel_view_form
 #, fuzzy
-msgid "<i title=\"Remove operator\" class=\"fa fa-fw fa-lg fa-close\"/>"
-msgstr ""
-"<i title=\"Operatorni olib tashlash\" class=\"fa fa-fw fa-lg fa-close\"/>"
+msgid "<i title=\"Remove operator\" class=\"fa-solid fa-xmark fa-lg\"/>"
+msgstr "<i title=\"Operatorni olib tashlash\" class=\"fa-solid fa-xmark fa-lg\"/>"
 
 #. module: im_livechat
 #: model_terms:ir.ui.view,arch_db:im_livechat.discuss_channel_view_kanban

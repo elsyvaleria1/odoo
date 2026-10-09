@@ -55,23 +55,23 @@ msgstr ""
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges
-msgid "<i class=\"fa fa-arrow-right\"/> Get Badges"
-msgstr "<i class=\"fa fa-arrow-right\"/> Получить значки"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Get Badges"
+msgstr "<i class=\"fa-solid fa-arrow-right\"/> Получить значки"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-1\"/>EDIT"
-msgstr "<i class=\"fa fa-pencil me-1\"/>EDIT"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>EDIT"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>EDIT"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_content
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
-msgstr "<i class=\"fa fa-pencil me-1\"/>Редактировать"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
+msgstr "<i class=\"fa-solid fa-pencil me-1\"/>Редактировать"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_profile_header
-msgid "<i class=\"fa fa-pencil me-2\"/>EDIT PROFILE"
-msgstr "<i class=\"fa fa-pencil me-2\"/>РЕДАКТИРОВАТЬ ПРОФИЛЬ"
+msgid "<i class=\"fa-solid fa-pencil me-2\"/>EDIT PROFILE"
+msgstr "<i class=\"fa-solid fa-pencil me-2\"/>РЕДАКТИРОВАТЬ ПРОФИЛЬ"
 
 #. module: website_profile
 #: model_terms:ir.ui.view,arch_db:website_profile.user_badges

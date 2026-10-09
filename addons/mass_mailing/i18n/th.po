@@ -290,14 +290,12 @@ msgstr ""
 msgid ""
 "<br/>\n"
 "                                    <span class=\"text-muted\">\n"
-"                                        <i class=\"fa fa-envelope-o\"/> "
-"Contacts\n"
+"                                        <i class=\"fa-regular fa-envelope\"/> Contacts\n"
 "                                    </span>"
 msgstr ""
 "<br/>\n"
 "                                    <span class=\"text-muted\">\n"
-"                                        <i class=\"fa fa-envelope-o\"/> "
-"รายชื่อผู้ติดต่อ\n"
+"                                        <i class=\"fa-regular fa-envelope\"/> รายชื่อผู้ติดต่อ\n"
 "                                    </span>"
 
 #. module: mass_mailing
@@ -505,27 +503,27 @@ msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-bar-chart\"/> Compare Version"
-msgstr "<i class=\"fa fa-bar-chart\"/> เปรียบเทียบเวอร์ชัน"
+msgid "<i class=\"fa-solid fa-chart-column\"/> Compare Version"
+msgstr "<i class=\"fa-solid fa-chart-column\"/> เปรียบเทียบเวอร์ชัน"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"Lead/"
-"Opportunity\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"Lead/Opportunity\"/>"
 msgstr ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"ลูกค้าเป้าหมาย/"
-"ผู้ที่มีโอกาสจะซื้อ\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"ลูกค้าเป้าหมาย/ผู้ที่มีโอกาสจะซื้อ\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-copy\"/> Create an Alternative"
-msgstr "<i class=\"fa fa-copy\"/> สร้างทางเลือก"
+msgid "<i class=\"fa-solid fa-copy\"/> Create an Alternative"
+msgstr "<i class=\"fa-solid fa-copy\"/> สร้างทางเลือก"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-envelope\"/> Send this as winner"
-msgstr "<i class=\"fa fa-envelope\"/> ส่งสิ่งนี้ในฐานะผู้ชนะ"
+msgid "<i class=\"fa-solid fa-envelope\"/> Send this as winner"
+msgstr "<i class=\"fa-solid fa-envelope\"/> ส่งสิ่งนี้ในฐานะผู้ชนะ"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
@@ -551,11 +549,11 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_contact_view_kanban
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Warning\" "
-"title=\"Warning\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
+"label=\"Warning\" title=\"Warning\"/>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"รูปภาพ\" aria-label=\"คำเตือน\" "
-"title=\"คำเตือน\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"รูปภาพ\" aria-"
+"label=\"คำเตือน\" title=\"คำเตือน\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
@@ -587,60 +585,62 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Access all modules"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Access all "
+"modules"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Account management"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Account "
+"management"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Complete CRM for "
-"any team"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Complete CRM "
+"for any team"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid "<span class=\"fa fa-check text-success\" role=\"img\"/>  Email support"
+msgid "<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Email support"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Limited "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Limited "
 "customization"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
 "marketing for 2"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_badge
-msgid "<span class=\"fa fa-fw fa-folder\"/>Category"
+msgid "<span class=\"fa-solid fa-folder\"/>Category"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
 msgid ""
-"<span class=\"fa fa-fw fa-info-circle\" role=\"img\"/>  What do you want to "
+"<span class=\"fa-solid fa-info-circle\" role=\"img\"/>  What do you want to "
 "promote&amp;nbsp;?"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"Scheduled date\"/>"
 msgstr ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"วันที่กำหนด\"/>"
 
 #. module: mass_mailing
@@ -657,20 +657,20 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<span class=\"fa fa-paper-plane me-2 small my-auto\" aria-label=\"Sent "
-"date\"/>"
+"<span class=\"fa-solid fa-paper-plane me-2 small my-auto\" aria-label=\"Sent"
+" date\"/>"
 msgstr ""
-"<span class=\"fa fa-paper-plane me-2 small my-auto\" aria-label=\"วันที่ส่ง\"/>"
+"<span class=\"fa-solid fa-paper-plane me-2 small my-auto\" aria-"
+"label=\"วันที่ส่ง\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/>  No customization"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No customization"
 msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid "<span class=\"fa fa-times text-danger\" role=\"img\"/>  No support"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No support"
 msgstr ""
 
 #. module: mass_mailing
@@ -982,8 +982,8 @@ msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<u>Refresh <i class=\"fa fa-refresh ms-1\"/></u>"
-msgstr "<u>รีเฟรช <i class=\"fa fa-refresh ms-1\"/></u>"
+msgid "<u>Refresh <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
+msgstr "<u>รีเฟรช <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
 
 #. module: mass_mailing
 #. odoo-python
@@ -2046,7 +2046,7 @@ msgstr "พื้นหลังเนื้อหา"
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
 msgid ""
-"Continue reading <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+"Continue reading <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 msgstr ""
 
 #. module: mass_mailing
@@ -2310,8 +2310,7 @@ msgstr "ค้นพบฟีเจอร์ทั้งหมด"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
-msgid ""
-"Discover more <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Discover more <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 msgstr ""
 
 #. module: mass_mailing
@@ -4773,7 +4772,7 @@ msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
-msgid "See more <span class=\"fa fa-long-arrow-right\" role=\"img\"/>"
+msgid "See more <span class=\"fa-solid fa-right-long\" role=\"img\"/>"
 msgstr ""
 
 #. module: mass_mailing

@@ -87,8 +87,10 @@ msgstr "Yaratish"
 #. module: hr_recruitment_integration_website
 #: model_terms:ir.ui.view,arch_db:hr_recruitment_integration_website.hr_recruitment_post_job_wizard_view_form
 #, fuzzy
-msgid "Generate Description (<i class=\"fa fa-fw fa-magic\"/>AI)"
-msgstr "Tavsifni yaratish (<i class=\"fa fa-fw fa-magic\"/>Sun'iy intellekt)"
+msgid "Generate Description (<i class=\"fa-solid fa-wand-magic-sparkles\"/>AI)"
+msgstr ""
+"Tavsifni yaratish (<i class=\"fa-solid fa-wand-magic-sparkles\"/>Sun'iy "
+"intellekt)"
 
 #. module: hr_recruitment_integration_website
 #: model:ir.model.fields,field_description:hr_recruitment_integration_website.field_hr_job__id

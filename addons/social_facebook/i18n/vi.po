@@ -32,8 +32,8 @@ msgstr "<b class=\"d-block mb-2\">Trang Facebook</b>"
 
 #. module: social_facebook
 #: model_terms:ir.ui.view,arch_db:social_facebook.social_stream_post_view_kanban
-msgid "<i class=\"fa fa-comments me-1\" title=\"Comments\"/>"
-msgstr "<i class=\"fa fa-comments me-1\" title=\"Bình luận\"/>"
+msgid "<i class=\"fa-solid fa-comments me-1\" title=\"Comments\"/>"
+msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Bình luận\"/>"
 
 #. module: social_facebook
 #: model:ir.model.fields,field_description:social_facebook.field_social_live_post__facebook_post_id
@@ -433,8 +433,8 @@ msgstr "đã thêm một sự kiện"
 
 #. module: social_facebook
 #: model_terms:ir.ui.view,arch_db:social_facebook.facebook_preview
-msgid "• <i class=\"fa fa-globe\"/>"
-msgstr "• <i class=\"fa fa-globe\"/>"
+msgid "• <i class=\"fa-solid fa-earth-americas\"/>"
+msgstr "• <i class=\"fa-solid fa-earth-americas\"/>"
 
 #~ msgid "You don't have an active subscription. Please buy one here: %s"
 #~ msgstr "Bạn không có đăng ký đang hoạt động. Hãy mua tại đây: %s"

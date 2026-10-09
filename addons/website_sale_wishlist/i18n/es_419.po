@@ -169,24 +169,22 @@ msgstr "6 columnas"
 #. module: website_sale_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_wishlist
 msgid ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
 "                                                    <span class=\"o_label "
 "small ms-1\">Add to Cart</span>"
 msgstr ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
 "                                                    <span class=\"o_label "
 "small ms-1\">Agregar al carrito</span>"
 
 #. module: website_sale_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_add_to_wishlist
 msgid ""
-"<i class=\"fa fa-heart-o me-2 me-lg-0\" role=\"img\" aria-label=\"Add to "
-"wishlist\"/>"
+"<i class=\"fa-regular fa-heart me-2 me-lg-0\" role=\"img\" aria-label=\"Add "
+"to wishlist\"/>"
 msgstr ""
-"<i class=\"fa fa-heart-o me-2 me-lg-0\" role=\"img\" aria-label=\"Agregar a "
-"la lista de deseos\"/>"
+"<i class=\"fa-regular fa-heart me-2 me-lg-0\" role=\"img\" aria-"
+"label=\"Agregar a la lista de deseos\"/>"
 
 #. module: website_sale_wishlist
 #: model_terms:ir.ui.view,arch_db:website_sale_wishlist.product_cart_lines

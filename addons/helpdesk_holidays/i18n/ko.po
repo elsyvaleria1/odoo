@@ -22,11 +22,11 @@ msgstr ""
 #. module: helpdesk_holidays
 #: model_terms:ir.ui.view,arch_db:helpdesk_holidays.helpdesk_team_view_form
 msgid ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">Team members on time "
-"off are not assigned any tickets</span>"
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">Team members on "
+"time off are not assigned any tickets</span>"
 msgstr ""
-"<i class=\"fa fa-lightbulb-o\"/><span class=\"ms-2\">휴가 중인 팀원에게는 티"
-"켓이 배정되지 않습니다.</span>"
+"<i class=\"fa-regular fa-lightbulb\"/><span class=\"ms-2\">휴가 중인 팀원에게는 티켓이 "
+"배정되지 않습니다.</span>"
 
 #. module: helpdesk_holidays
 #: model:ir.model.fields,field_description:helpdesk_holidays.field_res_users__display_name

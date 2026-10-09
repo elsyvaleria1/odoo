@@ -27,7 +27,7 @@ msgstr ""
 
 #. module: sale_loyalty
 #: model_terms:ir.ui.view,arch_db:sale_loyalty.sale_purchased_gift_card
-msgid "<span class=\"fa fa-clipboard\"/> Copy"
+msgid "<span class=\"fa-solid fa-paste\"/> Copy"
 msgstr ""
 
 #. module: sale_loyalty

@@ -55,13 +55,13 @@ msgstr ""
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.ref_country
 msgid ""
-"<i class=\"fa fa-map-marker\" role=\"img\" aria-label=\"Open map\" "
+"<i class=\"fa-solid fa-location-dot\" role=\"img\" aria-label=\"Open map\" "
 "title=\"Open map\"/>"
 msgstr ""
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_opportunity
-msgid "<i class=\"fa fa-pencil me-1\"/>Edit"
+msgid "<i class=\"fa-solid fa-pencil me-1\"/>Edit"
 msgstr ""
 
 #. module: website_crm_partner_assign
@@ -82,23 +82,20 @@ msgstr ""
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_lead
 msgid ""
-"<span class=\"fa fa-envelope\" role=\"img\" aria-label=\"Email\" "
+"<span class=\"fa-solid fa-envelope\" role=\"img\" aria-label=\"Email\" "
 "title=\"Email\"/>"
 msgstr ""
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_lead
-msgid ""
-"<span class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" "
-"title=\"Phone\"/>"
+msgid "<span class=\"fa-solid fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
 msgstr ""
 
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_opportunity
 msgid ""
 "<span class=\"input-group-text o_input_group_date_icon\">\n"
-"                                                        <span class=\"fa fa-"
-"calendar\" role=\"img\" aria-label=\"Calendar\" title=\"Calendar\"/>\n"
+"                                                        <span class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Calendar\" title=\"Calendar\"/>\n"
 "                                                    </span>"
 msgstr ""
 
@@ -106,8 +103,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.portal_my_opportunity
 msgid ""
 "<span class=\"input-group-text o_input_group_date_icon\">\n"
-"                                                        <span class=\"fa fa-"
-"calendar\" role=\"img\" aria-label=\"Calendar\"/>\n"
+"                                                        <span class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Calendar\"/>\n"
 "                                                    </span>"
 msgstr ""
 

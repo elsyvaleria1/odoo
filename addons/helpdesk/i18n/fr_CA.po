@@ -213,7 +213,9 @@ msgstr ""
 
 #. module: helpdesk
 #: model_terms:ir.ui.view,arch_db:helpdesk.helpdesk_team_view_kanban
-msgid "<i class=\"fa fa-envelope-o\" title=\"Domain alias\" role=\"img\" aria-label=\"Domain alias\"/>&amp;nbsp;"
+msgid ""
+"<i class=\"fa-regular fa-envelope\" title=\"Domain alias\" role=\"img\" "
+"aria-label=\"Domain alias\"/>&amp;nbsp;"
 msgstr ""
 
 #. module: helpdesk
@@ -227,7 +229,9 @@ msgstr ""
 
 #. module: helpdesk
 #: model_terms:ir.ui.view,arch_db:helpdesk.helpdesk_ticket_view_form
-msgid "<i class=\"fa fa-lg fa-clock-o me-2 mt-1\" aria-label=\"Sla Deadline\" title=\"Sla Deadline\"/>"
+msgid ""
+"<i class=\"fa-regular fa-clock fa-lg me-2 mt-1\" aria-label=\"Sla Deadline\""
+" title=\"Sla Deadline\"/>"
 msgstr ""
 
 #. module: helpdesk
@@ -248,12 +252,12 @@ msgstr ""
 
 #. module: helpdesk
 #: model_terms:ir.ui.view,arch_db:helpdesk.helpdesk_team_view_form
-msgid "<i class=\"fa fa-lightbulb-o\"/>&amp;nbsp;"
+msgid "<i class=\"fa-regular fa-lightbulb\"/>&amp;nbsp;"
 msgstr ""
 
 #. module: helpdesk
 #: model_terms:ir.ui.view,arch_db:helpdesk.helpdesk_team_view_form
-msgid "<i class=\"fa fa-warning\"/>&amp;nbsp;"
+msgid "<i class=\"fa-solid fa-triangle-exclamation\"/>&amp;nbsp;"
 msgstr ""
 
 #. module: helpdesk

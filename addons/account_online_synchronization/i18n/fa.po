@@ -43,7 +43,7 @@ msgstr "0 تراکنش یافت شد"
 
 #. module: account_online_synchronization
 #: model_terms:ir.ui.view,arch_db:account_online_synchronization.account_duplicate_transaction_wizard_view_form
-msgid "<i class=\"fa fa-trash me-1\"/> Delete Selected"
+msgid "<i class=\"fa-solid fa-trash-can me-1\"/> Delete Selected"
 msgstr ""
 
 #. module: account_online_synchronization

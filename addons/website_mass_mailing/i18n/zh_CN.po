@@ -33,31 +33,29 @@ msgstr "<font class=\"text-white\">|</font>"
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> 精选行业洞察"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> 精选行业洞察"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
-msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  专家提示和操作方"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  专家提示和操作方"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
-msgstr "<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> 指南和资源"
+msgstr "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> 指南和资源"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
-msgstr "<i class=\"fa fa-check-circle-o\" role=\"img\"/> 感谢登记！"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
+msgstr "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> 感谢登记！"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template

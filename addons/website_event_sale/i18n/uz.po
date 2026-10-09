@@ -39,8 +39,8 @@ msgstr "<b>Boshlash</b>"
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.event_confirmation
 #, fuzzy
-msgid "<i class=\"fa fa-check me-2\" role=\"img\"/>Registered"
-msgstr "<i class=\"fa fa-check me-2\" role=\"img\"/>Ro‘yxatdan o‘tgan"
+msgid "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registered"
+msgstr "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Ro‘yxatdan o‘tgan"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_attendee_details

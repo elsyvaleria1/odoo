@@ -292,11 +292,9 @@ msgstr ""
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.hr_payslip_run_form
 msgid ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
-msgstr ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"箭嘴圖示\" title=\"箭嘴"
-"\"/>"
+msgstr "<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"箭嘴圖示\" title=\"箭嘴\"/>"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.hr_payroll_note_demo_content
@@ -5095,11 +5093,11 @@ msgstr ""
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.hr_payroll_note_demo_content
 msgid ""
-"Still looking for more ? Here is a video to help you <i class=\"fa fa-video-"
-"camera fa-2\" aria-hidden=\"true\" contenteditable=\"false\">​</i>"
+"Still looking for more ? Here is a video to help you <i class=\"fa-solid fa-"
+"video fa-2\" aria-hidden=\"true\" contenteditable=\"false\">​</i>"
 msgstr ""
-"還想找更多資訊？這段影片可以幫助你 <i class=\"fa fa-video-camera fa-2\" aria-"
-"hidden=\"true\" contenteditable=\"false\">​</i>"
+"還想找更多資訊？這段影片可以幫助你 <i class=\"fa-solid fa-video fa-2\" aria-hidden=\"true\" "
+"contenteditable=\"false\">​</i>"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.hr_salary_attachment_employee_view_form

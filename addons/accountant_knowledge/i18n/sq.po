@@ -43,12 +43,12 @@ msgstr ""
 
 #. module: accountant_knowledge
 #: model_terms:ir.ui.view,arch_db:accountant_knowledge.audit_report_view_kanban
-msgid "<i class=\"fa fa-fw fa-building me-2\" title=\"Company\"/>"
+msgid "<i class=\"fa-solid fa-building me-2\" title=\"Company\"/>"
 msgstr ""
 
 #. module: accountant_knowledge
 #: model_terms:ir.ui.view,arch_db:accountant_knowledge.audit_report_view_kanban
-msgid "<i class=\"fa fa-fw fa-calendar me-2\" title=\"Calendar\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-2\" title=\"Calendar\"/>"
 msgstr ""
 
 #. module: accountant_knowledge

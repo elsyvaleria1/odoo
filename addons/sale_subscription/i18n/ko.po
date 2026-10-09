@@ -470,13 +470,13 @@ msgstr ""
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_sidebar
-msgid "<i class=\"fa fa-download me-1\"/> Download"
-msgstr "<i class=\"fa fa-download me-1\"/> 다운로드"
+msgid "<i class=\"fa-solid fa-download me-1\"/> Download"
+msgstr "<i class=\"fa-solid fa-download me-1\"/> 다운로드"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-check\"/> In Progress"
-msgstr "<i class=\"fa fa-fw fa-check\"/> 진행중"
+msgid "<i class=\"fa-solid fa-check\"/> In Progress"
+msgstr "<i class=\"fa-solid fa-check\"/> 진행중"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -495,8 +495,8 @@ msgstr "<i class=\"fa fa-fw fa-remove\"/> 마감됨"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-remove\"/> Closing"
-msgstr "<i class=\"fa fa-fw fa-remove\"/> 마감"
+msgid "<i class=\"fa-solid fa-xmark\"/> Closing"
+msgstr "<i class=\"fa-solid fa-xmark\"/> 마감"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -505,8 +505,8 @@ msgstr "<i class=\"fa fa-fw fa-repeat\"/> 갱신하기"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
-msgid "<i class=\"fa fa-plus\"/> Create address"
-msgstr "<i class=\"fa fa-plus\"/> 주소 생성"
+msgid "<i class=\"fa-solid fa-plus\"/> Create address"
+msgstr "<i class=\"fa-solid fa-plus\"/> 주소 생성"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_so_portal_template
@@ -529,20 +529,20 @@ msgstr "<small class=\"text-600\">연결된 구독에 대한 자동 결제</smal
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> To Renew</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> To Renew</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/>갱신하기</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/>갱신하기</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Closed</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Closed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/>마감</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/>마감</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
@@ -554,37 +554,37 @@ msgstr "<span class=\"badge rounded-pill text-bg-info\"> 갱신 견적 </span>"
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
 msgid ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Upsell</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> 상향 판매</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Renewed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> 갱신됨</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> In Progress</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/>진행 중</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Paused</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> 일시 정지</span>"
 
 #. module: sale_subscription

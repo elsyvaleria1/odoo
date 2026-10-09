@@ -278,16 +278,17 @@ msgstr ""
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template
 msgid ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> London, United "
-"Kingdom"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> London, "
+"United Kingdom"
 msgstr ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> Londýn, Spojené "
-"království"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> Londýn, "
+"Spojené království"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_blogging_template
-msgid "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
-msgstr "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;PODÍVEJTE SE NA VIDEO"
+msgid "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
+msgstr ""
+"<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;PODÍVEJTE SE NA VIDEO"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -522,10 +523,10 @@ msgstr "<span style=\"font-weight: bolder;\">Zaregistrujte se nyní</span>"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_promotion_template
 msgid ""
 "<span style=\"font-weight: bolder;\">View online</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 msgstr ""
 "<span style=\"font-weight: bolder;\">Zobrazit online</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coffeebreak_template
@@ -779,10 +780,10 @@ msgstr "Lahodné recepty z celého světa"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Delicious recipes from around the world&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Lahodné recepty z celého světa&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -793,10 +794,10 @@ msgstr "Destinace pro ekologickou dovolenou"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Destinations for an eco-holiday&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Destinace pro ekologickou dovolenou&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -870,8 +871,8 @@ msgstr "Zjistěte více"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Find out more&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Zjistěte více&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Find out more&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Zjistěte více&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -1068,10 +1069,10 @@ msgstr "Interaktivní demo Odoo"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Interview with Janet James&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Rozhovor s Janet Jamesovou&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -1259,15 +1260,15 @@ msgstr "ČTETE VÍCE"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Rainy day ideas&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Nápady na deštivé dny&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
-msgid "Read More&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Číst více&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Read More&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Číst více&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coupon_template
@@ -1518,10 +1519,10 @@ msgstr "5 nejlepších ranních rituálů pro zvýšení energie"
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 msgid ""
 "Top 5 energy-boosting morning routines&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "5 nejlepších ranních rituálů pro zvýšení energie&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template

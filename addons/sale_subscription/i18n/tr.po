@@ -496,13 +496,13 @@ msgstr ""
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_sidebar
-msgid "<i class=\"fa fa-download me-1\"/> Download"
-msgstr "<i class=\"fa fa-download me-1\"/> İndirin"
+msgid "<i class=\"fa-solid fa-download me-1\"/> Download"
+msgstr "<i class=\"fa-solid fa-download me-1\"/> İndirin"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-check\"/> In Progress"
-msgstr "<i class=\"fa fa-fw fa-check\"/> Devam etmekte"
+msgid "<i class=\"fa-solid fa-check\"/> In Progress"
+msgstr "<i class=\"fa-solid fa-check\"/> Devam etmekte"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -521,8 +521,8 @@ msgstr "<i class=\"fa fa-fw fa-remove\"/> Kapalı"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
-msgid "<i class=\"fa fa-fw fa-remove\"/> Closing"
-msgstr "<i class=\"fa fa-fw fa-remove\"/> Kapanıyor"
+msgid "<i class=\"fa-solid fa-xmark\"/> Closing"
+msgstr "<i class=\"fa-solid fa-xmark\"/> Kapanıyor"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_portal_content
@@ -531,8 +531,8 @@ msgstr "<i class=\"fa fa-fw fa-repeat\"/> Yenilenecek"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
-msgid "<i class=\"fa fa-plus\"/> Create address"
-msgstr "<i class=\"fa fa-plus\"/> Adres oluştur"
+msgid "<i class=\"fa-solid fa-plus\"/> Create address"
+msgstr "<i class=\"fa-solid fa-plus\"/> Adres oluştur"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.subscription_so_portal_template
@@ -557,20 +557,20 @@ msgstr ""
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> To Renew</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> To Renew</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa fa-fw fa-"
-"repeat\"/> Yenilenecek</span>"
+"<span class=\"badge rounded-pill text-bg-danger\"><i class=\"fa-solid fa-"
+"arrow-rotate-right\"/> Yenilenecek</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Closed</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Closed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa fa-fw fa-"
-"remove\"/> Kapalı</span>"
+"<span class=\"badge rounded-pill text-bg-dark\"><i class=\"fa-solid fa-"
+"xmark\"/> Kapalı</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
@@ -584,37 +584,37 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 #: model_terms:ir.ui.view,arch_db:sale_subscription.sale_order_portal_content_inherit
 msgid ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Upsell</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-primary\"><i class=\"fa-solid fa-"
 "check\"/> Yukarı Satış</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Renewed</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-secondary\"><i class=\"fa-solid fa-"
 "check\"/> Yenilendi</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> In Progress</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Devam Ediyor</span>"
 
 #. module: sale_subscription
 #: model_terms:ir.ui.view,arch_db:sale_subscription.portal_my_subscriptions
 msgid ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Paused</span>"
 msgstr ""
-"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa fa-fw fa-"
+"<span class=\"badge rounded-pill text-bg-success\"><i class=\"fa-solid fa-"
 "check\"/> Durduruldu</span>"
 
 #. module: sale_subscription

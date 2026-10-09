@@ -34,41 +34,40 @@ msgstr "<font class=\"text-white\">|</font>"
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Curated Industry "
-"Insights"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Curated "
+"Industry Insights"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Sohaga oid saralangan "
-"ma'lumotlar"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Sohaga oid "
+"saralangan ma'lumotlar"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Expert Tips &amp; "
-"How-Tos"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Expert Tips "
+"&amp; How-Tos"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Mutaxassislarning "
-"maslahatlari va yo‘riqnomalari"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> "
+"Mutaxassislarning maslahatlari va yo‘riqnomalari"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_benefits_popup
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
 msgstr ""
-"<i class=\"fa fa-check text-o-color-1\" role=\"img\"/> Qo‘llanmalar va "
-"manbalar"
+"<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/> Qo‘llanmalar va"
+" manbalar"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
 #, fuzzy
-msgid ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Thanks for registering!"
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
-"<i class=\"fa fa-check-circle-o\" role=\"img\"/> Ro‘yxatdan o‘tganingiz "
-"uchun rahmat!"
+"<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Ro‘yxatdan "
+"o‘tganingiz uchun rahmat!"
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template

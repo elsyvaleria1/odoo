@@ -36,17 +36,19 @@ msgstr "--- Sélectionner ---"
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Badges"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Badges"
 msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Imprimer les badges "
-"de l’événement"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Imprimer les "
+"badges de l’événement"
 
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Tickets"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Tickets"
 msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Imprimer les "
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Imprimer les "
 "tickets de l’événement"
 
 #. module: pos_event

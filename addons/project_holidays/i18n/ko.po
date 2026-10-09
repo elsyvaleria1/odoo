@@ -40,10 +40,8 @@ msgstr "%(names)s님이 %(leaves)s 휴가를 요청하셨습니다. \n"
 
 #. module: project_holidays
 #: model_terms:ir.ui.view,arch_db:project_holidays.view_task_form2_inherit_holidays
-msgid ""
-"<i class=\"fa fa-user-times me-2\" role=\"img\" title=\"Leave warning\"/>"
-msgstr ""
-"<i class=\"fa fa-user-times me-2\" role=\"img\" title=\"경고 남기기\"/>"
+msgid "<i class=\"fa-solid fa-user-times me-2\" role=\"img\" title=\"Leave warning\"/>"
+msgstr "<i class=\"fa-solid fa-user-times me-2\" role=\"img\" title=\"경고 남기기\"/>"
 
 #. module: project_holidays
 #: model:ir.model,website_form_label:project_holidays.model_project_task

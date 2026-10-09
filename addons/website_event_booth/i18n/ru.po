@@ -47,13 +47,13 @@ msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
-msgid "<i class=\"fa fa-map-o me-1\"/>View Plan"
-msgstr "<i class=\"fa fa-map-o me-1\"/>Посмотреть план"
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr "<i class=\"fa-regular fa-map me-1\"/>Посмотреть план"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_layout
-msgid "<span class=\"fa fa-gear me-1\"/> Configure Booths"
-msgstr "<span class=\"fa fa-gear me-1\"/> Настройка кабинок"
+msgid "<span class=\"fa-solid fa-gear me-1\"/> Configure Booths"
+msgstr "<span class=\"fa-solid fa-gear me-1\"/> Настройка кабинок"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
@@ -73,11 +73,11 @@ msgstr "<span>Забронировать стенды</span>"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"<span>Booth Selection</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Booth Selection</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 msgstr ""
-"<span>Выбор стенда</span><span class=\"fa fa-angle-right d-inline-block "
-"align-middle mx-2 mx-lg-3 opacity-75\"/>"
+"<span>Выбор стенда</span><span class=\"fa-solid fa-angle-right d-inline-"
+"block align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
@@ -156,11 +156,11 @@ msgstr "Контактная информация"
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_order_progress
 msgid ""
-"Contact Details<span class=\"fa fa-angle-right d-inline-block align-middle "
-"mx-2 mx-lg-3 opacity-75\"/>"
-msgstr ""
-"Контактная информация<span class=\"fa fa-angle-right d-inline-block align-"
+"Contact Details<span class=\"fa-solid fa-angle-right d-inline-block align-"
 "middle mx-2 mx-lg-3 opacity-75\"/>"
+msgstr ""
+"Контактная информация<span class=\"fa-solid fa-angle-right d-inline-block "
+"align-middle mx-2 mx-lg-3 opacity-75\"/>"
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration

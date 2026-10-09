@@ -28,11 +28,11 @@ msgstr ""
 #. module: currency_rate_live
 #: model_terms:ir.ui.view,arch_db:currency_rate_live.res_config_settings_view_form
 msgid ""
-"<i title=\"Update now\" role=\"img\" aria-label=\"Update now\" class=\"fa fa-"
-"fw fa-refresh\"/>"
+"<i title=\"Update now\" role=\"img\" aria-label=\"Update now\" class=\"fa-"
+"solid fa-arrows-rotate\"/>"
 msgstr ""
-"<i title=\"今すぐ更新\" role=\"img\" aria-label=\"Update now\" class=\"fa fa-"
-"fw fa-refresh\"/>"
+"<i title=\"今すぐ更新\" role=\"img\" aria-label=\"Update now\" class=\"fa-solid "
+"fa-arrows-rotate\"/>"
 
 #. module: currency_rate_live
 #: model:ir.model,name:currency_rate_live.model_res_company

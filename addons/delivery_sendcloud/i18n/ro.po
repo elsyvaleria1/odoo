@@ -68,40 +68,40 @@ msgstr "Este necesar telefonul pentru %(partner_name)s"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Nu uitați să încărcați produsele "
-"de livrare SendCloud pentru o configurare validă."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Nu uitați să încărcați "
+"produsele de livrare SendCloud pentru o configurare validă."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> În mediul de testare, pentru a "
-"evita costurile, expedierile dvs. sunt <b>anulate</b> automat după crearea "
-"etichetei."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> În mediul de testare, pentru"
+" a evita costurile, expedierile dvs. sunt <b>anulate</b> automat după "
+"crearea etichetei."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Doar administratorii pot configura "
-"cheile publice și private."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Doar administratorii pot "
+"configura cheile publice și private."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Produsele de livrare disponibile depind de "
-"transportatorii activați în contul dvs. Sendcloud."
+"<i class=\"fa-solid fa-info-circle\"/> Produsele de livrare disponibile "
+"depind de transportatorii activați în contul dvs. Sendcloud."
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

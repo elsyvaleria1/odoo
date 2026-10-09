@@ -39,32 +39,30 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr "올바른 구성을 위해 서비스를 선택하는 것을 잊지 마세요."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/><b>테스트 환경</b>에서는 라벨 생성 "
-"후 배송이 자동으로 <b>보관</b>됩니다.<br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/><b>테스트 환경</b>에서는 라벨 생성 후 배송이 자동으로 <b>보관</b>됩니다.<br/>\n"
 "                        라벨 생성에 대해서는 여전히 요금이 부과될 수 있으며 "
 "일부 배송업체는 라벨을 인쇄할 때 자동으로 배송을 확인할 수 있습니다."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/>  사용할 수 있는 배송 상품은 Starshipit 계정"
-"에 활성화되어 있는 운송업체에 따라 다릅니다."
+"<i class=\"fa-solid fa-info-circle\"/>  사용할 수 있는 배송 상품은 Starshipit 계정에 활성화되어"
+" 있는 운송업체에 따라 다릅니다."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.choose_delivery_carrier_view_form

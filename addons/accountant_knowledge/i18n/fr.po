@@ -49,13 +49,13 @@ msgstr "<em>A compléter...</em>"
 
 #. module: accountant_knowledge
 #: model_terms:ir.ui.view,arch_db:accountant_knowledge.audit_report_view_kanban
-msgid "<i class=\"fa fa-fw fa-building me-2\" title=\"Company\"/>"
-msgstr "<i class=\"fa fa-fw fa-building me-2\" title=\"Société\"/>"
+msgid "<i class=\"fa-solid fa-building me-2\" title=\"Company\"/>"
+msgstr "<i class=\"fa-solid fa-building me-2\" title=\"Société\"/>"
 
 #. module: accountant_knowledge
 #: model_terms:ir.ui.view,arch_db:accountant_knowledge.audit_report_view_kanban
-msgid "<i class=\"fa fa-fw fa-calendar me-2\" title=\"Calendar\"/>"
-msgstr "<i class=\"fa fa-fw fa-calendar me-2\" title=\"Calendrier\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-2\" title=\"Calendar\"/>"
+msgstr "<i class=\"fa-solid fa-calendar-days me-2\" title=\"Calendrier\"/>"
 
 #. module: accountant_knowledge
 #: model_terms:knowledge.article,template_body:accountant_knowledge.accountant_knowledge_article_template_supporting_documents

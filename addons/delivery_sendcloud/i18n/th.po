@@ -64,40 +64,41 @@ msgstr "จำเป็นต้องใช้โทรศัพท์ของ
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> อย่าลืมโหลดผลิตภัณฑ์จัดส่ง SendCloud "
-"ของคุณเพื่อการกำหนดค่าที่ถูกต้อง"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> อย่าลืมโหลดผลิตภัณฑ์จัดส่ง "
+"SendCloud ของคุณเพื่อการกำหนดค่าที่ถูกต้อง"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/>ในสภาพแวดล้อมการทดสอบ "
-"เพื่อหลีกเลี่ยงการเรียกเก็บเงิน การจัดส่งของคุณจะ<b>ถูกยกเลิก</"
-"b>โดยอัตโนมัติหลังจากการสร้างฉลาก"
+"<i class=\"fa-solid fa-exclamation-triangle\"/>ในสภาพแวดล้อมการทดสอบ "
+"เพื่อหลีกเลี่ยงการเรียกเก็บเงิน "
+"การจัดส่งของคุณจะ<b>ถูกยกเลิก</b>โดยอัตโนมัติหลังจากการสร้างฉลาก"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> "
 "มีเพียงผู้ดูแลระบบเท่านั้นที่สามารถกำหนดค่าคีย์สาธารณะและคีย์ส่วนตัวได้"
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> "
-"สินค้าจัดส่งที่มีจำหน่ายขึ้นอยู่กับผู้ให้บริการที่เปิดใช้งานในบัญชี Sendcloud ของคุณ"
+"<i class=\"fa-solid fa-info-circle\"/> "
+"สินค้าจัดส่งที่มีจำหน่ายขึ้นอยู่กับผู้ให้บริการที่เปิดใช้งานในบัญชี "
+"Sendcloud ของคุณ"
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

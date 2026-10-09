@@ -35,24 +35,21 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> N'oubliez pas de sélectionner un "
-"service pour valider la configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> N'oubliez pas de "
+"sélectionner un service pour valider la configuration."
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> En <b>Environment de test</b>, vos "
-"envois sont automatiquement  <b>archivés</b> après la création de "
-"l'étiquette. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> En <b>Environment de test</b>, vos envois sont automatiquement  <b>archivés</b> après la création de l'étiquette. <br/>\n"
 "                        Veuillez noter que des frais peuvent encore survenir "
 "pour la création d'étiquettes et que certains transporteurs sont "
 "susceptibles de valider automatiquement l'envoi lors de l'impression "
@@ -61,10 +58,10 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Les modes d'expédition disponibles "
+"<i class=\"fa-solid fa-info-circle\"/> Les modes d'expédition disponibles "
 "dépendent des transporteurs activés dans votre compte Starshipit."
 
 #. module: delivery_starshipit

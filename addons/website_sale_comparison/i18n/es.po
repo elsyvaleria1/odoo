@@ -26,9 +26,10 @@ msgstr ""
 
 #. module: website_sale_comparison
 #: model_terms:ir.ui.view,arch_db:website_sale_comparison.product_compare
-msgid "<i class=\"fa fa-shopping-cart me-2\" aria-hidden=\"true\"/>Add to Cart"
+msgid "<i class=\"fa-solid fa-shopping-cart me-2\" aria-hidden=\"true\"/>Add to Cart"
 msgstr ""
-"<i class=\"fa fa-shopping-cart me-2\" aria-hidden=\"true\"/>Añadir a la cesta"
+"<i class=\"fa-solid fa-shopping-cart me-2\" aria-hidden=\"true\"/>Añadir a "
+"la cesta"
 
 #. module: website_sale_comparison
 #: model_terms:ir.ui.view,arch_db:website_sale_comparison.product_compare
@@ -38,10 +39,10 @@ msgstr "<i class=\"oi oi-chevron-left me-1\"/> Volver a la tienda"
 #. module: website_sale_comparison
 #: model_terms:ir.ui.view,arch_db:website_sale_comparison.add_to_compare
 msgid ""
-"<span class=\"fa fa-exchange fa-fw o_not-animable\"/>\n"
+"<span class=\"fa-solid fa-right-left o_not-animable\"/>\n"
 "                    <span class=\"o_label small ms-2\">Compare</span>"
 msgstr ""
-"<span class=\"fa fa-exchange fa-fw o_not-animable\"/>\n"
+"<span class=\"fa-solid fa-right-left o_not-animable\"/>\n"
 "                    <span class=\"o_label small ms-2\">Comparar</span>"
 
 #. module: website_sale_comparison

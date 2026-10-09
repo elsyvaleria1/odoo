@@ -69,39 +69,39 @@ msgstr "%(partner_name)s telefon numarası gerekli"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Geçerli bir yapılandırma için "
-"SendCloud gönderim ürünlerinizi yüklemeyi unutmayın."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Geçerli bir yapılandırma "
+"için SendCloud gönderim ürünlerinizi yüklemeyi unutmayın."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Test ortamında, ücretlendirmeyi "
-"önlemek için etiket oluşturulduktan sonra gönderileriniz otomatik olarak "
-"<b>iptal edilir</b> ."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Test ortamında, "
+"ücretlendirmeyi önlemek için etiket oluşturulduktan sonra gönderileriniz "
+"otomatik olarak <b>iptal edilir</b> ."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Yalnızca yöneticiler genel ve özel "
-"anahtarları yapılandırabilir."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Yalnızca yöneticiler genel "
+"ve özel anahtarları yapılandırabilir."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Mevcut gönderim ürünleri, Sendcloud "
+"<i class=\"fa-solid fa-info-circle\"/> Mevcut gönderim ürünleri, Sendcloud "
 "hesabınızda etkinleştirilen taşıyıcılara bağlıdır."
 
 #. module: delivery_sendcloud

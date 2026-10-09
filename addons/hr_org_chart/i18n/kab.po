@@ -21,8 +21,7 @@ msgstr ""
 #. module: hr_org_chart
 #: model_terms:ir.ui.view,arch_db:hr_org_chart.hr_employee_view_form_inherit_org_chart
 msgid ""
-"<i class=\"fa fa-share-alt fa-rotate-90 ms-1 mt-1\" role=\"img\" aria-"
-"label=\"Full Chart\"/>\n"
+"<i class=\"fa-solid fa-share-alt fa-rotate-90 ms-1 mt-1\" role=\"img\" aria-label=\"Full Chart\"/>\n"
 "                        Full Chart"
 msgstr ""
 

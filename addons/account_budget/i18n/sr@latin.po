@@ -27,7 +27,7 @@ msgstr ""
 #. module: account_budget
 #: model_terms:ir.ui.view,arch_db:account_budget.view_budget_analytic_kanban
 msgid ""
-"<i class=\"fa fa-clock-o me-1\" role=\"img\" aria-label=\"Period\" "
+"<i class=\"fa-regular fa-clock me-1\" role=\"img\" aria-label=\"Period\" "
 "title=\"Period\"/>"
 msgstr ""
 
@@ -35,10 +35,9 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:account_budget.budget_split_wizard_form_view
 #: model_terms:ir.ui.view,arch_db:account_budget.view_budget_analytic_form
 #, fuzzy
-msgid ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"to\" title=\"to\"/>"
+msgid "<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"to\" title=\"to\"/>"
 msgstr ""
-"<i class=\"fa fa-long-arrow-right mx-2\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long mx-2\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 
 #. module: account_budget

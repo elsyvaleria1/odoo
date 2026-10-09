@@ -136,48 +136,50 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mail_group.message_footer
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-calendar\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
+"<i class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Date\" "
+"title=\"Date\"/>"
 msgstr ""
-"<i class=\"fa fa-calendar\" role=\"img\" aria-label=\"Sana\" title=\"Sana\"/>"
+"<i class=\"fa-solid fa-calendar-days\" role=\"img\" aria-label=\"Sana\" "
+"title=\"Sana\"/>"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-envelope-o me-1\" role=\"img\" aria-label=\"Alias\" "
+"<i class=\"fa-regular fa-envelope me-1\" role=\"img\" aria-label=\"Alias\" "
 "title=\"Alias\"/>"
 msgstr ""
-"<i class=\"fa fa-envelope-o me-1\" role=\"img\" aria-label=\"Taxallus\" "
-"title=\"Taxallus\"/>"
+"<i class=\"fa-regular fa-envelope me-1\" role=\"img\" aria-"
+"label=\"Taxallus\" title=\"Taxallus\"/>"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.group_name
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-envelope-o\" role=\"img\" aria-label=\"Alias\" "
+"<i class=\"fa-regular fa-envelope\" role=\"img\" aria-label=\"Alias\" "
 "title=\"Alias\"/>"
 msgstr ""
-"<i class=\"fa fa-envelope-o\" role=\"img\" aria-label=\"Taxallus\" "
+"<i class=\"fa-regular fa-envelope\" role=\"img\" aria-label=\"Taxallus\" "
 "title=\"Taxallus\"/>"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw fa-envelope-o\" role=\"img\" aria-label=\"Traffic\" "
+"<i class=\"fa-regular fa-envelope\" role=\"img\" aria-label=\"Traffic\" "
 "title=\"Traffic\"/>"
 msgstr ""
-"<i class=\"fa fa-fw fa-envelope-o\" role=\"img\" aria-label=\"Trafik\" "
+"<i class=\"fa-regular fa-envelope\" role=\"img\" aria-label=\"Trafik\" "
 "title=\"Trafik\"/>"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw fa-user\" role=\"img\" aria-label=\"Recipients\" "
+"<i class=\"fa-solid fa-user\" role=\"img\" aria-label=\"Recipients\" "
 "title=\"Recipients\"/>"
 msgstr ""
-"<i class=\"fa fa-fw fa-user\" role=\"img\" aria-label=\"Qabul qiluvchilar\" "
+"<i class=\"fa-solid fa-user\" role=\"img\" aria-label=\"Qabul qiluvchilar\" "
 "title=\"Qabul qiluvchilar\"/>"
 
 #. module: mail_group

@@ -66,40 +66,40 @@ msgstr "É necessário fornecer um telefone para %(partner_name)s"
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to load your "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to load your "
 "SendCloud shipping products for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Não se esqueça de carregar seus "
-"produtos de envio do SendCloud para obter uma configuração válida."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Não se esqueça de carregar "
+"seus produtos de envio do SendCloud para obter uma configuração válida."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> No ambiente de teste, para evitar "
-"cobranças, seus envios são automaticamente <b>cancelados</b> após a criação "
-"da etiqueta."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> No ambiente de teste, para "
+"evitar cobranças, seus envios são automaticamente <b>cancelados</b> após a "
+"criação da etiqueta."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Only administrators can configure "
-"the public and private keys."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Only administrators can "
+"configure the public and private keys."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> Somente os administradores podem "
-"configurar as chaves públicas e privadas."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Somente os administradores "
+"podem configurar as chaves públicas e privadas."
 
 #. module: delivery_sendcloud
 #: model_terms:ir.ui.view,arch_db:delivery_sendcloud.view_shipping_method_sendcloud
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping products depend on "
-"enabled carriers in your Sendcloud account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping products depend on"
+" enabled carriers in your Sendcloud account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> Os produtos de remessa disponíveis dependem "
-"das transportadoras habilitadas em sua conta Sendcloud."
+"<i class=\"fa-solid fa-info-circle\"/> Os produtos de remessa disponíveis "
+"dependem das transportadoras habilitadas em sua conta Sendcloud."
 
 #. module: delivery_sendcloud
 #: model:ir.model.fields,field_description:delivery_sendcloud.field_wizard_delivery_carrier_update_sendcloud_product__sendcloud_products_code

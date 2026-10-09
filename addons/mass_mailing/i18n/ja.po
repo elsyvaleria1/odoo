@@ -293,14 +293,12 @@ msgstr ""
 msgid ""
 "<br/>\n"
 "                                    <span class=\"text-muted\">\n"
-"                                        <i class=\"fa fa-envelope-o\"/> "
-"Contacts\n"
+"                                        <i class=\"fa-regular fa-envelope\"/> Contacts\n"
 "                                    </span>"
 msgstr ""
 "<br/>\n"
 "                                    <span class=\"text-muted\">\n"
-"                                        <i class=\"fa fa-envelope-o\"/> 連絡"
-"先\n"
+"                                        <i class=\"fa-regular fa-envelope\"/> 連絡先\n"
 "                                    </span>"
 
 #. module: mass_mailing
@@ -527,27 +525,27 @@ msgstr ""
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-bar-chart\"/> Compare Version"
-msgstr "<i class=\"fa fa-bar-chart\"/> バージョンを比較"
+msgid "<i class=\"fa-solid fa-chart-column\"/> Compare Version"
+msgstr "<i class=\"fa-solid fa-chart-column\"/> バージョンを比較"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"Lead/"
-"Opportunity\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"Lead/Opportunity\"/>"
 msgstr ""
-"<i class=\"fa fa-bullseye me-2\" role=\"img\" aria-label=\"Lead/"
-"Opportunity\"/>"
+"<i class=\"fa-solid fa-bullseye me-2\" role=\"img\" aria-"
+"label=\"Lead/Opportunity\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-copy\"/> Create an Alternative"
-msgstr "<i class=\"fa fa-copy\"/> 代替案を作成"
+msgid "<i class=\"fa-solid fa-copy\"/> Create an Alternative"
+msgstr "<i class=\"fa-solid fa-copy\"/> 代替案を作成"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<i class=\"fa fa-envelope\"/> Send this as winner"
-msgstr "<i class=\"fa fa-envelope\"/>これを当選者として送ります。"
+msgid "<i class=\"fa-solid fa-envelope\"/> Send this as winner"
+msgstr "<i class=\"fa-solid fa-envelope\"/>これを当選者として送ります。"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
@@ -574,11 +572,11 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_contact_view_kanban
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Warning\" "
-"title=\"Warning\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
+"label=\"Warning\" title=\"Warning\"/>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\" role=\"img\" aria-label=\"Warning\" "
-"title=\"Warning\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle\" role=\"img\" aria-"
+"label=\"Warning\" title=\"Warning\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
@@ -610,70 +608,66 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Access all modules"
-msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  すべてのモジュールに"
-"アクセス"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Access all "
+"modules"
+msgstr "<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  すべてのモジュールにアクセス"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Account management"
-msgstr "<span class=\"fa fa-check text-success\" role=\"img\"/> アカウント管理"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Account "
+"management"
+msgstr "<span class=\"fa-solid fa-check text-success\" role=\"img\"/> アカウント管理"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Complete CRM for "
-"any team"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Complete CRM "
+"for any team"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  あらゆるチームに対応"
-"する完全なCRM"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  "
+"あらゆるチームに対応する完全なCRM"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid "<span class=\"fa fa-check text-success\" role=\"img\"/>  Email support"
-msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  メールサポート"
+msgid "<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Email support"
+msgstr "<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  メールサポート"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Limited "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Limited "
 "customization"
-msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> 限られたカスタマイズ"
+msgstr "<span class=\"fa-solid fa-check text-success\" role=\"img\"/> 限られたカスタマイズ"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
 msgid ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/>  Sales &amp; "
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/>  Sales &amp; "
 "marketing for 2"
 msgstr ""
-"<span class=\"fa fa-check text-success\" role=\"img\"/> 販売&amp; マーケティ"
-"ング 2"
+"<span class=\"fa-solid fa-check text-success\" role=\"img\"/> 販売&amp; "
+"マーケティング 2"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_badge
-msgid "<span class=\"fa fa-fw fa-folder\"/>Category"
-msgstr "<span class=\"fa fa-fw fa-folder\"/>カテゴリ"
+msgid "<span class=\"fa-solid fa-folder\"/>Category"
+msgstr "<span class=\"fa-solid fa-folder\"/>カテゴリ"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
 msgid ""
-"<span class=\"fa fa-fw fa-info-circle\" role=\"img\"/>  What do you want to "
+"<span class=\"fa-solid fa-info-circle\" role=\"img\"/>  What do you want to "
 "promote&amp;nbsp;?"
-msgstr ""
-"<span class=\"fa fa-fw fa-info-circle\" role=\"img\"/>  何を宣伝しますか"
-"&amp;nbsp;?"
+msgstr "<span class=\"fa-solid fa-info-circle\" role=\"img\"/>  何を宣伝しますか&amp;nbsp;?"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"Scheduled date\"/>"
 msgstr ""
-"<span class=\"fa fa-hourglass-half me-2 small my-auto\" aria-"
+"<span class=\"fa-solid fa-hourglass-half me-2 small my-auto\" aria-"
 "label=\"Scheduled date\"/>"
 
 #. module: mass_mailing
@@ -690,23 +684,21 @@ msgstr ""
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_kanban
 msgid ""
-"<span class=\"fa fa-paper-plane me-2 small my-auto\" aria-label=\"Sent "
-"date\"/>"
+"<span class=\"fa-solid fa-paper-plane me-2 small my-auto\" aria-label=\"Sent"
+" date\"/>"
 msgstr ""
-"<span class=\"fa fa-paper-plane me-2 small my-auto\" aria-label=\"Sent "
-"date\"/>"
+"<span class=\"fa-solid fa-paper-plane me-2 small my-auto\" aria-label=\"Sent"
+" date\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/>  No customization"
-msgstr ""
-"<span class=\"fa fa-times text-danger\" role=\"img\"/> カスタマイズ不可"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No customization"
+msgstr "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/> カスタマイズ不可"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
-msgid "<span class=\"fa fa-times text-danger\" role=\"img\"/>  No support"
-msgstr "<span class=\"fa fa-times text-danger\" role=\"img\"/> サポートなし"
+msgid "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/>  No support"
+msgstr "<span class=\"fa-solid fa-times text-danger\" role=\"img\"/> サポートなし"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_comparisons
@@ -1058,8 +1050,8 @@ msgstr "<strong>[speaker]&amp; [speaker]のコンフェランス</strong>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.view_mail_mass_mailing_form
-msgid "<u>Refresh <i class=\"fa fa-refresh ms-1\"/></u>"
-msgstr "<u>リフレッシュ <i class=\"fa fa-refresh ms-1\"/></u>"
+msgid "<u>Refresh <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
+msgstr "<u>リフレッシュ <i class=\"fa-solid fa-arrows-rotate ms-1\"/></u>"
 
 #. module: mass_mailing
 #. odoo-python
@@ -2138,8 +2130,8 @@ msgstr "コンテンツ背景"
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
 msgid ""
-"Continue reading <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr "続きを読む<span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+"Continue reading <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "続きを読む<span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: mass_mailing
 #. odoo-python
@@ -2403,9 +2395,8 @@ msgstr "すべての特徴について"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_media_list
-msgid ""
-"Discover more <span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
-msgstr "さらに詳しく<span class=\"fa fa-long-arrow-right align-middle ms-1\"/>"
+msgid "Discover more <span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
+msgstr "さらに詳しく<span class=\"fa-solid fa-right-long align-middle ms-1\"/>"
 
 #. module: mass_mailing
 #: model:ir.model.fields,field_description:mass_mailing.field_ir_http__display_name
@@ -4899,8 +4890,8 @@ msgstr "安全な支払い"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_cta_badge
-msgid "See more <span class=\"fa fa-long-arrow-right\" role=\"img\"/>"
-msgstr "さらに見る <span class=\"fa fa-long-arrow-right\" role=\"img\"/>"
+msgid "See more <span class=\"fa-solid fa-right-long\" role=\"img\"/>"
+msgstr "さらに見る <span class=\"fa-solid fa-right-long\" role=\"img\"/>"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.mailing_filter_view_form

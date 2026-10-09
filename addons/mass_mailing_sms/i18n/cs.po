@@ -63,7 +63,7 @@ msgstr "24h statistiky %(mailing_type)s \"%(mailing_name)s\""
 msgid ""
 "<br/>\n"
 "                    <span class=\"text-muted\">\n"
-"                        <i class=\"fa fa-phone\"/> Contacts\n"
+"                        <i class=\"fa-solid fa-phone\"/> Contacts\n"
 "                    </span>"
 msgstr ""
 

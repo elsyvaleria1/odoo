@@ -303,17 +303,17 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> London, United "
-"Kingdom"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> London, "
+"United Kingdom"
 msgstr ""
-"<i class=\"fa fa-map-marker\" contenteditable=\"false\"/> London, Buyuk "
-"Britaniya"
+"<i class=\"fa-solid fa-location-dot\" contenteditable=\"false\"/> London, "
+"Buyuk Britaniya"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_blogging_template
 #, fuzzy
-msgid "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
-msgstr "<span class=\"fa fa-play\"/>&amp;nbsp;&amp;nbsp;VIDEONI KO‘RISH"
+msgid "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;WATCH VIDEO"
+msgstr "<span class=\"fa-solid fa-play\"/>&amp;nbsp;&amp;nbsp;VIDEONI KO‘RISH"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -571,10 +571,10 @@ msgstr "<span style=\"font-weight: bolder;\">Hoziroq ro‘yxatdan o‘ting</span
 #, fuzzy
 msgid ""
 "<span style=\"font-weight: bolder;\">View online</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 msgstr ""
 "<span style=\"font-weight: bolder;\">Onlayn ko‘rish</span>&amp;nbsp;<span "
-"class=\"fa fa-external-link\"/>"
+"class=\"fa-solid fa-up-right-from-square\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coffeebreak_template
@@ -869,10 +869,10 @@ msgstr "Dunyoning turli burchaklaridan mazali taomlar retsepti"
 #, fuzzy
 msgid ""
 "Delicious recipes from around the world&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Dunyoning turli burchaklaridan mazali taomlar retsepti&amp;nbsp; <span "
-"class=\"fa fa-angle-right\"/>"
+"class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -885,9 +885,10 @@ msgstr "Ekologik ta'til uchun manzillar"
 #, fuzzy
 msgid ""
 "Destinations for an eco-holiday&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
-"Ekologik ta'til uchun manzillar&amp;nbsp; <span class=\"fa fa-angle-right\"/>"
+"Ekologik ta'til uchun manzillar&amp;nbsp; <span class=\"fa-solid fa-angle-"
+"right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -974,8 +975,8 @@ msgstr "Batafsil ma'lumot"
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 #, fuzzy
-msgid "Find out more&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Batafsil ma'lumot&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Find out more&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Batafsil ma'lumot&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_roadshow1_template
@@ -1198,8 +1199,8 @@ msgstr "Interaktiv Odoo namoyishi"
 #, fuzzy
 msgid ""
 "Interview with Janet James&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
-msgstr "Janet Jeyms bilan suhbat&nbsp; <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Janet Jeyms bilan suhbat&nbsp; <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
@@ -1417,14 +1418,15 @@ msgstr "BATAFSIL"
 #, fuzzy
 msgid ""
 "Rainy day ideas&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
-msgstr "Yomg‘irli kun g‘oyalari&amp;nbsp; <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
+msgstr ""
+"Yomg‘irli kun g‘oyalari&amp;nbsp; <span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_magazine_template
 #, fuzzy
-msgid "Read More&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
-msgstr "Batafsil&amp;nbsp;<span class=\"fa fa-angle-right\"/>"
+msgid "Read More&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
+msgstr "Batafsil&amp;nbsp;<span class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_coupon_template
@@ -1714,10 +1716,10 @@ msgstr "Energiya beruvchi eng samarali 5 ta ertalabki mashq"
 #, fuzzy
 msgid ""
 "Top 5 energy-boosting morning routines&amp;nbsp;\n"
-"                                <span class=\"fa fa-angle-right\"/>"
+"                                <span class=\"fa-solid fa-angle-right\"/>"
 msgstr ""
 "Energiya beruvchi eng samarali 5 ta ertalabki mashq&amp;nbsp; <span "
-"class=\"fa fa-angle-right\"/>"
+"class=\"fa-solid fa-angle-right\"/>"
 
 #. module: mass_mailing_themes
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_training_template

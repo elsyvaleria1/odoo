@@ -27,13 +27,13 @@ msgstr ""
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail
 msgid ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
 "title=\"The letter will be sent using the IAP service from Odoo.&#10;Make "
 "sure you have enough credits on your account or proceed to a recharge.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"警告\" title=\"この"
-"手紙は Odoo の IAP サービスを通じて送信されます。&#10;アカウントに十分なクレ"
-"ジットがあることを確認するか、チャージを行ってください。\"/>"
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"警告\" "
+"title=\"この手紙は Odoo の IAP "
+"サービスを通じて送信されます。&#10;アカウントに十分なクレジットがあることを確認するか、チャージを行ってください。\"/>"
 
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail

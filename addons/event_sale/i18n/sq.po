@@ -25,7 +25,7 @@ msgstr ""
 
 #. module: event_sale
 #: model_terms:ir.ui.view,arch_db:event_sale.event_configurator_view_form
-msgid "<i class=\"fa fa-arrow-right\"/> Configure Events &amp; Tickets"
+msgid "<i class=\"fa-solid fa-arrow-right\"/> Configure Events &amp; Tickets"
 msgstr ""
 
 #. module: event_sale

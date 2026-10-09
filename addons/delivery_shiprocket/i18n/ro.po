@@ -46,12 +46,13 @@ msgstr ""
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<b>In Odoo configuration click on <i class=\"fa fa-refresh oe_inline\"/> "
-"icon near Shiprocket Channel to sync newly created channels.</b>"
+"<b>In Odoo configuration click on <i class=\"fa-solid fa-arrows-rotate "
+"oe_inline\"/> icon near Shiprocket Channel to sync newly created "
+"channels.</b>"
 msgstr ""
-"<b>În configurația Odoo, faceți clic pe pictograma <i class=\"fa fa-refresh "
-"oe_inline\"/> de lângă Canalul Shiprocket pentru a sincroniza canalele nou "
-"create.</b>"
+"<b>În configurația Odoo, faceți clic pe pictograma <i class=\"fa-solid fa-"
+"arrows-rotate oe_inline\"/> de lângă Canalul Shiprocket pentru a sincroniza "
+"canalele nou create.</b>"
 
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
@@ -81,14 +82,15 @@ msgstr "<b>Pentru a crea un canal, accesați Canale Shiprocket</b>"
 #. module: delivery_shiprocket
 #: model_terms:ir.ui.view,arch_db:delivery_shiprocket.view_delivery_carrier_form_inherit_delivery_shiprocket
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In test environment, to avoid "
-"charges, your shippings are automatically <b>cancelled</b> after the label "
-"creation. The amount of cancelled shipment will be returned in next 3-4 days."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In test environment, to "
+"avoid charges, your shippings are automatically <b>cancelled</b> after the "
+"label creation. The amount of cancelled shipment will be returned in next "
+"3-4 days."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> În mediul de testare, pentru a "
-"evita taxele, expedierile dvs. sunt <b>anulate</b> automat după crearea "
-"etichetei. Suma pentru expedierea anulată va fi returnată în următoarele 3-4 "
-"zile."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> În mediul de testare, pentru"
+" a evita taxele, expedierile dvs. sunt <b>anulate</b> automat după crearea "
+"etichetei. Suma pentru expedierea anulată va fi returnată în următoarele 3-4"
+" zile."
 
 #. module: delivery_shiprocket
 #: model:ir.model.fields,help:delivery_shiprocket.field_delivery_carrier__shiprocket_manifests_generate

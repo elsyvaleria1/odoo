@@ -43,8 +43,8 @@ msgstr "123 ko‘rish •"
 #. module: social_youtube
 #: model_terms:ir.ui.view,arch_db:social_youtube.social_stream_post_view_kanban
 #, fuzzy
-msgid "<i class=\"fa fa-thumbs-o-up me-1\" title=\"Likes\"/>"
-msgstr "<i class=\"fa fa-thumbs-o-up me-1\" title=\"Yoqtirishlar\"/>"
+msgid "<i class=\"fa-regular fa-thumbs-up me-1\" title=\"Likes\"/>"
+msgstr "<i class=\"fa-regular fa-thumbs-up me-1\" title=\"Yoqtirishlar\"/>"
 
 #. module: social_youtube
 #: model_terms:ir.ui.view,arch_db:social_youtube.youtube_preview

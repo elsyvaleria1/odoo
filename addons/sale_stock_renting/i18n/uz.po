@@ -49,14 +49,14 @@ msgstr "%(product)s (%(qty)s dona)"
 #: model_terms:ir.ui.view,arch_db:sale_stock_renting.rental_order_wizard_view_form
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation\"/>\n"
 "                        <span>\n"
 "                            Some products don't have the requested qty "
 "available for pickup\n"
 "                        </span>"
 msgstr ""
-"<i class=\"fa fa-warning\"/> <span>Ba'zi mahsulotlar uchun so‘ralgan miqdor "
-"olib ketish uchun mavjud emas</span>"
+"<i class=\"fa-solid fa-triangle-exclamation\"/> <span>Ba'zi mahsulotlar "
+"uchun so‘ralgan miqdor olib ketish uchun mavjud emas</span>"
 
 #. module: sale_stock_renting
 #: model_terms:ir.ui.view,arch_db:sale_stock_renting.res_config_settings_inherit_view_form

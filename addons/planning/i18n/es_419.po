@@ -257,98 +257,95 @@ msgstr ""
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-check-circle\"/>\n"
+"<i class=\"fa-solid fa-check-circle\"/>\n"
 "                        You have successfully requested to switch your "
 "shift. You will be notified when another employee takes over your shift."
 msgstr ""
-"<i class=\"fa fa-check-circle\"/>\n"
+"<i class=\"fa-solid fa-check-circle\"/>\n"
 "                         Solicitó cambiar de turno con éxito, se le "
 "notificará cuando otro empleado lo tome."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-check-circle\"/> Request to switch shift cancelled "
+"<i class=\"fa-solid fa-check-circle\"/> Request to switch shift cancelled "
 "successfully."
 msgstr ""
-"<i class=\"fa fa-check-circle\"/> Solicitud para cambiar de turno cancelada "
-"de forma correcta."
+"<i class=\"fa-solid fa-check-circle\"/> Solicitud para cambiar de turno "
+"cancelada de forma correcta."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-check-circle\"/> This shift is no longer assigned to you."
-msgstr "<i class=\"fa fa-check-circle\"/> Ya no está a cargo de este turno."
+"<i class=\"fa-solid fa-check-circle\"/> This shift is no longer assigned to "
+"you."
+msgstr "<i class=\"fa-solid fa-check-circle\"/> Ya no está a cargo de este turno."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-check-circle\"/> You were successfully assigned this open "
-"shift."
+"<i class=\"fa-solid fa-check-circle\"/> You were successfully assigned this "
+"open shift."
 msgstr ""
-"<i class=\"fa fa-check-circle\"/> Este turno abierto se le asignó con éxito."
+"<i class=\"fa-solid fa-check-circle\"/> Este turno abierto se le asignó con "
+"éxito."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_slot_template_view_kanban
-msgid ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Hours\" title=\"Hours\"/"
-">"
-msgstr ""
-"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Horas\" title=\"Horas\"/"
-">"
+msgid "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"Hours\" title=\"Hours\"/>"
+msgstr "<i class=\"fa-regular fa-clock\" role=\"img\" aria-label=\"Horas\" title=\"Horas\"/>"
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_assignee_contact_popover
 msgid ""
-"<i class=\"fa fa-envelope-o\" title=\"Mail\" role=\"img\" style=\"padding-"
-"right: 2px\"/>"
+"<i class=\"fa-regular fa-envelope\" title=\"Mail\" role=\"img\" "
+"style=\"padding-right: 2px\"/>"
 msgstr ""
-"<i class=\"fa fa-envelope-o\" title=\"Correo\" role=\"img\" style=\"padding-"
-"right: 2px\"/>"
+"<i class=\"fa-regular fa-envelope\" title=\"Correo\" role=\"img\" "
+"style=\"padding-right: 2px\"/>"
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-exclamation-circle\"/> This shift is already assigned to "
-"another employee."
+"<i class=\"fa-solid fa-exclamation-circle\"/> This shift is already assigned"
+" to another employee."
 msgstr ""
-"<i class=\"fa fa-exclamation-circle\"/> Ya se le asignó este turno a otro "
-"empleado."
+"<i class=\"fa-solid fa-exclamation-circle\"/> Ya se le asignó este turno a "
+"otro empleado."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_shift_notification
 msgid ""
-"<i class=\"fa fa-exclamation-circle\"/> You can no longer unassign yourself "
-"from this shift."
+"<i class=\"fa-solid fa-exclamation-circle\"/> You can no longer unassign "
+"yourself from this shift."
 msgstr ""
-"<i class=\"fa fa-exclamation-circle\"/> Ya no puede desasignarse este turno."
+"<i class=\"fa-solid fa-exclamation-circle\"/> Ya no puede desasignarse este "
+"turno."
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_slot_template_view_form
 msgid ""
-"<i class=\"fa fa-long-arrow-right my-1 mx-1\" aria-label=\"Arrow icon\" "
+"<i class=\"fa-solid fa-right-long my-1 mx-1\" aria-label=\"Arrow icon\" "
 "title=\"Arrow\"/>"
 msgstr ""
-"<i class=\"fa fa-long-arrow-right my-1 mx-1\" aria-label=\"Icono de flecha\" "
-"title=\"Flecha\"/>"
+"<i class=\"fa-solid fa-right-long my-1 mx-1\" aria-label=\"Icono de flecha\""
+" title=\"Flecha\"/>"
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.open_slots_list_template
-msgid ""
-"<i class=\"fa fa-long-arrow-right\" aria-label=\"Arrow icon\" "
-"title=\"Arrow\"/>"
+msgid "<i class=\"fa-solid fa-right-long\" aria-label=\"Arrow icon\" title=\"Arrow\"/>"
 msgstr ""
-"<i class=\"fa fa-long-arrow-right\" aria-label=\"Icono de flecha\" "
+"<i class=\"fa-solid fa-right-long\" aria-label=\"Icono de flecha\" "
 "title=\"Flecha\"/>"
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_assignee_contact_popover
 msgid ""
-"<i class=\"fa fa-phone\" title=\"Phone\" role=\"img\" style=\"padding-right: "
-"2px\"/>"
-msgstr ""
-"<i class=\"fa fa-phone\" title=\"Teléfono\" role=\"img\" style=\"padding-"
+"<i class=\"fa-solid fa-phone\" title=\"Phone\" role=\"img\" style=\"padding-"
 "right: 2px\"/>"
+msgstr ""
+"<i class=\"fa-solid fa-phone\" title=\"Teléfono\" role=\"img\" "
+"style=\"padding-right: 2px\"/>"
 
 #. module: planning
 #: model_terms:ir.ui.view,arch_db:planning.planning_view_kanban

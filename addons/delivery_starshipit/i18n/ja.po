@@ -40,34 +40,32 @@ msgstr ""
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> Do not forget to select a service "
-"for a valid configuration."
+"<i class=\"fa-solid fa-exclamation-triangle\"/> Do not forget to select a "
+"service for a valid configuration."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> 有効なコンフィギュレーションのため"
-"のサービスを忘れずに選択して下さい。"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> "
+"有効なコンフィギュレーションのためのサービスを忘れずに選択して下さい。"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_delivery_carrier_form
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/> In <b>Test Environment</b>, your "
-"shippings are automatically <b>archived</b> after the label creation. <br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/> In <b>Test Environment</b>, your shippings are automatically <b>archived</b> after the label creation. <br/>\n"
 "                        Please note that charges can still occur for label "
 "creations and some shipping carriers may automatically validate the shipment "
 "when printing labels."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/><b>テスト環境</b>では、ラベル作成"
-"後、発送物は自動的に<b>アーカイブ</b>されます。<br/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle\"/><b>テスト環境</b>では、ラベル作成後、発送物は自動的に<b>アーカイブ</b>されます。<br/>\n"
 "また、配送業者によっては、ラベルを印刷する際に自動的に貨物の確認が行われる場"
 "合があります。"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.view_shipping_method_starshipit
 msgid ""
-"<i class=\"fa fa-info-circle\"/> Available shipping services depend on "
-"enabled carriers in your Starshipit account."
+"<i class=\"fa-solid fa-info-circle\"/> Available shipping services depend on"
+" enabled carriers in your Starshipit account."
 msgstr ""
-"<i class=\"fa fa-info-circle\"/> 利用可能な配送サービスは、Starshipitアカウン"
-"トで有効になっている配送業者によって異なります。"
+"<i class=\"fa-solid fa-info-circle\"/> "
+"利用可能な配送サービスは、Starshipitアカウントで有効になっている配送業者によって異なります。"
 
 #. module: delivery_starshipit
 #: model_terms:ir.ui.view,arch_db:delivery_starshipit.choose_delivery_carrier_view_form

@@ -56,13 +56,13 @@ msgstr "<span class=\"ps-2\">Thẻ</span>"
 #. module: hr_expense_stripe
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.hr_expense_stripe_card_receive_wizard_form
 msgid ""
-"<span invisible=\"not show_warning_wrong_last_4\" class=\"fa fa-exclamation-"
-"triangle text-danger pb-2\" title=\"Entered digits don't match the last 4 "
-"digits of the card.\"/>"
+"<span invisible=\"not show_warning_wrong_last_4\" class=\"fa-solid fa-"
+"exclamation-triangle text-danger pb-2\" title=\"Entered digits don't match "
+"the last 4 digits of the card.\"/>"
 msgstr ""
-"<span invisible=\"not show_warning_wrong_last_4\" class=\"fa fa-exclamation-"
-"triangle text-danger pb-2\" title=\"Các số đã nhập không khớp với 4 số cuối "
-"của thẻ.\"/>"
+"<span invisible=\"not show_warning_wrong_last_4\" class=\"fa-solid fa-"
+"exclamation-triangle text-danger pb-2\" title=\"Các số đã nhập không khớp "
+"với 4 số cuối của thẻ.\"/>"
 
 #. module: hr_expense_stripe
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.account_journal_dashboard_kanban_view_inherit_expense_stripe

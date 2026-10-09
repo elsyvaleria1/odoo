@@ -1977,7 +1977,7 @@ msgstr ""
 
 #. module: esg_csrd
 #: model_terms:ir.ui.view,arch_db:esg_csrd.esg_report_kanban_view
-msgid "<i class=\"fa fa-fw fa-calendar me-2\" title=\"Calendar\"/>"
+msgid "<i class=\"fa-solid fa-calendar-days me-2\" title=\"Calendar\"/>"
 msgstr ""
 
 #. module: esg_csrd

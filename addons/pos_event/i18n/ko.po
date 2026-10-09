@@ -36,16 +36,16 @@ msgstr "--- 선택 ---"
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Badges"
-msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>행사 배지 인쇄"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Badges"
+msgstr "<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>행사 배지 인쇄"
 
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.pos_order_form_view_inherit
 msgid ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>Print Event Tickets"
-msgstr ""
-"<i class=\"fa fa-file-pdf-o me-1\" aria-hidden=\"true\"/>행사 티켓 인쇄"
+"<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>Print Event "
+"Tickets"
+msgstr "<i class=\"fa-regular fa-file-pdf me-1\" aria-hidden=\"true\"/>행사 티켓 인쇄"
 
 #. module: pos_event
 #: model_terms:ir.ui.view,arch_db:pos_event.event_registration_ticket_view_form

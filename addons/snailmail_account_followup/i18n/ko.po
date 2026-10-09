@@ -28,13 +28,13 @@ msgstr ""
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail
 msgid ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"Warning\" "
 "title=\"The letter will be sent using the IAP service from Odoo.&#10;Make "
 "sure you have enough credits on your account or proceed to a recharge.\"/>"
 msgstr ""
-"<i class=\"fa fa-info-circle\" role=\"img\" aria-label=\"경고\" title=\"편지"
-"는 Odoo.&amp;#10;의 IAP 서비스를 사용하여 전송됩니다. 계정에 충분한 크레딧이 "
-"있는지 확인하거나 재충전을 진행하세요.\"/>"
+"<i class=\"fa-solid fa-info-circle\" role=\"img\" aria-label=\"경고\" "
+"title=\"편지는 Odoo.&amp;#10;의 IAP 서비스를 사용하여 전송됩니다. 계정에 충분한 크레딧이 있는지 확인하거나 재충전을"
+" 진행하세요.\"/>"
 
 #. module: snailmail_account_followup
 #: model_terms:ir.ui.view,arch_db:snailmail_account_followup.manual_reminder_view_form_inherit_snailmail

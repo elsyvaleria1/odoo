@@ -50,8 +50,8 @@ msgstr "2023-08-15"
 #. module: quality_control
 #: model_terms:ir.ui.view,arch_db:quality_control.quality_alert_team_dashboard_view_kanban
 msgid ""
-"<i class=\"fa fa-envelope-o\" role=\"img\" aria-label=\"Domain alias\" "
-"title=\"Domain alias\"/>&amp;nbsp;"
+"<i class=\"fa-regular fa-envelope\" role=\"img\" aria-label=\"Domain alias\""
+" title=\"Domain alias\"/>&amp;nbsp;"
 msgstr ""
 
 #. module: quality_control
