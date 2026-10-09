@@ -165,3 +165,43 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
             resolve_capability(self.env, channel.group(1)),
             self.form._session_bus_target(),
         )
+
+    def test_a_participant_page_follows_the_host_over_the_bus(self):
+        self.env["survey.question"].create(
+            {
+                "title": "Live bus probe",
+                "survey_id": self.form.id,
+                "question_type": "text_box",
+            }
+        )
+        self._open_session()
+        code = """
+            (async () => {
+                const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                const until = async (predicate) => {
+                    for (let i = 0; i < 150 && !predicate(); i++) {
+                        await wait(100);
+                    }
+                    return predicate();
+                };
+                const shows = (text) => document.body.innerText.includes(text);
+                if (!(await until(() => shows("Pick one")))) {
+                    console.error("the participant never saw the first question");
+                    return;
+                }
+                await wait(1500);
+                await fetch("/survey/session/next_question/%(token)s", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: {} }),
+                });
+                if (await until(() => shows("Live bus probe"))) {
+                    console.log("test successful");
+                } else {
+                    console.error("the host's next question never reached the participant");
+                }
+            })();
+        """ % {"token": self.form.access_token}
+        self.browser_js(
+            f"/s/{self.form.session_code}", code, login="session_host", timeout=60
+        )
