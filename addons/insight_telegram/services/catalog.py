@@ -714,18 +714,18 @@ def run_salaries(ask):
     )
     employees = ask.env["hr.employee"].search(domain).filtered("current_version_id")
     lines = [
-        "**" + ask._("Salaries by current contract") + "**",
-        ask._("As of %(day)s", day=ask.format_day(ask.today)),
+        "**" + ask.env._("Salaries by current contract") + "**",
+        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
     ]
     if not employees:
-        lines.append(ask._("No employee with a contract found."))
+        lines.append(ask.env._("No employee with a contract found."))
         return lines
     totals = defaultdict(float)
     for employee in employees:
         totals[employee.company_id.currency_id] += employee.current_version_id.wage
     for currency, amount in totals.items():
         lines.append(
-            ask._(
+            ask.env._(
                 "Total: **%(amount)s** (%(count)s employees)",
                 amount=money(amount, currency),
                 count=len(
@@ -755,7 +755,7 @@ def run_salaries(ask):
         else (
             lambda employee: (
                 employee.current_version_id.department_id.display_name
-                or ask._("(none)")
+                or ask.env._("(none)")
             )
         )
     )
@@ -770,7 +770,7 @@ def run_salaries(ask):
         for (label, currency), (amount, count) in ranked[: ask.top]
     ]
     if len(ranked) > ask.top:
-        lines.append(ask._("… and %(count)s more", count=len(ranked) - ask.top))
+        lines.append(ask.env._("… and %(count)s more", count=len(ranked) - ask.top))
     return lines
 
 
