@@ -89,6 +89,6 @@ class TestTerminateTeardownRobustness(BaseCase):
             ws._terminate()
             ws._teardown()
         env["ir.websocket"]._on_websocket_closed.assert_called_once_with(
-            ws._httprequest.cookies
+            ws._handshake.cookies
         )
         self.assertEqual(ws.state, ConnectionState.CLOSED)
