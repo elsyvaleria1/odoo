@@ -221,6 +221,36 @@ class TestRuleScript(TransactionCase):
         with self.assertRaises(UserError):
             pong_version._activate()
 
+    def test_a_changed_rule_activates_after_the_rules_it_reaches(self):
+        def chain_rule(code, body, expected):
+            return (
+                f'RULE = "{code}"\nVALID_FROM = "2026-01-01"\nINPUTS = {{}}\n'
+                f'OUTPUT = "number"\nEXAMPLES = ({{"inputs": {{}}, "expected": {expected}}},)\n'
+                f"def evaluate(inputs, rules):\n    return {body}\n"
+            )
+
+        middle = chain_rule("test.middle", 'rules.call("test.base")', 1)
+        self._load(
+            {
+                "rules/base.py": chain_rule("test.base", "1", 1),
+                "rules/middle.py": middle,
+                "rules/top.py": chain_rule("test.top", 'rules.call("test.middle")', 1),
+            }
+        )
+
+        # the middle rule is unchanged: the top reaches the new base through it
+        self._load(
+            {
+                "rules/base.py": chain_rule("test.base", "1 + 0 * 2", 1),
+                "rules/middle.py": middle,
+                "rules/top.py": chain_rule(
+                    "test.top", 'rules.call("test.middle") + 0', 1
+                ),
+            }
+        )
+
+        self.assertEqual(self.Script._evaluate("test.top", "2026-03-01"), 1)
+
     def test_an_evaluation_calls_a_bounded_number_of_rules(self):
         many = (
             'RULE = "test.many"\nVALID_FROM = "2026-01-01"\nINPUTS = {}\n'

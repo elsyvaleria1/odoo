@@ -358,24 +358,39 @@ class RuleScriptVersion(models.Model):
 
     def _sorted_callees_first(self):
         """These versions ordered so that a version comes after the versions
-        of this set whose rules it calls; a cycle keeps its members in place,
-        for activation to refuse."""
+        of this set whose rules it calls, directly or through rules outside
+        the set; a cycle keeps its members in place, for activation to
+        refuse."""
+        calls = {
+            version.code: set(version.dependency_codes or [])
+            for version in self.search([("version_state", "=", "active")])
+        }
+        for version in self:
+            calls.setdefault(version.code, set()).update(version.dependency_codes or [])
+
+        def reached(code):
+            seen, stack = set(), list(calls.get(code, ()))
+            while stack:
+                callee = stack.pop()
+                if callee not in seen:
+                    seen.add(callee)
+                    stack.extend(calls.get(callee, ()))
+            return seen
+
+        reach = {version.code: reached(version.code) for version in self}
         ordered = self.browse()
         pending = self
         while pending:
-            ready = (
-                pending._filter_calling_none_of(set(pending.mapped("code"))) or pending
+            codes = set(pending.mapped("code"))
+            ready = pending.browse(
+                version.id
+                for version in pending
+                if not (reach[version.code] & codes) - {version.code}
             )
+            ready = ready or pending
             ordered |= ready
             pending -= ready
         return ordered
-
-    def _filter_calling_none_of(self, codes):
-        return self.filtered(
-            lambda version: (
-                not codes.intersection(version.dependency_codes or []) - {version.code}
-            )
-        )
 
     def _retire_or_drop(self) -> None:
         for version in self:
