@@ -1,4 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
+import { uuidv4 } from "@point_of_sale/utils";
 import { makeMockServer } from "@web/../tests/web_test_helpers";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
@@ -144,4 +145,20 @@ describe(`Related models Events`, () => {
         expect(linesUpdates.length).toBe(2);
         expect(linesUpdates[0].fields).toEqual(["order_id"]);
     });
+});
+
+test("update-only loads fire no create event", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const sampleUUID = uuidv4();
+    models.loadConnectedData({
+        "pos.order": [{ id: 21, uuid: sampleUUID, amount_total: 5 }],
+    });
+
+    let createEvents = 0;
+    models["pos.order"].addEventListener("create", () => createEvents++);
+    models.loadConnectedData({
+        "pos.order": [{ id: 21, uuid: sampleUUID, amount_total: 9 }],
+    });
+    expect(createEvents).toBe(0);
 });

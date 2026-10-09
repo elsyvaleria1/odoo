@@ -468,3 +468,32 @@ test("DOWN cash rounding does not forgive a whole rounding step", async () => {
     expect(order.remainingDue).toBe(0.05);
     expect(order.canBeValidated()).toBe(false);
 });
+
+test("setOrderPrices writes the post-rounding total into amount_total", async () => {
+    const store = await setupPosEnv();
+    const { cashPm } = prepareRoundingVals(store, 0.05, "HALF-UP", false);
+    const order = await getFilledOrderForPriceCheck(store);
+    order.addPaymentline(cashPm);
+    order.payment_ids[0].setAmount(order.totalDue);
+    order.setOrderPrices();
+
+    expect(order.priceIncl).toBe(52.54);
+    expect(order.totalDue).toBe(52.55);
+    expect(order.amount_total).toBe(52.55);
+    expect(order.amount_total).toBe(order.amount_paid);
+});
+
+test("change is not cash-rounded when the order itself is not rounded", async () => {
+    const store = await setupPosEnv();
+    const { cardPm } = prepareRoundingVals(store, 0.05, "HALF-UP", true);
+    const order = await getFilledOrderForPriceCheck(store);
+    order.addPaymentline(cardPm);
+    order.payment_ids[0].setAmount(60.0);
+    order.setOrderPrices();
+
+    expect(order.orderIsRounded).toBe(false);
+    expect(order.totalDue).toBe(52.54);
+    expect(order.appliedRounding).toBe(0);
+    expect(order.shouldRoundChange).toBe(false);
+    expect(Math.abs(order.change)).toBe(7.46);
+});

@@ -1206,3 +1206,37 @@ test("connectNewData moving a line to another order takes it out of the old orde
         orderB: lineIds(orderB),
     }).toEqual({ lineOrderId: 102, orderA: [], orderB: [201] });
 });
+
+test("changing an indexed value re-keys the index with the old value", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const p1 = models["res.partner"].create({ id: 1, name: "A", barcode: "AAA" });
+    const p2 = models["res.partner"].create({ id: 2, name: "B", barcode: "BBB" });
+
+    p1.update({ barcode: "CCC" });
+    expect(models["res.partner"].getBy("barcode", "AAA")).toBe(undefined);
+    expect(models["res.partner"].getBy("barcode", "CCC").id).toBe(1);
+    expect(models["res.partner"].getBy("barcode", "BBB").id).toBe(2);
+    expect(p2.barcode).toBe("BBB");
+});
+
+test("a throw mid-update leaves the record in the store indexes", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const p1 = models["res.partner"].create({ id: 1, name: "A", barcode: "AAA" });
+
+    let threw = false;
+    try {
+        p1.update({ barcode: "CCC", __nope__: 1 });
+    } catch {
+        threw = true;
+    }
+    expect(threw).toBe(true);
+
+    expect(models["res.partner"].get(1)?.id).toBe(1);
+    expect(models["res.partner"].getAll().map((p) => p.id)).toInclude(1);
+    const found = ["AAA", "CCC"].filter(
+        (code) => models["res.partner"].getBy("barcode", code)?.id === 1,
+    );
+    expect(found).toHaveLength(1);
+});

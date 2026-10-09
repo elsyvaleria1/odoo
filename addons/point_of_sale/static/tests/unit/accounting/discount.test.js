@@ -52,3 +52,16 @@ test("no_discount unit prices exclude the line discount", async () => {
     expect(line.unitPrices.no_discount_total_included).toBe(1250);
     expect(line.unitPrices.no_discount_total_excluded).toBe(1000);
 });
+
+test("discount_amount follows the display mode and the order sign", async () => {
+    const store = await setupPosEnv();
+    store.config.iface_tax_included = "subtotal";
+    const order = await getFilledOrderForPriceCheck(store);
+    const line = order.lines[0];
+    line.setDiscount(10);
+
+    expect(line.displayPriceNoDiscount).toBe(1000);
+    expect(line.displayPrice).toBe(900);
+    expect(line.prices.discount_amount).toBe(100);
+    expect(order.getTotalDiscount()).toBe(100);
+});

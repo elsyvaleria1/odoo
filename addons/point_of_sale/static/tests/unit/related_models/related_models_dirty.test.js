@@ -270,3 +270,28 @@ test("serializeForORM without deferClear clears the dirty flag at once", async (
     store.models.serializeForORM(order);
     expect(order.isDirty()).toBe(false);
 });
+
+test("record mutations made by load listeners are marked dirty", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const sampleUUID = uuidv4();
+    models.loadConnectedData({
+        "pos.order": [{ id: 22, uuid: sampleUUID, amount_total: 5 }],
+    });
+
+    let listenerRan = false;
+    models["pos.order"].addEventListener("update", ({ id }) => {
+        const rec = models["pos.order"].get(id);
+        if (!listenerRan) {
+            listenerRan = true;
+            rec.general_customer_note = "listener wrote this";
+        }
+    });
+    models.loadConnectedData({
+        "pos.order": [{ id: 22, uuid: sampleUUID, amount_total: 9 }],
+    });
+    expect(listenerRan).toBe(true);
+    const order = models["pos.order"].get(22);
+    expect(order.general_customer_note).toBe("listener wrote this");
+    expect(order.isDirty()).toBe(true);
+});

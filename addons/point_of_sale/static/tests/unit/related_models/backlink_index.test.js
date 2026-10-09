@@ -1,6 +1,7 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { createRelatedModels } from "@point_of_sale/app/models/related_models";
 import { makeMockServer } from "@web/../tests/web_test_helpers";
+import { effect } from "@web/core/utils/reactive";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
 import {
@@ -262,4 +263,33 @@ describe("createRelatedModels options", () => {
         ).not.toThrow();
         expect(models["pos.order"].get(3).lines).toHaveLength(1);
     });
+});
+
+test("backLink results are reactive on a warm cache", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const order = models["pos.order"].create({ id: 31 });
+    const att = models["product.template.attribute.value"].create({ id: 99 });
+    models["pos.order.line"].create({
+        id: 310,
+        order_id: order,
+        attribute_value_ids: [["link", att]],
+    });
+
+    expect(att.backLink("<-pos.order.line.attribute_value_ids")).toHaveLength(1);
+
+    let seen = 0;
+    effect(
+        (a) => {
+            seen = a.backLink("<-pos.order.line.attribute_value_ids").length;
+        },
+        [att],
+    );
+    expect(seen).toBe(1);
+    models["pos.order.line"].create({
+        id: 311,
+        order_id: order,
+        attribute_value_ids: [["link", att]],
+    });
+    expect(seen).toBe(2);
 });
