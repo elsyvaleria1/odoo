@@ -34,7 +34,9 @@ class AccountCollectionRemittance(models.Model):
         "reopen": models.Verb(
             transition=("state", ("submitted", "done"), "draft"), at_create=False
         ),
-        "validate": models.Verb(transition=("state", "submitted", "done")),
+        "validate": models.Verb(
+            methods=("action_validate",), transition=("state", "submitted", "done")
+        ),
         "cancel": models.Verb(
             transition=("state", ("draft", "submitted"), "cancel"), at_create=False
         ),

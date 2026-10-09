@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="approval_category_cash_hand_in" model="approval.category">
+        <field name="name">Cash Hand-in</field>
+        <field name="approval_type">collection_hand_in</field>
+        <field name="company_id" eval="False" />
+        <field name="privacy_visibility">private</field>
+        <field name="allow_self_approval" eval="True" />
+        <field name="allow_delegation" eval="False" />
+        <field name="proof_verdicts">approve_refuse</field>
+        <field
+            name="proof_method_ids"
+            eval="[Command.set([ref('auth_passkey_proof.proof_method_passkey')])]" />
+        <field
+            name="step_ids"
+            eval="[                 Command.create({                     'name': 'The collector hands the cash over',                     'sequence': 10,                     'minimum': 1,                     'subject_model_id': ref('account_collection.model_account_collection_remittance'),                     'subject_user_path': 'collector_id',                     'subject_user_required': True,                 }),                 Command.create({                     'name': 'The treasury receives it',                     'sequence': 20,                     'minimum': 1,                     'subject_model_id': ref('account_collection.model_account_collection_remittance'),                     'subject_user_path': 'receiver_id',                     'subject_user_required': True,                 }),             ]" />
+    </record>
+
+</odoo>

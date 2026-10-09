@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_collection_remittance_form" model="ir.ui.view">
+        <field name="name">account.collection.remittance.form.approval</field>
+        <field name="model">account.collection.remittance</field>
+        <field
+            name="inherit_id"
+            ref="account_collection.view_account_collection_remittance_form" />
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <button
+                    name="action_view_approval_request"
+                    type="object"
+                    string="Hand-in Approval"
+                    invisible="not approval_request_id" />
+            </field>
+            <field name="validated_by_id" position="before">
+                <field name="approval_request_id" invisible="1" />
+                <field name="receiver_id" invisible="not receiver_id" />
+                <field
+                    name="approval_state"
+                    invisible="not approval_request_id"
+                    decoration-danger="approval_state == 'refused'"
+                    decoration-success="approval_state == 'approved'" />
+            </field>
+        </field>
+    </record>
+
+</odoo>
