@@ -6,6 +6,7 @@ from odoo.tools import format_amount
 from odoo.tools.authority_keys import declare_authority_keys
 
 PROOF_PURPOSE = "approval.decision"
+SUMMARY_RECORDS = 5
 
 # set only in-process, by the entry points that take the proof as an argument
 declare_authority_keys("approval_proof", "approval_proof", "approval_proof_evidence_id")
@@ -119,10 +120,28 @@ class ApprovalRequest(models.Model):
                 summary.append(
                     [
                         field._description_string(self.env),
-                        field.convert_to_display_name(document[name], document) or "",
+                        self._get_proof_display_value(document, name),
                     ]
                 )
         return summary
+
+    def _get_proof_display_value(self, record: models.BaseModel, name: str) -> str:
+        field = record._fields[name]
+        value = record[name]
+        if field.type in ("one2many", "many2many"):
+            shown = ", ".join(value[:SUMMARY_RECORDS].mapped("display_name"))
+            if len(value) > SUMMARY_RECORDS:
+                return self.env._(
+                    "%(shown)s and %(more)s more",
+                    shown=shown,
+                    more=len(value) - SUMMARY_RECORDS,
+                )
+            return shown
+        if field.type == "monetary":
+            currency_field = field.get_currency_field(record)
+            currency = record[currency_field] if currency_field else self.currency_id
+            return format_amount(self.env, value, currency)
+        return field.convert_to_display_name(value, record) or ""
 
     def _get_proof_document_fields(self, document: models.BaseModel) -> list[str]:
         protected = getattr(document, "_get_fields_approval_protected", None)
