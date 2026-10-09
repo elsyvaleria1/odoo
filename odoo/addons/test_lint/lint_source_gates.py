@@ -5,9 +5,12 @@
 #   python odoo/addons/test_lint/lint_source_gates.py test_pep649 test_naming
 #
 # Run from the checkout with the workspace venv's interpreter. The addons path is
-# the narrow scope the floors are defined at (odoo/addons, addons). A test that
-# asks for a database skips instead of failing: the narrow test_lint run on a
-# database grades it, and still grades everything this one does.
+# the narrow scope the floors are defined at (odoo/addons, addons), plus the
+# sibling checkouts the workspace holds (l10n, agromarin): a gate graded per
+# repository reads each one's own files, so their floors are held here too, in
+# seconds, instead of only by a full-scope install nobody runs. A test that asks
+# for a database skips instead of failing: the narrow test_lint run on a
+# database grades it, and still grades everything this one does for odoo.
 import importlib
 import logging
 import multiprocessing
@@ -19,6 +22,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 CHECKOUT = Path(__file__).resolve().parents[3]
+SIBLINGS = ("l10n", "agromarin")
 TESTS = Path(__file__).resolve().parent / "tests"
 _logger = logging.getLogger("odoo.addons.test_lint.source_gates")
 
@@ -32,9 +36,12 @@ def main(names: list[str]) -> int:
     sys.path.insert(0, str(CHECKOUT))
     from odoo.tools import config
 
-    config.parse_config(
-        [f"--addons-path={CHECKOUT / 'odoo' / 'addons'},{CHECKOUT / 'addons'}"]
-    )
+    paths = [
+        CHECKOUT / "odoo" / "addons",
+        CHECKOUT / "addons",
+        *(path for name in SIBLINGS if (path := CHECKOUT.parent / name).is_dir()),
+    ]
+    config.parse_config([f"--addons-path={','.join(map(str, paths))}"])
     from odoo.modules.module import initialize_sys_path
 
     initialize_sys_path()

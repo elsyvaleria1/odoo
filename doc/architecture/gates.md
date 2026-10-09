@@ -141,8 +141,12 @@ same change.
 `odoo/addons/test_lint/lint_source_gates.py` runs the same suites without a
 database: a test that asks for one
 (`get_db_name()`) skips, and every test that reads only the tree runs, against
-the same floors and the narrow addons path. The database run still grades
-both halves; this one fails a tree scan before a module install is spent on it.
+the same floors, on the narrow addons path plus the sibling `l10n` and `agromarin`
+checkouts when the workspace holds them. A gate graded per repository reads each
+repository's own files, so `<gate>_l10n` and `<gate>_agromarin` are held here in
+seconds; before, only the full-scope install graded them, and nobody ran it. The
+database run still grades both halves for `odoo`; this one fails a tree scan
+before a module install is spent on it.
 `odoo/addons/test_lint/lint_ruff_gates.py` holds the Odoo rules of the ruff fork
 `requirements-dev.txt` pins (`Agro-Marin/ruff`, prefix `E85`, the per-file AST
 checks test_lint ran in Python) to the same `floors.json`: each
