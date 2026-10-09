@@ -68,7 +68,10 @@ class TestAddressAutocomplete(HttpCase):
         )
         return response.json()
 
-    def test_without_a_provider_nothing_is_asked(self):
+    def test_with_none_chosen_nothing_is_asked(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "address_autocomplete.provider", "none"
+        )
         self.authenticate("admin", "admin")
         self.assertEqual(
             self._post("/autocomplete/address", partial_address="9 rue de Bourlottes")[
@@ -151,7 +154,19 @@ class TestAddressAutocomplete(HttpCase):
         self.assertEqual(error["data"]["name"], "odoo.exceptions.AccessError")
         self.assertEqual(self.calls, [])
 
+    def test_with_no_choice_the_first_installed_provider_completes(self):
+        """Installing a provider is enough, as it was before the generic
+        module: an unset choice is the first installed provider by code."""
+        self._choose_fake()
+        self.env["ir.config_parameter"].sudo().set_param(
+            "address_autocomplete.provider", ""
+        )
+        self.assertEqual(self.env["ir.http"]._address_autocomplete_provider(), FAKE)
+
     def test_the_session_names_the_provider_to_internal_users(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "address_autocomplete.provider", "none"
+        )
         self.authenticate("admin", "admin")
         session = self._post("/web/session/get_session_info")["result"]
         self.assertNotIn("address_autocomplete", session)
@@ -163,7 +178,7 @@ class TestAddressAutocomplete(HttpCase):
         self._choose_fake()
         self.assertEqual(
             self.env["res.config.settings"]._selection_address_autocomplete_provider(),
-            [("fake", "Fake")],
+            [("none", "None"), ("fake", "Fake")],
         )
 
     def test_the_widget_fills_the_address(self):

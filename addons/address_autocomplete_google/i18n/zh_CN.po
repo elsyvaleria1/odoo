@@ -74,7 +74,7 @@ msgid "Display Name"
 msgstr "显示名称"
 
 #. module: address_autocomplete_google
-#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__google_places_api_key
+#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__address_autocomplete_google_api_key
 msgid "Google Places API Key"
 msgstr "谷歌放置API 密钥"
 

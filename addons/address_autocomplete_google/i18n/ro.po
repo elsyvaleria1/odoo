@@ -73,7 +73,7 @@ msgid "Display Name"
 msgstr "Nume afișat"
 
 #. module: address_autocomplete_google
-#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__google_places_api_key
+#: model:ir.model.fields,field_description:address_autocomplete_google.field_res_config_settings__address_autocomplete_google_api_key
 msgid "Google Places API Key"
 msgstr "Cheie API Google Places"
 

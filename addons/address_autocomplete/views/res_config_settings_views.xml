@@ -11,7 +11,7 @@
                 <setting
                     id="address_autocomplete_provider"
                     string="Address Autocomplete Provider"
-                    help="Which installed provider suggests addresses. Without one, nothing is suggested.">
+                    help="Which installed provider suggests addresses. Left empty, the first installed one does; None suggests nothing.">
                     <field name="address_autocomplete_provider" />
                 </setting>
             </setting>

@@ -77,6 +77,6 @@ class TestUI(HttpCase):
         self.website.address_autocomplete_key = WEBSITE_KEY
         self.assertTrue(self.website.has_address_autocomplete())
         self.env["ir.config_parameter"].sudo().set_param(
-            "address_autocomplete.provider", ""
+            "address_autocomplete.provider", "none"
         )
         self.assertFalse(self.website.has_address_autocomplete())

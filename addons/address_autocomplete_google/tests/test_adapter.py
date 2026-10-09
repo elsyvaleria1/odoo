@@ -446,12 +446,65 @@ class TestGooglePlacesAdapter(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestGooglePlacesUpgrade(TransactionCase):
-    def _migrate(self):
+    def _migration(self):
         path = Path(__file__).parents[1] / "migrations" / "2.0" / "post-migrate.py"
         spec = importlib.util.spec_from_file_location("places_2_0", path)
         migration = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(migration)
-        migration.migrate(self.env.cr, "1.1")
+        return migration
+
+    def _migrate(self):
+        self._migration().migrate(self.env.cr, "1.1")
+
+    def test_the_upgrade_rewrites_what_the_rename_changed_and_nothing_else(self):
+        rewritten = self._migration()._rewritten(
+            """<field name="street" widget="google_address_autocomplete"/>"""
+            """<field name="city" widget='google_address_autocomplete'/>"""
+            """<attribute name="widget"> google_address_autocomplete </attribute>"""
+            """<xpath expr="//setting[@id='google_address_autocomplete']"/>"""
+            """<div id="google_address_autocomplete_warning"/>"""
+            """<field name="module_google_address_autocomplete"/>"""
+            """<t t-call="google_address_autocomplete.x"/>"""
+            """<div class="o_field_google_address_autocomplete"/>"""
+        )
+        self.assertEqual(
+            rewritten,
+            """<field name="street" widget="address_autocomplete"/>"""
+            """<field name="city" widget='address_autocomplete'/>"""
+            """<attribute name="widget">address_autocomplete</attribute>"""
+            """<xpath expr="//setting[@id='address_autocomplete_google']"/>"""
+            """<div id="address_autocomplete_google_warning"/>"""
+            """<field name="module_address_autocomplete_google"/>"""
+            """<t t-call="google_address_autocomplete.x"/>"""
+            """<div class="o_field_google_address_autocomplete"/>""",
+        )
+
+    def test_the_upgrade_rewrites_a_soft_resets_previous_arch_too(self):
+        view = self.env["ir.ui.view"].create(
+            {
+                "name": "a customised partner form",
+                "model": "res.partner",
+                "inherit_id": self.env.ref("base.view_partner_form").id,
+                "arch": """<xpath expr="//field[@name='street']" position="after">
+                    <field name="city" widget="address_autocomplete"/>
+                </xpath>""",
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_ui_view SET arch_prev = %s WHERE id = %s",
+            [
+                (
+                    '<xpath expr="//field[@name=\'street\']" position="after">'
+                    '<field name="city" widget="google_address_autocomplete"/></xpath>'
+                ),
+                view.id,
+            ],
+        )
+        self._migrate()
+        view.invalidate_recordset(["arch_prev"])
+        self.assertIn('widget="address_autocomplete"', view.arch_prev)
+        self.assertNotIn("google_address_autocomplete", view.arch_prev)
 
     def test_the_upgrade_keeps_google_completing_addresses(self):
         Credential = self.env["credential.credential"]

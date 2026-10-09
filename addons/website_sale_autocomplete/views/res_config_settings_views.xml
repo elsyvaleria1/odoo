@@ -13,6 +13,15 @@
                 expr="//setting[@id='address_autocomplete_setting']"
                 position="inside">
                 <div>
+                    <div
+                        class="mt8 text-warning"
+                        invisible="address_autocomplete_provider_installed">
+                        No address provider is installed: enable one, such as
+                        Google Address Autocomplete, in the general settings.
+                    </div>
+                    <field
+                        name="address_autocomplete_provider_installed"
+                        invisible="1" />
                     <div class="content-group row mt16">
                         <label
                             for="website_address_autocomplete_key"
