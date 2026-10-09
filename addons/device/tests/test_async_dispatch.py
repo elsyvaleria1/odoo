@@ -176,6 +176,23 @@ class TestPushRouteStoresOneSource(DeviceHttpCase):
             [f"http_push/{self.device.identifier}"] * 2,
         )
 
+    def test_an_async_push_queues_its_job_as_an_active_user(self):
+        self.device.processing_mode = "async"
+        self.assertEqual(self._push().status_code, 202)
+
+        event = self._last_event()
+        job = (
+            self.env["ir.job"]
+            .sudo()
+            .search([("identity_key", "=", f"integration.event:{event.id}")])
+        )
+        self.assertTrue(job, "the push queued its processing")
+        self.assertTrue(
+            job.user_id.active,
+            f"queued as {job.user_id.login}, an archived user: its claim fails",
+        )
+        self.assertEqual(job.user_id, self.env.ref("device.user_device_receiver"))
+
 
 @tagged("post_install", "-at_install")
 class TestStatusPollLeavesNoOpenExchange(DeviceHttpCase):

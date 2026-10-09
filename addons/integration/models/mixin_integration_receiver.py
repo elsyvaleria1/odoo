@@ -283,7 +283,10 @@ class MixinIntegrationReceiver(models.AbstractModel):
         self.check_singleton()
 
         if event_log:
-            event = event_log
+            # the admission opened the exchange as the public user; its job is
+            # queued as the gate's principal, whom it acts for -- the public
+            # user is archived, and a job queued as it fails at its claim
+            event = event_log.with_env(self.env)
             event.write({"state": "pending", "date_completed": False})
         else:
             payload_str: str
