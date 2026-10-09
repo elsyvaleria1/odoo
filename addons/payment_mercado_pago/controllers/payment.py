@@ -109,14 +109,26 @@ class MercadoPagoPaymentController(http.Controller):
     @staticmethod
     def _check_and_process():
         """Process the admitted transaction's payment, fetched back from Mercado
-        Pago's API."""
-        tx_sudo = request.admission.subject
-        data = request.admission.extra["data"]
+        Pago's API, once it is the transaction's own."""
+        admission = request.admission
+        tx_sudo = admission.subject
+        payment_id = admission.extra["data"].get("payment_id")
+        if not isinstance(payment_id, str | int) or not str(payment_id).isdigit():
+            admission.refuse(400, "payment_id missing or malformed", "bad_request")
         try:
             verified_data = tx_sudo._send_api_request(
-                "GET", f"/v1/payments/{data.get('payment_id')}"
+                "GET", f"/v1/payments/{payment_id}"
             )
         except ValidationError:
             _logger.error("Unable to verify the payment data")
-        else:
-            tx_sudo._process("mercado_pago", verified_data)
+            return
+        if verified_data.get("external_reference") != tx_sudo.reference:
+            _logger.warning(
+                "Payment %s does not belong to transaction %s.",
+                payment_id,
+                tx_sudo.reference,
+            )
+            admission.refuse(
+                403, "the payment belongs to another transaction", "forbidden"
+            )
+        tx_sudo._process("mercado_pago", verified_data)
