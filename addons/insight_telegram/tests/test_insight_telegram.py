@@ -836,6 +836,71 @@ class TestWriteOperations(TransactionCase):
             ):
                 write_ops.check(self.env, operation)
 
+    def test_removing_lines_is_refused(self):
+        customer, _product = self._sale()
+        order = self.env["sale.order"].create({"partner_id": customer.id})
+        for command in ([2, 1], [3, 1], [5]):
+            with (
+                self.subTest(command=command),
+                self.assertRaisesRegex(write_ops.OperationError, "deleting"),
+            ):
+                write_ops.check(
+                    self.env,
+                    {
+                        "op": "write",
+                        "model": "sale.order",
+                        "ids": [order.id],
+                        "values": {"line_ids": [command]},
+                    },
+                )
+
+    def test_a_proposal_reads_as_the_screen_shows_it(self):
+        customer, product = self._sale()
+        operations = [
+            {
+                "op": "create",
+                "model": "sale.order",
+                "values": {
+                    "partner_id": customer.id,
+                    "line_ids": [
+                        [
+                            0,
+                            0,
+                            {
+                                "product_id": product.id,
+                                "product_qty": 2080,
+                                "price_unit": 260.0,
+                            },
+                        ],
+                        [
+                            0,
+                            0,
+                            {
+                                "product_id": product.id,
+                                "product_qty": 416,
+                                "price_unit": 0.0,
+                            },
+                        ],
+                    ],
+                },
+            },
+            {
+                "op": "action",
+                "model": "sale.order",
+                "ids": ["ref:1"],
+                "method": "action_confirm",
+            },
+        ]
+        text = "\n".join(write_ops.describe(self.env, operations))
+        self.assertIn(customer.display_name, text)
+        self.assertIn(product.display_name, text)
+        self.assertIn("2,080", text)
+        self.assertIn("540,800.00", text, "line subtotal and order total")
+        self.assertNotIn("partner_id", text)
+        self.assertNotIn("product_id", text)
+        self.assertNotIn(f"={customer.id}", text)
+        self.assertIn("«confirm»", text)
+
     def test_an_unknown_field_is_explained(self):
         with self.assertRaisesRegex(write_ops.OperationError, "no field"):
             write_ops.check(
@@ -949,6 +1014,24 @@ class TestWriteOperations(TransactionCase):
         )
         self.assertIn("No such PDF report", refused["error"])
 
+    def test_a_created_order_is_printed_with_its_main_report(self):
+        customer, _product = self._sale()
+        order = self.env["sale.order"].create({"partner_id": customer.id})
+        report = documents.main_report(self.env, "sale.order")
+        self.assertEqual(report.report_name, "sale.report_saleorder")
+        with patch.object(
+            type(self.env["ir.actions.report"]),
+            "_render_qweb_pdf",
+            return_value=(TINY_PDF, "pdf"),
+        ) as render:
+            files = documents.print_records(self.env, order)
+        self.assertEqual(render.call_args.args[:2], (report.id, order.ids))
+        self.assertEqual(files[0][1], TINY_PDF)
+        self.assertFalse(
+            documents.print_records(self.env, self.env["res.partner"].browse()),
+            "nothing printed for no record",
+        )
+
     def test_a_read_only_bot_offers_no_change(self):
         reader = OdooReader(
             self.registry, self.env.ref("insight_telegram.user_reader").id
@@ -1056,7 +1139,17 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertFalse(
             self.env["res.partner"].search([("name", "=", "Ask Probe Super")])
         )
-        self._job({"text": "autorizo"})
+        with (
+            patch(
+                "odoo.addons.insight_telegram.services.documents.print_records",
+                return_value=[("Ask Probe Super.pdf", TINY_PDF)],
+            ) as printed,
+            patch.object(type(self.test_bot), "send_document") as send,
+        ):
+            sent, _mocks = self._job({"text": "autorizo"})
+        self.assertIn("/odoo/res.partner/", sent, "the answer links the record")
+        self.assertEqual(printed.call_count, 1, "a created record is printed")
+        self.assertEqual(send.call_args.args[1:3], (TINY_PDF, "Ask Probe Super.pdf"))
         partner = self.env["res.partner"].search([("name", "=", "Ask Probe Super")])
         self.assertTrue(partner)
         self.assertEqual(partner.create_uid, self.env.user)

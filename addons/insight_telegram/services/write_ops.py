@@ -107,6 +107,16 @@ def check(env, operation) -> dict:
             raise OperationError(
                 f"{model_name} has no field {', '.join(unknown)}; call describe_model."
             )
+        for name, value in values.items():
+            if model._fields[name].type in ("one2many", "many2many") and any(
+                isinstance(command, (list, tuple))
+                and command
+                and command[0] in (2, 3, 5)
+                for command in (value if isinstance(value, list) else [])
+            ):
+                raise OperationError(
+                    f"{name}: removing lines is deleting, which the bot never does."
+                )
         normalized["values"] = values
     if op == "action":
         method = (operation.get("method") or "").strip()
@@ -126,31 +136,169 @@ def check(env, operation) -> dict:
 
 
 def describe(env, operations) -> list:
-    """One line per operation, for the person to authorize."""
+    """The proposed operations as the person reads them: each field by its
+    label and each value as the screen shows it, never raw ids."""
     lines = []
     for number, operation in enumerate(operations, 1):
+        model = env[operation["model"]]
         label = env["ir.model"]._get(operation["model"]).name or operation["model"]
         if operation["op"] == "create":
-            lines.append(
-                f"{number}. Crear {label}: {_values_text(operation['values'])}"
-            )
-        elif operation["op"] == "write":
-            lines.append(
-                f"{number}. Modificar {label} {operation['ids']}: "
-                f"{_values_text(operation['values'])}"
+            lines.append(f"**{number}. Crear {label}**")
+            lines += _values_lines(model, operation["values"])
+        else:
+            names = _records_text(model, operation["ids"])
+            if operation["op"] == "write":
+                lines.append(f"**{number}. Modificar {label} {names}**")
+                lines += _values_lines(model, operation["values"])
+            else:
+                lines.append(
+                    f"**{number}. {label} {names}:** botón {_button_text(model, operation['method'])}"
+                )
+        if operation.get("attach_files"):
+            lines.append("📎 Adjuntar los archivos que mandaste")
+        lines.append("")
+    return lines[:-1] if lines else lines
+
+
+def _records_text(model, ids) -> str:
+    names = []
+    for ident in ids:
+        if isinstance(ident, str):
+            names.append(f"(la #{ident[4:]} de arriba)")
+            continue
+        record = model.browse(ident).exists()
+        names.append(record.display_name if record else f"#{ident}")
+    return ", ".join(names)
+
+
+def _button_text(model, method) -> str:
+    words = method.removeprefix("action_").removeprefix("button_").replace("_", " ")
+    return f"«{words}»"
+
+
+def _currency(model, values):
+    env = model.env
+    currency = values.get("currency_id")
+    if isinstance(currency, int):
+        found = env["res.currency"].browse(currency).exists()
+        if found:
+            return found
+    company = values.get("company_id")
+    if isinstance(company, int):
+        found = env["res.company"].browse(company).exists()
+        if found:
+            return found.currency_id
+    return env.company.currency_id
+
+
+def _money(amount, currency) -> str:
+    text = f"{amount:,.2f}"
+    symbol = currency.symbol or ""
+    if currency.position == "after":
+        return f"{text} {symbol} {currency.name}".strip()
+    return f"{symbol}{text} {currency.name}".strip()
+
+
+def _number(value) -> str:
+    if isinstance(value, float) and not value.is_integer():
+        return f"{value:,.2f}"
+    return f"{int(value):,}" if isinstance(value, (int, float)) else str(value)
+
+
+QUANTITY_FIELDS = ("product_qty", "product_uom_qty", "quantity")
+
+
+def _values_lines(model, values) -> list:
+    currency = _currency(model, values)
+    lines = []
+    for name, value in values.items():
+        field = model._fields[name]
+        if field.type in ("one2many", "many2many") and isinstance(value, list):
+            lines += _relation_lines(
+                model.env[field.comodel_name], field, value, currency
             )
         else:
             lines.append(
-                f"{number}. {label} {operation['ids']}: botón {operation['method']}"
+                f"• {field.string}: {_value_text(model, field, value, currency)}"
             )
-        if operation.get("attach_files"):
-            lines.append("   + adjuntar los archivos que mandaste")
     return lines
 
 
-def _values_text(values) -> str:
-    text = ", ".join(f"{name}={value!r}" for name, value in values.items())
-    return text if len(text) <= 400 else text[:399] + "…"
+def _value_text(model, field, value, currency) -> str:
+    env = model.env
+    if value is False or value is None or value == "":
+        return "—"
+    if field.type == "many2one" and isinstance(value, int):
+        record = env[field.comodel_name].browse(value).exists()
+        return record.display_name if record else f"#{value}"
+    if field.type == "boolean":
+        return "Sí" if value else "No"
+    if field.type == "selection":
+        selection = field._description_selection(env)
+        return dict(selection).get(value, str(value))
+    if field.type == "monetary" and isinstance(value, (int, float)):
+        return _money(value, currency)
+    if field.type in ("float", "integer") and isinstance(value, (int, float)):
+        return _number(value)
+    if field.type == "html":
+        text = str(value)
+        return text if len(text) <= 200 else text[:199] + "…"
+    return str(value)
+
+
+def _relation_lines(comodel, field, commands, currency) -> list:
+    """An x2many's commands: new lines one per row, with a total where the
+    rows carry a quantity and a unit price."""
+    lines = [f"• {field.string}:"]
+    total = 0.0
+    priced = False
+    for command in commands:
+        if not isinstance(command, (list, tuple)) or not command:
+            continue
+        code = command[0]
+        if code == 0 and len(command) > 2 and isinstance(command[2], dict):
+            text, amount = _row_text(comodel, command[2], currency)
+            lines.append(f"   ◦ {text}")
+            if amount is not None:
+                total += amount
+                priced = True
+        elif code == 1 and len(command) > 2 and isinstance(command[2], dict):
+            text, _amount = _row_text(comodel, command[2], currency)
+            name = _records_text(comodel, [command[1]])
+            lines.append(f"   ◦ Cambiar {name}: {text}")
+        elif code in (4, 6):
+            ids = [command[1]] if code == 4 else list(command[2] or [])
+            lines.append(f"   ◦ {_records_text(comodel, ids)}")
+        elif code in (2, 3, 5):
+            lines.append("   ◦ Quitar renglones")
+    if priced and len(lines) > 2:
+        lines.append(f"   **Total: {_money(total, currency)}** (antes de impuestos)")
+    return lines
+
+
+def _row_text(comodel, values, currency):
+    """One row of a line: product, quantity × price = subtotal when it has
+    them, else its fields by label."""
+    product = values.get("product_id")
+    quantity = next((values[name] for name in QUANTITY_FIELDS if name in values), None)
+    price = values.get("price_unit")
+    if product and quantity is not None and "product_id" in comodel._fields:
+        name = _value_text(comodel, comodel._fields["product_id"], product, currency)
+        if isinstance(price, (int, float)) and isinstance(quantity, (int, float)):
+            subtotal = quantity * price
+            text = (
+                f"{name} — {_number(quantity)} × {_money(price, currency)}"
+                f" = {_money(subtotal, currency)}"
+            )
+            return text, subtotal
+        return f"{name} — {_number(quantity)}", None
+    parts = [
+        f"{comodel._fields[name].string}: "
+        f"{_value_text(comodel, comodel._fields[name], value, currency)}"
+        for name, value in values.items()
+        if name in comodel._fields
+    ]
+    return ", ".join(parts) or "—", None
 
 
 def apply(env, operations, files, requester):

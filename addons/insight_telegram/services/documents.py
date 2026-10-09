@@ -1,4 +1,8 @@
+import logging
+
 from .catalog import NotFound, find
+
+_logger = logging.getLogger(__name__)
 
 MAX_FILES = 5
 
@@ -142,3 +146,50 @@ def _printed(env, kind, params):
         name = (record.display_name or kind).replace("/", "-")
         files.append((f"{name}.pdf", content))
     return files, records.mapped("display_name")
+
+
+# The report each model's records are sent with once created: Odoo's own
+# main print. A model not listed uses the first report its Print menu offers.
+MAIN_REPORTS = {
+    "purchase.order": ("purchase.report_purchaseorder",),
+    "sale.order": ("sale.report_saleorder",),
+    "account.move": ("account.report_invoice_with_payments",),
+    "account.payment": (
+        "marin.report_payment_receipt",
+        "account.report_payment_receipt",
+    ),
+    "stock.picking": ("stock.report_deliveryslip",),
+}
+
+
+def main_report(env, model):
+    """The PDF report a record of `model` is printed with, or nothing."""
+    Report = env["ir.actions.report"]
+    base = [("model", "=", model), ("report_type", "=", "qweb-pdf")]
+    for name in MAIN_REPORTS.get(model, ()):
+        report = Report.search(base + [("report_name", "=", name)], limit=1)
+        if report:
+            return report
+    return Report.search(
+        base + [("binding_model_id", "!=", False)], limit=1, order="id"
+    )
+
+
+def print_records(env, records):
+    """``[(filename, bytes)]``: each record printed by its model's main
+    report; a model with none, or a report that fails, is left out."""
+    report = main_report(env, records._name) if records else None
+    if not report:
+        return []
+    files = []
+    for record in records:
+        try:
+            content, _format = env["ir.actions.report"]._render_qweb_pdf(
+                report.id, record.ids
+            )
+        except Exception:
+            _logger.info("insight_telegram could not print %s", record, exc_info=True)
+            continue
+        name = (record.display_name or report.name).replace("/", "-")
+        files.append((f"{name}.pdf", content))
+    return files

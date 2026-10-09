@@ -99,15 +99,18 @@ class TelegramChat(models.Model):
         pending = chat._insight_pending()
         decision = _decision(question) if pending else None
         if decision:
-            answer = (
-                self._insight_authorize(bot, pending, tr_env)
-                if decision == "authorize"
-                else tr_env._("Cancelled: nothing was changed.")
-            )
+            pdfs = []
+            if decision == "authorize":
+                answer, pdfs = self._insight_authorize(bot, pending, tr_env)
+            else:
+                answer = tr_env._("Cancelled: nothing was changed.")
             chat._insight_set_pending(None)
             self._insight_reply(
                 bot, chat, question, {"decision": decision}, answer, decision
             )
+            # each record created goes with its PDF, after the links
+            for filename, content in pdfs:
+                bot.send_document(chat.chat_id, content, filename)
             return
 
         tz = self.env.user.tz or reader_user.tz or DEFAULT_TZ
@@ -281,9 +284,10 @@ class TelegramChat(models.Model):
                 downloaded.append((name, got["content"], mimetype))
         return downloaded
 
-    def _insight_authorize(self, bot, pending, tr_env) -> str:
+    def _insight_authorize(self, bot, pending, tr_env) -> tuple:
         """Apply the changes the person just authorized, all or none, in
-        superuser mode but in their name, and say what was done."""
+        superuser mode but in their name: what was done, with a link to each
+        record, and the PDF Odoo prints for each record created."""
         requester = self.env.user
         env = self.env(user=requester.id, su=True)
         env = env(
@@ -304,16 +308,22 @@ class TelegramChat(models.Model):
             )
         except Exception as error:
             _logger.info("insight_telegram could not apply %s", pending, exc_info=True)
-            return tr_env._(
-                "I could not apply the changes, so nothing was changed: %(error)s",
-                error=str(error),
+            return (
+                tr_env._(
+                    "I could not apply the changes, so nothing was changed: %(error)s",
+                    error=str(error),
+                ),
+                [],
             )
         lines = ["**" + tr_env._("Done:") + "**"]
-        for records in touched:
+        pdfs = []
+        for operation, records in zip(pending["operations"], touched, strict=True):
             for record in records[:5]:
                 url = f"{record.get_base_url()}/odoo/{record._name}/{record.id}"
                 lines.append(f"• {record.display_name}: {url}")
-        return "\n".join(lines)
+            if operation["op"] == "create":
+                pdfs += documents.print_records(env, records[:5])
+        return "\n".join(lines), pdfs
 
     def _insight_send_documents(self, bot, chat, interpretation, reader_user, tr_env):
         """Send the files a request for documents asks for, and say what was
