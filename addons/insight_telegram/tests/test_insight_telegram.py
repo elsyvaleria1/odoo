@@ -1310,6 +1310,35 @@ class TestSuperBotFlow(TelegramBotTestCase):
         )
         self.assertEqual(order.company_id, company)
 
+    def test_a_changed_record_is_printed_again_once(self):
+        partner = self.env["res.partner"].create({"name": "Ask Probe Changed"})
+        proposal = [
+            {
+                "op": "write",
+                "model": "res.partner",
+                "ids": [partner.id],
+                "values": {"comment": "corrected"},
+            },
+            {
+                "op": "write",
+                "model": "res.partner",
+                "ids": [partner.id],
+                "values": {"ref": "APC"},
+            },
+        ]
+        self._job({"text": "corrige el contacto"}, agent=("Va.", proposal))
+        with (
+            patch(
+                "odoo.addons.insight_telegram.services.documents.print_records",
+                return_value=[("Ask Probe Changed.pdf", TINY_PDF)],
+            ) as printed,
+            patch.object(type(self.test_bot), "send_document") as send,
+        ):
+            self._job({"text": "autorizo"})
+        self.assertEqual(printed.call_count, 1, "printed once, as it stands now")
+        self.assertEqual(printed.call_args.args[1], partner)
+        self.assertEqual(send.call_count, 1)
+
     def test_cancelling_discards_the_proposals(self):
         proposal = [
             {

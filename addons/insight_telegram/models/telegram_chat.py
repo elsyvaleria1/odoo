@@ -366,7 +366,7 @@ class TelegramChat(models.Model):
     def _insight_authorize(self, bot, pending, tr_env) -> tuple:
         """Apply the changes the person just authorized, all or none, in
         superuser mode but in their name: what was done, with a link to each
-        record, and the PDF Odoo prints for each record created."""
+        record, and the PDF Odoo prints for each record created or changed."""
         requester = self.env.user
         env = self.env(user=requester.id, su=True)
         # the person's own company first: it is the default of anything
@@ -398,13 +398,17 @@ class TelegramChat(models.Model):
                 [],
             )
         lines = ["**" + tr_env._("Done:") + "**"]
-        pdfs = []
-        for operation, records in zip(pending["operations"], touched, strict=True):
+        # each record created or changed goes with its PDF as it stands now,
+        # once, however many operations touched it
+        printed = {}
+        for records in touched:
             for record in records[:5]:
                 url = f"{record.get_base_url()}/odoo/{record._name}/{record.id}"
                 lines.append(f"• {record.display_name}: {url}")
-            if operation["op"] == "create":
-                pdfs += documents.print_records(env, records[:5])
+                printed.setdefault((record._name, record.id), record)
+        pdfs = []
+        for record in list(printed.values())[: documents.MAX_FILES]:
+            pdfs += documents.print_records(env, record)
         return "\n".join(lines), pdfs
 
     def _insight_send_documents(self, bot, chat, interpretation, reader_user, tr_env):
