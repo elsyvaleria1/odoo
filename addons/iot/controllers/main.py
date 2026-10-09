@@ -166,7 +166,7 @@ class IoTController(IoTBoxLookup, http.Controller):
             )
             return
 
-        request.env["iot.channel"]._send_message(
+        request.env["iot.channel"]._send_reply(
             {
                 "session_id": session_id
                 or kwargs.get(
@@ -180,11 +180,11 @@ class IoTController(IoTBoxLookup, http.Controller):
                     "action_args": kwargs.get("action_args", {}),
                 },
             },
-            message_type="operation_confirmation",
+            "operation_confirmation",
         )
 
     @http.route("/iot/box/webrtc_answer", type="jsonrpc", auth="public")
-    def iot_box_webrtc_answer(self, iot_box_identifier, answer):
+    def iot_box_webrtc_answer(self, iot_box_identifier, answer, session_id=None):
         box = self._search_box(iot_box_identifier)
         if not box:
             _logger.warning(
@@ -193,12 +193,13 @@ class IoTController(IoTBoxLookup, http.Controller):
             )
             raise NotFound
 
-        request.env["iot.channel"]._send_message(
+        request.env["iot.channel"]._send_reply(
             {
+                "session_id": session_id,
                 "iot_box_identifier": iot_box_identifier,
                 "answer": answer,
             },
-            message_type="webrtc_answer",
+            "webrtc_answer",
         )
 
     @http.route("/iot/setup", type="jsonrpc", auth="public")
@@ -218,7 +219,7 @@ class IoTController(IoTBoxLookup, http.Controller):
 
         _logger.info("IoT %s devices:\n%s", box, pprint.pformat(devices))
         self._upsert_devices(box, devices)
-        return request.env["iot.channel"].sudo()._get_iot_channel()
+        return request.env["iot.channel"].sudo()._box_channel(box)
 
     def _upsert_box(self, iot_box):
         """Create or update the ``iot.box`` record this payload describes.

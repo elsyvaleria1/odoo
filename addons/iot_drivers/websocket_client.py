@@ -124,6 +124,7 @@ class WebsocketClient(Thread):
                     answer = webrtc_client.offer(payload["offer"])
                     send_to_controller(
                         {
+                            "session_id": payload.get("session_id"),
                             "iot_box_identifier": helpers.get_identifier(),
                             "answer": answer,
                         },
@@ -137,7 +138,7 @@ class WebsocketClient(Thread):
                         time.sleep(1)
                     send_to_controller(
                         {
-                            "session_id": 0,
+                            "session_id": payload.get("session_id", 0),
                             "iot_box_identifier": helpers.get_identifier(),
                             "device_identifier": None,
                             "status": "success",

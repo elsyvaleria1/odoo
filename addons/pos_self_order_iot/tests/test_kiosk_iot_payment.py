@@ -2,6 +2,8 @@ import odoo.tests
 from odoo import Command
 from odoo.tests.http import JsonRpcException
 
+from odoo.addons.bus.tools.channel_capability import channel_target, resolve_capability
+from odoo.addons.iot.models.iot_channel import REPLY_CHANNEL
 from odoo.addons.iot.tests.common import IotCommonTest
 from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCommonTest
 
@@ -175,7 +177,13 @@ class TestKioskIoTRelay(TestKioskIoTPayment):
 
         channel = self._relay(self.shop_iot_box.identifier)
 
-        self.assertEqual(channel, "mock_iot_channel")
+        channels = self.env["iot.channel"]
+        self.assertEqual(
+            resolve_capability(self.env, channel),
+            channel_target(
+                self.env, REPLY_CHANNEL, channels._kiosk_reply_key(self.pos_config)
+            ),
+        )
         self.assertEqual(len(self.iot_websocket_messages), 1)
 
     def test_a_kiosk_reads_only_its_own_boxes(self):

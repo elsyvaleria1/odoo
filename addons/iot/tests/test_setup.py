@@ -1,6 +1,9 @@
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import HttpCase, tagged
 
+from odoo.addons.bus.tools.channel_capability import channel_target, resolve_capability
+from odoo.addons.iot.models.iot_channel import BOX_CHANNEL
+
 
 @tagged("post_install", "-at_install")
 class TestBoxEnrolment(HttpCase):
@@ -117,15 +120,15 @@ class TestBoxEnrolment(HttpCase):
         self.env.invalidate_all()
         self.assertEqual(box.ip, "10.6.6.6")
 
-    def test_the_first_box_is_answered_the_channel_it_creates(self):
-        self.env["ir.config_parameter"].sudo().set_param("iot.ws_channel", False)
+    def test_a_box_is_answered_a_channel_of_its_own(self):
         token = self._hand_out_token()
 
         channel = self._setup(self._payload(token), {})
         self.env.invalidate_all()
 
-        self.assertTrue(channel, "the first box was answered no channel")
+        box = self.env["iot.box"].sudo().search([("token", "=", token)])
+        channels = self.env["iot.channel"]
         self.assertEqual(
-            channel,
-            self.env["ir.config_parameter"].sudo().get_param("iot.ws_channel"),
+            resolve_capability(self.env, channel),
+            channel_target(self.env, BOX_CHANNEL, channels._box_key(box)),
         )

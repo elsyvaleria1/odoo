@@ -57,11 +57,19 @@ class IotCommonTest(HttpCase):
         # the whole self-order service down with it.
         answerable = {"session_id", "iot_identifiers", "device_identifiers"}
 
-        def mock_send_message(iot_channel_record, message, message_type="iot_action"):
+        def mock_send_message(
+            iot_channel_record, message, message_type="iot_action", reply_key=None
+        ):
             self.iot_websocket_messages.append({message_type: message})
             if message_type == "iot_action" and answerable <= message.keys():
+                # a box echoes the session id the server routed through it
+                session_id = message["session_id"]
+                if reply_key:
+                    session_id = iot_channel_record._wrap_session_id(
+                        reply_key, session_id
+                    )
                 answer = {
-                    "session_id": message["session_id"],
+                    "session_id": session_id,
                     "iot_box_identifier": message["iot_identifiers"][0],
                     "device_identifier": message["device_identifiers"][0],
                     "status": "success",
@@ -76,18 +84,20 @@ class IotCommonTest(HttpCase):
                     headers={"Content-Type": "application/json"},
                     data=json_dumps({"params": answer}),
                 )
-            return original_send_message(iot_channel_record, message, message_type)
+            return original_send_message(
+                iot_channel_record, message, message_type, reply_key=reply_key
+            )
 
-        def mock_get_iot_channel(_iot_channel_record):
-            return "mock_iot_channel"
+        original_send_reply = IotChannel._send_reply
 
-        send_message_patcher = patch.object(
-            IotChannel, "_send_message", mock_send_message
-        )
-        channel_patcher = patch.object(
-            IotChannel, "_get_iot_channel", mock_get_iot_channel
-        )
-        self.addCleanup(send_message_patcher.stop)
-        self.addCleanup(channel_patcher.stop)
-        send_message_patcher.start()
-        channel_patcher.start()
+        def record_reply(iot_channel_record, message, message_type):
+            self.iot_websocket_messages.append({message_type: message})
+            return original_send_reply(iot_channel_record, message, message_type)
+
+        for name, mock in (
+            ("_send_message", mock_send_message),
+            ("_send_reply", record_reply),
+        ):
+            patcher = patch.object(IotChannel, name, mock)
+            self.addCleanup(patcher.stop)
+            patcher.start()

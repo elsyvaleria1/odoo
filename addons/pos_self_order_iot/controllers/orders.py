@@ -80,9 +80,9 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     def iot_box_websocket_channel(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
         self, access_token, message=None, message_type="iot_action"
     ):
-        # the IoT channel is the database's, every box's traffic on it: it is
-        # a kiosk's, which drives its point of sale's boxes from the browser,
-        # never a phone's, whose token every QR code prints
+        # a kiosk drives its point of sale's boxes from the browser and hears
+        # their answers on a channel of its own; a phone, whose token every QR
+        # code prints, reaches no box
         try:
             pos_config = self._get_pos_config(access_token)
         except Unauthorized:
@@ -102,8 +102,11 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
                 or not targets <= allowed
             ):
                 raise Forbidden
-            pos_config.env["iot.channel"]._send_message(message, message_type)
-        return pos_config.env["iot.channel"]._get_iot_channel()
+        channels = pos_config.env["iot.channel"]
+        reply_key = channels._kiosk_reply_key(pos_config)
+        if message:
+            channels._send_message(message, message_type, reply_key=reply_key)
+        return channels._reply_channel(reply_key)
 
     def _kiosk_iot_boxes(self, pos_config):
         if pos_config.self_ordering_mode != "kiosk":
