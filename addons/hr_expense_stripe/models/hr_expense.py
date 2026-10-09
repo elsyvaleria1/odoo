@@ -138,14 +138,18 @@ class HrExpense(models.Model):
                 )
             )
 
-        if self.env["hr.expense"].search(
+        existing = self.env["hr.expense"].search(
             [
                 ("stripe_authorization_id", "=", auth_object["id"]),
                 ("company_id", "=", card.company_id.id),
-            ],
-            limit=1,
-        ):
-            return self._update_from_stripe_authorization(auth_object)
+            ]
+        )
+        if existing:
+            # a closed authorization is a declined one whose refused expense
+            # already exists: its amount is 0 and must not overwrite it
+            if auth_object["status"] == "pending":
+                existing._update_from_stripe_authorization(auth_object)
+            return existing
         card = card.with_company(card.company_id)
         domain = Domain("can_be_expensed", "=", True)
         domain &= Domain(
