@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.66
-:Date: 2026-10-08
+:Version: 7.67
+:Date: 2026-10-09
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -3558,8 +3558,11 @@ line** ``[review]``:
   ``privileges``) and the worker restores them, dropping a privilege deleted
   since. ``records.sudo().delayed()`` therefore runs elevated, and
   ``records.with_privilege(...).delayed()`` holds that privilege; queue from the
-  environment whose authority the work needs. A job whose user has been
-  archived still fails terminally.
+  environment whose authority the work needs. The allowlisted context keeps the
+  acting partner and the privilege's reason with them. A job deduplicated on its
+  ``identity_key`` serves every caller with the widest authority among them:
+  an elevated or privileged caller widens the queued job it joins. A job whose
+  user has been archived still fails terminally.
 * Arguments are **JSON-serialisable**: pass ids, not recordsets or datetimes.
   Target records ride on ``delayed()``'s recordset.
 * Bodies are **idempotent**. The job's writes commit atomically with its
@@ -6186,6 +6189,10 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.67
+     - 2026-10-09
+     - §2.9.14: a job keeps its caller's acting partner and privilege reason, and
+       a deduplicated job holds the widest authority among the callers it serves.
    * - 7.66
      - 2026-10-08
      - Appendix D no longer claims a test pins its version collisions: none

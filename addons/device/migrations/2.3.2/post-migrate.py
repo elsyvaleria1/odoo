@@ -29,5 +29,8 @@ def migrate(cr, version):
                 # as the push that queued it: the receiver, in superuser mode,
                 # which its job now holds as well
                 attachment.with_user(receiver).sudo()._read_later(
-                    representation, **(job.kwargs or {})
+                    representation,
+                    channel=job.channel,
+                    priority=job.priority,
+                    **(job.kwargs or {}),
                 )

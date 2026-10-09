@@ -326,6 +326,26 @@ class TestIrJob(TransactionCase):
         self.assertFalse(env.su)
         self.assertEqual(env.privileges, frozenset(privilege.ids))
 
+    def test_a_deduplicated_job_holds_the_widest_authority_it_serves(self):
+        privilege = self._privilege()
+        user = new_test_user(self.env, login="job_dedup", groups="base.group_user")
+        plain = self.partner.with_user(user)
+        job = plain.delayed(identity_key="widest")._ir_job_test_append()
+        self.assertFalse(job.sudo().elevated)
+
+        plain.with_privilege(
+            privilege.get_external_id()[privilege.id], reason="test"
+        ).delayed(identity_key="widest")._ir_job_test_append()
+        plain.sudo().delayed(identity_key="widest")._ir_job_test_append()
+        plain.delayed(identity_key="widest")._ir_job_test_append()
+
+        job.invalidate_recordset()
+        self.assertTrue(job.sudo().elevated)
+        self.assertEqual(job.sudo().privileges, privilege.ids)
+        env = self._claimed_env()
+        self.assertTrue(env.su)
+        self.assertEqual(env.privileges, frozenset(privilege.ids))
+
     def test_a_privilege_gone_since_is_not_held(self):
         self.partner.delayed()._ir_job_test_append()
         job = self._claim()
@@ -797,6 +817,26 @@ class TestIrJob(TransactionCase):
             narrowed = IrJob._narrow_company_scope(env, claimed)
         self.assertEqual(narrowed.companies.ids, [kept.id])
         self.assertEqual(narrowed.company, kept)
+
+    def test_narrowing_keeps_the_jobs_privileges(self):
+        kept = self.env["res.company"].create({"name": "kept privileged"})
+        revoked = self.env["res.company"].create({"name": "revoked privileged"})
+        user = self._multi_company_user(kept + revoked, kept + revoked)
+        user.write({"company_ids": [(6, 0, kept.ids)]})
+        self.env.flush_all()
+
+        claimed = self._claim()
+        privileges = frozenset(self._privilege().ids)
+        env = odoo.api.Environment(
+            self.env.cr,
+            claimed["user_id"],
+            dict(claimed["context"]),
+            privileges=privileges,
+        )
+        with self.assertLogs("odoo.addons.base.models.ir_job", "WARNING"):
+            narrowed = IrJob._narrow_company_scope(env, claimed)
+        self.assertEqual(narrowed.companies.ids, [kept.id])
+        self.assertEqual(narrowed.privileges, privileges)
 
     def test_a_superuser_scope_is_never_narrowed(self):
         gone = self.env["res.company"].create({"name": "not the superuser's"})

@@ -160,7 +160,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_default_audit.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
 | `test_ir_demo.py` | `post_install`, `-at_install` | 4 | 8 | TransactionCase |
 | `test_ir_filters.py` | `post_install`, `-at_install`, `migration` | 8 | 35 | FiltersCase, TransactionCase |
-| `test_ir_job.py` | `post_install`, `-at_install` | 8 | 125 | TransactionCase, BaseCase |
+| `test_ir_job.py` | `post_install`, `-at_install` | 8 | 127 | TransactionCase, BaseCase |
 | `test_ir_logging.py` | `post_install`, `-at_install` | 3 | 7 | TransactionCase |
 | `test_ir_model.py` | `-at_install`, `post_install`, `test_eval_context` | 17 | 152 | TransactionCase, HttpCase, BaseCase |
 | `test_ir_model_data.py` | `post_install`, `-at_install` | 4 | 13 | TransactionCase |

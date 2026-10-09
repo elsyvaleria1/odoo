@@ -50,7 +50,16 @@ _debug = DebugLog(__name__)
 
 NOTIFY_PENDING_KEY = "ir.job.notify"
 
-ALLOWED_CONTEXT_KEYS = ("lang", "tz", "allowed_company_ids")
+# what of its caller's context a job keeps: the locale, the company scope and,
+# with the authority it holds, on whose behalf it acts and why a privilege is
+# held (the access log reads it)
+ALLOWED_CONTEXT_KEYS = (
+    "lang",
+    "tz",
+    "allowed_company_ids",
+    "access_acting_partner_id",
+    "privilege_reason",
+)
 
 DEAD_JOB_GRACE_S = 60
 
@@ -698,6 +707,22 @@ class IrJob(models.Model):
             existing=row[0] if row else None,
             chained_lost=bool(dep_ids),
         )
+        env = self.env
+        if row and (env.su or env.privileges):
+            # one job serves every caller of its identity: it runs with the
+            # widest authority among them, so an elevated caller is not served
+            # by a job queued without its elevation
+            env.cr.execute(
+                SQL(
+                    "UPDATE ir_job SET elevated = elevated OR %s, privileges = ("
+                    " SELECT jsonb_agg(DISTINCT p ORDER BY p) FROM jsonb_array_elements("
+                    " COALESCE(privileges, '[]'::jsonb) || %s::jsonb) AS p)"
+                    f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                    env.su,
+                    json_dumps(sorted(env.privileges)),
+                    row[0],
+                )
+            )
         if dep_ids:
             _logger.warning(
                 "ir.job %s.%s deduplicated on identity key %r: the job it "
@@ -1361,7 +1386,7 @@ class IrJob(models.Model):
             context["allowed_company_ids"] = kept
         else:
             context.pop("allowed_company_ids", None)
-        return api.Environment(env.cr, env.uid, context)
+        return env(context=context)
 
     @classmethod
     def _record_failure(cls, cr, job: dict[str, Any], exc: BaseException) -> None:
