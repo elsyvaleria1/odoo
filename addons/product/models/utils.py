@@ -17,3 +17,14 @@ def unlink_where_possible(records, delete):
             unlink_where_possible(records[middle:], delete)
         )
     return records.browse()
+
+
+def write_and_reorder(records, vals, write):
+    reordered = "sequence" in vals and any(
+        record.sequence != vals["sequence"] for record in records
+    )
+    result = write(vals)
+    if reordered:
+        records.env.flush_all()
+        records.env.invalidate_all()
+    return result

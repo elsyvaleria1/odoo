@@ -84,7 +84,7 @@
                                         <td
                                             groups="uom.group_uom"
                                             class="px-1"
-                                            t-out="product['uom']" />
+                                            t-out="variant['uom']" />
                                         <t t-foreach="quantities" t-as="qty">
                                             <td class="text-end px-1">
                                                 <span

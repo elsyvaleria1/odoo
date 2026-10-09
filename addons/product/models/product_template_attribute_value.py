@@ -160,7 +160,7 @@ class ProductTemplateAttributeValue(models.Model):
 
     def unlink(self):
         single_values = self.filtered(
-            lambda ptav: len(ptav.attribute_line_id.product_template_value_ids) == 1
+            lambda ptav: ptav._is_from_single_value_line(only_active=False)
         )
         for ptav in single_values:
             ptav.ptav_product_variant_ids.write(
@@ -184,9 +184,15 @@ class ProductTemplateAttributeValue(models.Model):
         return super().unlink()
 
     @api.depends("attribute_id")
+    @api.depends_context("show_attribute")
     def _compute_display_name(self):
+        show_attribute = self.env.context.get("show_attribute", True)
         for value in self:
-            value.display_name = f"{value.attribute_id.name}: {value.name}"
+            value.display_name = (
+                f"{value.attribute_id.name}: {value.name}"
+                if show_attribute
+                else value.name
+            )
 
     def _filtered_active(self) -> Self:
         return self.filtered(lambda ptav: ptav.ptav_active)
@@ -212,7 +218,4 @@ class ProductTemplateAttributeValue(models.Model):
 
     def _is_from_single_value_line(self, only_active=True) -> bool:
         self.check_singleton()
-        all_values = self.attribute_line_id.product_template_value_ids
-        if only_active:
-            all_values = all_values._filtered_active()
-        return len(all_values) == 1
+        return self.attribute_line_id._has_single_value(only_active)

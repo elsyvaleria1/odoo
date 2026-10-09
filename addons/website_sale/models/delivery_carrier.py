@@ -22,9 +22,5 @@ class DeliveryCarrier(models.Model):
         product_template = cast("ProductTemplate", self.env["product.template"])
         return cast(
             "UomUom",
-            product_template._get_uom_id_from_ir_config_parameter(
-                "product.volume_in_cubic_feet",
-                "uom.product_uom_mile",
-                "uom.product_uom_km",
-            ),
+            product_template._get_uom_from_setting("distance"),
         )

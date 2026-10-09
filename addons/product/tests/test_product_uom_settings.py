@@ -1,4 +1,5 @@
 from odoo.addons.base.tests.common import BaseCommon
+from odoo.addons.product.models.product_template import UOM_SETTINGS
 
 
 class UomSettingsCommon(BaseCommon):
@@ -25,14 +26,14 @@ class TestLengthIsResolvedOffTheVolumeSetting(UomSettingsCommon):
     def test_length_uom_defaults_to_millimeter(self):
         self._set("product.volume_in_cubic_feet", "0")
         self.assertEqual(
-            self.template._get_length_uom_id_from_ir_config_parameter(),
+            self.template._get_uom_from_setting("length"),
             self.env.ref("uom.product_uom_millimeter"),
         )
 
     def test_length_uom_follows_the_volume_setting(self):
         self._set("product.volume_in_cubic_feet", "1")
         self.assertEqual(
-            self.template._get_length_uom_id_from_ir_config_parameter(),
+            self.template._get_uom_from_setting("length"),
             self.env.ref("uom.product_uom_foot"),
         )
 
@@ -53,28 +54,21 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
     what keeps this true.
     """
 
-    def _resolved(self, key, method):
+    def _resolved(self, kind):
+        key = UOM_SETTINGS[kind][0]
         units = []
         for value in ("0", "1"):
             self._set(key, value)
-            units.append(getattr(self.template, method)())
+            units.append(self.template._get_uom_from_setting(kind))
         return units
 
     def test_every_resolved_unit_is_active(self):
-        # Weight, volume and length are deliberately absent: those three
-        # resolve a unit only to label a value, and no user is ever asked to
-        # re-select it, so `uom.product_uom_lb` staying archived costs nothing.
-        resolvers = (
-            ("product.odometer_in_mi", "_get_odometer_uom_id_from_ir_config_parameter"),
-            ("product.area_in_square_ft", "_get_area_uom_id_from_ir_config_parameter"),
-            ("product.power_in_hp", "_get_power_uom_id_from_ir_config_parameter"),
-            (
-                "product.fuel_efficiency_in_mpg",
-                "_get_fuel_efficiency_uom_id_from_ir_config_parameter",
-            ),
-        )
-        for key, method in resolvers:
-            for unit in self._resolved(key, method):
+        # Weight, volume, length and distance are deliberately absent: those
+        # resolve a unit only to label or convert a value, and no user is ever
+        # asked to re-select it, so `uom.product_uom_lb` staying archived costs
+        # nothing.
+        for kind in ("odometer", "area", "power", "fuel_efficiency"):
+            for unit in self._resolved(kind):
                 with self.subTest(unit=unit.display_name):
                     self.assertTrue(
                         unit.active,
@@ -84,7 +78,7 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
 
     def test_the_odometer_default_can_be_picked_again(self):
         self._set("product.odometer_in_mi", "0")
-        km = self.template._get_odometer_uom_id_from_ir_config_parameter()
+        km = self.template._get_uom_from_setting("odometer")
         self.assertEqual(
             self.env["uom.uom"].search([("id", "=", km.id)]),
             km,
@@ -92,68 +86,28 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
         )
 
 
-class TestResolversMatchTheCoreHelper(UomSettingsCommon):
-    """Each resolver must behave exactly as the parametrised helper.
+class TestTheUomSettingTable(UomSettingsCommon):
+    """Only the exact value "1" selects the alternative unit.
 
-    The four pairs used to inline the helper's body by hand. Collapsing them
-    is only safe if every branch agrees, including the ones a reader forgets:
-    the key absent, the key empty, the key set to something truthy that is not
-    "1".
+    Every branch a reader forgets is held: the key absent, empty, or set to
+    something truthy that is not "1".
     """
 
-    KEY_STATES = ("0", "1", None, "", "true")
+    KEY_STATES = {"0": False, "1": True, None: False, "": False, "true": False}
 
-    RESOLVERS = (
-        (
-            "product.odometer_in_mi",
-            "_get_odometer_uom_id_from_ir_config_parameter",
-            "uom.product_uom_mile",
-            "uom.product_uom_km",
-        ),
-        (
-            "product.area_in_square_ft",
-            "_get_area_uom_id_from_ir_config_parameter",
-            "uom.product_uom_square_foot",
-            "uom.product_uom_square_meter",
-        ),
-        (
-            "product.power_in_hp",
-            "_get_power_uom_id_from_ir_config_parameter",
-            "uom.product_uom_hp",
-            "uom.product_uom_kw",
-        ),
-        (
-            "product.fuel_efficiency_in_mpg",
-            "_get_fuel_efficiency_uom_id_from_ir_config_parameter",
-            "uom.product_uom_miles_per_galon",
-            "uom.product_uom_km_per_liter",
-        ),
-    )
-
-    def test_every_resolver_agrees_with_the_helper_on_every_key_state(self):
-        for key, method, ref_if_set, ref_default in self.RESOLVERS:
-            for state in self.KEY_STATES:
+    def test_every_kind_on_every_key_state(self):
+        for kind, (key, unit_if_set, unit_otherwise) in UOM_SETTINGS.items():
+            for state, selects in self.KEY_STATES.items():
                 if state is None:
                     self.icp.search([("key", "=", key)]).unlink()
                     self.env.registry.clear_cache()
                 else:
                     self._set(key, state)
-                with self.subTest(key=key, state=state):
+                with self.subTest(kind=kind, state=state):
                     self.assertEqual(
-                        getattr(self.template, method)(),
-                        self.template._get_uom_id_from_ir_config_parameter(
-                            key, ref_if_set, ref_default
-                        ),
+                        self.template._get_uom_from_setting(kind),
+                        self.env.ref(unit_if_set if selects else unit_otherwise),
                     )
-
-    def test_each_name_resolver_is_the_display_name_of_its_pair(self):
-        for key, method, _ref_if_set, _ref_default in self.RESOLVERS:
-            self._set(key, "1")
-            with self.subTest(key=key):
-                self.assertEqual(
-                    getattr(self.template, method.replace("_uom_id_", "_uom_name_"))(),
-                    getattr(self.template, method)().display_name,
-                )
 
 
 class TestTheSettingsBlockCarriesEveryUnit(UomSettingsCommon):

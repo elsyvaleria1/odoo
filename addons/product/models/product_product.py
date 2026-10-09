@@ -519,13 +519,11 @@ class ProductProduct(models.Model):
             return name
 
         partner_id = self.env.context.get("partner_id")
-        if partner_id:
-            partner_ids = [
-                partner_id,
-                self.env["res.partner"].browse(partner_id).commercial_partner_id.id,
-            ]
-        else:
-            partner_ids = []
+        partner_ids = (
+            self.env["res.partner"].browse(partner_id)._get_seller_partners().ids
+            if partner_id
+            else []
+        )
         company_id = self.env.context.get("company_id")
 
         self.check_access("read")
@@ -640,7 +638,14 @@ class ProductProduct(models.Model):
         supplier_domain = []
         if partner_id := self.env.context.get("partner_id"):
             supplier_domain = [
-                ("partner_id", "=", partner_id),
+                (
+                    "partner_id",
+                    "in",
+                    self.env["res.partner"]
+                    .browse(partner_id)
+                    ._get_seller_partners()
+                    .ids,
+                ),
                 "|",
                 ("product_code", operator, value),
                 ("product_name", operator, value),
@@ -750,7 +755,14 @@ class ProductProduct(models.Model):
         if not products and (partner_id := self.env.context.get("partner_id")):
             supplier_domain = Domain(
                 [
-                    ("partner_id", "=", partner_id),
+                    (
+                        "partner_id",
+                        "in",
+                        self.env["res.partner"]
+                        .browse(partner_id)
+                        ._get_seller_partners()
+                        .ids,
+                    ),
                     "|",
                     ("product_code", operator, name),
                     ("product_name", operator, name),
@@ -982,13 +994,16 @@ class ProductProduct(models.Model):
         SupplierInfo = self.env["product.supplierinfo"]
         if not partner_id or not SupplierInfo.has_access("read"):
             return SupplierInfo
+        partners = self.env["res.partner"].browse(partner_id)._get_seller_partners()
         sellers = self.seller_ids.filtered(
             lambda seller: (
-                seller.partner_id.id == partner_id
+                seller.partner_id in partners
                 and (not seller.product_id or seller.product_id == self)
             )
         )
-        return sellers.filtered("product_id")[:1] or sellers[:1]
+        return sellers.sorted(
+            lambda seller: (not seller.product_id, seller.partner_id.id != partner_id)
+        )[:1]
 
     def _get_filtered_sellers(
         self,
@@ -1004,6 +1019,7 @@ class ProductProduct(models.Model):
         precision = self.env["decimal.precision"].get_precision("Product Unit")
 
         sellers_filtered = self._prepare_sellers(params)
+        seller_partners = partner_id and partner_id._get_seller_partners()
         matching_ids = []
         for seller in sellers_filtered:
             if seller.date_start and seller.date_start > date:
@@ -1016,10 +1032,7 @@ class ProductProduct(models.Model):
                 and seller.product_uom_id not in (uom_id, self.uom_id)
             ):
                 continue
-            if partner_id and seller.partner_id not in [
-                partner_id,
-                partner_id.parent_id,
-            ]:
+            if partner_id and seller.partner_id not in seller_partners:
                 continue
             if seller.product_id and seller.product_id != self:
                 continue
@@ -1606,5 +1619,13 @@ class ProductProduct(models.Model):
             barcodes_within_company,
             company_id,
         )
-        if self.env["product.uom"].sudo().search_count(packaging_domain, limit=1):
-            raise ValidationError(self.env._("A packaging already uses the barcode"))
+        if (
+            packaging := self.env["product.uom"]
+            .sudo()
+            .search_fetch(packaging_domain, ["barcode"], limit=1)
+        ):
+            raise ValidationError(
+                self.env._(
+                    "The barcode %s is already used by a packaging.", packaging.barcode
+                )
+            )

@@ -61,10 +61,10 @@ class WizardProductProductPrintLabel(models.TransientModel):
 
         active_model = ""
         if self.product_tmpl_ids:
-            products = self.product_tmpl_ids.ids
+            product_ids = self.product_tmpl_ids.ids
             active_model = "product.template"
         elif self.product_ids:
-            products = self.product_ids.ids
+            product_ids = self.product_ids.ids
             active_model = "product.product"
         else:
             raise UserError(
@@ -75,7 +75,7 @@ class WizardProductProductPrintLabel(models.TransientModel):
 
         data = {
             "active_model": active_model,
-            "quantity_by_product": dict.fromkeys(products, self.custom_quantity),
+            "quantity_by_product": dict.fromkeys(product_ids, self.custom_quantity),
             "layout_wizard": self.id,
             "price_included": "xprice" in self.print_format,
         }

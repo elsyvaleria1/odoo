@@ -196,9 +196,7 @@ class DeliverCarrier(models.Model):
     def _envia_convert_size(self, size):
         """Returns the size in CM for a Envia order."""
         self.check_singleton()
-        size_uom_id = self.env[
-            "product.template"
-        ]._get_length_uom_id_from_ir_config_parameter()
+        size_uom_id = self.env["product.template"]._get_uom_from_setting("length")
         return size_uom_id._get_quantity_in_unit(
             size, self.env.ref("uom.product_uom_cm"), round=False
         )

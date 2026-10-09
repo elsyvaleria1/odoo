@@ -280,17 +280,13 @@ class ProviderUSPS(models.Model):
                     carrier.can_generate_return = True
 
     def _usps_convert_weight(self, weight):
-        weight_uom_id = self.env[
-            "product.template"
-        ]._get_weight_uom_id_from_ir_config_parameter()
+        weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         return weight_uom_id._get_quantity_in_unit(
             weight, self.env.ref("uom.product_uom_lb")
         )
 
     def _usps_convert_length(self, length):
-        length_uom_id = self.env[
-            "product.template"
-        ]._get_length_uom_id_from_ir_config_parameter()
+        length_uom_id = self.env["product.template"]._get_uom_from_setting("length")
         return length_uom_id._get_quantity_in_unit(
             length, self.env.ref("uom.product_uom_inch")
         )
@@ -299,9 +295,11 @@ class ProviderUSPS(models.Model):
         self.check_singleton()
         total_weight = order._get_estimated_weight()
         if float_is_zero(total_weight, precision_rounding=0.01):
-            weight_uom_name = self.env[
-                "product.template"
-            ]._get_weight_uom_name_from_ir_config_parameter()
+            weight_uom_name = (
+                self.env["product.template"]
+                ._get_uom_from_setting("weight")
+                .display_name
+            )
             raise UserError(
                 self.env._(
                     "The package cannot be created because the total weight of the products in the picking is 0.0 %s",

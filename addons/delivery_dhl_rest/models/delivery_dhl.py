@@ -186,9 +186,11 @@ class ProviderDHL(models.Model):
         total_weight = order._get_estimated_weight()
         total_weight = self._dhl_rest_convert_weight(total_weight)
         if not total_weight:
-            weight_uom_name = self.env[
-                "product.template"
-            ]._get_weight_uom_name_from_ir_config_parameter()
+            weight_uom_name = (
+                self.env["product.template"]
+                ._get_uom_from_setting("weight")
+                .display_name
+            )
             raise UserError(
                 self.env._(
                     "The package cannot be created because the total weight of the products in the picking is 0.0 %s",
@@ -710,9 +712,7 @@ class ProviderDHL(models.Model):
         picking.write({"carrier_tracking_ref": "", "carrier_price": 0.0})
 
     def _dhl_rest_convert_weight(self, weight):
-        weight_uom_id = self.env[
-            "product.template"
-        ]._get_weight_uom_id_from_ir_config_parameter()
+        weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         unit = self.dhl_unit_system
         if unit == "imperial":
             weight = weight_uom_id._get_quantity_in_unit(

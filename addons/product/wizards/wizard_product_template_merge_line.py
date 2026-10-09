@@ -19,7 +19,7 @@ class WizardProductTemplateMergeLine(models.TransientModel):
 
     wizard_id = fields.Many2one(comodel_name="wizard.product.template.merge")
     min_id = fields.Integer(string="MinID")
-    aggr_ids = fields.Char(
+    aggr_ids = fields.Json(
         string="Ids",
         required=True,
     )

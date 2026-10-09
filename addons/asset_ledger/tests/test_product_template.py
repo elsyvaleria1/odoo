@@ -178,9 +178,7 @@ class TestProductTemplate(TransactionCase):
             }
         )
         expected = (
-            self.env["product.template"]
-            ._get_weight_uom_id_from_ir_config_parameter()
-            .display_name
+            self.env["product.template"]._get_uom_from_setting("weight").display_name
         )
         self.assertEqual(truck.weight_capacity_uom_name, expected)
         self.assertTrue(truck.weight_capacity_uom_name)
@@ -194,9 +192,7 @@ class TestProductTemplate(TransactionCase):
             }
         )
         expected = (
-            self.env["product.template"]
-            ._get_volume_uom_id_from_ir_config_parameter()
-            .display_name
+            self.env["product.template"]._get_uom_from_setting("volume").display_name
         )
         self.assertEqual(van.volume_capacity_uom_name, expected)
         self.assertTrue(van.volume_capacity_uom_name)

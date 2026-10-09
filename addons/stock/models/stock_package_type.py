@@ -184,14 +184,10 @@ class StockPackageType(models.Model):
         ]
 
     def _default_length_uom_name(self):
-        return self.env[
-            "product.template"
-        ]._get_length_uom_name_from_ir_config_parameter()
+        return self.env["product.template"]._get_uom_from_setting("length").display_name
 
     def _default_weight_uom_name(self):
-        return self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        return self.env["product.template"]._get_uom_from_setting("weight").display_name
 
     @api.depends("name", "packaging_length", "width", "height")
     @api.depends_context("formatted_display_name")
@@ -229,14 +225,14 @@ class StockPackageType(models.Model):
             package_type.has_quants = pack_type_quants.get(package_type, 0) > 0
 
     def _compute_length_uom_name(self) -> None:
-        self.length_uom_name = self.env[
-            "product.template"
-        ]._get_length_uom_name_from_ir_config_parameter()
+        self.length_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("length").display_name
+        )
 
     def _compute_weight_uom_name(self) -> None:
-        self.weight_uom_name = self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        self.weight_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("weight").display_name
+        )
 
     def _get_next_name_by_sequence(self):
         if len(self) > 1:

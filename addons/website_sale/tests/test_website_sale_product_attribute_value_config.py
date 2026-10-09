@@ -229,6 +229,6 @@ class TestWebsiteSaleProductAttributeValueConfig(
             }
         )
 
-        product_template.product_variant_ids.unlink()
+        product_template.product_variant_ids._unlink_or_archive()
         previewed_attribute_values = product_template._get_previewed_attribute_values()
         self.assertFalse(previewed_attribute_values)

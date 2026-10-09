@@ -1,5 +1,4 @@
 import datetime
-from ast import literal_eval
 from collections import defaultdict
 from typing import Any
 
@@ -148,10 +147,20 @@ class WizardProductTemplateMerge(models.TransientModel):
                 key=lambda template: (
                     not template.active,
                     (template.create_date or datetime.datetime(1970, 1, 1)),
+                    template.id,
                 ),
                 reverse=True,
             )
         )
+
+    def _split_merge_group(self, template_ids: list[int]) -> list[list[int]]:
+        ordered = self._get_ordered_templates(template_ids)
+        destination, others = ordered[-1], ordered[:-1]
+        step = self._MAX_MERGE_SIZE - 1
+        return [
+            [destination.id, *others[index : index + step].ids]
+            for index in range(0, len(others), step)
+        ]
 
     def _check_mergeable(
         self, src_templates: models.BaseModel, dst_template: models.BaseModel
@@ -408,8 +417,14 @@ class WizardProductTemplateMerge(models.TransientModel):
             blank_excluded=sorted(set(fields) & self._CASE_INSENSITIVE_GROUPBY_FIELDS),
             maximum_group=maximum_group,
         )
-        if filters:
-            parts.append(SQL("WHERE %s", SQL(" AND ").join(filters)))
+        filters.append(
+            SQL(
+                "%s.id IN %s",
+                template,
+                self.env["product.template"]._search([]).subselect(),
+            )
+        )
+        parts.append(SQL("WHERE %s", SQL(" AND ").join(filters)))
         parts.extend(
             [
                 SQL("GROUP BY %s", SQL(", ").join(group_expressions)),
@@ -468,16 +483,8 @@ class WizardProductTemplateMerge(models.TransientModel):
         self.env.flush_all()
         self.env.cr.execute(query)  # noqa: E8501  built by _generate_query
 
-        groups = self.env.cr.fetchall()
-        all_ids = [tmpl_id for _, aggr_ids in groups for tmpl_id in aggr_ids]
-        accessible = self.env["product.template"].search([("id", "in", all_ids)])
-        accessible_set = set(accessible.ids)
-
         line_vals_list = []
-        for min_id, aggr_ids in groups:
-            template_ids = [
-                tmpl_id for tmpl_id in aggr_ids if tmpl_id in accessible_set
-            ]
+        for min_id, template_ids in self.env.cr.fetchall():
             if model_mapping:
                 excluded = self._get_excluded_templates(template_ids, model_mapping)
                 template_ids = [
@@ -486,12 +493,9 @@ class WizardProductTemplateMerge(models.TransientModel):
             if len(template_ids) < 2:
                 continue
 
-            line_vals_list.append(
-                {
-                    "wizard_id": self.id,
-                    "min_id": min_id,
-                    "aggr_ids": template_ids,
-                }
+            line_vals_list.extend(
+                {"wizard_id": self.id, "min_id": min_id, "aggr_ids": chunk}
+                for chunk in self._split_merge_group(template_ids)
             )
         self.env["wizard.product.template.merge.line"].create(line_vals_list)
         counter = len(line_vals_list)
@@ -505,7 +509,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         values = {}
         if self.line_ids:
             current_line = self.line_ids[0]
-            current_template_ids = literal_eval(current_line.aggr_ids)
+            current_template_ids = current_line.aggr_ids
             values.update(
                 {
                     "current_line_id": current_line.id,
@@ -574,7 +578,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         self.env.invalidate_all()
 
         for line in self.line_ids:
-            template_ids = literal_eval(line.aggr_ids)
+            template_ids = line.aggr_ids
             try:
                 with self.env.cr.savepoint():
                     self._merge(template_ids)

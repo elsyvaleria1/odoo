@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
-from odoo.tools import frozendict, groupby
+from odoo.tools import frozendict
 
 
 class ProductUom(models.Model):
@@ -45,36 +45,34 @@ class ProductUom(models.Model):
 
     @api.constrains("barcode", "company_id")
     def _check_barcode_uniqueness(self) -> None:
-        barcodes_by_company = {
-            company: [p.barcode for p in packagings if p.barcode]
-            for company, packagings in groupby(self, lambda p: p.company_id)
-        }
-        all_barcodes = [
-            b for barcodes in barcodes_by_company.values() for b in barcodes
+        barcodes = [packaging.barcode for packaging in self if packaging.barcode]
+        if not barcodes:
+            return
+        domain = [("barcode", "in", barcodes)]
+        fnames = ["barcode", "company_id"]
+        all_companies = self.sudo().env
+        holders = [
+            *all_companies["product.product"].search_fetch(domain, fnames),
+            *all_companies["product.uom"].search_fetch(domain, fnames),
         ]
-        if not all_barcodes:
-            return
-        colliding = (
-            self.env["product.product"]
-            .sudo()
-            .search_fetch([("barcode", "in", all_barcodes)], ["barcode", "company_id"])
-        )
-        if not colliding:
-            return
-        for company, barcodes in barcodes_by_company.items():
-            if not barcodes:
-                continue
-            wanted = set(barcodes)
-            if any(
-                product.barcode in wanted
-                and (
-                    not company
-                    or not product.company_id
-                    or product.company_id == company
-                )
-                for product in colliding
-            ):
-                raise ValidationError(self.env._("A product already uses the barcode"))
+        for packaging in self:
+            for holder in holders:
+                if (
+                    holder.barcode == packaging.barcode
+                    and holder != packaging
+                    and (
+                        not holder.company_id
+                        or not packaging.company_id
+                        or holder.company_id == packaging.company_id
+                    )
+                ):
+                    raise ValidationError(
+                        self.env._(
+                            "The barcode %s is already used by another product or"
+                            " packaging.",
+                            packaging.barcode,
+                        )
+                    )
 
     def _compute_display_name(self):
         if not self.env.context.get("show_variant_name"):

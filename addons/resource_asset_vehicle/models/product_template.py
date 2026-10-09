@@ -87,9 +87,9 @@ class ProductTemplate(models.Model):
     )
 
     def _compute_fuel_efficiency_uom_name(self) -> None:
-        self.fuel_efficiency_uom_name = (
-            self._get_fuel_efficiency_uom_name_from_ir_config_parameter()
-        )
+        self.fuel_efficiency_uom_name = self._get_uom_from_setting(
+            "fuel_efficiency"
+        ).display_name
 
     def _selection_vehicle_model_years(self) -> list:
         return [(str(year), str(year)) for year in range(1970, datetime.now().year + 2)]

@@ -15,21 +15,19 @@ class StockPackage(models.Model):
             package.weight = packages_weight[package]
 
     def _default_weight_uom_name(self):
-        return self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        return self.env["product.template"]._get_uom_from_setting("weight").display_name
 
     def _compute_weight_uom_name(self) -> None:
         for package in self:
-            package.weight_uom_name = self.env[
-                "product.template"
-            ]._get_weight_uom_name_from_ir_config_parameter()
+            package.weight_uom_name = (
+                self.env["product.template"]
+                ._get_uom_from_setting("weight")
+                .display_name
+            )
 
     def _compute_weight_uom_info(self) -> None:
         self.weight_is_kg = False
-        uom_id = self.env[
-            "product.template"
-        ]._get_weight_uom_id_from_ir_config_parameter()
+        uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         if uom_id == self.env.ref("uom.product_uom_kgm"):
             self.weight_is_kg = True
         self.weight_uom_rounding = uom_id.rounding

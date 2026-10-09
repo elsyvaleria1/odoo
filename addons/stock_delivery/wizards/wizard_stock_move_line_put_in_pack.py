@@ -17,9 +17,7 @@ class WizardStockMoveLinePutInPack(models.TransientModel):
 
     def _compute_weight_uom_name(self) -> None:
         self.weight_uom_name = (
-            self.env["product.template"]
-            ._get_weight_uom_id_from_ir_config_parameter()
-            .name
+            self.env["product.template"]._get_uom_from_setting("weight").name
         )
 
     @api.depends("package_type_id", "result_package_id")

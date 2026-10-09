@@ -596,15 +596,11 @@ class DeliveryCarrier(models.Model):
         packages = []
         package_items = []
         original_weight_uom = (
-            self.env["product.template"]
-            .sudo()
-            ._get_weight_uom_id_from_ir_config_parameter()
+            self.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
         target_weight_uom = self.env.ref("uom.product_uom_kgm")
         original_length_uom = (
-            self.env["product.template"]
-            .sudo()
-            ._get_length_uom_id_from_ir_config_parameter()
+            self.env["product.template"].sudo()._get_uom_from_setting("length")
         )
         target_length_uom = self.env.ref("uom.product_uom_meter")
         if picking:

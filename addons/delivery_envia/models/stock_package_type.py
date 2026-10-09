@@ -45,9 +45,9 @@ class StockPackageType(models.Model):
         Keep default length_uom and then convert it later down the line
         """
         super()._compute_length_uom_name()
-        uom_name = self.env[
-            "product.template"
-        ]._get_length_uom_name_from_ir_config_parameter()
+        uom_name = (
+            self.env["product.template"]._get_uom_from_setting("length").display_name
+        )
         for package in self:
             if package.package_carrier_type == "envia":
                 package.length_uom_name = uom_name

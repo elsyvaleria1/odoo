@@ -69,9 +69,9 @@ class ResourceResource(models.Model):
     _bool_search_inclusion_operator = staticmethod(_bool_search_inclusion_operator)
 
     def _compute_area_uom_name(self) -> None:
-        self.area_uom_name = self.env[
-            "product.template"
-        ]._get_area_uom_name_from_ir_config_parameter()
+        self.area_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("area").display_name
+        )
 
     @api.model
     def _get_seed_log_category(self, log_type):
@@ -167,9 +167,7 @@ class ResourceResource(models.Model):
             and "odometer_uom_id" not in vals
         ]
         if things:
-            uom = self.env[
-                "product.template"
-            ]._get_odometer_uom_id_from_ir_config_parameter()
+            uom = self.env["product.template"]._get_uom_from_setting("odometer")
             for vals in things:
                 vals["odometer_uom_id"] = uom.id
         return super().create(vals_list)

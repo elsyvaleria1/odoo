@@ -8,9 +8,9 @@ class ResCurrency(models.Model):
         res = super().write(vals)
 
         if self and "active" in vals and not vals["active"]:
-            self.env["product.pricelist"].search(
-                [("currency_id", "in", self.ids)]
-            ).action_archive()
+            self.env["product.pricelist"].with_context(
+                allowed_company_ids=self.env.user.company_ids.ids
+            ).search([("currency_id", "in", self.ids)]).action_archive()
 
         return res
 

@@ -373,9 +373,7 @@ class DeliveryCarrier(models.Model):
         weight in kilograms but pricing supports grams.
         """
         from_uom_id = (
-            self.env["product.template"]
-            .sudo()
-            ._get_weight_uom_id_from_ir_config_parameter()
+            self.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
         to_uom_id = (
             self.env.ref("uom.product_uom_gram")
@@ -408,9 +406,7 @@ class DeliveryCarrier(models.Model):
         if length == 0:
             return length
         length_uom_id = (
-            self.env["product.template"]
-            .sudo()
-            ._get_length_uom_id_from_ir_config_parameter()
+            self.env["product.template"].sudo()._get_uom_from_setting("length")
         )
         dest_uom_id = self.env["uom.uom"].search([("name", "ilike", unit)])
         if not dest_uom_id:

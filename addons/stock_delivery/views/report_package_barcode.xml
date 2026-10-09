@@ -77,7 +77,7 @@
                     <br />
                     <span t-field="o.shipping_weight" />
                     <span
-                        t-out="env['product.template']._get_weight_uom_id_from_ir_config_parameter().display_name" />
+                        t-out="env['product.template']._get_uom_from_setting('weight').display_name" />
                 </div>
             </t>
         </xpath>

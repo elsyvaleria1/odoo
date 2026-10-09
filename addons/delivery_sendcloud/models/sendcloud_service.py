@@ -623,9 +623,7 @@ class SendCloud:
             sendcloud_product_id.max_weight - 1, grams=True, reverse=True
         )  # grams to user uom
         user_weight_uom = (
-            carrier_id.env["product.template"]
-            .sudo()
-            ._get_weight_uom_id_from_ir_config_parameter()
+            carrier_id.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
         if not shipping_methods:
             raise UserError(

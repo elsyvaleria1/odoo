@@ -35,13 +35,11 @@ class ProductTemplate(models.Model):
     @api.model
     def _update_product_by_barcodelookup(self, product, barcode_lookup_data):
         product.check_singleton()
-        imperial_len = (
-            self._get_volume_uom_id_from_ir_config_parameter()
-            == self.env.ref("uom.product_uom_cubic_foot")
+        imperial_len = self._get_uom_from_setting("volume") == self.env.ref(
+            "uom.product_uom_cubic_foot"
         )
-        imperial_weight = (
-            self._get_weight_uom_id_from_ir_config_parameter()
-            == self.env.ref("uom.product_uom_lb")
+        imperial_weight = self._get_uom_from_setting("weight") == self.env.ref(
+            "uom.product_uom_lb"
         )
         if not barcode_lookup_data:
             return None
@@ -79,12 +77,11 @@ class ProductTemplate(models.Model):
                 weight = self._to_float(weight_dict.get("uom_val"))
                 if (
                     weight_dict.get("unit")
-                    and self._get_weight_uom_id_from_ir_config_parameter().name
-                    != weight_dict["unit"]
+                    and self._get_uom_from_setting("weight").name != weight_dict["unit"]
                 ):
                     weight = convert_weight_uom._get_quantity_estimate(
                         weight,
-                        to_unit=self._get_weight_uom_id_from_ir_config_parameter(),
+                        to_unit=self._get_uom_from_setting("weight"),
                     )
                 product.weight = weight
 
@@ -224,7 +221,7 @@ class ProductTemplate(models.Model):
 
         if convert_volume_uom:
             product.volume = convert_volume_uom._get_quantity_estimate(
-                volume, to_unit=self._get_volume_uom_id_from_ir_config_parameter()
+                volume, to_unit=self._get_uom_from_setting("volume")
             )
         else:
             product.volume = volume

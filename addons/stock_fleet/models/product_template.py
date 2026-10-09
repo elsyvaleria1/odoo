@@ -17,14 +17,14 @@ class ProductTemplate(models.Model):
     )
 
     def _compute_weight_capacity_uom_name(self) -> None:
-        self.weight_capacity_uom_name = (
-            self._get_weight_uom_name_from_ir_config_parameter()
-        )
+        self.weight_capacity_uom_name = self._get_uom_from_setting(
+            "weight"
+        ).display_name
 
     def _compute_volume_capacity_uom_name(self) -> None:
-        self.volume_capacity_uom_name = (
-            self._get_volume_uom_name_from_ir_config_parameter()
-        )
+        self.volume_capacity_uom_name = self._get_uom_from_setting(
+            "volume"
+        ).display_name
 
 
 class ProductProduct(models.Model):

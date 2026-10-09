@@ -1,5 +1,3 @@
-from ast import literal_eval
-
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import tagged
@@ -308,8 +306,8 @@ class TestProductMerge(ProductVariantsCommon):
         wizard.action_start_manual_process()
 
         self.assertEqual(
-            [line.aggr_ids for line in wizard.line_ids],
-            [str(sorted((destination + source).ids))],
+            [sorted(line.aggr_ids) for line in wizard.line_ids],
+            [sorted((destination + source).ids)],
             "Name and internal reference are compared case-insensitively, and "
             "the product nobody duplicates is left alone",
         )
@@ -327,35 +325,85 @@ class TestProductMerge(ProductVariantsCommon):
         wizard.action_start_manual_process()
 
         self.assertFalse(
-            [
-                line
-                for line in wizard.line_ids
-                if set(blanks.ids) <= set(literal_eval(line.aggr_ids))
-            ],
+            [line for line in wizard.line_ids if set(blanks.ids) <= set(line.aggr_ids)],
             "A blank internal reference identifies no product",
         )
 
-    def test_automatic_process_skips_a_group_it_refuses(self):
-        refused = [
-            self._create_template("Refused", default_code="REFUSED-REF")
-            for _index in range(4)
-        ]
+    def test_a_group_above_the_cap_merges_in_chunks_into_one_product(self):
+        duplicates = self.env["product.template"].concat(
+            *(
+                self._create_template("Chunked", default_code="CHUNK-REF")
+                for _index in range(5)
+            )
+        )
 
         wizard = self.env["wizard.product.template.merge"].create(
             {"group_by_name": True, "group_by_default_code": True}
         )
-        wizard.action_start_automatic_process()
-
-        self.assertEqual(
-            len(self.env["product.template"].concat(*refused).exists()),
-            4,
-            "A group of four is over the safety cap, so none of it is merged",
+        wizard.action_start_manual_process()
+        lines = wizard.line_ids.filtered(
+            lambda line: set(line.aggr_ids) <= set(duplicates.ids)
         )
+        self.assertEqual(len(lines), 2)
         self.assertTrue(
-            wizard.line_ids,
-            "And the group stays on the wizard for the user to settle by hand",
+            all(len(line.aggr_ids) <= wizard._MAX_MERGE_SIZE for line in lines)
         )
-        self.assertEqual(wizard.state, "selection")
+        self.assertEqual(
+            len(set(lines[0].aggr_ids) & set(lines[1].aggr_ids)),
+            1,
+            "every chunk carries the destination the whole group converges on",
+        )
+
+        wizard.action_start_automatic_process()
+        self.assertEqual(len(duplicates.exists()), 1)
+
+    def test_the_scan_limit_counts_only_products_the_user_can_merge(self):
+        other_company = self.env["res.company"].create({"name": "Hidden"})
+        self.env.user.company_ids += other_company
+        both = self.env.company | other_company
+        Template = self.env["product.template"].with_context(
+            allowed_company_ids=both.ids
+        )
+        for index in range(3):
+            Template.create(
+                [
+                    {
+                        "name": f"Hidden {index}",
+                        "default_code": f"HID-{index}",
+                        "company_id": other_company.id,
+                    }
+                ]
+                * 2
+            )
+        visible = self._create_template("Visible", default_code="VIS")
+        self._create_template("Visible", default_code="VIS")
+
+        manager = self.env["res.users"].create(
+            {
+                "name": "Single Company Manager",
+                "login": "single_company_merge_manager",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.link(self.env.ref("base.group_user").id),
+                    Command.link(self.env.ref("product.group_product_manager").id),
+                ],
+            }
+        )
+        wizard = (
+            self.env["wizard.product.template.merge"]
+            .with_user(manager)
+            .create(
+                {
+                    "group_by_name": True,
+                    "group_by_default_code": True,
+                    "maximum_group": 1,
+                }
+            )
+        )
+        wizard.action_start_manual_process()
+        self.assertEqual(wizard.number_group, 1)
+        self.assertIn(visible.id, wizard.line_ids.aggr_ids)
 
     def test_automatic_process_merges_every_group(self):
         destination = self._create_template("Swept", default_code="SWEEP-REF")
@@ -444,8 +492,8 @@ class TestProductMerge(ProductVariantsCommon):
         wizard.action_start_manual_process()
 
         self.assertIn(
-            str(sorted((first + second).ids)),
-            [line.aggr_ids for line in wizard.line_ids],
+            sorted((first + second).ids),
+            [sorted(line.aggr_ids) for line in wizard.line_ids],
             "Both products are proposed as one group",
         )
 
@@ -467,9 +515,7 @@ class TestProductMerge(ProductVariantsCommon):
         wizard.action_start_manual_process()
 
         grouped = {
-            template_id
-            for line in wizard.line_ids
-            for template_id in literal_eval(line.aggr_ids)
+            template_id for line in wizard.line_ids for template_id in line.aggr_ids
         }
         self.assertFalse(
             grouped & set(self.env["product.template"].concat(*uncategorised).ids)

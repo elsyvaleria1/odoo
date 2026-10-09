@@ -849,9 +849,7 @@ class DeliveryCarrier(models.Model):
         else:
             raise ValueError
 
-        weight_uom_id = self.env[
-            "product.template"
-        ]._get_weight_uom_id_from_ir_config_parameter()
+        weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
         new_value = weight_uom_id._get_quantity_in_unit(
             weight, self.env.ref(convert_to), round=False
         )

@@ -260,14 +260,14 @@ class DeliveryCarrier(models.Model):
                 )
 
     def _compute_weight_uom_name(self):
-        self.weight_uom_name = self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        self.weight_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("weight").display_name
+        )
 
     def _compute_volume_uom_name(self):
-        self.volume_uom_name = self.env[
-            "product.template"
-        ]._get_volume_uom_name_from_ir_config_parameter()
+        self.volume_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("volume").display_name
+        )
 
     @api.depends("delivery_type")
     def _compute_can_generate_return(self):
@@ -739,7 +739,7 @@ class DeliveryCarrier(models.Model):
         """Return product weight in kilograms without rounding."""
         self.check_singleton()
         product_model = cast("ProductTemplate", self.env["product.template"])
-        weight_uom = product_model._get_weight_uom_id_from_ir_config_parameter()
+        weight_uom = product_model._get_uom_from_setting("weight")
         return weight_uom._get_quantity_in_unit(
             weight, self.env.ref("uom.product_uom_kgm"), round=False
         )

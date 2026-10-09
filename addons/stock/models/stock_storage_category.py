@@ -76,9 +76,9 @@ class StockStorageCategory(models.Model):
             )
 
     def _compute_weight_uom_name(self) -> None:
-        self.weight_uom_name = self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        self.weight_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("weight").display_name
+        )
 
     def _inverse_storage_capacity_ids(self) -> None:
         for storage_category in self:

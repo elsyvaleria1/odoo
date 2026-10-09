@@ -9,9 +9,7 @@ class WizardSaleOrderAddShipping(models.TransientModel):
     _description = "Delivery Carrier Selection Wizard"
 
     def _default_weight_uom_name(self):
-        return self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        return self.env["product.template"]._get_uom_from_setting("weight").display_name
 
     order_id = fields.Many2one(
         comodel_name="sale.order",

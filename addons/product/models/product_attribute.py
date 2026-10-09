@@ -1,8 +1,9 @@
 from typing import Self
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
+from .utils import write_and_reorder
 from odoo.addons.base.models.mixin_catalog import no_name_uniq_index
 
 
@@ -47,6 +48,7 @@ class ProductAttribute(models.Model):
     )
     value_type = fields.Selection(
         default="multi",
+        readonly=True,
         help="How many values a single attribute line may hold. Always 'multi' "
         "for products: a line carries every value the template offers.",
     )
@@ -92,14 +94,7 @@ class ProductAttribute(models.Model):
                             ),
                         )
                     )
-        invalidate = "sequence" in vals and any(
-            record.sequence != vals["sequence"] for record in self
-        )
-        res = super().write(vals)
-        if invalidate:
-            self.env.flush_all()
-            self.env.invalidate_all()
-        return res
+        return write_and_reorder(self, vals, super().write)
 
     def _filtered_used(self):
         return self.filtered("count_product_tmpl")
@@ -119,11 +114,42 @@ class ProductAttribute(models.Model):
                     ("product_tmpl_id.active", "=", True),
                 ],
                 groupby=["attribute_id"],
-                aggregates=["__count"],
+                aggregates=["product_tmpl_id:count_distinct"],
             )
         }
         for pa in self:
             pa.count_product_tmpl = res.get(pa.id, 0)
+
+    @api.constrains("value_type")
+    def _check_value_type(self) -> None:
+        if any(attribute.value_type != "multi" for attribute in self):
+            raise ValidationError(
+                self.env._(
+                    "A product attribute line carries every value the product"
+                    " offers: product attributes are always multi-valued."
+                )
+            )
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_carried_by_any_product(self) -> None:
+        lines = (
+            self.env["product.template.attribute.line"]
+            .with_context(active_test=False)
+            .search([("attribute_id", "in", self.ids)])
+        )
+        if lines:
+            raise UserError(
+                self.env._(
+                    "You cannot delete the attribute %(names)s because it is used"
+                    " on: %(usage)s",
+                    names=", ".join(lines.attribute_id.mapped("display_name")),
+                    usage=", ".join(
+                        lines.product_tmpl_id.with_context(active_test=False).mapped(
+                            "display_name"
+                        )
+                    ),
+                )
+            )
 
     @api.depends("attribute_line_ids.active", "attribute_line_ids.product_tmpl_id")
     def _compute_product_tmpl_ids(self) -> None:

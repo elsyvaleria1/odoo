@@ -12,6 +12,43 @@ from odoo.tools.misc import OrderedSet, unique
 _logger = logging.getLogger(__name__)
 PRICE_CONTEXT_KEYS = ["pricelist", "quantity", "uom", "date"]
 
+# kind: (setting, unit when the setting is "1", unit otherwise). Length and
+# distance have no setting of their own: they follow the imperial volume one.
+UOM_SETTINGS = {
+    "weight": ("product.weight_in_lbs", "uom.product_uom_lb", "uom.product_uom_kgm"),
+    "volume": (
+        "product.volume_in_cubic_feet",
+        "uom.product_uom_cubic_foot",
+        "uom.product_uom_cubic_meter",
+    ),
+    "length": (
+        "product.volume_in_cubic_feet",
+        "uom.product_uom_foot",
+        "uom.product_uom_millimeter",
+    ),
+    "distance": (
+        "product.volume_in_cubic_feet",
+        "uom.product_uom_mile",
+        "uom.product_uom_km",
+    ),
+    "odometer": (
+        "product.odometer_in_mi",
+        "uom.product_uom_mile",
+        "uom.product_uom_km",
+    ),
+    "area": (
+        "product.area_in_square_ft",
+        "uom.product_uom_square_foot",
+        "uom.product_uom_square_meter",
+    ),
+    "power": ("product.power_in_hp", "uom.product_uom_hp", "uom.product_uom_kw"),
+    "fuel_efficiency": (
+        "product.fuel_efficiency_in_mpg",
+        "uom.product_uom_miles_per_galon",
+        "uom.product_uom_km_per_liter",
+    ),
+}
+
 # the four fields product.template mirrors from its single variant
 MANUFACTURER_FIELDS = (
     "manufacturer_id",
@@ -366,7 +403,11 @@ class ProductTemplate(models.Model):
     def create(self, vals_list):
         templates = super().create(vals_list)
         if self.env.context.get("create_product_product", True):
-            templates._create_variant_ids()
+            to_build = templates
+            if self.env.context.get("update_product_template_attribute_values", True):
+                # the lines just created rebuilt their own template's variants
+                to_build = templates.filtered(lambda t: not t.attribute_line_ids)
+            to_build._create_variant_ids()
 
         for template, vals in zip(templates, vals_list, strict=True):
             related_vals = {}
@@ -386,7 +427,12 @@ class ProductTemplate(models.Model):
                 .product_variant_ids
             )
             products.with_context(skip_uom_conversion=True)._update_uom(vals["uom_id"])
-        res = super().write(vals)
+        lines_rebuild_once = (
+            self.with_context(variant_rebuild_deferred=tuple(self.ids))
+            if "attribute_line_ids" in vals
+            else self
+        )
+        res = super(ProductTemplate, lines_rebuild_once).write(vals)
         if self.env.context.get("create_product_product", True):
             if "attribute_line_ids" in vals:
                 self._create_variant_ids()
@@ -418,23 +464,17 @@ class ProductTemplate(models.Model):
         for template, copied_template in zip(
             self.browse(unique(self._ids)), res, strict=True
         ):
-            for ptal, copied_ptal in zip(
+            for line, copied_line in zip(
                 template.attribute_line_ids,
                 copied_template.attribute_line_ids,
-                strict=False,
+                strict=True,
             ):
-                copied_ptav_by_pav = {
-                    copied_ptav.product_attribute_value_id: copied_ptav
-                    for copied_ptav in copied_ptal.product_template_value_ids
-                }
-                for ptav in ptal.product_template_value_ids:
-                    if not ptav.price_extra:
-                        continue
-                    copied_ptav = copied_ptav_by_pav.get(
-                        ptav.product_attribute_value_id
-                    )
-                    if copied_ptav and ptav.attribute_id == copied_ptav.attribute_id:
-                        copied_ptav.price_extra = ptav.price_extra
+                copied_by_value = copied_line.product_template_value_ids.grouped(
+                    "product_attribute_value_id"
+                )
+                for ptav in line.product_template_value_ids.filtered("price_extra"):
+                    if copied := copied_by_value.get(ptav.product_attribute_value_id):
+                        copied.price_extra = ptav.price_extra
         return res
 
     def copy_data(self, default=None):
@@ -552,10 +592,10 @@ class ProductTemplate(models.Model):
         self._compute_template_field_from_variant_field("barcode")
 
     def _compute_weight_uom_name(self) -> None:
-        self.weight_uom_name = self._get_weight_uom_name_from_ir_config_parameter()
+        self.weight_uom_name = self._get_uom_from_setting("weight").display_name
 
     def _compute_volume_uom_name(self) -> None:
-        self.volume_uom_name = self._get_volume_uom_name_from_ir_config_parameter()
+        self.volume_uom_name = self._get_uom_from_setting("volume").display_name
 
     @api.depends("product_variant_ids.default_code")
     def _compute_default_code(self) -> None:
@@ -816,9 +856,6 @@ class ProductTemplate(models.Model):
 
             if current_ptav_index < len(current_line_values) - 1:
                 value_index_per_line[line_index] += 1
-                current_line_values = product_template_attribute_values_per_line[
-                    line_index
-                ]
                 current_ptav_index = value_index_per_line[line_index]
                 current_ptav = current_line_values[current_ptav_index]
             elif line_index != 0:
@@ -954,9 +991,7 @@ class ProductTemplate(models.Model):
             current_variants_to_activate = Product
 
             single_value_lines = lines_without_no_variants.filtered(
-                lambda ptal: (
-                    len(ptal.product_template_value_ids._filtered_active()) == 1
-                )
+                lambda ptal: ptal._has_single_value()
             )
             if single_value_lines:
                 for variant in all_variants:
@@ -1052,43 +1087,68 @@ class ProductTemplate(models.Model):
     def _filter_combinations_impossible_by_config(
         self, combination_tuples, ignore_no_variant=False
     ):
-        self.check_singleton()
-        attribute_lines = self.valid_product_template_attribute_line_ids
-        attribute_lines_active_values = (
-            attribute_lines.product_template_value_ids._filtered_active()
-        )
-        if ignore_no_variant:
-            attribute_lines = attribute_lines._without_no_variant_attributes()
-        attribute_lines_without_multi = attribute_lines.filtered(
-            lambda l: l.attribute_id.display_type != "multi"
-        )
-        exclusions = self._get_own_attribute_exclusions()
+        is_configurable = self._get_combination_config_check(ignore_no_variant)
         for combination_tuple in combination_tuples:
             combination = self.env["product.template.attribute.value"].concat(
                 *combination_tuple
             )
-            combination_without_multi = combination.filtered(
-                lambda l: l.attribute_line_id.attribute_id.display_type != "multi"
+            if is_configurable(combination):
+                yield combination
+
+    def _get_combination_config_check(self, ignore_no_variant=False):
+        self.check_singleton()
+        attribute_lines = self.valid_product_template_attribute_line_ids
+        active_values = attribute_lines.product_template_value_ids._filtered_active()
+        if ignore_no_variant:
+            attribute_lines = attribute_lines._without_no_variant_attributes()
+        single_choice_lines = attribute_lines.filtered(
+            lambda line: line.attribute_id.display_type != "multi"
+        )
+        exclusions = self._get_own_attribute_exclusions()
+
+        def is_configurable(combination) -> bool:
+            single_choices = combination.filtered(
+                lambda ptav: ptav.attribute_line_id.attribute_id.display_type != "multi"
             )
-            if len(combination_without_multi) != len(attribute_lines_without_multi):
-                continue
-            if (
-                attribute_lines_without_multi
-                != combination_without_multi.attribute_line_id
-            ):
-                continue
-            if not (attribute_lines_active_values >= combination):
-                continue
-            if exclusions:
-                combination_ids = set(combination.ids)
-                combination_excluded_ids = set(
-                    itertools.chain(
-                        *[exclusions.get(ptav_id, ()) for ptav_id in combination.ids]
-                    )
-                )
-                if combination_ids & combination_excluded_ids:
-                    continue
-            yield combination
+            if len(single_choices) != len(single_choice_lines):
+                return False
+            if single_choice_lines != single_choices.attribute_line_id:
+                return False
+            if not active_values >= combination:
+                return False
+            combination_ids = set(combination.ids)
+            return not any(
+                combination_ids.intersection(exclusions.get(ptav_id, ()))
+                for ptav_id in combination_ids
+            )
+
+        return is_configurable
+
+    def _get_combination_check(self, parent_combination=None, ignore_no_variant=False):
+        self.check_singleton()
+        is_configurable = self._get_combination_config_check(ignore_no_variant)
+        is_dynamic = self.has_dynamic_attributes()
+        excluded_by_parent = bool(parent_combination) and self._is_excluded_by_parent(
+            parent_combination
+        )
+        parent_excluded_ids = set()
+        for excluded_ids in self._get_parent_attribute_exclusions(
+            parent_combination
+        ).values():
+            parent_excluded_ids.update(excluded_ids)
+
+        def is_possible(combination) -> bool:
+            if excluded_by_parent or not is_configurable(combination):
+                return False
+            variant = self._get_variant_for_combination(combination)
+            if is_dynamic:
+                if variant and not variant.active:
+                    return False
+            elif not variant or not variant.active:
+                return False
+            return parent_excluded_ids.isdisjoint(combination.ids)
+
+        return is_possible
 
     def _get_archived_combinations(self, combination_ids=None):
         self.check_singleton()
@@ -1160,8 +1220,11 @@ class ProductTemplate(models.Model):
 
     def _get_possible_variants(self, parent_combination=None):
         self.check_singleton()
+        is_possible = self._get_combination_check(
+            parent_combination, ignore_no_variant=True
+        )
         return self.product_variant_ids.filtered(
-            lambda p: p._is_variant_possible(parent_combination)
+            lambda variant: is_possible(variant.product_template_attribute_value_ids)
         )
 
     def _get_own_attribute_exclusions(self, combination_ids=None):
@@ -1272,9 +1335,9 @@ class ProductTemplate(models.Model):
             lambda ptal: ptal not in necessary_attribute_lines
         )
 
-        if not attribute_lines and self._is_combination_possible(
-            necessary_values, parent_combination
-        ):
+        is_possible = self._get_combination_check(parent_combination)
+        self.with_context(active_test=False).product_variant_ids.fetch(["active"])
+        if not attribute_lines and is_possible(necessary_values):
             yield necessary_values
 
         product_template_attribute_values_per_line = []
@@ -1289,7 +1352,7 @@ class ProductTemplate(models.Model):
             product_template_attribute_values_per_line, parent_combination
         ):
             combination = partial_combination + necessary_values
-            if self._is_combination_possible(combination, parent_combination):
+            if is_possible(combination):
                 yield combination
 
     def _get_closest_possible_combination(self, combination):
@@ -1369,92 +1432,11 @@ class ProductTemplate(models.Model):
         return self.uom_id | self.uom_ids
 
     @api.model
-    def _get_uom_id_from_ir_config_parameter(self, param_key, ref_if_set, ref_default):
-        if self.env.registry.settings.get(self.env, param_key, False) == "1":
-            return self.env.ref(ref_if_set)
-        return self.env.ref(ref_default)
-
-    @api.model
-    def _get_length_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.volume_in_cubic_feet",
-            "uom.product_uom_foot",
-            "uom.product_uom_millimeter",
-        )
-
-    @api.model
-    def _get_length_uom_name_from_ir_config_parameter(self):
-        return self._get_length_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_volume_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.volume_in_cubic_feet",
-            "uom.product_uom_cubic_foot",
-            "uom.product_uom_cubic_meter",
-        )
-
-    @api.model
-    def _get_volume_uom_name_from_ir_config_parameter(self):
-        return self._get_volume_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_weight_uom_name_from_ir_config_parameter(self):
-        return self._get_weight_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_weight_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.weight_in_lbs", "uom.product_uom_lb", "uom.product_uom_kgm"
-        )
-
-    @api.model
-    def _get_odometer_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.odometer_in_mi",
-            "uom.product_uom_mile",
-            "uom.product_uom_km",
-        )
-
-    @api.model
-    def _get_odometer_uom_name_from_ir_config_parameter(self):
-        return self._get_odometer_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_area_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.area_in_square_ft",
-            "uom.product_uom_square_foot",
-            "uom.product_uom_square_meter",
-        )
-
-    @api.model
-    def _get_area_uom_name_from_ir_config_parameter(self):
-        return self._get_area_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_power_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.power_in_hp",
-            "uom.product_uom_hp",
-            "uom.product_uom_kw",
-        )
-
-    @api.model
-    def _get_power_uom_name_from_ir_config_parameter(self):
-        return self._get_power_uom_id_from_ir_config_parameter().display_name
-
-    @api.model
-    def _get_fuel_efficiency_uom_id_from_ir_config_parameter(self):
-        return self._get_uom_id_from_ir_config_parameter(
-            "product.fuel_efficiency_in_mpg",
-            "uom.product_uom_miles_per_galon",
-            "uom.product_uom_km_per_liter",
-        )
-
-    @api.model
-    def _get_fuel_efficiency_uom_name_from_ir_config_parameter(self):
-        return self._get_fuel_efficiency_uom_id_from_ir_config_parameter().display_name
+    def _get_uom_from_setting(self, kind):
+        setting, unit_if_set, unit_otherwise = UOM_SETTINGS[kind]
+        if self.env.registry.settings.get(self.env, setting, False) == "1":
+            return self.env.ref(unit_if_set)
+        return self.env.ref(unit_otherwise)
 
     def _get_related_fields_variant_template(self):
         return [
@@ -1615,43 +1597,13 @@ class ProductTemplate(models.Model):
     def _is_combination_possible_by_config(
         self, combination, ignore_no_variant=False
     ) -> bool:
-        self.check_singleton()
-        return (
-            next(
-                self._filter_combinations_impossible_by_config(
-                    [combination], ignore_no_variant
-                ),
-                None,
-            )
-            is not None
-        )
+        return self._get_combination_config_check(ignore_no_variant)(combination)
 
     def _is_combination_possible(
         self, combination, parent_combination=None, ignore_no_variant=False
     ) -> bool:
-        self.check_singleton()
-
-        if not self._is_combination_possible_by_config(combination, ignore_no_variant):
-            return False
-
-        variant = self._get_variant_for_combination(combination)
-
-        if self.has_dynamic_attributes():
-            if variant and not variant.active:
-                return False
-        elif not variant or not variant.active:
-            return False
-
-        if not parent_combination:
-            return True
-        if self._is_excluded_by_parent(parent_combination):
-            return False
-        combination_ids = set(combination.ids)
-        return not any(
-            combination_ids.intersection(excluded_ids)
-            for excluded_ids in self._get_parent_attribute_exclusions(
-                parent_combination
-            ).values()
+        return self._get_combination_check(parent_combination, ignore_no_variant)(
+            combination
         )
 
     @api.model

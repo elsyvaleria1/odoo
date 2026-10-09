@@ -202,19 +202,6 @@ class ProductSupplierinfo(models.Model):
             }
         ]
 
-    def _normalize_vals(self, vals):
-        if vals.get("product_id") and not vals.get("product_tmpl_id"):
-            product = self.env["product.product"].browse(vals["product_id"])
-            return {**vals, "product_tmpl_id": product.product_tmpl_id.id}
-        return vals
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        return super().create([self._normalize_vals(vals) for vals in vals_list])
-
-    def write(self, vals):
-        return super().write(self._normalize_vals(vals))
-
     def _filtered_for_company_and_product(
         self, company_id, product_id, params=False
     ) -> Self:

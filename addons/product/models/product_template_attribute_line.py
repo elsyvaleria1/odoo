@@ -58,9 +58,7 @@ class ProductTemplateAttributeLine(models.Model):
                 ]
             )
         else:
-            self.value_ids = self.value_ids.filtered(
-                lambda pav: pav.attribute_id == self.attribute_id
-            )
+            self.value_ids -= self._get_stray_values()
 
     def _subject_label(self):
         return self.product_tmpl_id.display_name
@@ -144,7 +142,7 @@ class ProductTemplateAttributeLine(models.Model):
             self - still_valued, lambda ptals: ptals._unlink_without_fallback()
         )
         ptal_to_archive.action_archive()
-        (templates - ptal_to_archive.product_tmpl_id)._create_variant_ids()
+        self._rebuild_variants(templates - ptal_to_archive.product_tmpl_id)
         return True
 
     def _unlink_without_fallback(self):
@@ -199,8 +197,16 @@ class ProductTemplateAttributeLine(models.Model):
         if ptav_to_unlink:
             ptav_to_unlink.unlink()
         ProductTemplateAttributeValue.create(ptav_to_create)
-        if self.env.context.get("create_product_product", True):
-            self.product_tmpl_id._create_variant_ids()
+        self._rebuild_variants(self.product_tmpl_id)
+
+    @api.model
+    def _rebuild_variants(self, templates) -> None:
+        if not self.env.context.get("create_product_product", True):
+            return
+        deferred = self.env.context.get("variant_rebuild_deferred", ())
+        templates.filtered(
+            lambda template: template.id not in deferred
+        )._create_variant_ids()
 
     @api.model
     def _pool_of_reusable_archived_lines(self, vals_list):
@@ -256,6 +262,13 @@ class ProductTemplateAttributeLine(models.Model):
         return self.filtered(
             lambda ptal: ptal.attribute_id.create_variant != "no_variant"
         )
+
+    def _has_single_value(self, only_active=True) -> bool:
+        self.check_singleton()
+        values = self.product_template_value_ids
+        if only_active:
+            values = values._filtered_active()
+        return len(values) == 1
 
     def _is_configurable(self) -> bool:
         self.check_singleton()

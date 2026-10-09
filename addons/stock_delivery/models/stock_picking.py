@@ -15,15 +15,15 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def _default_weight_uom_name(self):
-        return self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        return self.env["product.template"]._get_uom_from_setting("weight").display_name
 
     def _compute_weight_uom_name(self) -> None:
         for package in self:
-            package.weight_uom_name = self.env[
-                "product.template"
-            ]._get_weight_uom_name_from_ir_config_parameter()
+            package.weight_uom_name = (
+                self.env["product.template"]
+                ._get_uom_from_setting("weight")
+                .display_name
+            )
 
     carrier_price = fields.Float(string="Shipping Cost")
     delivery_type = fields.Selection(

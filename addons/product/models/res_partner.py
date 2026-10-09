@@ -31,6 +31,10 @@ class ResPartner(models.Model):
         readonly=True,
     )
 
+    def _get_seller_partners(self):
+        self.check_singleton()
+        return self | self.parent_id | self.commercial_partner_id
+
     @api.depends_context("company", "country_code")
     @api.depends("country_id", "specific_property_product_pricelist")
     def _compute_property_product_pricelist(self) -> None:

@@ -114,14 +114,14 @@ class StockPickingBatch(models.Model):
                 batch.dock_id = batch.picking_ids.location_id
 
     def _compute_weight_uom_name(self) -> None:
-        self.weight_uom_name = self.env[
-            "product.template"
-        ]._get_weight_uom_name_from_ir_config_parameter()
+        self.weight_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("weight").display_name
+        )
 
     def _compute_volume_uom_name(self) -> None:
-        self.volume_uom_name = self.env[
-            "product.template"
-        ]._get_volume_uom_name_from_ir_config_parameter()
+        self.volume_uom_name = (
+            self.env["product.template"]._get_uom_from_setting("volume").display_name
+        )
 
     @api.depends("vehicle_id")
     def _compute_driver_id(self) -> None:

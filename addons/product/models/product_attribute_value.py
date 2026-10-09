@@ -3,6 +3,8 @@ from typing import Self
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from .utils import write_and_reorder
+
 
 class ProductAttributeValue(models.Model):
     _name = "product.attribute.value"
@@ -66,14 +68,7 @@ class ProductAttributeValue(models.Model):
     def write(self, vals):
         if "attribute_id" in vals:
             self._check_not_carried_when_moved(vals["attribute_id"])
-        invalidate = "sequence" in vals and any(
-            record.sequence != vals["sequence"] for record in self
-        )
-        res = super().write(vals)
-        if invalidate:
-            self.env.flush_all()
-            self.env.invalidate_all()
-        return res
+        return write_and_reorder(self, vals, super().write)
 
     def _check_not_carried_when_moved(self, attribute_id) -> None:
         carried = self.filtered(

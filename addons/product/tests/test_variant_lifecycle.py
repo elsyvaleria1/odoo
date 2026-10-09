@@ -1,4 +1,4 @@
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import tagged
 
@@ -208,3 +208,125 @@ class TestUnlinkWherePossibleFaults(ProductVariantsCommon):
 
         with self.assertRaises(AttributeError):
             unlink_where_possible(self.product_sofa_red, broken)
+
+
+@tagged("post_install", "-at_install")
+class TestVariantRebuildAndChecks(ProductVariantsCommon):
+    def _count_rebuilds(self):
+        Template = type(self.env["product.template"])
+        original = Template._create_variant_ids
+        calls = []
+
+        def counting(templates):
+            if templates:
+                calls.append(templates.ids)
+            return original(templates)
+
+        self.patch(Template, "_create_variant_ids", counting)
+        return calls
+
+    def test_a_template_save_rebuilds_its_variants_once(self):
+        calls = self._count_rebuilds()
+        template = self.env["product.template"].create(
+            {
+                "name": "Once",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.color_attribute.id,
+                            "value_ids": [
+                                Command.set(self.color_attribute.value_ids.ids)
+                            ],
+                        }
+                    )
+                ],
+            }
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(template.product_variant_ids), 3)
+
+        calls.clear()
+        template.write(
+            {
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [
+                                Command.set(self.size_attribute.value_ids.ids)
+                            ],
+                        }
+                    )
+                ]
+            }
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(template.product_variant_ids), 9)
+
+    def test_enumeration_agrees_with_the_single_check(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Grid",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": attribute.id,
+                            "value_ids": [Command.set(attribute.value_ids.ids)],
+                        }
+                    )
+                    for attribute in (self.color_attribute, self.size_attribute)
+                ],
+            }
+        )
+        red = template.attribute_line_ids[0].product_template_value_ids[0]
+        small = template.attribute_line_ids[1].product_template_value_ids[0]
+        red.write(
+            {
+                "exclude_for": [
+                    Command.create(
+                        {
+                            "product_tmpl_id": template.id,
+                            "value_ids": [Command.set(small.ids)],
+                        }
+                    )
+                ]
+            }
+        )
+        enumerated = list(template._get_possible_combinations())
+        self.assertEqual(len(enumerated), 8)
+        self.assertNotIn(red | small, enumerated)
+        self.assertTrue(all(template._is_combination_possible(c) for c in enumerated))
+        self.assertEqual(
+            template._get_possible_variants(),
+            template.product_variant_ids.filtered(lambda v: v._is_variant_possible()),
+        )
+
+    def test_an_attribute_on_an_archived_product_cannot_be_deleted(self):
+        self.product_template_sofa.action_archive()
+        with self.assertRaisesRegex(UserError, "Sofa"):
+            self.color_attribute.unlink()
+
+    def test_the_template_count_counts_templates(self):
+        self.product_template_sofa.write(
+            {
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.color_attribute.id,
+                            "value_ids": [Command.set(self.color_attribute_red.ids)],
+                        }
+                    )
+                ]
+            }
+        )
+        self.assertEqual(self.color_attribute.count_product_tmpl, 1)
+
+    def test_product_attributes_stay_multi_valued(self):
+        unused = self.env["product.attribute"].create({"name": "Unused"})
+        with self.assertRaises(ValidationError):
+            unused.value_type = "single"
+
+    def test_a_template_value_name_follows_show_attribute(self):
+        ptav = self.product_sofa_red.product_template_attribute_value_ids
+        self.assertEqual(ptav.display_name, "Color: red")
+        self.assertEqual(ptav.with_context(show_attribute=False).display_name, "red")
