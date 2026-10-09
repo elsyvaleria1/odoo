@@ -22,6 +22,34 @@ from odoo.addons.website_sale.controllers.main import WebsiteSale
 _debug = DebugLog(__name__)
 
 
+def get_order_total_fragment(
+    order_sudo, *, hide_promotions=False, redirect=None
+) -> Fragment:
+    # inner: every total on the page keeps the classes its own t-call gave it;
+    # show_shorter_cart_summary: nothing renders beside the total's root;
+    # redirect: the page's own, which the coupon form posts back to
+    values = {
+        "website_sale_order": order_sudo,
+        "show_shorter_cart_summary": True,
+        "hide_promotions": hide_promotions,
+        "redirect": redirect,
+    }
+    if hide_promotions:
+        return Fragment(
+            "website_sale.total",
+            values,
+            key="website_sale.total_no_promotions",
+            swap="inner",
+        )
+    return Fragment("website_sale.total", values, swap="inner")
+
+
+def get_cart_summary_fragment(order_sudo) -> Fragment:
+    return Fragment(
+        "website_sale.cart_summary_content", {"website_sale_order": order_sudo}
+    )
+
+
 class Cart(PaymentPortal):
     @route(route="/shop/cart", type="http", auth="public", website=True, sitemap=False)
     def cart(self, id=None, access_token=None, revive_method="", **post):
@@ -310,14 +338,7 @@ class Cart(PaymentPortal):
         )
 
     def _get_cart_total_fragment(self, order_sudo) -> Fragment:
-        # inner: every total on the page keeps the classes its own t-call gave it;
-        # show_shorter_cart_summary: these routes serve the cart page, where
-        # nothing renders beside the total's root
-        return Fragment(
-            "website_sale.total",
-            {"website_sale_order": order_sudo, "show_shorter_cart_summary": True},
-            swap="inner",
-        )
+        return get_order_total_fragment(order_sudo)
 
     def _get_quick_reorder_history_fragment(self, order_sudo) -> Fragment:
         return Fragment(

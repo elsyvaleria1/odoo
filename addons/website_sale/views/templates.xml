@@ -3990,83 +3990,85 @@
     </template>
 
     <template id="website_sale.cart_summary_content">
-        <div
-            t-if="not website_sale_order or not website_sale_order.website_order_line"
-            name="cart_summary_info"
-            class="alert alert-info">
-            Your cart is empty!
-        </div>
-        <div>
+        <div class="d-contents" data-fragment="website_sale.cart_summary_content">
             <div
-                t-att-class="len(website_sale_order.website_order_line) &gt; 3 and 'o_wsale_scrollable_table'">
-                <table
-                    t-if="website_sale_order and website_sale_order.website_order_line"
-                    class="o_cart_products_table table mb-0">
-                    <tbody>
-                        <tr
-                            t-foreach="website_sale_order.website_order_line"
-                            t-as="line"
-                            t-att-class="line_last and 'border-transparent'">
-                            <td class="td-img ps-0 pt-3">
-                                <div class="o_cart_product_image position-relative">
-                                    <span
-                                        t-if="not line._is_sellable() and line.product_id.image_128">
-                                        <img
-                                            t-att-src="image_data_uri(line.product_id.image_128)"
-                                            class="img rounded"
-                                            t-att-alt="line.name_short" />
-                                    </span>
-                                    <span
-                                        t-else=""
-                                        t-field="line.product_id.image_128"
-                                        t-options="{'widget': 'image', 'qweb_img_responsive': False, 'class': 'rounded'}" />
-                                    <span
-                                        class="o_cart_item_count badge bg-secondary position-absolute top-0 start-100 translate-middle">
-                                        <t t-out="int(line.product_qty)" />
-                                        <i
-                                            t-if="line._acquire_shop_warning(clear=False)"
-                                            class="fa-solid fa-triangle-exclamation"
-                                            role="img"
-                                            t-att-title="line._acquire_shop_warning()"
-                                            aria-label="Warning" />
-                                    </span>
-                                </div>
-                            </td>
-                            <td
-                                class="td-product_name td-qty w-100 pt-3"
-                                name="website_sale_cart_summary_product_name">
-                                <span
-                                    class="text-wrap"
-                                    t-out="line._get_line_header()" />
-                                <p
-                                    class="text-muted small mb-0"
-                                    t-out="line._get_combination_name()" />
-                                <span
-                                    t-if="line.product_template_id._has_multiple_uoms()"
-                                    class="badge mt-1 bg-light"
-                                    t-out="line.product_uom_id.name" />
-                            </td>
-                            <td
-                                class="td-price pe-0 pt-3 text-end"
-                                name="website_sale_cart_summary_line_price">
-                                <t t-call="website_sale.cart_product_price">
-                                    <t
-                                        t-set="product_price"
-                                        t-value="line._get_cart_display_price()" />
-                                </t>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                t-if="not website_sale_order or not website_sale_order.website_order_line"
+                name="cart_summary_info"
+                class="alert alert-info">
+                Your cart is empty!
             </div>
-            <t t-if="website_sale_order">
-                <t
-                    t-set="warning"
-                    t-value="website_sale_order._acquire_shop_warning(clear=False)" />
-                <div t-if="warning" class="alert alert-warning" role="alert">
-                    <strong>Warning!</strong> <t t-out="website_sale_order._acquire_shop_warning()" />
+            <div>
+                <div
+                    t-att-class="len(website_sale_order.website_order_line) &gt; 3 and 'o_wsale_scrollable_table'">
+                    <table
+                        t-if="website_sale_order and website_sale_order.website_order_line"
+                        class="o_cart_products_table table mb-0">
+                        <tbody>
+                            <tr
+                                t-foreach="website_sale_order.website_order_line"
+                                t-as="line"
+                                t-att-class="line_last and 'border-transparent'">
+                                <td class="td-img ps-0 pt-3">
+                                    <div class="o_cart_product_image position-relative">
+                                        <span
+                                            t-if="not line._is_sellable() and line.product_id.image_128">
+                                            <img
+                                                t-att-src="image_data_uri(line.product_id.image_128)"
+                                                class="img rounded"
+                                                t-att-alt="line.name_short" />
+                                        </span>
+                                        <span
+                                            t-else=""
+                                            t-field="line.product_id.image_128"
+                                            t-options="{'widget': 'image', 'qweb_img_responsive': False, 'class': 'rounded'}" />
+                                        <span
+                                            class="o_cart_item_count badge bg-secondary position-absolute top-0 start-100 translate-middle">
+                                            <t t-out="int(line.product_qty)" />
+                                            <i
+                                                t-if="line._acquire_shop_warning(clear=False)"
+                                                class="fa-solid fa-triangle-exclamation"
+                                                role="img"
+                                                t-att-title="line._acquire_shop_warning()"
+                                                aria-label="Warning" />
+                                        </span>
+                                    </div>
+                                </td>
+                                <td
+                                    class="td-product_name td-qty w-100 pt-3"
+                                    name="website_sale_cart_summary_product_name">
+                                    <span
+                                        class="text-wrap"
+                                        t-out="line._get_line_header()" />
+                                    <p
+                                        class="text-muted small mb-0"
+                                        t-out="line._get_combination_name()" />
+                                    <span
+                                        t-if="line.product_template_id._has_multiple_uoms()"
+                                        class="badge mt-1 bg-light"
+                                        t-out="line.product_uom_id.name" />
+                                </td>
+                                <td
+                                    class="td-price pe-0 pt-3 text-end"
+                                    name="website_sale_cart_summary_line_price">
+                                    <t t-call="website_sale.cart_product_price">
+                                        <t
+                                            t-set="product_price"
+                                            t-value="line._get_cart_display_price()" />
+                                    </t>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </t>
+                <t t-if="website_sale_order">
+                    <t
+                        t-set="warning"
+                        t-value="website_sale_order._acquire_shop_warning(clear=False)" />
+                    <div t-if="warning" class="alert alert-warning" role="alert">
+                        <strong>Warning!</strong> <t t-out="website_sale_order._acquire_shop_warning()" />
+                    </div>
+                </t>
+            </div>
         </div>
     </template>
 
@@ -4141,7 +4143,7 @@
         <div
             t-if="website_sale_order and website_sale_order.website_order_line"
             t-attf-class="o_cart_total #{_cart_total_classes}"
-            data-fragment="website_sale.total">
+            t-att-data-fragment="'website_sale.total_no_promotions' if hide_promotions else 'website_sale.total'">
             <table class="table mb-0">
                 <tr
                     t-if="website_sale_order._has_deliverable_products()"

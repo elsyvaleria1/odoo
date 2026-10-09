@@ -79,10 +79,7 @@ export class Checkout extends Interaction {
                     this._selectMatchingBillingAddress(selectedPartnerId),
                 );
             }
-            const deliveryFormHtml = await this.waitFor(rpc("/shop/delivery_methods"));
-            this.services["public.interactions"].stopInteractions(this.el);
-            document.getElementById("o_delivery_form").innerHTML = deliveryFormHtml;
-            this.services["public.interactions"].startInteractions(this.el);
+            this.swapFragments(await this.waitFor(rpc("/shop/delivery_methods")));
             await this.waitFor(this._prepareDeliveryMethods());
         }
         this._enableMainButton();
@@ -273,9 +270,18 @@ export class Checkout extends Interaction {
      */
     async _updateDeliveryMethod(radio) {
         this._showLoadingBadge(radio);
-        const result = await this.waitFor(this._setDeliveryMethod(radio.dataset.dmId));
-        this._updateAmountBadge(radio, result);
-        this._updateCartSummaries(result);
+        const response = await this.waitFor(
+            this._setDeliveryMethod(radio.dataset.dmId),
+        );
+        if (!response) {
+            return;
+        }
+        this._updateAmountBadge(radio, response.data);
+        this.swapFragments(response);
+        const amountTotalSummary = document.querySelector("#amount_total_summary");
+        if (amountTotalSummary) {
+            amountTotalSummary.innerHTML = response.data.amount_total;
+        }
     }
 
     /**
@@ -310,51 +316,6 @@ export class Checkout extends Interaction {
             deliveryPriceBadge.textContent = rateData.error_message;
             this._toggleDeliveryMethodRadio(radio, true);
         }
-    }
-
-    /**
-     * @private
-     * @param {Object} result
-     * @param {Object} targetEl
-     * @return {void}
-     */
-    _updateCartSummary(result, targetEl) {
-        const amountDelivery = targetEl.querySelector(
-            'tr[name="o_order_delivery"] .monetary_field',
-        );
-        const amountUntaxed = targetEl.querySelector(
-            'tr[name="o_order_total_untaxed"] .monetary_field',
-        );
-        const amountTax = targetEl.querySelector(
-            'tr[name="o_order_total_taxes"] .monetary_field',
-        );
-        const amountTotal = targetEl.parentElement.querySelectorAll(
-            'tr[name="o_order_total"] .monetary_field, #amount_total_summary.monetary_field',
-        );
-
-        if (amountDelivery.classList.contains("d-none")) {
-            amountDelivery
-                .querySelector('span[name="o_message_no_dm_set"]')
-                ?.classList.add("d-none");
-            amountDelivery.classList.remove("d-none");
-        }
-
-        amountDelivery.innerHTML = result.amount_delivery;
-        amountUntaxed.innerHTML = result.amount_untaxed;
-        amountTax.innerHTML = result.amount_tax;
-        amountTotal.forEach((total) => (total.innerHTML = result.amount_total));
-    }
-
-    /**
-     * @private
-     * @param {Object} result
-     * @return {void}
-     */
-    _updateCartSummaries(result) {
-        const parentElements = document.querySelectorAll(
-            "#o_cart_summary_offcanvas, div.o_total_card",
-        );
-        parentElements.forEach((el) => this._updateCartSummary(result, el));
     }
 
     /**
@@ -473,7 +434,7 @@ export class Checkout extends Interaction {
      * @return {Object}
      */
     async _setDeliveryMethod(dmId) {
-        return await rpc("/shop/set_delivery_method", { dm_id: dmId });
+        return await rpc("/shop/checkout/delivery_method", { dm_id: dmId });
     }
 
     /**

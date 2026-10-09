@@ -37,6 +37,41 @@ class TestWebsiteSaleDeliveryController(PaymentCommon, WebsiteSaleCommon):
         ):
             self.Controller.shop_set_delivery_method(dm_id=self.free_delivery.id)
 
+    def test_checkout_delivery_method_answers_with_both_totals_and_the_summary(self):
+        website = self.website.with_env(self.env)
+        with MockRequest(
+            website.env, website=website, sale_order_id=self.cart.id
+        ) as request:
+            request.cart = self.cart
+            response = self.Controller.shop_checkout_delivery_method(
+                dm_id=self.free_delivery.id
+            )
+        self.assertEqual(
+            [(f["key"], f["swap"]) for f in response["fragments"]],
+            [
+                ("website_sale.cart_summary_content", "morph"),
+                ("website_sale.total", "inner"),
+                ("website_sale.total_no_promotions", "inner"),
+            ],
+        )
+        self.assertIn(
+            "/shop/pricelist?r=/shop/checkout", response["fragments"][1]["html"]
+        )
+        self.assertEqual(self.cart.carrier_id, self.free_delivery)
+        self.assertTrue(response["data"]["success"])
+        self.assertIn("amount_total", response["data"])
+
+    def test_delivery_methods_answers_with_the_keyed_form(self):
+        website = self.website.with_env(self.env)
+        with MockRequest(
+            website.env, website=website, sale_order_id=self.cart.id
+        ) as request:
+            request.cart = self.cart
+            response = self.Controller.shop_delivery_methods()
+        [fragment] = response["fragments"]
+        self.assertEqual(fragment["key"], "website_sale.delivery_form")
+        self.assertIn('id="o_delivery_form"', fragment["html"])
+
     def test_available_methods(self):
         self.env["delivery.carrier"].search([]).action_archive()
         self.product_delivery_poste = self.env["product.product"].create(

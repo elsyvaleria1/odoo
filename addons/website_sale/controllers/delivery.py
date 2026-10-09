@@ -3,6 +3,15 @@ from odoo.http import request, route
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.payment import utils as payment_utils
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    render_fragments,
+)
+from odoo.addons.website_sale.controllers.cart import (
+    get_cart_summary_fragment,
+    get_order_total_fragment,
+)
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 _debug = DebugLog(__name__)
@@ -12,7 +21,7 @@ class Delivery(WebsiteSale):
     _express_checkout_delivery_route = "/shop/express/shipping_address_change"
 
     @route("/shop/delivery_methods", type="jsonrpc", auth="public", website=True)
-    def shop_delivery_methods(self):
+    def shop_delivery_methods(self) -> FragmentResponse:
         order_sudo = request.cart
         values = {
             "delivery_methods": order_sudo._get_delivery_methods(),
@@ -20,8 +29,8 @@ class Delivery(WebsiteSale):
             "order": order_sudo,
         }
         values |= self._prepare_additional_delivery_context()
-        return request.env["ir.ui.view"]._render_template(
-            "website_sale.delivery_form", values
+        return render_fragments(
+            request.env, Fragment("website_sale.delivery_form", values)
         )
 
     def _prepare_additional_delivery_context(self):
@@ -31,7 +40,29 @@ class Delivery(WebsiteSale):
     def shop_set_delivery_method(self, dm_id=None, **kwargs):
         if not (order_sudo := request.cart):
             return {}
+        self._set_cart_delivery_method(order_sudo, dm_id)
+        return self._order_summary_values(order_sudo, **kwargs)
 
+    @route(
+        "/shop/checkout/delivery_method", type="jsonrpc", auth="public", website=True
+    )
+    def shop_checkout_delivery_method(
+        self, dm_id=None, **kwargs
+    ) -> FragmentResponse | None:
+        if not (order_sudo := request.cart):
+            return None
+        self._set_cart_delivery_method(order_sudo, dm_id)
+        return render_fragments(
+            request.env,
+            get_cart_summary_fragment(order_sudo),
+            get_order_total_fragment(order_sudo, redirect="/shop/checkout"),
+            get_order_total_fragment(
+                order_sudo, hide_promotions=True, redirect="/shop/checkout"
+            ),
+            data=self._order_summary_values(order_sudo, **kwargs),
+        )
+
+    def _set_cart_delivery_method(self, order_sudo, dm_id) -> None:
         dm_id = int(dm_id)
         if (
             dm_id in order_sudo._get_delivery_methods().ids
@@ -59,7 +90,6 @@ class Delivery(WebsiteSale):
                 "delivery_method_chosen", order=order_sudo.id, carrier=dm_id
             )
             order_sudo._set_delivery_method(delivery_method_sudo)
-        return self._order_summary_values(order_sudo, **kwargs)
 
     def _order_summary_values(self, order, **kwargs):
         Monetary = request.env["ir.qweb.field.monetary"]

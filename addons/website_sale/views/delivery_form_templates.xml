@@ -2,21 +2,25 @@
 <odoo>
 
     <template id="delivery_form">
-        <form id="o_delivery_form" class="o_delivery_form">
-            <h4 class="mb-3">Delivery method</h4>
-            <ul t-if="delivery_methods" id="o_delivery_methods" class="list-group">
-                <t t-foreach="delivery_methods" t-as="dm">
-                    <li name="o_delivery_method" class="list-group-item">
-                        <t t-call="website_sale.delivery_method">
-                            <t t-set="is_selected" t-value="dm.id == selected_dm_id" />
-                        </t>
-                    </li>
-                </t>
-            </ul>
-            <div t-else="" class="alert alert-warning">
-                <strong>No suitable delivery method could be found.</strong>
-            </div>
-        </form>
+        <div class="d-contents" data-fragment="website_sale.delivery_form">
+            <form id="o_delivery_form" class="o_delivery_form">
+                <h4 class="mb-3">Delivery method</h4>
+                <ul t-if="delivery_methods" id="o_delivery_methods" class="list-group">
+                    <t t-foreach="delivery_methods" t-as="dm">
+                        <li name="o_delivery_method" class="list-group-item">
+                            <t t-call="website_sale.delivery_method">
+                                <t
+                                    t-set="is_selected"
+                                    t-value="dm.id == selected_dm_id" />
+                            </t>
+                        </li>
+                    </t>
+                </ul>
+                <div t-else="" class="alert alert-warning">
+                    <strong>No suitable delivery method could be found.</strong>
+                </div>
+            </form>
+        </div>
     </template>
 
     <template id="delivery_method">

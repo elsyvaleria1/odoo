@@ -46,7 +46,7 @@ patch(Checkout.prototype, {
             if (this.useDeliveryAsBillingToggle?.checked) {
                 this.useDeliveryAsBillingToggle.dispatchEvent(new MouseEvent("click"));
             }
-            const result = await this.waitFor(
+            const { data: result } = await this.waitFor(
                 this._setDeliveryMethod(checkedRadio.dataset.dmId),
             );
             if (!this.mondialRelayModal) {
