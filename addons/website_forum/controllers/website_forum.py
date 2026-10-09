@@ -476,17 +476,17 @@ class WebsiteForum(WebsiteProfile):
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/question/<model("forum.post"):question>/toggle_favorite',
-        type="jsonrpc",
+        type="http",
         auth="user",
         methods=["POST"],
         website=True,
     )
-    def question_toggle_favorite(self, forum, question, **post):
+    def question_toggle_favorite(self, forum, question, redirect=None, **post):
         favorite = not question.is_user_favorite
         question._update_user_favorite(favorite)
         if favorite:
             question.sudo().message_subscribe(request.env.user.partner_id.ids)
-        return favorite
+        return self._back_to_post(forum, question, redirect)
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/question/<model("forum.post"):question>/ask_for_close',

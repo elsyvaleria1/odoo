@@ -64,18 +64,29 @@
             <t t-out="question.closed_reason_id.name.capitalize()" />
             </t>
             </span>
-            <a
+            <form
                 t-elif="uid"
-                type="button"
+                class="d-inline-flex"
+                method="post"
+                t-attf-action="/forum/#{slug(question.forum_id)}/question/#{slug(question)}/toggle_favorite"
+                data-fragment-form="">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input
+                type="hidden"
+                name="redirect"
+                t-att-value="request.httprequest.full_path.rstrip('?')" />
+            <button
+                type="submit"
                 aria-label="Favorite"
-                t-attf-data-href="/forum/#{slug(question.forum_id)}/question/#{slug(question)}/toggle_favorite"
+                t-att-aria-pressed="'true' if question.is_user_favorite else 'false'"
                 t-attf-class="o_wforum_favorite_toggle btn btn-lg #{ 'opacity-50' if not question.is_user_favorite else '' } opacity-hover-100 p-0">
             <i
                 t-attf-class="position-relative fa-star #{'fa-solid o_wforum_gold' if question.is_user_favorite else 'fa-regular'}"
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
                 title="Favorite" />
-            </a>
+            </button>
+            </form>
             <t t-if="question.state == 'active'" t-call="website_forum.follow">
             <t t-set="object" t-value="question" />
             <t t-set="icons_design" t-value="True" />

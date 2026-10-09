@@ -70,3 +70,13 @@ class TestUi(HttpCaseGamification):
         self.user_demo.karma = forum.karma_upvote + 1
         self.start_tour(question.website_url, "forum_vote_in_place", login="demo")
         self.assertEqual(question.vote_count, 1)
+
+    def test_06_favorite_in_place(self):
+        question = self.env["forum.post"].create(
+            {
+                "name": "PN Favorite",
+                "forum_id": self.env.ref("website_forum.forum_help").id,
+            }
+        )
+        self.start_tour(question.website_url, "forum_favorite_in_place", login="demo")
+        self.assertTrue(question.with_user(self.user_demo).is_user_favorite)

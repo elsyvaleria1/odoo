@@ -215,6 +215,34 @@ class TestForumPostRoutes(HttpCase):
         self.assertTrue(response.headers["Location"].endswith("/forum/x?y=1"))
         self.assertTrue(self.answer.is_correct)
 
+    def test_starring_a_question_returns_to_the_page_given_and_toggles(self):
+        self.authenticate("forum_asker", "forum_asker")
+        slug = self.env["ir.http"]._slug
+        url = (
+            f"/forum/{slug(self.forum)}/question/{slug(self.question)}/toggle_favorite"
+        )
+        question = self.question.with_user(self.asker)
+
+        def star():
+            response = self.url_open(
+                url,
+                data={
+                    "csrf_token": http.Request.csrf_token(self),
+                    "redirect": "/forum/x?y=1",
+                },
+                allow_redirects=False,
+            )
+            question.invalidate_recordset()
+            return response, question.is_user_favorite
+
+        (starred, favorite), (unstarred, still_favorite) = star(), star()
+
+        self.assertEqual(starred.status_code, 303)
+        self.assertTrue(starred.headers["Location"].endswith("/forum/x?y=1"))
+        self.assertTrue(favorite)
+        self.assertEqual(unstarred.status_code, 303)
+        self.assertFalse(still_favorite)
+
     def test_a_vote_returns_to_the_question_and_counts(self):
         self.authenticate("forum_asker", "forum_asker")
         slug = self.env["ir.http"]._slug

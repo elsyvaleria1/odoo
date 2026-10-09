@@ -39,9 +39,6 @@ export class WebsiteForum extends Interaction {
         ".o_wforum_validation_queue a[href*='/validate']": {
             "t-on-click.prevent.withTarget": this.onValidationQueueClick,
         },
-        ".o_wforum_favorite_toggle": {
-            "t-on-click.prevent.withTarget": this.onToggleFavoriteClick,
-        },
         ".js_close_intro": {
             "t-on-click.prevent": this.onCloseIntroClick,
         },
@@ -367,20 +364,6 @@ export class WebsiteForum extends Interaction {
                 ?.classList.add("d-none");
             queueCountBadge.classList.add("d-none");
         }
-    }
-
-    /**
-     * @param {MouseEvent} ev
-     * @param {HTMLElement} currentTargetEl
-     */
-    async onToggleFavoriteClick(ev, currentTargetEl) {
-        const data = await this.waitFor(rpc(currentTargetEl.dataset.href));
-        currentTargetEl.classList.toggle("opacity-50", !data);
-        currentTargetEl.classList.toggle("opacity-100-hover", !data);
-        const currentTargetEl_icon = currentTargetEl.querySelector("i");
-        currentTargetEl_icon.classList.toggle("fa-regular", !data);
-        currentTargetEl_icon.classList.toggle("fa-solid", data);
-        currentTargetEl_icon.classList.toggle("o_wforum_gold", data);
     }
 
     onCloseIntroClick() {
