@@ -38,10 +38,8 @@ class DevicePhoneCallController(http.Controller):
 
         try:
             with request.env.cr.savepoint():
-                ingest = (
-                    request.env["phone.call"].sudo().ingest_from_device(device, calls)
-                )
-                device.sudo()._touch_last_seen()
+                ingest = request.env["phone.call"].ingest_from_device(device, calls)
+                device._touch_last_seen()
         except Exception as error:
             _logger.exception("Failed to store mobile call log")
             admission.settle(str(error))
@@ -95,12 +93,10 @@ class DevicePhoneCallController(http.Controller):
 
         try:
             with request.env.cr.savepoint():
-                ingest = (
-                    request.env["phone.call"]
-                    .sudo()
-                    .store_device_recording(device, payload)
+                ingest = request.env["phone.call"].store_device_recording(
+                    device, payload
                 )
-                device.sudo()._touch_last_seen()
+                device._touch_last_seen()
         except ValueError as error:
             admission.settle(str(error))
             return self._error_response(

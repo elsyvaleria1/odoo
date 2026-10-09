@@ -1,7 +1,7 @@
 import base64
 from datetime import datetime, timedelta
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.libs.documents import (
     CUES,
     METERED,
@@ -13,7 +13,7 @@ from odoo.libs.documents import (
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 from odoo.addons.device_phone_call.models.phone_call import CALL_LOG_GRACE
 
 _AUDIO = base64.b64encode(b"FAKE-M4A-AUDIO-BYTES").decode()
@@ -240,3 +240,87 @@ class TestDeviceCallRecording(DeviceHttpCase):
     def test_bad_token_rejected(self):
         resp = self._push({"audio_b64": _AUDIO, "number": "5512345678"}, token="nope")
         self.assertEqual(resp.status_code, 401)
+
+
+@tagged("post_install", "-at_install")
+class TestDeviceCallRecordingWithoutSu(NarrowedReceiver, TestDeviceCallRecording):
+    def test_the_receiver_files_a_recording_and_its_transcript_job_under_its_privilege(
+        self,
+    ):
+        receiver = self.env.ref("device.user_device_receiver")
+        resp = self._push(
+            {
+                "audio_b64": _AUDIO,
+                "number": "5512345678",
+                "recorded_at": "2026-07-28T15:30:20Z",
+                "duration": 42,
+                "file_name": "call.m4a",
+            }
+        )
+        self.assertEqual(resp.status_code, 200)
+        recording = self._recording(self.call)
+        self.assertEqual(recording.create_uid, receiver)
+        job = self._job(recording)
+        self.assertEqual(job.user_id, receiver)
+        self.assertFalse(job.elevated, "the transcript is heard without su")
+        self.assertIn(
+            self.env.ref("device_phone_call.privilege_file_device_call").id,
+            job.privileges,
+        )
+        job.action_run_now()
+        self.assertEqual(job.state, "done")
+        self.assertEqual(recording.transcript_state, "done")
+        self.assertEqual(recording.transcript_text, "le mando la cotización")
+
+    def test_an_entry_the_receiver_files_completes_the_waiting_recording(self):
+        receiver = self.env.ref("device.user_device_receiver")
+        other = self.env["res.company"].create({"name": "Línea de Xiuman"})
+        self.device.company_id.phone_ids = [
+            Command.create({"number": "+52 55 1000 0001", "type": "landline"})
+        ]
+        other.phone_ids = [
+            Command.create({"number": "+52 55 2000 0002", "type": "landline"})
+        ]
+        pbx = self.env["device.kind"].search([("code", "=", "pbx")], limit=1)
+        self.device.device_category_id = pbx
+        self.assertIn(other, receiver.company_ids, "it carries that company's line")
+        resp = self._push(
+            {
+                "audio_b64": _AUDIO,
+                "number": "5566666666",
+                "recorded_at": "2026-07-28T18:00:40Z",
+                "duration": 35,
+                "file_name": "call.m4a",
+            }
+        )
+        waiting = self.calls.browse(resp.json()["call_id"])
+        recording = self._recording(waiting)
+        self.assertEqual(recording.company_id, self.device.company_id)
+        resp = self.url_open(
+            "/remote/device/PHONE-REC-001/calllog",
+            data=json_dumps_bytes(
+                {
+                    "number": "5566666666",
+                    "direction": "outgoing",
+                    "timestamp": "2026-07-28T18:00:00Z",
+                    "duration": 35,
+                    "line": "5520000002",
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.token}",
+            },
+        )
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertFalse(waiting.awaits_call_log)
+        self.assertEqual(waiting.company_id, other)
+        self.assertEqual(waiting.write_uid, receiver)
+        self.assertEqual(
+            recording.company_id, other, "the recording follows its call's line"
+        )
+        job = self._job(recording)
+        self.assertEqual(job.state, "pending")
+        self.assertFalse(job.elevated)
+        job.action_run_now()
+        self.assertEqual(recording.transcript_state, "done")

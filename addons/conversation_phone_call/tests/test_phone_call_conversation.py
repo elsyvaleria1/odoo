@@ -1,5 +1,5 @@
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from odoo import fields
 from odoo.libs.documents import (
@@ -12,6 +12,9 @@ from odoo.libs.documents import (
 )
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase, new_test_user
+
+from odoo.addons.conversation.tests.common import ANALYSIS, ROUTER
+from odoo.addons.integration_machine_learning.tools import MlResult
 
 
 class _Hears(BaseReader):
@@ -314,3 +317,82 @@ class TestCallConversationIsQuiet(TransactionCase):
         self.env.cr.precommit.run()
         self.assertEqual(conversation.user_id, self.other)
         self.assertFalse(self._assignments(self.other))
+
+
+@tagged("post_install", "-at_install")
+class TestCallFiledByWhoMayNotOpenConversations(TransactionCase):
+    """A phone's receiver files the calls it reports: an internal user who
+    reads them and holds no conversation right. Its recording is heard and
+    analysed on the call's conversation all the same, without su."""
+
+    def setUp(self):
+        super().setUp()
+        engine = register_reader(_Hears())
+        self.addCleanup(unregister_reader, engine)
+        self.filer = new_test_user(
+            self.env, login="call_filer", groups="base.group_user"
+        )
+        self.customer = self.env["res.partner"].create({"name": "Ferretería López"})
+        self.call = self.env["phone.call"].create(
+            {
+                "phone_number": "5512345678",
+                "direction": "outgoing",
+                "channel": "mobile",
+                "user_id": self.filer.id,
+                "partner_id": self.customer.id,
+                "end_date": fields.Datetime.now(),
+            }
+        )
+        self.recording = self.env["ir.attachment"].create(
+            {
+                "name": "call.m4a",
+                "mimetype": "audio/mp4",
+                "raw": b"m4a-call",
+                "res_model": "phone.call",
+                "res_id": self.call.id,
+            }
+        )
+
+    def _job(self, key):
+        return self.env["ir.job"].search([("identity_key", "=", key)])
+
+    def test_the_recording_is_filed_heard_and_analysed_without_su(self):
+        self.assertFalse(
+            self.env["conversation.conversation"]
+            .with_user(self.filer)
+            .has_access("create")
+        )
+        self.call.with_user(self.filer)._file_recording(
+            self.recording.with_user(self.filer), 0, 2000
+        )
+        conversation = self.call.conversation_id
+        self.assertEqual(conversation.create_uid, self.filer)
+        self.assertEqual(conversation.phone_call_id, self.call)
+
+        heard = self._job(f"reading.cues.{self.recording.id}")
+        self.assertEqual(heard.user_id, self.filer)
+        self.assertFalse(heard.elevated)
+        heard.action_run_now()
+        self.assertEqual(heard.state, "done")
+        self.assertEqual(self.recording.transcript_state, "done")
+
+        analysis = self._job(f"extract.{conversation._name}.{conversation.id}")
+        self.assertEqual(analysis.user_id, self.filer)
+        self.assertFalse(analysis.elevated)
+        self.assertIn(
+            self.env.ref("conversation.privilege_extract_conversation").id,
+            analysis.privileges,
+        )
+        router = MagicMock()
+        router.select_model.return_value = MagicMock(code="a-model")
+        router.run.return_value = MlResult(model=None, data=dict(ANALYSIS))
+        with patch(ROUTER, return_value=router):
+            analysis.action_run_now()
+        self.assertEqual(analysis.state, "done")
+        self.assertEqual(conversation.state, "analyzed")
+        self.assertEqual(conversation.outcome, "visit_scheduled")
+        self.assertEqual(len(conversation.tool_call_ids), 2)
+        note = conversation.message_ids.filtered(
+            lambda message: "Analyzed:" in (message.body or "")
+        )
+        self.assertEqual(note.author_id, self.filer.partner_id)

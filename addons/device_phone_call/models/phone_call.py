@@ -87,7 +87,7 @@ class PhoneCall(models.Model):
     @api.model
     def ingest_from_device(self, device, calls) -> DeviceIngest:
         """Store a batch of calls ``device`` reported; the device route calls
-        it elevated, after authenticating the device."""
+        it as the device's receiver, after authenticating the device."""
         prepared = []
         skipped = []
         lines = device._phone_call_lines()
@@ -100,12 +100,30 @@ class PhoneCall(models.Model):
         skipped = tuple(skipped)
         if not prepared:
             return DeviceIngest(self.browse(), 0, skipped)
+        filed, duplicates = self._in_line_companies(device, lines)._file_device_entries(
+            device, prepared
+        )
+        return DeviceIngest(filed, duplicates, skipped)
 
+    @api.model
+    def _in_line_companies(self, device, lines=None):
+        """This model where ``device``'s calls are filed: a phone system
+        files each under the company whose number it reached, and a call and
+        its recording are looked up, moved and heard there."""
+        if lines is None:
+            lines = device._phone_call_lines()
+        companies = self.env["res.company"].union(*lines.values())
+        if not companies - self.env.companies:
+            return self
+        allowed = dict.fromkeys([*self.env.companies.ids, *companies.ids])
+        return self.with_context(allowed_company_ids=list(allowed))
+
+    @api.model
+    def _file_device_entries(self, device, prepared) -> tuple:
         fresh = self._remove_already_stored(device, prepared)
         duplicates = len(prepared) - len(fresh)
         if not fresh:
-            return DeviceIngest(self.browse(), duplicates, skipped)
-
+            return self.browse(), duplicates
         Company = self.env["res.company"]
         for company_id, entries in groupby(
             sorted(fresh, key=itemgetter("company_id")), key=itemgetter("company_id")
@@ -128,7 +146,7 @@ class PhoneCall(models.Model):
                 adopted |= reported
             else:
                 to_create.append(vals)
-        return DeviceIngest(adopted | self.create(to_create), duplicates, skipped)
+        return adopted | self.create(to_create), duplicates
 
     @api.model
     def _device_call_to_vals(self, device, call, lines=None) -> dict | None:
@@ -402,6 +420,10 @@ class PhoneCall(models.Model):
     def store_device_recording(self, device, vals):
         """File a recording a device uploaded on the call it belongs to: the
         call already reported, else a call that waits for its entry."""
+        return self._in_line_companies(device)._file_device_recording(device, vals)
+
+    @api.model
+    def _file_device_recording(self, device, vals):
         audio_b64 = vals.get("audio_b64") or vals.get("audio")
         if not audio_b64:
             raise ValueError("Missing audio payload")

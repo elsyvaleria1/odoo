@@ -7,4 +7,12 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_complete_softphone_call" model="res.groups">
+        <field
+            name="name">Privilege: a phone system's receiver completes the calls the softphone filed</field>
+        <field
+            name="comment">Held by a phone system's receiver: the softphone's own record of a call the phone system reports is completed instead of duplicated, the copies every rung browser filed go, and the extension a call names finds its user.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

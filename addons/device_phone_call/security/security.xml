@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_file_device_call" model="res.groups">
+        <field
+            name="name">Privilege: a phone's receiver files the calls and recordings it reports</field>
+        <field
+            name="comment">Held by a handset's or phone system's receiver: the calls the device reports, and a waiting recording's file following its call to the company whose line the entry names.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

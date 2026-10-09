@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from psycopg import IntegrityError
 
+from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
@@ -234,4 +235,30 @@ class TestDeviceVoip(DeviceHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceVoipWithoutSu(NarrowedReceiver, TestDeviceVoip):
-    pass
+    # every report the phone system makes reaches its receiver's route
+    def _report(self, **call):
+        response = self.url_open(
+            f"/remote/device/{self.pbx.identifier}/calllog",
+            data=json_dumps_bytes(
+                {
+                    "number": "5512345678",
+                    "direction": "incoming",
+                    "timestamp": self.when.isoformat(),
+                    "duration": 90,
+                    **call,
+                }
+            ),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self._device_token(self.pbx)}",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["accepted"], 1)
+        reported = self.calls.search(
+            [("device_id", "=", self.pbx.id), ("start_date", "=", self.when)]
+        )
+        self.assertEqual(
+            reported.write_uid, self.env.ref("device.user_device_receiver")
+        )
+        return reported

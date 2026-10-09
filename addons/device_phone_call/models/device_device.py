@@ -20,6 +20,7 @@ _CALL_REPORTER_MAX_LOGGED_PAYLOAD = 65536
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
+    _receiver_privileges = ("device_phone_call.privilege_file_device_call",)
 
     user_id = fields.Many2one(
         comodel_name="res.users",
@@ -73,6 +74,26 @@ class DeviceDevice(models.Model):
             vals.setdefault("duplicate_detection_enabled", True)
             vals.setdefault("duplicate_window_seconds", 900)
         return super().create(vals_list)
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "device_category_id" in vals:
+            self._place_receiver()
+        return result
+
+    def _place_receiver(self) -> None:
+        super()._place_receiver()
+        # a phone system files each call under the company whose number it
+        # reached, so its receiver works in every company that has a line
+        Gate = self.env["mixin.inbound.gate"]
+        for device in self.filtered(
+            lambda device: device.active and device._phone_call_channel() == "pbx"
+        ):
+            lines = device._phone_call_lines()
+            Gate._place_principal_in_companies(
+                device._inbound_service_user(),
+                self.env["res.company"].union(*lines.values()),
+            )
 
     def action_connect(self):
         self.check_singleton()

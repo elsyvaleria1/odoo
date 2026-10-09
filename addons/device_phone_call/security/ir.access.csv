@@ -1,3 +1,4 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 phone_call_device_user,Phone call: device users read the calls devices reported,phone_call.model_phone_call,device.group_device_user,permission,r,,,"[('device_id', '!=', False)]"
 phone_call_device_manager,Phone call: device managers manage the calls devices reported,phone_call.model_phone_call,device.group_device_manager,permission,cud,,,"[('device_id', '!=', False)]"
+privilege_file_device_call_phone_call,File a device's calls: the calls a device reports,phone_call.model_phone_call,privilege_file_device_call,permission,cru,,,"[('device_id', '!=', False)]"

@@ -2,7 +2,7 @@ from odoo import Command
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 
 
 @tagged("post_install", "-at_install")
@@ -187,3 +187,23 @@ class TestDeviceCallLog(DeviceHttpCase):
         self.device.user_id = user
         self._push({"number": "5512345678", "type": 2})
         self.assertEqual(self._calls().user_id, user)
+
+
+@tagged("post_install", "-at_install")
+class TestDeviceCallLogWithoutSu(NarrowedReceiver, TestDeviceCallLog):
+    def test_the_receiver_files_the_calls_it_is_told_of(self):
+        receiver = self.env.ref("device.user_device_receiver")
+        resp = self._push(
+            {
+                "number": "5512345678",
+                "type": 1,
+                "duration": 65,
+                "timestamp": "2026-07-28T15:30:00Z",
+            }
+        )
+        self.assertEqual(resp.status_code, 200)
+        call = self._calls()
+        self.assertEqual(call.create_uid, receiver)
+        self.assertEqual(call.partner_id, self.partner)
+        messages = call.message_ids
+        self.assertEqual(messages.author_id, receiver.partner_id)

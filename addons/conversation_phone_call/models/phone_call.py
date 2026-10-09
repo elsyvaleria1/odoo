@@ -15,9 +15,18 @@ class PhoneCall(models.Model):
 
     def _recording_timeline(self):
         self.check_singleton()
-        if not self.conversation_id:
-            self.sudo().conversation_id = self._create_conversation()
-        return self.conversation_id
+        # whoever files the recording, a phone's receiver or the softphone, may
+        # not open conversations: the call's own is its filing's to make
+        call = self._filing_conversation()
+        if not call.conversation_id:
+            call.conversation_id = call._create_conversation()
+        return call.conversation_id
+
+    def _filing_conversation(self):
+        return self.with_privilege(
+            "conversation_phone_call.privilege_file_call_conversation",
+            reason="a recorded call is filed on its conversation",
+        )
 
     def _conversation_name(self) -> str:
         self.check_singleton()
@@ -31,8 +40,8 @@ class PhoneCall(models.Model):
         # the phone's user is its responsible on every call it records: told
         # so once per recording, a phone's history flooded its inbox
         return (
-            self.env["conversation.conversation"]
-            .sudo()
+            self._filing_conversation()
+            .env["conversation.conversation"]
             .with_context(mail_auto_subscribe_no_notify=True)
             .create(
                 {
@@ -55,8 +64,8 @@ class PhoneCall(models.Model):
         # the entry may name another company's line and the extension that
         # answered: the conversation, transcript and analysis follow the call
         # to the people who took it
-        for call in self.filtered("conversation_id"):
-            conversation = call.conversation_id.sudo()
+        for call in self._filing_conversation().filtered("conversation_id"):
+            conversation = call.conversation_id
             vals = {
                 "name": call._conversation_name(),
                 "company_id": call.company_id.id,

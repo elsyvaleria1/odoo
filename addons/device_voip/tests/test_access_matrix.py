@@ -23,6 +23,13 @@ class TestDeviceVoipAccessMatrix(AccessMatrixCase):
             note=HANDED,
             carrier="rwcd",
         ),
+        Cell(
+            "phone.call",
+            "ringing_copy_a",
+            note="a phone system's receiver completes or drops what a softphone "
+            "filed through device_voip.privilege_complete_softphone_call, which no "
+            "user holds",
+        ),
     )
 
     @classmethod
@@ -38,6 +45,16 @@ class TestDeviceVoipAccessMatrix(AccessMatrixCase):
             }
         )
         return {
+            "ringing_copy_a": cls.env["phone.call"].create(
+                {
+                    "phone_number": "5512345678",
+                    "channel": "softphone",
+                    "direction": "incoming",
+                    "state": "missed",
+                    "user_id": False,
+                    "company_id": cls.companies["a"].id,
+                }
+            ),
             "carrier_settings": cls.env["res.users.settings"]._get_or_create_for_user(
                 carrier
             ),

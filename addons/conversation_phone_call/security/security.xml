@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_file_call_conversation" model="res.groups">
+        <field
+            name="name">Privilege: a recorded call is filed on its conversation, whoever files it</field>
+        <field
+            name="comment">Held while a call's recording is filed and while its late details reach the conversation, whoever does it (a phone's receiver, the softphone): the call's conversation, created on its first recording, and the link from the call to it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

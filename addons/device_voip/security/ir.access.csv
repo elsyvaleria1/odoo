@@ -1,2 +1,4 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 privilege_hand_softphone_settings,Hand a softphone: the settings of a user who carries a handset,base.model_res_users_settings,privilege_hand_softphone,permission,cr,,,"[('user_id.phone_device_ids', '!=', False)]"
+privilege_complete_softphone_call_phone_call,Complete a softphone call: the calls the softphone filed,phone_call.model_phone_call,privilege_complete_softphone_call,permission,rud,,,"[('channel', '=', 'softphone'), ('device_id', '=', False)]"
+privilege_complete_softphone_call_settings,Complete a softphone call: the user an extension names,base.model_res_users_settings,privilege_complete_softphone_call,permission,r,,,"[('voip_username', '!=', False)]"

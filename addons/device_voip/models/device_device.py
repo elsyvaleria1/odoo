@@ -3,7 +3,10 @@ from odoo import models
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
-    _receiver_privileges = ("device_voip.privilege_hand_softphone",)
+    _receiver_privileges = (
+        "device_voip.privilege_hand_softphone",
+        "device_voip.privilege_complete_softphone_call",
+    )
 
     def _softphone_settings(self) -> dict | None:
         """What the handset's softphone registers with: its user's extension

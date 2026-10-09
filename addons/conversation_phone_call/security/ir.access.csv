@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_file_call_conversation_conversation,File a call's conversation: the conversation of a call,conversation.model_conversation_conversation,privilege_file_call_conversation,permission,cru,,,"[('phone_call_id', '!=', False)]"
+privilege_file_call_conversation_phone_call,File a call's conversation: the call's link to it,phone_call.model_phone_call,privilege_file_call_conversation,permission,ru,,,"[('conversation_id', '=', False)]"
