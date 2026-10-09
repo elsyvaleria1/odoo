@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import statistics
 import threading
 import time
@@ -7,22 +8,50 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
 
+from odoo.db.cursor import Cursor
+
 
 class StatementCounter:
-    """Count driver submissions, with executemany treated as one submission."""
+    """Count driver submissions, with executemany treated as one submission,
+    and how long the thread waited for a CPU inside them (`sql_wait`)."""
 
     def __init__(self) -> None:
         self.count = 0
         self.chars = 0
+        self.sql_wait = 0.0
         self._time_start = getattr(threading.current_thread(), "query_time", 0.0)
+        self._schedstat: int | None = None
+        self._wait_mark: float | None = None
+        self._probe_seconds = 0.0
+
+    def _thread_wait(self) -> float:
+        # the probe's own time is booked as SQL time, so the residual a floor
+        # judges reads as it did without it: two reads per statement are
+        # ~0.9 us, a millisecond over a thousand statements
+        start = time.perf_counter()
+        wait = int(os.pread(self._schedstat, 64, 0).split()[1]) / 1e9
+        self._probe_seconds += time.perf_counter() - start
+        return wait
+
+    def _mark_statement(self) -> None:
+        # the last statement queued before the driver waits opens the wait:
+        # the time between two pipelined statements is the flow's own
+        self._wait_mark = self._thread_wait()
 
     def _record(self, cursor, query, params, start, delay):
         self.count += 1
         self.chars += len(query) if isinstance(query, (str, bytes)) else len(str(query))
+        if self._wait_mark is not None:
+            self.sql_wait += self._thread_wait() - self._wait_mark
+            self._wait_mark = None
 
     @property
     def seconds(self):
-        return threading.current_thread().query_time - self._time_start
+        return (
+            threading.current_thread().query_time
+            - self._time_start
+            + self._probe_seconds
+        )
 
     @contextmanager
     def on(self):
@@ -35,9 +64,29 @@ class StatementCounter:
         hooks = existing if existing is not None else []
         thread.query_hooks = hooks
         hooks.append(self._record)
+        before_statement = Cursor.__dict__.get("_before_statement", _MISSING)
+        try:
+            self._schedstat = os.open(_SCHEDSTAT, os.O_RDONLY)
+        except OSError:
+            self._schedstat = None
+        else:
+            inherited = Cursor._before_statement
+
+            def marked(cursor):
+                self._mark_statement()
+                inherited(cursor)
+
+            Cursor._before_statement = marked
         try:
             yield self
         finally:
+            if self._schedstat is not None:
+                if before_statement is _MISSING:
+                    del Cursor._before_statement
+                else:
+                    Cursor._before_statement = before_statement
+                os.close(self._schedstat)
+                self._schedstat = None
             hooks.remove(self._record)
             if existing is None and not hooks:
                 del thread.query_hooks
@@ -48,6 +97,9 @@ class StatementCounter:
     def reset(self) -> None:
         self.count = 0
         self.chars = 0
+        self.sql_wait = 0.0
+        self._probe_seconds = 0.0
+        self._wait_mark = None
         self._time_start = threading.current_thread().query_time
 
 
@@ -93,8 +145,8 @@ _MISSING = object()
 
 
 _SCHEDSTAT = Path("/proc/thread-self/schedstat")
-# a round counts when it waited for a CPU less than this share of its residual,
-# a fifth of the tolerance a floor is judged with
+# a round counts when, outside its statements, it waited for a CPU less than
+# this share of its residual, a fifth of the tolerance a floor is judged with
 CLEAN_WAIT_SHARE = 0.05
 
 
@@ -145,7 +197,9 @@ def measure(
                 "non_sql_ms": (wall - counter.seconds) / repeat * 1000,
             }
         )
-        if waited() - wait_start <= CLEAN_WAIT_SHARE * (wall - counter.seconds):
+        # the wake-up after each statement is SQL time, not the residual's
+        outside_sql = waited() - wait_start - getattr(counter, "sql_wait", 0.0)
+        if outside_sql <= CLEAN_WAIT_SHARE * (wall - counter.seconds):
             clean.append(samples[-1])
     # the fastest round is the floor's reading: another process's burst lands
     # in some rounds and not others, and measured 2026-09-22 under eight busy

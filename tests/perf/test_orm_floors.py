@@ -95,7 +95,7 @@ def test_partner_write_batch(env, counter, check):
         partners.write({"ref": f"b{tick[0]}"})
         env.flush_all()
 
-    readings = measure(batch, counter, repeat=1, rounds=3)
+    readings = measure(batch, counter, repeat=1, rounds=7)
     check("partner_write_batch_1000", readings)
 
 

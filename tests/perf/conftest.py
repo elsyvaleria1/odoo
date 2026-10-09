@@ -35,6 +35,19 @@ SIZE_TOLERANCE = 0.10
 # over-corrected (the loop slowed 3x where the ORM slowed 1.9x), so a slower
 # machine is reported as not judged rather than red
 CALIBRATION_KEY = "calibration_ms"
+# readings kept for the record: a floor on one would be judged as a time
+RECORD_ONLY = frozenset(
+    {
+        "rounds",
+        "rounds_contended",
+        "statements_min",
+        "statements_max",
+        "non_sql_ms_median",
+        "wall_ms",
+        "cpu_ms",
+        "sql_ms",
+    }
+)
 
 _READINGS = pytest.StashKey[list[dict]]()
 _DATABASES = pytest.StashKey[list[dict]]()
@@ -103,7 +116,8 @@ def _check(
     line = " ".join(f"{k}={v}" for k, v in readings.items())
     print(f"\n[perf] {scenario}: {line}")
     assert floors is not None, (
-        f"{scenario} has no floor in {FLOORS.name}; add {json_dumps(readings)}"
+        f"{scenario} has no floor in {FLOORS.name}; add "
+        f"{json_dumps({k: v for k, v in readings.items() if k not in RECORD_ONLY})}"
     )
     reference = floors_data.get(CALIBRATION_KEY)
     time_judged = not counts_only
@@ -183,6 +197,43 @@ def pytest_sessionstart(session):
         raise pytest.UsageError("performance gates require PostgreSQL")
     if dropdb_path() is None:
         raise pytest.UsageError("performance gates require dropdb")
+    _pin_to_performance_cores()
+
+
+def _pin_to_performance_cores() -> None:
+    # a hybrid CPU runs the calibration loop at 15.2 ms on a performance core,
+    # 23.6 on an efficiency one and 44.0 on a low-power one (Core Ultra 9 185H,
+    # 2026-10-09, none waiting for a CPU): unpinned, the calibration and the
+    # rounds land on different classes and a floor reads red on a still
+    # machine. The floors were set on the performance class.
+    try:
+        listed = Path("/sys/devices/cpu_core/cpus").read_text(encoding="ascii")
+    except OSError:
+        return
+    cpus = set()
+    for part in listed.strip().split(","):
+        first, _sep, last = part.partition("-")
+        cpus.update(range(int(first), int(last or first) + 1))
+    if allowed := cpus & os.sched_getaffinity(0):
+        os.sched_setaffinity(0, allowed)
+
+
+def pytest_terminal_summary(terminalreporter):
+    config = terminalreporter.config
+    if config.getoption("--perf-counts-only"):
+        return
+    readings = config.stash[_READINGS]
+    unjudged = [
+        reading["scenario"]
+        for reading in readings
+        if reading.get("time_judged") is False
+    ]
+    if unjudged:
+        terminalreporter.write_line(
+            f"[perf] time floors not judged in {len(unjudged)} of "
+            f"{len(readings)} scenarios: {', '.join(unjudged)}",
+            yellow=True,
+        )
 
 
 def _install(modules: str, label: str, pytest_config):

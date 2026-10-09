@@ -103,6 +103,36 @@ def test_a_round_that_waited_for_a_cpu_is_not_the_reading():
     assert readings["rounds_contended"] == 1
 
 
+class _WaitingCounter(_Counter):
+    sql_wait = 0.0
+
+    def reset(self):
+        super().reset()
+        self.sql_wait = 0.0
+
+
+def test_a_wait_inside_the_statements_does_not_contend_the_round():
+    # one round of 5 ms, 3 of them SQL; it waited 1 ms for a CPU, all of it
+    # on the wake-up after its statements, which the residual does not hold
+    counter = _WaitingCounter()
+    ticks = iter([0.0, 0.005])
+    waits = iter([0.0, 0.001])
+
+    def fn():
+        counter.seconds = 0.003
+        counter.sql_wait = 0.001
+
+    readings = measure(
+        fn,
+        counter,
+        repeat=1,
+        rounds=1,
+        clock=lambda: next(ticks),
+        waited=lambda: next(waits),
+    )
+    assert readings["rounds_contended"] == 0
+
+
 def test_the_run_delay_is_a_duration():
     assert run_delay() >= 0.0
 

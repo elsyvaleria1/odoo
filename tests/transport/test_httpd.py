@@ -885,6 +885,21 @@ def test_the_evented_child_reads_its_own_pool_and_holds_no_listener(monkeypatch)
     assert evented == 10
 
 
+def test_the_evented_child_announces_the_share_it_divides_by(monkeypatch, caplog):
+    monkeypatch.delenv("ODOO_MAX_HTTP_THREADS", raising=False)
+    with server_settings.override(db_maxconn=8, db_maxconn_gevent=40):
+        settings = server_settings.current()
+        limit, auto_limit = httpd.compute_http_thread_limit(
+            settings, listeners_spawned=False, evented=True
+        )
+        with caplog.at_level("INFO", logger="odoo.service.server"):
+            httpd.announce_thread_budget(
+                settings, limit, auto_limit, listeners_spawned=False, evented=True
+            )
+    assert "At most 10 HTTP request(s)" in caplog.text
+    assert "db_maxconn_gevent 40 // 4" in caplog.text
+
+
 def test_the_evented_child_leaves_half_its_pool_to_websocket_jobs(monkeypatch):
     import odoo
     from odoo.service import _limits

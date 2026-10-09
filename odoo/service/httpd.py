@@ -58,6 +58,10 @@ def get_http_pool_size(settings: ServerSettings, *, evented: bool = False) -> in
     return (settings.db_maxconn_gevent if evented else 0) or settings.db_maxconn
 
 
+def _http_pool_share(evented: bool) -> int:
+    return 4 if evented else 2
+
+
 def compute_http_thread_limit(
     settings: ServerSettings,
     *,
@@ -68,7 +72,7 @@ def compute_http_thread_limit(
     pool = get_http_pool_size(settings, evented=evented)
     # The evented child's requests are websocket handshakes; half its pool is
     # left to the websocket hub's database threads (get_websocket_db_threads).
-    share = 4 if evented else 2
+    share = _http_pool_share(evented)
     auto_limit = max((pool - listeners) // share, 1)
     limit = get_env_int("ODOO_MAX_HTTP_THREADS", auto_limit, minimum=0, logger=_logger)
     _debug.logic(
@@ -107,21 +111,27 @@ def announce_thread_budget(
             pool,
         )
         return
+    share = _http_pool_share(evented)
     if limit != auto_limit:
         source = "ODOO_MAX_HTTP_THREADS"
     elif listeners_spawned:
         source = (
-            "(%s %s - max_cron_threads %s - job_workers %s - stream_workers %s) // 2"
+            "(%s %s - max_cron_threads %s - job_workers %s - stream_workers %s) // %d"
             % (
                 pool_name,
                 pool,
                 settings.max_cron_threads,
                 settings.job_workers,
                 settings.stream_workers,
+                share,
             )
         )
     else:
-        source = "%s %s // 2 (no listener thread is spawned)" % (pool_name, pool)
+        source = "%s %s // %d (no listener thread is spawned)" % (
+            pool_name,
+            pool,
+            share,
+        )
     log = _logger.warning if limit < 4 else _logger.info
     log(
         "At most %d HTTP request(s) will be served concurrently, from %s. "
