@@ -485,6 +485,7 @@
             "@sign/*": ["./addons/sign/static/src/*"],
             "@sign_emsigner/*": ["./addons/sign_emsigner/static/src/*"],
             "@sign_itsme/*": ["./addons/sign_itsme/static/src/*"],
+            "@sign_proof/*": ["./addons/sign_proof/static/src/*"],
             "@sms/*": ["./addons/sms/static/src/*"],
             "@snailmail/*": ["./addons/snailmail/static/src/*"],
             "@social/*": ["./addons/social/static/src/*"],

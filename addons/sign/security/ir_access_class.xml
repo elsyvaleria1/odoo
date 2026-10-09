@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_signing_trace" model="ir.access.class">
+        <field name="name">sign.signing_trace</field>
+        <field
+            name="description">How a signer reached their signature: the browser it came from and the evidence an authentication method kept of their identity. What the signing log vouches for, read by sign managers.</field>
+    </record>
+
+    <record id="access_signing_trace_manager" model="ir.access">
+        <field name="name">sign.signing_trace: sign managers</field>
+        <field name="group_id" ref="group_sign_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">r</field>
+        <field name="class_id" ref="access_class_signing_trace" />
+    </record>
+
+</odoo>

@@ -572,6 +572,11 @@ class SignRequestItem(models.Model):
             )
             signer.is_mail_sent = True
 
+    def _get_signer_evidence(self) -> str | bool:
+        """What an authentication method kept to vouch for this signer's
+        identity, as its own hash, for the signature's log entry to cover."""
+        return False
+
     def sign(self, signature, **kwargs):
         """Sign sign request items at once.
         :param signature: dictionary containing signature values and corresponding ids

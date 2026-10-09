@@ -597,38 +597,43 @@ export class Document extends Component {
                 }
             }
         } else {
-            if (response.sms) {
-                this.signatureInfo.smsToken = undefined;
-                this.dialog.add(AlertDialog, {
+            this.onSignError(response);
+        }
+    }
+
+    /** Tell the signer why their signature was not submitted. */
+    onSignError(response) {
+        if (response.sms) {
+            this.signatureInfo.smsToken = undefined;
+            this.dialog.add(AlertDialog, {
+                title: _t("Error"),
+                body: _t(
+                    "Your signature was not submitted. Check the SMS validation code, or request a new one: a code expires after 10 minutes or 5 wrong attempts.",
+                ),
+            });
+        } else if (response.no_sms_credits) {
+            this.dialog.add(AlertDialog, {
+                title: _t("Error"),
+                body: _t(
+                    "This document cannot be signed right now: the SMS validation is unavailable. The sender has been notified.",
+                ),
+            });
+        } else {
+            this.dialog.add(
+                AlertDialog,
+                {
                     title: _t("Error"),
                     body: _t(
-                        "Your signature was not submitted. Check the SMS validation code, or request a new one: a code expires after 10 minutes or 5 wrong attempts.",
+                        "Sorry, an error occurred, please try to fill the document again.",
                     ),
-                });
-            } else if (response.no_sms_credits) {
-                this.dialog.add(AlertDialog, {
-                    title: _t("Error"),
-                    body: _t(
-                        "This document cannot be signed right now: the SMS validation is unavailable. The sender has been notified.",
-                    ),
-                });
-            } else {
-                this.dialog.add(
-                    AlertDialog,
-                    {
-                        title: _t("Error"),
-                        body: _t(
-                            "Sorry, an error occurred, please try to fill the document again.",
-                        ),
+                },
+                {
+                    onClose: () => {
+                        window.location.reload();
                     },
-                    {
-                        onClose: () => {
-                            window.location.reload();
-                        },
-                    },
-                );
-                this.validateButton.setAttribute("disabled", true);
-            }
+                },
+            );
+            this.validateButton.setAttribute("disabled", true);
         }
     }
 

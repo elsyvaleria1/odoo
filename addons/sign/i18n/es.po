@@ -5600,3 +5600,33 @@ msgstr "Resumen {{0}}"
 
 #~ msgid "this template to modify it."
 #~ msgstr "esta plantilla para modificarla."
+
+#. module: sign
+#: model:ir.model.fields,field_description:sign.field_sign_log__user_agent
+msgid "Browser"
+msgstr "Navegador"
+
+#. module: sign
+#: model:ir.access.class,description:sign.access_class_signing_trace
+msgid ""
+"How a signer reached their signature: the browser it came from and the "
+"evidence an authentication method kept of their identity. What the signing "
+"log vouches for, read by sign managers."
+msgstr ""
+"Cómo llegó un firmante a su firma: el navegador desde el que vino y la "
+"evidencia que un método de autenticación guardó de su identidad. Lo que "
+"respalda el registro de firma, leído por los administradores de firma."
+
+#. module: sign
+#: model:ir.model.fields,field_description:sign.field_sign_log__signer_evidence
+msgid "Signer Evidence"
+msgstr "Evidencia del firmante"
+
+#. module: sign
+#: model:ir.model.fields,help:sign.field_sign_log__signer_evidence
+msgid ""
+"What an authentication method kept to vouch for the signer's identity, as "
+"its own hash: the signature's entry covers it."
+msgstr ""
+"Lo que un método de autenticación guardó para respaldar la identidad del "
+"firmante, como su propio hash: la entrada de la firma lo cubre."

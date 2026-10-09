@@ -13,7 +13,9 @@ _logger = logging.getLogger(__name__)
 # 1: the creation entry hashes the text of the first document's base64 only.
 # 2: the creation entry hashes every document, and a completion entry hashes the
 #    signed PDFs delivered; each keeps the per-file digests it was computed from.
-HASH_VERSION = 2
+# 3: an entry also hashes the browser it came from and, for a signature, the
+#    evidence an authentication method kept of the signer's identity.
+HASH_VERSION = 3
 CHAINED_ACTIONS = ("create", "sign", "complete")
 
 # version 2 binds who acted by the user and the signer row, which merging
@@ -28,6 +30,7 @@ HASHED_FIELDS = [
     "user_id",
     "sign_request_item_id",
 ]
+HASHED_FIELDS_V3 = [*HASHED_FIELDS, "user_agent", "signer_evidence"]
 
 LOG_FIELDS = [
     "log_date",
@@ -93,6 +96,19 @@ class SignLog(models.Model):
         string="Inalterability Hash",
         copy=False,
         readonly=True,
+    )
+    user_agent = fields.Char(
+        string="Browser",
+        readonly=True,
+        classification="sign.signing_trace",
+        groups="sign.group_sign_manager",
+    )
+    signer_evidence = fields.Char(
+        readonly=True,
+        classification="sign.signing_trace",
+        groups="sign.group_sign_manager",
+        help="What an authentication method kept to vouch for the signer's "
+        "identity, as its own hash: the signature's entry covers it.",
     )
     hash_version = fields.Integer(
         default=HASH_VERSION,
@@ -196,12 +212,14 @@ class SignLog(models.Model):
             user_id = self.env.user.id if not self.env.user._is_public() else None
 
         ip = request.httprequest.remote_addr if request else "0.0.0.0"
+        user_agent = request.httprequest.user_agent.string[:512] if request else False
         now = fields.Datetime.now()
         for vals in vals_list:
             vals.update(
                 {
                     "user_id": user_id,
                     "ip": ip,
+                    "user_agent": user_agent,
                     "log_date": now,
                     "hash_version": HASH_VERSION,
                 }
@@ -255,11 +273,13 @@ class SignLog(models.Model):
         ).hexdigest()
 
     def _get_payload_to_hash(self, vals) -> str:
-        """Version 2: what an entry vouches for -- its own facts (when, by which
-        user for which signer, from where, in which state), then the values the
-        signer filled for a signature, or the file digests for a creation or a
-        completion."""
-        payload = {field: str(vals.get(field) or False) for field in HASHED_FIELDS}
+        """Versions 2 and 3: what an entry vouches for -- its own facts (when, by
+        which user for which signer, from where, in which state; from version 3
+        the browser and the evidence of the signer's identity), then the values
+        the signer filled for a signature, or the file digests for a creation or
+        a completion."""
+        hashed = HASHED_FIELDS_V3 if vals.get("hash_version", 1) >= 3 else HASHED_FIELDS
+        payload = {field: str(vals.get(field) or False) for field in hashed}
         # as stored: coordinates keep 7 decimals
         for field in ("latitude", "longitude"):
             payload[field] = f"{float(vals[field] or 0.0):.7f}"
@@ -378,6 +398,7 @@ class SignLog(models.Model):
                 else request_item.longitude
             )
         return {
+            "signer_evidence": request_item._get_signer_evidence(),
             "sign_request_item_id": request_item.id,
             "sign_request_id": sign_request.id,
             "request_state": sign_request.state,

@@ -154,6 +154,27 @@ class TestSignIntegrity(SignRequestCommon):
         self.env.invalidate_all()
         self.assertFalse(sign_request.integrity)
 
+    def test_entries_recorded_under_version_2_still_verify(self):
+        sign_request = self._two_document_request()
+        sign_request.request_item_ids.sudo().sign({})
+        logs = sign_request.sudo().sign_log_ids.filtered(
+            lambda log: log.action in ("create", "sign", "complete")
+        )
+        for log in logs.sorted("id"):
+            vals = {**log._get_hash_vals(), "hash_version": 2}
+            self.env.cr.execute(
+                "UPDATE sign_log SET hash_version = 2, log_hash = %s WHERE id = %s",
+                [self.env["sign.log"]._get_or_check_hash(vals), log.id],
+            )
+            self.env.invalidate_all()
+        # the browser became part of an entry's hash with version 3 only
+        self.env.cr.execute(
+            "UPDATE sign_log SET user_agent = 'changed' WHERE id = ANY(%s)", [logs.ids]
+        )
+        self.env.invalidate_all()
+
+        self.assertTrue(sign_request.integrity, sign_request.integrity_error)
+
     def test_the_form_view_read_does_not_raise_a_false_alarm(self):
         sign_request = self._two_document_request()
         sign_request.request_item_ids.sudo().sign({})

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="sign_request_logs_user" inherit_id="sign.sign_request_logs_user">
+        <xpath expr="//th[@id='participants_phone']" position="after">
+            <t
+                t-set="has_proof_validation"
+                t-value="o.sudo().request_item_ids.filtered(lambda i: i.proof_evidence_id)" />
+            <th t-if="has_proof_validation" class="text-start">Code Sent To</th>
+        </xpath>
+        <xpath expr="//td[hasclass('participant_sms_validation')]" position="after">
+            <td t-if="has_proof_validation">
+                <span
+                    t-if="sri.proof_evidence_id"
+                    t-out="sri.proof_evidence_id.payload.get('sent_to')" />
+            </td>
+        </xpath>
+        <xpath expr="//div[hasclass('sms_footnote')]" position="after">
+            <div class="text-muted" t-if="has_proof_validation">
+                <small>Code Sent To: the signatory proved it is them with a one-time code sent to their own email or Telegram, kept as chained proof evidence</small>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>

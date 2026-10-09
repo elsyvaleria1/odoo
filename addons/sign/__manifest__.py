@@ -1,6 +1,6 @@
 {
     "name": "Electronic Signatures",
-    "version": "1.7",
+    "version": "1.8",
     "oldest_upgradable_version": "1.6",
     "category": "Sales/Sign",
     "sequence": 105,
@@ -20,6 +20,7 @@
     "data": [
         "security/security.xml",
         "security/ir.access.csv",
+        "security/ir_access_class.xml",
         "data/mail_activity_type_data.xml",
         "data/mail_templates.xml",
         "data/sign_data.xml",

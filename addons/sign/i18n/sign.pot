@@ -5213,3 +5213,28 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sign.green_report_el_pdf
 msgid "{{0}} Summary"
 msgstr ""
+
+#. module: sign
+#: model:ir.model.fields,field_description:sign.field_sign_log__user_agent
+msgid "Browser"
+msgstr ""
+
+#. module: sign
+#: model:ir.access.class,description:sign.access_class_signing_trace
+msgid ""
+"How a signer reached their signature: the browser it came from and the "
+"evidence an authentication method kept of their identity. What the signing "
+"log vouches for, read by sign managers."
+msgstr ""
+
+#. module: sign
+#: model:ir.model.fields,field_description:sign.field_sign_log__signer_evidence
+msgid "Signer Evidence"
+msgstr ""
+
+#. module: sign
+#: model:ir.model.fields,help:sign.field_sign_log__signer_evidence
+msgid ""
+"What an authentication method kept to vouch for the signer's identity, as "
+"its own hash: the signature's entry covers it."
+msgstr ""

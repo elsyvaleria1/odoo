@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="sign_proof.ProofSignerDialog">
+        <Dialog t-props="this.dialogProps">
+            <p>We send a code to your own email or Telegram. Type it here to sign.</p>
+            <div t-if="this.state.error" class="alert alert-warning" role="alert" t-out="this.state.error"/>
+            <button class="btn btn-secondary mb-3 o_sign_proof_send" t-on-click="this.sendCode" t-att-disabled="this.state.sending">
+                <t t-if="this.state.challenge">Send a new code</t>
+                <t t-else="">Send me the code</t>
+            </button>
+            <p t-if="this.state.sentTo" class="text-muted">Sent to <t t-out="this.state.sentTo"/>.</p>
+            <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" t-ref="this.codeInput" class="form-control o_sign_proof_code" placeholder="123456"/>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary o_sign_proof_validate" t-on-click="this.validate" t-att-disabled="!this.state.challenge">Sign</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

@@ -1,0 +1,164 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sign_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 21:34+0000\n"
+"PO-Revision-Date: 2026-10-09 21:34+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/models/sign_request_item.py:0
+msgid "%(signer)s proved it is them with the code sent to %(sent_to)s."
+msgstr ""
+"%(signer)s probó que es quien firma con el código enviado a %(sent_to)s."
+
+#. module: sign_proof
+#: model_terms:ir.ui.view,arch_db:sign_proof.sign_request_logs_user
+msgid ""
+"<small>Code Sent To: the signatory proved it is them with a one-time code "
+"sent to their own email or Telegram, kept as chained proof evidence</small>"
+msgstr ""
+"<small>Código enviado a: el firmante probó que es quien firma con un código "
+"de un solo uso enviado a su propio correo o Telegram, guardado como "
+"evidencia de comprobación encadenada</small>"
+
+#. module: sign_proof
+#: model_terms:ir.ui.view,arch_db:sign_proof.sign_request_logs_user
+msgid "Code Sent To"
+msgstr "Código enviado a"
+
+#. module: sign_proof
+#: model:ir.model.fields.selection,name:sign_proof.selection__sign_item_role__auth_method__proof
+msgid "Code to the Signer's Email or Telegram"
+msgstr "Código al correo o Telegram del firmante"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.js:0
+msgid "Confirm it is you"
+msgstr "Confirme que es usted"
+
+#. module: sign_proof
+#: model:ir.model.fields,field_description:sign_proof.field_sign_item_role__display_name
+#: model:ir.model.fields,field_description:sign_proof.field_sign_request_item__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/models/sign_request_item.py:0
+msgid "Document"
+msgstr "Documento"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/document_signable.js:0
+msgid "Error"
+msgstr "Error"
+
+#. module: sign_proof
+#: model:ir.model.fields,field_description:sign_proof.field_sign_item_role__auth_method
+msgid "Extra Authentication Step"
+msgstr "Paso adicional de autenticación"
+
+#. module: sign_proof
+#: model:ir.model.fields,help:sign_proof.field_sign_item_role__auth_method
+msgid "Force the signatory to identify using a second authentication method"
+msgstr ""
+"Obligar al firmante a identificarse con un segundo método de autenticación"
+
+#. module: sign_proof
+#: model:ir.model.fields,field_description:sign_proof.field_sign_item_role__id
+#: model:ir.model.fields,field_description:sign_proof.field_sign_request_item__id
+msgid "ID"
+msgstr "ID"
+
+#. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/models/sign_request_item.py:0
+msgid "Requested by"
+msgstr "Solicitado por"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
+msgid "Send a new code"
+msgstr "Enviar un código nuevo"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
+msgid "Send me the code"
+msgstr "Envíenme el código"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
+msgid "Sent to"
+msgstr "Enviado a"
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
+msgid "Sign"
+msgstr "Firmar"
+
+#. module: sign_proof
+#: model:ir.model,name:sign_proof.model_sign_item_role
+msgid "Signature Item Role"
+msgstr "Función del elemento de firma"
+
+#. module: sign_proof
+#: model:ir.model,name:sign_proof.model_sign_request_item
+msgid "Signature Request Item"
+msgstr "Elemento de solicitud de firma"
+
+#. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/models/sign_request_item.py:0
+msgid "Signer"
+msgstr "Firmante"
+
+#. module: sign_proof
+#: model:ir.model.fields,field_description:sign_proof.field_sign_request_item__proof_evidence_id
+msgid "Signer's Proof"
+msgstr "Comprobación del firmante"
+
+#. module: sign_proof
+#: model:ir.model.fields,help:sign_proof.field_sign_request_item__proof_evidence_id
+msgid ""
+"The code the signer received on their own email or Telegram and typed in to "
+"sign: it covers this signer and the documents as sent."
+msgstr ""
+"El código que el firmante recibió en su propio correo o Telegram y escribió "
+"para firmar: cubre a este firmante y los documentos tal como se enviaron."
+
+#. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/controllers/main.py:0
+msgid "This signature does not ask for a code."
+msgstr "Esta firma no pide un código."
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
+msgid "We send a code to your own email or Telegram. Type it here to sign."
+msgstr ""
+"Le enviamos un código a su propio correo o Telegram. Escríbalo aquí para "
+"firmar."
+
+#. module: sign_proof
+#. odoo-javascript
+#: code:addons/sign_proof/static/src/document_signable.js:0
+msgid "Your signature was not submitted: confirm it is you with a code."
+msgstr "Su firma no se envió: confirme que es usted con un código."
