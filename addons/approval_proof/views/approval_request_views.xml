@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form" model="ir.ui.view">
+        <field name="name">approval.request.form.approval.proof</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval.view_approval_request_form" />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//field[@name='decision_log_ids']/list/field[@name='verdict']"
+                position="after">
+                <field name="evidence_id" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

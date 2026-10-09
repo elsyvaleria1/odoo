@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_category_form" model="ir.ui.view">
+        <field name="name">approval.category.form.approval.proof</field>
+        <field name="model">approval.category</field>
+        <field name="inherit_id" ref="approval.view_approval_category_form" />
+        <field name="arch" type="xml">
+            <group name="approvers_settings" position="after">
+                <group name="proof_settings" string="Proof of Identity">
+                    <field name="proof_verdicts" />
+                    <field
+                        name="proof_method_ids"
+                        widget="many2many_tags"
+                        invisible="proof_verdicts == 'none'"
+                        required="proof_verdicts != 'none'" />
+                    <field name="allow_delegation" />
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

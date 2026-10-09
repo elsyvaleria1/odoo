@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_proof_evidence_approval_reader,proof.evidence: whoever reads a request reads the proofs its decisions carry,proof.model_proof_evidence,base.group_user,permission,r,,,"[('approval_decision_log_ids', 'any', [('request_id', 'access', 'read')])]"
