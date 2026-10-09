@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from odoo import SUPERUSER_ID, api
+from odoo.libs import redact
 
 _logger = logging.getLogger(__name__)
 
@@ -100,10 +101,13 @@ def keep_row_on_rollback(env: api.Environment, vals: dict[str, Any], admission) 
             [
                 {
                     **vals,
+                    **admission.annotations,
                     "event_type": admission.event_type or vals.get("event_type"),
                     "state": "failed",
                     "error_type": "other",
-                    "error_message": admission.error or "the request rolled back",
+                    "error_message": redact.mask_text(admission.error)
+                    or "the request rolled back",
+                    "duration_ms": admission.elapsed_ms,
                 }
             ],
         )

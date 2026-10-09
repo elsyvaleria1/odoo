@@ -163,6 +163,24 @@ class TestInboundExchangeRecording(TransactionCase):
         self.assertEqual(kept.error_message, "OSError: connection reset")
         self.assertEqual(kept.event_type, "probe")
 
+    def test_the_kept_row_is_masked_and_keeps_what_the_handler_learnt(self):
+        secret = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"
+        admission = self._admit()
+        admission.annotate(status_code=500)
+        admission.settle(f"UserError: upstream said: Bearer {secret} is revoked")
+
+        cr = self.env.cr
+        cr.clear()
+        with self.sync_env_with_side_cursors():
+            cr.postrollback.run()
+
+        kept = self._rows().sorted("id")[-1]
+        self.assertEqual(kept.state, "failed")
+        self.assertIn("upstream said", kept.error_message)
+        self.assertNotIn(secret, kept.error_message, "the kept row unmasked a token")
+        self.assertEqual(kept.status_code, 500)
+        self.assertGreater(kept.duration_ms, 0)
+
     def test_a_scheme_method_decides_for_its_auth_type(self):
         self.receiver.write(
             {
