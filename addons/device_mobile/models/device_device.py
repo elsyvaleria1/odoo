@@ -33,6 +33,7 @@ def mobile_e164(number, country=None) -> str | None:
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
+    _receiver_privileges = ("device_gps.privilege_receive_fix",)
 
     device_category_code = fields.Char(related="device_category_id.code")
     line_number = fields.Char(

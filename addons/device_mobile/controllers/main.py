@@ -31,12 +31,10 @@ class DeviceMobileController(DevicePhoneCallController):
 
         try:
             with request.env.cr.savepoint():
-                ingest = (
-                    request.env["device.data.log.gps"]
-                    .sudo()
-                    .ingest_from_mobile(device, points)
+                ingest = request.env["device.data.log.gps"].ingest_from_mobile(
+                    device, points
                 )
-                device.sudo()._touch_last_seen()
+                device._touch_last_seen()
         except Exception as error:
             _logger.exception("Failed to store mobile GPS fixes")
             admission.settle(str(error))

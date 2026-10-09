@@ -3,7 +3,7 @@ from datetime import datetime
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 
 
 @tagged("post_install", "-at_install")
@@ -120,3 +120,8 @@ class TestMobileLocation(DeviceHttpCase):
         self._push({"latitude": 19.0, "longitude": -99.0})
         self.device.invalidate_recordset(["connection_state"])
         self.assertEqual(self.device.connection_state, "connected")
+
+
+@tagged("post_install", "-at_install")
+class TestMobileLocationWithoutSu(NarrowedReceiver, TestMobileLocation):
+    pass
