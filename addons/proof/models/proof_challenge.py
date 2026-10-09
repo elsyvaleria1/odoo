@@ -78,6 +78,22 @@ class ProofChallenge(models.Model):
         readonly=True,
         required=True,
     )
+    code_hash = fields.Char(
+        copy=False,
+        readonly=True,
+        help="HMAC of the one-time code sent to the signer, under the database secret.",
+    )
+    code_attempts = fields.Integer(
+        default=0,
+        copy=False,
+        readonly=True,
+    )
+    code_sent_to = fields.Char(
+        string="Code Sent To",
+        copy=False,
+        readonly=True,
+        help="Where the code went, masked.",
+    )
     date_remind = fields.Datetime(
         string="Remind On",
         readonly=True,

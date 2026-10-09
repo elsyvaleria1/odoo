@@ -1,5 +1,6 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
 access_proof_method_user,proof.method: internal users read which proof methods exist,model_proof_method,base.group_user,permission,r,,,
+privilege_record_proof_method,proof.method: a proof reads the method it is answered with,model_proof_method,privilege_record_proof,permission,r,,,
 access_proof_method_system,proof.method: administrators order and archive proof methods,model_proof_method,base.group_system,permission,ru,,,
 privilege_record_proof_challenge,proof.challenge: a user's proof issues and redeems its challenge,model_proof_challenge,privilege_record_proof,permission,cru,,,
 privilege_record_proof_evidence,proof.evidence: an accepted proof is chained after the last recorded one,model_proof_evidence,privilege_record_proof,permission,cr,,,

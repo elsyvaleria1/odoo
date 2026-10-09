@@ -41,21 +41,6 @@ msgid "Code"
 msgstr "Código"
 
 #. module: mail_proof
-#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_attempts
-msgid "Code Attempts"
-msgstr "Intentos del código"
-
-#. module: mail_proof
-#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_hash
-msgid "Code Hash"
-msgstr "Hash del código"
-
-#. module: mail_proof
-#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_sent_to
-msgid "Code Sent To"
-msgstr "Código enviado a"
-
-#. module: mail_proof
 #. odoo-javascript
 #: code:addons/mail_proof/static/src/email_code_proof/email_code_proof.xml:0
 msgid "Code sent to"
@@ -73,7 +58,6 @@ msgid "Confirm or report a problem"
 msgstr "Confirmar o reportar un problema"
 
 #. module: mail_proof
-#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__display_name
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
@@ -91,20 +75,12 @@ msgid "Email Confirmation"
 msgstr "Confirmación por correo"
 
 #. module: mail_proof
-#: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_hash
-msgid "HMAC of the one-time code sent by email, under the database secret."
-msgstr ""
-"HMAC del código de un solo uso enviado por correo, con el secreto de la base"
-" de datos."
-
-#. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
 msgid "Hello"
 msgstr "Hola"
 
 #. module: mail_proof
-#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__id
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__id
 msgid "ID"
 msgstr "ID"
@@ -128,11 +104,6 @@ msgstr ""
 "que le pide"
 
 #. module: mail_proof
-#: model:ir.model,name:mail_proof.model_proof_challenge
-msgid "Proof Challenge"
-msgstr "Desafío de comprobación"
-
-#. module: mail_proof
 #: model:ir.model,name:mail_proof.model_proof_method
 msgid "Proof Method"
 msgstr "Método de comprobación"
@@ -144,27 +115,9 @@ msgid "Reminder: please confirm"
 msgstr "Recordatorio: por favor, confirme"
 
 #. module: mail_proof
-#: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_sent_to
-msgid "The address the code went to, masked."
-msgstr "La dirección a la que se envió el código, enmascarada."
-
-#. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
 msgid "The link works until"
 msgstr "El enlace funciona hasta el"
-
-#. module: mail_proof
-#. odoo-python
-#: code:addons/mail_proof/models/proof_method.py:0
-msgid "This code is not the one we sent."
-msgstr "Este código no es el que enviamos."
-
-#. module: mail_proof
-#. odoo-python
-#: code:addons/mail_proof/models/proof_method.py:0
-msgid "Too many wrong codes. Start again to send a new one."
-msgstr ""
-"Demasiados códigos incorrectos. Empiece de nuevo para enviar uno nuevo."
 
 #. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
@@ -187,6 +140,33 @@ msgstr "le pide confirmar lo siguiente:"
 msgid ""
 "is asking you to confirm the following. If you agree, give them this code:"
 msgstr "le pide confirmar lo siguiente. Si está de acuerdo, dele este código:"
+
+#~ msgid "Code Attempts"
+#~ msgstr "Intentos del código"
+
+#~ msgid "Code Hash"
+#~ msgstr "Hash del código"
+
+#~ msgid "Code Sent To"
+#~ msgstr "Código enviado a"
+
+#~ msgid "HMAC of the one-time code sent by email, under the database secret."
+#~ msgstr ""
+#~ "HMAC del código de un solo uso enviado por correo, con el secreto de la base"
+#~ " de datos."
+
+#~ msgid "Proof Challenge"
+#~ msgstr "Desafío de comprobación"
+
+#~ msgid "The address the code went to, masked."
+#~ msgstr "La dirección a la que se envió el código, enmascarada."
+
+#~ msgid "This code is not the one we sent."
+#~ msgstr "Este código no es el que enviamos."
+
+#~ msgid "Too many wrong codes. Start again to send a new one."
+#~ msgstr ""
+#~ "Demasiados códigos incorrectos. Empiece de nuevo para enviar uno nuevo."
 
 #~ msgid ""
 #~ "Asking a user or a contact for an email-code proof sends them the code at "

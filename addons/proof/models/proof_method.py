@@ -1,8 +1,20 @@
+import secrets
 from typing import Any
 
 from odoo import fields, models
 from odoo.exceptions import AccessDenied, UserError
-from odoo.tools import frozendict
+from odoo.tools import SQL, frozendict, register_signed_scope
+from odoo.tools.security import hmac, is_hmac_valid
+
+CODE_SCOPE = register_signed_scope(
+    "proof_code",
+    purpose="a one-time code sent to the signer's own channel answers one proof "
+    "challenge",
+    lifetime="the challenge's own: it is checked only while the challenge is "
+    "issued and unexpired",
+)
+CODE_DIGITS = 6
+CODE_ATTEMPTS = 5
 
 STRENGTHS = [
     ("cryptographic", "Signed by the user's own key"),
@@ -93,9 +105,76 @@ class ProofMethod(models.Model):
         """Tell the contact a message they can no longer answer is spent."""
         self.check_singleton()
 
+    def _uses_code(self) -> bool:
+        """Whether this method is answered with a code sent to the signer's own
+        channel, which the user who asks them enters."""
+        self.check_singleton()
+        return False
+
+    def _send_code(
+        self, challenge: models.BaseModel, signer: models.BaseModel, code: str
+    ) -> str:
+        """Send ``code`` to ``signer`` on this method's channel, with what they
+        agree to, and return where it went, masked."""
+        self.check_singleton()
+        raise UserError(
+            self.env._(
+                "The proof method %(method)s is not available.", method=self.name
+            )
+        )
+
     def _get_proof_options(self, challenge: models.BaseModel) -> dict[str, Any]:
         self.check_singleton()
+        if self._uses_code():
+            return self._issue_code(challenge)
         return {}
+
+    def _issue_code(self, challenge: models.BaseModel) -> dict[str, Any]:
+        signer = challenge.partner_id or challenge.user_id.partner_id
+        code = f"{secrets.randbelow(10**CODE_DIGITS):0{CODE_DIGITS}d}"
+        sent_to = self._send_code(challenge, signer, code)
+        challenge.write(
+            {
+                "code_hash": hmac(self.env, CODE_SCOPE, (challenge.id, code)),
+                "code_sent_to": sent_to,
+            }
+        )
+        return {"sent_to": sent_to, "digits": CODE_DIGITS}
+
+    def _check_code(
+        self, challenge: models.BaseModel, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        if challenge.code_attempts >= CODE_ATTEMPTS:
+            raise UserError(
+                self.env._("Too many wrong codes. Start again to send a new one.")
+            )
+        code = payload.get("code")
+        if not challenge.code_hash or not is_hmac_valid(
+            self.env, CODE_SCOPE, (challenge.id, code), challenge.code_hash
+        ):
+            self._count_wrong_code(challenge)
+            raise UserError(self.env._("This code is not the one we sent."))
+        signer = challenge.partner_id or challenge.user_id.partner_id
+        return {
+            "channel": self.code,
+            "sent_to": challenge.code_sent_to,
+            "signer": signer.id,
+        }
+
+    def _count_wrong_code(self, challenge: models.BaseModel) -> None:
+        # in its own transaction, since the refusal rolls this request back;
+        # only a wrong code counts, so the request that redeems the challenge
+        # is never the one that also moved its counter
+        with self.env.registry.cursor() as cr:
+            cr.execute(
+                SQL(
+                    "UPDATE proof_challenge "
+                    "SET code_attempts = COALESCE(code_attempts, 0) + 1 "
+                    "WHERE id = %s",
+                    challenge.id,
+                )
+            )
+        challenge.invalidate_recordset(["code_attempts"])
 
     def _accept_proof(
         self, challenge: models.BaseModel, payload: dict[str, Any]
@@ -103,6 +182,8 @@ class ProofMethod(models.Model):
         """Check the user's proof against the challenge and return what the
         evidence keeps of it; raise UserError when it does not hold."""
         self.check_singleton()
+        if self._uses_code():
+            return self._check_code(challenge, payload)
         if self.code == "password":
             self._check_password(payload.get("password"))
             return {}

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:14+0000\n"
-"PO-Revision-Date: 2026-10-09 20:14+0000\n"
+"POT-Creation-Date: 2026-10-09 20:24+0000\n"
+"PO-Revision-Date: 2026-10-09 20:24+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -127,6 +127,21 @@ msgstr ""
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_method__code
 msgid "Code"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_attempts
+msgid "Code Attempts"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_hash
+msgid "Code Hash"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_sent_to
+msgid "Code Sent To"
 msgstr ""
 
 #. module: proof
@@ -274,6 +289,12 @@ msgid "For example: I paid a different amount"
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__code_hash
+msgid ""
+"HMAC of the one-time code sent to the signer, under the database secret."
+msgstr ""
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__hash
 msgid "Hash"
 msgstr ""
@@ -376,6 +397,11 @@ msgstr ""
 #. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
 msgid "Not Answered"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_delivery__state__failed
+msgid "Not Delivered"
 msgstr ""
 
 #. module: proof
@@ -675,6 +701,12 @@ msgstr ""
 
 #. module: proof
 #. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "This code is not the one we sent."
+msgstr ""
+
+#. module: proof
+#. odoo-python
 #: code:addons/proof/models/proof_challenge.py:0
 msgid "This proof method was not offered for this request."
 msgstr ""
@@ -713,6 +745,12 @@ msgstr ""
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__token_hash
 msgid "Token Hash"
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "Too many wrong codes. Start again to send a new one."
 msgstr ""
 
 #. module: proof
@@ -769,6 +807,11 @@ msgstr ""
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_challenge__date_remind
 msgid "When a contact who has not answered yet is reminded."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__code_sent_to
+msgid "Where the code went, masked."
 msgstr ""
 
 #. module: proof

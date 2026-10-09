@@ -50,6 +50,7 @@ class ProofDelivery(models.Model):
     state = fields.Selection(
         selection=[
             ("sent", "Sent"),
+            ("failed", "Not Delivered"),
             ("answered", "Answered"),
             ("withdrawn", "Withdrawn"),
         ],

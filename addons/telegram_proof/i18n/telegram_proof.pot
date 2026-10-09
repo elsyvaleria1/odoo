@@ -1,0 +1,152 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* telegram_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 20:24+0000\n"
+"PO-Revision-Date: 2026-10-09 20:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "%(asker)s asks you to confirm the following:"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "%(company)s asks you to confirm the following:"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model.fields,field_description:telegram_proof.field_proof_method__code
+msgid "Code"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "Confirm, this is right"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model.fields,field_description:telegram_proof.field_proof_method__display_name
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model.fields,field_description:telegram_proof.field_proof_method__id
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__id
+msgid "ID"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "If you agree, give them this code: %(code)s"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "If you did not expect this, do not give the code to anyone."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "Is this right?"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "Not right"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model,name:telegram_proof.model_proof_method
+msgid "Proof Method"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "Reminder: %(company)s asks you to confirm the following:"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model.fields.selection,name:telegram_proof.selection__proof_method__code__telegram_code
+#: model:proof.method,name:telegram_proof.proof_method_telegram_code
+msgid "Telegram Code"
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model.fields.selection,name:telegram_proof.selection__proof_method__code__telegram_confirm
+#: model:proof.method,name:telegram_proof.proof_method_telegram_confirm
+msgid "Telegram Confirmation"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/proof_method.py:0
+msgid "Telegram did not take the code for %(signer)s. Ask for another way."
+msgstr ""
+
+#. module: telegram_proof
+#: model:ir.model,name:telegram_proof.model_telegram_handler_proof
+msgid "Telegram: Confirmations"
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "Thank you. We passed it on."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid ""
+"Thank you. We will contact you. If you want, write here what is not right."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "Thank you. You confirmed it."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "This request was already answered or is no longer current."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "Write it as a text message, please."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "telling us what is not right"
+msgstr ""

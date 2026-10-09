@@ -221,3 +221,7 @@ class MixinProofConfirmation(models.AbstractModel):
 
     def _on_confirmation_expired(self) -> None:
         """The contact did not answer in time."""
+
+    def _on_confirmation_comment(self, evidence: models.BaseModel, text: str) -> None:
+        """The contact who answered ``evidence`` added ``text``, on a channel
+        that takes their words after their answer."""

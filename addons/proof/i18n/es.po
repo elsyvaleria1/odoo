@@ -141,6 +141,21 @@ msgid "Code"
 msgstr "Código"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_attempts
+msgid "Code Attempts"
+msgstr "Intentos del código"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_hash
+msgid "Code Hash"
+msgstr "Hash del código"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__code_sent_to
+msgid "Code Sent To"
+msgstr "Código enviado a"
+
+#. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__possession
 #: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__possession
 msgid "Code delivered to the signer's own channel"
@@ -285,6 +300,14 @@ msgid "For example: I paid a different amount"
 msgstr "Por ejemplo: pagué otro importe"
 
 #. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__code_hash
+msgid ""
+"HMAC of the one-time code sent to the signer, under the database secret."
+msgstr ""
+"HMAC del código de un solo uso enviado al firmante, con el secreto de la "
+"base de datos."
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__hash
 msgid "Hash"
 msgstr "Hash"
@@ -390,6 +413,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
 msgid "Not Answered"
 msgstr "Sin respuesta"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_delivery__state__failed
+msgid "Not Delivered"
+msgstr "No entregado"
 
 #. module: proof
 #: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
@@ -708,6 +736,12 @@ msgstr "Esta respuesta no es una de las que pedimos."
 
 #. module: proof
 #. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "This code is not the one we sent."
+msgstr "Este código no es el que enviamos."
+
+#. module: proof
+#. odoo-python
 #: code:addons/proof/models/proof_challenge.py:0
 msgid "This proof method was not offered for this request."
 msgstr "Este método de comprobación no se ofreció para esta solicitud."
@@ -750,6 +784,13 @@ msgstr "Esta solicitud ya fue respondida o ya no está vigente."
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__token_hash
 msgid "Token Hash"
 msgstr "Hash del token"
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "Too many wrong codes. Start again to send a new one."
+msgstr ""
+"Demasiados códigos incorrectos. Empiece de nuevo para enviar uno nuevo."
 
 #. module: proof
 #: model:ir.model.constraint,message:proof.constraint_proof_evidence_sequence_uniq
@@ -812,6 +853,11 @@ msgstr "Lo que se le mostró al usuario al pedirle la comprobación."
 #: model:ir.model.fields,help:proof.field_proof_challenge__date_remind
 msgid "When a contact who has not answered yet is reminded."
 msgstr "Cuándo se le recuerda a un contacto que aún no ha respondido."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__code_sent_to
+msgid "Where the code went, masked."
+msgstr "A dónde se envió el código, enmascarado."
 
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_delivery__sent_to
