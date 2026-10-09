@@ -524,19 +524,14 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
         return self._order_portal_edi_response(order_sudo) or request.redirect("/my")
 
     @http.route(
-        ["/my/orders/<int:order_id>/update_line_dict"],
-        type="jsonrpc",
+        "/my/orders/<int:order_id>/line",
+        type="http",
         auth="public",
+        methods=["POST"],
         website=True,
     )
-    def portal_quote_option_update(
-        self,
-        order_id,
-        line_id,
-        access_token=None,
-        remove=False,
-        input_quantity=False,
-        **kwargs,
+    def portal_order_line_update(
+        self, order_id, line_id=None, access_token=None, quantity=None, delta=None, **kw
     ):
         try:
             order_sudo = request.env["access.link"]._open_record(
@@ -544,16 +539,16 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
             )
         except AccessError, MissingError:
             _debug.logic("portal_access_denied", route="update_line", order=order_id)
-            return
+            return request.redirect("/my")
 
+        order_line = request.env["sale.order.line"].sudo()
+        if str(line_id or "").isdigit():
+            order_line = order_line.browse(int(line_id)).exists()
         if not order_sudo._can_be_edited_on_portal():
             _debug.logic(
                 "portal_line_update_refused", order=order_sudo, reason="order_readonly"
             )
-            return
-
-        order_line = request.env["sale.order.line"].sudo().browse(int(line_id)).exists()
-        if (
+        elif (
             not order_line
             or order_line.order_id != order_sudo
             or not order_line._can_be_edited_on_portal()
@@ -561,25 +556,37 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
             _debug.logic(
                 "portal_line_update_refused", order=order_sudo, reason="line_readonly"
             )
-            return
-
-        if input_quantity is not False:
-            quantity = max(input_quantity, 0)
         else:
-            number = -1 if remove else 1
-            quantity = max((order_line.product_qty + number), 0)
+            new_quantity = self._portal_line_quantity(order_line, quantity, delta)
+            if new_quantity is not None:
+                if order_line.product_type == "combo":
+                    order_line._get_lines_linked().filtered("combo_item_id").update(
+                        {"product_qty": new_quantity}
+                    )
+                _debug.lifecycle(
+                    "portal_line_quantity_set",
+                    order=order_sudo,
+                    line=order_line,
+                    quantity=new_quantity,
+                )
+                order_line.product_qty = new_quantity
+        return request.redirect(order_sudo.get_portal_url())
 
-        if order_line.product_type == "combo":
-            combo_item_lines = order_line._get_lines_linked().filtered("combo_item_id")
-            combo_item_lines.update({"product_qty": quantity})
-
-        _debug.lifecycle(
-            "portal_line_quantity_set",
-            order=order_sudo,
-            line=order_line,
-            quantity=quantity,
-        )
-        order_line.product_qty = quantity
+    @staticmethod
+    def _portal_line_quantity(order_line, quantity, delta):
+        # a typed quantity wins over the -/+ button that came with it: Enter
+        # in the field submits the form with its first button, the minus
+        try:
+            typed = int(quantity) if quantity not in (None, "") else None
+            if typed is not None and (
+                typed != int(order_line.product_qty) or not delta
+            ):
+                return max(typed, 0)
+            if delta:
+                return max(order_line.product_qty + int(delta), 0)
+        except ValueError:
+            pass
+        return None
 
 
 class PaymentPortal(payment_portal.PaymentPortal):

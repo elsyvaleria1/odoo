@@ -132,9 +132,12 @@ class TestPortalControllerRobustness(HttpCase):
 
     def test_address_archive_non_numeric_partner_id(self):
         self._login()
-        with self.assertRaises(JsonRpcException) as capture:
-            self.call_jsonrpc("/my/address/archive", params={"partner_id": "abc"})
-        self.assertNotIn("ValueError", str(capture.exception))
+        response = self.url_open(
+            "/my/address/archive",
+            data={"partner_id": "abc", "csrf_token": Request.csrf_token(self)},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("ValueError", response.text)
 
     def test_chatter_fetch_unknown_model(self):
         self._login()

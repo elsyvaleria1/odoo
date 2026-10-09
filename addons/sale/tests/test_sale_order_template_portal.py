@@ -1,5 +1,6 @@
 from lxml import html
 
+from odoo import http
 from odoo.fields import Command
 from odoo.tests import HttpCase, tagged
 
@@ -37,26 +38,52 @@ class TestPortalQuoteOptionUpdate(HttpCase, SaleOrderTemplateCommon):
     def test_a_zero_optional_quantity_is_rendered_as_zero(self):
         self.optional_line.product_qty = 0
         self.assertTrue(self.optional_line._can_be_edited_on_portal())
-        rendered = self.env["ir.qweb"]._render(
-            "sale.sale_order_portal_optional_product_quantity",
-            {"line": self.optional_line},
-        )
-        [quantity] = html.fromstring(str(rendered)).xpath(
+        self.authenticate(None, None)
+        page = self.url_open(self.sale_order_with_option.get_portal_url())
+        [quantity] = html.fromstring(page.content).xpath(
+            f"//form[.//input[@name='line_id'][@value='{self.optional_line.id}']]"
             "//input[contains(@class, 'js_quantity')]"
         )
         self.assertEqual(quantity.get("value"), "0")
 
+    def _update_line(self, access_token=None, **values):
+        return self.url_open(
+            f"/my/orders/{self.sale_order_with_option.id}/line",
+            data={
+                "access_token": access_token
+                or self.sale_order_with_option.access_token,
+                "line_id": self.optional_line.id,
+                "csrf_token": http.Request.csrf_token(self),
+                **values,
+            },
+            allow_redirects=False,
+        )
+
+    def test_the_buttons_step_the_quantity_and_return_to_the_order(self):
+        self.authenticate(None, None)
+        quantity = self.optional_line.product_qty
+
+        response = self._update_line(quantity=int(quantity), delta=1)
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn(
+            self.sale_order_with_option.get_portal_url(), response.headers["Location"]
+        )
+        self.assertEqual(self.optional_line.product_qty, quantity + 1)
+        self._update_line(quantity=int(quantity + 1), delta=-1)
+        self.assertEqual(self.optional_line.product_qty, quantity)
+
+    def test_a_typed_quantity_wins_over_the_button_enter_submits_with(self):
+        self.authenticate(None, None)
+
+        self._update_line(quantity=7, delta=-1)
+
+        self.assertEqual(self.optional_line.product_qty, 7)
+
     def test_negative_input_quantity_is_clamped_to_zero(self):
         self.authenticate(None, None)
 
-        self.call_jsonrpc(
-            f"/my/orders/{self.sale_order_with_option.id}/update_line_dict",
-            {
-                "access_token": self.sale_order_with_option.access_token,
-                "line_id": self.optional_line.id,
-                "input_quantity": -5,
-            },
-        )
+        self._update_line(quantity=-5)
 
         self.assertEqual(
             self.optional_line.product_qty,
@@ -68,14 +95,10 @@ class TestPortalQuoteOptionUpdate(HttpCase, SaleOrderTemplateCommon):
         self.authenticate(None, None)
         quantity = self.optional_line.product_qty
 
-        result = self.call_jsonrpc(
-            f"/my/orders/{self.sale_order_with_option.id}/update_line_dict",
-            {
-                "access_token": "not-the-token",
-                "line_id": self.optional_line.id,
-                "input_quantity": quantity + 3,
-            },
+        response = self._update_line(
+            access_token="not-the-token", quantity=quantity + 3
         )
 
-        self.assertIsNone(result, "the client reloads the page, which refuses it")
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/my"))
         self.assertEqual(self.optional_line.product_qty, quantity)

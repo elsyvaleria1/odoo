@@ -60,39 +60,52 @@
     </template>
 
     <template id="sale_order_portal_optional_product_quantity" name="Order Quantity">
-        <div t-if="line._can_be_edited_on_portal()" class="d-inline-flex">
+        <form
+            t-if="line._can_be_edited_on_portal()"
+            class="d-inline-flex"
+            method="post"
+            t-attf-action="/my/orders/#{line.order_id.id}/line"
+            data-fragment-form="">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input type="hidden" name="line_id" t-att-value="line.id" />
+            <input
+                type="hidden"
+                name="access_token"
+                t-att-value="line.order_id.access_token" />
             <div class="input-group js_quantity_container pull-right">
                 <span class="d-print-none input-group-text d-none d-md-inline-block">
-                    <a
+                    <button
+                        type="submit"
+                        name="delta"
+                        value="-1"
                         title="Remove one"
                         aria-label="Remove one"
-                        href="#"
-                        t-att-class="'opacity-50' if line.product_qty == 0 else 'js_update_line_json'"
-                        t-att-data-line-id="line.id"
-                        t-att-data-remove="True">
+                        t-attf-class="btn btn-link p-0 text-reset js_update_line_json #{'opacity-50' if line.product_qty == 0 else ''}">
                         <span class="fa-solid fa-minus" />
-                    </a>
+                    </button>
                 </span>
                 <input
                     type="text"
+                    name="quantity"
                     class="js_quantity form-control"
-                    t-att-data-line-id="line.id"
+                    data-submit-on-change=""
                     t-attf-value="{{int(line.product_qty)}}" />
                 <span class="d-print-none input-group-text d-none d-md-inline-block">
-                    <a
+                    <button
+                        type="submit"
+                        name="delta"
+                        value="1"
                         title="Add one"
                         aria-label="Add one"
-                        class="js_update_line_json"
-                        href="#"
-                        t-att-data-line-id="line.id">
+                        class="btn btn-link p-0 text-reset js_update_line_json">
                         <span class="fa-solid fa-plus" />
-                    </a>
+                    </button>
                 </span>
             </div>
             <div class="ms-1 align-self-center">
                 <span t-field="line.product_uom_id" />
             </div>
-        </div>
+        </form>
         <div t-else="">
             <span t-field="line.product_qty" />
             <span t-field="line.product_uom_id" />

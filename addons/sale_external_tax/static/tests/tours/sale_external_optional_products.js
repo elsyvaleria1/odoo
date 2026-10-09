@@ -23,7 +23,6 @@ registry.category("web_tour.tours").add("sale_external_optional_products", {
             trigger:
                 "tr:contains(optional product) .js_quantity_container .js_update_line_json[title='Add one']",
             run: "click",
-            expectUnloadPage: true,
         },
         {
             trigger: ".o_portal_sidebar_content h2:contains($):contains(11.)",
@@ -42,7 +41,6 @@ registry.category("web_tour.tours").add("sale_external_optional_products", {
             trigger:
                 "tr:contains(optional product) .js_quantity_container .js_update_line_json[title='Remove one']",
             run: "click",
-            expectUnloadPage: true,
         },
         {
             trigger: ".o_portal_sidebar_content h2:contains($):contains(10.)",

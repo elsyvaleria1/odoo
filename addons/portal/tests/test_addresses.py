@@ -2,7 +2,6 @@ from odoo import Command
 from odoo.http import Request
 from odoo.libs.web import urls
 from odoo.tests import HttpCase, tagged
-from odoo.tests.common import JsonRpcException
 from odoo.tools import mute_logger
 
 from odoo.addons.base.tests.common import BaseCommon
@@ -299,26 +298,31 @@ class TestPortalAddresses(BaseCommon, HttpCase):
             [self.expected_address_values],
         )
 
+    def _archive(self, partner, headers=None):
+        return self.url_open(
+            self.archive_url,
+            data={"partner_id": partner.id, "csrf_token": Request.csrf_token(self)},
+            headers=headers,
+            allow_redirects=False,
+        )
+
     def test_address_archiving(self):
         self.authenticate(self.account_a.login, self.account_a.login)
 
-        with self.assertRaises(JsonRpcException):
-            self.call_jsonrpc(
-                self.archive_url,
-                params={"partner_id": self.portal_user.partner_id.id},
+        with mute_logger("odoo.http"):
+            self.assertEqual(
+                self._archive(self.portal_user.partner_id).status_code, 403
             )
-
-        with self.assertRaises(JsonRpcException), mute_logger("odoo.http"):
-            self.call_jsonrpc(
-                self.archive_url,
-                params={"partner_id": self.account_a.partner_id.id},
+            self.assertEqual(self._archive(self.account_b.partner_id).status_code, 403)
+            self.assertNotEqual(
+                self._archive(self.account_a.partner_id).status_code, 303
             )
-
-        with self.assertRaises(JsonRpcException):
-            self.call_jsonrpc(
-                self.archive_url,
-                params={"partner_id": self.account_b.partner_id.id},
-            )
+        refused = self._archive(self.account_a.partner_id, {"X-Odoo-Fragments": "1"})
+        self.assertEqual(refused.status_code, 422)
+        self.assertEqual(
+            refused.json()["error"]["message"], "You cannot archive your main address"
+        )
+        self.assertTrue(self.account_a.partner_id.active)
 
         child_partner = self.env["res.partner"].create(
             {
@@ -329,10 +333,9 @@ class TestPortalAddresses(BaseCommon, HttpCase):
             }
         )
         self.assertTrue(child_partner.active)
-        self.call_jsonrpc(
-            self.archive_url,
-            params={"partner_id": child_partner.id},
-        )
+        archived = self._archive(child_partner)
+        self.assertEqual(archived.status_code, 303)
+        self.assertTrue(archived.headers["Location"].endswith("/my/addresses"))
         self.assertFalse(child_partner.active)
 
     def test_zipcode_alias_is_consumed_from_extra_form_data(self):

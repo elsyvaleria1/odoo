@@ -921,12 +921,12 @@ class CustomerPortal(Controller):
 
     @route(
         "/my/address/archive",
-        type="jsonrpc",
+        type="http",
         auth="user",
         website=True,
         methods=["POST"],
     )
-    def address_archive(self, partner_id):
+    def address_archive(self, partner_id=None, **kwargs):
         address_sudo = (
             request.env["res.partner"]
             .sudo()
@@ -943,6 +943,7 @@ class CustomerPortal(Controller):
 
         _debug.lifecycle("address_archived", partner=address_sudo.id)
         address_sudo.action_archive()
+        return request.redirect("/my/addresses")
 
     @route(
         "/my/security", type="http", auth="user", website=True, methods=["GET", "POST"]
