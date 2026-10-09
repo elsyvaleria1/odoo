@@ -106,6 +106,21 @@ class AccessEvent(models.Model):
     )
 
     @api.model
+    def _employee_for_badge(self, badge: str) -> int | None:
+        # a badge is an employee's private identifier (hr.private), which no
+        # privilege should open wide: the lookup elevates, and only the id of
+        # the employee it names, in the reader's companies, leaves it
+        employee = (
+            self.env["hr.employee"]
+            .sudo()
+            .search(
+                [("barcode", "=", badge), ("company_id", "in", self.env.companies.ids)],
+                limit=1,
+            )
+        )
+        return employee.id or None
+
+    @api.model
     def map_event_type(self, major, sub):
         return ACCESS_EVENT_MAP.get((major, sub), "other")
 

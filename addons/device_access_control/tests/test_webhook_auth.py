@@ -1,6 +1,6 @@
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 
 AUTH_MODE_PARAM = "device_access_control.auth_mode"
 
@@ -197,3 +197,44 @@ class TestAccessDeviceWebhookAuth(DeviceHttpCase):
             ]
         )
         self.assertIn("NO-SUCH-READER", row.channel_name)
+
+
+@tagged("post_install", "-at_install")
+class TestAccessDeviceWebhookWithoutSu(NarrowedReceiver, TestAccessDeviceWebhookAuth):
+    def _post_badge(self, badge):
+        payload = self._event_payload("Badge holder")
+        payload["AccessControllerEvent"]["employeeNoString"] = badge
+        payload["AccessControllerEvent"]["serialNo"] = badge
+        self.url_open(
+            f"/access_device/webhook/{self.device.identifier}",
+            json=payload,
+            headers=self._bearer(),
+        )
+        return self.env["access.event"].search(
+            [("device_id", "=", self.device.id), ("event_uid", "=", badge)]
+        )
+
+    def test_a_badge_names_the_employee_of_the_reader_s_company(self):
+        employee = self.env["hr.employee"].create(
+            {"name": "Door Walker", "barcode": "BHOME1"}
+        )
+
+        event = self._post_badge("BHOME1")
+
+        self.assertEqual(event.employee_id, employee)
+        self.assertEqual(event.create_uid, self.env.ref("device.user_device_receiver"))
+
+    def test_a_badge_never_names_an_employee_of_another_company(self):
+        other_company = self.env["res.company"].create({"name": "Badge tenant"})
+        self.env["hr.employee"].create(
+            {
+                "name": "Elsewhere",
+                "barcode": "BAWAY1",
+                "company_id": other_company.id,
+            }
+        )
+
+        event = self._post_badge("BAWAY1")
+
+        self.assertTrue(event, "the event is filed")
+        self.assertFalse(event.employee_id)

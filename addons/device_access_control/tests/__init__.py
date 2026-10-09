@@ -7,4 +7,3 @@ from . import test_fetch_users_rpc
 from . import test_isapi_parsing
 from . import test_parse_event_time
 from . import test_webhook_auth
-from . import test_webhook_reads_employees

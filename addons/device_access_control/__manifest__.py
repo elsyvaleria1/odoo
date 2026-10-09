@@ -1,6 +1,6 @@
 {
     "name": "Access Control Devices",
-    "version": "19.0.4.7.0",
+    "version": "19.0.4.8.0",
     "oldest_upgradable_version": "19.0.4.7.0",
     "category": "Human Resources",
     "summary": "Synchronize access-device users and schedules and receive access events",
@@ -27,7 +27,6 @@
         "data/device_kind_access_data.xml",
         "data/credential_category_ehome_data.xml",
         "data/credential_category_ehome_field_data.xml",
-        "data/access_device_webhook_user_data.xml",
         "data/ir_cron.xml",
         "views/device_device_views.xml",
         "views/access_device_views.xml",
@@ -42,5 +41,4 @@
             "device_access_control/static/src/**/*",
         ],
     },
-    "post_init_hook": "_update_webhook_user_password",
 }

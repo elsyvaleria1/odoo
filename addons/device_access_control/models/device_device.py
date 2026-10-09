@@ -56,6 +56,7 @@ EHOME_BRIDGE_MARGIN = 5
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
+    _receiver_privileges = ("device_access_control.privilege_receive_access_event",)
 
     is_access_device = fields.Boolean(
         compute="_compute_is_access_device",

@@ -74,17 +74,13 @@ class AccessDeviceController(http.Controller):
         admission = request.admission
         device = admission.subject
         try:
-            commands = (
-                request.env["access.command"]
-                .sudo()
-                .search(
-                    [
-                        ("device_id", "=", device.id),
-                        ("state", "=", "pending"),
-                    ],
-                    order="create_date asc",
-                    limit=10,
-                )
+            commands = request.env["access.command"].search(
+                [
+                    ("device_id", "=", device.id),
+                    ("state", "=", "pending"),
+                ],
+                order="create_date asc",
+                limit=10,
             )
 
             result = []
@@ -143,7 +139,7 @@ class AccessDeviceController(http.Controller):
                     {"error": "missing_command_id"}, status=400
                 )
 
-            command = request.env["access.command"].sudo().browse(cmd_id)
+            command = request.env["access.command"].browse(cmd_id)
             if not command.exists() or command.device_id.id != device.id:
                 return request.prepare_json_response(
                     {"error": "command_not_found"}, status=404
@@ -343,32 +339,26 @@ class AccessDeviceController(http.Controller):
         event_data="",
         image=None,
     ):
-        mapped_type = request.env["access.event"].sudo().map_event_type(major, sub)
+        mapped_type = request.env["access.event"].map_event_type(major, sub)
         event_uid = serial_no or None
 
         if event_uid:
-            existing = (
-                request.env["access.event"]
-                .sudo()
-                .search(
-                    [
-                        ("device_id", "=", device.id),
-                        ("event_uid", "=", event_uid),
-                    ],
-                    limit=1,
-                )
+            existing = request.env["access.event"].search(
+                [
+                    ("device_id", "=", device.id),
+                    ("event_uid", "=", event_uid),
+                ],
+                limit=1,
             )
             if existing:
                 _logger.debug("AccessDevice: Duplicate event %s, skipping", event_uid)
                 return
 
-        employee = False
-        if employee_no:
-            employee = (
-                request.env["hr.employee"]
-                .sudo()
-                .search([("barcode", "=", employee_no)], limit=1)
-            )
+        employee_id = (
+            request.env["access.event"]._employee_for_badge(employee_no)
+            if employee_no
+            else None
+        )
 
         event_time = self._parse_event_time(event_time_str)
 
@@ -385,12 +375,12 @@ class AccessDeviceController(http.Controller):
             "event_uid": event_uid,
             "attendance_status": attendance or False,
         }
-        if employee:
-            vals["employee_id"] = employee.id
+        if employee_id:
+            vals["employee_id"] = employee_id
         if image:
             vals["image"] = image
 
-        request.env["access.event"].sudo().create(vals)
+        request.env["access.event"].create(vals)
         _logger.info(
             "Access event: device=%s type=%s major=%s sub=%s employee=%s",
             device.name,
