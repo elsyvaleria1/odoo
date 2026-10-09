@@ -1,7 +1,8 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { tick } from "@odoo/hoot-dom";
-import { Deferred } from "@odoo/hoot-mock";
+import { advanceTime, Deferred } from "@odoo/hoot-mock";
 import { isQueued } from "@point_of_sale/app/services/data_service";
+import { UNSYNC_QUEUE_STORE } from "@point_of_sale/app/utils/offline_queue";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { ConnectionLostError, RPCError } from "@web/core/network";
 
@@ -493,5 +494,205 @@ describe("data_service", () => {
         const order = store.models["pos.order"].getBy("uuid", "edited");
         expect(order?.isDirty()).toBe(true);
         expect(results["pos.order"]).toInclude(order);
+    });
+
+    const cashMoveEntry = (uuid) => ({
+        args: [
+            {
+                type: "call",
+                model: "pos.session",
+                method: "try_cash_in_out",
+                args: [
+                    [1],
+                    "in",
+                    9,
+                    "float",
+                    1,
+                    { translatedType: "in", formattedAmount: "$ 9.00" },
+                ],
+                kwargs: {},
+            },
+        ],
+        date: "2025-01-01 00:00:00",
+        try: 1,
+        uuid,
+    });
+
+    test("an operation that fails while online is retried with a growing delay until it is sent", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [];
+        data.network.offline = false;
+        const attempts = [];
+        let failures = 2;
+        patchWithCleanup(data.orm, {
+            call: async (_model, method) => {
+                attempts.push(method);
+                if (failures-- > 0) {
+                    throw new ConnectionLostError();
+                }
+                return true;
+            },
+        });
+        const settle = async () => {
+            await data.mutex.getUnlockedDef();
+            await tick();
+        };
+
+        const result = await data.call(
+            "pos.session",
+            "try_cash_in_out",
+            cashMoveEntry("x").args[0].args,
+            {},
+            true,
+        );
+        expect(isQueued(result)).toBe(true);
+        expect(attempts).toHaveLength(1);
+
+        await advanceTime(1900);
+        await settle();
+        expect(attempts).toHaveLength(1);
+        await advanceTime(100);
+        await settle();
+        expect(attempts).toHaveLength(2);
+        expect(data.network.unsyncData).toHaveLength(1);
+
+        await advanceTime(3900);
+        await settle();
+        expect(attempts).toHaveLength(2);
+        await advanceTime(100);
+        await settle();
+        expect(attempts).toHaveLength(3);
+        expect(data.network.unsyncData).toHaveLength(0);
+
+        await advanceTime(120000);
+        await settle();
+        expect(attempts).toHaveLength(3);
+    });
+
+    test("an operation the server refuses on replay is shown to the cashier", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        data.network.unsyncData = [cashMoveEntry("refused-1")];
+        data.network.deadSyncData = [];
+        const shown = [];
+        patchWithCleanup(data.dialog, {
+            add: (_component, props) => shown.push(props),
+        });
+        data.execute = async () => {
+            const error = new RPCError("Session closed");
+            error.data = { message: "This session is closed." };
+            throw error;
+        };
+
+        await data.syncData();
+
+        expect(data.network.deadSyncData).toHaveLength(1);
+        expect(shown).toHaveLength(1);
+        expect(shown[0].body).toInclude("Cash in of $ 9.00 (float)");
+        expect(shown[0].body).toInclude("This session is closed.");
+    });
+
+    test("every pending local write is issued in the task that asks for it", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => `${model}:${row.uuid}`));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.markLocalRecordsDirty(
+            "pos.order.line",
+            order.lines.map((line) => line.id),
+        );
+
+        const writing = data._synchronizeLocalDataInIndexedDB({ onlyDirty: true });
+
+        expect(written.sort()).toEqual(
+            [
+                `pos.order:${order.uuid}`,
+                ...order.lines.map((line) => `pos.order.line:${line.uuid}`),
+            ].sort(),
+        );
+        await writing;
+    });
+
+    test("a change still waiting for the debounce is written at once when the page hides", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const order = await getFilledOrder(store);
+        const line = order.lines[0];
+        const written = [];
+        patchWithCleanup(data.indexedDB, {
+            create: async (model, rows) => {
+                written.push(...rows.map((row) => `${model}:${row.uuid}`));
+                return rows.map(() => ({ status: "fulfilled" }));
+            },
+        });
+        data.listenToLocalChanges();
+        line.setQuantity(7);
+        expect(written).toEqual([]);
+
+        const flushing = data.flushLocalDataInIndexedDB();
+
+        expect(written).toInclude(`pos.order.line:${line.uuid}`);
+        await flushing;
+        const count = written.length;
+        await advanceTime(1000);
+        expect(written).toHaveLength(count);
+    });
+
+    test("a boot without the server keeps the synced orders it cannot check", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const results = store.models.loadConnectedData(
+            {
+                "pos.order": [
+                    {
+                        id: 7010,
+                        uuid: "synced-draft",
+                        state: "draft",
+                        session_id: parseInt(odoo.pos_session_id),
+                        config_id: 1,
+                        lines: [],
+                        payment_ids: [],
+                    },
+                ],
+            },
+            [],
+        );
+        data.network.offline = true;
+
+        await data.checkAndDeleteMissingOrders(results);
+
+        expect(store.models["pos.order"].getBy("uuid", "synced-draft")).not.toBe(
+            undefined,
+        );
+    });
+
+    test("Reload Data clears every local store but the operations the server has not seen", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        let cleared;
+        patchWithCleanup(data.indexedDB, {
+            dbStores: [
+                ["uuid", "pos.order"],
+                ["id", "product.product"],
+                ["uuid", UNSYNC_QUEUE_STORE],
+            ],
+            clear: async (stores) => {
+                cleared = stores;
+                return true;
+            },
+            close: () => expect.step("closed"),
+        });
+
+        await data.resetIndexedDBKeepingQueue();
+
+        expect(cleared).toEqual(["pos.order", "product.product"]);
+        expect.verifySteps(["closed"]);
     });
 });

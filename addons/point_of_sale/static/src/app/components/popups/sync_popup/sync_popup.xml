@@ -7,6 +7,7 @@
             </t>
             <div class="payment-methods-overview overflow-auto">
                 <h5 class="text-warning">Be aware that reloading data will delete unsaved orders.</h5>
+                <p>Operations not yet sent to the server, such as cash moves, are kept and sent once the connection allows.</p>
                 <p>You can update it by selecting one of the following options:</p>
                 <ul>
                     <li><strong>Limited Synchronization:</strong> Quickly refresh essential data.</li>

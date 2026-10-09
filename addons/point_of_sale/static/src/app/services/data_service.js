@@ -17,6 +17,7 @@ import { _t } from "@web/core/translation";
 import { Mutex } from "@web/core/utils/concurrency";
 import { SignalStore } from "@web/core/utils/reactive";
 import { debounce } from "@web/core/utils/timing";
+import { AlertDialog } from "@web/ui/dialog";
 
 import { DataServiceOptions } from "../models/data_service_options.js";
 import IndexedDB from "../models/utils/indexed_db.js";
@@ -26,6 +27,8 @@ import { OptimisticUpdates } from "../utils/optimistic_updates.js";
 import { logPosMessage } from "../utils/pretty_console_log.js";
 const CONSOLE_COLOR = "#28ffeb";
 const MAX_SYNC_ATTEMPTS = 5;
+const QUEUE_RETRY_BASE_DELAY = 2000;
+const QUEUE_RETRY_MAX_DELAY = 60000;
 const log = makeLogger("pos.data");
 const UNQUEUEABLE_TYPES = new Set(["read", "search_read"]);
 
@@ -108,6 +111,7 @@ export class PosData extends SignalStore {
         };
 
         this.localUnsyncedPaidOrderUuids = new Set();
+        this.queueRetry = markRaw({ attempt: 0, timeout: null });
 
         const endSetup = log.perf("setup");
         log.lifecycle("setup", () => ({
@@ -209,6 +213,24 @@ export class PosData extends SignalStore {
     async resetIndexedDB() {
         log.lifecycle("[idb] reset", () => ({ db: this.databaseName }));
         await this.indexedDB.reset();
+    }
+
+    // the offline queue holds operations the server has not seen: only their
+    // replay may remove them. The connection is closed so that no flush, on
+    // pagehide or debounced, writes rows back before the reload
+    async resetIndexedDBKeepingQueue() {
+        const stores = this.indexedDB.dbStores
+            .map(([, storeName]) => storeName)
+            .filter((storeName) => storeName !== UNSYNC_QUEUE_STORE);
+        log.lifecycle("[idb] reset, queue kept", () => ({
+            db: this.databaseName,
+            stores: stores.length,
+            queued: this.network.unsyncData.length,
+        }));
+        this.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+        const cleared = await this.indexedDB.clear(stores);
+        this.indexedDB.close();
+        return cleared;
     }
 
     get serverCacheStores() {
@@ -346,20 +368,17 @@ export class PosData extends SignalStore {
         return live;
     }
 
+    // every write is issued before the first await: on pagehide nothing after
+    // it runs, and later transactions on a store commit after earlier ones
     async _synchronizeLocalDataInIndexedDB({ onlyDirty = false } = {}) {
         const endSync = log.perf("synchronizeLocalDataInIndexedDB");
-        const modelsParams = Object.entries(this.opts.databaseTable);
-        const data = {};
-        let written = 0;
-        for (const [model, params] of modelsParams) {
+        const plan = Object.entries(this.opts.databaseTable).map(([model, params]) => {
             const put = [];
             const remove = [];
             const dirty = this.takeDirtyLocalRecords(model);
             const modelData = onlyDirty ? dirty : this.models[model].getAll();
-
             for (const record of modelData) {
                 const isToRemove = params.condition(record);
-
                 if (isToRemove === undefined || isToRemove === true) {
                     if (record[params.key]) {
                         remove.push(record[params.key]);
@@ -368,58 +387,88 @@ export class PosData extends SignalStore {
                     put.push(record.serializeForIndexedDB());
                 }
             }
-
-            data[model] = put;
-            written += put.length;
             log.pipeline("[idb] synchronizeLocalData: model", () => ({
                 model,
                 onlyDirty,
                 put: put.length,
                 remove: remove.length,
             }));
-
-            if (remove.length) {
-                await this.indexedDB.delete(model, remove);
-            }
-
-            let writeResults;
-            if (put.length) {
-                writeResults = await this.indexedDB.create(model, put);
-            }
-
+            return { model, put, remove };
+        });
+        const writes = plan.map(({ model, put, remove }) =>
+            Promise.all([
+                remove.length && this.indexedDB.delete(model, remove),
+                put.length && this.indexedDB.create(model, put),
+            ]),
+        );
+        const data = {};
+        let written = 0;
+        for (const [index, { model, put }] of plan.entries()) {
+            const [, writeResults] = await writes[index];
+            data[model] = put;
+            written += put.length;
             if (model === "pos.order") {
-                const writeSucceeded =
-                    !put.length ||
-                    (Array.isArray(writeResults) &&
-                        writeResults.every((r) => r?.status === "fulfilled"));
-                const writtenByUuid = new Map(put.map((r) => [r.uuid, r]));
-                for (const trackedUuid of [...this.localUnsyncedPaidOrderUuids]) {
-                    const written = writtenByUuid.get(trackedUuid);
-                    const localRecord = this.models[model].getBy("uuid", trackedUuid);
-                    log.logic("[idb] unsynced paid guard", () => ({
-                        order: trackedUuid,
-                        stillUnsyncedPaid: Boolean(localRecord?.isUnsyncedPaid),
-                        written: Boolean(written),
-                        writeSucceeded,
-                    }));
-                    if (!localRecord?.isUnsyncedPaid) {
-                        this.localUnsyncedPaidOrderUuids.delete(trackedUuid);
-                    } else if (written?.state === "paid" && writeSucceeded) {
-                        this.localUnsyncedPaidOrderUuids.delete(trackedUuid);
-                    } else {
-                        logPosMessage(
-                            "DataService",
-                            "syncLocalDataInIndexedDB",
-                            `Paid order ${trackedUuid} is flagged unsynced but not confirmed durable (written=${!!written}, writeOk=${writeSucceeded}) — keeping data-loss guard`,
-                            CONSOLE_COLOR,
-                        );
-                    }
-                }
+                this.settleUnsyncedPaidGuard(put, writeResults);
             }
         }
         endSync({ models: Object.keys(data).length, onlyDirty, written });
 
         return data;
+    }
+
+    settleUnsyncedPaidGuard(put, writeResults) {
+        const model = "pos.order";
+        const writeSucceeded =
+            !put.length ||
+            (Array.isArray(writeResults) &&
+                writeResults.every((r) => r?.status === "fulfilled"));
+        const writtenByUuid = new Map(put.map((r) => [r.uuid, r]));
+        for (const trackedUuid of [...this.localUnsyncedPaidOrderUuids]) {
+            const written = writtenByUuid.get(trackedUuid);
+            const localRecord = this.models[model].getBy("uuid", trackedUuid);
+            log.logic("[idb] unsynced paid guard", () => ({
+                order: trackedUuid,
+                stillUnsyncedPaid: Boolean(localRecord?.isUnsyncedPaid),
+                written: Boolean(written),
+                writeSucceeded,
+            }));
+            if (!localRecord?.isUnsyncedPaid) {
+                this.localUnsyncedPaidOrderUuids.delete(trackedUuid);
+            } else if (written?.state === "paid" && writeSucceeded) {
+                this.localUnsyncedPaidOrderUuids.delete(trackedUuid);
+            } else {
+                logPosMessage(
+                    "DataService",
+                    "syncLocalDataInIndexedDB",
+                    `Paid order ${trackedUuid} is flagged unsynced but not confirmed durable (written=${!!written}, writeOk=${writeSucceeded}) — keeping data-loss guard`,
+                    CONSOLE_COLOR,
+                );
+            }
+        }
+    }
+
+    // outside indexedDBMutex: a queued job would start after the page is gone
+    flushLocalDataInIndexedDB() {
+        this.debouncedSynchronizeLocalDataInIndexedDB.cancel();
+        if (
+            !this.indexedDB ||
+            (!this.dirtyLocalRecords.size && !this.localUnsyncedPaidOrderUuids.size)
+        ) {
+            return;
+        }
+        log.lifecycle("[idb] flush now", () => ({
+            models: [...this.dirtyLocalRecords.keys()],
+        }));
+        return this._synchronizeLocalDataInIndexedDB({ onlyDirty: true }).catch(
+            (error) =>
+                logPosMessage(
+                    "DataService",
+                    "flushLocalDataInIndexedDB",
+                    "Could not write the latest local changes",
+                    CONSOLE_COLOR,
+                    [error],
+                ),
+        );
     }
 
     async syncServerDataInIndexedDB(serverData = {}) {
@@ -821,6 +870,12 @@ export class PosData extends SignalStore {
 
     initListeners() {
         this.listenToLocalChanges();
+        browser.addEventListener("pagehide", () => this.flushLocalDataInIndexedDB());
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                this.flushLocalDataInIndexedDB();
+            }
+        });
 
         const ignore = new Set(Object.keys(this.opts.databaseTable));
         for (const model of Object.keys(this.relations)) {
@@ -1118,6 +1173,7 @@ export class PosData extends SignalStore {
                 uuid: entry.uuid,
                 queue: this.network.unsyncData.length,
             }));
+            this.scheduleQueueRetry();
             return new QueuedOperation(entry.uuid);
         } finally {
             this._inFlight -= 1;
@@ -1360,86 +1416,155 @@ export class PosData extends SignalStore {
         });
     }
 
+    // nothing else replays the queue while the till believes it is online:
+    // checkConnectivity only runs on a browser online/offline event or offline
+    scheduleQueueRetry() {
+        const retry = this.queueRetry;
+        if (!this.network.unsyncData.length) {
+            clearTimeout(retry.timeout);
+            retry.timeout = null;
+            retry.attempt = 0;
+            return;
+        }
+        if (retry.timeout) {
+            return;
+        }
+        const delay = Math.min(
+            QUEUE_RETRY_BASE_DELAY * 2 ** retry.attempt,
+            QUEUE_RETRY_MAX_DELAY,
+        );
+        retry.attempt++;
+        log.logic("[queue] retry scheduled", () => ({
+            delay,
+            attempt: retry.attempt,
+            pending: this.network.unsyncData.length,
+        }));
+        retry.timeout = setTimeout(() => {
+            retry.timeout = null;
+            if (this.network.offline) {
+                return;
+            }
+            this.syncData().catch(() => {});
+        }, delay);
+    }
+
     async syncData() {
         log.pipeline("syncData", () => ({ pending: this.network.unsyncData.length }));
         const endSync = log.perf("[queue] syncData");
         let replayed = 0;
-        await this.mutex.exec(async () => {
-            while (this.network.unsyncData.length > 0) {
-                const data = this.network.unsyncData[0];
-                try {
-                    log.pipeline("[queue] replay", () => ({
-                        uuid: data.uuid,
-                        try: data.try,
-                        type: data.args[0]?.type,
-                        model: data.args[0]?.model,
-                        method: data.args[0]?.method,
-                    }));
-                    await this.execute({
-                        ...data.args[0],
-                        uuid: data.uuid,
-                        optimistic: data.appliedLocally === true,
-                    });
-                    replayed++;
-                    this.network.unsyncData.shift();
-                    this._unpersistQueueEntry(data.uuid);
-                    const params = data.args[0];
-                    if ((data.restored || data.sent) && params?.type === "write") {
-                        await this.readBackReplayedWrite(params, {
-                            keepLocalEdits: !data.restored,
+        const dead = [];
+        try {
+            await this.mutex.exec(async () => {
+                while (this.network.unsyncData.length > 0) {
+                    const data = this.network.unsyncData[0];
+                    try {
+                        log.pipeline("[queue] replay", () => ({
+                            uuid: data.uuid,
+                            try: data.try,
+                            type: data.args[0]?.type,
+                            model: data.args[0]?.model,
+                            method: data.args[0]?.method,
+                        }));
+                        await this.execute({
+                            ...data.args[0],
+                            uuid: data.uuid,
+                            optimistic: data.appliedLocally === true,
                         });
-                    }
-                    if (params?.type === "write" && this.deviceSync?.dispatch) {
-                        Promise.resolve(
-                            this.deviceSync.dispatch({
-                                [params.model]: params.ids.map((id) => ({ id })),
-                            }),
-                        ).catch(() => {});
-                    }
-                } catch (error) {
-                    log.logic("[queue] replay failed", () => ({
-                        uuid: data.uuid,
-                        try: data.try,
-                        connectionLost: error instanceof ConnectionLostError,
-                        rpcError: error instanceof RPCError,
-                        error: error?.message,
-                    }));
-                    if (error instanceof ConnectionLostError) {
-                        endSync({ replayed, connectionLost: true });
-                        throw error;
-                    }
-                    if (!(error instanceof RPCError)) {
-                        data.try = (data.try ?? 1) + 1;
-                        if (data.try <= MAX_SYNC_ATTEMPTS) {
-                            await this._persistQueueEntry(data);
+                        replayed++;
+                        this.network.unsyncData.shift();
+                        this._unpersistQueueEntry(data.uuid);
+                        const params = data.args[0];
+                        if ((data.restored || data.sent) && params?.type === "write") {
+                            await this.readBackReplayedWrite(params, {
+                                keepLocalEdits: !data.restored,
+                            });
+                        }
+                        if (params?.type === "write" && this.deviceSync?.dispatch) {
+                            Promise.resolve(
+                                this.deviceSync.dispatch({
+                                    [params.model]: params.ids.map((id) => ({ id })),
+                                }),
+                            ).catch(() => {});
+                        }
+                    } catch (error) {
+                        log.logic("[queue] replay failed", () => ({
+                            uuid: data.uuid,
+                            try: data.try,
+                            connectionLost: error instanceof ConnectionLostError,
+                            rpcError: error instanceof RPCError,
+                            error: error?.message,
+                        }));
+                        if (error instanceof ConnectionLostError) {
+                            endSync({ replayed, connectionLost: true });
                             throw error;
                         }
+                        if (!(error instanceof RPCError)) {
+                            data.try = (data.try ?? 1) + 1;
+                            if (data.try <= MAX_SYNC_ATTEMPTS) {
+                                await this._persistQueueEntry(data);
+                                throw error;
+                            }
+                            logPosMessage(
+                                "DataService",
+                                "syncData",
+                                `A queued offline operation failed ${MAX_SYNC_ATTEMPTS} times client-side and will not be retried`,
+                                CONSOLE_COLOR,
+                                [error, data],
+                            );
+                        }
+                        this.network.unsyncData.shift();
+                        this._unpersistQueueEntry(data.uuid);
+                        this.network.deadSyncData.push({ ...data, error });
+                        dead.push({ ...data, error });
+                        log.lifecycle("[queue] dead", () => ({
+                            uuid: data.uuid,
+                            dead: this.network.deadSyncData.length,
+                        }));
                         logPosMessage(
                             "DataService",
                             "syncData",
-                            `A queued offline operation failed ${MAX_SYNC_ATTEMPTS} times client-side and will not be retried`,
+                            "A queued offline operation was rejected by the server and will not be retried",
                             CONSOLE_COLOR,
                             [error, data],
                         );
                     }
-                    this.network.unsyncData.shift();
-                    this._unpersistQueueEntry(data.uuid);
-                    this.network.deadSyncData.push({ ...data, error });
-                    log.lifecycle("[queue] dead", () => ({
-                        uuid: data.uuid,
-                        dead: this.network.deadSyncData.length,
-                    }));
-                    logPosMessage(
-                        "DataService",
-                        "syncData",
-                        "A queued offline operation was rejected by the server and will not be retried",
-                        CONSOLE_COLOR,
-                        [error, data],
-                    );
                 }
+            });
+        } finally {
+            this.scheduleQueueRetry();
+            if (dead.length) {
+                this.reportDeadOperations(dead);
             }
-        });
+        }
         endSync({ replayed, pending: this.network.unsyncData.length });
+    }
+
+    describeQueuedOperation({ args }) {
+        const { type, model, method, args: callArgs = [] } = args?.[0] || {};
+        if (model === "pos.session" && method === "try_cash_in_out") {
+            const [, moveType, amount, reason, , extras = {}] = callArgs;
+            const values = { amount: extras.formattedAmount || amount, reason };
+            return moveType === "in"
+                ? _t("Cash in of %(amount)s (%(reason)s)", values)
+                : _t("Cash out of %(amount)s (%(reason)s)", values);
+        }
+        return `${model} ${method || type}`;
+    }
+
+    reportDeadOperations(entries) {
+        const lines = entries.map((entry) => {
+            const error = entry.error;
+            const reason = error?.data?.message || error?.message || String(error);
+            return `• ${this.describeQueuedOperation(entry)}: ${reason}`;
+        });
+        log.lifecycle("[queue] dead reported", () => ({ count: entries.length }));
+        this.dialog.add(AlertDialog, {
+            title: _t("Not recorded on the server"),
+            body: _t(
+                "These operations made on this register could not be recorded on the server and will not be retried:\n%(operations)s\nRecord them again if they really happened.",
+                { operations: lines.join("\n") },
+            ),
+        });
     }
 
     // a write sent before (restored, or sent in this session with its answer lost)
@@ -1504,7 +1629,18 @@ export class PosData extends SignalStore {
                 results["pos.order"].filter((o) => o.isSynced).map((o) => o.id),
             );
             if (ids.size) {
-                const orders = await this.loadServerOrders([["id", "in", [...ids]]]);
+                let orders;
+                try {
+                    orders = await this.loadServerOrders([["id", "in", [...ids]]]);
+                } catch (error) {
+                    if (!(error instanceof ConnectionLostError)) {
+                        throw error;
+                    }
+                    log.logic("checkAndDeleteMissingOrders: offline, kept", () => ({
+                        local: ids.size,
+                    }));
+                    return;
+                }
                 const serverIds = orders.map((r) => r.id);
                 const missing = [...ids].filter((id) => !serverIds.includes(id));
                 log.logic("checkAndDeleteMissingOrders", () => ({

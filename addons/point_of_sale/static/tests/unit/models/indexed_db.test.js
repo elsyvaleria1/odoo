@@ -193,6 +193,20 @@ describe("indexed_db", () => {
         expect(results[0].reason.name).toBe("QuotaExceededError");
     });
 
+    test("a batch asks for its commit once its requests are issued, before any of them answers", async () => {
+        const { db } = makeIndexedDB();
+        const transaction = fakeTransaction();
+        transaction.commit = () =>
+            expect.step(`commit after ${transaction.requests.length}`);
+        patchWithCleanup(db, { getNewTransaction: () => transaction });
+
+        const promise = db.create("store", [{ id: 1 }, { id: 2 }]);
+
+        expect.verifySteps(["commit after 2"]);
+        transaction.oncomplete();
+        await promise;
+    });
+
     test("a batch that commits is reported fulfilled", async () => {
         const { db } = makeIndexedDB();
         const transaction = fakeTransaction();

@@ -1,7 +1,11 @@
 import { expect, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-dom";
 import { ClosePosPopup } from "@point_of_sale/app/components/popups/closing_popup/closing_popup";
-import { mockService, patchWithCleanup } from "@web/../tests/web_test_helpers";
+import {
+    contains,
+    mockService,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
 import { mountPosDialog, setupPosEnv } from "../utils.js";
@@ -21,7 +25,7 @@ const mountClosingPopup = async (pos, refusal) => {
             if (method === "update_closing_control_state_session") {
                 return refusal;
             }
-            return { successful: false, message: "stop here", redirect: true };
+            return { successful: true };
         },
     });
     const popup = await mountPosDialog(ClosePosPopup, {
@@ -67,5 +71,31 @@ test("an accepted closing state goes on to close the session", async () => {
         "update_closing_control_state_session",
         "close_session_from_ui",
     ]);
+    expect(navigations).toEqual(["close"]);
+});
+
+test("an already closed session is reported in an alert and left only once it is read", async () => {
+    mockService("report", () => ({ doAction: async () => {} }));
+    const pos = await setupPosEnv();
+    const { popup, navigations } = await mountClosingPopup(pos, {
+        successful: false,
+        type: "alert",
+        title: "Session already closed",
+        message: "The session has already been closed by another user.",
+        redirect: true,
+    });
+
+    await popup.closeSession();
+    await animationFrame();
+
+    expect(".modal-title:contains(Session already closed)").toHaveCount(1);
+    expect(".modal button:contains(Review Orders)").toHaveCount(0);
+    expect(".modal button:contains(Cancel Orders)").toHaveCount(0);
+    expect(navigations).toEqual([]);
+
+    await contains(
+        ".modal:has(.modal-title:contains(Session already closed)) .modal-footer .btn-primary",
+    ).click();
+
     expect(navigations).toEqual(["close"]);
 });

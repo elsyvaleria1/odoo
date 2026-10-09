@@ -236,6 +236,10 @@ export class ClosePosPopup extends Component {
     }
     async closeSession() {
         const endClose = log.perf("[session:close] closeSession");
+        if (!(await this.pos.sendPendingOperations())) {
+            endClose({ stoppedAt: "pendingOperations" });
+            return;
+        }
         this.pos._resetConnectedCashier();
         const syncSuccess = await this.pos.pushOrdersWithClosingPopup();
         log.pipeline("[session:close] orders pushed", () => ({
@@ -382,39 +386,43 @@ export class ClosePosPopup extends Component {
             redirect: response.redirect,
             openOrders: response.open_order_ids?.length,
         }));
+        // only a refusal over open orders has orders to review or cancel
+        if (!response.open_order_ids) {
+            this.dialog.add(
+                AlertDialog,
+                {
+                    title: response.title || _t("Error"),
+                    body: response.message,
+                },
+                { onClose: () => response.redirect && this.pos.router.close() },
+            );
+            return;
+        }
         this.dialog.add(ConfirmationDialog, {
-            title: response.title || "Error",
+            title: response.title || _t("Error"),
             body: response.message,
             confirmLabel: _t("Review Orders"),
             cancelLabel: _t("Cancel Orders"),
             confirm: () => {
-                if (!response.redirect) {
-                    this.props.close();
-                    this.pos.navigate("TicketScreen");
-                }
+                this.props.close();
+                this.pos.navigate("TicketScreen");
             },
             cancel: async () => {
-                if (!response.redirect) {
-                    const now = getNow();
-                    const ordersDraft = this.pos.models["pos.order"].filter(
-                        (o) =>
-                            !o.finalized &&
-                            !(o.preset_time && compareDates(o.preset_time, now) > 0),
-                    );
-                    log.pipeline("[session:close] cancel open orders", () => ({
-                        drafts: ordersDraft.map((o) => o.uuid),
-                        serverIds: response.open_order_ids,
-                    }));
-                    await this.pos.removeOrders(ordersDraft, response.open_order_ids);
-                    this.closeSession();
-                }
+                const now = getNow();
+                const ordersDraft = this.pos.models["pos.order"].filter(
+                    (o) =>
+                        !o.finalized &&
+                        !(o.preset_time && compareDates(o.preset_time, now) > 0),
+                );
+                log.pipeline("[session:close] cancel open orders", () => ({
+                    drafts: ordersDraft.map((o) => o.uuid),
+                    serverIds: response.open_order_ids,
+                }));
+                await this.pos.removeOrders(ordersDraft, response.open_order_ids);
+                this.closeSession();
             },
             dismiss: async () => {},
         });
-
-        if (response.redirect) {
-            this.pos.router.close();
-        }
     }
     getMovesTotalAmount() {
         const amounts = this.props.default_cash_details.moves.map(

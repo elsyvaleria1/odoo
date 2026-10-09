@@ -3190,6 +3190,14 @@ class TestUi(TestPointOfSaleHttpCommon):
             login="pos_user",
         )
 
+    def test_reload_right_after_a_change_keeps_it(self):
+        self.main_pos_config.with_user(self.pos_user).open_ui()
+        self.start_tour(
+            f"/pos/ui/{self.main_pos_config.id}",
+            "test_reload_right_after_a_change_keeps_it",
+            login="pos_user",
+        )
+
     def test_product_card_qty_precision(self):
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(

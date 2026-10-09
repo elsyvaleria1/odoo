@@ -295,7 +295,10 @@ export class PosStore extends WithLazyGetterTrap {
         log.lifecycle("reloadData", () => ({ fullReload }));
         const orders = this.models["pos.order"].getAll();
         this.device.saveUnusedNumber(orders);
-        await this.data.resetIndexedDB();
+        if (!this.data.network.offline) {
+            await this.data.syncData().catch(() => {});
+        }
+        await this.data.resetIndexedDBKeepingQueue();
         const url = new URL(window.location.href);
 
         if (fullReload) {
@@ -550,8 +553,39 @@ export class PosStore extends WithLazyGetterTrap {
         this.hardwareProxy.openCashbox(_t("Cash in / out"));
         return makeAwaitable(this.dialog, CashMovePopup);
     }
+    // a cash move still queued would be missing from the counted balance, and
+    // its replay after the close is refused by the closed session
+    async sendPendingOperations() {
+        const network = this.data.network;
+        if (network.unsyncData.length && !network.offline) {
+            await this.data.syncData().catch(() => {});
+        }
+        const pending = network.unsyncData.length;
+        log.logic("sendPendingOperations", () => ({
+            pending,
+            offline: network.offline,
+        }));
+        if (!pending) {
+            return true;
+        }
+        const operations = network.unsyncData
+            .map((entry) => `• ${this.data.describeQueuedOperation(entry)}`)
+            .join("\n");
+        this.dialog.add(AlertDialog, {
+            title: _t("Operations not sent yet"),
+            body: _t(
+                "These operations made on this register have not reached the server yet:\n%(operations)s\nThe register cannot be closed until they are sent. Check the connection and try again.",
+                { operations },
+            ),
+        });
+        return false;
+    }
+
     async closeSession() {
         log.logic("closeSession", () => ({ session: this.session?.id }));
+        if (!(await this.sendPendingOperations())) {
+            return;
+        }
         await this.pushOrdersWithClosingPopup();
         const info = await this.getClosePosInfo();
 
@@ -864,10 +898,30 @@ export class PosStore extends WithLazyGetterTrap {
             this.setOrder(order);
             return;
         }
-        await this.data.loadServerOrders([["uuid", "=", orderPathUuid]]);
-        const loadedOrder = this.models["pos.order"].find(
-            (order) => order.uuid === orderPathUuid,
-        );
+        let loadedOrder;
+        try {
+            await this.data.loadServerOrders([["uuid", "=", orderPathUuid]]);
+            loadedOrder = this.models["pos.order"].find(
+                (order) => order.uuid === orderPathUuid,
+            );
+        } catch (error) {
+            // runs during boot: a throw here stops the POS from starting
+            log.logic("handleUrlParams: server lookup failed", () => ({
+                orderUuid: orderPathUuid,
+                connectionLost: error instanceof ConnectionLostError,
+                error: error?.message,
+            }));
+            this.notification.add(
+                error instanceof ConnectionLostError
+                    ? _t(
+                          "The order in the address is not on this device and cannot be fetched while offline. The register opened without it.",
+                      )
+                    : _t(
+                          "The order in the address could not be loaded. The register opened without it.",
+                      ),
+                { type: "warning" },
+            );
+        }
         log.logic("handleUrlParams: server lookup", () => ({
             orderUuid: orderPathUuid,
             found: Boolean(loadedOrder),
@@ -876,7 +930,7 @@ export class PosStore extends WithLazyGetterTrap {
             this.setOrder(loadedOrder);
         } else {
             const next = this.getDefaultPage();
-            this.router.navigate(next.page, next.params);
+            this.router.navigate(next.page, next.params, { replace: true });
         }
     }
 

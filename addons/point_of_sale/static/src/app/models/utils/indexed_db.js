@@ -296,6 +296,13 @@ export default class IndexedDB {
                         break;
                     }
                 }
+                // without it the commit waits for the request callbacks, which
+                // never run when the write was issued on pagehide
+                if (!firstError) {
+                    try {
+                        transaction.commit?.();
+                    } catch {}
+                }
             });
 
             const result = await batchPromise
@@ -484,6 +491,12 @@ export default class IndexedDB {
                 resolve(false);
             };
         });
+    }
+
+    close() {
+        log.lifecycle("close", () => ({ db: this.dbName, open: Boolean(this.db) }));
+        this.db?.close();
+        this.db = null;
     }
 
     clear(storeNames) {

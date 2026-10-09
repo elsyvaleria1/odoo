@@ -6,6 +6,7 @@ import { CashMoveReceipt } from "@point_of_sale/app/components/popups/cash_move_
 import { NumberPopup } from "@point_of_sale/app/components/popups/number_popup/number_popup";
 import { useAsyncLockedMethod } from "@point_of_sale/app/hooks/hooks";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
+import { isQueued } from "@point_of_sale/app/services/data_service";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { useLifecycleLog } from "@web/core/debug/logger_hooks";
@@ -69,7 +70,7 @@ export class CashMovePopup extends Component {
         const extras = { formattedAmount, translatedType };
         const reason = this.state.reason.trim();
 
-        await this.pos.data.call(
+        const result = await this.pos.data.call(
             "pos.session",
             "try_cash_in_out",
             this._prepareTryCashInOutPayload(
@@ -82,7 +83,8 @@ export class CashMovePopup extends Component {
             {},
             true,
         );
-        endMove({ session: this.pos.session.id, type, amount });
+        const queued = isQueued(result);
+        endMove({ session: this.pos.session.id, type, amount, queued });
         await this.pos.logEmployeeMessage(
             `${_t("Cash")} ${translatedType} - ${_t("Amount")}: ${formattedAmount}`,
             "CASH_DRAWER_ACTION",
@@ -115,6 +117,21 @@ export class CashMovePopup extends Component {
 
         this.props.getPayload?.(true);
         this.props.close();
+        if (queued) {
+            this.notification.add(
+                type === "in"
+                    ? _t(
+                          "The cash in of %(amount)s has not reached the server yet. It is kept on this device and sent automatically; the register cannot be closed until it is.",
+                          { amount: formattedAmount },
+                      )
+                    : _t(
+                          "The cash out of %(amount)s has not reached the server yet. It is kept on this device and sent automatically; the register cannot be closed until it is.",
+                          { amount: formattedAmount },
+                      ),
+                { type: "warning", sticky: true },
+            );
+            return;
+        }
         this.notification.add(
             _t("Successfully made a cash %s of %s.", type, formattedAmount),
             { autocloseDelay: 3000 },

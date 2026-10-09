@@ -152,7 +152,7 @@ export class PosRouter extends SignalStore {
         }
     }
 
-    navigate(routeName, routeParams = {}) {
+    navigate(routeName, routeParams = {}, { replace = false } = {}) {
         const route = this.getRoute(routeName);
         const url = new URL(browser.location.href);
         log.lifecycle("navigate", () => ({
@@ -167,7 +167,11 @@ export class PosRouter extends SignalStore {
             (match, paramName) => routeParams[paramName],
         );
 
-        history.pushState({}, "", url);
+        if (replace) {
+            history.replaceState({}, "", url);
+        } else {
+            history.pushState({}, "", url);
+        }
         this.path = window.location.pathname;
         this.historyPage = this.path;
         this.matchURL(routeParams);

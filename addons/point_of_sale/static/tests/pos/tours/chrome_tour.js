@@ -1,4 +1,5 @@
 import * as Dialog from "@point_of_sale/../tests/generic_helpers/dialog_util";
+import * as Order from "@point_of_sale/../tests/generic_helpers/order_widget_util";
 import { refresh } from "@point_of_sale/../tests/generic_helpers/utils";
 import * as CashMoveList from "@point_of_sale/../tests/pos/tours/utils/cash_move_list_util";
 import * as Chrome from "@point_of_sale/../tests/pos/tours/utils/chrome_util";
@@ -185,6 +186,27 @@ registry
                 PaymentScreen.clickValidate(),
             ].flat(),
     });
+
+registry.category("web_tour.tours").add("test_reload_right_after_a_change_keeps_it", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            Dialog.confirm("Open Register"),
+            ProductScreen.clickDisplayedProduct("Desk Organizer", true, "1.0"),
+            ProductScreen.clickDisplayedProduct("Desk Organizer", true, "2.0"),
+            {
+                content: "reload before the debounced local write runs",
+                trigger: ".pos .product-screen",
+                run: () => window.location.reload(),
+                expectUnloadPage: true,
+            },
+            // mounting the product screen deselects the order's line, after a
+            // reload as on any other entry: only the line and its quantity count
+            inLeftSide(
+                Order.hasLine({ productName: "Desk Organizer", quantity: "2.0" }),
+            ),
+        ].flat(),
+});
 
 registry.category("web_tour.tours").add("test_cash_in_out", {
     steps: () =>
