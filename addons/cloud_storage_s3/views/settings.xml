@@ -12,7 +12,7 @@
             <xpath expr="//setting[@id='cloud_storage_provider']" position="inside">
                 <div
                     class="content-group mt16"
-                    invisible="cloud_storage_provider != 's3'">
+                    invisible="cloud_storage_provider not in ('s3', 'ovh')">
                     <div class="o_setting_box mb16">
                         <div class="o_setting_left_pane">
                             <field
@@ -105,7 +105,7 @@
                             <code>s3:PutObject</code>, <code>s3:GetObject</code>,
                             <code>s3:DeleteObject</code>.
                             <code>s3:PutBucketCors</code> is only needed in
-                            <b>S3 Only</b> mode (browser-direct uploads).
+                            <b>Cloud Only</b> mode (browser-direct uploads).
                         </div>
                     </div>
                 </div>

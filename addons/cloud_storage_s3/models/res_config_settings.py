@@ -10,7 +10,9 @@ from ..tools import s3
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    cloud_storage_provider = fields.Selection(selection_add=[("s3", "Amazon S3")])
+    cloud_storage_provider = fields.Selection(
+        selection_add=[("s3", "Amazon S3"), ("ovh", "OVHcloud Object Storage")]
+    )
     cloud_storage_s3_bucket_name = fields.Char(
         string="S3 Bucket Name",
         config_parameter=s3.PARAM_BUCKET,
@@ -47,21 +49,22 @@ class ResConfigSettings(models.TransientModel):
     )
     cloud_storage_s3_storage_mode = fields.Selection(
         selection=[
-            ("s3_only", "S3 Only"),
-            ("hybrid", "Hybrid (S3 + Local)"),
+            ("s3_only", "Cloud Only"),
+            ("hybrid", "Hybrid (Cloud + Local)"),
         ],
         string="S3 Storage Mode",
         default="s3_only",
         config_parameter="cloud_storage_s3_storage_mode",
-        help="S3 Only: new attachments are uploaded straight to S3 from the "
+        help="Cloud Only: new attachments are uploaded straight to the bucket from the "
         "browser and not kept locally. Hybrid: attachments are stored in the "
-        "local filestore and mirrored to S3 by a scheduled job, keeping the "
+        "local filestore and mirrored to the bucket by a scheduled job, keeping the "
         "local copy.",
     )
 
     def _is_s3_provider(self) -> bool:
         return (
-            self.env["ir.config_parameter"].get_param("cloud_storage_provider") == "s3"
+            self.env["ir.config_parameter"].get_param("cloud_storage_provider")
+            in s3.PROVIDERS
         )
 
     @api.model

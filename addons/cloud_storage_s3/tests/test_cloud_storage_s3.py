@@ -364,6 +364,23 @@ class TestCloudStorageS3Endpoint(TestCloudStorageS3Common):
         with self.assertRaises(UserError):
             uninstall_hook(self.env)
 
+    def test_ovh_provider_is_served_by_this_module(self):
+        icp = self.env["ir.config_parameter"]
+        icp.set_param("cloud_storage_provider", "ovh")
+        attachment = self.env["ir.attachment"].new()
+        self.assertTrue(attachment._is_s3_provider())
+        self.assertTrue(s3.get_config(self.env))
+        icp.set_param("cloud_storage_s3_storage_mode", "hybrid")
+        self.assertTrue(attachment._is_s3_hybrid())
+
+    def test_ovh_without_endpoint_is_not_configured(self):
+        icp = self.env["ir.config_parameter"]
+        icp.set_param("cloud_storage_provider", "ovh")
+        icp.set_param(s3.PARAM_ENDPOINT, False)
+        self.assertFalse(s3.get_config(self.env))
+        with self.assertRaises(UserError):
+            s3.get_client(self.env)
+
     def test_uninstall_drops_the_endpoint(self):
         uninstall_hook(self.env)
         self.assertFalse(self.env["ir.config_parameter"].get_param(s3.PARAM_ENDPOINT))

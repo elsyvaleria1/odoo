@@ -10,6 +10,8 @@ from odoo.libs.json import dumps as json_dumps
 PARAM_BUCKET = "cloud_storage_s3_bucket_name"
 PARAM_REGION = "cloud_storage_s3_region"
 PARAM_ENDPOINT = "cloud_storage_s3_endpoint_url"
+# cloud_storage_provider values served by this module; every one speaks S3
+PROVIDERS = ("s3", "ovh")
 CREDENTIAL_CATEGORY_XMLID = "cloud_storage_s3.credential_category_cloud_storage_s3"
 CREDENTIAL_NAME = "Cloud Storage S3"
 
@@ -87,6 +89,9 @@ def get_config(env):
     if not all(config.values()):
         return {}
     config["endpoint_url"] = get_endpoint(env)
+    if not config["endpoint_url"] and icp.get_param("cloud_storage_provider") == "ovh":
+        # without its endpoint an OVHcloud bucket would be looked up on Amazon
+        return {}
     return config
 
 
@@ -95,8 +100,8 @@ def get_client(env):
     if not config:
         raise UserError(
             env._(
-                "Amazon S3 is not fully configured: set the bucket, region and "
-                "IAM keys in Settings → Cloud Storage."
+                "S3 storage is not fully configured: set the bucket, region, "
+                "keys and, for OVHcloud, the endpoint in Settings → Cloud Storage."
             )
         )
     signature = (config["region"], config["endpoint_url"], config["credential"])
@@ -106,7 +111,7 @@ def get_client(env):
         return cached_client
     keys = get_keys(env)
     if not keys:
-        raise UserError(env._("The Amazon S3 IAM keys are missing or unreadable."))
+        raise UserError(env._("The S3 access keys are missing or unreadable."))
     client = boto3.client(  # noqa: E8518 - botocore opens its own connections and takes no requests session
         "s3",
         aws_access_key_id=keys["access_key_id"],

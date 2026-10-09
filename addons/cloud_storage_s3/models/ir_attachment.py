@@ -39,7 +39,7 @@ class IrAttachment(models.Model):
     def _is_s3_provider(self) -> bool:
         return (
             self.env.registry.settings.get(self.env, "cloud_storage_provider", False)
-            == "s3"
+            in s3.PROVIDERS
         )
 
     def _is_s3_hybrid(self) -> bool:
@@ -47,7 +47,7 @@ class IrAttachment(models.Model):
             return False
         icp = self.env["ir.config_parameter"].sudo()
         return (
-            icp.get_param("cloud_storage_provider") == "s3"
+            icp.get_param("cloud_storage_provider") in s3.PROVIDERS
             and icp.get_param("cloud_storage_s3_storage_mode") == "hybrid"
         )
 

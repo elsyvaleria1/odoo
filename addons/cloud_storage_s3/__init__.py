@@ -4,7 +4,7 @@ from .tools import s3
 
 def uninstall_hook(env):
     icp = env["ir.config_parameter"]
-    if icp.get_param("cloud_storage_provider") == "s3":
+    if icp.get_param("cloud_storage_provider") in s3.PROVIDERS:
         env["res.config.settings"]._check_cloud_storage_uninstallable()
         icp.set_param("cloud_storage_provider", False)
     icp.search(
