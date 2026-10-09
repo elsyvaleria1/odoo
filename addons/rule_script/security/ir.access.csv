@@ -1,0 +1,7 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_rule_script_user,rule.script: an employee evaluates the rules a module reads for them,model_rule_script,base.group_user,permission,r,
+access_rule_script_author,rule.script: an author creates and edits rules,model_rule_script,group_rule_script_author,permission,cru,
+access_rule_script_version_user,rule.script.version: an employee evaluates the version in force,model_rule_script_version,base.group_user,permission,r,
+access_rule_script_version_author,rule.script.version: an author writes draft versions,model_rule_script_version,group_rule_script_author,permission,crud,
+access_rule_script_test_user,rule.script.test: an employee reads what a rule is tested against,model_rule_script_test,base.group_user,permission,r,
+access_rule_script_test_author,rule.script.test: an author writes and runs tests,model_rule_script_test,group_rule_script_author,permission,crud,

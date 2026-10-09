@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_rule_script_list" model="ir.ui.view">
+        <field name="name">rule.script.list</field>
+        <field name="model">rule.script</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code" />
+                <field name="name" />
+                <field name="current_version_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_rule_script_form" model="ir.ui.view">
+        <field name="name">rule.script.form</field>
+        <field name="model">rule.script</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        invisible="active"
+                        bg_color="text-bg-danger" />
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="e.g. Payment rounding" />
+                        </h1>
+                        <field name="code" placeholder="e.g. mx.cff.round_payment" />
+                    </div>
+                    <group>
+                        <field name="current_version_id" />
+                        <field name="active" invisible="1" />
+                    </group>
+                    <field
+                        name="description"
+                        placeholder="What the rule decides and for whom" />
+                    <notebook>
+                        <page name="versions" string="Versions">
+                            <field name="version_ids" />
+                        </page>
+                        <page name="tests" string="Tests">
+                            <field name="test_ids">
+                                <list editable="bottom">
+                                    <field name="name" />
+                                    <field name="date_on" />
+                                    <field name="inputs" />
+                                    <field name="expected" />
+                                    <field name="legal_reference" optional="show" />
+                                    <field name="version_id" optional="hide" />
+                                    <field name="origin" optional="hide" />
+                                    <field name="last_result" optional="show" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_rule_script_search" model="ir.ui.view">
+        <field name="name">rule.script.search</field>
+        <field name="model">rule.script</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code" />
+                <field name="name" />
+                <filter
+                    name="archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_rule_script" model="ir.actions.act_window">
+        <field name="name">Rules</field>
+        <field name="res_model">rule.script</field>
+        <field name="path">rules</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_rule_script_search" />
+    </record>
+
+</odoo>

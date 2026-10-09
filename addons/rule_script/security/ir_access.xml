@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_rule_script_version_activate" model="ir.access">
+        <field
+            name="name">rule.script.version: an approver activates and retires the versions others wrote</field>
+        <field name="model_id" ref="model_rule_script_version" />
+        <field name="group_id" ref="group_rule_script_approver" />
+        <field name="kind">permission</field>
+        <field name="verbs">activate,retire</field>
+    </record>
+
+</odoo>

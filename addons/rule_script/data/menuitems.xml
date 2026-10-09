@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_rule_script_root"
+        name="Rules"
+        parent="base.menu_custom"
+        sequence="60" />
+
+    <menuitem
+        id="menu_rule_script"
+        name="Rules"
+        parent="menu_rule_script_root"
+        action="action_rule_script"
+        sequence="10" />
+
+    <menuitem
+        id="menu_rule_script_version"
+        name="Versions"
+        parent="menu_rule_script_root"
+        action="action_rule_script_version"
+        sequence="20" />
+
+    <menuitem
+        id="menu_rule_script_test"
+        name="Tests"
+        parent="menu_rule_script_root"
+        action="action_rule_script_test"
+        sequence="30" />
+
+</odoo>

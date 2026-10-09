@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_rule_script_version_list" model="ir.ui.view">
+        <field name="name">rule.script.version.list</field>
+        <field name="model">rule.script.version</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="script_id" />
+                <field name="date_from" />
+                <field name="date_to" />
+                <field name="origin" />
+                <field name="module" optional="hide" />
+                <field name="date_activated" optional="show" />
+                <field
+                    name="version_state"
+                    widget="badge"
+                    decoration-muted="version_state == 'retired'"
+                    decoration-success="version_state == 'active'" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_rule_script_version_form" model="ir.ui.view">
+        <field name="name">rule.script.version.form</field>
+        <field name="model">rule.script.version</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_activate"
+                        type="object"
+                        string="Activate"
+                        groups="rule_script.group_rule_script_approver"
+                        invisible="version_state != 'draft'"
+                        class="btn-primary" />
+                    <button name="action_run_tests" type="object" string="Run Tests" />
+                    <button
+                        name="action_retire"
+                        type="object"
+                        string="Retire"
+                        confirm="The rule will have no version in force over these dates until another is activated."
+                        groups="rule_script.group_rule_script_approver"
+                        invisible="version_state != 'active'" />
+                    <field
+                        name="version_state"
+                        widget="statusbar"
+                        statusbar_visible="draft,active,retired" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field
+                                name="script_id"
+                                readonly="version_state != 'draft'" />
+                            <field name="date_from" />
+                            <field name="date_to" />
+                            <field name="output_type" />
+                        </group>
+                        <group>
+                            <field name="origin" />
+                            <field name="module" invisible="origin != 'shipped'" />
+                            <field name="path" invisible="origin != 'shipped'" />
+                            <field
+                                name="activated_by_id"
+                                invisible="not activated_by_id" />
+                            <field
+                                name="date_activated"
+                                invisible="not date_activated" />
+                        </group>
+                    </group>
+                    <group>
+                        <field name="legal_sources" />
+                        <field name="change_reason" />
+                    </group>
+                    <field
+                        name="source_code"
+                        widget="code"
+                        options="{'mode': 'python'}"
+                        readonly="version_state != 'draft'" />
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="view_rule_script_version_search" model="ir.ui.view">
+        <field name="name">rule.script.version.search</field>
+        <field name="model">rule.script.version</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="script_id" />
+                <field name="legal_sources" />
+                <filter
+                    name="active_versions"
+                    string="Active"
+                    domain="[('version_state', '=', 'active')]" />
+                <filter
+                    name="draft_versions"
+                    string="Draft"
+                    domain="[('version_state', '=', 'draft')]" />
+                <separator />
+                <filter
+                    name="groupby_script"
+                    string="Rule"
+                    context="{'group_by': 'script_id'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_rule_script_version" model="ir.actions.act_window">
+        <field name="name">Rule Versions</field>
+        <field name="res_model">rule.script.version</field>
+        <field name="path">rule-versions</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_rule_script_version_search" />
+    </record>
+
+</odoo>
