@@ -454,6 +454,9 @@ class TestCatalog(TransactionCase):
                 self.env, "sale_order", {"reference": order.name}
             )
         self.assertEqual(render.call_count, 1)
+        report = self.env["ir.actions.report"].browse(render.call_args.args[0])
+        self.assertTrue(report.exists(), "the id rendered is a report action's")
+        self.assertEqual(report.report_name, "sale.report_saleorder")
         self.assertEqual(names, [order.display_name])
         self.assertEqual(files[0][1], b"%PDF-1.4 order")
         self.assertTrue(files[0][0].endswith(".pdf"))

@@ -91,9 +91,23 @@ def _printed(env, kind, params):
     model, reports = PRINTED_KINDS[kind]
     if model not in env:
         raise NotFound(env._("That document cannot be printed on this database."))
-    found = (env.ref(xmlid, raise_if_not_found=False) for xmlid in reports)
-    report = next((record for record in found if record), None)
-    if report is None:
+    # the names are report_name values, the template each report prints, not
+    # xml ids: an xml id of that name is the template's view, not the report
+    report = env["ir.actions.report"].search(
+        [("report_name", "in", list(reports)), ("model", "=", model)],
+        limit=1,
+        order="id",
+    )
+    if len(reports) > 1 and report:
+        # the first name listed is preferred where several are installed
+        for name in reports:
+            preferred = report.search(
+                [("report_name", "=", name), ("model", "=", model)], limit=1
+            )
+            if preferred:
+                report = preferred
+                break
+    if not report:
         raise NotFound(env._("That document cannot be printed on this database."))
     if model == "res.partner":
         records = _partner(env, params)
