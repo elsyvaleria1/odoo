@@ -11,16 +11,25 @@ class PosPaymentMethod(models.Model):
         if self.use_payment_terminal != "pine_labs":
             return super()._payment_request_from_kiosk(order)
         reference_prefix = order.config_id.name.replace(" ", "")
-        # We need to provide the amount in paisa since Pine Labs processes amounts in paisa.
-        # The conversion rate between INR and paisa is set as 1 INR = 100 paisa.
         data = {
-            "amount": order.amount_total * 100,
+            "amount": self._pine_labs_paisa(order),
             "transactionNumber": f"{reference_prefix}/Order/{order.id}/{uuid.uuid4().hex}",
             "sequenceNumber": "1",
         }
         payment_response = self.pine_labs_make_payment_request(data)
+        if payment_response.get("plutusTransactionReferenceID"):
+            order._set_kiosk_terminal_request(
+                data["transactionNumber"],
+                payment_response["plutusTransactionReferenceID"],
+            )
         payment_response["payment_ref_no"] = data["transactionNumber"]
         return payment_response
+
+    @api.model
+    def _pine_labs_paisa(self, order) -> int:
+        # Pine Labs takes whole paisa; amount_total * 100 is a float such as
+        # 1998.9999999999998, which it refuses or truncates
+        return round(order.currency_id.round(order.amount_total) * 100)
 
     @api.model
     def _load_pos_self_data_domain(self, data, config):

@@ -11,11 +11,16 @@ class PosPaymentMethod(models.Model):
         if self.use_payment_terminal != "razorpay":
             return super()._payment_request_from_kiosk(order)
         reference_prefix = order.config_id.name.replace(" ", "")
-        data = {
-            "amount": order.amount_total,
-            "referenceId": f"{reference_prefix}/Order/{order.id}/{uuid.uuid4().hex}",
-        }
-        return self.razorpay_make_payment_request(data)
+        reference = f"{reference_prefix}/Order/{order.id}/{uuid.uuid4().hex}"
+        response = self.razorpay_make_payment_request(
+            {
+                "amount": order.currency_id.round(order.amount_total),
+                "referenceId": reference,
+            }
+        )
+        if response.get("p2pRequestId"):
+            order._set_kiosk_terminal_request(reference, response["p2pRequestId"])
+        return response
 
     @api.model
     def _load_pos_self_data_domain(self, data, config):

@@ -117,6 +117,7 @@ class PosPaymentMethod(models.Model):
             ):
                 return {
                     "status": response.get("status"),
+                    "amount": response.get("amount"),
                     "authCode": response.get("authCode"),
                     "cardLastFourDigit": response.get("cardLastFourDigit"),
                     "externalRefNumber": response.get("externalRefNumber"),

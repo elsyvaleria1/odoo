@@ -64,5 +64,49 @@ class TestSelfOrderKioskQFPay(TestPointOfSaleHttpCommon, AccountTestInvoicingCom
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")
         self_route = self.pos_config._get_self_order_route()
-        with patch("odoo.addons.pos_qfpay.controllers.main.consteq", lambda a, b: True):
+        with patch.object(
+            type(self.env["pos.payment.method"]),
+            "_is_inbound_request_authentic",
+            lambda self, headers, body: True,
+        ):
             self.start_tour(self_route, "kiosk_qfpay_order")
+
+    def test_a_replayed_notification_pays_the_order_once(self):
+        self.pos_config.with_user(self.pos_user).open_ui()
+        session = self.pos_config.current_session_id
+        session.set_opening_control(0, "")
+        qfpay = self.pos_config.payment_method_ids
+        order = self.env["pos.order"].create(
+            {
+                "session_id": session.id,
+                "amount_tax": 0,
+                "amount_total": 0,
+                "amount_paid": 0,
+                "amount_return": 0,
+                "lines": [
+                    Command.create(
+                        {
+                            "product_id": self.desk_pad.product_variant_id.id,
+                            "qty": 1,
+                            "price_unit": 10,
+                            "price_subtotal": 10,
+                            "price_subtotal_incl": 10,
+                            "tax_ids": [],
+                        }
+                    )
+                ],
+            }
+        )
+        order._recompute_amounts()
+        notification = {
+            "notify_type": "payment",
+            "status": "1",
+            "chnlsn": "CHANNEL-1",
+            "syssn": "SYSSN-1",
+        }
+
+        qfpay._qfpay_handle_webhook(self.pos_config, notification, order.uuid)
+        qfpay._qfpay_handle_webhook(self.pos_config, notification, order.uuid)
+
+        self.assertEqual(order.state, "paid")
+        self.assertEqual(order.payment_ids.mapped("transaction_id"), ["SYSSN-1"])

@@ -1,5 +1,10 @@
+import logging
+
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 from odoo.fields import Domain
+
+_logger = logging.getLogger(__name__)
 
 
 class PosPaymentMethod(models.Model):
@@ -28,22 +33,25 @@ class PosPaymentMethod(models.Model):
         if data.get("notify_type") != "payment":
             return None
 
-        if data["status"] == "1":
-            order = self.env["pos.order"].search([("uuid", "=", uuid)], limit=1)
-            if order:
-                order.add_payment(
+        order = self.env["pos.order"].search([("uuid", "=", uuid)], limit=1)
+        if not order:
+            return None
+        if data["status"] != "1":
+            order._send_payment_result("fail")
+            return None
+        try:
+            with self.env.cr.savepoint():
+                paid = order._add_kiosk_terminal_payment(
+                    self,
                     {
-                        "amount": order.amount_total,
                         "payment_date": fields.Datetime.now(),
-                        "payment_method_id": self.id,
                         "payment_ref_no": data["chnlsn"],
                         "transaction_id": data["syssn"],
-                        "pos_order_id": order.id,
-                    }
+                    },
                 )
-                order.action_pos_order_paid()
-
-                order._send_payment_result("Success")
-        else:
-            order._send_payment_result("fail")
+        except UserError as error:
+            _logger.warning("QFPay notification for %s refused: %s", order.uuid, error)
+            return None
+        if paid:
+            order._send_payment_result("Success")
         return None

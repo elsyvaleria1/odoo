@@ -77,6 +77,69 @@ class PosOrder(models.Model):
     source = fields.Selection(
         selection_add=[("mobile", "Self-Order Mobile"), ("kiosk", "Self-Order Kiosk")]
     )
+    kiosk_terminal_reference = fields.Char(
+        copy=False,
+        readonly=True,
+        help="The reference the kiosk's latest terminal payment request was sent with.",
+    )
+    kiosk_terminal_request = fields.Char(
+        copy=False,
+        readonly=True,
+        help="The terminal provider's id of that request.",
+    )
+
+    def _set_kiosk_terminal_request(self, reference, request_id) -> None:
+        self.check_singleton()
+        self.write(
+            {
+                "kiosk_terminal_reference": reference,
+                "kiosk_terminal_request": request_id and str(request_id),
+            }
+        )
+
+    def _add_kiosk_terminal_payment(self, payment_method, values) -> bool:
+        """Pay the whole order with a transaction its kiosk's terminal approved.
+
+        The caller has checked the transaction is the one requested for this
+        order, for its amount. False when it already paid this order; raises
+        UserError when it paid another one or the order awaits no payment.
+        """
+        self.check_singleton()
+        transaction_id = values.get("transaction_id")
+        if not transaction_id:
+            raise UserError(self.env._("The terminal approved no transaction."))
+        self.lock_for_update(wait=True)
+        recorded = (
+            self.env["pos.payment"]
+            .sudo()
+            .search(
+                [
+                    ("transaction_id", "=", str(transaction_id)),
+                    (
+                        "payment_method_id.use_payment_terminal",
+                        "=",
+                        payment_method.use_payment_terminal,
+                    ),
+                ]
+            )
+        )
+        if recorded.pos_order_id - self:
+            raise UserError(self.env._("This transaction already paid another order."))
+        if recorded:
+            return False
+        if self.state != "draft":
+            raise UserError(self.env._("This order is not awaiting a payment."))
+        self.add_payment(
+            {
+                **values,
+                "transaction_id": str(transaction_id),
+                "amount": self.amount_total,
+                "payment_method_id": payment_method.id,
+                "pos_order_id": self.id,
+            }
+        )
+        self.action_pos_order_paid()
+        return True
 
     def write(self, vals):
         if "table_id" in vals and self.self_ordering_table_id:
