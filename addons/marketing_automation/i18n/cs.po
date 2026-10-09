@@ -90,23 +90,23 @@ msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
-msgstr "<i class=\"fa fa-check-circle\"/> Odrazil"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Odrazil"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
-msgstr "<i class=\"fa fa-check-circle\"/> Kliknuto"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Kliknuto"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
-msgstr "<i class=\"fa fa-check-circle\"/> Otevřeno"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Otevřeno"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
-msgstr "<i class=\"fa fa-check-circle\"/> Odpověděl"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Odpověděl"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form

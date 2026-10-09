@@ -56,7 +56,7 @@ msgid ""
 "&amp;copy;\n"
 "                <span class=\"o_footer_copyright_name align-"
 "baseline\">Company name</span>\n"
-"                 -"
+"                    -"
 msgstr ""
 "&amp;copy; <span class=\"o_footer_copyright_name align-baseline\">Kompaniya "
 "nomi</span> -"
@@ -220,12 +220,12 @@ msgstr "<b>Teglar</b>"
 #: model_terms:ir.ui.view,arch_db:website_sale.suggested_products_list
 #, fuzzy
 msgid ""
-"<i class=\"d-md-none fa fa-shopping-cart\" role=\"presentation\"/>\n"
+"<i class=\"d-md-none fa-solid fa-shopping-cart\" role=\"presentation\"/>\n"
 "                                    <span class=\"d-none d-md-inline\">Add "
 "to cart</span>"
 msgstr ""
-"<i class=\"d-md-none fa fa-shopping-cart\" role=\"presentation\"/> <span "
-"class=\"d-none d-md-inline\">Savatga qo‘shish</span>"
+"<i class=\"d-md-none fa-solid fa-shopping-cart\" role=\"presentation\"/> "
+"<span class=\"d-none d-md-inline\">Savatga qo‘shish</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.navigation_buttons
@@ -255,12 +255,12 @@ msgstr "<i class=\"fa-solid fa-cart-plus me-2\"/>Savatga qo‘shish"
 #: model_terms:ir.ui.view,arch_db:website_sale.shop_product_buttons
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
-"                    <span class=\"o_label small ms-1\">Add to Cart</span>"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
+"                        <span class=\"o_label small ms-1\">Add to Cart</span>"
 msgstr ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-"> <span class=\"o_label small ms-1\">Savatga qo‘shish</span>"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" "
+"role=\"presentation\"/> <span class=\"o_label small ms-1\">Savatga "
+"qo‘shish</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_pages_kanban_view
@@ -302,9 +302,9 @@ msgstr "<i class=\"fa-solid fa-arrow-rotate-left me-2\"/>Tezkor qayta buyurtma"
 #: model_terms:ir.ui.view,arch_db:website_sale.sale_order_re_order_btn
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-rotate-right me-1\"/>\n"
-"                    Order Again"
-msgstr "<i class=\"fa fa-rotate-right me-1\"/> Yana buyurtma berish"
+"<i class=\"fa-solid fa-arrow-rotate-right me-1\"/>\n"
+"                        Order Again"
+msgstr "<i class=\"fa-solid fa-arrow-rotate-right me-1\"/> Yana buyurtma berish"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.dynamic_filter_template_product_product_products_item

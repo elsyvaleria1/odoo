@@ -88,23 +88,23 @@ msgstr "<br/>هذا النشاط"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
-msgstr "<i class=\"fa fa-check-circle\"/> مرتدة"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> مرتدة"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
-msgstr "<i class=\"fa fa-check-circle\"/> تم النقر عليها"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> تم النقر عليها"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
-msgstr "<i class=\"fa fa-check-circle\"/> تم فتحها"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> تم فتحها"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
-msgstr "<i class=\"fa fa-check-circle\"/> تم الرد عليها"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> تم الرد عليها"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form

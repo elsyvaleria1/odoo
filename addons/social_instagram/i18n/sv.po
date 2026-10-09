@@ -37,23 +37,22 @@ msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"Kommentarer\"/>"
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                At least one image is required when posting on Instagram."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                    At least one image is required when posting on Instagram."
 msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                You can only post up to 10 images at once."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                        You can only post up to 10 images at once."
 msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                Your image appears to be corrupted, please try loading it "
-"again."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                    Your image appears to be corrupted, please try loading it again."
 msgstr ""
 
 #. module: social_instagram

@@ -86,8 +86,8 @@ msgstr ""
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-globe mt-1 text-primary\"/>\n"
-"                    <b>Website</b>"
+"<i class=\"fa-solid fa-earth-americas me-2 mt-1 text-primary\"/>\n"
+"                        <b>Website</b>"
 msgstr ""
 
 #. module: iap_mail
@@ -102,8 +102,8 @@ msgstr ""
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company_by_dnb
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-industry text-primary\"/>\n"
-"                    <b>Industries</b>"
+"<i class=\"fa-solid fa-industry me-2 text-primary\"/>\n"
+"                        <b>Industries</b>"
 msgstr ""
 
 #. module: iap_mail
@@ -150,10 +150,10 @@ msgstr ""
 #. module: iap_mail
 #: model_terms:ir.ui.view,arch_db:iap_mail.enrich_company
 msgid ""
-"<i class=\"fa fa-fw me-2 fa-twitter text-primary\"/>\n"
+"<i class=\"fa-brands fa-twitter me-2 text-primary\"/>\n"
 "                    <b>X</b>"
 msgstr ""
-"<i class=\"fa fa-fw me-2 fa-twitter text-primary\"/>\n"
+"<i class=\"fa-brands fa-twitter me-2 text-primary\"/>\n"
 "                    <b>X</b>"
 
 #. module: iap_mail

@@ -90,7 +90,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:asset_gps.view_device_device_kanban_gps_dashboard_asset
 msgid ""
 "<i class=\"fa-solid fa-truck\"/>\n"
-"                        <span class=\"ms-1\">Asset: </span>"
+"                    <span class=\"ms-1\">Asset: </span>"
 msgstr ""
 
 #. module: asset_gps

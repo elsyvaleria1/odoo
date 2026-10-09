@@ -235,7 +235,7 @@ msgstr "<b>워크숍 실</b> - 주로 개발자를 위한 것입니다."
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">from</span>"
+"                                                <span class=\"me-1\">from</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">시작일</"
@@ -245,7 +245,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">to</span>"
+"                                                <span class=\"me-1\">to</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">종료일</"
@@ -370,8 +370,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                                    Registration\n"
-"                                </span>"
+"                                        Registration\n"
+"                                    </span>"
 msgstr ""
 "<span class=\"o_stat_text\">\n"
 "                                    등록\n"
@@ -3124,8 +3124,7 @@ msgstr "참석자"
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "Attendees\n"
-"                                    <span invisible=\"not is_multi_slots\"> "
-"per slot</span>"
+"                                        <span invisible=\"not is_multi_slots\"> per slot</span>"
 msgstr ""
 "<span invisible=\"not is_multi_slots\">슬롯당</span>\n"
 "                                     참석자 수"
@@ -3611,8 +3610,8 @@ msgstr "티켓 다운로드"
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
-msgid "Download Tickets <i class=\"ms-1 fa fa-download\"/>"
-msgstr "티켓 다운로드 <i class=\"ms-1 fa fa-download\"/>"
+msgid "Download Tickets <i class=\"ms-1 fa-solid fa-download\"/>"
+msgstr "티켓 다운로드 <i class=\"ms-1 fa-solid fa-download\"/>"
 
 #. module: event
 #: model_terms:event.event,description:event.event_2

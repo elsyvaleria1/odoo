@@ -89,23 +89,23 @@ msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
-msgstr "<i class=\"fa fa-check-circle\"/> Blev afvist"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Blev afvist"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
-msgstr "<i class=\"fa fa-check-circle\"/> Klikkede"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Klikkede"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
-msgstr "<i class=\"fa fa-check-circle\"/> Åbnet"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Åbnet"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
-msgstr "<i class=\"fa fa-check-circle\"/> Svarede"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Svarede"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form

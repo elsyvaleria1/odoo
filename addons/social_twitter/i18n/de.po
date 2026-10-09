@@ -53,10 +53,10 @@ msgstr "<i class=\"fa-solid fa-heart me-1\" title=\"Likes\"/>"
 #. module: social_twitter
 #: model_terms:ir.ui.view,arch_db:social_twitter.social_stream_post_view_kanban
 msgid ""
-"<i class=\"fa fa-pencil me-1\" title=\"Quote a post\"/>\n"
-"                                    <span>Quote</span>"
+"<i class=\"fa-solid fa-pencil me-1\" title=\"Quote a post\"/>\n"
+"                                        <span>Quote</span>"
 msgstr ""
-"<i class=\"fa fa-pencil me-1\" title=\"Quote a post\"/>\n"
+"<i class=\"fa-solid fa-pencil me-1\" title=\"Quote a post\"/>\n"
 "                                    <span>Zitat</span>"
 
 #. module: social_twitter

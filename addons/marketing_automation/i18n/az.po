@@ -84,23 +84,23 @@ msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
-msgstr "<i class=\"fa fa-check-circle\"/> Sıçrayış etdi"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Sıçrayış etdi"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
-msgstr "<i class=\"fa fa-check-circle\"/> Klikləndi"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Klikləndi"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
-msgstr "<i class=\"fa fa-check-circle\"/> Açıqdır"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Açıqdır"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
-msgstr "<i class=\"fa fa-check-circle\"/> Cavablandırıldı"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> Cavablandırıldı"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form

@@ -81,7 +81,7 @@ msgstr "(ushbu teglarning istalgan biri)"
 #, fuzzy
 msgid ""
 ",\n"
-"    <br/><br/>"
+"                <br/><br/>"
 msgstr ", <br/><br/>"
 
 #. module: helpdesk

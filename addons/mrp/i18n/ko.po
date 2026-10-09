@@ -503,8 +503,8 @@ msgstr "<span name=\"to_produce\" class=\"fw-bold text-nowrap\">생산 예정</s
 #: model_terms:ir.ui.view,arch_db:mrp.report_mrp_production_components
 msgid ""
 "<span>\n"
-"            Components\n"
-"        </span>"
+"                Components\n"
+"            </span>"
 msgstr ""
 "<span>\n"
 "            부품\n"

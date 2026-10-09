@@ -23,25 +23,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "&amp;#128075; <br/>\n"
-"    Welcome to the To-do app!"
+"                Welcome to the To-do app!"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<br/>\n"
-"    <span style=\"font-size: 14px;\">\n"
-"        Ensure you follow the correct format and order. For example: Send "
-"invitations #event @Mitchell !\n"
-"    </span>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"                    Add a checklist\n"
-"                    (/<span style=\"font-style: italic;\">checklist</span>)\n"
+"                <span style=\"font-size: 14px;\">\n"
+"                    Ensure you follow the correct format and order. For example: Send invitations #event @Mitchell !\n"
 "                </span>"
 msgstr ""
 
@@ -49,8 +39,74 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"                    Add a separator\n"
-"                    (/<span style=\"font-style: italic;\">separator</span>)\n"
+"                                Add a checklist\n"
+"                                (/<span style=\"font-style: italic;\">checklist</span>)\n"
+"                            </span>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                                Add a separator\n"
+"                                (/<span style=\"font-style: italic;\">separator</span>)\n"
+"                            </span>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                                Use\n"
+"                                /<span style=\"font-style: italic;\">heading</span>\n"
+"                                to convert a text into a title\n"
+"                            </span>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                        Below this list, try\n"
+"                        <span style=\"font-weight: bolder;\">commands</span>\n"
+"                        by\n"
+"                        <span style=\"font-weight: bolder;\">\n"
+"                            <font style=\"color: #017E84\">typing</font>\n"
+"                        </span>\n"
+"                        \"<span style=\"font-weight: bolder;\">/</span>\"\n"
+"                    </span>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                        Select text to\n"
+"                        <font style=\"background-color: #017E84; color: white\">Highlight</font>,\n"
+"                        <span style=\"text-decoration-line: line-through;\">strikethrough</span>\n"
+"                        or\n"
+"                        <span style=\"font-weight: bolder;\">style</span>\n"
+"                        <span style=\"font-style: italic; text-decoration-line: underline;\">it</span>\n"
+"                    </span>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                    Access your personal pipeline with your to-dos and assigned tasks by going to the Project app and clicking\n"
+"                    <span>\n"
+"                        <font style=\"font-weight: bolder;\" class=\"text-o-color-2\">My Tasks</font>.\n"
+"                    </span>\n"
+"                </span>\n"
+"                <br/>\n"
+"                <br/>\n"
+"                <span style=\"font-size: 14px;\">\n"
+"                    There, your to-dos are listed as\n"
+"                    <span style=\"font-weight: bolder;\">\n"
+"                        <font class=\"text-o-color-2\">private tasks.</font>\n"
+"                    </span>\n"
+"                    Any task you create privately will also be included in your to-dos. Essentially, they are interchangeable.\n"
 "                </span>"
 msgstr ""
 
@@ -58,9 +114,23 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"                    Use\n"
-"                    /<span style=\"font-style: italic;\">heading</span>\n"
-"                    to convert a text into a title\n"
+"                    By default, to-dos are only visible to you. You can share them with other users by adding them as\n"
+"                    <span>\n"
+"                        <font style=\"font-weight: bolder;\" class=\"text-o-color-2\">assignees</font>.\n"
+"                    </span>\n"
+"                </span>\n"
+"                <br/>"
+msgstr ""
+
+#. module: project_todo
+#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
+msgid ""
+"<span style=\"font-size: 14px;\">\n"
+"                    Customize the stages from the\n"
+"                    <span style=\"font-weight: bolder;\">\n"
+"                        <font class=\"text-o-color-2\">Kanban view</font>\n"
+"                    </span>\n"
+"                    to reflect your preferred workflow.\n"
 "                </span>"
 msgstr ""
 
@@ -68,122 +138,39 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"            Below this list, try\n"
-"            <span style=\"font-weight: bolder;\">commands</span>\n"
-"            by\n"
-"            <span style=\"font-weight: bolder;\">\n"
-"                <font style=\"color: #017E84\">typing</font>\n"
-"            </span>\n"
-"            \"<span style=\"font-weight: bolder;\">/</span>\"\n"
-"        </span>"
+"                    If you want to assign your to-do to a specific project, open the ⚙️ menu and click\n"
+"                    <span>\n"
+"                        <font style=\"font-weight: bolder;\" class=\"text-o-color-2\">Convert to Task</font>.\n"
+"                    </span>\n"
+"                    This action will make it visible to other users.\n"
+"                </span>\n"
+"                <br/>"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"            Select text to\n"
-"            <font style=\"background-color: #017E84; color: "
-"white\">Highlight</font>,\n"
-"            <span style=\"text-decoration-line: line-through;"
-"\">strikethrough</span>\n"
-"            or\n"
-"            <span style=\"font-weight: bolder;\">style</span>\n"
-"            <span style=\"font-style: italic; text-decoration-line: "
-"underline;\">it</span>\n"
-"        </span>"
+"                    Use it to manage your work, take notes on the go, and create tasks based on them.\n"
+"                </span>"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"        Access your personal pipeline with your to-dos and assigned tasks by "
-"going to the Project app and clicking\n"
-"        <span>\n"
-"            <font style=\"font-weight: bolder;\" class=\"text-o-color-2\">My "
-"Tasks</font>.\n"
-"        </span>\n"
-"    </span>\n"
-"    <br/>\n"
-"    <br/>\n"
-"    <span style=\"font-size: 14px;\">\n"
-"        There, your to-dos are listed as\n"
-"        <span style=\"font-weight: bolder;\">\n"
-"            <font class=\"text-o-color-2\">private tasks.</font>\n"
-"        </span>\n"
-"        Any task you create privately will also be included in your to-dos. "
-"Essentially, they are interchangeable.\n"
-"    </span>"
+"                    Use these keywords in the title to streamline your to-dos:\n"
+"                </span>\n"
+"                <br/>"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-size: 14px;\">\n"
-"        By default, to-dos are only visible to you. You can share them with "
-"other users by adding them as\n"
-"        <span>\n"
-"            <font style=\"font-weight: bolder;\" class=\"text-o-"
-"color-2\">assignees</font>.\n"
-"        </span>\n"
-"    </span>\n"
-"    <br/>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"        Customize the stages from the\n"
-"        <span style=\"font-weight: bolder;\">\n"
-"            <font class=\"text-o-color-2\">Kanban view</font>\n"
-"        </span>\n"
-"        to reflect your preferred workflow.\n"
-"    </span>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"        If you want to assign your to-do to a specific project, open the ⚙️ "
-"menu and click\n"
-"        <span>\n"
-"            <font style=\"font-weight: bolder;\" class=\"text-o-"
-"color-2\">Convert to Task</font>.\n"
-"        </span>\n"
-"        This action will make it visible to other users.\n"
-"    </span>\n"
-"    <br/>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"        Use it to manage your work, take notes on the go, and create tasks "
-"based on them.\n"
-"    </span>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"        Use these keywords in the title to streamline your to-dos:\n"
-"    </span>\n"
-"    <br/>"
-msgstr ""
-
-#. module: project_todo
-#: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
-msgid ""
-"<span style=\"font-size: 14px;\">\n"
-"        Wherever you are, use the magic keyboard shortcut to add yourself a "
-"reminder &amp;#128161;\n"
-"    </span>\n"
-"    <br/>"
+"                    Wherever you are, use the magic keyboard shortcut to add yourself a reminder &amp;#128161;\n"
+"                </span>\n"
+"                <br/>"
 msgstr ""
 
 #. module: project_todo
@@ -211,8 +198,8 @@ msgstr ""
 msgid ""
 "<span style=\"font-size: 14px;\">This private to-do is for you to play "
 "around with.</span>\n"
-"    <br/>\n"
-"    <span style=\"font-size: 14px;\">Ready to give it a spin?</span>"
+"                <br/>\n"
+"                <span style=\"font-size: 14px;\">Ready to give it a spin?</span>"
 msgstr ""
 
 #. module: project_todo
@@ -224,63 +211,63 @@ msgstr "<span style=\"font-size: 14px;\"> Prøv følgende </span>"
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">!!!:</font>\n"
-"            </span>\n"
-"            Mark the to-do as urgent"
+"                            <font class=\"text-o-color-2\">!!!:</font>\n"
+"                        </span>\n"
+"                        Mark the to-do as urgent"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">!!:</font>\n"
-"            </span>\n"
-"            Mark the to-do as high priority"
+"                            <font class=\"text-o-color-2\">!!:</font>\n"
+"                        </span>\n"
+"                        Mark the to-do as high priority"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">!:</font>\n"
-"            </span>\n"
-"            Mark the to-do as medium priority"
+"                            <font class=\"text-o-color-2\">!:</font>\n"
+"                        </span>\n"
+"                        Mark the to-do as medium priority"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">#tags:</font>\n"
-"            </span>\n"
-"            Add tags to categorize the to-do"
+"                            <font class=\"text-o-color-2\">#tags:</font>\n"
+"                        </span>\n"
+"                        Add tags to categorize the to-do"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">@user:</font>\n"
-"            </span>\n"
-"            Assign the to-do to a specific user"
+"                            <font class=\"text-o-color-2\">@user:</font>\n"
+"                        </span>\n"
+"                        Assign the to-do to a specific user"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">Alt + Shift + T</font>\n"
-"            </span>\n"
-"            (Windows/Linux)"
+"                            <font class=\"text-o-color-2\">Alt + Shift + T</font>\n"
+"                        </span>\n"
+"                        (Windows/Linux)"
 msgstr ""
 
 #. module: project_todo
 #: model_terms:ir.ui.view,arch_db:project_todo.todo_user_onboarding
 msgid ""
 "<span style=\"font-weight: bolder;\">\n"
-"                <font class=\"text-o-color-2\">Ctrl + Shift + T</font>\n"
-"            </span>\n"
-"            (MacOs)"
+"                            <font class=\"text-o-color-2\">Ctrl + Shift + T</font>\n"
+"                        </span>\n"
+"                        (MacOs)"
 msgstr ""
 
 #. module: project_todo

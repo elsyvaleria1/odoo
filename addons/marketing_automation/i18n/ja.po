@@ -87,23 +87,23 @@ msgstr "<br/>この活動は"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
-msgstr "<i class=\"fa fa-check-circle\"/> 不達"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> 不達"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
-msgstr "<i class=\"fa fa-check-circle\"/> クリック済"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> クリック済"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
-msgstr "<i class=\"fa fa-check-circle\"/> 開封済"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> 開封済"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
-msgstr "<i class=\"fa fa-check-circle\"/> 返信済"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
+msgstr "<i class=\"fa-solid fa-circle-check\"/> 返信済"
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_campaign_view_form

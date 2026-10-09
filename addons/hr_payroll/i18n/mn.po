@@ -334,7 +334,7 @@ msgstr "<span class=\"o_stat_text\">Ажилтан</span>"
 #: model_terms:ir.ui.view,arch_db:hr_payroll.payroll_hr_employee_view_form
 msgid ""
 "<span class=\"o_stat_text\">Payslips</span>\n"
-"                            <span class=\"o_stat_value\">New</span>"
+"                        <span class=\"o_stat_value\">New</span>"
 msgstr ""
 
 #. module: hr_payroll

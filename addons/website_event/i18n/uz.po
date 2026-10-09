@@ -402,12 +402,11 @@ msgstr ""
 msgid ""
 "<span itemprop=\"availability\" content=\"http://schema.org/SoldOut\" "
 "class=\"text-danger\">\n"
-"                                        <i class=\"fa fa-ban me-2\"/>Sold "
-"Out\n"
-"                                    </span>"
+"                                            <i class=\"fa-solid fa-ban me-2\"/>Sold Out\n"
+"                                        </span>"
 msgstr ""
 "<span itemprop=\"availability\" content=\"http://schema.org/SoldOut\" "
-"class=\"text-danger\"> <i class=\"fa fa-ban me-2\"/>Sotildi</span>"
+"class=\"text-danger\"> <i class=\"fa-solid fa-ban me-2\"/>Sotildi</span>"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_aside_preview_data
@@ -1372,8 +1371,8 @@ msgstr "Onlayn qo‘shiling"
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_ticket_access
 #, fuzzy
-msgid "Join online <i class=\"ms-1 fa fa-globe\"/>"
-msgstr "Onlayn qo‘shiling <i class=\"ms-1 fa fa-globe\"/>"
+msgid "Join online <i class=\"ms-1 fa-solid fa-earth-americas\"/>"
+msgstr "Onlayn qo‘shiling <i class=\"ms-1 fa-solid fa-earth-americas\"/>"
 
 #. module: website_event
 #: model:ir.model.fields,field_description:website_event.field_website_event_menu__write_uid

@@ -170,8 +170,8 @@ msgstr ""
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.sale_order_re_order_btn
 msgid ""
-"<i class=\"fa fa-rotate-right me-1\"/>\n"
-"                    Order Again"
+"<i class=\"fa-solid fa-arrow-rotate-right me-1\"/>\n"
+"                        Order Again"
 msgstr ""
 
 #. module: website_sale

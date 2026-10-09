@@ -35,7 +35,7 @@ msgstr "<b>Homiy</b>:"
 #, fuzzy
 msgid ""
 "<span>Company Name</span>\n"
-"                        <span class=\"mandatory_mark\"> *</span>"
+"                            <span class=\"mandatory_mark\"> *</span>"
 msgstr "<span>Tashkilot nomi</span> <span class=\"mandatory_mark\"> *</span>"
 
 #. module: website_event_booth_exhibitor
@@ -43,7 +43,7 @@ msgstr "<span>Tashkilot nomi</span> <span class=\"mandatory_mark\"> *</span>"
 #, fuzzy
 msgid ""
 "<span>Email</span>\n"
-"                        <span class=\"mandatory_mark\"> *</span>"
+"                            <span class=\"mandatory_mark\"> *</span>"
 msgstr "<span>Elektron pochta</span> <span class=\"mandatory_mark\"> *</span>"
 
 #. module: website_event_booth_exhibitor

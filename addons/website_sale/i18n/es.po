@@ -58,7 +58,7 @@ msgid ""
 "&amp;copy;\n"
 "                <span class=\"o_footer_copyright_name align-"
 "baseline\">Company name</span>\n"
-"                 -"
+"                    -"
 msgstr ""
 "&amp;copy;\n"
 "                <span class=\"o_footer_copyright_name align-"
@@ -246,11 +246,11 @@ msgstr "<b>Etiquetas</b>"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.suggested_products_list
 msgid ""
-"<i class=\"d-md-none fa fa-shopping-cart\" role=\"presentation\"/>\n"
+"<i class=\"d-md-none fa-solid fa-shopping-cart\" role=\"presentation\"/>\n"
 "                                    <span class=\"d-none d-md-inline\">Add "
 "to cart</span>"
 msgstr ""
-"<i class=\"d-md-none fa fa-shopping-cart\" role=\"presentation\"/>\n"
+"<i class=\"d-md-none fa-solid fa-shopping-cart\" role=\"presentation\"/>\n"
 "                                    <span class=\"d-none d-md-"
 "inline\">Añadir a la cesta</span>"
 
@@ -280,12 +280,10 @@ msgstr "<i class=\"fa-solid fa-cart-plus me-2\"/>Añadir a la cesta"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.shop_product_buttons
 msgid ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
-"                    <span class=\"o_label small ms-1\">Add to Cart</span>"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
+"                        <span class=\"o_label small ms-1\">Add to Cart</span>"
 msgstr ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
+"<i class=\"fa-solid fa-shopping-cart o_not-animable\" role=\"presentation\"/>\n"
 "                    <span class=\"o_label small ms-1\">Añadir a la cesta</"
 "span>"
 
@@ -322,10 +320,10 @@ msgstr "<i class=\"fa-solid fa-arrow-rotate-left me-2\"/>Volver a pedir"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.sale_order_re_order_btn
 msgid ""
-"<i class=\"fa fa-rotate-right me-1\"/>\n"
-"                    Order Again"
+"<i class=\"fa-solid fa-arrow-rotate-right me-1\"/>\n"
+"                        Order Again"
 msgstr ""
-"<i class=\"fa fa-rotate-right me-1\"/>\n"
+"<i class=\"fa-solid fa-arrow-rotate-right me-1\"/>\n"
 "                    Pedir de nuevo"
 
 #. module: website_sale

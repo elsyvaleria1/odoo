@@ -18,15 +18,15 @@ msgstr ""
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration_details
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-2\" role=\"img\" aria-label=\"Error\" title=\"Error\"/>\n"
-"                    <span class=\"o_wbooth_registration_error_message\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle me-2\" role=\"img\" aria-label=\"Error\" title=\"Error\"/>\n"
+"                        <span class=\"o_wbooth_registration_error_message\"/>"
 msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/>\n"
-"                                        <span>Sorry, several booths are now sold out. Please change your choices before validating again.</span>"
+"<i class=\"fa-solid fa-exclamation-triangle\"/>\n"
+"                                            <span>Sorry, several booths are now sold out. Please change your choices before validating again.</span>"
 msgstr ""
 
 #. module: website_event_booth
@@ -70,14 +70,14 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration_details
 msgid ""
 "<span>Email</span>\n"
-"                            <span> *</span>"
+"                                <span> *</span>"
 msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration_details
 msgid ""
 "<span>Name</span>\n"
-"                            <span> *</span>"
+"                                <span> *</span>"
 msgstr ""
 
 #. module: website_event_booth

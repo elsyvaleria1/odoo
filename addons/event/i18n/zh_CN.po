@@ -241,7 +241,7 @@ msgstr "<b>研讨会间</b> - 主要供开发人员使用。"
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">from</span>"
+"                                                <span class=\"me-1\">from</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">由</span>"
@@ -250,7 +250,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">to</span>"
+"                                                <span class=\"me-1\">to</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">至</span>"
@@ -366,8 +366,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                                    Registration\n"
-"                                </span>"
+"                                        Registration\n"
+"                                    </span>"
 msgstr ""
 "<span class=\"o_stat_text\">\n"
 "                                    注册\n"
@@ -3115,8 +3115,7 @@ msgstr "参会者"
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "Attendees\n"
-"                                    <span invisible=\"not is_multi_slots\"> "
-"per slot</span>"
+"                                        <span invisible=\"not is_multi_slots\"> per slot</span>"
 msgstr ""
 "参与者\n"
 "                                    <span invisible=\"not is_multi_slots\">每"
@@ -3592,8 +3591,8 @@ msgstr "下载门票"
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
-msgid "Download Tickets <i class=\"ms-1 fa fa-download\"/>"
-msgstr "下载门票<i class=\"ms-1 fa fa-download\"/>"
+msgid "Download Tickets <i class=\"ms-1 fa-solid fa-download\"/>"
+msgstr "下载门票<i class=\"ms-1 fa-solid fa-download\"/>"
 
 #. module: event
 #: model_terms:event.event,description:event.event_2

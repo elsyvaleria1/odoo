@@ -29,17 +29,15 @@ msgstr "! Minilo je že nekaj dni od vašega nakupa. Upamo, da vam je všeč!"
 #: model_terms:ir.ui.view,arch_db:marketing_automation_website_sale.mailing_purchase_followup_arch
 msgid ""
 "-\n"
-"            <span style=\"color: rgb(183, 191, 199); font-size: "
-"12.25px\">September 10 2024</span>"
+"                                <span style=\"color: rgb(183, 191, 199); font-size: 12.25px\">September 10 2024</span>"
 msgstr ""
 
 #. module: marketing_automation_website_sale
 #: model_terms:ir.ui.view,arch_db:marketing_automation_website_sale.mailing_purchase_followup_arch
 msgid ""
 "<br/>\n"
-"            <span style=\"font-size: 12px\">\n"
-"              <font style=\"color: rgb(183, 191, 199)\">To unsubscribe,</"
-"font></span>"
+"                                <span style=\"font-size: 12px\">\n"
+"                                    <font style=\"color: rgb(183, 191, 199)\">To unsubscribe,</font></span>"
 msgstr ""
 "<br/>\n"
 "            <span style=\"font-size: 12px\">\n"
@@ -84,23 +82,20 @@ msgstr "<span style=\"font-size: 1.07143rem\">HVALA ZA VAŠ NAKUP</span>"
 #: model_terms:ir.ui.view,arch_db:marketing_automation_website_sale.mailing_repeat_customer_new_purchase_arch
 msgid ""
 "<span style=\"font-size: 1.07143rem\">YOU MAKE OUR SUCCESS POSSIBLE</span>\n"
-"              <font style=\"font-size: 12px\"/><br/>"
+"                                    <font style=\"font-size: 12px\"/><br/>"
 msgstr ""
 
 #. module: marketing_automation_website_sale
 #: model_terms:ir.ui.view,arch_db:marketing_automation_website_sale.mailing_purchase_followup_arch
 msgid ""
 "<span style=\"font-size: 12px\">\n"
-"              <font style=\"color: rgb(183, 191, 199)\">8000 Marina Blvd, "
-"Suite 300</font></span>\n"
-"            <br/>\n"
-"            <span style=\"font-size: 12px\"><font style=\"color: rgb(183, "
-"191, 199)\">Brisbane, California 94005</font></span>\n"
-"            <br/>\n"
-"            <span style=\"font-size: 12px\">\n"
-"              <font style=\"color: rgb(183, 191, 199)\">You received this "
-"email from</font>\n"
-"            </span>"
+"                                    <font style=\"color: rgb(183, 191, 199)\">8000 Marina Blvd, Suite 300</font></span>\n"
+"                                <br/>\n"
+"                                <span style=\"font-size: 12px\"><font style=\"color: rgb(183, 191, 199)\">Brisbane, California 94005</font></span>\n"
+"                                <br/>\n"
+"                                <span style=\"font-size: 12px\">\n"
+"                                    <font style=\"color: rgb(183, 191, 199)\">You received this email from</font>\n"
+"                                </span>"
 msgstr ""
 
 #. module: marketing_automation_website_sale
@@ -293,7 +288,7 @@ msgstr "Marketinška kampanja"
 #: model_terms:ir.ui.view,arch_db:marketing_automation_website_sale.mailing_repeat_customer_new_purchase_arch
 msgid ""
 "Michael Fletcher<br/>\n"
-"              <span style=\"font-size: 12px\"><strong>CEO</strong></span>"
+"                                    <span style=\"font-size: 12px\"><strong>CEO</strong></span>"
 msgstr ""
 
 #. module: marketing_automation_website_sale

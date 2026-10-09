@@ -22,13 +22,11 @@ msgstr ""
 #. module: stock_barcode_product_expiry
 #: model_terms:ir.ui.view,arch_db:stock_barcode_product_expiry.stock_move_line_product_selector
 msgid ""
-"<span class=\"fa fa-exclamation-triangle fs-6 text-danger ms-4\" "
-"invisible=\"not is_expired or not picking_type_use_existing_lots\">\n"
-"                        This lot is expired\n"
-"                    </span>"
+"<span class=\"fa-solid fa-exclamation-triangle fs-6 text-danger ms-4\" invisible=\"not is_expired or not picking_type_use_existing_lots\">\n"
+"                            This lot is expired\n"
+"                        </span>"
 msgstr ""
-"<span class=\"fa fa-exclamation-triangle fs-6 text-danger ms-4\" "
-"invisible=\"not is_expired or not picking_type_use_existing_lots\">\n"
+"<span class=\"fa-solid fa-exclamation-triangle fs-6 text-danger ms-4\" invisible=\"not is_expired or not picking_type_use_existing_lots\">\n"
 "                        Este lote está caducado\n"
 "                    </span>"
 

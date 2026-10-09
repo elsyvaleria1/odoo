@@ -77,7 +77,7 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<br/>\n"
-"                        <span class=\"text-muted\">Leads</span>"
+"                            <span class=\"text-muted\">Leads</span>"
 msgstr "<br/> <span class=\"text-muted\">Potensial mijozlar</span>"
 
 #. module: survey_crm

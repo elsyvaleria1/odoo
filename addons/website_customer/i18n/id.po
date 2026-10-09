@@ -28,11 +28,10 @@ msgstr ""
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.index
 msgid ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
-"                        There are no matching customers found for the "
-"selected country. Displaying results across all countries instead."
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
+"                            There are no matching customers found for the selected country. Displaying results across all countries instead."
 msgstr ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
 "                        Tidak ada pelanggan yang cocok yang ditemukan untuk "
 "negara terpilih. Sekarang menampilkan hasil di semua negara."
 

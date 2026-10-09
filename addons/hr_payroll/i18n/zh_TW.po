@@ -341,7 +341,7 @@ msgstr "<span class=\"o_stat_text\">員工</span>"
 #: model_terms:ir.ui.view,arch_db:hr_payroll.payroll_hr_employee_view_form
 msgid ""
 "<span class=\"o_stat_text\">Payslips</span>\n"
-"                            <span class=\"o_stat_value\">New</span>"
+"                        <span class=\"o_stat_value\">New</span>"
 msgstr ""
 "<span class=\"o_stat_text\">工資單</span>\n"
 "                            <span class=\"o_stat_value\">新</span>"

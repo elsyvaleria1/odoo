@@ -228,7 +228,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event.navbar
 msgid ""
 "<i class=\"oi oi-chevron-left\"/>\n"
-"                <span>All Events</span>"
+"                    <span>All Events</span>"
 msgstr ""
 "<i class=\"oi oi-chevron-left\"/>\n"
 "                <span>모든 행사</span>"
@@ -342,14 +342,12 @@ msgstr ""
 msgid ""
 "<span itemprop=\"availability\" content=\"http://schema.org/SoldOut\" "
 "class=\"text-danger\">\n"
-"                                        <i class=\"fa fa-ban me-2\"/>Sold "
-"Out\n"
-"                                    </span>"
+"                                            <i class=\"fa-solid fa-ban me-2\"/>Sold Out\n"
+"                                        </span>"
 msgstr ""
 "<span itemprop=\"availability\" content=\"http://schema.org/SoldOut\" "
 "class=\"text-danger\">\n"
-"                                        <i class=\"fa fa-ban me-2\"/>판매 완"
-"료\n"
+"                                        <i class=\"fa-solid fa-ban me-2\"/>판매 완료\n"
 "                                    </span>"
 
 #. module: website_event
@@ -1182,8 +1180,8 @@ msgstr "온라인 가입"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_ticket_access
-msgid "Join online <i class=\"ms-1 fa fa-globe\"/>"
-msgstr "온라인 가입 <i class=\"ms-1 fa fa-globe\"/>"
+msgid "Join online <i class=\"ms-1 fa-solid fa-earth-americas\"/>"
+msgstr "온라인 가입 <i class=\"ms-1 fa-solid fa-earth-americas\"/>"
 
 #. module: website_event
 #: model:ir.model.fields,field_description:website_event.field_website_event_menu__write_uid

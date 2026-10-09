@@ -193,8 +193,7 @@ msgstr ""
 msgid ""
 "<span class=\"o_stat_text\" invisible=\"duplicate_lead_count &lt; "
 "2\">Similar Leads</span>\n"
-"                                    <span class=\"o_stat_text\" "
-"invisible=\"duplicate_lead_count &gt; 1\">Similar Lead</span>"
+"                                <span class=\"o_stat_text\" invisible=\"duplicate_lead_count &gt; 1\">Similar Lead</span>"
 msgstr ""
 "<span class=\"o_stat_text\" invisible=\"duplicate_lead_count &lt; 2\">سرنخ "
 "های مشابه</span>\n"
@@ -246,7 +245,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:crm.sales_team_form_view_in_crm
 msgid ""
 "<span> leads assigned this month\n"
-"                            on a maximum of </span>"
+"                        on a maximum of </span>"
 msgstr "<span> سرنخ تخصیص داده شده </span>"
 
 #. module: crm

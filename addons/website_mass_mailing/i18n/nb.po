@@ -59,7 +59,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template
 msgid ""
 "<span class=\"s_website_form_label_content\">Email</span>\n"
-"                                <span class=\"s_website_form_mark\"> *</span>"
+"                                    <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_mass_mailing
@@ -67,21 +67,21 @@ msgstr ""
 msgid ""
 "<span class=\"s_website_form_label_content\">I agree to receive updates</"
 "span>\n"
-"                                <span class=\"s_website_form_mark\"> *</span>"
+"                                    <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template
 msgid ""
 "<span class=\"s_website_form_label_content\">Name</span>\n"
-"                                <span class=\"s_website_form_mark\"> *</span>"
+"                                    <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_mass_mailing
 #: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_block_form_template
 msgid ""
 "<span class=\"s_website_form_label_content\">Subscribe to</span>\n"
-"                                <span class=\"s_website_form_mark\"> *</span>"
+"                                    <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_mass_mailing

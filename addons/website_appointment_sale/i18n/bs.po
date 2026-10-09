@@ -31,8 +31,8 @@ msgstr ""
 #. module: website_appointment_sale
 #: model_terms:ir.ui.view,arch_db:website_appointment_sale.appointment_sale_confirmation_cards
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" role=\"img\"/>\n"
-"                            Please Contact Us"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" role=\"img\"/>\n"
+"                                Please Contact Us"
 msgstr ""
 
 #. module: website_appointment_sale

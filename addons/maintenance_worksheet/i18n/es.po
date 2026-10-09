@@ -37,7 +37,7 @@ msgstr "<span class=\"o_stat_text\">Hoja de trabajo</span>"
 #: model_terms:ir.ui.view,arch_db:maintenance_worksheet.maintenance_request_view_form_inherit_worksheet
 msgid ""
 "<span class=\"o_stat_text\">Worksheet</span>\n"
-"                            <span class=\"o_stat_text\">Complete</span>"
+"                        <span class=\"o_stat_text\">Complete</span>"
 msgstr ""
 "<span class=\"o_stat_text\">Hoja de trabajo</span>\n"
 "                            <span class=\"o_stat_text\">Completa</span>"

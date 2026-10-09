@@ -22,7 +22,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:account_test.report_accounttest
 msgid ""
 "<br/>\n"
-"                        <strong>Description:</strong>"
+"                            <strong>Description:</strong>"
 msgstr ""
 
 #. module: account_test

@@ -28,11 +28,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration_details
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-2\" role=\"img\" aria-"
-"label=\"Error\" title=\"Error\"/>\n"
-"                    <span class=\"o_wbooth_registration_error_message\"/>"
+"<i class=\"fa-solid fa-exclamation-triangle me-2\" role=\"img\" aria-label=\"Error\" title=\"Error\"/>\n"
+"                        <span class=\"o_wbooth_registration_error_message\"/>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-2\" role=\"img\" aria-"
+"<i class=\"fa-solid fa-exclamation-triangle me-2\" role=\"img\" aria-"
 "label=\"Error\" title=\"Error\"/> <span "
 "class=\"o_wbooth_registration_error_message\"/>"
 
@@ -40,12 +39,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-exclamation-triangle\"/>\n"
-"                                        <span>Sorry, several booths are now "
-"sold out. Please change your choices before validating again.</span>"
+"<i class=\"fa-solid fa-exclamation-triangle\"/>\n"
+"                                            <span>Sorry, several booths are now sold out. Please change your choices before validating again.</span>"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle\"/> <span>Kechirasiz, hozirda bir "
-"nechta stendlar sotilgan. Iltimos, qayta tasdiqlashdan oldin "
+"<i class=\"fa-solid fa-exclamation-triangle\"/> <span>Kechirasiz, hozirda "
+"bir nechta stendlar sotilgan. Iltimos, qayta tasdiqlashdan oldin "
 "tanlovlaringizni o‘zgartiring.</span>"
 
 #. module: website_event_booth
@@ -99,7 +97,7 @@ msgstr "<span>Tasdiqlandi</span>"
 #, fuzzy
 msgid ""
 "<span>Email</span>\n"
-"                            <span> *</span>"
+"                                <span> *</span>"
 msgstr "<span>Elektron pochta</span> <span> *</span>"
 
 #. module: website_event_booth
@@ -107,7 +105,7 @@ msgstr "<span>Elektron pochta</span> <span> *</span>"
 #, fuzzy
 msgid ""
 "<span>Name</span>\n"
-"                            <span> *</span>"
+"                                <span> *</span>"
 msgstr "<span>Ism</span> <span> *</span>"
 
 #. module: website_event_booth

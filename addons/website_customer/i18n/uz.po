@@ -28,12 +28,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_customer.index
 #, fuzzy
 msgid ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
-"                        There are no matching customers found for the "
-"selected country. Displaying results across all countries instead."
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
+"                            There are no matching customers found for the selected country. Displaying results across all countries instead."
 msgstr ""
-"<i class=\"fa fa-info-circle me-2\"/> Tanlangan mamlakat uchun mos mijozlar "
-"topilmadi. Buning o‘rniga barcha mamlakatlardagi natijalar ko‘rsatilmoqda."
+"<i class=\"fa-solid fa-info-circle me-2\"/> Tanlangan mamlakat uchun mos "
+"mijozlar topilmadi. Buning o‘rniga barcha mamlakatlardagi natijalar "
+"ko‘rsatilmoqda."
 
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.opt_country

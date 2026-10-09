@@ -106,16 +106,16 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing_sms.mailing_mailing_view_form_sms
 msgid ""
 "<strong>\n"
-"                            It appears you don't have enough IAP credits. Click here to buy credits.\n"
-"                        </strong>"
+"                                It appears you don't have enough IAP credits. Click here to buy credits.\n"
+"                            </strong>"
 msgstr ""
 
 #. module: mass_mailing_sms
 #: model_terms:ir.ui.view,arch_db:mass_mailing_sms.mailing_mailing_view_form_sms
 msgid ""
 "<strong>\n"
-"                            It appears your SMS account is not registered. Click here to set up your account.\n"
-"                        </strong>"
+"                                It appears your SMS account is not registered. Click here to set up your account.\n"
+"                            </strong>"
 msgstr ""
 
 #. module: mass_mailing_sms

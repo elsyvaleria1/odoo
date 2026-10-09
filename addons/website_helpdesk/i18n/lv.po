@@ -33,8 +33,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk.ticket_submit_form
 msgid ""
 "<span class=\"s_website_form_label_content\">Ask Your Question</span>\n"
-"                                            <span "
-"class=\"s_website_form_mark\"> *</span>"
+"                                                <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_helpdesk
@@ -54,8 +53,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk.ticket_submit_form
 msgid ""
 "<span class=\"s_website_form_label_content\">Email Address</span>\n"
-"                                            <span "
-"class=\"s_website_form_mark\"> *</span>"
+"                                                <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_helpdesk
@@ -63,8 +61,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk.ticket_submit_form
 msgid ""
 "<span class=\"s_website_form_label_content\">Full Name</span>\n"
-"                                            <span "
-"class=\"s_website_form_mark\"> *</span>"
+"                                                <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_helpdesk
@@ -78,8 +75,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_helpdesk.ticket_submit_form
 msgid ""
 "<span class=\"s_website_form_label_content\">Message Subject</span>\n"
-"                                            <span "
-"class=\"s_website_form_mark\"> *</span>"
+"                                                <span class=\"s_website_form_mark\"> *</span>"
 msgstr ""
 
 #. module: website_helpdesk

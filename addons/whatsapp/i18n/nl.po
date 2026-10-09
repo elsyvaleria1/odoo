@@ -70,10 +70,10 @@ msgstr "Het telefoonnummer in 'Knoppen' lijkt ongeldig."
 #. module: whatsapp
 #: model_terms:ir.ui.view,arch_db:whatsapp.whatsapp_template_view_kanban
 msgid ""
-"<i class=\"fa fa-whatsapp me-1\" title=\"Messages Count\" aria-"
+"<i class=\"fa-brands fa-whatsapp me-1\" title=\"Messages Count\" aria-"
 "label=\"Messages Count\"/>"
 msgstr ""
-"<i class=\"fa fa-whatsapp me-1\" title=\"Messages Count\" aria-"
+"<i class=\"fa-brands fa-whatsapp me-1\" title=\"Messages Count\" aria-"
 "label=\"Messages Count\"/>"
 
 #. module: whatsapp

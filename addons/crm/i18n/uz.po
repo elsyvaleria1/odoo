@@ -230,8 +230,7 @@ msgstr ""
 msgid ""
 "<span class=\"o_stat_text\" invisible=\"duplicate_lead_count &lt; "
 "2\">Similar Leads</span>\n"
-"                                    <span class=\"o_stat_text\" "
-"invisible=\"duplicate_lead_count &gt; 1\">Similar Lead</span>"
+"                                <span class=\"o_stat_text\" invisible=\"duplicate_lead_count &gt; 1\">Similar Lead</span>"
 msgstr ""
 "<span class=\"o_stat_text\" invisible=\"duplicate_lead_count &lt; "
 "2\">O‘xshash ehtimoliy mijozlar</span> <span class=\"o_stat_text\" "
@@ -294,7 +293,7 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span> leads assigned this month\n"
-"                            on a maximum of </span>"
+"                        on a maximum of </span>"
 msgstr "<span> ta potensial mijozdan </span>"
 
 #. module: crm

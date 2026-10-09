@@ -29,7 +29,7 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<br/>\n"
-"                        <strong>Description:</strong>"
+"                            <strong>Description:</strong>"
 msgstr "<br/> <strong>Tavsif:</strong>"
 
 #. module: account_test

@@ -47,7 +47,8 @@ msgstr ""
 #. module: appointment_google_reserve
 #: model_terms:ir.ui.view,arch_db:appointment_google_reserve.appointment_type_view_form
 msgid ""
-"<i class=\"ms-2 fa fa-info-circle\" title=\"Required for Google Reserve\"/>"
+"<i class=\"ms-2 fa-solid fa-info-circle\" title=\"Required for Google "
+"Reserve\"/>"
 msgstr ""
 
 #. module: appointment_google_reserve

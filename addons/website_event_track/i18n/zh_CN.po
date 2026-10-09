@@ -211,15 +211,16 @@ msgstr ""
 #. module: website_event_track
 #: model_terms:ir.ui.view,arch_db:website_event_track.event_track_proposal
 msgid ""
-"<span class=\"o_wetrack_proposal_label_content\">Talk Introduction</span>\n"
-"                                        <span>*</span>"
+"<span class=\"o_wetrack_proposal_label_content\">Talk Introduction</"
+"span>\n"
+"                                            <span>*</span>"
 msgstr ""
 
 #. module: website_event_track
 #: model_terms:ir.ui.view,arch_db:website_event_track.event_track_proposal
 msgid ""
 "<span class=\"o_wetrack_proposal_label_content\">Talk Title</span>\n"
-"                                        <span>*</span>"
+"                                            <span>*</span>"
 msgstr ""
 "<span class=\"o_wetrack_proposal_label_content\">演讲主题</span>\n"
 "                                        <span>*（必填）</span>"
@@ -233,7 +234,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event_track.event_track_proposal_contact_details
 msgid ""
 "<span for=\"contact_name\">Name</span>\n"
-"                    <span>*</span>"
+"                        <span>*</span>"
 msgstr ""
 "<span for=\"contact_name\">名称</span>\n"
 "                    <span>*</span>"

@@ -76,7 +76,7 @@ msgstr "（其中任何一个标签）"
 #: model_terms:ir.ui.view,arch_db:helpdesk.ticket_invitation_follower
 msgid ""
 ",\n"
-"    <br/><br/>"
+"                <br/><br/>"
 msgstr ""
 ",\n"
 "    <br/><br/>"

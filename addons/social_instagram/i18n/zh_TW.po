@@ -38,29 +38,28 @@ msgstr "<i class=\"fa-solid fa-comments me-1\" title=\"留言\"/>"
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                At least one image is required when posting on Instagram."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                    At least one image is required when posting on Instagram."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
 "                發佈帖文至 Instagram 時，須最少有一張圖片。"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                You can only post up to 10 images at once."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                        You can only post up to 10 images at once."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
 "                每次發佈最多只可有 10 張圖片。"
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
-"                Your image appears to be corrupted, please try loading it "
-"again."
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
+"                    Your image appears to be corrupted, please try loading it again."
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\"/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
 "                你的圖片檔案似乎已損壞，請嘗試重新上載。"
 
 #. module: social_instagram

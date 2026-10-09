@@ -22,10 +22,10 @@ msgstr ""
 #. module: website_event_track_live
 #: model_terms:ir.ui.view,arch_db:website_event_track_live.event_track_content
 msgid ""
-"<i class=\"fa fa-spin fa-circle-o-notch position-relative\"/>\n"
-"                <span class=\"ps-2\">Loading Video...</span>"
+"<i class=\"fa-solid fa-circle-notch fa-spin position-relative\"/>\n"
+"                    <span class=\"ps-2\">Loading Video...</span>"
 msgstr ""
-"<i class=\"fa fa-spin fa-circle-o-notch position-relative\"/>\n"
+"<i class=\"fa-solid fa-circle-notch fa-spin position-relative\"/>\n"
 "                <span class=\"ps-2\">Video laden...</span>"
 
 #. module: website_event_track_live

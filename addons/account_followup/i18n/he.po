@@ -230,8 +230,8 @@ msgstr "<span class=\"o_stat_text\">יתרה לפרעון</span>"
 #: model_terms:ir.ui.view,arch_db:account_followup.template_followup_report
 msgid ""
 "<strong>\n"
-"                                Pending Invoices\n"
-"                            </strong>"
+"                                    Pending Invoices\n"
+"                                </strong>"
 msgstr "חשבוניות ממתינות לתשלום"
 
 #. module: account_followup

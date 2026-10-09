@@ -399,7 +399,7 @@ msgstr "<span class=\"o_stat_text\">Xodimlar</span>"
 #, fuzzy
 msgid ""
 "<span class=\"o_stat_text\">Payslips</span>\n"
-"                            <span class=\"o_stat_value\">New</span>"
+"                        <span class=\"o_stat_value\">New</span>"
 msgstr ""
 "<span class=\"o_stat_text\">Ish haqi hisob-varaqlari</span> <span "
 "class=\"o_stat_value\">Yangi</span>"

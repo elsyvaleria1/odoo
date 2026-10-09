@@ -587,8 +587,8 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span>\n"
-"            Components\n"
-"        </span>"
+"                Components\n"
+"            </span>"
 msgstr "<span> Tarkibiy qismlar </span>"
 
 #. module: mrp

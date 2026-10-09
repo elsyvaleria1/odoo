@@ -948,7 +948,7 @@ msgstr "開啟營業點超過 7 天"
 #: model_terms:ir.ui.view,arch_db:website_event_exhibitor.exhibitor_main
 msgid ""
 "is over.\n"
-"                <br/>"
+"                    <br/>"
 msgstr ""
 "已結束。\n"
 "                <br/>"

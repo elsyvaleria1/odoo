@@ -262,8 +262,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mrp.report_mrp_production_components
 msgid ""
 "<span>\n"
-"            Components\n"
-"        </span>"
+"                Components\n"
+"            </span>"
 msgstr ""
 
 #. module: mrp

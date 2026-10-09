@@ -240,7 +240,7 @@ msgstr "<b>غرفة ورشة العمل</b> - للمطورين على الأغل
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">from</span>"
+"                                                <span class=\"me-1\">from</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">من </span>"
@@ -249,7 +249,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">to</span>"
+"                                                <span class=\"me-1\">to</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">إلى</span>"
@@ -373,8 +373,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                                    Registration\n"
-"                                </span>"
+"                                        Registration\n"
+"                                    </span>"
 msgstr ""
 "<span class=\"o_stat_text\">\n"
 "                                    التسجيل\n"
@@ -3142,8 +3142,7 @@ msgstr "الحاضرين"
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "Attendees\n"
-"                                    <span invisible=\"not is_multi_slots\"> "
-"per slot</span>"
+"                                        <span invisible=\"not is_multi_slots\"> per slot</span>"
 msgstr ""
 "الحاضرون\n"
 "                                    <span invisible=\"not is_multi_slots\"> "
@@ -3631,8 +3630,8 @@ msgstr "تنزيل التذاكر"
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
-msgid "Download Tickets <i class=\"ms-1 fa fa-download\"/>"
-msgstr "تنزيل التذاكر <i class=\"ms-1 fa fa-download\"/>"
+msgid "Download Tickets <i class=\"ms-1 fa-solid fa-download\"/>"
+msgstr "تنزيل التذاكر <i class=\"ms-1 fa-solid fa-download\"/>"
 
 #. module: event
 #: model_terms:event.event,description:event.event_2

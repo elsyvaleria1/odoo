@@ -27,11 +27,10 @@ msgstr ""
 #. module: website_customer
 #: model_terms:ir.ui.view,arch_db:website_customer.index
 msgid ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
-"                        There are no matching customers found for the "
-"selected country. Displaying results across all countries instead."
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
+"                            There are no matching customers found for the selected country. Displaying results across all countries instead."
 msgstr ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
 "                          Không tìm thấy khách hàng phù hợp nào cho quốc gia "
 "đã chọn. Thay vào đó, hiển thị kết quả cho tất cả các quốc gia."
 

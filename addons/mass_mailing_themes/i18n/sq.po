@@ -958,8 +958,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing_themes.theme_bignews_template
 msgid ""
 "Michael Fletcher<br/>\n"
-"                   <span style=\"font-size: 12px; font-weight: bolder;"
-"\">Customer Service</span>"
+"                    <span style=\"font-size: 12px; font-weight: bolder;\">Customer Service</span>"
 msgstr ""
 
 #. module: mass_mailing_themes
@@ -1336,11 +1335,8 @@ msgstr ""
 msgid ""
 "We are proud to announce that due to our remarkable growth in the "
 "Springfield area, we are moving to a new location on July 1.\n"
-"                   <br/>We will continue to offer the same friendly service "
-"at our new address on <span style=\"font-weight: bolder\">1600 Main Street</"
-"span>,\n"
-"                   <br/>which will allow us to offer an even larger "
-"selection of products and services."
+"                    <br/>We will continue to offer the same friendly service at our new address on <span style=\"font-weight: bolder\">1600 Main Street</span>,\n"
+"                    <br/>which will allow us to offer an even larger selection of products and services."
 msgstr ""
 
 #. module: mass_mailing_themes

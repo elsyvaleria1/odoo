@@ -944,7 +944,7 @@ msgstr "已经结束了。"
 #: model_terms:ir.ui.view,arch_db:website_event_exhibitor.exhibitor_main
 msgid ""
 "is over.\n"
-"                <br/>"
+"                    <br/>"
 msgstr ""
 "已经结束了。\n"
 "               <br/>"

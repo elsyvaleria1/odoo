@@ -64,7 +64,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:survey_crm.survey_survey_view_kanban
 msgid ""
 "<br/>\n"
-"                        <span class=\"text-muted\">Leads</span>"
+"                            <span class=\"text-muted\">Leads</span>"
 msgstr ""
 
 #. module: survey_crm

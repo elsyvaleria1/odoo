@@ -99,22 +99,22 @@ msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Bounced"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Bounced"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Clicked"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Clicked"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Opened"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Opened"
 msgstr ""
 
 #. module: marketing_automation
 #: model_terms:ir.ui.view,arch_db:marketing_automation.marketing_participant_view_form
-msgid "<i class=\"fa fa-check-circle\"/> Replied"
+msgid "<i class=\"fa-solid fa-circle-check\"/> Replied"
 msgstr ""
 
 #. module: marketing_automation

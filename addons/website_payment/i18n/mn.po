@@ -27,11 +27,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_payment.donation_mail_body
 msgid ""
 ".\n"
-"                        <br/>\n"
-"                        We appreciate your support for our organization as "
-"such.\n"
-"                        <br/>\n"
-"                        Regards."
+"                            <br/>\n"
+"                            We appreciate your support for our organization as such.\n"
+"                            <br/>\n"
+"                            Regards."
 msgstr ""
 
 #. module: website_payment

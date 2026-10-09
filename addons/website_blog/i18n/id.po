@@ -2973,7 +2973,7 @@ msgstr "belum dipublikasikan"
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_info
 msgid ""
 "|\n"
-"            <i class=\"fa fa-comment ms-1 text-muted\"/>"
+"                <i class=\"fa-solid fa-comment ms-1 text-muted\"/>"
 msgstr ""
 
 #. module: website_blog

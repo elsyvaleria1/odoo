@@ -271,7 +271,7 @@ msgstr "<b>Seminar xonasi</b> - asosan dasturchilarga mo‘ljallangan."
 #, fuzzy
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">from</span>"
+"                                                <span class=\"me-1\">from</span>"
 msgstr "<br/> <span class=\"me-1\">dan</span>"
 
 #. module: event
@@ -279,7 +279,7 @@ msgstr "<br/> <span class=\"me-1\">dan</span>"
 #, fuzzy
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">to</span>"
+"                                                <span class=\"me-1\">to</span>"
 msgstr "<br/> <span class=\"me-1\">gacha</span>"
 
 #. module: event
@@ -416,8 +416,8 @@ msgstr "<span class=\"o_stat_text\">Ishtirokchi javoblari</span>"
 #, fuzzy
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                                    Registration\n"
-"                                </span>"
+"                                        Registration\n"
+"                                    </span>"
 msgstr "<span class=\"o_stat_text\">Ro‘yxatdan o‘tish</span>"
 
 #. module: event
@@ -2054,8 +2054,7 @@ msgstr "Ishtirokchilar"
 #, fuzzy
 msgid ""
 "Attendees\n"
-"                                    <span invisible=\"not is_multi_slots\"> "
-"per slot</span>"
+"                                        <span invisible=\"not is_multi_slots\"> per slot</span>"
 msgstr ""
 "Ishtirokchilar <span invisible=\"not is_multi_slots\">har bir seans uchun</"
 "span>"
@@ -2622,8 +2621,8 @@ msgstr "Chiptalarni yuklab olish"
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 #, fuzzy
-msgid "Download Tickets <i class=\"ms-1 fa fa-download\"/>"
-msgstr "Chiptalarni yuklab olish <i class=\"ms-1 fa fa-download\"/>"
+msgid "Download Tickets <i class=\"ms-1 fa-solid fa-download\"/>"
+msgstr "Chiptalarni yuklab olish <i class=\"ms-1 fa-solid fa-download\"/>"
 
 #. module: event
 #: model_terms:event.event,description:event.event_2

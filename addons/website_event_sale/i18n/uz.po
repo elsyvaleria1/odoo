@@ -47,8 +47,8 @@ msgstr "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Ro‘yxatdan o‘tgan"
 #, fuzzy
 msgid ""
 "<span>Sign In</span>\n"
-"                <span class=\"fa fa-sign-in\"/>"
-msgstr "<span>Kirish</span> <span class=\"fa fa-sign-in\"/>"
+"                    <span class=\"fa-solid fa-right-to-bracket\"/>"
+msgstr "<span>Kirish</span> <span class=\"fa-solid fa-right-to-bracket\"/>"
 
 #. module: website_event_sale
 #. odoo-python

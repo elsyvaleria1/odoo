@@ -189,7 +189,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_event_track.event_track_proposal_contact_details
 msgid ""
 "<span for=\"contact_name\">Name</span>\n"
-"                    <span>*</span>"
+"                        <span>*</span>"
 msgstr ""
 
 #. module: website_event_track

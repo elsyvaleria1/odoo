@@ -58,9 +58,8 @@ msgstr ""
 #. module: website_crm_partner_assign
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.index
 msgid ""
-"<i class=\"fa fa-info-circle me-2\"/>\n"
-"                There are no matching partners found for the selected "
-"country. Displaying results across all countries instead."
+"<i class=\"fa-solid fa-info-circle me-2\"/>\n"
+"                    There are no matching partners found for the selected country. Displaying results across all countries instead."
 msgstr ""
 
 #. module: website_crm_partner_assign
@@ -131,8 +130,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_crm_partner_assign.view_crm_lead_opportunity_geo_assign_form
 msgid ""
 "<span class=\"opacity-50\" invisible=\"partner_latitude &lt;= 0\">N </span>\n"
-"                                    <span class=\"opacity-50\" "
-"invisible=\"partner_latitude &gt;= 0\">S </span>"
+"                                <span class=\"opacity-50\" invisible=\"partner_latitude &gt;= 0\">S </span>"
 msgstr ""
 
 #. module: website_crm_partner_assign
@@ -140,9 +138,8 @@ msgstr ""
 msgid ""
 "<span class=\"opacity-50\" invisible=\"partner_longitude &lt;= 0\">E </"
 "span>\n"
-"                                    <span class=\"opacity-50\" "
-"invisible=\"partner_longitude &gt;= 0\">W </span>\n"
-"                                    <span class=\"opacity-50 ps-1\">) </span>"
+"                                <span class=\"opacity-50\" invisible=\"partner_longitude &gt;= 0\">W </span>\n"
+"                                <span class=\"opacity-50 ps-1\">) </span>"
 msgstr ""
 
 #. module: website_crm_partner_assign

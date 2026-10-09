@@ -222,7 +222,7 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span class=\"o_wetrack_proposal_label_content\">Talk Introduction</span>\n"
-"                                        <span>*</span>"
+"                                            <span>*</span>"
 msgstr ""
 "<span class=\"o_wetrack_proposal_label_content\">Suhbat kirishi</span> "
 "<span>*</span>"
@@ -232,7 +232,7 @@ msgstr ""
 #, fuzzy
 msgid ""
 "<span class=\"o_wetrack_proposal_label_content\">Talk Title</span>\n"
-"                                        <span>*</span>"
+"                                            <span>*</span>"
 msgstr ""
 "<span class=\"o_wetrack_proposal_label_content\">Suhbat sarlavhasi</span> "
 "<span>*</span>"
@@ -248,7 +248,7 @@ msgstr "<span class=\"text-muted\"> yo‘nalishlar</span>"
 #, fuzzy
 msgid ""
 "<span for=\"contact_name\">Name</span>\n"
-"                    <span>*</span>"
+"                        <span>*</span>"
 msgstr "<span for=\"contact_name\">Ism</span> <span>*</span>"
 
 #. module: website_event_track

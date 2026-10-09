@@ -41,7 +41,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_youtube.social_account_view_form
 msgid ""
 "<span>These are stored up to 30 days and refreshed often to provide you an accurate depiction of reality. </span>\n"
-"                        <span>To delete these from Odoo, simply delete this account.</span>"
+"                            <span>To delete these from Odoo, simply delete this account.</span>"
 msgstr ""
 
 #. module: social_youtube

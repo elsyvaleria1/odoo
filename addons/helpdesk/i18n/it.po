@@ -74,7 +74,7 @@ msgstr "(qualsiasi di questi tag)"
 #: model_terms:ir.ui.view,arch_db:helpdesk.ticket_invitation_follower
 msgid ""
 ",\n"
-"    <br/><br/>"
+"                <br/><br/>"
 msgstr ""
 ",\n"
 "    <br/><br/>"

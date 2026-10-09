@@ -34,10 +34,10 @@ msgstr "<i class=\"fa-regular fa-clock me-1\" role=\"img\"/> 等待付款"
 #. module: website_appointment_sale
 #: model_terms:ir.ui.view,arch_db:website_appointment_sale.appointment_sale_confirmation_cards
 msgid ""
-"<i class=\"fa fa-exclamation-triangle me-1\" role=\"img\"/>\n"
-"                            Please Contact Us"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" role=\"img\"/>\n"
+"                                Please Contact Us"
 msgstr ""
-"<i class=\"fa fa-exclamation-triangle me-1\" role=\"img\"/>\n"
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" role=\"img\"/>\n"
 "                            請聯絡我們"
 
 #. module: website_appointment_sale

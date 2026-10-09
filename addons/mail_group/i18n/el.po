@@ -629,11 +629,10 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mail_group.email_template_mail_group_closed
 msgid ""
 "Hello there,\n"
-"    <br/><br/>\n"
-"    The mailing list you are trying to reach has been closed, and will not "
-"accept new messages.\n"
-"    <br/><br/>\n"
-"    Kind Regards,"
+"                <br/><br/>\n"
+"                The mailing list you are trying to reach has been closed, and will not accept new messages.\n"
+"                <br/><br/>\n"
+"                Kind Regards,"
 msgstr ""
 
 #. module: mail_group

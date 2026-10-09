@@ -44,10 +44,10 @@ msgstr "<i class=\"fa-solid fa-check me-2\" role=\"img\"/>Registriert"
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_attendee_details
 msgid ""
 "<span>Sign In</span>\n"
-"                <span class=\"fa fa-sign-in\"/>"
+"                    <span class=\"fa-solid fa-right-to-bracket\"/>"
 msgstr ""
 "<span>Anmelden</span>\n"
-"                <span class=\"fa fa-sign-in\"/>"
+"                <span class=\"fa-solid fa-right-to-bracket\"/>"
 
 #. module: website_event_sale
 #. odoo-python

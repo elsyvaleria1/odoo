@@ -72,7 +72,7 @@ msgstr "（這些標籤其中任何一個）"
 #: model_terms:ir.ui.view,arch_db:helpdesk.ticket_invitation_follower
 msgid ""
 ",\n"
-"    <br/><br/>"
+"                <br/><br/>"
 msgstr ""
 "，\n"
 "    <br/><br/>"

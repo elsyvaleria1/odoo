@@ -303,8 +303,8 @@ msgstr "<span class=\"o_stat_text\">To‘lanishi kerak</span>"
 #, fuzzy
 msgid ""
 "<strong>\n"
-"                                Pending Invoices\n"
-"                            </strong>"
+"                                    Pending Invoices\n"
+"                                </strong>"
 msgstr "<strong>Kutilayotgan schot-fakturalar</strong>"
 
 #. module: account_followup

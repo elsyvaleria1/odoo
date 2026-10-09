@@ -947,7 +947,7 @@ msgstr "は終了しました。"
 #: model_terms:ir.ui.view,arch_db:website_event_exhibitor.exhibitor_main
 msgid ""
 "is over.\n"
-"                <br/>"
+"                    <br/>"
 msgstr ""
 "は終了しました。\n"
 "                <br/>"

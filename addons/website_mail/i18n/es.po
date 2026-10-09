@@ -26,13 +26,13 @@ msgstr ""
 
 #. module: website_mail
 #: model_terms:ir.ui.view,arch_db:website_mail.follow
-msgid "<small>Follow</small><i class=\"fa fa-fw ms-1\"/>"
-msgstr "<small>Seguir</small><i class=\"fa fa-fw ms-1\"/>"
+msgid "<small>Follow</small><i class=\"fa-solid ms-1\"/>"
+msgstr "<small>Seguir</small><i class=\"fa-solid ms-1\"/>"
 
 #. module: website_mail
 #: model_terms:ir.ui.view,arch_db:website_mail.follow
-msgid "<small>Unfollow</small><i class=\"fa fa-fw ms-1\"/>"
-msgstr "<small>Dejar de seguir</small><i class=\"fa fa-fw ms-1\"/>"
+msgid "<small>Unfollow</small><i class=\"fa-solid ms-1\"/>"
+msgstr "<small>Dejar de seguir</small><i class=\"fa-solid ms-1\"/>"
 
 #. module: website_mail
 #: model:ir.model.fields,field_description:website_mail.field_ir_http__display_name

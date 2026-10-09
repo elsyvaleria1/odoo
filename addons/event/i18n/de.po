@@ -248,7 +248,7 @@ msgstr "<b>Workshop-Raum</b> - Hauptsächlich für Entwickler."
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">from</span>"
+"                                                <span class=\"me-1\">from</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">von</span>"
@@ -257,7 +257,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
 msgid ""
 "<br/>\n"
-"                                            <span class=\"me-1\">to</span>"
+"                                                <span class=\"me-1\">to</span>"
 msgstr ""
 "<br/>\n"
 "                                            <span class=\"me-1\">bis</span>"
@@ -385,8 +385,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                                    Registration\n"
-"                                </span>"
+"                                        Registration\n"
+"                                    </span>"
 msgstr ""
 "<span class=\"o_stat_text\">\n"
 "                                    Registrierung\n"
@@ -3163,8 +3163,7 @@ msgstr "Teilnehmer"
 #: model_terms:ir.ui.view,arch_db:event.view_event_form
 msgid ""
 "Attendees\n"
-"                                    <span invisible=\"not is_multi_slots\"> "
-"per slot</span>"
+"                                        <span invisible=\"not is_multi_slots\"> per slot</span>"
 msgstr ""
 "Teilnehmer\n"
 "                                    <span invisible=\"not is_multi_slots\"> "
@@ -3657,8 +3656,8 @@ msgstr "Tickets herunterladen"
 
 #. module: event
 #: model_terms:ir.ui.view,arch_db:event.event_report_template_full_page_ticket
-msgid "Download Tickets <i class=\"ms-1 fa fa-download\"/>"
-msgstr "Tickets herunterladen <i class=\"ms-1 fa fa-download\"/>"
+msgid "Download Tickets <i class=\"ms-1 fa-solid fa-download\"/>"
+msgstr "Tickets herunterladen <i class=\"ms-1 fa-solid fa-download\"/>"
 
 #. module: event
 #: model_terms:event.event,description:event.event_2

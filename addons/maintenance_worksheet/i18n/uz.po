@@ -45,7 +45,7 @@ msgstr "<span class=\"o_stat_text\">Ish varag‘i</span>"
 #, fuzzy
 msgid ""
 "<span class=\"o_stat_text\">Worksheet</span>\n"
-"                            <span class=\"o_stat_text\">Complete</span>"
+"                        <span class=\"o_stat_text\">Complete</span>"
 msgstr ""
 "<span class=\"o_stat_text\">Ish varag‘i</span> <span "
 "class=\"o_stat_text\">Bajarildi</span>"

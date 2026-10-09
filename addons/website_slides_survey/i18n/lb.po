@@ -583,7 +583,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:website_slides_survey.badge_content
 msgid ""
 "You can gain badges by passing certifications. Here is a list of all available certification badges.\n"
-"                            <br/>Follow the links to reach new heights and skill up!"
+"                                <br/>Follow the links to reach new heights and skill up!"
 msgstr ""
 
 #. module: website_slides_survey

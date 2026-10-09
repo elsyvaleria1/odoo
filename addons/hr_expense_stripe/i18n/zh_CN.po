@@ -29,11 +29,10 @@ msgstr "（正在获取...）"
 #. module: hr_expense_stripe
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.res_config_settings_view_form
 msgid ""
-"<i class=\"fa fa-warning ms-1 text-warning\"/>\n"
-"                                <span class=\"text-warning\"> Stripe issuing "
-"is not yet supported for your localization.</span>"
+"<i class=\"fa-solid fa-triangle-exclamation ms-1 text-warning\"/>\n"
+"                            <span class=\"text-warning\"> Stripe issuing is not yet supported for your localization.</span>"
 msgstr ""
-"<i class=\"fa fa-warning ms-1 text-warning\"/>\n"
+"<i class=\"fa-solid fa-triangle-exclamation ms-1 text-warning\"/>\n"
 "                                <span class=\"text-warning\"> 您的本地化尚不"
 "支持 Stripe 发行。</span>"
 
