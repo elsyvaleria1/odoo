@@ -219,6 +219,18 @@ class PosSession(models.Model):
     @api.model
     def _get_field_relations(self, model, field_names):
         model_fields = self.env[model]._fields
+        till_writes_by_model = {}
+
+        def till_writes(model_name):
+            if model_name not in till_writes_by_model:
+                Model = self.env[model_name]
+                till_writes_by_model[model_name] = (
+                    Model._get_pos_data_till_writes()
+                    if isinstance(Model, self.pool["mixin.pos.load"])
+                    else {}
+                )
+            return till_writes_by_model[model_name]
+
         relations = {}
         for name, params in model_fields.items():
             if field_names:
@@ -227,16 +239,17 @@ class PosSession(models.Model):
             elif params.manual:
                 continue
             relations[name] = self._describe_field_relation(
-                params.model_name, name, params
+                params.model_name, name, params, till_writes(params.model_name)
             )
         projected = self.env[model]._load_pos_data_projected_fields()
         for name, params in projected.items():
-            relations[name] = self._describe_field_relation(model, name, params)
+            relations[name] = self._describe_field_relation(
+                model, name, params, till_writes(model)
+            )
         return relations
 
     @api.model
-    def _describe_field_relation(self, model, name, params):
-        till_writes = getattr(self.env[model], "_pos_data_till_writes", {})
+    def _describe_field_relation(self, model, name, params, till_writes):
         relation = {
             "name": name,
             "type": params.type,

@@ -4,6 +4,7 @@ from datetime import timedelta
 import odoo
 from odoo import Command, fields
 from odoo.tests import new_test_user
+from odoo.tools import frozendict
 
 from odoo.addons.point_of_sale.tests.common import (
     PosLazySessionCommon,
@@ -482,3 +483,38 @@ class TestPosLocalDataFilter(PosOpenSessionCommon):
         template.active = False
         result = self.session.filter_local_data({"product.template": [template.id]})
         self.assertEqual(result["product.template"], [template.id])
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestPosLoadDeclarationsCompose(odoo.tests.TransactionCase):
+    def _extended(self, model_name, **declarations):
+        layer = type(
+            "PosLoadExtension",
+            (type(self.env[model_name]),),
+            {"_register": False, "__module__": __name__, **declarations},
+        )
+        return layer(self.env, (), ())
+
+    def test_an_extension_adds_incremental_fields_to_those_it_inherits(self):
+        partners = self._extended(
+            "res.partner", _pos_data_incremental_fields=("parent_id.write_date",)
+        ).with_context(pos_last_server_date="2026-01-01 00:00:00")
+
+        domain = repr(partners._add_server_date_to_domain([]))
+
+        for field in (
+            "'write_date'",
+            "'country_id.write_date'",
+            "'parent_id.write_date'",
+        ):
+            self.assertIn(field, domain)
+
+    def test_an_extension_adds_till_writes_to_those_it_inherits(self):
+        lines = self._extended(
+            "pos.order.line", _pos_data_till_writes=frozendict({"note": True})
+        )
+
+        self.assertEqual(
+            lines._get_pos_data_till_writes(),
+            {"combo_qty_per_parent": True, "note": True},
+        )

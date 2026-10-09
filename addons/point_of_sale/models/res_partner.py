@@ -11,7 +11,6 @@ class ResPartner(models.Model):
 
     _pos_data_incremental = True
     _pos_data_incremental_fields = (
-        "write_date",
         "country_id.write_date",
         "state_id.write_date",
         "state_id.country_id.write_date",

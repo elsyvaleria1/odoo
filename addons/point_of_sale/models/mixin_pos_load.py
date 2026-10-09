@@ -17,6 +17,23 @@ class MixinPosLoad(models.AbstractModel):
     _pos_data_till_writes = frozendict()
 
     @api.model
+    def _get_pos_data_incremental_fields(self) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(
+                field
+                for cls in reversed(type(self).mro())
+                for field in vars(cls).get("_pos_data_incremental_fields", ())
+            )
+        )
+
+    @api.model
+    def _get_pos_data_till_writes(self) -> dict[str, bool]:
+        till_writes = {}
+        for cls in reversed(type(self).mro()):
+            till_writes.update(vars(cls).get("_pos_data_till_writes", {}))
+        return till_writes
+
+    @api.model
     def _load_pos_data_search_read(self, data, config):
         if not config:
             raise ValueError("config must be provided to search for PoS data.")
@@ -54,17 +71,15 @@ class MixinPosLoad(models.AbstractModel):
         model_included = self._pos_data_incremental
 
         if limited_loading and last_server_date and model_included:
+            incremental_fields = self._get_pos_data_incremental_fields()
             _debug.logic(
                 "load_incremental",
                 model=self._name,
-                fields=self._pos_data_incremental_fields,
+                fields=incremental_fields,
                 since=last_server_date,
             )
             changes = Domain.OR(
-                [
-                    [(field, ">", last_server_date)]
-                    for field in self._pos_data_incremental_fields
-                ]
+                [[(field, ">", last_server_date)] for field in incremental_fields]
             )
             domain = Domain.AND([domain, changes])
 
