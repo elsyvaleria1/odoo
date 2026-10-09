@@ -70,6 +70,19 @@ class IrAttachment(models.Model):
             stream.max_age = max(info["time_to_expiry"] - 10, 0)
         return stream
 
+    def write(self, vals):
+        if ("raw" in vals or "datas" in vals) and "type" not in vals:
+            cloud = self.filtered(lambda a: a.type == "cloud_storage")
+            if cloud:
+                # new bytes written on a cloud attachment are stored here, so it
+                # stops pointing at the blob that held the old ones
+                super(IrAttachment, cloud).write(
+                    {**vals, "type": "binary", "url": False}
+                )
+                rest = self - cloud
+                return super(IrAttachment, rest).write(vals) if rest else True
+        return super().write(vals)
+
     def _post_add_create(self, **kwargs):
         super()._post_add_create(**kwargs)
         if kwargs.get("cloud_storage"):
@@ -85,6 +98,24 @@ class IrAttachment(models.Model):
                         "url": record._generate_cloud_storage_url(),
                     }
                 )
+
+    def _compute_raw(self):
+        # raw and datas are what business code reads; on a blob the provider
+        # holds they used to answer empty bytes, the same as an empty file, so
+        # a reader got nothing and no error. A configured provider is asked for
+        # the blob; an unconfigured one (a neutralized copy) still answers
+        # empty, so restored databases keep working without the bucket.
+        cloud = self.filtered(
+            lambda a: a.type == "cloud_storage" and not a.store_fname and a.file_size
+        )
+        super(IrAttachment, self - cloud)._compute_raw()
+        if not cloud:
+            return
+        configured = bool(
+            self.env["res.config.settings"]._get_cloud_storage_configuration()
+        )
+        for attach in cloud:
+            attach.raw = attach._get_content() if configured else False
 
     def _get_content(self, size=None):
         """Download the blob a provider holds, so the bytes exist for a reader.

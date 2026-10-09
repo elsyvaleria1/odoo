@@ -81,12 +81,56 @@ class IrAttachment(models.Model):
     )
 
     def write(self, vals):
+        held = {}
+        if vals.keys() & {"type", "url", "raw", "datas"} and self._s3_is_enabled():
+            held = {a.id: a.url for a in self if a.type == "cloud_storage" and a.url}
         res = super().write(vals)
         if self._S3_MIRROR_TRIGGER_FIELDS & vals.keys() and self._is_s3_hybrid():
             self.filtered(
                 lambda a: not a.s3_blob_name and not a.s3_mirror_pending
             )._s3_queue_mirror()
+        if held:
+            dropped = [
+                url
+                for attach_id, url in held.items()
+                if (attach := self.browse(attach_id)).type != "cloud_storage"
+                or attach.url != url
+            ]
+            self._s3_delete_unused_blobs(dropped)
         return res
+
+    def _s3_delete_unused_blobs(self, urls) -> None:
+        if not urls:
+            return
+        still_used = set(
+            self.sudo()._with_field_rows().search([("url", "in", urls)]).mapped("url")
+        )
+        endpoint = s3.get_endpoint(self.env)
+        blobs = defaultdict(list)
+        for url in set(urls) - still_used:
+            if info := s3.parse_object_url(url, None, endpoint):
+                blobs[info["bucket_name"]].append(info["blob_name"])
+        if not blobs:
+            return
+        client = s3.get_client(self.env)
+
+        def delete():
+            for bucket, keys in blobs.items():
+                try:
+                    client.delete_objects(
+                        Bucket=bucket,
+                        Delete={"Objects": [{"Key": k} for k in keys]},
+                    )
+                except Exception:
+                    _logger.warning(
+                        "Failed to delete %d replaced S3 blobs from bucket %s",
+                        len(keys),
+                        bucket,
+                        exc_info=True,
+                    )
+
+        # the blob goes only once the row that stopped using it is committed
+        self.env.cr.postcommit.add(delete)
 
     def _post_add_create(self, **kwargs):
         if kwargs.get("cloud_storage") and self._is_s3_hybrid():

@@ -191,3 +191,48 @@ class TestCloudStorage(TransactionCase):
         with configured, signed, egress:
             self.assertEqual(remote._get_pdf_raw(), pdf)
             self.assertEqual(to_pdf_stream(remote).getvalue(), pdf)
+
+    def _sized_cloud_attachment(self):
+        remote = self._cloud_attachment("statement.pdf", "application/pdf")
+        remote.file_size = 7
+        remote.invalidate_recordset(["raw", "datas"])
+        return remote
+
+    def test_raw_of_a_cloud_blob_is_fetched_from_the_provider(self):
+        """Code that reads raw or datas gets the blob, not empty bytes."""
+        remote = self._sized_cloud_attachment()
+        configured, signed, egress = self._configured(b"payload")
+        with configured, signed, egress:
+            self.assertEqual(remote.raw, b"payload")
+            self.assertEqual(remote.datas, b"cGF5bG9hZA==")
+
+    def test_raw_of_a_cloud_blob_is_empty_without_a_provider(self):
+        """A neutralized copy keeps answering empty bytes, never calling out."""
+        remote = self._sized_cloud_attachment()
+
+        def explode(*args, **kwargs):
+            raise AssertionError("an unconfigured provider must not be called")
+
+        with patch.object(type(self.env["ir.egress"]), "request", explode):
+            self.assertFalse(remote.raw)
+
+    def test_writing_bytes_on_a_cloud_attachment_stores_them_here(self):
+        """New content no longer belongs to the blob the attachment pointed at."""
+        remote = self._sized_cloud_attachment()
+
+        def explode(*args, **kwargs):
+            raise AssertionError("the new bytes are local, nothing is fetched")
+
+        with patch.object(type(self.env["ir.egress"]), "request", explode):
+            remote.write({"raw": b"rewritten"})
+            self.assertEqual(remote.type, "binary")
+            self.assertFalse(remote.url)
+            self.assertEqual(remote.raw, b"rewritten")
+            self.assertTrue(remote.store_fname)
+
+    def test_an_explicit_type_keeps_the_attachment_in_the_cloud(self):
+        """_post_add_create empties the bytes and names the type itself."""
+        local = self.env["ir.attachment"].create({"name": "up.txt", "raw": b"x"})
+        local.write({"raw": False, "type": "cloud_storage", "url": "https://bucket/b"})
+        self.assertEqual(local.type, "cloud_storage")
+        self.assertEqual(local.url, "https://bucket/b")

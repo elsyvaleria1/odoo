@@ -520,6 +520,29 @@ class TestCloudStorageS3Move(TestCloudStorageS3Common):
         outcome = attachment._s3_release_local_files()
         self.assertEqual(outcome, {"not_releasable": attachment.ids})
 
+    def test_rewriting_a_cloud_attachment_deletes_its_unused_blob(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        key = attachment._get_s3_info()["blob_name"]
+        attachment.write({"raw": b"new content"})
+        self.assertEqual(attachment.type, "binary")
+        self.mock_s3_client.delete_objects.assert_not_called()
+        self.env.cr.postcommit.run()
+        self.mock_s3_client.delete_objects.assert_called_once()
+        objects = self.mock_s3_client.delete_objects.call_args.kwargs["Delete"][
+            "Objects"
+        ]
+        self.assertEqual(objects, [{"Key": key}])
+
+    def test_rewriting_keeps_a_blob_a_copy_still_uses(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        copy = attachment.copy()
+        copy.write({"raw": b"new content"})
+        self.env.cr.postcommit.run()
+        self.mock_s3_client.delete_objects.assert_not_called()
+        self.assertEqual(attachment.type, "cloud_storage")
+
     def test_unlink_keeps_a_blob_a_copy_still_uses(self):
         attachment = self._local()
         attachment._s3_move_to_cloud()
