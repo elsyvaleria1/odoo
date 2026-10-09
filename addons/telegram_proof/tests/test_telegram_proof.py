@@ -226,3 +226,85 @@ class TestTelegramProof(TelegramBotTestCase):
         ).sudo()
         self.assertEqual(evidence.partner_id, self.customer)
         self.assertEqual(evidence.payload["channel"], "telegram_code")
+
+    def test_one_code_reaches_every_channel_and_either_copy_works(self):
+        if not self.env.ref("mail_proof.proof_method_email_code", False):
+            self.skipTest("no email channel installed")
+        self.customer.email = "lupita@example.com"
+        methods = self.env.ref(
+            "telegram_proof.proof_method_telegram_code"
+        ) | self.env.ref("mail_proof.proof_method_email_code")
+        challenges = self.env["proof.challenge"].with_user(self.collector)
+        with self.mock_api_gateway_post() as post:
+            params = challenges._issue(
+                self.subject,
+                "test.collection",
+                self.facts,
+                methods,
+                summary=self.summary,
+                partner=self.customer,
+            )
+        telegram_code = re.search(
+            r"<b>(\d{6})</b>", post.call_args.kwargs["json"]["text"]
+        ).group(1)
+        mail = self.env["mail.mail"].search(
+            [("email_to", "like", "lupita@example.com")], order="id desc", limit=1
+        )
+
+        self.assertIn(telegram_code, mail.body_html)
+        self.assertEqual(
+            sorted(method["code"] for method in params["methods"]),
+            ["email_code", "telegram_code"],
+        )
+        evidence = challenges._redeem(
+            params["token"],
+            "email_code",
+            {"code": telegram_code},
+            self.subject,
+            "test.collection",
+            self.facts,
+        ).sudo()
+        self.assertEqual(evidence.partner_id, self.customer)
+
+    def test_a_channel_that_refuses_the_code_is_left_out(self):
+        if not self.env.ref("mail_proof.proof_method_email_code", False):
+            self.skipTest("no email channel installed")
+        self.customer.email = "lupita@example.com"
+        methods = self.env.ref(
+            "telegram_proof.proof_method_telegram_code"
+        ) | self.env.ref("mail_proof.proof_method_email_code")
+        refused = self.mock_telegram_response(success=False, description="blocked")
+        with self.mock_api_gateway_post(refused):
+            params = (
+                self.env["proof.challenge"]
+                .with_user(self.collector)
+                ._issue(
+                    self.subject,
+                    "test.collection",
+                    self.facts,
+                    methods,
+                    summary=self.summary,
+                    partner=self.customer,
+                )
+            )
+
+        self.assertEqual(
+            [method["code"] for method in params["methods"]], ["email_code"]
+        )
+
+    def test_a_contact_who_connects_telegram_is_asked_there_too(self):
+        newcomer = self.env["res.partner"].create(
+            {"name": "Ferreteria Nueva", "lang": "en_US"}
+        )
+        challenge, _ledgers = self._ask(partner=newcomer)
+        self.assertFalse(challenge.delivery_ids)
+        token = self.env["telegram.link.token"]._issue_invitation(
+            self.test_bot, newcomer
+        )
+
+        self._say(f"/start {token}", chat_id="700003")
+
+        (delivery,) = challenge.delivery_ids
+        self.assertEqual(delivery.method_id.code, "telegram_confirm")
+        self.assertEqual(delivery.state, "sent")
+        self.assertEqual(challenge.method_ids.mapped("code"), ["telegram_confirm"])

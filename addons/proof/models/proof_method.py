@@ -1,10 +1,9 @@
-import secrets
 from typing import Any
 
 from odoo import fields, models
 from odoo.exceptions import AccessDenied, UserError
 from odoo.tools import SQL, frozendict, register_signed_scope
-from odoo.tools.security import hmac, is_hmac_valid
+from odoo.tools.security import is_hmac_valid
 
 CODE_SCOPE = register_signed_scope(
     "proof_code",
@@ -125,21 +124,7 @@ class ProofMethod(models.Model):
 
     def _get_proof_options(self, challenge: models.BaseModel) -> dict[str, Any]:
         self.check_singleton()
-        if self._uses_code():
-            return self._issue_code(challenge)
         return {}
-
-    def _issue_code(self, challenge: models.BaseModel) -> dict[str, Any]:
-        signer = challenge.partner_id or challenge.user_id.partner_id
-        code = f"{secrets.randbelow(10**CODE_DIGITS):0{CODE_DIGITS}d}"
-        sent_to = self._send_code(challenge, signer, code)
-        challenge.write(
-            {
-                "code_hash": hmac(self.env, CODE_SCOPE, (challenge.id, code)),
-                "code_sent_to": sent_to,
-            }
-        )
-        return {"sent_to": sent_to, "digits": CODE_DIGITS}
 
     def _check_code(
         self, challenge: models.BaseModel, payload: dict[str, Any]

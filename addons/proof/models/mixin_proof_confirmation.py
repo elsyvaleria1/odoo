@@ -113,6 +113,27 @@ class MixinProofConfirmation(models.AbstractModel):
             deciding.setdefault(challenge.res_id, challenge)
         return deciding
 
+    def _get_confirmation_channels(self) -> list[str]:
+        """Where the question waiting for the contact went, masked."""
+        self.check_singleton()
+        challenge = self._get_confirmation_challenges().get(self.id)
+        if not challenge or challenge.state != "issued":
+            return []
+        return [
+            delivery.sent_to
+            for delivery in challenge.delivery_ids
+            if delivery.state == "sent"
+        ]
+
+    def _can_confirm_with_code(self) -> bool:
+        """Whether a code reaches the contact, for them to confirm at hand."""
+        self.check_singleton()
+        partner = self._get_confirmation_partner()
+        return bool(partner) and any(
+            method._uses_code() and method._is_enrolled_contact(partner)
+            for method in self.env["proof.method"].search([("mode", "=", "submit")])
+        )
+
     def _get_confirmation_partner(self) -> models.BaseModel:
         """The contact who confirms the record; none, and nobody is asked."""
         return self.env["res.partner"]

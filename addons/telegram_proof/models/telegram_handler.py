@@ -20,6 +20,17 @@ class TelegramHandlerProof(models.AbstractModel):
     def _telegram_flow_label(self, bot, chat):
         return self._tr(bot, chat)._("telling us what is not right")
 
+    def _on_account_bound(self, bot, chat, binding) -> None:
+        # a contact who connects Telegram while a question waits for them is
+        # asked it here too: typically a customer scanning the collector's QR
+        self.env["proof.challenge"]._with_proof_privilege().search(
+            [
+                ("kind", "=", "confirm"),
+                ("state", "=", "issued"),
+                ("partner_id", "=", binding.partner_id.id),
+            ]
+        )._reach_again()
+
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         tr = self._tr(bot, chat)
         delivery_id, _sep, answer = (

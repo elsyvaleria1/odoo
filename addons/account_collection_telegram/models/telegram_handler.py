@@ -256,7 +256,16 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
         if not step:
             return False
         text = (message.get("text") or "").strip()
-        handlers = {
+        handlers = self._get_message_steps()
+        if step in handlers:
+            handlers[step](bot, chat, message, text, internal_user)
+            return True
+        self._send(bot, chat, self._tr(bot, chat)._("Use the buttons above, please."))
+        return True
+
+    def _get_message_steps(self) -> dict:
+        """The flow steps that take a message, and what reads it."""
+        return {
             "collect_customer": self._read_customer,
             "collect_amount": self._read_collect_amount,
             "collect_date": self._read_collect_date,
@@ -266,11 +275,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             "remit_amount": self._read_remit_amount,
             "remit_slip": self._read_remit_slip,
         }
-        if step in handlers:
-            handlers[step](bot, chat, message, text, internal_user)
-            return True
-        self._send(bot, chat, self._tr(bot, chat)._("Use the buttons above, please."))
-        return True
 
     def _read_customer(self, bot, chat, message, text, user) -> None:
         tr = self._tr(bot, chat)
@@ -698,6 +702,10 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
                 "count": len(held),
             },
         )
+        self._tell_customer_reach(bot, chat, payment, channels)
+
+    def _tell_customer_reach(self, bot, chat, payment, channels) -> None:
+        """Tell the collector how the customer heard of their collection."""
         tr = self._tr(bot, chat)
         self._send(
             bot,

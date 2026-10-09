@@ -1,0 +1,93 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection_telegram_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 21:02+0000\n"
+"PO-Revision-Date: 2026-10-09 21:02+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "Customer is here: use a code"
+msgstr "El cliente está aquí: usar un código"
+
+#. module: account_collection_telegram_proof
+#: model:ir.model.fields,field_description:account_collection_telegram_proof.field_telegram_handler_account_collection__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "Finish or /cancelar what you are doing first."
+msgstr "Primero termine o /cancelar lo que está haciendo."
+
+#. module: account_collection_telegram_proof
+#: model:ir.model.fields,field_description:account_collection_telegram_proof.field_telegram_handler_account_collection__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "Invite the customer to Telegram"
+msgstr "Invitar al cliente a Telegram"
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "No channel reaches the customer to confirm it."
+msgstr "Ningún canal llega al cliente para que lo confirme."
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid ""
+"Show this to %(customer)s: they scan it with their own phone and open it in "
+"Telegram. The question about this collection then reaches them there."
+msgstr ""
+"Muéstrele esto a %(customer)s: lo escanea con su propio teléfono y lo abre "
+"en Telegram. La pregunta sobre este cobro le llega entonces ahí."
+
+#. module: account_collection_telegram_proof
+#: model:ir.model,name:account_collection_telegram_proof.model_telegram_handler_account_collection
+msgid "Telegram: Field Collections"
+msgstr "Telegram: cobranza en campo"
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr "Ese botón ya no es válido."
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "The customer confirmed collection %(name)s."
+msgstr "El cliente confirmó el cobro %(name)s."
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid "Waiting for the customer to confirm it on %(channels)s."
+msgstr "Esperando a que el cliente lo confirme en %(channels)s."
+
+#. module: account_collection_telegram_proof
+#. odoo-python
+#: code:addons/account_collection_telegram_proof/models/telegram_handler.py:0
+msgid ""
+"We sent the customer a code (%(sent_to)s). Type here the code they read you,"
+" or /cancelar."
+msgstr ""
+"Le enviamos un código al cliente (%(sent_to)s). Escriba aquí el código que "
+"le lea, o /cancelar."

@@ -7,8 +7,9 @@ from typing import Any
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.http import request
+from odoo.tools.security import hmac
 
-from .proof_method import MODES, VERDICTS
+from .proof_method import CODE_DIGITS, CODE_SCOPE, MODES, VERDICTS
 
 CHALLENGE_LIFETIME = timedelta(minutes=5)
 CONFIRMATION_LIFETIME = timedelta(days=3)
@@ -304,6 +305,45 @@ class ProofChallenge(models.Model):
             delivery.state = "withdrawn"
             delivery.method_id._withdraw_delivery(delivery)
 
+    def _get_asker_env(self) -> api.Environment:
+        """The environment of the user who asked the contact, in their own
+        companies: what the contact's answer, from outside, acts as."""
+        self.check_singleton()
+        context = dict(self.env.context)
+        context.pop("allowed_company_ids", None)
+        return self.env(user=self.user_id.id, context=context)
+
+    def _reach_again(self) -> None:
+        """Ask again, on the channels that reach the contact now and did not
+        when they were asked: one they connected since. The channels that
+        already carry the question keep it."""
+        confirm_methods = (
+            self._with_proof_privilege()
+            .env["proof.method"]
+            .search([("mode", "=", "confirm")])
+        )
+        for challenge in self.filtered(
+            lambda challenge: (
+                challenge.kind == "confirm" and challenge.state == "issued"
+            )
+        ):
+            challenge = (
+                challenge._get_asker_env()["proof.challenge"]
+                ._with_proof_privilege()
+                .browse(challenge.id)
+            )
+            methods = confirm_methods.with_env(challenge.env).filtered(
+                lambda method, challenge=challenge: (
+                    method not in challenge.method_ids
+                    and method._is_enrolled_contact(challenge.partner_id)
+                )
+            )
+            if not methods:
+                continue
+            challenge.method_ids |= methods
+            for method in methods:
+                method._deliver_confirmation(challenge)
+
     def _get_record_links(self) -> list[tuple[str, str]]:
         """The links the record sends along with what its contact confirms, in
         the contact's language."""
@@ -322,10 +362,7 @@ class ProofChallenge(models.Model):
         self.check_singleton()
         # the contact answers from outside, as no user of ours and inside no
         # company: the record hears it as the user who asked them
-        context = dict(self.env.context)
-        context.pop("allowed_company_ids", None)
-        asker_env = self.env(user=self.user_id.id, context=context)
-        record = asker_env[self.res_model].browse(self.res_id).exists()
+        record = self._get_asker_env()[self.res_model].browse(self.res_id).exists()
         # a record outside the confirmation mixin asked its contact directly
         # and follows the answer from the challenge
         if record and hasattr(record, hook):
@@ -358,6 +395,10 @@ class ProofChallenge(models.Model):
 
     def _get_client_params(self, token: str) -> dict[str, Any]:
         self.check_singleton()
+        code_options = self._send_codes()
+        methods = self.method_ids.filtered(
+            lambda method: not method._uses_code() or method.id in code_options
+        )
         return {
             "token": token,
             "expires": fields.Datetime.to_string(self.date_expire),
@@ -367,11 +408,44 @@ class ProofChallenge(models.Model):
                 {
                     "code": method.code,
                     "name": method.name,
-                    "options": method._get_proof_options(self),
+                    "options": code_options.get(method.id)
+                    or method._get_proof_options(self),
                 }
-                for method in self.method_ids
+                for method in methods
             ],
         }
+
+    def _send_codes(self) -> dict[int, dict[str, Any]]:
+        """Send one code to every channel a code method reaches the signer on,
+        so whichever they read it on is the one the challenge takes, and return
+        each method's options. A channel that refuses it is left out; when none
+        takes it and nothing else is offered, its refusal is the error."""
+        methods = self.method_ids.filtered(lambda method: method._uses_code())
+        if not methods:
+            return {}
+        signer = self.partner_id or self.user_id.partner_id
+        code = f"{secrets.randbelow(10**CODE_DIGITS):0{CODE_DIGITS}d}"
+        options, refusals = {}, []
+        for method in methods:
+            try:
+                sent_to = method._send_code(self, signer, code)
+            except UserError as refusal:
+                refusals.append(refusal)
+                continue
+            options[method.id] = {"sent_to": sent_to, "digits": CODE_DIGITS}
+        if not options:
+            if refusals and not self.method_ids - methods:
+                raise refusals[0]
+            return {}
+        self.write(
+            {
+                "code_hash": hmac(self.env, CODE_SCOPE, (self.id, code)),
+                "code_sent_to": ", ".join(
+                    option["sent_to"] for option in options.values()
+                ),
+            }
+        )
+        return options
 
     def _check_redeemable(
         self, record: models.BaseModel, purpose: str, facts: dict[str, Any]
