@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_picking_form_carrier_tracking" model="ir.ui.view">
+        <field name="name">stock.picking.form.carrier.tracking</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='carrier_data']" position="after">
+                <group
+                    name="carrier_tracking"
+                    string="Carrier Status"
+                    invisible="not carrier_tracking_provider or not carrier_tracking_ref">
+                    <field name="carrier_tracking_provider" invisible="1" />
+                    <label for="carrier_tracking_state" />
+                    <div name="carrier_tracking_state">
+                        <field
+                            name="carrier_tracking_state"
+                            widget="badge"
+                            class="oe_inline"
+                            decoration-info="carrier_tracking_state in ('at_destination', 'out_for_delivery')"
+                            decoration-success="carrier_tracking_state == 'delivered'" />
+                        <button
+                            name="action_fetch_carrier_tracking"
+                            type="object"
+                            string="Read now"
+                            icon="fa-refresh"
+                            class="oe_link" />
+                    </div>
+                    <field
+                        name="carrier_delivery_kind"
+                        invisible="not carrier_delivery_kind" />
+                    <field
+                        name="carrier_status_text"
+                        invisible="not carrier_status_text" />
+                    <field
+                        name="carrier_status_branch"
+                        invisible="not carrier_status_branch" />
+                    <field
+                        name="date_carrier_status"
+                        invisible="not date_carrier_status" />
+                    <field
+                        name="carrier_estimated_delivery"
+                        invisible="not carrier_estimated_delivery or carrier_tracking_state == 'delivered'" />
+                    <field
+                        name="carrier_received_by"
+                        invisible="not carrier_received_by" />
+                    <field
+                        name="date_carrier_tracking_sync"
+                        invisible="not date_carrier_tracking_sync" />
+                    <field
+                        name="carrier_tracking_error"
+                        invisible="not carrier_tracking_error"
+                        class="text-danger" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_list_carrier_tracking" model="ir.ui.view">
+        <field name="name">stock.picking.list.carrier.tracking</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_list_vpicktree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='carrier_tracking_ref']" position="after">
+                <field
+                    name="carrier_tracking_state"
+                    widget="badge"
+                    optional="show"
+                    decoration-info="carrier_tracking_state in ('at_destination', 'out_for_delivery')"
+                    decoration-success="carrier_tracking_state == 'delivered'" />
+                <field name="date_carrier_status" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_search_carrier_tracking" model="ir.ui.view">
+        <field name="name">stock.picking.search.carrier.tracking</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_stock_picking_search_internal" />
+        <field name="arch" type="xml">
+            <search position="inside">
+                <separator />
+                <filter
+                    name="carrier_in_transit"
+                    string="Carrier: On the Way"
+                    domain="[('carrier_tracking_state', 'in', ('documented', 'in_transit', 'out_for_delivery'))]" />
+                <filter
+                    name="carrier_at_destination"
+                    string="Carrier: At Destination"
+                    domain="[('carrier_tracking_state', '=', 'at_destination')]" />
+                <filter
+                    name="carrier_delivered_open"
+                    string="Carrier: Delivered, Not Validated"
+                    domain="[('carrier_tracking_state', '=', 'delivered'), ('state', 'not in', ('done', 'cancel'))]" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,199 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* delivery_tracking
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 23:27+0000\n"
+"PO-Revision-Date: 2026-10-09 23:27+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "%(carrier)s delivered it: validate the transfer"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "%(carrier)s · %(code)s %(event)s · %(branch)s · %(date)s"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__at_destination
+msgid "At Destination"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_status_branch
+msgid "Carrier Branch"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_status_code
+msgid "Carrier Event Code"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__date_carrier_status
+msgid "Carrier Event Date"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_status_text
+msgid "Carrier Last Event"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_delivery_kind
+msgid "Carrier Service"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_state
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Carrier Status"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_error
+msgid "Carrier Status Error"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__date_carrier_tracking_sync
+msgid "Carrier Status Read On"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
+msgid "Carrier: At Destination"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
+msgid "Carrier: Delivered, Not Validated"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
+msgid "Carrier: On the Way"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__delivered
+msgid "Delivered"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__display_name
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__documented
+msgid "Documented"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_estimated_delivery
+msgid "Estimated Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_delivery_carrier__tracking_notify_user_id
+msgid ""
+"Gets a to-do when the carrier reports an open transfer as delivered. Empty: "
+"the transfer's responsible."
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_delivery_kind__home
+msgid "Home Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__id
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__id
+msgid "ID"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__in_transit
+msgid "In Transit"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__tracking_notify_user_id
+msgid "Notify on Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__other
+msgid "Other"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__out_for_delivery
+msgid "Out for Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_delivery_kind__pickup
+msgid "Pickup at Branch"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Read now"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_delivery_carrier__tracking_provider
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking__carrier_tracking_provider
+msgid ""
+"Reads the status of this carrier's tracking numbers on a schedule. Each "
+"carrier connector adds itself here."
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_received_by
+msgid "Received By"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model,name:delivery_tracking.model_delivery_carrier
+msgid "Shipping Methods"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__tracking_provider
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_provider
+msgid "Tracking Provider"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model,name:delivery_tracking.model_stock_picking
+msgid "Transfer"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.actions.server,name:delivery_tracking.ir_cron_fetch_carrier_tracking_ir_actions_server
+msgid "Transfers: read carrier tracking status"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking__carrier_tracking_state
+msgid ""
+"Where the carrier last reported the shipment, read on a schedule from its "
+"tracking number."
+msgstr ""

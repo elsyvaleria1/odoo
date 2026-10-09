@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_delivery_carrier_form_tracking" model="ir.ui.view">
+        <field name="name">delivery.carrier.form.tracking</field>
+        <field name="model">delivery.carrier</field>
+        <field name="inherit_id" ref="delivery.view_delivery_carrier_form" />
+        <field name="arch" type="xml">
+            <field name="tracking_url" position="after">
+                <field name="tracking_provider" />
+                <field
+                    name="tracking_notify_user_id"
+                    invisible="not tracking_provider" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

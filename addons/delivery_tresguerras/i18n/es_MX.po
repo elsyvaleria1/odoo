@@ -1,0 +1,69 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* delivery_tresguerras
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 23:27+0000\n"
+"PO-Revision-Date: 2026-10-09 23:27+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Language: es_MX\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: delivery_tresguerras
+#: model:ir.model.fields,field_description:delivery_tresguerras.field_delivery_carrier__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: delivery_tresguerras
+#: model:ir.model.fields,field_description:delivery_tresguerras.field_delivery_carrier__id
+msgid "ID"
+msgstr "ID"
+
+#. module: delivery_tresguerras
+#: model:ir.model.fields,help:delivery_tresguerras.field_delivery_carrier__tracking_provider
+msgid ""
+"Reads the status of this carrier's tracking numbers on a schedule. Each "
+"carrier connector adds itself here."
+msgstr ""
+"Lee periódicamente el estado de las guías de este transportista. Cada "
+"conector de transportista se agrega aquí."
+
+#. module: delivery_tresguerras
+#: model:ir.model,name:delivery_tresguerras.model_delivery_carrier
+msgid "Shipping Methods"
+msgstr "Métodos de envío"
+
+#. module: delivery_tresguerras
+#: model:ir.model.fields,field_description:delivery_tresguerras.field_delivery_carrier__tracking_provider
+msgid "Tracking Provider"
+msgstr "Proveedor de rastreo"
+
+#. module: delivery_tresguerras
+#: model:ir.model.fields.selection,name:delivery_tresguerras.selection__delivery_carrier__tracking_provider__tresguerras
+msgid "Tres Guerras"
+msgstr "Tres Guerras"
+
+#. module: delivery_tresguerras
+#. odoo-python
+#: code:addons/delivery_tresguerras/models/delivery_carrier.py:0
+msgid "Tres Guerras answered HTTP %(status)s for %(reference)s."
+msgstr "Tres Guerras respondió HTTP %(status)s para %(reference)s."
+
+#. module: delivery_tresguerras
+#. odoo-python
+#: code:addons/delivery_tresguerras/models/delivery_carrier.py:0
+msgid "Tres Guerras reports no event for %(reference)s."
+msgstr "Tres Guerras no reporta ningún evento para %(reference)s."
+
+#. module: delivery_tresguerras
+#. odoo-python
+#: code:addons/delivery_tresguerras/models/delivery_carrier.py:0
+msgid "Tres Guerras: %(error)s (%(reference)s)."
+msgstr "Tres Guerras: %(error)s (%(reference)s)."
