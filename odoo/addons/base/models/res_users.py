@@ -1451,6 +1451,21 @@ class ResUsers(models.Model):
         return super().name_search(name, domain, operator, limit)
 
     @api.model
+    def _get_picker_domain(self) -> Domain:
+        # a picker offers people: a service principal is a program acting for
+        # the company, and a domain naming principal_type asks for it
+        return Domain("principal_type", "=", "person")
+
+    @api.model
+    def _get_service_partner_ids(self) -> list[int]:
+        # partners of service principals, archived ones included: ids to leave
+        # out of a person picker, whoever may read the users
+        self.env.cr.execute(
+            SQL("SELECT partner_id FROM res_users WHERE principal_type = 'service'")
+        )
+        return [partner_id for (partner_id,) in self.env.cr.fetchall()]
+
+    @api.model
     def _search_display_name(self, operator: str, value: Any) -> list:
         domain = super()._search_display_name(operator, value)
         if operator in ("in", "ilike") and value:
@@ -2050,6 +2065,23 @@ class ResUsers(models.Model):
             return
 
         source = request.httprequest.remote_addr or "n/a"
+        if (
+            self._get_login_cooldown_threshold() > 0
+            and not self._login_cooldown().claim(self.env.cr, source)
+        ):
+            _logger.warning(
+                "Login attempt ignored for %s (user %r) on %s: another attempt "
+                "from that address is in progress.",
+                source,
+                user or "?",
+                self.env.cr.dbname,
+            )
+            raise AccessDenied(
+                self.env._(
+                    "Another sign-in from your address is in progress, please "
+                    "try again."
+                )
+            )
         failures, previous = self._get_login_failure_state(source)
         if self._is_login_on_cooldown(failures, previous):
             _debug.logic("login_cooldown", source=source, failures=failures)
@@ -2095,10 +2127,13 @@ class ResUsers(models.Model):
             self.env, "base.login_cooldown_duration", 60
         )
 
-    def _is_login_on_cooldown(self, failures: int, previous: datetime.datetime) -> bool:
-        min_failures = self.env.registry.settings.get_int(
+    def _get_login_cooldown_threshold(self) -> int:
+        return self.env.registry.settings.get_int(
             self.env, "base.login_cooldown_after", 10
         )
+
+    def _is_login_on_cooldown(self, failures: int, previous: datetime.datetime) -> bool:
+        min_failures = self._get_login_cooldown_threshold()
         if min_failures <= 0:
             _debug.logic("login_cooldown_disabled")
             return False

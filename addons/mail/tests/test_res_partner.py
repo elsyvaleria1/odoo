@@ -925,6 +925,28 @@ class TestPartnerMentionAndReplies(MailCommon):
         )
         self.assertEqual(len(result["res.partner"]), 8, "garbage means the default")
 
+    def test_mention_suggestions_leave_out_service_principals(self):
+        group_user = self.env.ref("base.group_user")
+        person, service = self.env["res.users"].create(
+            [
+                {
+                    "name": "Wombat Person",
+                    "login": "wombat_person",
+                    "group_ids": [(6, 0, group_user.ids)],
+                },
+                {
+                    "name": "Wombat Receiver",
+                    "login": "wombat_receiver",
+                    "principal_type": "service",
+                    "group_ids": [(6, 0, group_user.ids)],
+                },
+            ]
+        )
+        result = self.env["res.partner"].get_mention_suggestions("Wombat")
+        suggested = {partner["id"] for partner in result["res.partner"]}
+        self.assertIn(person.partner_id.id, suggested)
+        self.assertNotIn(service.partner_id.id, suggested)
+
     def test_reply_suggestions_read_only_the_last_reply(self):
         partner = self.env["res.partner"].create({"name": "Chatty"})
         replier = self.env["res.partner"].create(

@@ -405,6 +405,8 @@ class ResPartner(models.Model):
         self, domain: DomainType, limit: int, extra_domain: DomainType | None = None
     ) -> Self:
         domain = Domain(domain)
+        if service := self.env["res.users"]._get_service_partner_ids():
+            domain &= Domain("id", "not in", service)
         domain_is_user = (
             Domain("user_ids", "!=", False)
             & Domain("user_ids.active", "=", True)

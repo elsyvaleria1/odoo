@@ -54,6 +54,24 @@ class ResUsers(models.Model):
                 user_list = [user_tuple[0], *user_list[:-1]]
         return user_list
 
+    @api.model
+    @api.readonly
+    def web_name_search(
+        self,
+        name: str,
+        specification: dict[str, dict],
+        domain: DomainType | None = None,
+        operator: str = "ilike",
+        limit: int = 100,
+    ) -> list[dict]:
+        domain = Domain(domain or Domain.TRUE)
+        if not any(
+            condition.field_expr == "principal_type"
+            for condition in domain.iter_conditions()
+        ):
+            domain &= self._get_picker_domain()
+        return super().web_name_search(name, specification, domain, operator, limit)
+
     def _on_webclient_bootstrap(self) -> None:
         self.check_singleton()
 

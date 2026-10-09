@@ -47,6 +47,23 @@ class LoginCooldown:
         env = api.Environment(cr, SUPERUSER_ID, {})
         return env["res.users.login.cooldown"]
 
+    def claim(self, cr, source: str) -> bool:
+        # One attempt per source in flight, held to the end of the caller's
+        # transaction. The count is read in the caller's snapshot and written
+        # after it, so attempts overlapping one another would all read the
+        # count from before the others' failures; one at a time, an attempt
+        # reads at most the last one's failure late. A second attempt is
+        # refused, not queued: waiting, it would still read its old snapshot.
+        cr.execute(
+            SQL(
+                "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))",
+                f"login_cooldown:{source}",
+            )
+        )
+        claimed = bool(cr.fetchone()[0])
+        _debug.logic("cooldown_claim", source=source, claimed=claimed)
+        return claimed
+
     def state(self, cr, source: str) -> tuple[int, datetime.datetime]:
         cr.execute(
             SQL(

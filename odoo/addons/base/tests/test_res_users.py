@@ -8,6 +8,7 @@ from werkzeug.user_agent import UserAgent
 
 from odoo import models
 from odoo.api import SUPERUSER_ID
+from odoo.db import db_connect
 from odoo.exceptions import AccessDenied, AccessError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.http import _request_stack
@@ -944,6 +945,27 @@ class TestLoginCooldown(TransactionCase):
                 as_target.change_password("wrong", "irrelevant")
         with self._attempt("7.7.7.7"), self.assertRaises(AccessDenied):
             as_target.change_password("correct-horse-battery", "a-brand-new-password")
+
+    @mute_logger("odoo.addons.base.models.res_users")
+    def test_one_attempt_per_source_is_in_flight(self):
+        users = self.env["res.users"]
+        with db_connect(self.env.cr.dbname).cursor() as other:
+            other.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                ["login_cooldown:9.9.9.9"],
+            )
+            with (
+                self._attempt("9.9.9.9"),
+                self.assertRaisesRegex(AccessDenied, "in progress"),
+                users._assert_can_auth(user=self.env.uid),
+            ):
+                pass
+            with self._attempt("9.9.9.10"), users._assert_can_auth(user=self.env.uid):
+                pass
+            other.rollback()
+        with self._attempt("9.9.9.9"), users._assert_can_auth(user=self.env.uid):
+            pass
+        self.assertEqual(self._failures("9.9.9.9"), 0, "a refusal is not a failure")
 
     def test_success_resets_counter(self):
         users = self.env["res.users"]
