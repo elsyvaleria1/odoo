@@ -25,7 +25,9 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
     @patch.object(
         CalendarSyncUsers,
         "_calendar_sync_connection",
-        lambda user, code=None: "a-connection" if user.login == "user1" else False,
+        lambda user, code=None: (
+            code == "google" and user.login == "user1" and "a-connection"
+        ),
     )
     @freeze_time("2020-01-01")
     def test_event_creation_for_user(self):

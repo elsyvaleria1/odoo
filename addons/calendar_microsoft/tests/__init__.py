@@ -9,3 +9,4 @@ from . import test_oauth_state
 from . import test_sync_candidates
 from . import test_reset_account
 from . import test_contract
+from . import test_upgrade

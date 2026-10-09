@@ -17,7 +17,9 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 
 
 @patch.object(
-    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+    CalendarSyncUsers,
+    "_calendar_sync_connection",
+    lambda user, code: code == "google" and "dummy-token",
 )
 class TestSyncGoogle2Odoo(TestSyncGoogle):
     def setUp(self):
@@ -1746,7 +1748,9 @@ class TestSyncGoogle2Odoo(TestSyncGoogle):
         with patch.object(
             CalendarSyncUsers,
             "_calendar_sync_connection",
-            lambda user, code=None: user.login != "calendar-user" and "dummy-token",
+            lambda user, code=None: (
+                code == "google" and user.login != "calendar-user" and "dummy-token"
+            ),
         ):
             google_id = "oj44nep1ldf8a3ll02uip0c9aa"
             other_user = new_test_user(self.env, login="calendar-user")

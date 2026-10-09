@@ -14,7 +14,9 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 
 @tagged("odoo2google", "calendar_performance", "is_query_count")
 @patch.object(
-    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+    CalendarSyncUsers,
+    "_calendar_sync_connection",
+    lambda user, code: code == "google" and "dummy-token",
 )
 class TestSyncOdoo2Google(TestSyncGoogle):
     def setUp(self):

@@ -929,6 +929,11 @@ class TestCreateEvents(TestCommon):
                 }
             )
         )
+        # a weekday inside the synchronization window
+        today = datetime.now()
+        day = today.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+            days=7 + (2 - today.weekday()) % 7
+        )
         self.holiday = (
             self.env["hr.leave"]
             .with_context(mail_create_nolog=True, mail_notrack=True)
@@ -938,8 +943,8 @@ class TestCreateEvents(TestCommon):
                     "name": "Time Off Employee",
                     "employee_id": self.employee_emp.id,
                     "holiday_status_id": self.hr_leave_type.id,
-                    "request_date_from": datetime(2020, 1, 15),
-                    "request_date_to": datetime(2020, 1, 15),
+                    "request_date_from": day,
+                    "request_date_to": day,
                 }
             )
         )
@@ -960,12 +965,12 @@ class TestCreateEvents(TestCommon):
         )
         self.assertEqual(
             record.start_date,
-            datetime(2020, 1, 15).date(),
+            day.date(),
             "The start date should match the time off request.",
         )
         self.assertEqual(
             record.stop_date,
-            datetime(2020, 1, 15).date(),
+            day.date(),
             "The end date should match the time off request.",
         )
 

@@ -4,8 +4,8 @@ from odoo.tools import SQL
 
 def migrate(cr, version):
     """The first synchronization's date, kept for the whole database, becomes
-    each account's floor; the parameters and the wizard nothing reads any
-    more go."""
+    the floor of each account that has none (a reset may have set a later
+    one); the parameters and the wizard nothing reads any more go."""
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
@@ -13,12 +13,20 @@ def migrate(cr, version):
     first = env.registry.settings.get(
         env, "calendar_microsoft.sync.first_synchronization_date", False
     )
-    accounts = env["calendar.sync.account"].search([("provider", "=", "microsoft")])
+    accounts = (
+        env["calendar.sync.account"]
+        .search([("provider", "=", "microsoft")])
+        .filtered(lambda account: not account.insert_since)
+    )
     if first:
         accounts.write({"insert_since": first})
     else:
-        # synchronized before the date was kept: everything was sent
-        accounts.filtered("sync_token").write({"insert_since": False})
+        # no date kept: an account that synchronized did so before the date
+        # existed and sent everything; one that never did starts now, as its
+        # first synchronization would have
+        accounts.filtered(lambda account: not account.sync_token).write(
+            {"insert_since": cr.now()}
+        )
     ICP.search(
         [
             (

@@ -587,7 +587,7 @@ class TestMicrosoftService(TransactionCase):
     @patch.object(
         CalendarSyncUsers,
         "_calendar_sync_connection",
-        lambda user, code: "MY_CONNECTION",
+        lambda user, code: code == "microsoft" and "MY_CONNECTION",
     )
     def test_get_events_delta_with_outdated_sync_token(
         self, mock_do_request, mock_check_full_sync_required

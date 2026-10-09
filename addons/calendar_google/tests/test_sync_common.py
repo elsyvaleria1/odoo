@@ -26,7 +26,9 @@ def patch_api(func):
 
 
 @patch.object(
-    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+    CalendarSyncUsers,
+    "_calendar_sync_connection",
+    lambda user, code: code == "google" and "dummy-token",
 )
 class TestSyncGoogle(HttpCase):
     def setUp(self):

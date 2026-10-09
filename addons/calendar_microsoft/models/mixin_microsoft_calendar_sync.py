@@ -25,6 +25,13 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
             or self.env.context.get("calendar_sync_applying") == "microsoft"
         )
 
+    def _calendar_applying(self) -> bool:
+        """Whether this change comes from a synchronized calendar, Outlook's
+        or another provider's, rather than from a person in Odoo."""
+        return bool(
+            self._microsoft_applying() or self.env.context.get("calendar_sync_applying")
+        )
+
     def _microsoft_held(self):
         """These records but those no Outlook calendar holds."""
         Link = self.env["calendar.sync.link"]

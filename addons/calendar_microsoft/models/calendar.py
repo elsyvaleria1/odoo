@@ -75,7 +75,7 @@ class CalendarEvent(models.Model):
         recurrency_in_batch = any(vals.get("recurrency") for vals in vals_list)
         if (
             self._check_microsoft_sync_status()
-            and not self._microsoft_applying()
+            and not self._calendar_applying()
             and recurrency_in_batch
         ):
             self._forbid_recurrence_creation()
@@ -214,7 +214,7 @@ class CalendarEvent(models.Model):
                 or (recurrency_in_batch and len(recurrency_in_batch) > 0)
             )
             if (
-                not self._microsoft_applying()
+                not self._calendar_applying()
                 and recurrence_update_attempt
                 and "active" not in values
             ):

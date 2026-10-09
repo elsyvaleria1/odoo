@@ -14,7 +14,9 @@ from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncU
 
 @tagged("odoo2google")
 @patch.object(
-    CalendarSyncUsers, "_calendar_sync_connection", lambda user, code: "dummy-token"
+    CalendarSyncUsers,
+    "_calendar_sync_connection",
+    lambda user, code: code == "google" and "dummy-token",
 )
 class TestSyncFailures(TestSyncGoogle):
     """What Google refuses or loses, through the engine."""
