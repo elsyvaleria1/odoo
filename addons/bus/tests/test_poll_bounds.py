@@ -18,9 +18,9 @@ from ..websocket import ConnectionState, NotificationDispatchState, Websocket
 class TestPollBounds(TransactionCase):
     CHANNEL = "test_poll_bounds"
 
-    def _seed(self, count, body_size=32):
+    def _seed(self, count, body_size=32, char="x"):
         channel = json_dump(channel_with_db(self.env.cr.dbname, self.CHANNEL))
-        message = json_dump({"type": "probe", "payload": {"body": "x" * body_size}})
+        message = json_dump({"type": "probe", "payload": {"body": char * body_size}})
         self.env.cr.execute(
             """
             INSERT INTO bus_bus (channel, message, create_date)
@@ -66,6 +66,16 @@ class TestPollBounds(TransactionCase):
             MAX_NOTIFICATIONS_PER_POLL,
             "the count cap was not what stopped this batch",
         )
+        self.assertLessEqual(len(notifications), expected_max)
+
+    def test_the_payload_cap_counts_bytes_not_characters(self):
+        body = 8 * 1024
+        expected_max = MAX_NOTIFICATION_BYTES_PER_POLL // (2 * body) + 1
+        ids = self._seed(100, body_size=body, char="é")
+        notifications, truncated = self.env["bus.bus"]._poll_batch(
+            [self.CHANNEL], last=ids[0] - 1
+        )
+        self.assertTrue(truncated)
         self.assertLessEqual(len(notifications), expected_max)
 
     def test_a_single_oversized_notification_is_still_returned(self):

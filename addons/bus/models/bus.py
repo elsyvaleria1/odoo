@@ -321,7 +321,8 @@ class BusBus(models.Model):
         channels = [json_dump(channel_with_db(self.env.cr.dbname, c)) for c in channels]
         self.env.cr.execute(
             SQL(
-                "SELECT id, message FROM bus_bus WHERE %s AND channel = ANY(%s)"
+                "SELECT id, message, octet_length(message) FROM bus_bus"
+                " WHERE %s AND channel = ANY(%s)"
                 " ORDER BY id LIMIT %s",
                 where,
                 channels,
@@ -333,9 +334,11 @@ class BusBus(models.Model):
         del rows[limit:]
         notifications = []
         payload_bytes = 0
-        for row in rows:
-            payload_bytes += len(row[1])
-            notifications.append({"id": row[0], "message": json_loads(row[1])})
+        for notification_id, message, size in rows:
+            payload_bytes += size
+            notifications.append(
+                {"id": notification_id, "message": json_loads(message)}
+            )
             if payload_bytes >= max_bytes:
                 truncated = truncated or len(notifications) < len(rows)
                 break
