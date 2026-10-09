@@ -5,7 +5,7 @@ from typing import Any, NamedTuple
 import psycopg.errors
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.http import request
 from odoo.libs import redact
@@ -38,6 +38,17 @@ class Verdict(NamedTuple):
     status: int
     reason: str
     code: str
+
+
+def receiver_privileges_of(gate_class: type) -> tuple[str, ...]:
+    # every module extending a gate names its own; the gate holds them all
+    return tuple(
+        dict.fromkeys(
+            name
+            for cls in reversed(gate_class.__mro__)
+            for name in vars(cls).get("_receiver_privileges", ())
+        )
+    )
 
 
 INBOUND_SUBJECT_KEY = "inbound_subject"
@@ -130,6 +141,17 @@ class MixinInboundGate(models.AbstractModel):
     AUTH_MODE_OFF = "off"
 
     _BODY_DEPENDENT_AUTH_TYPES = ("hmac_sha256", "hmac_sha512", "custom")
+
+    # The named privileges a call admitted through this gate holds, on top of
+    # its service principal's own grants. Each module extending a gate names
+    # its own; the gate holds them all (`_inbound_receiver_privileges`).
+    # Literal names only: test_lint reads this tuple as a with_privilege() call.
+    _receiver_privileges: tuple[str, ...] = (
+        "integration.privilege_keep_inbound_exchange",
+    )
+    # Transitional: an elevated gate's handler runs as its principal with su,
+    # as every gate did before the principals held named privileges.
+    _inbound_elevated = True
 
     @api.model
     def _resolve_route_receiver(
@@ -444,6 +466,9 @@ class MixinInboundGate(models.AbstractModel):
                 caller_already_checked=caller_already_checked,
             )
         )
+        if verdict.allowed and not self._inbound_elevated:
+            if unfitness := self._inbound_principal_unfitness():
+                verdict = Verdict(False, 403, unfitness, "principal_unfit")
         self._record_inbound_verdict(
             verdict.allowed,
             verdict.status,
@@ -454,6 +479,69 @@ class MixinInboundGate(models.AbstractModel):
             mode=mode,
         )
         return verdict
+
+    def _inbound_principal_unfitness(self) -> str | None:
+        """Why the gate's service principal may not run an admitted call, or
+        None: it must be an active service user and belong to the gate's
+        company, since it runs without su and the company guards bind it."""
+        self.check_singleton()
+        principal = self._inbound_service_user()
+        if not principal:
+            return None
+        if not principal.active:
+            return f"{principal.login}, which {self.display_name} runs as, is archived"
+        if principal.principal_type != "service":
+            return (
+                f"{principal.login}, which {self.display_name} runs as, is not "
+                "a service user"
+            )
+        company_id = self._get_inbound_company_id()
+        if company_id and company_id not in principal.company_ids.ids:
+            return (
+                f"{principal.login}, which {self.display_name} runs as, does not "
+                "belong to its company"
+            )
+        return None
+
+    def _inbound_principal_env(self, env, principal):
+        """The environment an admitted call's handler runs in: the gate's
+        service principal without su, in the gate's company, holding the
+        gate's receiver privileges."""
+        self.check_singleton()
+        context = dict(env.context)
+        # an elevated gate's subject carries su: its principal is not asked to
+        # be in the gate's company, and the caller's context stays
+        if not self._inbound_elevated:
+            if company_id := self._get_inbound_company_id():
+                context["allowed_company_ids"] = [company_id]
+            else:
+                # whatever companies the caller's context named are not the
+                # principal's to be in; its own default applies
+                context.pop("allowed_company_ids", None)
+        gate = self.with_env(env(user=principal.id, context=context, su=False))
+        if receiver_privileges := self._inbound_receiver_privileges():
+            gate = gate.with_privilege(
+                *receiver_privileges,
+                reason=f"a call admitted through {self._name}",
+            )
+        return gate.env
+
+    @api.model
+    def _place_principal_in_companies(self, principal, companies) -> None:
+        # a principal runs without su and the company guards bind it, so it
+        # belongs to the company of every gate it runs for
+        principal = principal.with_env(self.env)
+        missing = companies - principal.company_ids
+        if not principal or not missing:
+            return
+        principal.with_privilege(
+            "integration.privilege_place_principal",
+            reason="a gate it runs for was bound to a company it was not in",
+        ).write({"company_ids": [Command.link(company.id) for company in missing]})
+
+    @api.model
+    def _inbound_receiver_privileges(self) -> tuple[str, ...]:
+        return receiver_privileges_of(type(self))
 
     def _decide_inbound_request(
         self,

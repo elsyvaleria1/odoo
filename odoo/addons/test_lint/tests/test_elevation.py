@@ -163,18 +163,45 @@ def _declared_privileges() -> frozenset[str]:
     return frozenset(names)
 
 
+_RECEIVER_PRIVILEGES = "_receiver_privileges"
+# integration applies a gate's tuples with a starred call over their union,
+# which the tuples answer for
+_RECEIVER_PRIVILEGES_APPLIED = "receiver_privileges"
+
+
+def _literal_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
 def _privileges_named(tree: ast.AST) -> list[tuple[int, str | None]]:
-    # (line, name) of every with_privilege argument, None for a runtime value
-    return [
-        (
-            node.lineno,
-            arg.value
-            if isinstance(arg, ast.Constant) and isinstance(arg.value, str)
-            else None,
-        )
+    # (line, name) of every with_privilege argument and every name a gate's
+    # `_receiver_privileges` tuple holds, None for a runtime value
+    named = [
+        (node.lineno, _literal_name(arg))
         for node in _calls(tree, frozenset({"with_privilege"}))
         for arg in node.args
+        if not (
+            isinstance(arg, ast.Starred)
+            and _RECEIVER_PRIVILEGES_APPLIED in ast.unparse(arg.value)
+        )
     ]
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            targets, value = node.targets, node.value
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            targets, value = [node.target], node.value
+        else:
+            continue
+        if not any(
+            isinstance(target, ast.Name) and target.id == _RECEIVER_PRIVILEGES
+            for target in targets
+        ):
+            continue
+        elements = value.elts if isinstance(value, ast.Tuple | ast.List) else [value]
+        named.extend((node.lineno, _literal_name(element)) for element in elements)
+    return named
 
 
 _MODEL_BASES = frozenset(
@@ -935,3 +962,19 @@ class PlantedExtension(models.Model):
     def test_an_undeclared_privilege(self):
         found = self._scan(privilege_findings, "r.with_privilege('nope.nothing')")
         self.assertEqual(len(found), 1)
+
+    def test_a_gate_s_receiver_privileges_are_named_privileges(self):
+        text = (
+            "class Gate:\n"
+            "    _receiver_privileges = ('nope.nothing', NAME)\n"
+            "    def env_for(self):\n"
+            "        return self.with_privilege(*self._receiver_privileges)\n"
+            "    def env_of_all(self, receiver_privileges):\n"
+            "        return self.with_privilege(*receiver_privileges)\n"
+        )
+        found = self._scan(privilege_findings, text)
+        self.assertEqual(
+            [finding.split(" ", 1)[1] for finding in found],
+            ["nope.nothing is declared nowhere", "a privilege named at runtime"],
+            "each name the tuple holds is checked; the starred call it feeds is not",
+        )

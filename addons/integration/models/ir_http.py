@@ -94,8 +94,17 @@ class IrHttp(models.AbstractModel):
         if service_user := gate._inbound_service_user():
             # the handler runs as the gate's service principal, so what it
             # writes is attributed to it rather than to the public user
-            request.update_env(user=service_user.id)
             admission = request.admission
+            principal_env = gate._inbound_principal_env(request.env, service_user)
+            request.update_env(
+                user=principal_env.uid,
+                context=principal_env.context,
+                su=False,
+                privileges=principal_env.privileges,
+            )
+            subject_env = (
+                request.env(su=True) if gate._inbound_elevated else request.env
+            )
             if admission.subject:
-                admission.subject = admission.subject.with_env(request.env(su=True))
+                admission.subject = admission.subject.with_env(subject_env)
             admission.annotate(user_id=service_user.id)

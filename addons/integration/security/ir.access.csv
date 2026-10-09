@@ -28,3 +28,6 @@ privilege_oauth_authorization_connection,OAuth authorization: the connection aut
 privilege_oauth_authorization_service,OAuth authorization: its service,model_integration_service,privilege_oauth_authorization,permission,r,,,
 privilege_oauth_authorization_credential,OAuth authorization: the credential a legacy authorize names,credential.model_credential_credential,privilege_oauth_authorization,permission,r,,,
 privilege_shared_egress_service,Shared egress: the service sent to,model_integration_service,privilege_shared_egress,permission,r,,,
+privilege_place_principal_user,Place a principal: the service user put in a company,base.model_res_users,privilege_place_principal,permission,u,,,"[('principal_type', '=', 'service')]"
+privilege_place_principal_partner,Place a principal: the service user's own contact,base.model_res_partner,privilege_place_principal,permission,u,,,"[('user_ids.principal_type', '=', 'service')]"
+privilege_keep_inbound_exchange_rows,Keep inbound exchanges: the row of a call it admitted,model_integration_exchange,privilege_keep_inbound_exchange,permission,cru,company,,"[('direction', '=', 'inbound')]"

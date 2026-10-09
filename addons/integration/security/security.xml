@@ -65,4 +65,16 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_keep_inbound_exchange" model="res.groups">
+        <field
+            name="name">Privilege: a gate's service principal keeps the rows of the calls it admits</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_place_principal" model="res.groups">
+        <field
+            name="name">Privilege: whoever binds a gate to a company puts the gate's service principal in it</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

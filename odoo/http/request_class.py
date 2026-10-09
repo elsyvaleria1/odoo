@@ -186,6 +186,7 @@ class Request(
         su: bool | None = None,
         *,
         anonymous: bool = False,
+        privileges: frozenset[int] | None = None,
     ) -> None:
         env = self.env
         if env is None:
@@ -197,7 +198,7 @@ class Request(
                 env.cr, None, env.context if context is None else context
             )
         else:
-            env = env(None, user, context, su)
+            env = env(None, user, context, su, privileges)
         self.env = env
         env.transaction.default_env = env
         current_worker_thread().uid = env.uid
