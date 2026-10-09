@@ -452,6 +452,9 @@ export class PaymentScreen extends Component {
             line: line.uuid,
             isCancelSuccessful,
         }));
+        if (line.isDone()) {
+            return;
+        }
         if (isCancelSuccessful) {
             line.setPaymentStatus("retry");
             this.pos.paymentTerminalInProgress = false;

@@ -20,6 +20,7 @@ class PosPaymentMethod(models.Model):
     _MERCADO_PAGO_REFERENCE = re.compile(
         r"(\d+)_(\d+)_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
     )
+    _MERCADO_PAGO_INTENT_ID = re.compile(r"[0-9A-Za-z-]{1,64}")
 
     @api.model
     def _receiver_for_mercado_pago_terminal(self, **path_args) -> tuple:
@@ -82,14 +83,15 @@ class PosPaymentMethod(models.Model):
         ts_m = re.search(r"ts=(\d+)", x_signature)
         v1_m = re.search(r"v1=([a-f0-9]+)", x_signature)
         data = request.httprequest.get_json(silent=True) or {}
-        if not ts_m or not v1_m or "id" not in data:
+        secret = self.mp_webhook_secret_key
+        if not secret or not ts_m or not v1_m or "id" not in data:
             return False
         signed_template = (
             f"id:{data['id']};request-id:{headers.get('X-Request-Id')};"
             f"ts:{ts_m.group(1)};"
         )
         cyphed_signature = hmac.new(
-            (self.mp_webhook_secret_key or "").encode(),
+            secret.encode(),
             signed_template.encode(),
             hashlib.sha256,
         ).hexdigest()
@@ -123,7 +125,8 @@ class PosPaymentMethod(models.Model):
         inverse="_inverse_credential_doors",
         copy=True,
         groups="point_of_sale.group_pos_manager",
-        help="Mercado Pago production secret key from integration application: https://www.mercadopago.com.mx/developers/panel/app",
+        help="Mercado Pago production secret key from integration application: https://www.mercadopago.com.mx/developers/panel/app. "
+        "Notifications are refused while it is not set.",
     )
     mp_id_point_smart = fields.Char(
         string="Terminal S/N",
@@ -180,28 +183,48 @@ class PosPaymentMethod(models.Model):
         )
         return resp
 
-    def mp_payment_intent_get(self, payment_intent_id):
-        """
-        Called from frontend to get the last payment intend from Mercado Pago
-        """
+    def _mp_check_payment_intent_id(self, payment_intent_id) -> None:
+        if not isinstance(
+            payment_intent_id, str
+        ) or not self._MERCADO_PAGO_INTENT_ID.fullmatch(payment_intent_id):
+            raise UserError(self.env._("Invalid Mercado Pago payment intent"))
+
+    def _mp_payment_intent_of_this_terminal(self, payment_intent_id) -> dict:
         self._check_special_access()
+        self._mp_check_payment_intent_id(payment_intent_id)
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
-        # Call Mercado Pago for payment intend status
         resp = mercado_pago.call_mercado_pago(
             "get", f"/point/integration-api/payment-intents/{payment_intent_id}", {}
         )
         _logger.debug("mp_payment_intent_get(), response from Mercado Pago: %s", resp)
+        if "device_id" in resp and resp["device_id"] != self.mp_id_point_smart_complet:
+            raise AccessError(
+                self.env._("This payment intent was not sent to this terminal")
+            )
         return resp
 
-    def mp_get_payment_status(self, payment_id):
+    def mp_payment_intent_get(self, payment_intent_id):
         """
-        Called from frontend to get the payment status from Mercado Pago
+        Called from frontend to get the last payment intend from Mercado Pago
         """
-        self._check_special_access()
+        return self._mp_payment_intent_of_this_terminal(payment_intent_id)
+
+    def mp_get_payment_status(self, payment_intent_id):
+        """
+        Called from frontend to get the status of the payment of a payment
+        intent this terminal received
+        """
+        payment_intent = self._mp_payment_intent_of_this_terminal(payment_intent_id)
+        payment_id = (payment_intent.get("payment") or {}).get("id")
+        if (
+            payment_intent.get("device_id") != self.mp_id_point_smart_complet
+            or not isinstance(payment_id, int | str)
+            or not str(payment_id).isdigit()
+        ):
+            return {"errorMessage": self.env._("No payment for this payment intent")}
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
-
         resp = mercado_pago.call_mercado_pago("get", f"/v1/payments/{payment_id}", {})
         _logger.debug("mp_get_payment_status(), response from Mercado Pago: %s", resp)
         return resp
@@ -211,6 +234,7 @@ class PosPaymentMethod(models.Model):
         Called from frontend to cancel a payment intent in Mercado Pago
         """
         self._check_special_access()
+        self._mp_check_payment_intent_id(payment_intent_id)
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
         # Call Mercado Pago for payment intend cancelation

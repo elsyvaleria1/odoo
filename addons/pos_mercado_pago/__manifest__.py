@@ -17,7 +17,10 @@
     ],
     "assets": {
         "point_of_sale._assets_pos": [
-            "pos_mercado_pago/static/**/*",
+            "pos_mercado_pago/static/src/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "pos_mercado_pago/static/tests/unit/**/*",
         ],
     },
 }
