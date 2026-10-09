@@ -274,6 +274,25 @@ class PosOrderLine(models.Model):
             )
             orderline.refunded_qty = -sum(refund_order_line.mapped("qty"))
 
+    def read_for_refund(self, field_names) -> dict:
+        drafts = self.refund_orderline_ids.filtered(
+            lambda refund: refund.order_id.state == "draft"
+        )
+        _debug.logic("read_for_refund", lines=self, drafts=drafts)
+        return {
+            "lines": self.read(field_names, load=False),
+            "draft_refunds": [
+                {
+                    "line_id": refund.refunded_orderline_id.id,
+                    "order_uuid": refund.order_id.uuid,
+                    "order": refund.order_id.pos_reference or refund.order_id.name,
+                    "till": refund.order_id.config_id.name,
+                    "qty": -refund.qty,
+                }
+                for refund in drafts
+            ],
+        }
+
     def _get_over_refunded_lines(self, refund_order) -> Self:
         self._serialize_refund_settlements()
         # a draft refund elsewhere has returned nothing yet, so only settled

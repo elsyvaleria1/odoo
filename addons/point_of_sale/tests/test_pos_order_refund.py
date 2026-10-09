@@ -316,6 +316,39 @@ class TestPosRefundQuantities(TestPoSCommon):
             self.env["pos.order"].search([("uuid", "=", draft["uuid"])]).state, "draft"
         )
 
+    def test_the_till_reads_which_draft_refunds_hold_a_line(self):
+        line = self.original.lines
+        draft = self.create_ui_order_data(
+            [
+                {
+                    "product": self.product,
+                    "quantity": -2,
+                    "refunded_orderline_id": line.id,
+                }
+            ],
+            pos_order_ui_args={"state": "draft", "is_refund": True},
+            payments=[],
+        )
+        self.env["pos.order"].sync_from_ui([draft])
+        self._sync([(self.product, -1)], line)
+        held_by = self.env["pos.order"].search([("uuid", "=", draft["uuid"])])
+
+        state = line.read_for_refund(["refunded_qty"])
+
+        self.assertEqual(state["lines"], [{"id": line.id, "refunded_qty": 3}])
+        self.assertEqual(
+            state["draft_refunds"],
+            [
+                {
+                    "line_id": line.id,
+                    "order_uuid": held_by.uuid,
+                    "order": held_by.pos_reference,
+                    "till": self.config.name,
+                    "qty": 2,
+                }
+            ],
+        )
+
     def test_a_draft_refund_settled_by_the_wizard_cannot_over_refund(self):
         line = self.original.lines
         draft = self.create_ui_order_data(

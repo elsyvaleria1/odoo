@@ -1884,23 +1884,59 @@ export class PosStore extends WithLazyGetterTrap {
 
     postSyncAllOrders(orders) {}
 
-    async refreshRefundedQuantities(lines) {
+    async readRefundState(lines) {
         const ids = [
             ...new Set(lines.filter((line) => line?.isSynced).map((line) => line.id)),
         ];
         if (!ids.length) {
-            return false;
+            return { refreshed: false, draftRefunds: [] };
         }
         try {
-            await this.data.read("pos.order.line", ids);
-            return true;
+            const { lines: rows, draft_refunds: draftRefunds } = await this.data.call(
+                "pos.order.line",
+                "read_for_refund",
+                [ids, this.data.fields["pos.order.line"]],
+            );
+            await this.data.loadServerRecords("pos.order.line", rows);
+            return { refreshed: true, draftRefunds };
         } catch (error) {
             if (!(error instanceof ConnectionLostError)) {
                 throw error;
             }
-            log.logic("refreshRefundedQuantities: offline", () => ({ ids }));
-            return false;
+            log.logic("readRefundState: offline", () => ({ ids }));
+            return { refreshed: false, draftRefunds: [] };
         }
+    }
+
+    draftRefundsHolding(line, draftRefunds, refundOrder) {
+        const holds = new Map();
+        const hold = (uuid, order, till, qty) => {
+            const held = holds.get(uuid) ?? { order, till, qty: 0 };
+            held.qty += qty;
+            holds.set(uuid, held);
+        };
+        for (const draft of draftRefunds) {
+            if (draft.line_id === line.id && draft.order_uuid !== refundOrder?.uuid) {
+                hold(draft.order_uuid, draft.order, draft.till, draft.qty);
+            }
+        }
+        const fromServer = new Set(holds.keys());
+        for (const refund of line.refund_orderline_ids) {
+            const order = refund.order_id;
+            if (
+                order?.state === "draft" &&
+                order.uuid !== refundOrder?.uuid &&
+                !fromServer.has(order.uuid)
+            ) {
+                hold(
+                    order.uuid,
+                    order.pos_reference || order.name,
+                    this.config.name,
+                    -refund.qty,
+                );
+            }
+        }
+        return [...holds.values()];
     }
 
     /**
@@ -1909,7 +1945,7 @@ export class PosStore extends WithLazyGetterTrap {
      * @param {Object} [refundOrder] the order already holding these refunds
      */
     async checkRefundableQuantities(refunds, refundOrder = null) {
-        const refreshed = await this.refreshRefundedQuantities(
+        const { refreshed, draftRefunds } = await this.readRefundState(
             refunds.map(({ line }) => line),
         );
         const exceeded = refunds
@@ -1934,14 +1970,23 @@ export class PosStore extends WithLazyGetterTrap {
                     excess > 0 &&
                     !line.product_id.uom_id?.isZero(excess)
                 );
-            });
+            })
+            .map((refused) => ({
+                ...refused,
+                holds: this.draftRefundsHolding(
+                    refused.line,
+                    draftRefunds,
+                    refundOrder,
+                ),
+            }));
         log.logic("checkRefundableQuantities", () => ({
             refreshed,
             refundOrder: refundOrder?.uuid,
             refunds: refunds.map(({ line, qty }) => ({ line: line.uuid, qty })),
-            exceeded: exceeded.map(({ line, refundable }) => ({
+            exceeded: exceeded.map(({ line, refundable, holds }) => ({
                 line: line.uuid,
                 refundable,
+                holds,
             })),
         }));
         if (!exceeded.length) {
@@ -1951,7 +1996,7 @@ export class PosStore extends WithLazyGetterTrap {
         this.dialog.add(AlertDialog, {
             title: _t("Maximum Exceeded"),
             body: (shown.length ? shown : exceeded)
-                .map(({ line, qty, refundable }) =>
+                .flatMap(({ line, qty, refundable, holds }) => [
                     _t(
                         "%(product)s: %(requested)s requested while only %(refundable)s can still be refunded.",
                         {
@@ -1960,7 +2005,13 @@ export class PosStore extends WithLazyGetterTrap {
                             refundable: Math.max(0, refundable),
                         },
                     ),
-                )
+                    ...holds.map((held) =>
+                        _t(
+                            "%(qty)s is held by draft refund %(order)s on %(till)s; cancel that refund to free it.",
+                            held,
+                        ),
+                    ),
+                ])
                 .join("\n"),
         });
         return false;
