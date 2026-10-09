@@ -9,6 +9,7 @@ ROOM_MAX_LOGGED_PAYLOAD = 65536
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
+    _receiver_privileges = ("conversation_meeting.privilege_record_meeting",)
 
     @api.model
     def _room_defaults(self) -> dict:

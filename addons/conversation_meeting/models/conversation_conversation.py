@@ -49,8 +49,16 @@ class ConversationConversation(models.Model):
 
     def action_start_live(self):
         self.check_access("write")
-        self.coaching_note_ids.sudo().unlink()
+        self._recording_meeting().coaching_note_ids.unlink()
         return super().action_start_live()
+
+    def _recording_meeting(self):
+        # the coach's notices are its own: whoever restarts the session or
+        # runs the coach keeps them, no user writes them
+        return self.with_privilege(
+            "conversation_meeting.privilege_record_meeting",
+            reason="a meeting's coach keeps its notices",
+        )
 
     def _check_live_can_start(self) -> None:
         super()._check_live_can_start()
@@ -124,16 +132,20 @@ class ConversationConversation(models.Model):
             return Note
         if not isinstance(notices, list):
             notices = []
-        notes = Note.sudo().create(
-            [
-                {
-                    "conversation_id": self.id,
-                    "at_s": self.live_elapsed_s,
-                    "text": str(notice)[:MAX_NOTICE_CHARS],
-                }
-                for notice in notices[:MAX_NOTICES]
-                if notice
-            ]
+        notes = (
+            self._recording_meeting()
+            .env["conversation.coaching.note"]
+            .create(
+                [
+                    {
+                        "conversation_id": self.id,
+                        "at_s": self.live_elapsed_s,
+                        "text": str(notice)[:MAX_NOTICE_CHARS],
+                    }
+                    for notice in notices[:MAX_NOTICES]
+                    if notice
+                ]
+            )
         )
         for note in notes:
             self._live_publish(
@@ -154,7 +166,7 @@ class ConversationConversation(models.Model):
         if self.is_live:
             self.action_stop_live()
         self._drop_live_chunks()
-        kept.sudo().unlink()
+        kept.unlink()
         self.source = "meeting_capture"
         return self._file_recording(data, filename, mimetype)
 

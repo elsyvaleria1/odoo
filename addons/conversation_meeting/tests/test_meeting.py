@@ -9,7 +9,7 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.conversation.tests.common import ANALYSIS, ROUTER, StubTranscription
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 from odoo.addons.integration_machine_learning.tools import MlResult
 
 COACH_ROUTER = (
@@ -301,3 +301,76 @@ class TestLiveCaptureAccess(TransactionCase):
         conversation.with_user(owner).action_start_live()
         self.assertTrue(conversation.is_live)
         self.assertFalse(notice.exists())
+
+
+@tagged("post_install", "-at_install")
+class TestMeetingWithoutSu(NarrowedReceiver, TestMeeting):
+    def _job(self, key):
+        return self.env["ir.job"].search([("identity_key", "=", key)])
+
+    def _assert_receivers(self, job):
+        self.assertEqual(job.user_id, self.env.ref("device.user_device_receiver"))
+        self.assertFalse(job.elevated)
+        self.assertIn(
+            self.env.ref("conversation_meeting.privilege_record_meeting").id,
+            job.privileges,
+        )
+
+    def test_the_room_streams_and_the_coach_answers_without_su(self):
+        receiver = self.env.ref("device.user_device_receiver")
+        self.conversation.action_start_live()
+        self.assertEqual(self._push(0).status_code, 200)
+        self.assertEqual(self._push(15).status_code, 200)
+        self.conversation.invalidate_recordset()
+        chunks = self.conversation.segment_ids.sorted("start_ms")
+        self.assertEqual(chunks.create_uid, receiver)
+        self.assertEqual(chunks.attachment_id.create_uid, receiver)
+        for chunk in chunks:
+            heard = self._job(f"reading.cues.{chunk.attachment_id.id}")
+            self._assert_receivers(heard)
+            heard.action_run_now()
+            self.assertEqual(heard.state, "done")
+        coach = self._job(f"conversation.coach.{self.conversation.id}")
+        self._assert_receivers(coach)
+        self.conversation.live_elapsed_s = 120
+        router = MagicMock()
+        router.run.return_value = MlResult(
+            model=None, data={"notices": ["Decisión sin dueño: loops"]}
+        )
+        with patch(COACH_ROUTER, return_value=router):
+            coach.action_run_now()
+        self.assertEqual(coach.state, "done")
+        notice = self.conversation.coaching_note_ids
+        self.assertEqual(notice.text, "Decisión sin dueño: loops")
+        self.assertEqual(notice.create_uid, receiver)
+
+    def test_the_room_recording_is_heard_and_analysed_without_su(self):
+        receiver = self.env.ref("device.user_device_receiver")
+        response = self._post(
+            f"/conversation/SALA-01/{self.conversation.id}/audio",
+            {"audio_b64": AUDIO, "file_name": "sala.ogg", "mimetype": "audio/ogg"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.conversation.invalidate_recordset()
+        recording = self.conversation.segment_ids.attachment_id
+        self.assertEqual(recording.create_uid, receiver)
+        self.assertEqual(self.conversation.write_uid, receiver)
+        heard = self._job(f"reading.cues.{recording.id}")
+        self._assert_receivers(heard)
+        heard.action_run_now()
+        self.assertEqual(heard.state, "done")
+        analysis = self._job(
+            f"extract.{self.conversation._name}.{self.conversation.id}"
+        )
+        self._assert_receivers(analysis)
+        router = MagicMock()
+        router.select_model.return_value = MagicMock(code="a-model")
+        router.run.return_value = MlResult(model=None, data=dict(ANALYSIS))
+        with patch(ROUTER, return_value=router):
+            analysis.action_run_now()
+        self.assertEqual(analysis.state, "done")
+        self.assertEqual(self.conversation.state, "analyzed")
+        note = self.conversation.message_ids.filtered(
+            lambda message: "Analyzed:" in (message.body or "")
+        )
+        self.assertEqual(note.author_id, receiver.partner_id)

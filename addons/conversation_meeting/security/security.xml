@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_record_meeting" model="res.groups">
+        <field
+            name="name">Privilege: a meeting room records its meeting and coaches its moderator</field>
+        <field
+            name="comment">Held by a meeting room's receiver, whose recordings and live chunks are filed on the room company's conversation, and by the live coach, which keeps its notices; a moderator restarting a live session clears the old ones under it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

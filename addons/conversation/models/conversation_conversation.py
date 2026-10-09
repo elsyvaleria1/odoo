@@ -210,26 +210,18 @@ class ConversationConversation(models.Model):
 
     def _file_recording(self, data, filename, mimetype=None, duration_s=0.0):
         self.check_singleton()
-        attachment = (
-            self.env["ir.attachment"]
-            .sudo()
-            .create(
-                {
-                    "name": filename,
-                    "raw": data,
-                    "mimetype": mimetype
-                    or _audio_mimetype(filename)
-                    or DEFAULT_MIMETYPE,
-                    "res_model": self._name,
-                    "res_id": self.id,
-                }
-            )
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": filename,
+                "raw": data,
+                "mimetype": mimetype or _audio_mimetype(filename) or DEFAULT_MIMETYPE,
+                "res_model": self._name,
+                "res_id": self.id,
+            }
         )
         start_ms = max(self.segment_ids.mapped("end_ms"), default=0)
         length_ms = max(int((duration_s or 0.0) * 1000), 1)
-        segment = self.sudo()._add_media_segment(
-            attachment, start_ms, start_ms + length_ms
-        )
+        segment = self._add_media_segment(attachment, start_ms, start_ms + length_ms)
         if attachment.can_transcribe:
             attachment._transcribe_later()
         return segment

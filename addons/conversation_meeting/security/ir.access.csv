@@ -5,3 +5,5 @@ rule_conversation_coaching_note_leader,Coach notices: company,model_conversation
 rule_conversation_coaching_note_user_group_manager,Coach notices: own or attended,model_conversation_coaching_note,conversation.group_manager,permission,crud,own,conversation_user,
 rule_conversation_coaching_note_user_group_manager_2,Coach notices: own or attended (2),model_conversation_coaching_note,conversation.group_manager,permission,crud,own,,
 rule_conversation_coaching_note_leader_group_manager,Coach notices: company,model_conversation_coaching_note,conversation.group_manager,permission,crud,company,,
+privilege_record_meeting_conversation,Record a meeting: the conversation a room records,conversation.model_conversation_conversation,privilege_record_meeting,permission,ru,,,
+privilege_record_meeting_coaching_note,Record a meeting: the coach's notices,model_conversation_coaching_note,privilege_record_meeting,permission,crd,,,

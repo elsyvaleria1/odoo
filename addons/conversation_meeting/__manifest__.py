@@ -1,6 +1,6 @@
 {
     "name": "Conversations - Meetings",
-    "version": "19.0.2.1.0",
+    "version": "19.0.2.2.0",
     "oldest_upgradable_version": "19.0.2.1.0",
     "category": "Sales/CRM",
     "sequence": 63,
@@ -17,6 +17,7 @@
         "bus",
     ],
     "data": [
+        "security/security.xml",
         "security/ir.access.csv",
         "data/device_kind_data.xml",
         "views/calendar_event_views.xml",

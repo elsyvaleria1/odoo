@@ -66,7 +66,7 @@ class MixinMediaLive(models.AbstractModel):
 
     def _drop_live_chunks(self) -> None:
         self.check_singleton()
-        self.segment_ids.filtered("live").sudo().unlink()
+        self.segment_ids.filtered("live").unlink()
 
     def _decode_live_audio(self, audio_b64: str) -> bytes:
         try:
@@ -88,18 +88,14 @@ class MixinMediaLive(models.AbstractModel):
             raise UserError(self.env._("The chunk holds no audio."))
         start_ms = int(start_s * 1000)
         end_ms = start_ms + max(int(duration_s * 1000), 1)
-        attachment = (
-            self.env["ir.attachment"]
-            .sudo()
-            .create(
-                {
-                    "name": f"{self._name}-{self.id}-live-{start_ms:010d}",
-                    "raw": audio,
-                    "mimetype": mimetype,
-                    "res_model": self._name,
-                    "res_id": self.id,
-                }
-            )
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": f"{self._name}-{self.id}-live-{start_ms:010d}",
+                "raw": audio,
+                "mimetype": mimetype,
+                "res_model": self._name,
+                "res_id": self.id,
+            }
         )
         if not attachment.can_transcribe:
             raise UserError(
@@ -109,7 +105,7 @@ class MixinMediaLive(models.AbstractModel):
                     company=(attachment.company_id or self.env.company).name,
                 )
             )
-        segment = self.sudo()._file_media(
+        segment = self._file_media(
             attachment, start_ms, end_ms, priority=LIVE_CHUNK_PRIORITY
         )
         segment.live = True

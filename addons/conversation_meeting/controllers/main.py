@@ -10,16 +10,12 @@ _logger = logging.getLogger(__name__)
 
 class ConversationMeetingController(http.Controller):
     def _room_conversation(self, device, conversation_id):
-        return (
-            request.env["conversation.conversation"]
-            .sudo()
-            .search(
-                [
-                    ("id", "=", conversation_id),
-                    ("company_id", "=", device.company_id.id),
-                ],
-                limit=1,
-            )
+        return request.env["conversation.conversation"].search(
+            [
+                ("id", "=", conversation_id),
+                ("company_id", "=", device.company_id.id),
+            ],
+            limit=1,
         )
 
     def _refuse(self, admission, code, message, status):
@@ -44,7 +40,7 @@ class ConversationMeetingController(http.Controller):
         result = request.admission
         device = result.subject
         payload = result.json()
-        Record = request.env["conversation.conversation"].sudo()
+        Record = request.env["conversation.conversation"]
         try:
             audio = Record._live_decode(payload)
         except UserError:
@@ -66,7 +62,7 @@ class ConversationMeetingController(http.Controller):
                     payload.get("mimetype") or "audio/wav",
                     replace=bool(payload.get("replace")),
                 )
-                device.sudo()._touch_last_seen()
+                device._touch_last_seen()
         except UserError as error:
             return self._refuse(result, "audio_exists", str(error), 409)
         except Exception:
@@ -99,7 +95,7 @@ class ConversationMeetingController(http.Controller):
         result = request.admission
         device = result.subject
         payload = result.json()
-        Record = request.env["conversation.conversation"].sudo()
+        Record = request.env["conversation.conversation"]
         try:
             audio = Record._live_decode(payload)
             start_s = float(payload.get("start_s") or 0.0)
@@ -123,7 +119,7 @@ class ConversationMeetingController(http.Controller):
                     duration_s=duration_s,
                     mimetype=payload.get("mimetype") or "audio/wav",
                 )
-                device.sudo()._touch_last_seen()
+                device._touch_last_seen()
         except UserError as error:
             return self._refuse(result, "not_accepted", str(error), 422)
         except Exception:
