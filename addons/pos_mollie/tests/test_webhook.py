@@ -100,3 +100,19 @@ class TestMollieWebhook(CommonPosTest, HttpCase):
                 )
                 self.assertEqual(response.status_code, 400)
                 self.assertFalse(get_mock.called)
+
+    @mute_logger("odoo.addons.pos_mollie.controllers.webhook")
+    def test_a_payment_without_details_reaches_its_session(self):
+        paid_payment = self._get_paid_payment("uuid-1")
+        del paid_payment["details"]
+        for status, details in (
+            ("open", {}),
+            ("paid", {}),
+            ("paid", {"details": None}),
+        ):
+            with self.subTest(status=status, details=details):
+                response, _get_mock, notify_mock = self._post_webhook(
+                    "tr_1", dict(paid_payment, status=status, **details)
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(notify_mock.call_args.args[2]["status"], status)
