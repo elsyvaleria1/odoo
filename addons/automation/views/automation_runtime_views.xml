@@ -168,8 +168,14 @@
                         widget="statusbar"
                         statusbar_visible="draft,in_progress,done" />
                     <field name="awaiting_input" invisible="1" />
+                    <field name="automation_paused" invisible="1" />
                 </header>
                 <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Paused"
+                        invisible="not automation_paused or state not in ('in_progress', 'waiting_resume')"
+                        bg_color="bg-warning" />
                     <div class="oe_button_box" name="button_box">
                         <button
                             name="action_view_automation"

@@ -143,7 +143,16 @@ class AutomationRule(models.Model):
     )
     active = fields.Boolean(
         default=True,
-        help="When unchecked, the rule is hidden and will not be executed.",
+        help="Archived, the automation is retired: it starts no new run, and the "
+        "runs already under way finish. Pause it to hold its runs instead.",
+    )
+    is_paused = fields.Boolean(
+        string="Paused",
+        copy=False,
+        tracking=True,
+        help="A paused automation still starts runs, but none of its runs moves "
+        "on: steps, waits and approvals wait where they stand until it is "
+        "resumed.",
     )
     description = fields.Html()
     model_id = fields.Many2one(
@@ -596,6 +605,20 @@ class AutomationRule(models.Model):
                 )
             ],
         }
+
+    def action_pause(self) -> None:
+        self.write({"is_paused": True})
+
+    def action_unpause(self) -> None:
+        paused = self.filtered("is_paused")
+        paused.write({"is_paused": False})
+        # what waited moves on now, as the dispatcher would have moved it
+        paused.live_runtime_ids._advance()
+        if paused:
+            self.env["automation.runtime"]._request_dispatch()
+
+    def action_cancel_open_runs(self) -> None:
+        self.live_runtime_ids.action_cancel()
 
     def action_sync_running_runs(self) -> None:
         """Bring every run still going up to this automation's graph, running

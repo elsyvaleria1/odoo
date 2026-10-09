@@ -704,7 +704,7 @@ class AutomationRuntimeLine(models.Model):
                 *(
                     [("runtime_id.automation_id", "in", rules.ids)]
                     if rules is not None
-                    else [("runtime_id.automation_id.active", "=", True)]
+                    else [("runtime_id.automation_id.is_paused", "=", False)]
                 ),
             ],
             order="id",

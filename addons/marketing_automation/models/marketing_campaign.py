@@ -338,8 +338,14 @@ class MarketingCampaign(models.Model):
                     rule_vals["name"] = campaign.name
                 if rule.model_id != campaign.model_id:
                     rule_vals["model_id"] = campaign.model_id.id
-                if rule.active != (campaign.state == "running"):
-                    rule_vals["active"] = campaign.state == "running"
+                running = campaign.state == "running"
+                if rule.active != running:
+                    rule_vals["active"] = running
+                # a stopped campaign holds its participants where they stand,
+                # and a restarted one moves them on: archiving alone retires a
+                # rule and lets its runs finish
+                if rule.is_paused == running:
+                    rule_vals["is_paused"] = not running
                 if rule_vals:
                     rule.write(rule_vals)
             if "model_id" in vals:

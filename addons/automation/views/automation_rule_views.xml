@@ -135,6 +135,26 @@
             <form string="Automation Rule">
                 <header>
                     <button
+                        name="action_pause"
+                        type="object"
+                        string="Pause"
+                        help="Hold every run of this automation where it stands; new runs start and wait too"
+                        invisible="is_paused or not active" />
+                    <button
+                        name="action_unpause"
+                        type="object"
+                        string="Resume"
+                        help="Let the runs of this automation move on"
+                        invisible="not is_paused"
+                        class="btn-primary" />
+                    <button
+                        name="action_cancel_open_runs"
+                        type="object"
+                        string="Cancel Open Runs"
+                        help="Cancel the runs of this retired automation that are still under way"
+                        confirm="Every run of this automation still under way is cancelled; its unfinished steps are not run."
+                        invisible="active or not live_run_count" />
+                    <button
                         name="action_sync_running_runs"
                         type="object"
                         string="Update Running Runs"
@@ -155,11 +175,17 @@
                     </div>
                     <field name="active" invisible="1" />
                     <field name="model_name" force_save="True" invisible="1" />
+                    <field name="is_paused" invisible="1" />
                     <widget
                         name="web_ribbon"
                         title="Archived"
                         invisible="active"
                         bg_color="bg-danger" />
+                    <widget
+                        name="web_ribbon"
+                        title="Paused"
+                        invisible="not is_paused or not active"
+                        bg_color="bg-warning" />
                     <div
                         class="alert alert-warning"
                         role="alert"

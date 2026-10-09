@@ -126,7 +126,7 @@ class TestSyncToDefinition(QueuedCase):
         later = self._action("later")
         edge = link(self.env, first, later)
         (runtime,) = self._launch(self.partner)
-        self.automation.active = False
+        self.automation.is_paused = True
         self._line(runtime, first).action_execute()
         self.assertEqual(self._line(runtime, later).state, "ready")
         settled = self._line(runtime, first).date_settled
@@ -198,7 +198,7 @@ class TestAddSteps(QueuedCase):
         later = self._action("later")
         link(self.env, first, later, delay=1, delay_unit="hour")
         (runtime,) = self._launch(self.partner)
-        self.automation.active = False
+        self.automation.is_paused = True
         first_line = self._line(runtime, first)
         first_line.action_execute()
         first_line.date_settled -= timedelta(hours=3)
@@ -212,29 +212,61 @@ class TestAddSteps(QueuedCase):
         )
 
 
-class TestArchivedRule(QueuedCase):
-    def test_an_archived_rule_is_not_dispatched(self):
+class TestPausedAndRetiredRule(QueuedCase):
+    def test_a_paused_rule_is_not_dispatched_until_resumed(self):
+        first = self._action("first", "record.write({'ref': 'ran'})")
+        (runtime, *_others) = self._launch(self.partner)
+
+        self.automation.action_pause()
+        self._dispatch()
+        self.assertEqual(self._line(runtime, first).state, "ready")
+        self.assertTrue(runtime.automation_paused)
+
+        self.automation.action_unpause()
+        self._dispatch()
+        self.assertEqual(self._line(runtime, first).state, "done")
+
+    def test_a_paused_rule_named_explicitly_is_dispatched(self):
+        first = self._action("first")
+        (runtime,) = self._launch(self.partner)
+        self.automation.is_paused = True
+
+        self.env["automation.runtime"]._dispatch_due_steps(rules=self.automation)
+
+        self.assertEqual(self._line(runtime, first).state, "done")
+
+    def test_a_retired_rule_finishes_its_open_runs(self):
         first = self._action("first", "record.write({'ref': 'ran'})")
         (runtime,) = self._launch(self.partner)
 
         self.automation.active = False
         self._dispatch()
 
-        self.assertEqual(self._line(runtime, first).state, "ready")
-
-        self.automation.active = True
-        self._dispatch()
-
         self.assertEqual(self._line(runtime, first).state, "done")
+        self.assertEqual(runtime.state, "done")
 
-    def test_an_archived_rule_named_explicitly_is_dispatched(self):
+    def test_a_retired_rule_can_cancel_its_open_runs(self):
         first = self._action("first")
         (runtime,) = self._launch(self.partner)
+
         self.automation.active = False
+        self.automation.action_cancel_open_runs()
 
-        self.env["automation.runtime"]._dispatch_due_steps(rules=self.automation)
+        self.assertEqual(runtime.state, "cancel")
+        self.assertEqual(self._line(runtime, first).state, "cancel")
 
+    def test_a_paused_immediate_run_waits_and_resumes(self):
+        self.automation.run_mode = "immediate"
+        first = self._action("first", "record.write({'ref': 'ran'})")
+        self.automation.action_pause()
+
+        runtime = self._run()
+
+        self.assertEqual(runtime.state, "in_progress")
+        self.assertEqual(self._line(runtime, first).state, "ready")
+        self.automation.action_unpause()
         self.assertEqual(self._line(runtime, first).state, "done")
+        self.assertEqual(runtime.state, "done")
 
 
 class TestStepErrorPolicy(QueuedCase):

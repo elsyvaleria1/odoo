@@ -562,3 +562,22 @@ class TestSyncing(SyncingCase):
             ],
             new_activity_mail,
         )
+
+
+@tagged("marketing_automation", "ma_sync")
+class TestCampaignHoldsItsRule(SyncingCase):
+    def test_a_stopped_campaign_pauses_its_rule_and_a_restarted_one_resumes_it(self):
+        campaign = self.campaign
+        rule = campaign.automation_rule_id.with_context(active_test=False)
+
+        campaign.action_start_campaign()
+        self.assertTrue(rule.active)
+        self.assertFalse(rule.is_paused)
+
+        campaign.action_stop_campaign()
+        self.assertFalse(rule.active, "a stopped campaign starts no participant")
+        self.assertTrue(rule.is_paused, "and holds the ones under way")
+
+        campaign.action_start_campaign()
+        self.assertTrue(rule.active)
+        self.assertFalse(rule.is_paused)

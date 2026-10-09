@@ -42,7 +42,7 @@ its Diagram page, read-only and drawn from the run's snapshot.
 | `tests/test_mail_composer.py` | Mail trigger tests |
 | `tests/test_audit_regressions.py` | Regressions from the audit (`@tagged post_install`) |
 | `tests/test_registry_hooks.py` | Only rules whose trigger patches a model reload the registry |
-| `tests/test_runtime_sync.py` | Skip reasons, root start delays, syncing running runs to an edited definition, adding steps, archived rules, the error policy |
+| `tests/test_runtime_sync.py` | Skip reasons, root start delays, syncing running runs to an edited definition, adding steps, paused and retired rules, the error policy |
 | `tests/test_step_validity.py` | A step skipped once its validity has passed |
 | `tests/test_queued_dispatch.py` | Queued runs, the batched dispatcher, commit policy |
 | `tests/test_timed_event_edges.py` | Delayed edges, event and no-event edges, exclusive events, the scheduled state |

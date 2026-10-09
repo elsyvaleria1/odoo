@@ -152,6 +152,10 @@ class AutomationRuntime(models.Model):
         compute_sudo=True,
         help="Human-readable progress display",
     )
+    automation_paused = fields.Boolean(
+        related="automation_id.is_paused",
+        string="Automation Paused",
+    )
     awaiting_input = fields.Boolean(
         compute="_compute_awaiting_input",
         help="A step waits for someone to fill in fields of this run",
@@ -286,6 +290,9 @@ class AutomationRuntime(models.Model):
 
     def action_run_all(self):
         self.check_singleton()
+        if self.automation_id.is_paused:
+            # held where it stands; resuming the automation advances it
+            return self.state
 
         while self.state == "in_progress":
             ready_lines = self.line_ids.filtered(lambda l: l.state == "ready")
@@ -472,7 +479,7 @@ class AutomationRuntime(models.Model):
                 *(
                     [("automation_id", "in", rules.ids)]
                     if rules is not None
-                    else [("automation_id.active", "=", True)]
+                    else [("automation_id.is_paused", "=", False)]
                 ),
                 (
                     "line_ids",
@@ -505,7 +512,7 @@ class AutomationRuntime(models.Model):
                 *(
                     [("runtime_id.automation_id", "in", rules.ids)]
                     if rules is not None
-                    else [("runtime_id.automation_id.active", "=", True)]
+                    else [("runtime_id.automation_id.is_paused", "=", False)]
                 ),
             ],
             order="action_id, id",

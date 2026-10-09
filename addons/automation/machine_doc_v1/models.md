@@ -513,16 +513,20 @@ now runs `_dispatch_due_steps()` (migration `1.10` rewrites its code and name):
    loops until no ready line is left that it has not already handed out.
 
 Immediate runs are never dispatched: a run that a person steps through with
-`action_next_step` keeps its ready lines until they click. Neither are the queued runs of an
-archived rule: both `_resume_waiting_executions` and the dispatcher filter on
-`automation_id.active`, so archiving a rule pauses its runs where they stand and
-unarchiving resumes them.
+`action_next_step` keeps its ready lines until they click. Neither are the runs
+of a paused rule (`automation.rule.is_paused`, Pause / Resume on the form):
+`_settle_approvals`, `_resume_waiting_executions` and the dispatcher filter on
+`automation_id.is_paused`, and `action_run_all` returns at once for an immediate
+run, so a paused rule's runs -- the ones it starts while paused included -- wait
+where they stand; `action_unpause` advances them and requests a dispatch.
+Archiving a rule retires it instead: it starts no new run, the runs under way
+finish, and `action_cancel_open_runs` cancels them when that is the intent.
 
 `_dispatch_due_steps(rules=None)` and `_resume_waiting_executions(rules=None)`
 take an optional recordset of rules, so an application can dispatch its own rules
 now (a campaign's "execute" button) without touching anyone else's queue. Rules
-named that way are dispatched even when archived: asking for a rule by name is
-the explicit request the archive otherwise withholds.
+named that way are dispatched even when paused: asking for a rule by name is
+the explicit request the pause otherwise withholds.
 
 ### What a failed step does
 
