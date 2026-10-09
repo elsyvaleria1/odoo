@@ -84,7 +84,7 @@ class IotBox(models.Model):
 
     def _is_inbound_request_authentic(self, headers, body) -> bool:
         self.check_singleton()
-        return is_bearer_token_valid(headers, self.sudo().token)
+        return is_bearer_token_valid(headers, self.token)
 
     device_ids = fields.One2many(
         comodel_name="iot.device",
