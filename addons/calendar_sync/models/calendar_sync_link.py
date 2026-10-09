@@ -70,6 +70,12 @@ class CalendarSyncLink(models.Model):
         copy=False,
         help="The provider's last refusal; the record is not sent again until it changes.",
     )
+    answer_owed = fields.Char(
+        copy=False,
+        help="The answer to its invitation this attendee's calendar still owes the "
+        "organizer: sent when the synchronization runs, kept until the provider "
+        "takes it.",
+    )
 
     _one_record = models.Constraint(
         "CHECK(num_nonnulls(event_id, recurrence_id) <= 1)",
@@ -145,6 +151,13 @@ class CalendarSyncLink(models.Model):
         def unmatched():
             return [remote for remote in remotes if remote.remote_id not in found]
 
+        def adoptable():
+            # a cancelled item found by its iCalendar UID or Odoo's hint may be
+            # an earlier copy, deleted, of a meeting held under another id now:
+            # adopting it would read that deletion as this calendar's declining.
+            # One under the very id another calendar holds is the same item
+            return [remote for remote in unmatched() if not remote.cancelled]
+
         # an insert in flight whose answer was lost: the item carries the id
         # the insert sent, as its own id or beside it
         client_ids = account._provider(code).capabilities.client_insert_id
@@ -161,11 +174,16 @@ class CalendarSyncLink(models.Model):
                 ]
             ):
                 remote = inserting[link.insert_id]
+                if not link._record():
+                    # a tombstone: its record went before the item was known
+                    link.remote_id = remote.remote_id
+                    found[remote.remote_id] = link
+                    continue
                 found[remote.remote_id] = Link._adopt(
                     account, link._record(), remote, link
                 )
 
-        by_universal_id = {r.universal_id: r for r in unmatched() if r.universal_id}
+        by_universal_id = {r.universal_id: r for r in adoptable() if r.universal_id}
         if by_universal_id:
             for link in Link.search(
                 Domain("account_id.provider", "=", code)
@@ -187,7 +205,7 @@ class CalendarSyncLink(models.Model):
                     found[remote.remote_id] = Link._adopt(
                         account, link._record(), remote, link
                     )
-        for remote in unmatched():
+        for remote in adoptable():
             if not remote.odoo_hint:
                 continue
             model = (

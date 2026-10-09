@@ -74,15 +74,11 @@ class WizardCalendarSyncReset(models.TransientModel):
             )
             for link in deleted:
                 account._call(adapter._delete, account, link.remote_id)
-            if account._provider(code).capabilities.shared_ids:
-                # the attendees' calendars hold the same items under the same
-                # ids: their links would read the deletion as their declining
-                links |= Link.search(
-                    [
-                        ("account_id.provider", "=", code),
-                        ("remote_id", "in", organized.mapped("remote_id")),
-                    ]
-                )
+            # the attendees' calendars lose the items too: their links would
+            # read the deletion as their declining
+            links |= Link._of(organized.event_id, code) | Link._of(
+                organized.recurrence_id, code
+            )
         events = (
             organized.event_id | organized.recurrence_id.calendar_event_ids
         ).with_env(self.env)

@@ -135,12 +135,15 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
 
     @api.model
     def _patch(self, account, remote_id, record, values):
-        self._service(record).patch(
+        # the version Google answers is Odoo's own: a later read of it must
+        # not overwrite an edit Odoo still owes
+        response = self._service(record).patch(
             remote_id,
             values,
             connection=account.user_id._calendar_sync_connection("google"),
             timeout=self._timeout(),
         )
+        return RemoteEvent(remote_id, etag=(response or {}).get("etag"))
 
     @api.model
     def _delete(self, account, remote_id):

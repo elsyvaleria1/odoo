@@ -76,7 +76,13 @@ class MixinCalendarSync(models.AbstractModel):
                 # an insert in flight may have landed under its own id
                 for link in links.filtered(lambda l: not l.remote_id and l.insert_id):
                     link.remote_id = link.insert_id
-            unsent = links.filtered(lambda link: not link.remote_id)
+            # one whose id the provider chooses stays a tombstone too: the item
+            # it may have inserted is found by its insert id, then deleted
+            unsent = links.filtered(lambda link: not (link.remote_id or link.insert_id))
+            # dated now: a read after this is what tells whether it landed
+            links.filtered(lambda link: not link.remote_id and link.insert_id).write(
+                {"pending": False}
+            )
             unsent.unlink()
             accounts |= (links - unsent).account_id
         # the links left become tombstones: their items are deleted next

@@ -33,16 +33,21 @@ class CalendarAttendee(models.Model):
             for event in self.event_id:
                 sender = event.user_id or self.env.user
                 links = Link._of(event, code)
-                if not (links and sender._calendar_sync_active(code)):
+                if not links or sender._calendar_sync_stopped(code):
                     continue
+                # owed like an edit: sent when the synchronization runs
                 links.write({"pending": True, "error": False})
-                Account._for(sender, code)._as_engine()._queue_push(event)
+                if sender._calendar_sync_active(code):
+                    Account._for(sender, code)._as_engine()._queue_push(event)
 
     def _calendar_sync_answer_in_own_calendar(self, code: str) -> None:
-        """The current user's answers, sent from their own calendar; the
-        organizer has none to give."""
+        """The current user's answers, owed from their own calendar while they
+        synchronize with `code`, paused or not; the organizer has none to
+        give."""
         user = self.env.user
-        if not user._calendar_sync_active(code):
+        if not user._calendar_sync_connection(code) or user._calendar_sync_stopped(
+            code
+        ):
             return
         Link = self.env["calendar.sync.link"]
         account = self.env["calendar.sync.account"]._for(user, code)._as_engine()
@@ -53,4 +58,4 @@ class CalendarAttendee(models.Model):
             )
         ):
             if Link._of(attendee.event_id, code):
-                account._queue_answer(attendee.event_id, attendee.state)
+                account._owe_answer(attendee.event_id, attendee.state)

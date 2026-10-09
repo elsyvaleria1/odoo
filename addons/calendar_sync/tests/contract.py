@@ -420,3 +420,86 @@ class CalendarSyncContract:
         self.assertEqual(len(self.server.items(self.organizer)), 1)
         self.assertEqual(len(self.events_named("Sent twice")), 1)
         self.assertTrue(self.link(event, self.organizer).remote_id)
+
+    def test_an_edit_made_after_a_lost_insert_answer_reaches_the_item(self):
+        """The retried insert finds the item the first attempt left, which
+        holds the values of then."""
+        self.server.lost_answers = 1
+        event = self.event(name="Lost")
+        self.push()
+        event.with_user(self.organizer).name = "Renamed after loss"
+        self.push()
+        self.sync(self.organizer)
+        self.assertEqual(
+            [item["name"] for item in self.server.items(self.organizer).values()],
+            ["Renamed after loss"],
+        )
+        self.assertEqual(event.name, "Renamed after loss")
+
+    def test_an_event_deleted_after_a_lost_insert_answer_stays_deleted(self):
+        self.server.lost_answers = 1
+        event = self.event(name="Lost then deleted")
+        self.push()
+        event.with_user(self.organizer).unlink()
+        self.push()
+        self.sync(self.organizer)
+        self.sync(self.organizer)
+        self.assertFalse(self.server.items(self.organizer))
+        self.assertFalse(self.events_named("Lost then deleted"))
+
+    def test_an_answer_given_while_paused_reaches_the_organizer_once_resumed(self):
+        event = self.event(name="Answered while paused")
+        self.push()
+        self.sync(self.attendee)
+        remote_id = self.link(event, self.organizer).remote_id
+        self.env["calendar.sync.account"]._set_paused(self.code, True)
+        event.attendee_ids.filtered(
+            lambda attendee: attendee.partner_id == self.attendee.partner_id
+        ).with_user(self.attendee).do_accept()
+        self.push()
+        self.env["calendar.sync.account"]._set_paused(self.code, False)
+        self.sync(self.attendee)
+        self.sync(self.organizer)
+        self.assertEqual(
+            self.server.items(self.organizer)[remote_id]["answers"][
+                self.attendee.email
+            ],
+            "accepted",
+        )
+
+    def test_a_reset_deleting_the_items_declines_nothing_for_the_attendees(self):
+        event = self.event(name="Reset with attendees")
+        self.push()
+        self.sync(self.attendee)
+        self.env["wizard.calendar.sync.reset"].create(
+            {
+                "provider": self.code,
+                "user_id": self.organizer.id,
+                "delete_policy": "delete_remote",
+                "sync_policy": "all",
+            }
+        ).reset_account()
+        self.push()
+        self.sync(self.attendee)
+        self.assertNotEqual(
+            event.attendee_ids.filtered(
+                lambda attendee: attendee.partner_id == self.attendee.partner_id
+            ).state,
+            "declined",
+        )
+
+    def test_an_edit_owed_after_a_patch_is_not_overwritten_by_the_patch(self):
+        """The version a patch answers is Odoo's own: reading it back must not
+        overwrite an edit Odoo still owes."""
+        event = self.event(name="V0")
+        self.push()
+        remote_id = self.link(event, self.organizer).remote_id
+        event.with_user(self.organizer).name = "V1"
+        self.push()
+        self.env["calendar.sync.account"]._set_paused(self.code, True)
+        event.with_user(self.organizer).name = "V2"
+        self.push()
+        self.env["calendar.sync.account"]._set_paused(self.code, False)
+        self.sync(self.organizer)
+        self.assertEqual(event.name, "V2")
+        self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "V2")

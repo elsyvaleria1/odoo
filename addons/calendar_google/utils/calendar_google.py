@@ -90,12 +90,13 @@ class GoogleCalendarService(CalendarService):
 
     @requires_connection
     def patch(self, event_id, values, connection=None, timeout=TIMEOUT):
+        """The event as Google holds it after the patch."""
         send_updates = self.env.context.get("send_updates", True)
         url = (
             "/calendar/v3/calendars/primary/events/%s?sendUpdates=%s&conferenceDataVersion=1"
             % (event_id, "all" if send_updates else "none")
         )
-        self._request(connection, "PATCH", url, json=values, timeout=timeout)
+        return self._request(connection, "PATCH", url, json=values, timeout=timeout)
 
     @requires_connection
     def delete(self, event_id, connection=None, timeout=TIMEOUT):

@@ -457,11 +457,22 @@ class CalendarSyncAccount(models.Model):
         if quiet:
             data["calendar_sync.push.quiet"].update(self.ids)
 
-    def _queue_answer(self, event, state: str) -> None:
-        """Answer `event`'s invitation with `state` in this attendee's account
-        once this transaction is committed."""
+    def _owe_answer(self, event, state: str) -> None:
+        """Owe `event`'s organizer this attendee's answer `state`, sent once
+        this transaction is committed when the synchronization runs, else
+        when it next does."""
         self.check_singleton()
-        self._push_queue()["calendar_sync.push.answers"].add((self.id, event.id, state))
+        Link = self.env["calendar.sync.link"]._engine()
+        if own := Link.search(
+            [("account_id", "=", self.id), ("event_id", "=", event.id)]
+        ):
+            own.answer_owed = state
+        else:
+            Link.create(
+                {"account_id": self.id, "event_id": event.id, "answer_owed": state}
+            )
+        if self.user_id._calendar_sync_active(self.provider):
+            self._push_queue()["calendar_sync.push.answers"].add(self.id)
 
     def _push_queue(self):
         """What the push after this transaction's commit sends, started on
@@ -485,11 +496,7 @@ class CalendarSyncAccount(models.Model):
             records = cr.postcommit.data.pop("calendar_sync.push.records")
             quiet = cr.postcommit.data.pop("calendar_sync.push.quiet")
             deletes = cr.postcommit.data.pop("calendar_sync.push.deletes")
-            answers = {}
-            for account_id, event_id, state in cr.postcommit.data.pop(
-                "calendar_sync.push.answers"
-            ):
-                answers.setdefault(account_id, []).append((event_id, state))
+            answers = cr.postcommit.data.pop("calendar_sync.push.answers")
             only = dict.fromkeys(deletes, ())
             for account_id, model, record_id in records:
                 only[account_id] = (*only.get(account_id, ()), (model, record_id))
@@ -507,11 +514,13 @@ class CalendarSyncAccount(models.Model):
                         calendar_sync_interactive=account.id not in everything,
                     )
                     try:
-                        account._send_answers(answers.get(account.id, ()))
+                        # a push sends the answers owed first
                         if account.id in everything or account.id in only:
                             account._push(
                                 None if account.id in everything else only[account.id]
                             )
+                        else:
+                            account._send_answers()
                         push_cr.commit()
                     except Exception:
                         _logger.exception("calendar push of %s failed", account)
@@ -533,6 +542,8 @@ class CalendarSyncAccount(models.Model):
         self.check_singleton()
         code = self.provider
         if not self.user_id._calendar_sync_active(code):
+            return
+        if not self._send_answers():
             return
         Link = self.env["calendar.sync.link"]._engine()
         budget = PUSH_BUDGET
@@ -638,7 +649,12 @@ class CalendarSyncAccount(models.Model):
     def _send_delete(self, tombstone) -> bool:
         """Delete `tombstone`'s item; whether the push goes on."""
         if not tombstone.remote_id:
-            tombstone.unlink()
+            # an insert whose answer was lost: a read since the record went
+            # would have found the item it left, so there is none
+            if not tombstone.insert_id or (
+                self.last_sync_date and self.last_sync_date > tombstone.write_date
+            ):
+                tombstone.unlink()
             return True
         __, error = self._call(self._adapter()._delete, self, tombstone.remote_id)
         if error and error.kind in (ErrorKind.AUTH, ErrorKind.THROTTLED):
@@ -671,10 +687,24 @@ class CalendarSyncAccount(models.Model):
                 own, record, CalendarSyncError(ErrorKind.INVALID, refusal)
             )
         if not record.active:
+            if (
+                not own.remote_id
+                and own.insert_id
+                and self._provider(self.provider).capabilities.client_insert_id
+            ):
+                # an insert in flight may have landed under its own id
+                own.remote_id = own.insert_id
             if own.remote_id:
                 __, error = self._call(adapter._delete, self, own.remote_id)
                 if error and error.kind not in (ErrorKind.GONE, *PERMANENT):
                     return self._failed(own, record, error)
+            elif own.insert_id:
+                # the item an insert whose answer was lost may have left is
+                # found by its insert id, then deleted
+                own.write({Link._field_of(record): False, "pending": False})
+                (Link._of(record, self.provider) - own).unlink()
+                self.env.cr.commit()
+                return True
             Link._of(record, self.provider).unlink()
         elif not (values := adapter._remote_values(record, self)):
             # nothing the provider can hold yet: a series with no event
@@ -690,6 +720,9 @@ class CalendarSyncAccount(models.Model):
         else:
             if own.error:
                 return True
+            # an earlier attempt whose answer was lost: what it inserted holds
+            # the values of then, and the retry resolves to that item
+            retried = bool(own)
             own = own or Link.create(
                 {
                     "account_id": self.id,
@@ -709,6 +742,7 @@ class CalendarSyncAccount(models.Model):
                 and self._provider(self.provider).capabilities.client_insert_id
             ):
                 own.write({"remote_id": own.insert_id, "pending": False})
+                retried = True
             elif error:
                 return self._failed(own, record, error)
             else:
@@ -721,37 +755,48 @@ class CalendarSyncAccount(models.Model):
                     }
                 )
                 adapter._after_insert(self, record, remote)
+            if retried:
+                remote, error = self._call(
+                    adapter._patch, self, own.remote_id, record, values
+                )
+                if error:
+                    own.pending = True
+                    return self._failed(own, record, error)
+                own.remote_etag = remote and remote.etag
         self.env.cr.commit()
         return True
 
-    def _send_answers(self, answers) -> None:
-        """Answer the invitations of `answers`, [(event id, state)], in this
-        account's calendar."""
-        if not answers or not self.user_id._calendar_sync_active(self.provider):
-            return
+    def _send_answers(self) -> bool:
+        """Send the answers this attendee's calendar owes; whether the push
+        goes on. An answer stays owed until the provider takes it, or refuses
+        it for good."""
+        if not self.user_id._calendar_sync_active(self.provider):
+            return False
+        if not self._provider(self.provider).capabilities.answer_endpoint:
+            # its answers travel in the organizer's event, owed as an edit is
+            return True
         Link = self.env["calendar.sync.link"]._engine()
         adapter = self._adapter()
-        events = (
-            self.env["calendar.event"]
-            .browse([event_id for event_id, __ in answers])
-            .exists()
-        )
-        links = Link.search(
-            [("account_id", "=", self.id), ("event_id", "in", events.ids)]
-        ).grouped("event_id")
-        for event_id, state in answers:
-            event = events.browse(event_id)
-            if event not in events:
-                continue
-            own = links.get(event, Link)
+        for own in Link.search(
+            [
+                ("account_id", "=", self.id),
+                ("answer_owed", "!=", False),
+                ("event_id", "!=", False),
+            ]
+        ):
             if not own.remote_id:
-                own = self._resolve(event, own)
+                own = self._resolve(own.event_id, own)
             if not own.remote_id:
                 continue
-            __, error = self._call(adapter._answer, self, own.remote_id, state)
+            __, error = self._call(
+                adapter._answer, self, own.remote_id, own.answer_owed
+            )
             if error and error.kind in (ErrorKind.AUTH, ErrorKind.THROTTLED):
-                return
+                return False
+            if not error or error.kind == ErrorKind.GONE or error.kind in PERMANENT:
+                own.answer_owed = False
             self.env.cr.commit()
+        return True
 
     def _resolve(self, record, own):
         """This account's link of a `record` another account's calendar holds:
