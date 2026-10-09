@@ -18,7 +18,10 @@ registry.category("web_tour.tours").add("shop_sale_gift_card", {
             content: "validate the gift card",
             trigger: 'form[name="coupon_code"] button[type="submit"]',
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: "the code is answered in place",
+            trigger: "body:not(:has(form[name='coupon_code'][aria-busy]))",
         },
         {
             content: "check gift card line",
@@ -33,7 +36,10 @@ registry.category("web_tour.tours").add("shop_sale_gift_card", {
             content: "Validate the promo",
             trigger: 'form[name="coupon_code"] button[type="submit"]',
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: "the code is answered in place",
+            trigger: "body:not(:has(form[name='coupon_code'][aria-busy]))",
         },
         {
             content: "Check promo",

@@ -114,7 +114,10 @@ webTours.add("update_shipping_after_discount", {
             content: "apply discount code",
             trigger: 'form[name="coupon_code"] button[type="submit"]',
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: "the code is answered in place",
+            trigger: "body:not(:has(form[name='coupon_code'][aria-busy]))",
         },
         ...assertCartAmounts({
             total: "0.00",

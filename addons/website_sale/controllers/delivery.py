@@ -8,7 +8,7 @@ from odoo.addons.web.controllers.utils import (
     FragmentResponse,
     render_fragments,
 )
-from odoo.addons.website_sale.controllers.cart import (
+from odoo.addons.website_sale.controllers.fragments import (
     get_cart_summary_fragment,
     get_order_total_fragment,
 )

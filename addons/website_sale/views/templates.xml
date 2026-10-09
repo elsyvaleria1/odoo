@@ -3525,7 +3525,8 @@
             class="mb-3"
             t-attf-action="/shop/pricelist#{redirect and '?r=' + redirect or ''}"
             method="post"
-            name="coupon_code">
+            name="coupon_code"
+            data-fragment-form="">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
             <div class="input-group w-100">
                 <input
@@ -3537,7 +3538,9 @@
                 <button type="submit" class="btn btn-light border">Apply</button>
             </div>
         </form>
-        <t t-if="request.params.get('code_not_available')" name="code_not_available">
+        <t
+            t-if="code_not_available or request.params.get('code_not_available')"
+            name="code_not_available">
             <div class="alert alert-danger text-start" role="alert">This promo code is not available.</div>
         </t>
     </template>

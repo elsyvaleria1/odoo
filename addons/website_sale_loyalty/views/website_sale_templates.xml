@@ -20,7 +20,8 @@
             <tr t-if="not hide_promotions" class="oe_website_sale_gift_card">
                 <td colspan="3" class="text-center text-xl-end border-0 p-0">
                     <span class="">
-                        <t t-if="request.params.get('code_not_available')">
+                        <t
+                            t-if="code_not_available or request.params.get('code_not_available')">
                             <div
                                 class="alert alert-danger text-start small"
                                 role="alert">

@@ -19,9 +19,11 @@ from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.controllers import portal as payment_portal
 from odoo.addons.portal.controllers.portal import _parse_bool_param, _parse_record_id
 from odoo.addons.sale.controllers import portal as sale_portal
+from odoo.addons.web.controllers.utils import fragments_or_redirect, wants_fragments
 from odoo.addons.website.controllers.main import QueryURL
 from odoo.addons.website.models.ir_http import sitemap_qs2dom
 from odoo.addons.website_sale.const import SHOP_PATH
+from odoo.addons.website_sale.controllers.fragments import get_coupon_fragments
 from odoo.addons.website_sale.models.website import (
     PRICELIST_SELECTED_SESSION_CACHE_KEY,
     PRICELIST_SESSION_CACHE_KEY,
@@ -977,13 +979,30 @@ class WebsiteSale(payment_portal.PaymentPortal):
                 pricelist_sudo
                 and request.website.is_pricelist_available(pricelist_sudo.id)
             ):
-                return request.redirect("%s?code_not_available=1" % redirect)
+                return self._coupon_answer(redirect, code_not_available=True)
 
             self._apply_pricelist(pricelist=pricelist_sudo)
         else:
             self._apply_pricelist(pricelist=None)
 
-        return request.redirect(redirect)
+        return self._coupon_answer(redirect)
+
+    def _coupon_answer(self, redirect, code_not_available=False):
+        location = (
+            f"{redirect}?code_not_available=1" if code_not_available else redirect
+        )
+        order_sudo = request.cart
+        if not order_sudo or not wants_fragments():
+            return request.redirect(location)
+        # what the page's own request would do before rendering it (loyalty
+        # rewards, prices and taxes follow the code)
+        order_sudo._recompute_cart()
+        return fragments_or_redirect(
+            request.env,
+            location,
+            *get_coupon_fragments(order_sudo, redirect, code_not_available),
+            events=order_sudo._cart_page_events(),
+        )
 
     def _apply_selectable_pricelist(self, pricelist_id):
         if (

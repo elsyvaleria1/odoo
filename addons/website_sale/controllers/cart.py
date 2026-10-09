@@ -19,6 +19,10 @@ from odoo.addons.web.controllers.utils import (
     fragments_or_redirect,
     render_fragments,
 )
+from odoo.addons.website_sale.controllers.fragments import (
+    get_cart_lines_fragment,
+    get_order_total_fragment,
+)
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 _debug = DebugLog(__name__)
@@ -26,34 +30,6 @@ _debug = DebugLog(__name__)
 # the products a route put in the cart before redirecting to it, for the cart
 # page to report as added (@website_sale/interactions/tracking)
 ADD_TO_CART_TRACKING_KEY = "website_sale_add_to_cart_tracking"
-
-
-def get_order_total_fragment(
-    order_sudo, *, hide_promotions=False, redirect=None
-) -> Fragment:
-    # inner: every total on the page keeps the classes its own t-call gave it;
-    # show_shorter_cart_summary: nothing renders beside the total's root;
-    # redirect: the page's own, which the coupon form posts back to
-    values = {
-        "website_sale_order": order_sudo,
-        "show_shorter_cart_summary": True,
-        "hide_promotions": hide_promotions,
-        "redirect": redirect,
-    }
-    if hide_promotions:
-        return Fragment(
-            "website_sale.total",
-            values,
-            key="website_sale.total_no_promotions",
-            swap="inner",
-        )
-    return Fragment("website_sale.total", values, swap="inner")
-
-
-def get_cart_summary_fragment(order_sudo) -> Fragment:
-    return Fragment(
-        "website_sale.cart_summary_content", {"website_sale_order": order_sudo}
-    )
 
 
 class Cart(PaymentPortal):
@@ -342,14 +318,7 @@ class Cart(PaymentPortal):
         )
 
     def _get_cart_lines_fragment(self, order_sudo) -> Fragment:
-        return Fragment(
-            "website_sale.cart_lines",
-            {
-                "website_sale_order": order_sudo,
-                "date": fields.Date.today(),
-                "suggested_products": order_sudo._cart_accessories(),
-            },
-        )
+        return get_cart_lines_fragment(order_sudo)
 
     def _get_cart_total_fragment(self, order_sudo) -> Fragment:
         return get_order_total_fragment(order_sudo)

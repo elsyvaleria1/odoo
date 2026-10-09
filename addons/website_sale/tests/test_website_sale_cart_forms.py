@@ -112,3 +112,47 @@ class TestCartBusChannel(HttpCase):
         with MockRequest(self.env, website=website, sale_order_id=order.id):
             channels = self.env["ir.websocket"]._get_bus_channels([])
         self.assertIn(order, channels)
+
+
+@tagged("post_install", "-at_install")
+class TestCouponForm(TestCartLineForm):
+    def _apply(self, promo, headers=None):
+        return self.url_open(
+            "/shop/pricelist?r=/shop/cart",
+            data={"csrf_token": http.Request.csrf_token(self), "promo": promo},
+            headers=headers,
+            allow_redirects=False,
+        )
+
+    def test_an_unknown_code_returns_to_the_page_that_says_so(self):
+        response = self._apply("NO-SUCH-CODE")
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(
+            response.headers["Location"].endswith("/shop/cart?code_not_available=1")
+        )
+
+    def test_asked_in_place_the_code_answers_the_cart_and_its_events(self):
+        response = self._apply("NO-SUCH-CODE", {"X-Odoo-Fragments": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        fragments = {
+            fragment["key"]: fragment["html"] for fragment in payload["fragments"]
+        }
+        self.assertEqual(
+            set(fragments),
+            {
+                "website_sale.cart_lines",
+                "website_sale.cart_summary_content",
+                "website_sale.total",
+                "website_sale.total_no_promotions",
+            },
+        )
+        # the total the coupon form sits in says what the redirect's query would
+        self.assertIn('name="coupon_code"', fragments["website_sale.total"])
+        self.assertIn("alert-danger", fragments["website_sale.total"])
+        events = {event["name"] for event in payload["events"]}
+        self.assertEqual(
+            events, {"website_sale:cart_updated", "payment:amount_changed"}
+        )

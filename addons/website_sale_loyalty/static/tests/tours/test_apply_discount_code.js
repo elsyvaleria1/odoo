@@ -34,7 +34,10 @@ registry.category("web_tour.tours").add("apply_discount_code_program_multi_rewar
             content: "validate the promo code",
             trigger: 'form[name="coupon_code"] button[type="submit"]',
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: "the code is answered in place",
+            trigger: "body:not(:has(form[name='coupon_code'][aria-busy]))",
         },
         {
             content: "check reward",
@@ -63,7 +66,10 @@ registry.category("web_tour.tours").add("apply_discount_code_program_multi_rewar
             content: "validate the promo code",
             trigger: 'form[name="coupon_code"] button[type="submit"]',
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: "the code is answered in place",
+            trigger: "body:not(:has(form[name='coupon_code'][aria-busy]))",
         },
         {
             content: "check refused message",

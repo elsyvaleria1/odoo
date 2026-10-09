@@ -33,7 +33,7 @@ class WebsiteSale(main.WebsiteSale):
 
             if reward_successfully_applied:
                 request.session["successful_code"] = promo
-        return request.redirect(post.get("r", "/shop/cart"))
+        return self._coupon_answer(post.get("r", "/shop/cart"))
 
     @route(
         ["/coupon/<string:code>"],
