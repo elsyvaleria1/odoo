@@ -97,3 +97,31 @@ test("a combo parent's displayPrice carries the order sign on a refund", async (
     expect(parent.displayPrice).toBe(10);
     expect(parent.displayPrice).toBe(child1.displayPrice + child2.displayPrice);
 });
+
+for (const method of ["round_globally", "round_per_line"]) {
+    test(`line subtotals sum to the order total under ${method}`, async () => {
+        const store = await setupPosEnv();
+        store.company.tax_calculation_rounding_method = method;
+        const lineIds = [901, 902, 903];
+        const order = store.models.loadConnectedData({
+            "pos.order": [{ id: 801, name: "Rounding", lines: lineIds }],
+            "pos.order.line": lineIds.map((id) => ({
+                id,
+                order_id: 801,
+                product_id: 5,
+                qty: 1,
+                price_unit: 1.05,
+                tax_ids: [1],
+            })),
+        })["pos.order"][0];
+        order.setOrderPrices();
+
+        const sum = (field) =>
+            order.currency.round(order.lines.reduce((s, line) => s + line[field], 0));
+        expect(order.amount_total).toBe(method === "round_globally" ? 3.62 : 3.63);
+        expect(sum("price_subtotal_incl")).toBe(order.amount_total);
+        expect(sum("price_subtotal")).toBe(
+            order.currency.round(order.amount_total - order.amount_tax),
+        );
+    });
+}

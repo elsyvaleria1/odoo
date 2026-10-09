@@ -186,11 +186,14 @@ export class PosOrderAccounting extends Base {
     }
 
     _getLineSubtotals(line, baseLine) {
+        const taxDetails = baseLine.tax_details;
+        const [totalIncluded] = accountTaxHelpers.measure_base_lines_total([baseLine]);
         return {
-            price_subtotal: line.currency.round(baseLine.tax_details.total_excluded),
-            price_subtotal_incl: line.currency.round(
-                baseLine.tax_details.total_included,
+            price_subtotal: line.currency.round(
+                taxDetails.total_excluded_currency +
+                    taxDetails.delta_total_excluded_currency,
             ),
+            price_subtotal_incl: line.currency.round(totalIncluded),
         };
     }
 
