@@ -2,6 +2,7 @@ import re
 from datetime import timedelta
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests import freeze_time, tagged
 
 from odoo.addons.account_collection.tests.common import CollectionCommon
@@ -161,3 +162,46 @@ class TestCustomerConfirmation(CollectionCommon, MockEmail):
         payment.action_post()
 
         self.assertFalse(payment.confirmation_state)
+
+    def test_a_reset_collection_is_unconfirmed_until_posted_again(self):
+        payment, _mails = self._collect_with_mails()
+        self._delivery(payment)._answer("confirmed")
+
+        payment.action_draft()
+        self.assertFalse(payment.confirmation_state)
+        with self.mock_mail_gateway():
+            payment.action_post()
+            mails = self._new_mails
+
+        self.assertEqual(payment.confirmation_state, "confirmed")
+        self.assertFalse(mails.filtered(lambda mail: mail.subject == "Please confirm"))
+
+    def test_a_cancelled_collection_takes_no_code(self):
+        payment, _mails = self._collect_with_mails()
+        payment.action_cancel()
+
+        with self.assertRaisesRegex(UserError, "does not wait for its contact"):
+            payment.action_issue_confirmation_code()
+
+    def test_the_chatter_says_where_the_customer_was_asked(self):
+        payment, _mails = self._collect_with_mails()
+
+        self.assertTrue(
+            payment.message_ids.filtered(
+                lambda message: (
+                    "asked to confirm this collection on s****@example.com"
+                    in (message.body or "")
+                )
+            )
+        )
+
+    def test_an_answer_through_the_collectors_invitation_reaches_the_supervisor(self):
+        payment, _mails = self._collect_with_mails()
+
+        self._delivery(payment).with_user(self.public)._answer(
+            "confirmed", payload={"invited_by": self.collector.id}
+        )
+
+        self.assertEqual(payment.confirmation_state, "confirmed")
+        (activity,) = self._supervisor_activities(payment)
+        self.assertIn("the collector invited", activity.summary)

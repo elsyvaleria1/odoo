@@ -32,7 +32,12 @@ class StockFleetTraceProof(StockFleetTraceOffline):
 
     def _picking(self, picking_id):
         picking = request.env["stock.picking"].browse(picking_id).exists()
-        if not picking or not picking.has_access("write"):
+        # the driver of the trip the delivery is on, at its door
+        if (
+            not picking
+            or not picking.has_access("write")
+            or picking.batch_id.operator_id.user_id != request.env.user
+        ):
             raise NotFound
         return picking
 

@@ -57,6 +57,12 @@ msgid "Confirmation Requests"
 msgstr "Solicitudes de confirmación"
 
 #. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Confirmed through a Telegram account the collector invited"
+msgstr "Confirmado mediante una cuenta de Telegram que invitó el cobrador"
+
+#. module: account_collection_proof
 #: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__confirmation_state
 msgid "Contact Confirmation"
 msgstr "Confirmación del contacto"
@@ -89,6 +95,12 @@ msgstr "Confirmo este cobro (%(sent_to)s)."
 #: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__id
 msgid "ID"
 msgstr "ID"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "No channel reaches the customer to confirm this collection."
+msgstr "Ningún canal llega al cliente para que confirme este cobro."
 
 #. module: account_collection_proof
 #: model:ir.model.fields,field_description:account_collection_proof.field_account_collection_remittance__count_payment_unconfirmed
@@ -153,6 +165,12 @@ msgstr "El cliente no confirmó este cobro"
 #: code:addons/account_collection_proof/models/account_payment.py:0
 msgid "The customer disputes this collection"
 msgstr "El cliente disputa este cobro"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "The customer was asked to confirm this collection on %(channels)s."
+msgstr "Se le pidió al cliente confirmar este cobro en %(channels)s."
 
 #. module: account_collection_proof
 #. odoo-python

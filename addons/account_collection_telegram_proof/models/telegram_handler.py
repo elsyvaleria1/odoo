@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import models
 from odoo.exceptions import UserError
 
@@ -6,6 +8,7 @@ from odoo.addons.telegram.tools import keyboard as kb
 
 CONFIRM = "cpf:"
 QR_SIDE = 400
+INVITATION_TTL = timedelta(minutes=30)
 
 
 class TelegramHandlerAccountCollection(models.AbstractModel):
@@ -145,8 +148,14 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
 
     def _invite_customer(self, bot, chat, payment) -> None:
         tr = self._tr(bot, chat)
-        token = self.env["telegram.link.token"]._issue_invitation(
-            bot, payment.partner_id
+        # opened at the door or not at all: a QR left in the collector's chat
+        # for days could bind an account of theirs as the customer
+        token = self.env["telegram.link.token"]._issue(
+            bot,
+            partner=payment.partner_id,
+            user=None,
+            method="invitation",
+            ttl=INVITATION_TTL,
         )
         link = bot._deep_link(token)
         qr = self.env["ir.actions.report"].prepare_barcode(

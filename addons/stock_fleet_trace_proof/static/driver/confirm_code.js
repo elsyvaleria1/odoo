@@ -73,6 +73,14 @@ function confirmCode(kind, stop, api) {
         T.confirm_code_send,
     );
     input.hidden = true;
+    // the code box sits in the Delivered form: Enter checks the code, it does
+    // not file the delivery
+    input.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            check.click();
+        }
+    });
     const box = h("div", {}, send, status, input, check);
     return api.field(T.confirm_code, box);
 }

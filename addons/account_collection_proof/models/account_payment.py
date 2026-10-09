@@ -1,14 +1,36 @@
 from typing import Any
 
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.tools import float_repr, format_date
 
 CONFIRMATION_PURPOSE = "account.payment.collection"
+UNPOSTED = ("draft", "canceled", "rejected")
 
 
 class AccountPayment(models.Model):
     _name = "account.payment"
     _inherit = ["account.payment", "mixin.proof.confirmation"]
+
+    @api.depends(
+        "confirmation_challenge_ids.state",
+        "confirmation_challenge_ids.delivery_ids.state",
+        "state",
+    )
+    def _compute_confirmation_state(self) -> None:
+        super()._compute_confirmation_state()
+        # a collection reset or cancelled stands confirmed by nobody: posted
+        # again with the same figures, its confirmation shows again
+        self.filtered(lambda payment: payment.state in UNPOSTED).update(
+            {
+                "confirmation_state": False,
+                "confirmation_date": False,
+                "confirmation_sent_to": False,
+            }
+        )
+
+    def _is_confirmation_askable(self) -> bool:
+        self.check_singleton()
+        return self.state not in UNPOSTED
 
     def _is_customer_collection(self) -> bool:
         self.check_singleton()
@@ -70,6 +92,7 @@ class AccountPayment(models.Model):
             if self.collection_check_date
             else None,
             "collector": self.collector_id.id,
+            "memo": self.memo or None,
         }
 
     def _get_confirmation_summary(self) -> list[list[str]]:
@@ -95,13 +118,39 @@ class AccountPayment(models.Model):
         self.check_singleton()
         return [(self.env._("Your receipt"), self.get_collection_receipt_url())]
 
+    def _on_confirmation_asked(self, challenge: models.BaseModel) -> None:
+        channels = self._get_confirmation_channels()
+        self._with_answer_privilege().message_post(
+            body=self.env._(
+                "The customer was asked to confirm this collection on %(channels)s.",
+                channels=", ".join(channels),
+            )
+            if channels
+            else self.env._(
+                "No channel reaches the customer to confirm this collection."
+            )
+        )
+
     def _on_confirmation_answered(self, evidence: models.BaseModel) -> None:
         payment = self._with_answer_privilege()
-        sent_to = (evidence.payload or {}).get("sent_to") or "-"
+        payload = evidence.payload or {}
+        sent_to = payload.get("sent_to") or "-"
         if evidence.verdict == "confirmed":
             payment._post_customer_answer(
                 self.env._("I confirm this collection (%(sent_to)s).", sent_to=sent_to)
             )
+            # the account that answered was connected with an invitation whoever
+            # asked made: they could have opened it themselves
+            if (
+                payload.get("invited_by")
+                and payload["invited_by"] == evidence.user_id.id
+            ):
+                payment._schedule_supervisor_activity(
+                    self.env._(
+                        "Confirmed through a Telegram account the collector invited"
+                    ),
+                    "",
+                )
             return
         reason = (evidence.payload or {}).get("reason") or ""
         payment._post_customer_answer(

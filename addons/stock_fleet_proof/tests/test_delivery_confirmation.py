@@ -6,7 +6,7 @@ from datetime import timedelta
 from PIL import Image
 
 from odoo import Command, fields
-from odoo.exceptions import RedirectWarning
+from odoo.exceptions import RedirectWarning, UserError
 from odoo.tests import TransactionCase, freeze_time, new_test_user, tagged
 
 from odoo.addons.mail.tests.common import MockEmail
@@ -101,8 +101,10 @@ class TestDeliveryConfirmation(MockEmail, TransactionCase):
 
         self.assertEqual(picking.confirmation_state, "confirmed")
         self.assertTrue(picking.delivery_proof_ok)
-        self.assertIn("I received this delivery", picking.message_ids[0].body)
-        self.assertEqual(picking.message_ids[0].author_id, self.customer)
+        note = picking.message_ids.filtered(
+            lambda message: "I confirm this delivery" in (message.body or "")
+        )
+        self.assertEqual(note.author_id, self.customer)
 
     def test_a_dispute_reaches_the_responsible(self):
         picking, _mails = self._delivered()
@@ -180,3 +182,62 @@ class TestDeliveryConfirmation(MockEmail, TransactionCase):
                 lambda activity: activity.summary and "disputes" in activity.summary
             )
         )
+
+    def test_a_reviewer_rejection_outlives_a_dispute_and_no_answer(self):
+        disputed, _mails = self._delivered()
+        silent, _mails = self._delivered()
+        (disputed | silent).delivery_proof_ok = False
+
+        self._delivery(disputed).with_user(self.public)._answer("disputed")
+        with freeze_time(fields.Datetime.now() + timedelta(days=3, hours=1)):
+            self.env["proof.challenge"]._cron_follow_up_confirmations()
+
+        self.assertEqual(
+            (disputed.delivery_proof_ok, silent.delivery_proof_ok), (False, False)
+        )
+
+    def test_a_code_given_for_everything_does_not_cover_part_of_it(self):
+        other = self.env["product.product"].create(
+            {"name": "Seed", "is_storable": True}
+        )
+        self.env["stock.quant"]._update_available_quantity(
+            other, self.stock_location, 1000
+        )
+        picking = self._picking()
+        picking.move_ids = [
+            Command.create(
+                {
+                    "product_id": other.id,
+                    "product_uom_qty": 4,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": self.customer_location.id,
+                }
+            )
+        ]
+        picking.action_assign()
+        picking.move_ids.picked = False
+        with self.mock_mail_gateway():
+            params = picking.action_issue_confirmation_code()
+            code = re.search(r">\s*(\d{6})\s*<", self._new_mails.body_html).group(1)
+        picking.action_prove_confirmation_code(
+            {
+                "token": params["token"],
+                "method": "email_code",
+                "payload": {"code": code},
+            }
+        )
+
+        picking.move_ids.filtered(
+            lambda move: move.product_id == self.product
+        ).picked = True
+
+        self.assertFalse(picking._is_confirmation_current())
+        with self.assertRaises(RedirectWarning):
+            picking.button_validate()
+
+    def test_a_dispute_is_not_overridden_by_a_code(self):
+        picking, _mails = self._delivered()
+        self._delivery(picking)._answer("disputed")
+
+        with self.assertRaisesRegex(UserError, "does not wait for its contact"):
+            picking.action_issue_confirmation_code()

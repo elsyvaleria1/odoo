@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import Any
 
-from odoo import api, fields, models
-from odoo.tools import float_repr, format_date
+from odoo import models
+from odoo.tools import float_repr
 
 CONFIRMATION_PURPOSE = "stock.picking.delivery"
 
@@ -11,30 +11,28 @@ class StockPicking(models.Model):
     _name = "stock.picking"
     _inherit = ["stock.picking", "mixin.proof.confirmation"]
 
-    @api.depends("delivery_proof", "signature", "confirmation_state")
-    def _compute_delivery_proof_ok(self):
-        super()._compute_delivery_proof_ok()
-        self.filtered(
-            lambda picking: picking.confirmation_state == "confirmed"
-        ).delivery_proof_ok = True
-
     def _has_delivery_proof(self):
         return super()._has_delivery_proof() or self._is_confirmation_current()
 
     def _action_done(self, *, cancel_backorder=False):
         res = super()._action_done(cancel_backorder=cancel_backorder)
+        # a customer who confirmed at the door what was delivered is not asked
+        # again; one who confirmed more than left is
         self.filtered(
-            lambda picking: (
-                picking.state == "done"
-                and picking._is_customer_delivery()
-                and picking.confirmation_state != "confirmed"
-            )
+            lambda picking: picking.state == "done" and picking._is_customer_delivery()
         )._ask_confirmation()
         return res
 
     def _is_customer_delivery(self) -> bool:
         self.check_singleton()
-        return bool(self.partner_id and self._requires_delivery_proof())
+        # a return to a vendor leaves by the delivery type too, to no customer
+        return bool(
+            self.partner_id and not self.return_id and self._requires_delivery_proof()
+        )
+
+    def _is_confirmation_askable(self) -> bool:
+        self.check_singleton()
+        return self.state != "cancel"
 
     def _get_confirmation_partner(self) -> models.BaseModel:
         self.check_singleton()
@@ -47,7 +45,10 @@ class StockPicking(models.Model):
 
     def _get_delivered_quantities(self) -> list[tuple[models.BaseModel, float]]:
         quantities = defaultdict(float)
-        for move in self.move_ids.filtered(lambda move: move.state != "cancel"):
+        moves = self.move_ids.filtered(lambda move: move.state != "cancel")
+        # what leaves: the moves picked when some are, all of them before then
+        moves = moves.filtered("picked") or moves
+        for move in moves:
             quantities[move.product_id] += move.product_uom_id._get_quantity_report(
                 move.quantity, move.product_id.uom_id
             )
@@ -76,10 +77,6 @@ class StockPicking(models.Model):
         summary = [
             [env._("Delivery"), self.name],
             [
-                env._("Delivered on"),
-                format_date(env, self.date_done or fields.Date.context_today(self)),
-            ],
-            [
                 env._("Products"),
                 "; ".join(
                     f"{product.display_name}: "
@@ -96,14 +93,32 @@ class StockPicking(models.Model):
             summary.append([env._("Reference"), self.origin])
         return summary
 
+    def _on_confirmation_asked(self, challenge: models.BaseModel) -> None:
+        channels = self._get_confirmation_channels()
+        self.message_post(
+            body=self.env._(
+                "The customer was asked to confirm this delivery on %(channels)s.",
+                channels=", ".join(channels),
+            )
+            if channels
+            else self.env._("No channel reaches the customer to confirm this delivery.")
+        )
+
     def _on_confirmation_answered(self, evidence: models.BaseModel) -> None:
         sent_to = (evidence.payload or {}).get("sent_to") or "-"
         if evidence.verdict == "confirmed":
             self._post_customer_answer(
                 self.env._(
-                    "I received this delivery as it is (%(sent_to)s).", sent_to=sent_to
+                    "I confirm this delivery as it is (%(sent_to)s).", sent_to=sent_to
                 )
             )
+            # the customer's word is evidence: once, and as a reviewer's tick,
+            # which a reviewer may take back
+            if not self.delivery_proof_ok:
+                self.with_privilege(
+                    "stock_fleet_proof.privilege_accept_customer_confirmation",
+                    reason="the customer confirmed the delivery as it is",
+                ).delivery_proof_ok = True
             return
         reason = (evidence.payload or {}).get("reason") or ""
         self._post_customer_answer(

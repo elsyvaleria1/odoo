@@ -16,6 +16,19 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: stock_fleet_proof
+#: model:res.groups,comment:stock_fleet_proof.privilege_accept_customer_confirmation
+msgid ""
+"A customer who confirms on their own channel, or with a code at the door, "
+"the goods a delivery left them gives it evidence a reviewer would accept. "
+"Nobody holds this privilege as a member: the delivery takes it to tick its "
+"evidence valid once, which a reviewer may take back."
+msgstr ""
+"Un cliente que confirma en su propio canal, o con un código en la puerta, la"
+" mercancía que le dejó una entrega le da una evidencia que un revisor "
+"aceptaría. Nadie tiene este privilegio como miembro: la entrega lo toma para"
+" marcar su evidencia como válida una vez, lo que un revisor puede retirar."
+
+#. module: stock_fleet_proof
 #: model:ir.model.fields,field_description:stock_fleet_proof.field_stock_picking__confirmation_sent_to
 msgid "Answered From"
 msgstr "Respondido desde"
@@ -39,12 +52,6 @@ msgstr "Confirmación del contacto"
 #: model_terms:ir.ui.view,arch_db:stock_fleet_proof.view_picking_form
 msgid "Customer Is Here: Confirm With a Code"
 msgstr "El cliente está aquí: confirmar con un código"
-
-#. module: stock_fleet_proof
-#. odoo-python
-#: code:addons/stock_fleet_proof/models/stock_picking.py:0
-msgid "Delivered on"
-msgstr "Entregado el"
 
 #. module: stock_fleet_proof
 #. odoo-python
@@ -77,8 +84,8 @@ msgstr "Conductor"
 #. module: stock_fleet_proof
 #. odoo-python
 #: code:addons/stock_fleet_proof/models/stock_picking.py:0
-msgid "I received this delivery as it is (%(sent_to)s)."
-msgstr "Recibí esta entrega tal como está (%(sent_to)s)."
+msgid "I confirm this delivery as it is (%(sent_to)s)."
+msgstr "Confirmo esta entrega tal como está (%(sent_to)s)."
 
 #. module: stock_fleet_proof
 #: model:ir.model.fields,field_description:stock_fleet_proof.field_stock_picking__id
@@ -86,9 +93,23 @@ msgid "ID"
 msgstr "ID"
 
 #. module: stock_fleet_proof
+#. odoo-python
+#: code:addons/stock_fleet_proof/models/stock_picking.py:0
+msgid "No channel reaches the customer to confirm this delivery."
+msgstr "Ningún canal llega al cliente para que confirme esta entrega."
+
+#. module: stock_fleet_proof
 #: model_terms:ir.ui.view,arch_db:stock_fleet_proof.view_picking_search
 msgid "Not Confirmed by the Customer"
 msgstr "No confirmado por el cliente"
+
+#. module: stock_fleet_proof
+#: model:res.groups,name:stock_fleet_proof.privilege_accept_customer_confirmation
+msgid ""
+"Privilege: a customer's confirmation of a delivery is its accepted evidence"
+msgstr ""
+"Privilegio: la confirmación de una entrega por el cliente es su evidencia "
+"aceptada"
 
 #. module: stock_fleet_proof
 #. odoo-python
@@ -122,6 +143,12 @@ msgstr "El cliente disputa esta entrega"
 #. module: stock_fleet_proof
 #. odoo-python
 #: code:addons/stock_fleet_proof/models/stock_picking.py:0
+msgid "The customer was asked to confirm this delivery on %(channels)s."
+msgstr "Se le pidió al cliente confirmar esta entrega en %(channels)s."
+
+#. module: stock_fleet_proof
+#. odoo-python
+#: code:addons/stock_fleet_proof/models/stock_picking.py:0
 msgid "This delivery is not right (%(sent_to)s). %(reason)s"
 msgstr "Esta entrega no es correcta (%(sent_to)s). %(reason)s"
 
@@ -129,3 +156,9 @@ msgstr "Esta entrega no es correcta (%(sent_to)s). %(reason)s"
 #: model:ir.model,name:stock_fleet_proof.model_stock_picking
 msgid "Transfer"
 msgstr "Traslado"
+
+#~ msgid "Delivered on"
+#~ msgstr "Entregado el"
+
+#~ msgid "I received this delivery as it is (%(sent_to)s)."
+#~ msgstr "Recibí esta entrega tal como está (%(sent_to)s)."

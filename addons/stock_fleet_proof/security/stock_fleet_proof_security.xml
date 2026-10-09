@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_accept_customer_confirmation" model="res.groups">
+        <field
+            name="name">Privilege: a customer's confirmation of a delivery is its accepted evidence</field>
+        <field
+            name="comment">A customer who confirms on their own channel, or with a code at the door, the goods a delivery left them gives it evidence a reviewer would accept. Nobody holds this privilege as a member: the delivery takes it to tick its evidence valid once, which a reviewer may take back.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="access_stock_picking_accept_customer_confirmation" model="ir.access">
+        <field
+            name="name">stock.picking: a customer's confirmation ticks the delivery's evidence valid</field>
+        <field name="model_id" ref="stock.model_stock_picking" />
+        <field name="group_id" ref="privilege_accept_customer_confirmation" />
+        <field name="kind">permission</field>
+        <field name="verbs">accept_delivery_proof</field>
+    </record>
+
+</odoo>
