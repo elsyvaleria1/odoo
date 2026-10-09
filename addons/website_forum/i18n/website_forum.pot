@@ -1683,7 +1683,6 @@ msgid "Famous Question"
 msgstr ""
 
 #. module: website_forum
-#: model:ir.model.fields,field_description:website_forum.field_forum_post__favorite_count
 #: model_terms:ir.ui.view,arch_db:website_forum.forum_model_nav
 msgid "Favorite"
 msgstr ""
@@ -1715,6 +1714,7 @@ msgid "Favorite Questions"
 msgstr ""
 
 #. module: website_forum
+#: model:ir.model.fields,field_description:website_forum.field_forum_post__favorite_count
 #: model_terms:ir.ui.view,arch_db:website_forum.user_sidebar_body
 msgid "Favorites"
 msgstr ""

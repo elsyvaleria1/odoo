@@ -131,7 +131,7 @@ class ForumPost(models.Model):
 
     favorite_count = fields.Count(
         count_of="favorite_user_ids",
-        string="Favorite",
+        string="Favorites",
         store=True,
     )
 
