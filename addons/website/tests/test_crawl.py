@@ -12,6 +12,18 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 _logger = logging.getLogger(__name__)
 
 
+def nested_form(html):
+    depth = 0
+    for tag in re.finditer(r"<(/?)form\b[^>]*>", html, re.IGNORECASE):
+        if tag.group(1):
+            depth = max(0, depth - 1)
+            continue
+        if depth:
+            return tag.group(0)
+        depth += 1
+    return None
+
+
 @odoo.tests.common.tagged("post_install", "-at_install", "crawl")
 class Crawler(HttpCaseWithUserDemo):
     def setUp(self):
@@ -81,6 +93,11 @@ class Crawler(HttpCaseWithUserDemo):
         )
 
         if r.headers["Content-Type"].startswith("text/html"):
+            self.assertFalse(
+                nested_form(r.text),
+                "%s %s opens a form inside another: the parser drops the inner "
+                "one, and its buttons submit the outer" % (msg, url),
+            )
             doc = lxml.html.fromstring(r.content)
             for link in doc.xpath("//a[@href]"):
                 href = link.get("href")
@@ -164,6 +181,12 @@ class Crawler(HttpCaseWithUserDemo):
             self.assertEqual(cleaned, clean_expected)
             uniq.add(cleaned)
         self.assertEqual(len(uniq), 16)
+
+    def test_06_a_form_inside_a_form_is_found(self):
+        self.assertIsNone(nested_form("<form a></form><form b></form>"))
+        self.assertEqual(
+            nested_form("<FORM a><div><form b></form></div></FORM>"), "<form b>"
+        )
 
     def test_10_crawl_public(self):
         t0 = time.time()

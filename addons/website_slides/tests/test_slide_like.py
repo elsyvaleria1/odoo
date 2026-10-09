@@ -1,3 +1,5 @@
+import re
+
 from odoo import http
 from odoo.tests import HttpCase, new_test_user, tagged
 
@@ -104,3 +106,19 @@ class TestSlideLike(HttpCase):
         )
 
         self.assertEqual(self.slide.likes, 1)
+
+    def test_the_course_page_nests_no_form_in_another(self):
+        # a form inside a form is dropped by the parser, and its buttons
+        # submit the outer one: the like widget sits in each lesson card,
+        # which a documentation course shows
+        self.channel.channel_type = "documentation"
+        self.channel._action_add_members(self.voter.partner_id)
+        self.authenticate("slide_voter", "slide_voter")
+
+        page = self.url_open(self.channel.website_url).text
+
+        self.assertIn(f"website_slides.slide_like.{self.slide.id}", page)
+        depth = 0
+        for tag in re.findall(r"<(/?)form\b", page):
+            depth += -1 if tag else 1
+            self.assertLessEqual(depth, 1, "a form is opened inside another")
