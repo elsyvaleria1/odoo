@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { tick } from "@odoo/hoot-dom";
+import { tick, waitUntil } from "@odoo/hoot-dom";
 import { advanceTime, Deferred } from "@odoo/hoot-mock";
 import { isQueued } from "@point_of_sale/app/services/data_service";
 import { UNSYNC_QUEUE_STORE } from "@point_of_sale/app/utils/offline_queue";
@@ -553,17 +553,14 @@ describe("data_service", () => {
         await settle();
         expect(attempts).toHaveLength(1);
         await advanceTime(100);
-        await settle();
-        expect(attempts).toHaveLength(2);
+        await waitUntil(() => attempts.length === 2 && !data.mutex.locked);
         expect(data.network.unsyncData).toHaveLength(1);
 
         await advanceTime(3900);
         await settle();
         expect(attempts).toHaveLength(2);
         await advanceTime(100);
-        await settle();
-        expect(attempts).toHaveLength(3);
-        expect(data.network.unsyncData).toHaveLength(0);
+        await waitUntil(() => attempts.length === 3 && !data.network.unsyncData.length);
 
         await advanceTime(120000);
         await settle();
