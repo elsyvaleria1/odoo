@@ -296,6 +296,10 @@ class StockInventoryAdjustment(models.Model):
             ),
         }
 
+    def _is_approval_acted_on(self) -> bool:
+        self.check_singleton()
+        return self.state == "applied"
+
     def _is_operation_run_on_approval(self, operation: str) -> bool:
         return self.state == "draft"
 

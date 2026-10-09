@@ -42,11 +42,6 @@ class ResUsersDeletion(models.Model):
     def _get_fields_approval_protected(self) -> list[str]:
         return ["user_id"]
 
-    def _get_approval_request_name(self) -> str:
-        return self.env._(
-            "Account deletion of %s", self.user_id.name or self.user_id_int
-        )
-
     def _get_approval_reason_html(self) -> str:
         return self.env._(
             "Portal user %(name)s (#%(id)s) asked for their account and its "
@@ -61,6 +56,10 @@ class ResUsersDeletion(models.Model):
             vals["partner_id"] = self.user_id.partner_id.id
         vals["request_owner_id"] = self.env.ref("base.user_root").id
         return vals
+
+    def _is_approval_acted_on(self) -> bool:
+        self.check_singleton()
+        return self.state == "done"
 
     def _on_approval_refused(self) -> None:
         super()._on_approval_refused()

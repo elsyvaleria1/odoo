@@ -106,3 +106,43 @@ class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
 
         with self.assertRaises(UserError):
             blocked.action_ship()
+
+
+@tagged("post_install", "-at_install")
+class TestGateBatchRaisesTogether(ApprovalCommon):
+    """A batch raises its requests in one go: what one more document costs is its
+    own rows, not another round of category searches and per-request triggers."""
+
+    def setUp(self):
+        super().setUp()
+        self.category = self._make_category(
+            name=f"Batch {self.id()}", approvers=[self.approver_1], company_id=False
+        )
+        self.env.cr.flush()
+
+    def _queries_to_ship(self, count):
+        documents = self.env["approval.test.gated"].create(
+            [
+                {
+                    "name": f"Batch {index}",
+                    "partner_id": self.partner.id,
+                    "amount_total": 100.0,
+                    "company_id": self.env.company.id,
+                    "test_category_id": self.category.id,
+                }
+                for index in range(count)
+            ]
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+        before = self.env.cr.sql_statement_count
+        documents.action_ship()
+        self.env.flush_all()
+        self.assertEqual(set(documents.mapped("approval_state")), {"pending"})
+        return self.env.cr.sql_statement_count - before
+
+    def test_each_further_document_costs_a_bounded_number_of_queries(self):
+        ten = self._queries_to_ship(10)
+        twenty = self._queries_to_ship(20)
+        # 55 statements a document when each was raised on its own; 7 raised together
+        self.assertLessEqual((twenty - ten) / 10, 15)

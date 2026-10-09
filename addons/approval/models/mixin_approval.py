@@ -241,7 +241,12 @@ class MixinApproval(models.AbstractModel):
                     missing=missing_fields,
                 )
 
-    def _check_can_request_approval(self) -> None:
+    def _check_can_request_approval(self, candidates=None) -> "ApprovalCategory":  # noqa: UP037 — see _get_candidate_approval_categories.
+        """Refuse what cannot be asked for, and return the category it is asked in.
+
+        `candidates` is a batch's memo of category searches, as
+        `_get_approval_category` keeps it.
+        """
         self.check_singleton()
         if self.approval_request_id:
             trace.REFUSAL.event(
@@ -270,7 +275,8 @@ class MixinApproval(models.AbstractModel):
                 ),
             )
 
-        if not self._get_approval_category():
+        category = self._get_approval_category(candidates)
+        if not category:
             trace.REFUSAL.event("no_category_for_document", record=self)
             raise UserError(
                 self.env._(
@@ -291,58 +297,63 @@ class MixinApproval(models.AbstractModel):
                     "Approval cannot be requested for this document right now.",
                 ),
             )
+        return category
 
-    def action_refuse_approval(self) -> None:
-        self.check_singleton()
-        self.check_access("write")
-        if self.approval_request_id and self.approval_request_id._refuse_cascade():
-            self.message_post(
-                body=self.env._("Approval request refused (parent document cancelled)"),
-                message_type="notification",
-            )
+    def _refuse_pending_approval(self) -> None:
+        for record in self.filtered(
+            lambda r: r.approval_request_id and r.approval_state in ("new", "pending")
+        ):
+            if record.approval_request_id._refuse_cascade():
+                record.message_post(
+                    body=self.env._(
+                        "Approval request refused: the document was cancelled."
+                    ),
+                    message_type="notification",
+                )
 
     def action_create_approval_request(self) -> dict[str, Any]:
         self.check_singleton()
+        return self._get_approval_submitted_action(self._raise_approval_requests())
 
+    def _raise_approval_requests(self):
+        """Raise one request per record, in one batch, and submit them."""
         self.lock_for_update(wait=True)
         self.invalidate_recordset(["approval_request_id"])
-
-        self._check_can_request_approval()
-
-        category = self._get_approval_category()
-        if not category:
-            trace.REFUSAL.event("no_category_at_submit", record=self)
-            raise UserError(
-                self.env._(
-                    "No approval category found for this document type. "
-                    "Please configure approval categories first.\n\n"
-                    "Go to: Approvals → Configuration → Approval Types",
-                ),
+        candidates = {}
+        vals_list = [
+            record._prepare_approval_request_values(
+                record._check_can_request_approval(candidates)
             )
-
-        vals = self._prepare_approval_request_values(category)
-        approval = self.env["approval.request"]._create_raised([vals])
+            for record in self
+        ]
+        approvals = self.env["approval.request"]._create_raised(vals_list)
         trace.MIXIN.note(
-            "request_raised",
-            record=self,
-            category=category.id,
-            request=approval.id,
+            "requests_raised",
+            records=self,
+            requests=approvals.ids,
+            searches=len(candidates),
         )
-        self.write({"approval_request_id": approval.id})
-
-        self._before_approval_request_submit(approval)
-
-        approval.action_confirm()
-
-        self.message_post(
-            body=Markup(
-                "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
+        for record, approval in zip(self, approvals, strict=True):
+            record.write({"approval_request_id": approval.id})
+            record._before_approval_request_submit(approval)
+        if self._submits_approval_request_on_raise():
+            approvals.action_confirm()
+        for record, approval in zip(self, approvals, strict=True):
+            record.message_post(
+                body=record._get_approval_raised_note(approval),
+                message_type="notification",
             )
-            % (approval.id, escape(approval.name), self.env._("created")),
-            message_type="notification",
-        )
+        return approvals
 
-        return self._get_approval_submitted_action(approval)
+    def _submits_approval_request_on_raise(self) -> bool:
+        """Whether a raised request is submitted at once, or left in draft for its
+        owner to complete and submit."""
+        return True
+
+    def _get_approval_raised_note(self, approval) -> Markup:
+        return Markup(
+            "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
+        ) % (approval.id, escape(approval.display_name), self.env._("created"))
 
     def _before_approval_request_submit(self, approval) -> None:
         pass
@@ -792,19 +803,28 @@ class MixinApproval(models.AbstractModel):
         )
         return self._get_approval_category_fallback(categories)
 
-    def _get_approval_category(self) -> "ApprovalCategory | bool":  # noqa: UP037 — see _get_candidate_approval_categories.
+    def _get_approval_category(self, candidates=None) -> "ApprovalCategory | bool":  # noqa: UP037 — see _get_candidate_approval_categories.
         self.check_singleton()
-        if not self._get_domain_approval_category():
+        domain = self._get_domain_approval_category()
+        if not domain:
             trace.MIXIN.event("approval_category", record=self, outcome="no_domain")
             return False
-        categories = self._get_candidate_approval_categories()
+        if candidates is None:
+            candidates = {}
+        company_id = False
+        if "company_id" in self._fields:
+            company_id = self.company_id.id if self.company_id else False
+        key = (repr(domain), company_id)
+        if key not in candidates:
+            candidates[key] = self._get_candidate_approval_categories()
+        categories = candidates[key]
         if not categories:
             trace.MIXIN.event(
                 "approval_category", record=self, outcome="none_configured"
             )
             self._raise_approval_category_not_configured()
             return False
-        category = self._find_approval_category()
+        category = self._find_approval_category(categories)
         if category:
             trace.MIXIN.event(
                 "approval_category",
@@ -841,9 +861,6 @@ class MixinApproval(models.AbstractModel):
     def _get_approval_reason_html(self) -> str:
         self.check_singleton()
         return self.env._("Approval requested for %s", self.display_name)
-
-    def _get_approval_request_name(self) -> str:
-        return self.env._("Approval for %s", self.display_name)
 
     def _get_approval_request_view_action(self) -> dict[str, Any]:
         self.check_singleton()
@@ -910,6 +927,36 @@ class MixinApproval(models.AbstractModel):
             binding=vals.get("binding_id"),
         )
         return vals
+
+    def _is_approval_acted_on(self) -> bool:
+        """Whether this document already did what its approval allowed.
+
+        Withdrawing or resetting such an approval would undo nothing, so the request
+        refuses both: the document is reversed by its own means instead.
+        """
+        self.check_singleton()
+        return False
+
+    _APPROVAL_REFRESHED_FIELDS = (
+        "amount",
+        "currency_id",
+        "partner_id",
+        "date",
+        "reason",
+        "date_deadline",
+        "reference",
+    )
+
+    def _get_approval_refresh_values(self, request) -> dict[str, Any]:
+        """What a request reset to draft takes again from this document before it is
+        submitted: the figures the approvers decide on, as they are now."""
+        self.check_singleton()
+        values = self._prepare_approval_request_values(request.category_id)
+        return {
+            name: values[name]
+            for name in self._APPROVAL_REFRESHED_FIELDS
+            if name in values
+        }
 
     def _on_approval_state_changed(self, new_state: str) -> None:
         trace.MIXIN.note(

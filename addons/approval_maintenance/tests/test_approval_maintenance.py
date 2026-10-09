@@ -149,23 +149,6 @@ class TestApprovalCategoryRouting(TestApprovalMaintenanceSetup):
 
 
 @tagged("post_install", "-at_install")
-class TestApprovalRequestName(TestApprovalMaintenanceSetup):
-    def test_preventive_request_name_contains_equipment(self):
-        order = self._create_order(maintenance_type="preventive")
-        name = order._get_approval_request_name()
-        self.assertIn("Preventivo", name)
-        self.assertIn(self.equipment.name, name)
-
-    def test_corrective_request_name_contains_type_label(self):
-        order = self._create_order(maintenance_type="corrective")
-        self.assertIn("Correctivo", order._get_approval_request_name())
-
-    def test_request_name_without_lot_uses_na(self):
-        order = self.env["maintenance.order"].create({"name": "No asset"})
-        self.assertIn("N/A", order._get_approval_request_name())
-
-
-@tagged("post_install", "-at_install")
 class TestMaintenanceApprovalReasonHtml(TestApprovalMaintenanceSetup):
     def test_reason_html_is_markup(self):
         order = self._create_order()

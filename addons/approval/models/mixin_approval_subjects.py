@@ -2,6 +2,7 @@ from typing import Any
 
 from odoo import fields, models
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 from . import approval_trace as trace
 
@@ -52,21 +53,26 @@ class MixinApprovalSubjects(models.AbstractModel):
             vals["company_id"] = self.company_id.id
         return vals
 
-    def _get_approval_request(self, subject_key: str):
-        """The latest request raised for `subject_key`, whatever its state."""
-        self.check_singleton()
-        request = (
+    def _search_subject_approval_requests(self, domain=(), limit=None):
+        """These records' subject requests matching `domain`, latest first."""
+        return (
             self.env["approval.request"]
             .sudo()
             .search(
-                [
-                    ("res_model", "=", self._name),
-                    ("res_id", "=", self.id),
-                    ("subject_key", "=", subject_key),
-                ],
+                Domain("res_model", "=", self._name)
+                & Domain("res_id", "in", self.ids)
+                & Domain("subject_key", "!=", False)
+                & Domain(list(domain)),
                 order="id desc",
-                limit=1,
+                limit=limit,
             )
+        )
+
+    def _get_approval_request(self, subject_key: str):
+        """The latest request raised for `subject_key`, whatever its state."""
+        self.check_singleton()
+        request = self._search_subject_approval_requests(
+            [("subject_key", "=", subject_key)], limit=1
         )
         trace.SUBJECTS.event(
             "request_lookup",
@@ -128,6 +134,26 @@ class MixinApprovalSubjects(models.AbstractModel):
         )
         request.action_confirm()
         return request
+
+    def unlink(self):
+        live = self._search_subject_approval_requests(
+            [("state", "in", LIVE_REQUEST_STATES)]
+        )
+        if live:
+            names = {record.id: record.display_name for record in self}
+            trace.SUBJECTS.note(
+                "requests_end_with_their_record", records=self, requests=live.ids
+            )
+            for request in live:
+                request._force_terminal(
+                    "cancelled",
+                    body=self.env._(
+                        "%(user)s deleted %(record)s; nothing is left to decide.",
+                        user=self.env.user.name,
+                        record=names[request.res_id],
+                    ),
+                )
+        return super().unlink()
 
     def _on_approval_subject_state_changed(self, request, new_state: str) -> None:
         """`request`, raised for one of this record's subjects, reached `new_state`."""

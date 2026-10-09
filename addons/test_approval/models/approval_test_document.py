@@ -96,9 +96,6 @@ class ApprovalTestDocument(models.Model):
     def _get_fields_approval_required(self) -> list[str]:
         return ["name", "partner_id"]
 
-    def _get_approval_request_name(self) -> str:
-        return f"Test Document Approval: {self.name}"
-
     def _on_approval_state_changed(self, new_state: str) -> None:
         self.sudo().write(
             {

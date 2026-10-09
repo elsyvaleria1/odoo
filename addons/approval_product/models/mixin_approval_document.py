@@ -170,7 +170,7 @@ class MixinApprovalDocument(models.AbstractModel):
             return True
         return self._check_rate_limit_exceeded()
 
-    def action_create_approval_request(self) -> dict[str, Any]:
+    def _check_can_request_approval(self, candidates=None):
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == self._name
@@ -183,7 +183,7 @@ class MixinApprovalDocument(models.AbstractModel):
                     request=self.approval_request_id.name,
                 ),
             )
-        return super().action_create_approval_request()
+        return super()._check_can_request_approval(candidates)
 
     def _get_fields_approval_required(self) -> list[str]:
         return ["partner_id", "line_ids"]
@@ -413,9 +413,28 @@ class MixinApprovalDocument(models.AbstractModel):
         self.check_singleton()
         return bool(self.approval_request_id and self.approval_state == "approved")
 
+    def _get_approval_snapshot(self, operation: str) -> dict[str, Any]:
+        snapshot = super()._get_approval_snapshot(operation)
+        return snapshot | {
+            "partner_id": self.partner_id.id,
+            "currency_id": self.currency_id.id,
+            "lines": sorted(
+                [
+                    line.product_id.id or 0,
+                    line.product_qty,
+                    line.product_uom_id.id or 0,
+                    line.price_unit,
+                    line.discount,
+                ]
+                for line in self.line_ids
+                if not line.display_type
+            ),
+        }
+
     def _check_approval_covers(self, operation: str) -> None:
-        super()._check_approval_covers(operation)
+        # the amount first: when it moved, saying so is the more useful refusal
         self._check_approved_amount()
+        super()._check_approval_covers(operation)
 
     def _check_approved_amount(self) -> None:
         self.check_singleton()

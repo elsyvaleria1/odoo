@@ -209,6 +209,89 @@ class TestAutoActionRules(common.TransactionCase):
         )
         self.assertTrue(rule2)
 
+    def _auto_rule(self, name, action_type, **vals):
+        return self.env["approval.rule"].create(
+            {
+                "name": name,
+                "category_id": self.category.id,
+                "condition_field": "amount",
+                "action_type": action_type,
+                **vals,
+            }
+        )
+
+    def test_widening_a_band_into_the_other_is_refused(self):
+        band = self._auto_rule(
+            "Approve 0-100",
+            "auto_approve",
+            operator="between",
+            threshold=0,
+            threshold_max=100,
+        )
+        self._auto_rule("Refuse Above 200", "auto_refuse", operator="gt", threshold=200)
+        with self.assertRaises(ValidationError):
+            band.threshold_max = 300
+
+    def test_bands_in_two_currencies_compare_at_todays_rate(self):
+        company = self.env.company
+        other = self.env.ref("base.EUR")
+        if other == company.currency_id:
+            other = self.env.ref("base.USD")
+        other.active = True
+        self.env["res.currency.rate"].create(
+            {
+                "currency_id": other.id,
+                "company_id": company.id,
+                "name": fields.Date.today(),
+                "rate": 0.5,
+            }
+        )
+        self._auto_rule(
+            "Approve Below 100",
+            "auto_approve",
+            operator="lt",
+            threshold=100,
+            currency_id=company.currency_id.id,
+        )
+        # 60 in a currency worth twice the company's is 120 of it: no overlap
+        self._auto_rule(
+            "Refuse Above 60",
+            "auto_refuse",
+            operator="gt",
+            threshold=60,
+            currency_id=other.id,
+        )
+        with self.assertRaises(ValidationError):
+            self._auto_rule(
+                "Refuse Above 40",
+                "auto_refuse",
+                operator="gt",
+                threshold=40,
+                currency_id=other.id,
+            )
+
+    def test_domain_rules_conflict_only_on_the_same_domain(self):
+        partner_model = self.env["ir.model"]._get("res.partner")
+
+        def domain_rule(name, action_type, domain):
+            return self.env["approval.rule"].create(
+                {
+                    "name": name,
+                    "category_id": self.category.id,
+                    "condition_type": "domain",
+                    "subject_model_id": partner_model.id,
+                    "subject_domain": domain,
+                    "action_type": action_type,
+                }
+            )
+
+        domain_rule("Approve Companies", "auto_approve", "[('is_company', '=', True)]")
+        domain_rule("Refuse People", "auto_refuse", "[('is_company', '=', False)]")
+        with self.assertRaises(ValidationError):
+            domain_rule(
+                "Refuse Companies", "auto_refuse", "[('is_company', '=', True)]"
+            )
+
 
 @tagged("post_install", "-at_install")
 class TestAutoActionRulesAuditRegressions(ApprovalCommon):

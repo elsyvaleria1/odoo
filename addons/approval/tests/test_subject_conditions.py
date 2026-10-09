@@ -145,6 +145,22 @@ class TestSubjectConditions(common.TransactionCase):
         )
         self.assertNotIn(self.extra_approver, request.approver_ids.mapped("user_id"))
 
+    def test_field_selection_condition_walks_a_dotted_path(self):
+        self.company_partner.write({"country_id": self.env.ref("base.be").id})
+        add_rule_step(
+            self.category,
+            self.extra_approver,
+            name="Belgian Partners",
+            condition_type="field_selection",
+            subject_model_id=self.partner_model.id,
+            subject_field="country_id.code",
+            subject_value="BE",
+        )
+        request = self._create_request(
+            res_model="res.partner", res_id=self.company_partner.id
+        )
+        self.assertIn(self.extra_approver, request.approver_ids.mapped("user_id"))
+
     # -- configuration-time validation ------------------------------------
 
     def test_a_domain_rule_without_a_source_model_is_refused(self):
@@ -170,6 +186,21 @@ class TestSubjectConditions(common.TransactionCase):
     def test_a_dotted_path_through_an_unknown_field_is_refused(self):
         with self.assertRaises(ValidationError):
             self._domain_rule("[('country_id.no_such_field', '=', 'BE')]")
+
+    def test_a_path_reading_past_a_value_is_refused(self):
+        with self.assertRaises(ValidationError):
+            self._domain_rule("[('name.length', '=', 3)]")
+        with self.assertRaises(ValidationError):
+            self.env["approval.rule"].create(
+                {
+                    "name": "Past A Value",
+                    "category_id": self.category.id,
+                    "condition_type": "field_selection",
+                    "subject_model_id": self.partner_model.id,
+                    "subject_field": "name.length",
+                    "subject_value": "3",
+                }
+            )
 
     def test_a_field_selection_rule_naming_an_unknown_field_is_refused(self):
         with self.assertRaises(ValidationError):

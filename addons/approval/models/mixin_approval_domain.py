@@ -63,7 +63,8 @@ class MixinApprovalDomain(models.AbstractModel):
     def _check_field_path(self, model, field_path: str) -> None:
         self.check_singleton()
         current = model
-        for part in field_path.split("."):
+        parts = field_path.split(".")
+        for index, part in enumerate(parts):
             field = current._fields.get(part)
             if field is None:
                 trace.REFUSAL.event(
@@ -82,9 +83,26 @@ class MixinApprovalDomain(models.AbstractModel):
                         part=part,
                     ),
                 )
-            if not field.relational:
-                break
-            current = self.env[field.comodel_name]
+            if field.relational:
+                current = self.env[field.comodel_name]
+            elif index < len(parts) - 1:
+                trace.REFUSAL.event(
+                    "field_path_past_a_value",
+                    record=self,
+                    path=field_path,
+                    on=current._name,
+                    part=part,
+                )
+                raise ValidationError(
+                    self.env._(
+                        "%(name)s reads %(path)s, but %(part)s on %(model)s is a "
+                        "value, not a link to read further through.",
+                        name=self.display_name,
+                        path=field_path,
+                        model=current._name,
+                        part=part,
+                    ),
+                )
 
     @api.model
     def _domain_field_paths(self, domain) -> set[str]:

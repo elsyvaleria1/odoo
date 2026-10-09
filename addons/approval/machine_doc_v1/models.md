@@ -541,13 +541,12 @@ What the engine asks of any record a request is raised for, whichever adopter sh
 
 | Method | Purpose |
 |--------|---------|
-| `action_create_approval_request()` | Create + submit approval request, link bidirectionally |
-| `action_refuse_approval()` | Reverse cascade: parent cancelled → `_refuse_cascade()` on the linked request |
+| `action_create_approval_request()` | One record's `_raise_approval_requests()`, then `_get_approval_submitted_action` |
+| `_refuse_pending_approval()` | Reverse cascade: the document is cancelled → `_refuse_cascade()` on a new or pending linked request (lifecycle `action_cancel`, adopters' own cancels) |
 | `action_view_approval_request()` | Open the linked request form |
 | `_clear_refused_approval_link()` | Release a refused/cancelled link so a reopened document can request a fresh approval |
 | `_get_domain_approval_category()` | **Override**: domain to find category |
 | `_get_fields_approval_required()` | **Override**: required fields before approval |
-| `_get_approval_request_name()` | **Override**: customize request name |
 | `_prepare_approval_request_values()` | **Override**: customize request creation values. Honours `approval_binding_for` = (model, id, binding) in context, only when it names this record, so a binding-raised request knows its operation and a nested document cannot inherit the link |
 | `_on_approval_state_changed()` | **Dispatcher — do NOT override.** Routes to `_on_approval_approved` / `_on_approval_refused` / `_on_approval_cancelled` / `_on_approval_revoked` / `_on_approval_reset`. Base posts a chatter note per state; for the `pending` revocation it also schedules a To-Do for the responsible user on activity-enabled models. See conventions.md |
 | `_get_approval_trigger()` | **Override**: `False` (nothing asks), `APPROVAL_TRIGGER_CATEGORY` (default: a category that applies asks) or `APPROVAL_TRIGGER_RULE` (the document's own rule asks — a flag, a level, a threshold — and a category only routes it; a configured category that does not apply is refused when asked) |
@@ -560,6 +559,9 @@ What the engine asks of any record a request is raised for, whichever adopter sh
 | `_check_can_request_approval()` / `_compute_can_request_approval()` | Gate on the "Request Approval" button |
 | `_before_approval_request_submit(approval)` | Hook between request creation and auto-confirm |
 | `_get_approval_submitted_action()` / `_get_approval_request_view_action()` | Client actions returned after submit / when opening the request |
+| `_raise_approval_requests()` | The batch behind `action_create_approval_request`: per record `_check_can_request_approval` (which returns the category, one search per domain and company in the batch), one `_create_raised` for all, the links, `_before_approval_request_submit`, one `action_confirm` unless `_submits_approval_request_on_raise()` says the owner submits (maintenance), and `_get_approval_raised_note` on each record |
+| `_is_approval_acted_on()` | Whether the document already did what its approval allowed; the request then refuses a withdrawal or a reset (`_check_source_not_acted_on`). A gate: the operation ran. An employee change: approved (its values are written). A module install request: the module is installed. An account deletion: done |
+| `_get_approval_refresh_values(request)` | What a request reset to draft takes again from the document when it is submitted (`approval.request._refresh_from_source`, from `action_confirm`): amount, currency, partner, date, reason, deadline, reference, and for a gate the operation snapshot |
 
 ### Submission Rate Limiting
 
@@ -680,7 +682,7 @@ refusals), `refusal_reason_auto_rule` (auto-refuse rules),
 | `subject_model_id` | Many2one(`ir.model`) | Yes | No | ondelete=cascade. Required for `domain` and `field_selection`: the model the condition reads |
 | `subject_model_name` | Char | No | No | related `subject_model_id.model`. The domain editor in the form reads its fields from it: the widget takes a model name, and handed the many2one it crashed the form |
 | `subject_domain` | Char | Yes | No | `domain` rules: evaluated with `filtered_domain` against the source document; every dotted path is walked against the registry at save time |
-| `subject_field` | Char | Yes | No | `field_selection` rules: the field on the source model |
+| `subject_field` | Char | Yes | No | `field_selection` rules: the field on the source model, or a dotted path through its links; read with `mapped` under `sudo`, it matches when any record the path reaches holds the value |
 | `subject_value` | Char | Yes | No | `field_selection` rules: compared as text against the raw value — a Selection's key, a Many2one's id |
 | `action_type` | Selection(auto_approve/auto_refuse/condition) | Yes | Yes | default="condition". `condition` does nothing by itself: steps apply by it (`when_rule_ids`, `unless_rule_ids`), and while one does the rule can be neither archived, deleted nor given another action (`_check_no_step_reads_it`). Rules that added or replaced approvers were retired in 19.0.2.8.0: a step names the approvers and applies by a condition |
 
@@ -689,7 +691,8 @@ refusals), `refusal_reason_auto_rule` (auto-refuse rules),
 - `_name_category_uniq`: unique nulls not distinct (name, category_id, company_id)
 - `_check_range_bounds`: `threshold` rules with `between` only — the upper bound exceeds the lower one, or is 0 for unlimited
 - `_check_threshold`: `threshold` rules only — a `priority` threshold is one of 0, 1, 2, 3
-- `_check_condition_shape`: a `threshold` rule needs `condition_field` and `operator`; any other type needs `subject_model_id`, and every path its `subject_domain` or `subject_field` names must exist on that model. Refused at save time because a rule that never matches reads as "approval was not required"
+- `_check_condition_shape`: a `threshold` rule needs `condition_field` and `operator`; any other type needs `subject_model_id`, and every path its `subject_domain` or `subject_field` names must exist on that model and read through links only (`name.length` is refused). Refused at save time because a rule that never matches reads as "approval was not required"
+- `_check_auto_action_conflict`: an auto-approve and an auto-refuse rule of one category and company that can match the same request are refused. Judged only between rules of one kind (`_auto_action_collides`): threshold rules on the same figure whose bands overlap, an amount band converted into the other rule's currency at today's rate (`_condition_bounds_in`); field rules on the same model, path and value; domain rules on the same model and domain. Rules of different kinds are not compared, since whether they meet depends on the document
 
 ### Key Methods
 
@@ -734,6 +737,7 @@ For a record that holds one request per subject rather than one in all: a course
 |--------|--------------|
 | `_raise_approval_request(subject_key)` | Raises and submits the request as the current user (the request is created under `sudo`, keeping the uid). Refused while a request for that subject is new or pending |
 | `_get_approval_request(subject_key)` / `_get_live_approval_request(subject_key)` | The latest request for the subject, and that request only while it is new or pending |
+| `unlink()` | Cancels the record's new and pending subject requests (`_force_terminal`), naming the deleted record; decided ones keep their state |
 
 `approval.request._get_notifiable_source_document()` tells such a record only about a request that carries a `subject_key`; a request pointed at the record without one reaches nothing, as a `mixin.approval` document is told only about the request it references. Covered by `test_approval/tests/test_approval_subjects.py` against `approval.test.subject.document`.
 
@@ -752,14 +756,16 @@ For a document that holds its own verbs — confirming, posting, validating — 
 | Method | What it does |
 |--------|--------------|
 | `_run_through_approval(operation, run)` | Splits the records, calls `run(ready)` on what needs no approval or already holds it, raises a request for the rest (one record: returns that request's action), and carries the run's own action as the notification's `next` |
-| `_split_for_approval(operation)` | ready / needs-approval. A waiting request always refuses; a refused or cancelled one refuses while the document still requires approval; an approved one is checked by `_check_approval_covers` |
+| `_split_for_approval(operation)` | ready / needs-approval. A waiting request always refuses; a refused or cancelled one refuses while the document still requires approval; an approved one is checked by `_check_approval_covers`. A settled request raised here for another operation gives way (`_release_approval_of_other_operation`): the link is released and the operation asked for on its own, unless that request is still waiting or approved and not yet used |
 | `_approval_request_gates(operation)` | Whether the linked request was raised for this operation. A grant clears the operation it was asked for and no other |
-| `_check_approval_covers(operation)` | Hook: raises when the grant no longer covers what the operation would do |
+| `_check_approval_covers(operation)` | Hook: raises when the grant no longer covers what the operation would do. Compares the keys the grant's `operation_snapshot` recorded with `_get_approval_snapshot` now, so a key a later version adds does not void an older grant. The order mixin snapshots partner, currency and each line (product, quantity, unit, price, discount); a bill its partner, currency, journal and each product line (product, account, quantity, price, discount, taxes); a transfer each move's product, quantity and unit. The amount is checked first, being the more useful refusal |
 | `_check_approval_admits(operation, enforced, binding)` | Reached from the verb's checkpoints and state move, so a caller that did not come through the door is caught. Records an `approval.observation` on the obligation and refuses when the obligation enforces (Request or Block, and the caller's elevation does not pass its `sudo_policy`) |
 | `_check_before_approval(verb)` | Hook run at the door before anything is asked: a document that could not go through fails in the caller's face. `mixin.approval.lifecycle` runs the confirm checks for `confirm`; agromarin's order mixin skips them, as the orders always asked first; a transfer runs `_check_before_approval_gate` for `validate` |
 | `_get_gated_operation()` / `_get_operation_door(verb)` / `_get_operation_names(verb)` | The verb the document's own obligation holds, for a request that names none; the door a grant re-enters; and the names a request may carry for the verb, its doors included, for a request raised before 19.0.2.14.0 |
 | `_is_operation_run_on_approval(operation)` / `_run_operation_on_approval()` | Whether a grant re-enters the transition, and the re-entry itself: once, through the gated method so its validations run again, as the request's owner in the owner's companies (the document's first) -- never the approver, never under sudo, as a binding replays; the superuser account keeps its `su` (19.0.2.10.3). A requester who can no longer run the operation leaves the grant standing and a chatter note, like any failed side effect |
-| `_refuse_pending_approval()` | Refuses a waiting request, for an adopter's cancel path |
+| `_stamp_operation_run(operation)` | A grant's operation run by hand after it was approved is its run: `date_operation_run` is stamped, as the re-entry stamps it |
+| `_is_approval_acted_on()` | True once `date_operation_run` is set: the request then refuses a withdrawal or a reset, which would undo nothing |
+| `_ask_approval_each()` | Raises the batch's requests in one `_raise_approval_requests`; only when a step is unstaffed does it raise again one record at a time, to report that record and keep the rest |
 
 Adopted by `mixin.approval.lifecycle`. Covered by `test_approval/tests/test_gate.py` against `approval.test.gated`.
 
@@ -804,7 +810,7 @@ For a record whose access a partner asks for: a course on invitation, a shared d
 |------|----------|
 | `_access_approval_category` | Class attribute: the xmlid of the shipped category. Or override `_get_approval_subject_category` |
 | `_has_access(partner, role)` | Whether the partner already holds the role. Required |
-| `_grant_access(partner, role)` | Writes the grant when a request is approved. Required |
+| `_grant_access(partner, role)` | Writes the grant when a request is approved and the partner does not already hold the role (`_has_access`): an older, narrower request approved after a wider one must not narrow it. Required |
 | `_get_access_request_name(partner, role)` | The request's name; "Access to <record> for <partner>" by default |
 
 ### Behaviour
@@ -843,7 +849,7 @@ when a decision depends on them.
 | `_domain_source_field()` | Abstract: the Char field holding the domain (`subject_domain` on both inheritors) |
 | `_parse_domain(field_name=None)` / `_parse_domain_or_warn(field_name=None)` | `ast.literal_eval` into a `Domain`, or None; the second logs the unparseable value. `field_name` defaults to `_domain_source_field()`, and a binding passes `reset_domain` |
 | `_check_domain_against_model(model, field_name=None)` | Raises unless the domain parses and every path in it exists |
-| `_check_field_path(model, path)` | Walks a dotted path across relational fields |
+| `_check_field_path(model, path)` | Walks a dotted path across relational fields, and refuses one that reads on past a value field: the same walk `approval.rule._evaluate_field_selection` reads |
 
 ---
 

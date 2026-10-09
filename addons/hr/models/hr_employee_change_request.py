@@ -151,6 +151,11 @@ class HrEmployeeChangeRequest(models.Model):
         after asking: an approval would otherwise apply values nobody reviewed."""
         return ["employee_id", *self._PROPOSED_FIELDS]
 
+    def _is_approval_acted_on(self) -> bool:
+        # the approval writes the proposed values onto the employee as it lands
+        self.check_singleton()
+        return self.approval_state == "approved"
+
     def _on_approval_approved(self) -> None:
         super()._on_approval_approved()
         for request in self:

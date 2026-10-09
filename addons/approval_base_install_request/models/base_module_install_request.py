@@ -42,11 +42,12 @@ class BaseModuleInstallRequest(models.Model):
     def _get_fields_approval_protected(self):
         return ["module_id", "body_html"]
 
-    def _get_approval_request_name(self) -> str:
-        return self.env._('Activation of "%s"', self.module_id.shortdesc)
-
     def _get_approval_reason_html(self):
         return self.body_html or ""
+
+    def _is_approval_acted_on(self) -> bool:
+        self.check_singleton()
+        return self.module_id.state in ("installed", "to upgrade")
 
     def _on_approval_approved(self) -> None:
         super()._on_approval_approved()

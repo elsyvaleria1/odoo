@@ -146,9 +146,6 @@ class ErrorIncident(models.Model):
         pull = self._autofix_pull()
         return {"pull": pull.id, "head": pull.head_sha}
 
-    def _get_approval_request_name(self) -> str:
-        return self.env._("Autofix: %s", self.name)
-
     def _get_approval_reason_html(self) -> str:
         self.check_singleton()
         pull = self._autofix_pull()

@@ -71,6 +71,17 @@ class TestApprovalSubjects(ApprovalCommon):
         self.assertEqual(record._get_approval_request("access:1"), second)
         self.assertEqual(first.state, "approved")
 
+    def test_deleting_the_record_cancels_what_is_waiting_on_it(self):
+        record = self._record()
+        waiting = record._raise_approval_request("access:1")
+        decided = record._raise_approval_request("access:2")
+        decided.with_user(self.approver_1).action_approve()
+
+        record.unlink()
+
+        self.assertEqual(waiting.state, "cancelled")
+        self.assertEqual(decided.state, "approved")
+
     def test_a_decision_tells_the_record_which_subject_it_decided(self):
         record = self._record()
         first = record._raise_approval_request("access:1")

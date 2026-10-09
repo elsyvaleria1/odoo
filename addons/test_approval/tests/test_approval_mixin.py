@@ -191,13 +191,13 @@ class TestApprovalMixin(common.TransactionCase):
 
         self.assertIn("already exists", str(ctx.exception))
 
-    def test_mixin_action_refuse_approval(self):
+    def test_mixin_refuse_pending_approval(self):
         doc = self._create_test_document()
         doc.action_create_approval_request()
 
         self.assertEqual(doc.approval_request_id.state, "pending")
 
-        doc.action_refuse_approval()
+        doc._refuse_pending_approval()
 
         self.assertEqual(doc.approval_request_id.state, "refused")
         self.assertEqual(doc.approval_state, "refused")
@@ -205,7 +205,7 @@ class TestApprovalMixin(common.TransactionCase):
     def test_clear_refused_link_unlinks(self):
         doc = self._create_test_document()
         doc.action_create_approval_request()
-        doc.action_refuse_approval()
+        doc._refuse_pending_approval()
         self.assertEqual(doc.approval_state, "refused")
 
         self.assertTrue(doc.date_approval_requested)
@@ -371,7 +371,7 @@ class TestApprovalMixin(common.TransactionCase):
 
         doc.action_create_approval_request()
         first_approval = doc.approval_request_id
-        doc.action_refuse_approval()
+        doc._refuse_pending_approval()
 
         doc.approval_request_id = False
 

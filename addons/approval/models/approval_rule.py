@@ -76,7 +76,9 @@ class ApprovalRule(models.Model):
     )
     subject_field = fields.Char(
         string="Source Field",
-        help="Field on the source model to compare.",
+        help="Field on the source model to compare. A dotted path reads through "
+        "links (partner_id.country_id), and matches when any record it reaches "
+        "holds the value.",
     )
     subject_value = fields.Char(
         string="Source Value",
@@ -203,74 +205,95 @@ class ApprovalRule(models.Model):
     @api.constrains(
         "category_id",
         "company_id",
+        "currency_id",
+        "condition_type",
         "condition_field",
         "operator",
         "threshold",
+        "threshold_max",
+        "subject_model_id",
+        "subject_domain",
+        "subject_field",
+        "subject_value",
         "action_type",
         "active",
     )
     def _check_auto_action_conflict(self) -> None:
         auto_types = ("auto_approve", "auto_refuse")
-        stored_peers = (
+        rules = self.filtered(
+            lambda rule: rule.action_type in auto_types and rule.active
+        )
+        if not rules:
+            return
+        peers = (
             self.sudo().search(
                 [
-                    ("category_id", "in", self.category_id.ids),
-                    (
-                        "condition_field",
-                        "in",
-                        list(set(self.mapped("condition_field"))),
-                    ),
+                    ("category_id", "in", rules.category_id.ids),
                     ("action_type", "in", auto_types),
                     ("active", "=", True),
                 ],
             )
-            if self.category_id
-            else self.browse()
+            | rules
         )
-        for rule in self:
-            if rule.action_type not in auto_types or not rule.active:
-                continue
-            peers = (stored_peers | self).filtered_domain(
-                [
-                    ("id", "!=", rule.id),
-                    ("category_id", "=", rule.category_id.id),
-                    ("condition_field", "=", rule.condition_field),
-                    ("action_type", "in", list(auto_types)),
-                    ("active", "=", True),
-                ]
-            )
+        for rule in rules:
             for other in peers:
-                if other.action_type == rule.action_type:
-                    continue
                 if (
-                    rule.company_id
-                    and other.company_id
-                    and rule.company_id != other.company_id
+                    other == rule
+                    or other.category_id != rule.category_id
+                    or other.action_type == rule.action_type
+                    or (
+                        rule.company_id
+                        and other.company_id
+                        and rule.company_id != other.company_id
+                    )
+                    or not rule._auto_action_collides(other)
                 ):
                     continue
-                if rule._condition_overlaps(other):
-                    trace.REFUSAL.event(
-                        "auto_action_bands_overlap",
-                        rule=rule.id,
-                        other=other.id,
-                        field=rule.condition_field,
-                        actions=[rule.action_type, other.action_type],
-                    )
-                    raise ValidationError(
-                        self.env._(
-                            "Rule '%(rule)s' (auto-%(rule_action)s) and "
-                            "'%(other)s' (auto-%(other_action)s) can both "
-                            "match the same %(field)s value — one would "
-                            "silently override the other depending on "
-                            "sequence. Narrow the thresholds so their "
-                            "ranges don't overlap.",
-                            rule=rule.name,
-                            rule_action=rule.action_type.removeprefix("auto_"),
-                            other=other.name,
-                            other_action=other.action_type.removeprefix("auto_"),
-                            field=rule.condition_field,
-                        ),
-                    )
+                trace.REFUSAL.event(
+                    "auto_action_bands_overlap",
+                    rule=rule.id,
+                    other=other.id,
+                    kind=rule.condition_type,
+                    actions=[rule.action_type, other.action_type],
+                )
+                raise ValidationError(
+                    self.env._(
+                        "Rule '%(rule)s' (auto-%(rule_action)s) and "
+                        "'%(other)s' (auto-%(other_action)s) can both match the "
+                        "same request — one would silently override the other "
+                        "depending on sequence. Narrow them so they don't overlap.",
+                        rule=rule.name,
+                        rule_action=rule.action_type.removeprefix("auto_"),
+                        other=other.name,
+                        other_action=other.action_type.removeprefix("auto_"),
+                    ),
+                )
+
+    def _auto_action_collides(self, other) -> bool:
+        """Whether this rule and `other` can match one request, as far as that can be
+        told without a request: rules of different kinds, or on different figures,
+        documents or fields, are not compared."""
+        self.check_singleton()
+        if self.condition_type != other.condition_type:
+            return False
+        match self.condition_type:
+            case "threshold":
+                return (
+                    self.condition_field == other.condition_field
+                    and self._condition_overlaps(other)
+                )
+            case "field_selection":
+                return (
+                    self.subject_model_id == other.subject_model_id
+                    and self.subject_field == other.subject_field
+                    and (self.subject_value or "") == (other.subject_value or "")
+                )
+            case _:
+                return (
+                    self.subject_model_id == other.subject_model_id
+                    and self._parse_domain() is not None
+                    and self._parse_domain() == other._parse_domain()
+                )
 
     @api.constrains("threshold", "condition_field")
     def _check_threshold(self) -> None:
@@ -467,19 +490,24 @@ class ApprovalRule(models.Model):
 
     def _evaluate_field_selection(self, request) -> bool:
         subject = self._get_subject(request)
-        if not subject or self.subject_field not in subject._fields:
+        if not subject or not self.subject_field:
             trace.RULES.event(
                 "field_selection_not_evaluated",
                 rule=self.id,
                 request=request.id,
                 field=self.subject_field,
-                why="no_subject" if not subject else "field_absent",
+                why="no_subject" if not subject else "no_field",
             )
             return False
-        value = subject[self.subject_field]
-        if hasattr(value, "ids"):
-            value = value.id
-        matched = str(value) == (self.subject_value or "")
+        # The path _check_field_path accepted, read the same way: through each
+        # link, and matching when any record it reaches holds the value.
+        reached = subject.mapped(self.subject_field)
+        if isinstance(reached, models.BaseModel):
+            values = [str(record.id) for record in reached] or [str(False)]
+        else:
+            values = [str(value) for value in reached]
+        matched = (self.subject_value or "") in values
+        value = ",".join(values)
         trace.RULES.event(
             "field_selection_evaluated",
             rule=self.id,
@@ -510,11 +538,36 @@ class ApprovalRule(models.Model):
             return (t, True, self.threshold_max or math.inf, False)
         return None
 
+    def _condition_bounds_in(self, reference) -> tuple[float, bool, float, bool] | None:
+        """This rule's bounds in `reference`'s currency, for an amount, at today's
+        rate: two bands in different currencies overlap as their amounts compare
+        now."""
+        self.check_singleton()
+        bounds = self._condition_bounds()
+        if (
+            bounds is None
+            or self.condition_field != "amount"
+            or self.currency_id == reference.currency_id
+        ):
+            return bounds
+        low, low_closed, high, high_closed = bounds
+        company = reference.company_id or self.company_id or self.env.company
+        today = fields.Date.context_today(self)
+
+        def convert(amount):
+            if math.isinf(amount):
+                return amount
+            return self.currency_id._convert(
+                amount, reference.currency_id, company, today, round=False
+            )
+
+        return (convert(low), low_closed, convert(high), high_closed)
+
     def _condition_overlaps(self, other) -> bool:
         self.check_singleton()
         other.check_singleton()
         bounds_a = self._condition_bounds()
-        bounds_b = other._condition_bounds()
+        bounds_b = other._condition_bounds_in(self)
         if bounds_a is None or bounds_b is None:
             trace.RULES.event(
                 "overlap_assumed",

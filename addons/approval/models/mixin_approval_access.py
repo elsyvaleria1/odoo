@@ -2,6 +2,7 @@ from odoo import models
 from odoo.exceptions import UserError
 
 from . import approval_trace as trace
+from .mixin_approval_subjects import LIVE_REQUEST_STATES
 
 ACCESS_SUBJECT_PREFIX = "access"
 
@@ -50,15 +51,49 @@ class MixinApprovalAccess(models.AbstractModel):
         if new_state != "approved":
             return
         partner, role = self._get_access_subject(request.subject_key)
+        if not partner:
+            return
+        # An approval asked before a wider grant must not narrow it: an older
+        # "view" approved after "edit" would set the partner back to view.
+        held = self._has_access(partner, role)
         trace.SUBJECTS.note(
             "access_granted",
             record=self,
             request=request.id,
-            partner=partner.id or None,
+            partner=partner.id,
             role=role,
+            already_held=held,
         )
-        if partner:
+        if not held:
             self._grant_access(partner, role)
+        self._end_access_requests_now_held(partner, request)
+
+    def _end_access_requests_now_held(self, partner, granted) -> None:
+        """Cancel the partner's other waiting requests that the access they hold now
+        already answers."""
+        self.check_singleton()
+        key = self._get_access_subject_key(partner)
+        waiting = self._search_subject_approval_requests(
+            [
+                ("state", "in", LIVE_REQUEST_STATES),
+                ("id", "!=", granted.id),
+                "|",
+                ("subject_key", "=", key),
+                ("subject_key", "=like", f"{key}:%"),
+            ]
+        )
+        for request in waiting:
+            _partner, role = self._get_access_subject(request.subject_key)
+            if not self._has_access(partner, role):
+                continue
+            request._force_terminal(
+                "cancelled",
+                body=self.env._(
+                    "%(partner)s already holds this access to %(record)s.",
+                    partner=partner.name,
+                    record=self.display_name,
+                ),
+            )
 
     def _has_access(self, partner, role=False) -> bool:
         raise NotImplementedError

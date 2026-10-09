@@ -199,7 +199,7 @@ class TestInventoryAdjustmentApproval(TransactionCase):
         batch.approval_request_id.with_user(self.approver).action_approve()
 
         request = batch.approval_request_id.with_env(self.env)
-        with self.assertRaisesRegex(UserError, "was applied to the stock"):
+        with self.assertRaisesRegex(UserError, "already went through"):
             request.action_reset_to_draft()
         self.assertEqual(batch.approval_state, "approved")
 

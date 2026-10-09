@@ -331,7 +331,7 @@ pool is not a row.
 | Withdraw | Approver who approved; through `action_withdraw_approver(approver_id, step_id)` -- for one step of it, or all -- also a manager or a pool member of a later step (`_check_withdraw_actor`) | `action_withdraw()` / `action_withdraw_approver()` | approver state=approved (pending or approved request), `_check_withdraw_allowed()` |
 | Bulk approve | Approver/delegate with pending rights | `action_approve_bulk()` | All selected state=pending, `_get_current_pending_approver()` non-empty |
 | Bulk refuse | Approver/delegate with pending rights | `action_refuse_bulk()` | Validates the batch, then opens `wizard.approval.request.decide` in batch mode (`request_ids`) so a reason is captured on every request, exactly as a single refusal does |
-| Cascade refuse | Parent document (mixin) | `action_refuse_approval()` → `_refuse_cascade()` | request not terminal and not draft |
+| Cascade refuse | Parent document (mixin) | `_refuse_pending_approval()` → `_refuse_cascade()` | request not terminal and not draft |
 | Auto-expire | Cron | `cron_auto_expire()` → `_force_terminal("cancelled")` | pending past `auto_expire_hours` |
 | Consent approve | Cron | `cron_consent_approval()` | pending past window, parallel category, no refusal, no pending change, `_can_consent_approve()` |
 
@@ -760,7 +760,7 @@ The mixin:
    for one decision)
 5. Provides related fields: `approval_state`, `approval_progress`, `pending_approver_ids`
 6. Can force-refuse the linked request when the parent document is
-   cancelled (`action_refuse_approval()` → `_refuse_cascade()`)
+   cancelled (`_refuse_pending_approval()` → `_refuse_cascade()`)
 7. Releases failed links when the document reopens
    (`_clear_refused_approval_link()`), which also makes the old request
    non-resettable (`_check_reset_allowed`)

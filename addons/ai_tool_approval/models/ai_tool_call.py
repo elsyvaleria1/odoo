@@ -279,9 +279,6 @@ class AiToolCall(models.Model):
             evidence=self.evidence or "",
         )
 
-    def _get_approval_request_name(self) -> str:
-        return self.env._("AI proposal: %s", self.name)
-
     def _on_approval_approved(self) -> None:
         self.sudo().write({"state": "approved"})
         super()._on_approval_approved()

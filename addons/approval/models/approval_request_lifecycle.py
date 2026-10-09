@@ -746,6 +746,7 @@ class ApprovalRequestLifecycle(models.Model):
                 )
 
             old_state = request.state
+            request._refresh_from_source()
             request._check_confirm()
 
             confirmed_vals = {
@@ -1306,6 +1307,33 @@ class ApprovalRequestLifecycle(models.Model):
 
     def _check_withdraw_allowed(self) -> None:
         self._check_moved_from_source_document()
+        self._check_source_not_acted_on()
+
+    def _check_source_not_acted_on(self) -> None:
+        for request in self:
+            document = request.sudo().get_source_document()
+            if (
+                not document
+                or not isinstance(document, self.env.registry["mixin.approval"])
+                or not document.exists()
+                or document.approval_request_id != request
+                or not document._is_approval_acted_on()
+            ):
+                continue
+            trace.REFUSAL.event(
+                "source_acted_on_approval",
+                request=request.id,
+                model=request.res_model,
+                res_id=request.res_id,
+            )
+            raise UserError(
+                self.env._(
+                    "%(document)s already went through on this approval, and taking "
+                    "the approval back would not undo that. Reverse %(document)s "
+                    "itself instead.",
+                    document=document.display_name,
+                )
+            )
 
     def _check_moved_from_source_document(self) -> None:
         for request in self:

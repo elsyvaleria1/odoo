@@ -91,6 +91,21 @@ class TestAuditRegressions(AccountApprovalCommon):
 
         self.assertEqual(move.state, "posted")
 
+    def test_a_line_swapped_at_the_same_amount_is_not_what_was_approved(self):
+        move = self._approved_move(price=1000.0)
+        other = self.env["product.product"].create(
+            {"name": "Swapped Product", "type": "consu", "list_price": 1.0}
+        )
+
+        move.invoice_line_ids[0].write(
+            {"product_id": other.id, "price_unit": 1000.0, "tax_ids": []}
+        )
+        self.assertEqual(move.amount_total, move.approval_request_id.amount)
+
+        with self.assertRaises(UserError):
+            move.action_post()
+        self.assertEqual(move.state, "draft")
+
     def test_another_partner_is_not_what_was_approved(self):
         """A bill approved for one vendor does not post for another: the change
         resets the approval, and posting then asks for it again."""

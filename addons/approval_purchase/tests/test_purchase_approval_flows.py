@@ -424,6 +424,35 @@ class TestPurchaseApprovalFlows(TransactionCase):
         with self.assertRaises(AccessError):
             approval.with_user(self.purchase_user).action_approve()
 
+    def test_a_line_swapped_at_the_same_amount_is_not_what_was_approved(self):
+        self.company.po_auto_confirm_on_approval = False
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 50.0,
+                            "price_unit": 75.0,
+                        }
+                    )
+                ],
+            },
+        )
+        po.action_confirm()
+        po.approval_request_id.with_user(self.approver_user).action_approve()
+        self.assertEqual(po.state, "draft")
+        other = self.env["product.product"].create(
+            {"name": "Swapped Product", "type": "consu"}
+        )
+
+        po.line_ids.write({"product_id": other.id, "price_unit": 75.0})
+        self.assertEqual(po.amount_total, po.approval_request_id.amount)
+
+        with self.assertRaisesRegex(UserError, "no longer what is there"):
+            po.action_confirm()
+
     def test_an_order_approved_at_zero_does_not_confirm_at_another_amount(self):
         po = self.env["purchase.order"].create(
             {

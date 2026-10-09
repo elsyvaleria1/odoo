@@ -354,6 +354,32 @@ class ApprovalRequestAccess(models.Model):
                 )
             return self.create(vals_list)
 
+    def _refresh_from_source(self) -> None:
+        """Bring a request reset to draft up to its document before it is asked
+        again: amount, snapshot and the rest are what the document is now, not
+        what it was when the request was first raised."""
+        self.check_singleton()
+        document = self.get_source_document()
+        if (
+            not document
+            or not isinstance(document, self.env.registry["mixin.approval"])
+            or not document.exists()
+            or document.approval_request_id != self
+            or not self._get_requests_with_decision_log()
+        ):
+            return
+        vals = document._get_approval_refresh_values(self)
+        trace.LIFECYCLE.event(
+            "refreshed_from_source", request=self.id, fields=sorted(vals)
+        )
+        with (
+            self.env.transaction.admitting(
+                document._name, RAISE_ADMISSION, document.ids
+            ),
+            self._recording(),
+        ):
+            self.write(vals)
+
     @api.model
     def _is_raised_by_source(self, vals: dict) -> bool:
         return RAISE_ADMISSION in self.env.transaction.admitted_names(

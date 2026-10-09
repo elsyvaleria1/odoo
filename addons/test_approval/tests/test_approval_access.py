@@ -38,6 +38,25 @@ class TestApprovalAccess(ApprovalCommon):
         self.assertIn(self.partner, self.document.editor_partner_ids)
         self.assertNotIn(self.partner, self.document.viewer_partner_ids)
 
+    def test_an_older_view_approval_does_not_narrow_a_later_edit(self):
+        view = self.document._request_access(self.partner, "view")
+        edit = self.document._request_access(self.partner, "edit")
+
+        edit.with_user(self.approver_1).action_approve()
+
+        self.assertIn(self.partner, self.document.editor_partner_ids)
+        self.assertEqual(view.state, "cancelled", "edit answers the view request")
+        self.assertNotIn(self.partner, self.document.viewer_partner_ids)
+
+    def test_a_view_approval_leaves_a_waiting_edit_request(self):
+        view = self.document._request_access(self.partner, "view")
+        edit = self.document._request_access(self.partner, "edit")
+
+        view.with_user(self.approver_1).action_approve()
+
+        self.assertIn(self.partner, self.document.viewer_partner_ids)
+        self.assertEqual(edit.state, "pending")
+
     def test_refusing_grants_nothing(self):
         request = self.document._request_access(self.partner, "view")
 

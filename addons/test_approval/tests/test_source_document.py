@@ -181,7 +181,7 @@ class TestSourceDocumentIsNotified(ApprovalCommon):
         doc.action_create_approval_request()
         request = doc.approval_request_id
 
-        doc.action_refuse_approval()
+        doc._refuse_pending_approval()
 
         self.assertEqual(request.state, "refused")
         self.assertEqual(

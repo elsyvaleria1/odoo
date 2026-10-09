@@ -308,7 +308,7 @@ class AccountMove(models.Model):
                 )
         return notes
 
-    def action_create_approval_request(self) -> dict[str, Any]:
+    def _check_can_request_approval(self, candidates=None):
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == "account.move"
@@ -321,7 +321,7 @@ class AccountMove(models.Model):
                 ),
             )
 
-        return super().action_create_approval_request()
+        return super()._check_can_request_approval(candidates)
 
     def action_view_approval(self) -> dict[str, Any]:
         self.check_singleton()
@@ -342,11 +342,31 @@ class AccountMove(models.Model):
             "domain": domain,
         }
 
+    def _get_approval_snapshot(self, operation: str) -> dict[str, Any]:
+        snapshot = super()._get_approval_snapshot(operation)
+        return snapshot | {
+            "partner_id": self.partner_id.id,
+            "currency_id": self.currency_id.id,
+            "journal_id": self.journal_id.id,
+            "lines": sorted(
+                [
+                    line.product_id.id or 0,
+                    line.account_id.id or 0,
+                    line.quantity,
+                    line.price_unit,
+                    line.discount,
+                    sorted(line.tax_ids.ids),
+                ]
+                for line in self.invoice_line_ids
+                if line.display_type == "product"
+            ),
+        }
+
     def _check_approval_covers(self, operation: str) -> None:
+        # the amount first: when it moved, saying so is the more useful refusal
+        if self.approval_request_id.target_model != "account.move":
+            self._check_approved_amount()
         super()._check_approval_covers(operation)
-        if self.approval_request_id.target_model == "account.move":
-            return
-        self._check_approved_amount()
 
     def _is_approval_reasked_after_refusal(self, operation: str) -> bool:
         return True

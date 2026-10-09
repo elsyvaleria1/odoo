@@ -76,21 +76,6 @@ class ApprovalRequest(models.Model):
             self._get_all_pickings(),
             self.env._("stock picking"),
         )
-        self._check_withdraw_blocked_by_applied_adjustment()
-
-    def _check_withdraw_blocked_by_applied_adjustment(self) -> None:
-        _debug.logic("approval_withdraw_blocked", requests=self)
-        if self.res_model != "stock.inventory.adjustment":
-            return
-        adjustment = self.get_source_document()
-        if adjustment and adjustment.state == "applied":
-            raise UserError(
-                self.env._(
-                    "%(name)s was applied to the stock: its approval can no longer "
-                    "be withdrawn or reset.",
-                    name=adjustment.display_name,
-                )
-            )
 
     @api.depends("request_owner_id", "request_owner_id.employee_id", "has_asset")
     def _compute_asset_id(self) -> None:

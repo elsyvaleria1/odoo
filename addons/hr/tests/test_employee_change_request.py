@@ -114,6 +114,14 @@ class TestEmployeeChangeRequest(TransactionCase):
         with self.assertRaises(AccessError):
             other.write({"emergency_contact": "Not Theirs"})
 
+    def test_an_applied_change_cannot_be_withdrawn(self):
+        request = self._raise_request(private_street="New Street 2")
+        self._decide(request, "approve")
+
+        with self.assertRaisesRegex(UserError, "already went through"):
+            request.approval_request_id.with_user(self.officer).action_withdraw()
+        self.assertEqual(request.approval_state, "approved")
+
     def test_refusing_leaves_the_employee_untouched(self):
         request = self._raise_request(private_street="Never Applied")
         self._decide(request, "refuse")

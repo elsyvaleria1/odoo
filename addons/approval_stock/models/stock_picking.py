@@ -223,7 +223,7 @@ class StockPicking(models.Model):
                 message_type="notification",
             )
 
-    def action_create_approval_request(self) -> dict[str, Any]:
+    def _check_can_request_approval(self, candidates=None):
         if (
             self.approval_request_id
             and self.approval_request_id.target_model == "stock.picking"
@@ -236,7 +236,7 @@ class StockPicking(models.Model):
                 ),
             )
 
-        return super().action_create_approval_request()
+        return super()._check_can_request_approval(candidates)
 
     def action_cancel(self) -> bool:
         result = super().action_cancel()
@@ -273,6 +273,9 @@ class StockPicking(models.Model):
             "location_dest_id": self.location_dest_id.id,
             "moves": sorted(
                 [move.product_id.id, move.product_uom_qty] for move in self.move_ids
+            ),
+            "uoms": sorted(
+                [move.product_id.id, move.product_uom_id.id] for move in self.move_ids
             ),
         }
 

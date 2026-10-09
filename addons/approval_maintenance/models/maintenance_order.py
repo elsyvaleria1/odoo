@@ -12,13 +12,6 @@ class MaintenanceOrder(models.Model):
         self.check_singleton()
         return "Preventivo" if self.maintenance_type == "preventive" else "Correctivo"
 
-    def _get_approval_request_name(self) -> str:
-        self.check_singleton()
-        return (
-            f"Mantenimiento {self._get_maintenance_type_label()} - "
-            f"{', '.join(self.trace_ids.mapped('name')) or 'N/A'}"
-        )
-
     def _prepare_approval_request_values(self, category) -> dict[str, Any]:
         vals = super()._prepare_approval_request_values(category)
         vals["reason"] = self._get_maintenance_approval_reason_html()
@@ -50,27 +43,20 @@ class MaintenanceOrder(models.Model):
             )
         return Markup("").join(parts)
 
-    def action_create_approval_request(self) -> dict[str, Any]:
-        self.check_singleton()
-        self.lock_for_update(wait=True)
-        self.invalidate_recordset(["approval_request_id"])
-        self._check_can_request_approval()
-        category = self._get_approval_category()
-        approval = self.env["approval.request"]._create_raised(
-            [self._prepare_approval_request_values(category)]
+    def _submits_approval_request_on_raise(self) -> bool:
+        # the owner attaches the documents the request asks for, then submits it
+        return False
+
+    def _get_approval_raised_note(self, approval) -> Markup:
+        return Markup(
+            "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
+        ) % (
+            approval.id,
+            escape(approval.display_name),
+            self.env._("created. Please attach documents and submit."),
         )
-        self.write({"approval_request_id": approval.id})
-        self.message_post(
-            body=Markup(
-                "<a href='#' data-oe-model='approval.request' data-oe-id='%s'>%s</a> %s"
-            )
-            % (
-                approval.id,
-                escape(approval.display_name),
-                self.env._("created. Please attach documents and submit."),
-            ),
-            message_type="notification",
-        )
+
+    def _get_approval_submitted_action(self, approval) -> dict[str, Any]:
         return {
             "type": "ir.actions.act_window",
             "res_model": "approval.request",

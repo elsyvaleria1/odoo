@@ -22,7 +22,10 @@ class MixinApprovalGate(models.AbstractModel):
 
     def _run_through_approval(self, operation, run):
         ready, need_approval = self._split_for_approval(operation)
-        result = ready._run_admitted(operation, run) if ready else True
+        result = True
+        if ready:
+            result = ready._run_admitted(operation, run)
+            ready._stamp_operation_run(operation)
         if not need_approval:
             return result
         trace.MIXIN.note(
@@ -42,7 +45,8 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _ask_approval_each(self) -> tuple:
-        """Raise one request per record, and keep the batch when a company staffs none.
+        """Raise the batch's requests together, and keep the batch when a company
+        staffs none.
 
         A batch is one transaction, so a refusal here rolls back every record that
         already ran -- including the ones that needed no approval at all and were
@@ -50,7 +54,8 @@ class MixinApprovalGate(models.AbstractModel):
         that: something about that document is wrong, and the person asked for it by
         acting on it. A step whose approvers all work in another company does not.
         That configuration is nobody-in-this-batch's doing and nobody in it can fix
-        it, so the record is reported and the rest stand.
+        it, so the record is reported and the rest stand: the batch is then raised
+        again one record at a time to find which.
 
         Returns the records whose request was raised, and a list of
         ``(record, error)`` for the ones it could not be raised for.
@@ -60,12 +65,19 @@ class MixinApprovalGate(models.AbstractModel):
         # them, so a later iteration is otherwise handed a failure belonging to work
         # done before this loop began.
         self.env.flush_all()
+        try:
+            with self.env.cr.savepoint():
+                self._raise_approval_requests()
+        except ApprovalStepUnstaffed:
+            trace.MIXIN.event("batch_not_asked_unstaffed", records=self)
+        else:
+            return self, []
         asked = self.browse()
         blocked = []
         for record in self:
             try:
                 with self.env.cr.savepoint():
-                    record.action_create_approval_request()
+                    record._raise_approval_requests()
             except ApprovalStepUnstaffed as error:
                 trace.MIXIN.event(
                     "approval_not_asked_unstaffed",
@@ -150,7 +162,9 @@ class MixinApprovalGate(models.AbstractModel):
         ready = need_approval = self.browse()
         for record in self:
             state = record.approval_state if record.approval_request_id else False
+            other_operation = False
             if state and not record._approval_request_gates(operation):
+                other_operation = bool(record._get_own_approval_request())
                 state = False
             if state in ("new", "pending"):
                 trace.REFUSAL.event(
@@ -183,8 +197,78 @@ class MixinApprovalGate(models.AbstractModel):
                     )
                 )
             else:
+                if other_operation:
+                    record._release_approval_of_other_operation(operation)
                 need_approval |= record
         return ready, need_approval
+
+    def _get_own_approval_request(self):
+        """The linked request, elevated, when it was raised about this document;
+        empty when it is the request that produced the document."""
+        self.check_singleton()
+        request = self.approval_request_id.sudo()
+        return request if request.get_source_document() == self else request.browse()
+
+    def _release_approval_of_other_operation(self, operation) -> None:
+        """Let go of a settled request raised for another operation, so `operation`
+        is asked for in its own request; the old one keeps its history.
+
+        A document holds one request at a time. Refusing every later operation
+        because an earlier one was asked about left a document approved for one
+        thing unable to ask for the next.
+        """
+        self.check_singleton()
+        request = self._get_own_approval_request()
+        if request.state in ("new", "pending"):
+            trace.REFUSAL.event(
+                "other_operation_pending",
+                record=self,
+                operation=operation,
+                request=request.id,
+            )
+            raise UserError(
+                self.env._(
+                    "%(name)s is waiting for an approval of %(other)s: it is decided "
+                    "before %(operation)s can be asked for.",
+                    name=self.display_name,
+                    other=request.operation,
+                    operation=operation,
+                )
+            )
+        if request.state == "approved" and not request.date_operation_run:
+            trace.REFUSAL.event(
+                "other_operation_unused",
+                record=self,
+                operation=operation,
+                request=request.id,
+            )
+            raise UserError(
+                self.env._(
+                    "%(name)s holds an approval of %(other)s that has not been used "
+                    "yet. Run %(other)s, or reset that approval, before asking for "
+                    "%(operation)s.",
+                    name=self.display_name,
+                    other=request.operation,
+                    operation=operation,
+                )
+            )
+        trace.MIXIN.note(
+            "approval_released_for_another_operation",
+            record=self,
+            operation=operation,
+            request=request.id,
+        )
+        self.approval_request_id = False
+        self.message_post(
+            body=self.env._(
+                "%(request)s, for %(other)s, stays with its history; %(operation)s "
+                "is asked for on its own.",
+                request=request.display_name,
+                other=request.operation,
+                operation=operation,
+            ),
+            message_type="notification",
+        )
 
     def _is_approval_reasked_after_refusal(self, operation) -> bool:
         """Whether a refused request is dropped and asked again, rather than refusing
@@ -199,9 +283,8 @@ class MixinApprovalGate(models.AbstractModel):
         exist, not whether it may go through; gating on it would leave a
         transfer created from an approved request unable to move.
         """
-        self.check_singleton()
-        request = self.approval_request_id.sudo()
-        if request.get_source_document() != self:
+        request = self._get_own_approval_request()
+        if not request:
             return False
         asked_for = request.operation
         return not asked_for or asked_for in self._get_operation_names(operation)
@@ -231,7 +314,10 @@ class MixinApprovalGate(models.AbstractModel):
         approved = self.approval_request_id.operation_snapshot
         if not approved:
             return
-        if approved != self._get_approval_snapshot(operation):
+        # Only what the grant recorded is compared: a key a later version of the
+        # document's snapshot adds was not shown to the approver of an older grant.
+        current = self._get_approval_snapshot(operation)
+        if any(current.get(key) != value for key, value in approved.items()):
             trace.REFUSAL.event(
                 "operation_snapshot_moved", record=self, operation=operation
             )
@@ -299,6 +385,39 @@ class MixinApprovalGate(models.AbstractModel):
             )
         )
 
+    def _stamp_operation_run(self, operation) -> None:
+        """Record that the operation an approval was granted for has now run: run by
+        hand after the grant, it is the run the grant allowed."""
+        granted = self.filtered(
+            lambda record: (
+                record.approval_state == "approved"
+                and record._approval_request_gates(operation)
+            )
+        )
+        if not granted:
+            return
+        # each one elevated: the union keeps the environment of its first
+        own = [record._get_own_approval_request() for record in granted]
+        requests = (
+            own[0]
+            .union(*own[1:])
+            .filtered(lambda request: not request.date_operation_run)
+        )
+        if requests:
+            trace.MIXIN.note(
+                "operation_ran_by_hand", records=granted, operation=operation
+            )
+            requests.date_operation_run = fields.Datetime.now()
+
+    def _get_approval_refresh_values(self, request):
+        values = super()._get_approval_refresh_values(request)
+        if operation := request.operation or self._get_gated_operation():
+            values["operation_snapshot"] = self._get_approval_snapshot(operation)
+        return values
+
+    def _is_approval_acted_on(self) -> bool:
+        return bool(self._get_own_approval_request().date_operation_run)
+
     def _is_operation_run_on_approval(self, operation) -> bool:
         self.check_singleton()
         return True
@@ -308,10 +427,9 @@ class MixinApprovalGate(models.AbstractModel):
         self._run_operation_on_approval()
 
     def _run_operation_on_approval(self) -> None:
-        self.check_singleton()
-        request = self.approval_request_id.sudo()
+        request = self._get_own_approval_request()
         operation = request.operation or self._get_gated_operation()
-        if not operation or request.date_operation_run:
+        if not request or not operation or request.date_operation_run:
             return
         if not self._is_operation_run_on_approval(operation):
             return
@@ -348,15 +466,3 @@ class MixinApprovalGate(models.AbstractModel):
             values["operation"] = operation
             values["operation_snapshot"] = self._get_approval_snapshot(operation)
         return values
-
-    def _refuse_pending_approval(self) -> None:
-        for record in self.filtered(
-            lambda r: r.approval_request_id and r.approval_state in ("new", "pending")
-        ):
-            if record.approval_request_id._refuse_cascade():
-                record.message_post(
-                    body=self.env._(
-                        "Approval request refused: the document was cancelled."
-                    ),
-                    message_type="notification",
-                )
