@@ -78,6 +78,12 @@ msgid "<strong>Point of Sales:</strong>"
 msgstr "<strong>Puntos de venta:</strong>"
 
 #. module: pos_restaurant
+#. odoo-javascript
+#: code:addons/pos_restaurant/static/src/app/screens/floor_screen/floor_screen.js:0
+msgid "A new table is already waiting for the connection to come back."
+msgstr "Ya hay una mesa nueva en espera de que regrese la conexión."
+
+#. module: pos_restaurant
 #: model_terms:ir.actions.act_window,help:pos_restaurant.action_restaurant_floor_form
 msgid ""
 "A restaurant floor represents the place where customers are served, this is "
@@ -1565,6 +1571,13 @@ msgstr "Con"
 #: code:addons/pos_restaurant/static/src/app/services/pos_store.js:0
 msgid "You are currently transferring the order %s"
 msgstr "Estás trasladando la orden %s"
+
+#. module: pos_restaurant
+#. odoo-javascript
+#: code:addons/pos_restaurant/static/src/app/screens/floor_screen/floor_screen.js:0
+msgid ""
+"You are offline. The table will be created once the connection is back."
+msgstr "No tiene conexión. La mesa se creará cuando regrese la conexión."
 
 #. module: pos_restaurant
 #. odoo-python
