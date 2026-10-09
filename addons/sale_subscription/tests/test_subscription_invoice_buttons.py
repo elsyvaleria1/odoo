@@ -86,6 +86,29 @@ class TestSubscriptionInvoiceButtons(TestSubscriptionCommon):
             self._shown_invoice_buttons(subscription), ["create_invoice_sub"]
         )
 
+    def test_an_invoiced_period_with_a_one_time_line_offers_the_regular_invoice(self):
+        subscription = self.subscription
+        subscription.action_confirm()
+        subscription._create_recurring_invoice()
+        subscription.write(
+            {
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.company_data["product_order_no"].id,
+                            "product_qty": 1,
+                            "tax_ids": False,
+                        }
+                    )
+                ]
+            }
+        )
+
+        self.assertGreater(subscription.next_invoice_date, fields.Date.today())
+        self.assertEqual(subscription.invoice_state, "partial")
+        self.assertTrue(subscription.is_invoiceable)
+        self.assertEqual(self._shown_invoice_buttons(subscription), ["create_invoice"])
+
     def test_invoicing_a_subscription_in_advance_defaults_to_a_regular_invoice(self):
         subscription = self.subscription
         subscription.action_confirm()
