@@ -1,6 +1,12 @@
+import importlib.util
+
+from psycopg.errors import UniqueViolation
+
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import tagged
+from odoo.tools import mute_logger
+from odoo.tools.misc import file_path
 
 from odoo.addons.product.models.utils import unlink_where_possible
 from odoo.addons.product.tests.common import ProductVariantsCommon
@@ -306,9 +312,10 @@ class TestVariantRebuildAndChecks(ProductVariantsCommon):
         with self.assertRaisesRegex(UserError, "Sofa"):
             self.color_attribute.unlink()
 
-    def test_the_template_count_counts_templates(self):
-        self.product_template_sofa.write(
+    def test_the_template_count_counts_active_templates(self):
+        chair = self.env["product.template"].create(
             {
+                "name": "Chair",
                 "attribute_line_ids": [
                     Command.create(
                         {
@@ -316,10 +323,44 @@ class TestVariantRebuildAndChecks(ProductVariantsCommon):
                             "value_ids": [Command.set(self.color_attribute_red.ids)],
                         }
                     )
+                ],
+            }
+        )
+        self.assertEqual(self.color_attribute.count_product_tmpl, 2)
+        chair.action_archive()
+        self.color_attribute.invalidate_recordset(["count_product_tmpl"])
+        self.assertEqual(self.color_attribute.count_product_tmpl, 1)
+
+    def test_an_attribute_sits_on_one_line_per_product(self):
+        with mute_logger("odoo.db"), self.assertRaises(UniqueViolation):
+            self.env["product.template.attribute.line"].create(
+                {
+                    "product_tmpl_id": self.product_template_sofa.id,
+                    "attribute_id": self.color_attribute.id,
+                    "value_ids": [Command.set(self.color_attribute_red.ids)],
+                }
+            )
+            self.env.flush_all()
+
+    def test_a_line_can_be_replaced_in_one_save(self):
+        old_line = self.product_template_sofa.attribute_line_ids
+        self.product_template_sofa.write(
+            {
+                "attribute_line_ids": [
+                    Command.delete(old_line.id),
+                    Command.create(
+                        {
+                            "attribute_id": self.color_attribute.id,
+                            "value_ids": [Command.set(self.color_attribute_blue.ids)],
+                        }
+                    ),
                 ]
             }
         )
-        self.assertEqual(self.color_attribute.count_product_tmpl, 1)
+        self.assertEqual(
+            self.product_template_sofa.attribute_line_ids.value_ids,
+            self.color_attribute_blue,
+        )
 
     def test_product_attributes_stay_multi_valued(self):
         unused = self.env["product.attribute"].create({"name": "Unused"})
@@ -330,3 +371,168 @@ class TestVariantRebuildAndChecks(ProductVariantsCommon):
         ptav = self.product_sofa_red.product_template_attribute_value_ids
         self.assertEqual(ptav.display_name, "Color: red")
         self.assertEqual(ptav.with_context(show_attribute=False).display_name, "red")
+
+
+@tagged("post_install", "-at_install")
+class TestSpecificationLines(ProductVariantsCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.grapes = cls.env["product.attribute"].create(
+            {
+                "name": "Grapes",
+                "value_ids": [
+                    Command.create({"name": "Merlot"}),
+                    Command.create({"name": "Malbec"}),
+                ],
+            }
+        )
+
+    def _wine(self, **values):
+        return self.env["product.template"].create(
+            {
+                "name": "Wine",
+                "specification_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.grapes.id,
+                            "value_ids": [Command.set(self.grapes.value_ids.ids)],
+                        }
+                    )
+                ],
+                **values,
+            }
+        )
+
+    def test_a_specification_describes_without_varying(self):
+        wine = self._wine()
+        line = wine.specification_line_ids
+        self.assertEqual(line.purpose, "specification")
+        self.assertFalse(wine.attribute_line_ids)
+        self.assertEqual(len(wine.product_variant_ids), 1)
+        self.assertFalse(line.product_template_value_ids)
+        self.assertFalse(wine.has_configurable_attributes)
+        self.assertEqual(wine._get_attribute_lines_for_display(), line)
+        self.assertEqual(
+            wine.product_variant_id._get_attribute_lines_for_display(), line
+        )
+
+    def test_specifications_sit_beside_variant_lines(self):
+        wine = self._wine(
+            attribute_line_ids=[
+                Command.create(
+                    {
+                        "attribute_id": self.size_attribute.id,
+                        "value_ids": [Command.set(self.size_attribute.value_ids.ids)],
+                    }
+                )
+            ]
+        )
+        self.assertEqual(len(wine.product_variant_ids), 3)
+        self.assertEqual(
+            wine.product_variant_ids.product_template_attribute_value_ids.attribute_id,
+            self.size_attribute,
+        )
+
+    def test_an_attribute_is_a_variant_or_a_specification_not_both(self):
+        wine = self._wine()
+        with mute_logger("odoo.db"), self.assertRaises(UniqueViolation):
+            wine.write(
+                {
+                    "attribute_line_ids": [
+                        Command.create(
+                            {
+                                "attribute_id": self.grapes.id,
+                                "value_ids": [Command.set(self.grapes.value_ids.ids)],
+                            }
+                        )
+                    ]
+                }
+            )
+            self.env.flush_all()
+
+    def test_turning_a_variant_line_into_a_specification_drops_the_dimension(self):
+        template = self.product_template_sofa
+        self.assertEqual(len(template.product_variant_ids), 3)
+        template.attribute_line_ids.purpose = "specification"
+        self.assertEqual(len(template.product_variant_ids), 1)
+        self.assertFalse(
+            template.product_variant_ids.product_template_attribute_value_ids
+        )
+        self.assertEqual(
+            template.specification_line_ids.value_ids, self.color_attribute.value_ids
+        )
+
+        template.specification_line_ids.purpose = "variant"
+        self.assertEqual(len(template.product_variant_ids), 3)
+
+
+@tagged("post_install", "-at_install")
+class TestSpecificationMigration(ProductVariantsCommon):
+    def _migrate(self):
+        spec = importlib.util.spec_from_file_location(
+            "product_pre_migrate_1_12",
+            file_path("product/migrations/1.12/pre-migrate.py"),
+        )
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+        self.env.flush_all()
+        migration.migrate(self.env.cr, "1.11")
+        self.env.invalidate_all()
+
+    def _repeat_line(self, template, values):
+        self.env.cr.execute(
+            "DROP INDEX product_template_attribute_line_attribute_unique_per_product"
+        )
+        for value in values:
+            self.env.cr.execute(
+                """
+                INSERT INTO product_template_attribute_line
+                       (product_tmpl_id, attribute_id, active, sequence, purpose)
+                VALUES (%s, %s, true, 20, 'variant') RETURNING id
+                """,
+                [template.id, value.attribute_id.id],
+            )
+            (line_id,) = self.env.cr.fetchone()
+            self.env.cr.execute(
+                """
+                INSERT INTO product_attribute_value_product_template_attribute_line_rel
+                       (product_template_attribute_line_id, product_attribute_value_id)
+                VALUES (%s, %s)
+                """,
+                [line_id, value.id],
+            )
+
+    def test_repeated_single_value_lines_become_one_specification(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Margaux",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [Command.set(self.size_attribute_s.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        variant = template.product_variant_id
+        self.assertTrue(variant.product_template_attribute_value_ids)
+        self._repeat_line(template, self.size_attribute_m | self.size_attribute_l)
+
+        self._migrate()
+
+        self.assertFalse(template.attribute_line_ids)
+        self.assertEqual(
+            template.specification_line_ids.value_ids, self.size_attribute.value_ids
+        )
+        self.assertFalse(variant.product_template_attribute_value_ids)
+        self.assertEqual(variant.combination_indices, "")
+
+    def test_a_repeated_line_of_several_values_stops_the_upgrade(self):
+        self._repeat_line(self.product_template_sofa, self.color_attribute_red)
+        with self.assertRaisesRegex(
+            UserError, "product.template %s" % self.product_template_sofa.id
+        ):
+            self._migrate()

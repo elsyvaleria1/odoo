@@ -48,6 +48,25 @@ class ProductTemplateAttributeLine(models.Model):
         inverse_name="attribute_line_id",
         string="Product Attribute Values",
     )
+    purpose = fields.Selection(
+        selection=[
+            ("variant", "Variants and Choices"),
+            ("specification", "Specification"),
+        ],
+        default="variant",
+        required=True,
+        help="Variants and Choices: each value is an option of the product, a variant"
+        " or a choice made when selling it.\n"
+        "Specification: every value describes the product (e.g. its grape"
+        " varieties); none is chosen, and no variant is made from them.",
+    )
+
+    _attribute_unique_per_product = models.UniqueIndex(
+        "(product_tmpl_id, attribute_id) WHERE active IS TRUE",
+        "A product carries each attribute on one line only: put all its values on"
+        " that line, and use a second attribute for a second dimension (e.g. Frame"
+        " Color and Seat Color).",
+    )
 
     @api.onchange("attribute_id")
     def _onchange_attribute_id(self) -> None:
@@ -156,7 +175,7 @@ class ProductTemplateAttributeLine(models.Model):
         for ptal in self:
             ptav_to_activate = ProductTemplateAttributeValue
             ptav_to_deactivate = ProductTemplateAttributeValue
-            remaining_pav = set(ptal.value_ids.ids)
+            remaining_pav = set(ptal.value_ids.ids if ptal.purpose == "variant" else ())
             for ptav in ptal.product_template_value_ids:
                 if ptav.product_attribute_value_id.id not in remaining_pav:
                     if ptav.ptav_active:
@@ -272,7 +291,7 @@ class ProductTemplateAttributeLine(models.Model):
 
     def _is_configurable(self) -> bool:
         self.check_singleton()
-        return bool(
+        return self.purpose == "variant" and bool(
             len(self.value_ids) >= 2
             or self.attribute_id.display_type == "multi"
             or self.value_ids.is_custom

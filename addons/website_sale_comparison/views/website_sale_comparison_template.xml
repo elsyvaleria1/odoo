@@ -9,7 +9,7 @@
         <xpath expr="//div[hasclass('o_wsale_product_action_row')]" position="inside">
             <t
                 t-set="isCompareAvailable"
-                t-value="product and product.valid_product_template_attribute_line_ids" />
+                t-value="product and product._get_attribute_lines_for_display()" />
 
             <t
                 t-if="isCompareAvailable"
@@ -20,7 +20,7 @@
 
                 <t
                     t-set="attrib_categories"
-                    t-value="product.valid_product_template_attribute_line_ids._prepare_categories_for_display()" />
+                    t-value="product._get_attribute_lines_for_display()._prepare_categories_for_display()" />
                 <t
                     t-set="product_variant_id"
                     t-value="product._get_first_possible_variant_id()" />
@@ -54,7 +54,7 @@
         <xpath expr="//div[@id='product_option_block']" position="inside">
             <t
                 t-set="attrib_categories"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_categories_for_display()" />
+                t-value="product._get_attribute_lines_for_display()._prepare_categories_for_display()" />
             <t
                 t-set="product_variant_id"
                 t-value="product._get_first_possible_variant_id()" />
@@ -92,7 +92,7 @@
         <xpath expr="//div[@id='product_full_description']" position="after">
             <t
                 t-set="attrib_categories"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_categories_for_display()" />
+                t-value="product._get_attribute_lines_for_display()._prepare_categories_for_display()" />
             <t t-if="attrib_categories">
                 <section class="pt32 pb32" id="product_full_spec">
                     <div class="container">
@@ -124,12 +124,12 @@
         <xpath expr="//div[@id='more_information_accordion_item']" position="before">
             <t
                 t-set="attrib_categories"
-                t-value="product.valid_product_template_attribute_line_ids._prepare_categories_for_display()" />
+                t-value="product._get_attribute_lines_for_display()._prepare_categories_for_display()" />
             <t
                 t-set="product_variant_id"
                 t-value="product._get_first_possible_variant_id()" />
             <t
-                t-if="product.valid_product_template_attribute_line_ids._prepare_categories_for_display()">
+                t-if="product._get_attribute_lines_for_display()._prepare_categories_for_display()">
                 <t t-foreach="attrib_categories" t-as="category">
                     <div class="accordion-item">
                         <div class="accordion-header my-0 h6">

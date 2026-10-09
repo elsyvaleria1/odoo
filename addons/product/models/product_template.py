@@ -233,6 +233,14 @@ class ProductTemplate(models.Model):
         inverse_name="product_tmpl_id",
         string="Product Attributes",
         copy=True,
+        domain=[("purpose", "=", "variant")],
+    )
+    specification_line_ids = fields.One2many(
+        comodel_name="product.template.attribute.line",
+        inverse_name="product_tmpl_id",
+        string="Specifications",
+        copy=True,
+        domain=[("purpose", "=", "specification")],
     )
 
     valid_product_template_attribute_line_ids = fields.Many2many(
@@ -401,7 +409,9 @@ class ProductTemplate(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        templates = super().create(vals_list)
+        templates = super().create(
+            [self._with_specification_purpose(vals) for vals in vals_list]
+        )
         if self.env.context.get("create_product_product", True):
             to_build = templates
             if self.env.context.get("update_product_template_attribute_values", True):
@@ -427,14 +437,15 @@ class ProductTemplate(models.Model):
                 .product_variant_ids
             )
             products.with_context(skip_uom_conversion=True)._update_uom(vals["uom_id"])
+        vals = self._with_specification_purpose(vals)
         lines_rebuild_once = (
             self.with_context(variant_rebuild_deferred=tuple(self.ids))
-            if "attribute_line_ids" in vals
+            if "attribute_line_ids" in vals or "specification_line_ids" in vals
             else self
         )
         res = super(ProductTemplate, lines_rebuild_once).write(vals)
         if self.env.context.get("create_product_product", True):
-            if "attribute_line_ids" in vals:
+            if "attribute_line_ids" in vals or "specification_line_ids" in vals:
                 self._create_variant_ids()
             elif vals.get("active"):
                 self.filtered(lambda t: not t.product_variant_ids)._create_variant_ids()
@@ -1437,6 +1448,26 @@ class ProductTemplate(models.Model):
         if self.env.registry.settings.get(self.env, setting, False) == "1":
             return self.env.ref(unit_if_set)
         return self.env.ref(unit_otherwise)
+
+    @api.model
+    def _with_specification_purpose(self, vals) -> dict:
+        commands = vals.get("specification_line_ids")
+        if not commands:
+            return vals
+        return {
+            **vals,
+            "specification_line_ids": [
+                Command.create({**command[2], "purpose": "specification"})
+                if isinstance(command, list | tuple) and command[0] == Command.CREATE
+                else command
+                for command in commands
+            ],
+        }
+
+    def _get_attribute_lines_for_display(self):
+        return self.valid_product_template_attribute_line_ids | (
+            self.specification_line_ids.filtered("value_ids")
+        )
 
     def _get_related_fields_variant_template(self):
         return [

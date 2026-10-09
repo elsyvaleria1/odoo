@@ -14,7 +14,7 @@ def gelato_variants(*options):
                 ],
             }
             for index, variant in enumerate(options)
-        ]
+        ],
     }
 
 
@@ -39,7 +39,9 @@ class TestGelatoVariantSync(TransactionCase):
     def test_a_value_gelato_no_longer_offers_leaves_the_product(self):
         template = self.env["product.template"].create({"name": "Mug"})
         template._create_attributes_from_gelato_info(
-            gelato_variants({"Gelato mug": "S"}, {"Gelato mug": "M"}, {"Gelato mug": "L"})
+            gelato_variants(
+                {"Gelato mug": "S"}, {"Gelato mug": "M"}, {"Gelato mug": "L"}
+            )
         )
         template._create_attributes_from_gelato_info(
             gelato_variants({"Gelato mug": "S"}, {"Gelato mug": "M"})

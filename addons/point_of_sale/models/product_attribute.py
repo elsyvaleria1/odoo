@@ -48,7 +48,10 @@ class ProductTemplateAttributeLine(models.Model):
     @api.model
     def _load_pos_data_domain(self, data, config):
         loaded_product_tmpl_ids = list({p["id"] for p in data["product.template"]})
-        return [("product_tmpl_id", "in", loaded_product_tmpl_ids)]
+        return [
+            ("product_tmpl_id", "in", loaded_product_tmpl_ids),
+            ("purpose", "=", "variant"),
+        ]
 
 
 class ProductTemplateAttributeValue(models.Model):

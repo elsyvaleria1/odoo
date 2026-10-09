@@ -1374,14 +1374,17 @@ class TestVariantsArchive(ProductVariantsCommon):
         self.patch(type(Product), "unlink", unlink)
 
         variants_2x2 = self.template.product_variant_ids
+        small = variants_2x2.filtered(
+            lambda variant: (
+                self.ptav_size_s in variant.product_template_attribute_value_ids
+            )
+        )
         self.ptal_size.write({"value_ids": [(3, self.size_attribute_m.id)]})
         self._assert_2color_x_1size()
-        self.assertEqual(
-            self.template.product_variant_ids, variants_2x2[0] + variants_2x2[2]
-        )
+        self.assertEqual(self.template.product_variant_ids, small)
         archived_variants = self._get_archived_variants()
         self._assert_2color_x_1size(archived_variants, ptav=self.ptav_size_m)
-        self.assertEqual(archived_variants, variants_2x2[1] + variants_2x2[3])
+        self.assertEqual(archived_variants, variants_2x2 - small)
 
         self.ptal_size.write({"value_ids": [Command.link(self.size_attribute_m.id)]})
         self._assert_2color_x_2size()
@@ -2150,6 +2153,16 @@ class TestVariantsExclusion(ProductVariantsCommon):
 
     @mute_logger("odoo.models.unlink")
     def test_dynamic_variants_unarchive(self):
+        second_dynamic = self.env["product.attribute"].create(
+            {
+                "name": "Second dynamic",
+                "create_variant": "dynamic",
+                "value_ids": [
+                    Command.create({"name": "dyn-b1"}),
+                    Command.create({"name": "dyn-b2"}),
+                ],
+            }
+        )
         product_template = self.env["product.template"].create(
             {
                 "name": "Test dynamic",
@@ -2164,10 +2177,8 @@ class TestVariantsExclusion(ProductVariantsCommon):
                     ),
                     Command.create(
                         {
-                            "attribute_id": self.dynamic_attribute.id,
-                            "value_ids": [
-                                Command.set(self.dynamic_attribute.value_ids.ids)
-                            ],
+                            "attribute_id": second_dynamic.id,
+                            "value_ids": [Command.set(second_dynamic.value_ids.ids)],
                         }
                     ),
                 ],
@@ -2185,7 +2196,7 @@ class TestVariantsExclusion(ProductVariantsCommon):
 
         self.assertEqual(len(product_template.product_variant_ids), 2)
 
-        pav_to_remove = self.dynamic_attribute.value_ids[:1]
+        pav_to_remove = second_dynamic.value_ids[:1]
         variant_to_archive = product_template.product_variant_ids.filtered(
             lambda pp: (
                 pav_to_remove
@@ -2200,13 +2211,13 @@ class TestVariantsExclusion(ProductVariantsCommon):
             ),
         ):
             product_template.attribute_line_ids[1].value_ids = [
-                Command.unlink(self.dynamic_attribute.value_ids[:1].id)
+                Command.unlink(second_dynamic.value_ids[:1].id)
             ]
         self.assertEqual(len(product_template.product_variant_ids), 1)
         self.assertFalse(variant_to_archive.active)
 
         product_template.attribute_line_ids[1].value_ids = [
-            Command.link(self.dynamic_attribute.value_ids[:1].id)
+            Command.link(second_dynamic.value_ids[:1].id)
         ]
         self.assertEqual(len(product_template.product_variant_ids), 2)
         self.assertTrue(variant_to_archive.active)

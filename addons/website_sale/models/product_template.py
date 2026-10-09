@@ -823,7 +823,11 @@ class ProductTemplate(models.Model):
 
     def _get_domain_attribute_value(self, attribute_value_dict) -> list:
         return [
-            [("attribute_line_ids.value_ids", "in", attribute_value_ids)]
+            [
+                "|",
+                ("attribute_line_ids.value_ids", "in", attribute_value_ids),
+                ("specification_line_ids.value_ids", "in", attribute_value_ids),
+            ]
             for attribute_value_ids in attribute_value_dict.values()
         ]
 

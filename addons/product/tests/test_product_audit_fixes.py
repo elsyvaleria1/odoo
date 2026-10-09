@@ -747,19 +747,17 @@ class TestProductAuditFixes(ProductCommon):
             top_pricelist._get_product_price(self.product, 1.0), 9.0, places=6
         )
 
-    def test_value_archived_by_one_line_is_revived_by_a_later_one(self):
+    def test_a_value_removed_then_added_back_is_revived(self):
         attribute = self.env["product.attribute"].create(
             {
                 "name": "PoolAttr",
-                "create_variant": "no_variant",
                 "value_ids": [
                     Command.create({"name": "X"}),
                     Command.create({"name": "Y"}),
-                    Command.create({"name": "Z"}),
                 ],
             }
         )
-        value_x, value_y, value_z = attribute.value_ids
+        value_x = attribute.value_ids[0]
         template = self.env["product.template"].create(
             {
                 "name": "PoolProbe",
@@ -767,36 +765,31 @@ class TestProductAuditFixes(ProductCommon):
                     Command.create(
                         {
                             "attribute_id": attribute.id,
-                            "value_ids": [Command.set((value_x + value_y).ids)],
+                            "value_ids": [Command.set(attribute.value_ids.ids)],
                         }
-                    ),
-                    Command.create(
-                        {
-                            "attribute_id": attribute.id,
-                            "value_ids": [Command.set(value_z.ids)],
-                        }
-                    ),
+                    )
                 ],
             }
         )
-        first_line, second_line = template.attribute_line_ids
-        value_for_x = first_line.product_template_value_ids.filtered(
+        line = template.attribute_line_ids
+        value_for_x = line.product_template_value_ids.filtered(
             lambda ptav: ptav.product_attribute_value_id == value_x
         )
         value_for_x.price_extra = 42.0
-        original_id = value_for_x.id
+        self.env["product.combo"].create(
+            {
+                "name": "Keeps X",
+                "combo_item_ids": [
+                    Command.create(
+                        {"product_id": value_for_x.ptav_product_variant_ids.id}
+                    )
+                ],
+            }
+        )
 
-        no_sync = {"update_product_template_attribute_values": False}
-        first_line.with_context(**no_sync).write(
-            {"value_ids": [Command.set(value_y.ids)]}
-        )
-        second_line.with_context(**no_sync).write(
-            {"value_ids": [Command.set((value_z + value_x).ids)]}
-        )
-        self.env.flush_all()
-        (first_line + second_line)._update_product_template_attribute_values()
-        self.env.flush_all()
-        self.env.invalidate_all()
+        line.value_ids = [Command.unlink(value_x.id)]
+        self.assertFalse(value_for_x.ptav_active, "a referenced value is archived")
+        line.value_ids = [Command.link(value_x.id)]
 
         values_for_x = self.env["product.template.attribute.value"].search(
             [
@@ -804,11 +797,7 @@ class TestProductAuditFixes(ProductCommon):
                 ("product_attribute_value_id", "=", value_x.id),
             ]
         )
-        self.assertEqual(len(values_for_x), 1, "no duplicate value may be created")
-        self.assertEqual(
-            values_for_x.id, original_id, "the existing record must be revived"
-        )
-        self.assertEqual(values_for_x.attribute_line_id, second_line)
+        self.assertEqual(values_for_x, value_for_x, "the existing record is revived")
         self.assertTrue(values_for_x.ptav_active)
         self.assertEqual(values_for_x.price_extra, 42.0, "its configuration survives")
 

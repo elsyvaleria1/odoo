@@ -126,14 +126,12 @@ class TestWebsiteSaleComparisonUi(HttpCase):
         cls.attribute_line_varieties = cls.env[
             "product.template.attribute.line"
         ].create(
-            [
-                {
-                    "product_tmpl_id": cls.template_margaux.id,
-                    "attribute_id": cls.attribute_varieties.id,
-                    "value_ids": [(6, 0, v.ids)],
-                }
-                for v in cls.values_varieties
-            ]
+            {
+                "product_tmpl_id": cls.template_margaux.id,
+                "attribute_id": cls.attribute_varieties.id,
+                "value_ids": [Command.set(cls.values_varieties.ids)],
+                "purpose": "specification",
+            }
         )
         cls.variants_margaux = cls.template_margaux._get_possible_variants_sorted()
 
@@ -314,7 +312,7 @@ class TestWebsiteSaleComparisonUi(HttpCase):
         self.attribute_vintage.category_id = category_vintage
         self.attribute_varieties.category_id = category_varieties
 
-        prep_categories = self.template_margaux.valid_product_template_attribute_line_ids._prepare_categories_for_display()
+        prep_categories = self.template_margaux._get_attribute_lines_for_display()._prepare_categories_for_display()
         self.assertEqual(
             prep_categories,
             OrderedDict(
@@ -343,12 +341,7 @@ class TestWebsiteSaleComparisonUi(HttpCase):
                                         [
                                             (
                                                 variant_margaux,
-                                                variant_ptavs.filtered(
-                                                    lambda ptav: (
-                                                        ptav.attribute_id
-                                                        == self.attribute_varieties
-                                                    )
-                                                ),
+                                                self.attribute_line_varieties.value_ids,
                                             )
                                         ]
                                     ),

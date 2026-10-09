@@ -10,7 +10,7 @@ class ProductProduct(models.Model):
     _inherit = "product.product"
 
     def _prepare_categories_for_display(self):
-        attributes = self.product_tmpl_id.valid_product_template_attribute_line_ids.attribute_id.sorted()
+        attributes = self.product_tmpl_id._get_attribute_lines_for_display().attribute_id.sorted()
         categories = OrderedDict(
             [(cat, OrderedDict()) for cat in attributes.category_id.sorted()]
         )
@@ -24,9 +24,11 @@ class ProductProduct(models.Model):
                         product.product_template_attribute_value_ids.filtered_domain(
                             [("attribute_id", "=", pa.id)]
                         )
-                        or product.attribute_line_ids.filtered_domain(
-                            [("attribute_id", "=", pa.id)]
-                        ).value_ids,
+                        or product._get_attribute_lines_for_display()
+                        .filtered(
+                            lambda line, attribute=pa: line.attribute_id == attribute
+                        )
+                        .value_ids,
                     )
                     for product in self
                 ]

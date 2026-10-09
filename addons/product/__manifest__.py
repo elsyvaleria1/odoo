@@ -1,6 +1,6 @@
 {
     "name": "Products and Pricelists",
-    "version": "1.11",
+    "version": "1.12",
     "oldest_upgradable_version": "1.11",
     "category": "Sales/Sales",
     "summary": "Manage product variants, pricing rules and supplier information",

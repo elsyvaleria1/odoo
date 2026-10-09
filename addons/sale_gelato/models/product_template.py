@@ -145,6 +145,18 @@ class ProductTemplate(models.Model):
                     product=self.display_name,
                 )
             )
+        specified = self.specification_line_ids.attribute_id.filtered(
+            lambda attribute: attribute.name in option_names
+        )
+        if specified:
+            raise UserError(
+                self.env._(
+                    "%(attributes)s is a specification of %(product)s, while Gelato"
+                    " makes variants of it.",
+                    attributes=", ".join(specified.mapped("name")),
+                    product=self.display_name,
+                )
+            )
         not_always = variant_attributes.filtered(
             lambda attribute: attribute.create_variant != "always"
         )

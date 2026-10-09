@@ -792,22 +792,23 @@ class TestProductAttributeValueConfig(TestProductAttributeValueCommon):
             mouse_color_green,
         )
 
+        trim_attribute = self.env["product.attribute"].create({"name": "Trim"})
         color_blue = self.env["product.attribute.value"].create(
             {
                 "name": "Blue",
-                "attribute_id": color_attribute.id,
+                "attribute_id": trim_attribute.id,
             }
         )
         color_yellow = self.env["product.attribute.value"].create(
             {
                 "name": "Yellow",
-                "attribute_id": color_attribute.id,
+                "attribute_id": trim_attribute.id,
             }
         )
         self.env["product.template.attribute.line"].create(
             {
                 "product_tmpl_id": mouse.id,
-                "attribute_id": color_attribute.id,
+                "attribute_id": trim_attribute.id,
                 "value_ids": [(6, 0, [color_blue.id, color_yellow.id])],
             }
         )

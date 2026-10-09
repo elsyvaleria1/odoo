@@ -9,7 +9,11 @@ class ProductTemplateAttributeLine(models.Model):
     def _prepare_single_value_for_display(self):
         single_value_lines = self.filtered(
             lambda ptal: (
-                len(ptal.value_ids) == 1 and ptal.attribute_id.display_type != "multi"
+                ptal.purpose == "specification"
+                or (
+                    len(ptal.value_ids) == 1
+                    and ptal.attribute_id.display_type != "multi"
+                )
             )
         )
         single_value_attributes = OrderedDict(

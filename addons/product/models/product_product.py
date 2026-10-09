@@ -977,6 +977,9 @@ class ProductProduct(models.Model):
     def _get_product_placeholder_filename(self):
         return self.product_tmpl_id._get_product_placeholder_filename()
 
+    def _get_attribute_lines_for_display(self):
+        return self.product_tmpl_id._get_attribute_lines_for_display()
+
     def _get_barcodes_by_company(self) -> list:
         return [
             (company_id, [p.barcode for p in products if p.barcode])
@@ -1400,6 +1403,19 @@ class ProductProduct(models.Model):
             (ptal.product_tmpl_id.id, ptal.attribute_id.id): ptal
             for ptal in PTAL.search(domain)
         }
+        if specifications := [
+            ptal
+            for ptal in template_attribute_to_ptal.values()
+            if ptal.purpose != "variant"
+        ]:
+            raise ValueError(  # noqa: E8511  the import wizard shows this text
+                self.env._(
+                    "%(attribute)s is a specification of %(product)s, not a variant"
+                    " attribute: its values cannot make variants.",
+                    attribute=specifications[0].attribute_id.display_name,
+                    product=specifications[0].product_tmpl_id.display_name,
+                )
+            )
         ptals_to_create = []
         for (template_id, attribute_id), pavs in pt_to_attribute_to_values.items():
             ptal = template_attribute_to_ptal.get((template_id, attribute_id))
