@@ -3,7 +3,11 @@
 
     <template id="index" name="Blog Navigation">
         <t t-call="website.layout">
-            <div id="wrap" class="js_blog website_blog">
+            <div
+                id="wrap"
+                class="js_blog website_blog"
+                data-fragment="website_blog.index"
+                data-partial-navigation="#wrap &gt; nav.navbar, #o_wblog_sidebar, #o_wblog_posts_loop .post_link, #o_wblog_posts_loop_container .pagination">
                 <t t-out="0" />
 
                 <t t-set="oe_structure_blog_footer_description">Visible in all blogs' pages</t>

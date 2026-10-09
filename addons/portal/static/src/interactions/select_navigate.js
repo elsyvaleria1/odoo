@@ -1,8 +1,8 @@
 /** @odoo-module native */
-import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { isSafeUrlScheme } from "@web/core/utils/urls";
 import { Interaction } from "@web/public/interaction";
+import { requestNavigation } from "@web/public/partial_navigation";
 
 export class SelectNavigate extends Interaction {
     static selector = "select[data-o-navigate]";
@@ -13,7 +13,7 @@ export class SelectNavigate extends Interaction {
     onChange() {
         const url = /** @type {HTMLSelectElement} */ (this.el).value;
         if (url && isSafeUrlScheme(url)) {
-            browser.location.href = url;
+            requestNavigation(this.el, url);
         }
     }
 }
