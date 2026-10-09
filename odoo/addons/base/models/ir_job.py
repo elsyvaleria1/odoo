@@ -1183,7 +1183,9 @@ class IrJob(models.Model):
             su=bool(job["elevated"]),
             privileges=privileges,
         )
-        if is_user_archived(env):
+        # the public user is archived so that nobody logs in as it, not
+        # because it left: what an anonymous caller queued runs as it
+        if is_user_archived(env) and not env.user._is_public():
             _debug.logic("job.terminal", job=job["id"], reason="user_archived")
             raise TerminalJobError(
                 env._(

@@ -745,6 +745,16 @@ class TestIrJob(TransactionCase):
         self.assertFalse(job.worker_ident, "names a worker that is not running it")
         self.assertFalse(job.started_at, "reads as liveness to the reaper")
 
+    def test_a_job_an_anonymous_caller_queued_runs_as_the_public_user(self):
+        public = self.env.ref("base.public_user")
+        self.assertFalse(public.active)
+        self.partner.with_user(public).sudo().delayed()._ir_job_test_append()
+        self.env.flush_all()
+
+        env, _records = IrJob._get_claimed_target(self.env.cr, self._claim())
+
+        self.assertEqual(env.user, public)
+
     def test_archived_scheduling_user_is_refused(self):
         user = self.env["res.users"].create(
             {
