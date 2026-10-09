@@ -17,10 +17,25 @@ from odoo.libs.web import urljoin as url_join
 from odoo.models import ValuesType
 from odoo.tools import frozendict, is_html_empty
 
+from odoo.addons.bus.tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+    token_revision,
+)
+
 if TYPE_CHECKING:
     from cryptography.fernet import Fernet
 
 _logger = logging.getLogger(__name__)
+
+
+SESSION_CHANNEL = register_channel_scope(
+    "survey.session",
+    purpose="the live session of one survey: its question changes and its end, "
+    "to everyone answering it",
+    lifetime="until the survey's access token is rotated",
+)
 
 
 class SurveySurvey(models.Model):
@@ -1704,7 +1719,16 @@ class SurveySurvey(models.Model):
         )
         if session_inputs:
             session_inputs._mark_done()
-        self.env["bus.bus"]._sendone(self.access_token, "end_session", {})
+        self.env["bus.bus"]._sendone(self._session_bus_target(), "end_session", {})
+
+    def _session_bus_key(self) -> str:
+        return f"{self.id}.{token_revision(self.access_token)}"
+
+    def _session_bus_channel(self) -> str:
+        return channel_capability(self.env, SESSION_CHANNEL, self._session_bus_key())
+
+    def _session_bus_target(self) -> tuple:
+        return channel_target(self.env, SESSION_CHANNEL, self._session_bus_key())
 
     def get_start_url(self) -> str:
         return f"/survey/start/{self.access_token}"

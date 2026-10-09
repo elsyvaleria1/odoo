@@ -100,7 +100,7 @@ class UserInputSession(http.Controller):
                 }
             )
             request.env["bus.bus"]._sendone(
-                survey.access_token,
+                survey._session_bus_target(),
                 "next_question",
                 {"question_start": now.timestamp()},
             )

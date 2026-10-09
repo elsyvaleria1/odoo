@@ -1,8 +1,12 @@
+import re
+from unittest.mock import patch
+
 from odoo.fields import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import new_test_user, tagged
 from odoo.tests.common import HttpCase
 
+from odoo.addons.bus.tools.channel_capability import resolve_capability
 from odoo.addons.survey.tests import common
 
 
@@ -130,3 +134,34 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
         self.authenticate("session_host", "session_host")
         self.assertFalse(self._rpc("/survey/session/results/not-a-token"))
         self.assertEqual(self._rpc("/survey/session/leaderboard/not-a-token"), "")
+
+    def test_a_session_speaks_on_its_capability_and_never_names_its_token(self):
+        self.form.action_start_session()
+        self.authenticate("session_host", "session_host")
+        sent = []
+        with patch.object(
+            type(self.env["bus.bus"]),
+            "_sendone",
+            lambda _bus, target, notification_type, _message: sent.append(
+                (target, notification_type)
+            ),
+        ):
+            self._rpc(f"/survey/session/next_question/{self.form.access_token}")
+            self.form.action_end_session()
+        target = self.form._session_bus_target()
+        self.assertEqual(sent, [(target, "next_question"), (target, "end_session")])
+        self.assertEqual(
+            resolve_capability(self.env, self.form._session_bus_channel()), target
+        )
+        self.assertNotIn(self.form.access_token, repr(sent))
+
+    def test_a_participant_is_handed_the_session_capability(self):
+        self._open_session()
+        self.authenticate(None, None)
+        page = self.url_open(f"/s/{self.form.session_code}").text
+        channel = re.search(r'data-session-bus-channel="([^"]+)"', page)
+        self.assertTrue(channel, "a session participant's page names its channel")
+        self.assertEqual(
+            resolve_capability(self.env, channel.group(1)),
+            self.form._session_bus_target(),
+        )

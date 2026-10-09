@@ -98,6 +98,7 @@ export class SurveyForm extends Interaction {
             surveyToken: optionsData.surveyToken,
             usersCanGoBack: !!optionsData.usersCanGoBack,
             sessionInProgress: !!optionsData.sessionInProgress,
+            sessionBusChannel: optionsData.sessionBusChannel,
             isStartScreen: !!optionsData.isStartScreen,
             readonly: !!optionsData.readonly,
             hasAnswered: !!optionsData.hasAnswered,
@@ -171,8 +172,8 @@ export class SurveyForm extends Interaction {
     async willStart() {
         // initialize session management
         const busService = this.services.bus_service;
-        if (this.options.surveyToken && this.options.sessionInProgress) {
-            busService.addChannel(this.options.surveyToken);
+        if (this.options.sessionBusChannel && this.options.sessionInProgress) {
+            busService.addChannel(this.options.sessionBusChannel);
             await this.checkIsOnMainTab();
             busService.subscribe(
                 "next_question",

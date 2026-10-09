@@ -1,3 +1,5 @@
+import hashlib
+
 from odoo.tools import hmac, is_hmac_valid, register_signed_scope
 
 # A client subscribes to a channel by naming it, so a name a client can say is
@@ -48,6 +50,12 @@ def resolve_capability(env, name: str) -> tuple | None:
     if not is_hmac_valid(env, signed_scope, key, signature):
         return None
     return (env.cr.dbname, TARGET, scope, key)
+
+
+def token_revision(token: str) -> str:
+    """A key part that changes with ``token``: a capability keyed with it is
+    revoked when the token is rotated, and gives nothing of the token away."""
+    return hashlib.sha256(token.encode()).hexdigest()[:16]
 
 
 def _signed_scope(scope: str) -> str:

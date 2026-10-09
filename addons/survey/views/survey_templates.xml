@@ -159,6 +159,7 @@
             t-att-data-survey-token="survey.access_token"
             t-att-data-users-can-go-back="survey.users_can_go_back and not answer.is_session_answer"
             t-att-data-session-in-progress="answer.is_session_answer"
+            t-att-data-session-bus-channel="answer.is_session_answer and survey._session_bus_channel()"
             t-att-data-is-start-screen="answer.state == 'new'"
             t-att-data-readonly="survey_form_readonly"
             t-att-data-has-answered="bool(has_answered)"
