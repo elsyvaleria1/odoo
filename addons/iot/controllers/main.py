@@ -9,11 +9,13 @@ import textwrap
 import zipfile
 
 from odoo import http
-from odoo.http import NotFound, Response, Stream, Unauthorized, request
+from odoo.http import Response, Stream, Unauthorized, request
 from odoo.libs.json import loads as json_loads
 from odoo.modules import get_module_path
 from odoo.modules.module import Manifest
 from odoo.tools.misc import consteq, str2bool
+
+from odoo.addons.integration.tools.authentication import is_bearer_token_valid
 
 _logger = logging.getLogger(__name__)
 
@@ -47,6 +49,20 @@ class IoTBoxLookup:
             .search([("identifier", "=", identifier)], limit=1)
         )
 
+    def _calling_box(self, identifier):
+        """The box a call names itself as. A token, when sent, must be that
+        box's, and an unknown box sending one is refused as a wrong token is;
+        a call with none is heard, as an upstream box sends none."""
+        box = self._search_box(identifier) if identifier else request.env["iot.box"]
+        headers = request.httprequest.headers
+        if "Authorization" in headers:
+            if not (box and is_bearer_token_valid(dict(headers), box.token)):
+                raise Unauthorized
+            return box
+        if box:
+            box._note_unverified_call(request.httprequest.path)
+        return box
+
 
 class IoTController(IoTBoxLookup, http.Controller):
     def _get_handler_modules(self, box):
@@ -75,6 +91,7 @@ class IoTController(IoTBoxLookup, http.Controller):
         auth="receiver",
         receiver="iot.box:_receiver_for_handlers",
         receiver_event="iot_handlers",
+        receiver_refusal="iot.box:_prepare_box_refusal_response",
         csrf=False,
         typed=True,
     )
@@ -141,7 +158,7 @@ class IoTController(IoTBoxLookup, http.Controller):
     def iot_box_send_websocket(
         self, session_id, iot_box_identifier, device_identifier, status, **kwargs
     ):
-        box = self._search_box(iot_box_identifier)
+        box = self._calling_box(iot_box_identifier)
         if not box:
             _logger.warning(
                 "No IoT Box found with identifier: '%s'. Request ignored",
@@ -185,13 +202,13 @@ class IoTController(IoTBoxLookup, http.Controller):
 
     @http.route("/iot/box/webrtc_answer", type="jsonrpc", auth="public")
     def iot_box_webrtc_answer(self, iot_box_identifier, answer, session_id=None):
-        box = self._search_box(iot_box_identifier)
+        box = self._calling_box(iot_box_identifier)
         if not box:
             _logger.warning(
                 "No IoT Box found with identifier: '%s'. Request ignored",
                 iot_box_identifier,
             )
-            raise NotFound
+            return
 
         request.env["iot.channel"]._send_reply(
             {
@@ -363,7 +380,7 @@ class IoTController(IoTBoxLookup, http.Controller):
         :param str identifier: IoT Box identifier
         :param str ssl_certificate_end_date: SSL certificate end date
         """
-        box = self._search_box(identifier)
+        box = self._calling_box(identifier)
         if not box:
             _logger.warning(
                 "No IoT Box found with identifier '%s'. Request ignored", identifier
@@ -390,6 +407,7 @@ class IoTLogController(IoTBoxLookup, http.Controller):
         auth="receiver",
         receiver="iot.box:_receiver_for_logs",
         receiver_event="iot_log",
+        receiver_refusal="iot.box:_prepare_box_refusal_response",
         csrf=False,
         typed=True,
     )
@@ -412,7 +430,8 @@ class IoTLogController(IoTBoxLookup, http.Controller):
             )
 
         def finish_request():
-            return Response(status=200)
+            # as an unknown box is acknowledged, so the two read the same
+            return Response(status=200, content_type="text/plain")
 
         if not self._is_iot_log_enabled():
             return finish_request()

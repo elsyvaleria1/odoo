@@ -1,5 +1,6 @@
 import logging
 import secrets
+import time
 from datetime import timedelta
 from typing import Self
 from urllib.parse import urlsplit
@@ -7,12 +8,20 @@ from urllib.parse import urlsplit
 from odoo import api, fields, models
 from odoo.http import request
 
-from odoo.addons.integration.tools.admission import Acknowledged
+from odoo.addons.integration.tools.admission import Acknowledged, Refused
 from odoo.addons.integration.tools.authentication import is_bearer_token_valid
 
 _logger = logging.getLogger(__name__)
 
 IOT_TOKEN_VALIDITY = timedelta(minutes=15)
+
+# A box runs upstream's iot_drivers, which the box image pulls from
+# github.com/odoo/odoo and which presents its paired token on /iot/setup only:
+# every other call names the box and proves nothing. Such a call is heard and
+# reported once per box, route and window; a token, when one is sent, must be
+# the box's.
+UNVERIFIED_CALL_REPORT_SECONDS = 3600
+_UNVERIFIED_CALLS_REPORTED: dict[tuple[str, int, str], float] = {}
 
 # What a box and its peripherals are in the registry: pushed to, and admitted
 # by the token the box was paired with (`_is_inbound_request_authentic`), which
@@ -42,7 +51,10 @@ class IotBox(models.Model):
         identifier = request.get_http_params().get("identifier")
         if not identifier:
             return self.browse()
-        return self.sudo().search([("identifier", "=", identifier)], limit=1)
+        box = self.sudo().search([("identifier", "=", identifier)], limit=1)
+        if not box:
+            self._refuse_unknown_box_presenting_a_token(identifier)
+        return box
 
     IOT_LOG_ELEMENT_SEPARATOR = b"<log/>\n"
     IOT_LOG_IDENTIFIER_PREFIX = b"identifier "
@@ -61,6 +73,9 @@ class IotBox(models.Model):
             [("identifier", "=", identifier.decode(errors="replace"))], limit=1
         )
         if not box:
+            self._refuse_unknown_box_presenting_a_token(
+                identifier.decode(errors="replace")
+            )
             request.env["integration.exchange"]._record_unknown_caller(
                 "iot.box",
                 identifier.decode(errors="replace")[:64],
@@ -70,6 +85,46 @@ class IotBox(models.Model):
             )
             raise Acknowledged
         return box, {"log_elements": elements[1:], "purpose": "logs"}
+
+    @api.model
+    def _refuse_unknown_box_presenting_a_token(self, identifier: str) -> None:
+        """An unknown box that presents a token is answered as a known box
+        presenting the wrong one, so the answer does not say which exists."""
+        if "Authorization" not in request.httprequest.headers:
+            return
+        request.env["integration.exchange"]._record_unknown_caller(
+            "iot.box",
+            identifier[:64],
+            request.httprequest.remote_addr,
+            user_agent=request.httprequest.headers.get("User-Agent"),
+            status_code=401,
+        )
+        raise Refused(
+            401, "unauthenticated request", "authentication_failed", commit=True
+        )
+
+    @api.model
+    def _prepare_box_refusal_response(self, refused: Refused):
+        """A refusal names its code only: the gate's reason names the box,
+        which an unknown identifier must not tell apart from a known one."""
+        return request.prepare_json_response(
+            {"error": refused.error_code}, status=refused.status
+        )
+
+    def _note_unverified_call(self, route: str) -> None:
+        self.check_singleton()
+        key = (self.env.cr.dbname, self.id, route)
+        now = time.monotonic()
+        reported = _UNVERIFIED_CALLS_REPORTED.get(key)
+        if reported is not None and now - reported < UNVERIFIED_CALL_REPORT_SECONDS:
+            return
+        _UNVERIFIED_CALLS_REPORTED[key] = now
+        _logger.warning(
+            "IoT box %s called %s without its paired token; heard, as an "
+            "upstream iot_drivers sends none there",
+            self.identifier,
+            route,
+        )
 
     def _inbound_gate_owner(self):
         purpose = "handlers"

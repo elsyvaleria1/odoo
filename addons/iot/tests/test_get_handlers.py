@@ -106,15 +106,35 @@ class TestHandlerShipping(HttpCase):
     def test_an_unknown_box_gets_nothing(self):
         self.assertEqual(self._fetch(identifier="no-such-box").status_code, 404)
 
-    def test_a_box_that_does_not_present_its_token_gets_nothing(self):
+    def test_a_box_that_sends_no_token_is_served_in_audit(self):
+        """A box runs upstream's iot_drivers, which names itself on this route
+        and sends no token: the call is served, and recorded as unverified."""
         self._box()
-        for token in ("", "not-the-box-token"):
-            with self.subTest(token=token):
-                response = self._fetch(token=token)
-                self.assertEqual(response.status_code, 401)
-                self.assertNotEqual(
-                    response.headers.get("Content-Type"), "application/zip"
-                )
+        names = self._names(self._fetch(token=""))
+        self.assertIn("drivers/printer_driver_base.py", names)
+        call = (
+            self.env["integration.exchange"]
+            .sudo()
+            .search([("direction", "=", "inbound")], order="id desc", limit=1)
+        )
+        self.assertEqual(call.auth_mode, "audit")
+        self.assertFalse(call.signature_verified)
+
+    def test_a_box_presenting_another_token_gets_nothing(self):
+        self._box()
+        response = self._fetch(token="not-the-box-token")
+        self.assertEqual(response.status_code, 401)
+        self.assertNotEqual(response.headers.get("Content-Type"), "application/zip")
+
+    def test_an_unknown_box_presenting_a_token_reads_as_a_wrong_token(self):
+        self._box()
+        wrong = self._fetch(token="not-the-box-token")
+        unknown = self._fetch(identifier="no-such-box", token="not-the-box-token")
+        self.assertEqual(
+            (unknown.status_code, unknown.headers.get("Content-Type"), unknown.content),
+            (wrong.status_code, wrong.headers.get("Content-Type"), wrong.content),
+            "the answer tells a stranger whether the box exists",
+        )
 
     def test_auto_update_off_refuses_an_automatic_request(self):
         self._box(auto_update=False)
@@ -128,16 +148,11 @@ class TestHandlerShipping(HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestBoxLog(HttpCase):
-    def _post_log(self, box, token):
-        return self.url_open(
-            "/iot/log",
-            data=b"identifier " + box.identifier.encode() + b"<log/>\n20,a line",
-            headers={"Authorization": f"Bearer {token}"} if token else None,
-        )
-
-    def test_a_box_logs_only_under_its_token(self):
-        box = (
-            self.env["iot.box"]
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.box = (
+            cls.env["iot.box"]
             .sudo()
             .create(
                 {
@@ -149,9 +164,38 @@ class TestBoxLog(HttpCase):
             )
         )
 
-        self.assertEqual(self._post_log(box, "").status_code, 401)
-        self.assertEqual(self._post_log(box, "not-the-box-token").status_code, 401)
-        self.assertEqual(self._post_log(box, box.token).status_code, 200)
+    def _post_log(self, identifier, token):
+        return self.url_open(
+            "/iot/log",
+            data=b"identifier " + identifier.encode() + b"<log/>\n20,a line",
+            headers={"Authorization": f"Bearer {token}"} if token else None,
+        )
+
+    def test_a_box_logs_under_its_token_or_none_and_never_another(self):
+        self.assertEqual(self._post_log("log-box", "").status_code, 200)
+        self.assertEqual(
+            self._post_log("log-box", "not-the-box-token").status_code, 401
+        )
+        self.assertEqual(self._post_log("log-box", self.box.token).status_code, 200)
+
+    def test_an_unknown_box_is_answered_as_a_known_one(self):
+        for token in ("", "not-the-box-token"):
+            with self.subTest(token=token):
+                known = self._post_log("log-box", token)
+                unknown = self._post_log("no-such-box", token)
+                self.assertEqual(
+                    (
+                        unknown.status_code,
+                        unknown.headers.get("Content-Type"),
+                        unknown.content,
+                    ),
+                    (
+                        known.status_code,
+                        known.headers.get("Content-Type"),
+                        known.content,
+                    ),
+                    "the answer tells a stranger whether the box exists",
+                )
 
 
 @tagged("post_install", "-at_install")

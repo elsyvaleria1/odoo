@@ -1,4 +1,5 @@
 from . import device_device
+from . import integration_receiver
 from . import iot_box
 from . import iot_channel
 from . import iot_device

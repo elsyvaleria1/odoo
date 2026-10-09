@@ -302,12 +302,6 @@ def get_token():
     return get_conf("token")
 
 
-def authorization_header() -> dict[str, str]:
-    """The header the database authenticates this box's calls by: the token
-    the box was paired with, which the database keeps on the box's record."""
-    return {"Authorization": f"Bearer {get_token() or ''}"}
-
-
 def get_commit_hash():
     return (
         subprocess.run(
@@ -380,10 +374,7 @@ def download_iot_handlers(auto=True, server_url=None) -> None:
             server_url + "/iot/get_handlers",
             data={"identifier": get_identifier(), "auto": auto},
             timeout=8,
-            headers={
-                **authorization_header(),
-                **({"If-None-Match": etag} if etag else {}),
-            },
+            headers={"If-None-Match": etag} if etag else None,
         )
         response.raise_for_status()
     except requests.exceptions.RequestException:

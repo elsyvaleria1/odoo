@@ -110,10 +110,7 @@ class AsyncHTTPHandler(logging.Handler):
             odoo_session.post(
                 self._odoo_server_url + "/iot/log",
                 data=empty_queue(),
-                headers={
-                    "X-Odoo-Database": self._db_name,
-                    **helpers.authorization_header(),
-                },
+                headers={"X-Odoo-Database": self._db_name},
                 timeout=self._REQUEST_TIMEOUT,
             ).raise_for_status()
             self._next_disconnection_time = None
