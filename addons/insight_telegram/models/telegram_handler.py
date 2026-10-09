@@ -7,7 +7,9 @@ from odoo.addons.telegram.tools.dispatch import translation_env
 GROUP = "insight_telegram.group_insight_telegram"
 AUTHORIZE = "ins_ok"
 CANCEL = "ins_no"
-CALLBACKS = (AUTHORIZE, CANCEL)
+DETAIL = "ins_det:"
+PDF = "ins_pdf:"
+CALLBACKS = (AUTHORIZE, CANCEL, DETAIL, PDF)
 
 
 class TelegramHandlerInsight(models.AbstractModel):
@@ -25,11 +27,27 @@ class TelegramHandlerInsight(models.AbstractModel):
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
-        if data not in CALLBACKS:
+        if not data.startswith(CALLBACKS):
             return False
         bot.answer_callback_query(callback_query.get("id"))
-        self._clear_keyboard(bot, chat, callback_query)
+        if not data.startswith((DETAIL, PDF)):
+            # authorizing or cancelling answers once; a statement keeps its buttons
+            self._clear_keyboard(bot, chat, callback_query)
         if not self._may_ask(bot, internal_user):
+            return True
+        if data.startswith((DETAIL, PDF)):
+            # a statement's button: its breakdown or its PDF, for that partner
+            action = "statement_detail" if data.startswith(DETAIL) else "statement_pdf"
+            chat.delayed(
+                identity_key=f"telegram_insight:{chat.id}:cb:{callback_query.get('id')}"
+            )._insight_answer(
+                bot.id,
+                {
+                    "insight_action": action,
+                    "partner_id": int(data.split(":", 1)[1] or 0),
+                },
+                bot._acting_company().id,
+            )
             return True
         # a button stands for the words: the job decides as it would for them
         words = "autorizo" if data == AUTHORIZE else "cancelar"

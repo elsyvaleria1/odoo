@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:36+0000\n"
-"PO-Revision-Date: 2026-10-09 20:36+0000\n"
+"POT-Creation-Date: 2026-10-09 20:57+0000\n"
+"PO-Revision-Date: 2026-10-09 20:57+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -23,14 +23,14 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
-#: code:addons/insight_telegram/services/catalog.py:0
-msgid " (%(days)s days late)"
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "%(count)s more matched; ask for one by its number."
 msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
-#: code:addons/insight_telegram/models/telegram_chat.py:0
-msgid "%(count)s more matched; ask for one by its number."
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(count)s open documents"
 msgstr ""
 
 #. module: insight_telegram
@@ -43,14 +43,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "%(free)s free"
-msgstr ""
-
-#. module: insight_telegram
-#. odoo-python
-#: code:addons/insight_telegram/services/catalog.py:0
-msgid ""
-"%(label)s in %(company)s: **%(pending)s** (%(count)s documents), overdue "
-"%(overdue)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -86,7 +78,25 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
-msgid "Account statement of %(name)s"
+msgid "1 to 30 days late"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "31 to 60 days late"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "61 to 90 days late"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Account statement"
 msgstr ""
 
 #. module: insight_telegram
@@ -306,6 +316,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "From %(start)s to %(end)s:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "Hi! Ask me about the business in your own words."
 msgstr ""
@@ -413,7 +429,7 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
-msgid "Movements from %(start)s to %(end)s:"
+msgid "More than 90 days late"
 msgstr ""
 
 #. module: insight_telegram
@@ -461,6 +477,12 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Not due yet"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid ""
 "Note: there is a guarantee release document on file (%(names)s): the "
 "guarantee may have been returned."
@@ -481,7 +503,7 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
-msgid "Open documents, oldest due first:"
+msgid "Overdue"
 msgstr ""
 
 #. module: insight_telegram
@@ -755,6 +777,12 @@ msgid "Unanswered"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Want the breakdown or the PDF? Use the buttons below, or just ask."
+msgstr ""
+
+#. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_enabled
 msgid ""
 "When a question fits no catalogued report, or comes with files, let a chat "
@@ -809,6 +837,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "as of %(day)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "bank and cash balances"
 msgstr ""
@@ -841,6 +875,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "credit notes received"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "due %(day)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -992,6 +1032,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "❌ Cancel"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "📋 Breakdown"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "📎 PDF"
 msgstr ""
 
 #. module: insight_telegram

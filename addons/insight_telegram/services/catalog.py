@@ -35,6 +35,8 @@ class Ask:
     today: date
     params: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
+    # what a report learns that the chat needs next, e.g. whose statement
+    extras: dict = field(default_factory=dict)
 
     # -- parameters ------------------------------------------------------------
 
@@ -960,17 +962,23 @@ STATEMENT_DOCUMENTS = 15
 
 
 def run_statement(ask):
-    """A customer's or supplier's account statement over every company: what
-    is open, what is overdue, and what was invoiced and paid lately."""
-    name = (ask.params.get("partner") or "").strip()
-    if not name:
-        return [
-            ask.env._(
-                "Tell me whose account statement you want: the customer's or "
-                "supplier's name."
-            )
-        ]
-    partners = ask.matches("res.partner", name, ("name", "vat"))
+    """A customer's or supplier's account statement over every company: the
+    balance and what is overdue first; the breakdown by age when asked."""
+    env = ask.env
+    if ask.params.get("partner_id"):
+        partners = env["res.partner"].browse(int(ask.params["partner_id"])).exists()
+    else:
+        name = (ask.params.get("partner") or "").strip()
+        if not name:
+            return [
+                env._(
+                    "Tell me whose account statement you want: the customer's or "
+                    "supplier's name."
+                )
+            ]
+        partners = ask.matches("res.partner", name, ("name", "vat"))
+    partner = partners[:1].commercial_partner_id
+    ask.extras["statement_partner_id"] = partner.id
     company_domain = ask.filter_domain(
         {"company": ("company_id", "res.company", ("name",), None)}
     )
@@ -978,14 +986,9 @@ def run_statement(ask):
         start, end = ask.period()
     else:
         start, end = ask.today - timedelta(days=STATEMENT_DAYS), ask.today
-    title = ask.env._("Account statement of %(name)s", name=partners[:1].display_name)
-    lines = [
-        "**" + title + "**",
-        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
-    ]
-    Move = ask.env["account.move"]
+    Move = env["account.move"]
     base = [
-        ("partner_id", "child_of", partners.ids),
+        ("partner_id", "child_of", partner.id),
         ("state", "=", "posted"),
         ("move_type", "in", ("out_invoice", "out_refund", "in_invoice", "in_refund")),
     ] + company_domain
@@ -993,79 +996,66 @@ def run_statement(ask):
         base + [("amount_residual_signed", "!=", 0)],
         order="invoice_date_due asc, id asc",
     )
-    # receivable and payable, per company and currency: amounts of different
-    # companies or currencies are never added together
+    lines = [
+        "📄 **" + env._("Account statement") + "**",
+        f"**{partner.display_name}** · "
+        + env._("as of %(day)s", day=ask.format_day(ask.today)),
+        "",
+    ]
     sides = (
-        (("out_invoice", "out_refund"), 1, ask.env._("Receivable")),
-        (("in_invoice", "in_refund"), -1, ask.env._("Payable")),
+        (("out_invoice", "out_refund"), 1, "💰", env._("Receivable")),
+        (("in_invoice", "in_refund"), -1, "💸", env._("Payable")),
     )
-    for move_types, sign, label in sides:
+    for move_types, sign, icon, label in sides:
         moves = open_moves.filtered(lambda m, t=move_types: m.move_type in t)
-        totals = defaultdict(lambda: [0.0, 0.0, 0])
+        by_company = defaultdict(lambda: env["account.move"])
         for move in moves:
-            entry = totals[(move.company_id, move.company_id.currency_id)]
-            entry[0] += sign * move.amount_residual_signed
-            if move.invoice_date_due and move.invoice_date_due < ask.today:
-                entry[1] += sign * move.amount_residual_signed
-            entry[2] += 1
-        for (company, currency), (pending, overdue, count) in totals.items():
-            lines.append(
-                ask.env._(
-                    "%(label)s in %(company)s: **%(pending)s** (%(count)s documents), "
-                    "overdue %(overdue)s",
-                    label=label,
-                    company=company.display_name,
-                    pending=money(pending, currency),
-                    count=count,
-                    overdue=money(overdue, currency),
-                )
+            by_company[move.company_id] |= move
+        for company, company_moves in by_company.items():
+            currency = company.currency_id
+            pending = sum(sign * m.amount_residual_signed for m in company_moves)
+            late = company_moves.filtered(
+                lambda m: m.invoice_date_due and m.invoice_date_due < ask.today
             )
+            overdue = sum(sign * m.amount_residual_signed for m in late)
+            share = f" ({overdue / pending:.0%})" if pending else ""
+            lines += [
+                f"{icon} {label} · {company.display_name}: **{money(pending, currency)}**",
+                "⚠️ " + env._("Overdue") + f": **{money(overdue, currency)}**{share}",
+                "📑 " + env._("%(count)s open documents", count=len(company_moves)),
+                "",
+            ]
+            if ask.params.get("detail"):
+                lines += _aging(ask, company_moves, sign, currency)
     if not open_moves:
-        lines.append(ask.env._("Nothing pending."))
-    else:
-        lines.append(ask.env._("Open documents, oldest due first:"))
-        for move in open_moves[:STATEMENT_DOCUMENTS]:
-            sign = 1 if move.move_type in ("out_invoice", "out_refund") else -1
-            due = move.invoice_date_due
-            late = (ask.today - due).days if due and due < ask.today else 0
-            lines.append(
-                f"• {move.name} · {move.company_id.display_name} · "
-                + (ask.format_day(due) if due else "-")
-                + f": {money(sign * move.amount_residual_signed, move.company_id.currency_id)}"
-                + (ask.env._(" (%(days)s days late)", days=late) if late else "")
-            )
-        if len(open_moves) > STATEMENT_DOCUMENTS:
-            lines.append(
-                ask.env._(
-                    "… and %(count)s more", count=len(open_moves) - STATEMENT_DOCUMENTS
-                )
-            )
+        lines += ["✅ " + env._("Nothing pending."), ""]
     lines.append(
-        ask.env._(
-            "Movements from %(start)s to %(end)s:",
+        "🗓 "
+        + env._(
+            "From %(start)s to %(end)s:",
             start=ask.format_day(start),
             end=ask.format_day(end),
         )
     )
+    labels = {
+        "out_invoice": env._("invoiced"),
+        "out_refund": env._("credit notes issued"),
+        "in_invoice": env._("bills received"),
+        "in_refund": env._("credit notes received"),
+    }
     invoiced = Move._read_group(
         base + [("invoice_date", ">=", start), ("invoice_date", "<=", end)],
         ["company_id", "move_type"],
         ["amount_total_signed:sum", "__count"],
     )
-    labels = {
-        "out_invoice": ask.env._("invoiced"),
-        "out_refund": ask.env._("credit notes issued"),
-        "in_invoice": ask.env._("bills received"),
-        "in_refund": ask.env._("credit notes received"),
-    }
     for company, move_type, amount, count in invoiced:
         lines.append(
-            f"• {company.display_name} · {labels[move_type]}: "
+            f"• {labels[move_type].capitalize()}: "
             f"{money(abs(amount), company.currency_id)} ({count})"
         )
-    payments = ask.env["account.payment"]._read_group(
+    payments = env["account.payment"]._read_group(
         [
-            ("partner_id", "child_of", partners.ids),
+            ("partner_id", "child_of", partner.id),
             ("state", "in", ("in_process", "paid")),
             ("date", ">=", start),
             ("date", "<=", end),
@@ -1076,16 +1066,78 @@ def run_statement(ask):
     )
     for company, payment_type, amount, count in payments:
         label = (
-            ask.env._("payments received")
+            env._("payments received")
             if payment_type == "inbound"
-            else ask.env._("payments made")
+            else env._("payments made")
         )
         lines.append(
-            f"• {company.display_name} · {label}: "
-            f"{money(abs(amount), company.currency_id)} ({count})"
+            f"• {label.capitalize()}: {money(abs(amount), company.currency_id)} ({count})"
         )
     if not invoiced and not payments:
-        lines.append(ask.env._("No movements in that period."))
+        lines.append("• " + env._("No movements in that period."))
+    if open_moves and not ask.params.get("detail"):
+        lines += [
+            "",
+            env._("Want the breakdown or the PDF? Use the buttons below, or just ask."),
+        ]
+    return lines
+
+
+AGING_BUCKETS = (
+    (91, "🔴"),
+    (61, "🟠"),
+    (31, "🟡"),
+    (1, "🔵"),
+    (None, "🟢"),
+)
+BUCKET_DOCUMENTS = 10
+
+
+def _aging(ask, moves, sign, currency) -> list:
+    """The open documents grouped by how late they are, oldest first."""
+    env = ask.env
+    names = {
+        91: env._("More than 90 days late"),
+        61: env._("61 to 90 days late"),
+        31: env._("31 to 60 days late"),
+        1: env._("1 to 30 days late"),
+        None: env._("Not due yet"),
+    }
+    groups = defaultdict(list)
+    for move in moves:
+        due = move.invoice_date_due
+        late = (ask.today - due).days if due else 0
+        bucket = next(
+            (low for low, _icon in AGING_BUCKETS if low is not None and late >= low),
+            None,
+        )
+        groups[bucket].append((move, late))
+    lines = []
+    for low, icon in AGING_BUCKETS:
+        items = groups.get(low)
+        if not items:
+            continue
+        total = sum(sign * move.amount_residual_signed for move, _late in items)
+        lines.append(
+            f"{icon} **{names[low]}**: {money(total, currency)} ({len(items)})"
+        )
+        for move, late in items[:BUCKET_DOCUMENTS]:
+            when = (
+                f"{late} d"
+                if late > 0
+                else env._("due %(day)s", day=ask.format_day(move.invoice_date_due))
+                if move.invoice_date_due
+                else "-"
+            )
+            lines.append(
+                f"   • {move.name} · {money(sign * move.amount_residual_signed, currency)} · {when}"
+            )
+        if len(items) > BUCKET_DOCUMENTS:
+            lines.append(
+                "   "
+                + env._("… and %(count)s more", count=len(items) - BUCKET_DOCUMENTS)
+            )
+        lines.append("")
     return lines
 
 
@@ -1256,7 +1308,7 @@ def available_queries(env) -> dict:
     }
 
 
-def answer(env, query, params, *, tz, today) -> str:
+def answer(env, query, params, *, tz, today, extras=None) -> str:
     """The answer to `query` with the classifier's `params`, read from `env`.
 
     :param env: a read-only environment
@@ -1274,4 +1326,6 @@ def answer(env, query, params, *, tz, today) -> str:
         lines = query.run(ask)
     except NotFound as error:
         return str(error)
+    if extras is not None:
+        extras.update(ask.extras)
     return "\n".join(lines + ask.notes)

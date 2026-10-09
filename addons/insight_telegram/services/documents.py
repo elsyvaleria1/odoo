@@ -44,6 +44,10 @@ def collect(env, kind, params):
 
 
 def _partner(env, params):
+    if params.get("partner_id"):
+        found = env["res.partner"].browse(int(params["partner_id"])).exists()
+        if found:
+            return found.commercial_partner_id
     name = (params.get("partner") or "").strip()
     if not name:
         raise NotFound(env._("Tell me whose documents you want: the name."))

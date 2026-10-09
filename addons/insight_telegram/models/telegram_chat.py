@@ -68,6 +68,11 @@ class TelegramChat(models.Model):
             )
             return
 
+        action = message.get("insight_action")
+        if action:
+            self._insight_statement_action(bot, chat, message, reader_user, tr_env)
+            return
+
         question = (message.get("text") or message.get("caption") or "").strip()
         attached = _files_of(message)
         if not question and not attached:
@@ -105,6 +110,7 @@ class TelegramChat(models.Model):
         )
         queries = available_queries(self.env)
         interpretation, answer, answered_by, proposals = {}, "", False, []
+        markup = None
         try:
             if attached:
                 # a file needs reading: only the agent sees it
@@ -126,11 +132,18 @@ class TelegramChat(models.Model):
                 answer = _help_text(tr_env, queries, InsightAgent(bot).available)
                 answered_by = HELP
             elif key in queries and not _needs_agent(interpretation, bot):
+                extras = {}
                 with reader.env() as env:
                     answer = catalog.answer(
-                        env, queries[key], interpretation, tz=tz, today=today
+                        env,
+                        queries[key],
+                        interpretation,
+                        tz=tz,
+                        today=today,
+                        extras=extras,
                     )
                 answered_by = key
+                markup = _statement_buttons(tr_env, extras, interpretation)
             else:
                 blocks = files.blocks(self._insight_download(bot, attached))
                 answer, proposals = self._insight_ask_agent(
@@ -150,7 +163,6 @@ class TelegramChat(models.Model):
             answer = (
                 tr_env._("🔎 AI-consulted answer, please verify it.") + "\n\n" + answer
             )
-        markup = None
         if proposals:
             chat._insight_set_pending(
                 {
@@ -179,6 +191,44 @@ class TelegramChat(models.Model):
             interpretation = {**interpretation, "proposals": proposals}
         self._insight_reply(
             bot, chat, question, interpretation, answer, answered_by, markup=markup
+        )
+
+    def _insight_statement_action(self, bot, chat, message, reader_user, tr_env):
+        """A statement's button: its breakdown by age, or its PDF."""
+        partner_id = int(message.get("partner_id") or 0)
+        action = message["insight_action"]
+        if action == STATEMENT_PDF:
+            answer = self._insight_send_documents(
+                bot,
+                chat,
+                {"document_kind": "statement", "partner_id": partner_id},
+                reader_user,
+                tr_env,
+            )
+        else:
+            tz = self.env.user.tz or reader_user.tz or DEFAULT_TZ
+            today = datetime.now(pytz.timezone(tz)).date()
+            reader = OdooReader(
+                self.env.registry,
+                reader_user.id,
+                context={"lang": tr_env.lang, "tz": tz},
+            )
+            query = available_queries(self.env)["statement"]
+            with reader.env() as env:
+                answer = catalog.answer(
+                    env,
+                    query,
+                    {"partner_id": partner_id, "detail": True},
+                    tz=tz,
+                    today=today,
+                )
+        self._insight_reply(
+            bot,
+            chat,
+            action,
+            {"query": "statement", "action": action, "partner_id": partner_id},
+            answer,
+            "statement",
         )
 
     def _insight_reply(
@@ -363,6 +413,21 @@ class TelegramChat(models.Model):
             }
         )
         self._set_context(HISTORY_KEY, history[-HISTORY_SIZE:])
+
+
+STATEMENT_DETAIL = "statement_detail"
+STATEMENT_PDF = "statement_pdf"
+
+
+def _statement_buttons(tr_env, extras, interpretation):
+    """The breakdown and PDF buttons under a statement's summary."""
+    partner_id = extras.get("statement_partner_id")
+    if interpretation.get("query") != "statement" or not partner_id:
+        return None
+    buttons = [kb.button(tr_env._("📎 PDF"), f"ins_pdf:{partner_id}")]
+    if not interpretation.get("detail"):
+        buttons.insert(0, kb.button(tr_env._("📋 Breakdown"), f"ins_det:{partner_id}"))
+    return kb.keyboard(buttons)
 
 
 def _decision(text):

@@ -48,6 +48,8 @@ and reference (the document's number) as said.
 - confidence: from 0 to 1, how sure you are that the report you picked \
 answers what he is after. Below 0.6 means the question needs more than one \
 report, a comparison, or data no report has.
+- detail: true when he asks for the breakdown, the detail or the list of \
+documents ("desglósalo", "el detalle"), else null.
 - summary_only: true when he asks only for the total ("just the total", \
 "solo el total"), else null.
 - overdue_only: true when he asks only for overdue or late items.
@@ -130,6 +132,7 @@ def _schema(queries) -> dict:
         **dict.fromkeys(FILTERS, _TEXT),
         "overdue_only": {"type": ["boolean", "null"]},
         "summary_only": {"type": ["boolean", "null"]},
+        "detail": {"type": ["boolean", "null"]},
         "confidence": {"type": "number"},
         "top": {"type": ["integer", "null"]},
     }

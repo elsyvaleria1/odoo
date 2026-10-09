@@ -310,10 +310,27 @@ class TestCatalog(TransactionCase):
         )
         invoice.action_post()
         text = self._answer("statement", partner="Ask Probe Debtor")
-        self.assertIn("Account statement of Ask Probe Debtor", text)
-        self.assertIn("Receivable in", text)
-        self.assertIn(invoice.name, text)
-        self.assertIn("invoiced", text)
+        # the summary comes first: totals, no document list
+        self.assertIn("Account statement", text)
+        self.assertIn("Ask Probe Debtor", text)
+        self.assertIn("Receivable", text)
+        self.assertIn("Invoiced", text)
+        self.assertNotIn(invoice.name, text)
+        self.assertIn("breakdown or the PDF", text)
+        extras = {}
+        with self.reader.env() as env:
+            queries = catalog.available_queries(env)
+            detail = catalog.answer(
+                env,
+                queries["statement"],
+                {"partner": "Ask Probe Debtor", "detail": True},
+                tz="America/Mexico_City",
+                today=self.today,
+                extras=extras,
+            )
+        self.assertIn(invoice.name, detail)
+        self.assertIn("Not due yet", detail)
+        self.assertEqual(extras["statement_partner_id"], customer.id)
 
     def test_summary_only_answers_the_total(self):
         if "sale.order" not in self.env:
@@ -1090,3 +1107,46 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertEqual(render.call_args.args[:2], (report.id, order.ids))
         self.assertEqual(send.call_args.args[1], TINY_PDF)
         self.assertTrue(send.call_args.args[2].endswith(".pdf"))
+
+    def test_a_statement_offers_its_breakdown_and_pdf(self):
+        from odoo.addons.insight_telegram.models.telegram_chat import (
+            _statement_buttons,
+        )
+
+        tr_env = self.env
+        markup = _statement_buttons(
+            tr_env, {"statement_partner_id": 7}, {"query": "statement"}
+        )
+        data = [button["callback_data"] for button in markup["inline_keyboard"][0]]
+        self.assertEqual(data, ["ins_det:7", "ins_pdf:7"])
+        markup = _statement_buttons(
+            tr_env, {"statement_partner_id": 7}, {"query": "statement", "detail": True}
+        )
+        self.assertEqual(
+            [b["callback_data"] for b in markup["inline_keyboard"][0]], ["ins_pdf:7"]
+        )
+        self.assertIsNone(_statement_buttons(tr_env, {}, {"query": "sales"}))
+
+    def test_the_pdf_button_sends_the_statement(self):
+        with (
+            patch(
+                "odoo.addons.insight_telegram.services.documents.collect",
+                return_value=([("estado.pdf", TINY_PDF)], ["Cliente"]),
+            ) as collect,
+            patch.object(type(self.test_bot), "send_document") as send,
+            patch.object(
+                InsightAssistant,
+                "available",
+                new_callable=PropertyMock,
+                return_value=True,
+            ),
+            self.mock_api_gateway_post(self.mock_ok),
+        ):
+            self.test_chat._insight_answer(
+                self.test_bot.id,
+                {"insight_action": "statement_pdf", "partner_id": 7},
+                self.company.id,
+            )
+        self.assertEqual(collect.call_args.args[1], "statement")
+        self.assertEqual(collect.call_args.args[2]["partner_id"], 7)
+        self.assertEqual(send.call_count, 1)
