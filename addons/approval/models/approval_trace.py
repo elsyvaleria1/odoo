@@ -526,7 +526,6 @@ CALL_TRACES: dict[str, dict[str, str]] = {
         "cron_consent_approval": "cron",
         "_send_reminder": "escalation",
         "_escalate_to_manager": "escalation",
-        "_reconcile_delegation_activities": "escalation",
         "_compute_state": "compute",
         "_compute_sla_status": "compute",
         "_compute_approval_progress": "compute",

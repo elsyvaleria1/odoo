@@ -128,6 +128,10 @@ class TestApprovalStepDecisions(ApprovalCommon):
     def test_a_consent_approval_counts_toward_every_step(self):
         request = self._request_with_steps()
         request.category_id.consent_approval_hours = 24
+        request.category_snapshot = {
+            **request.category_snapshot,
+            "consent_approval_hours": 24,
+        }
         request.date_confirmed = fields.Datetime.now() - timedelta(hours=30)
         self.env["approval.request"].cron_consent_approval()
         self.assertEqual(request.state, "approved")

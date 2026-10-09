@@ -1,4 +1,4 @@
-from odoo import SUPERUSER_ID, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
 
 from . import approval_trace as trace
@@ -144,6 +144,9 @@ class MixinApprovalGate(models.AbstractModel):
         }
 
     def _split_for_approval(self, operation) -> tuple:
+        # approval_required is computed without dependencies; a value cached
+        # before the document changed in this transaction must not decide a gate.
+        self.invalidate_recordset(["approval_required"])
         ready = need_approval = self.browse()
         for record in self:
             state = record.approval_state if record.approval_request_id else False
@@ -256,6 +259,7 @@ class MixinApprovalGate(models.AbstractModel):
         """
         admitted = self._get_admitted_ids(operation)
         blocked = self.browse()
+        self.invalidate_recordset(["approval_required"])
         for record in self.filtered(lambda r: r.id not in admitted):
             state = record.approval_state if record.approval_request_id else False
             if state == "approved" and record._approval_request_gates(operation):
@@ -273,7 +277,7 @@ class MixinApprovalGate(models.AbstractModel):
                     "operation": operation,
                     "res_id": record.id,
                     "user_id": self.env.uid,
-                    "elevation": "superuser" if self.env.su else "none",
+                    "elevation": self.env["approval.binding"]._elevation(),
                     "would_block": True,
                 }
                 for record in blocked
@@ -312,17 +316,11 @@ class MixinApprovalGate(models.AbstractModel):
         if not self._is_operation_run_on_approval(operation):
             return
         trace.MIXIN.note("operation_on_approval", record=self, operation=operation)
-        request.date_operation_run = fields.Datetime.now()
-        owner = request.request_owner_id
-        document = self.with_user(owner).with_context(
-            allowed_company_ids=owner.company_ids.ids
-        )
-        company = self["company_id"] if "company_id" in self._fields else None
-        if company and company in owner.company_ids:
-            document = document.with_company(company)
-        if owner.id == SUPERUSER_ID:
-            document = document.sudo()
+        document = request._as_owner(self)
         with self._approval_side_effect(self._get_operation_failure_note(operation)):
+            # Stamped first, so the door it opens does not run it again, and inside
+            # the savepoint, so an operation that fails is not counted as run.
+            request.date_operation_run = fields.Datetime.now()
             getattr(document, self._get_operation_door(operation))()
 
     def _get_operation_failure_note(self, operation) -> str:

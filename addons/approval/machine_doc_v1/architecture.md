@@ -436,7 +436,7 @@ through real approver rows, so consent auto-approval writes its own way.
 |--------|---------------|------------------|
 | `action_cancel()` (owner/manager) | `cancelled` | -- |
 | `cron_auto_expire()` | `cancelled` | -- |
-| `_refuse_cascade()` (parent document cancelled) | `_get_parent_cancel_state()`, `refused` in the base | `approval.refusal_reason_parent_cancelled` + note (refusals only) |
+| `_refuse_cascade()` (parent document cancelled) | `refused` | `approval.refusal_reason_parent_cancelled` + note |
 
 Shared side-effect sequence, in order: flip only **non-terminal** approver
 rows (rows that already approved/refused keep their state — they are the
@@ -572,18 +572,18 @@ Rules evaluate conditions and take actions:
 ```
 Smart Escalation (cron_smart_escalation, every 4 hours, max 500
 requests per priority bucket per tick):
-    _reconcile_delegation_activities()   -- FIRST, before any bucket.
-        Every pending row with a delegate whose To-Do still sits in the
-        wrong inbox is repointed at the effective approver (or closed if
-        the right one already exists). A delegation set AFTER the round
-        opened does not move the activity by itself; this is what makes
-        the queue converge.
+    (A delegate's To-Do follows the row when the delegation is written and
+    at the daily cron_hand_delegated_activities_over, which also closes a
+    duplicate; the escalation tick no longer does it.)
     For each priority level in _get_escalation_rules():
         Find pending requests past reminder threshold (oldest first),
             EXCLUDING those with pending_change_field set — the ball is
             in the requester's court, not the approver's, so a request
             awaiting a change is never chased or escalated
-        If past escalation threshold AND not yet escalated:
+        Every request found is stamped last_reminder_date, reminded or not,
+            so one nobody could be reminded about does not refill each batch
+        If escalate_overdue AND past escalation threshold (or an approver is
+        archived) AND not yet escalated:
             _resolve_escalation_targets() -> {manager: approvers}, unescalated
             _escalate_to_manager() -> ONE message_post per MANAGER, naming
                 every approver they are being asked to chase (it used to
@@ -770,7 +770,6 @@ and `has_product` now live in `approval_product`, which depends on
 | `_get_escalation_manager(approver)` | Supply the manager for cron escalation | approval_hr |
 | `_check_withdraw_allowed()` + `_raise_withdraw_blocked()` | Block withdrawal when linked documents exist | approval_account / sale / purchase / stock |
 | `_check_reset_allowed()` | Veto reset-to-draft | Base only today (it blocks a request whose source-document link was released); no satellite overrides it |
-| `_get_parent_cancel_state()` | Which terminal a parent-document cancellation drives the request into. Base returns `refused`; return `cancelled` where a parent's cancellation is not a verdict on the request | none today |
 | `_can_consent_approve()` | Veto consent auto-approval | approval_account |
 | `_refuse_approval_request()` | Cooperative rollback of documents created from the approval | account / purchase / sale satellites |
 | `_on_approval_approved()` / `_on_approval_refused()` / `_on_approval_cancelled()` / `_on_approval_revoked()` / `_on_approval_reset()` | React to one transition in source documents. Omit `super()` when your message replaces the base's generic note. Put any document-advancing call inside `_approval_side_effect()` — the hook runs inside the approver's transaction and that helper carries the savepoint, catch and chatter note | account / sale / purchase / stock / rma / account_credit |

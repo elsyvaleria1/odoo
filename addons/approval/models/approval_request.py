@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 from typing import Any, Self
 
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
 from odoo.fields import Domain
 
@@ -143,9 +143,11 @@ class ApprovalRequest(models.Model):
         selection=[("refused", "Refused"), ("cancelled", "Cancelled")],
         copy=False,
         readonly=True,
-        help="Set when an approved request was overturned from outside its decisions, "
-        "e.g. a validated leave refused by an officer. The state reads it before the "
-        "approver rows, whose decisions stay as they were given.",
+        help="Set when the request was ended from outside its decisions: an approved "
+        "request overturned (a validated leave refused by an officer), or a pending "
+        "one cancelled or refused when every row was already decided, so closing the "
+        "undecided ones would end nothing. The state reads it before the approver "
+        "rows, whose decisions stay as they were given.",
     )
     revoked_by_user_id = fields.Many2one(
         comodel_name="res.users",
@@ -277,7 +279,7 @@ class ApprovalRequest(models.Model):
     )
     approval_minimum = fields.Integer(
         default=1,
-        copy=True,
+        copy=False,
         readonly=True,
         help="Effective minimum approvals needed. Defaults from category, "
         "overridden by matching tier when applicable.",
@@ -480,6 +482,7 @@ class ApprovalRequest(models.Model):
         }
         for vals in vals_list:
             self._check_no_forged_computed_fields(vals)
+            self._check_engine_owned_fields(vals, create=True)
             if not vals.get("category_id"):
                 continue
             if "approval_minimum" not in vals:
@@ -520,6 +523,8 @@ class ApprovalRequest(models.Model):
         self._check_access_write()
 
         self._check_no_forged_computed_fields(vals)
+
+        self._check_engine_owned_fields(vals)
 
         self._check_locked_fields(vals)
 
@@ -733,7 +738,7 @@ class ApprovalRequest(models.Model):
         for request in self:
             request.can_change_request_owner = is_manager
 
-    @api.depends("approver_ids")
+    @api.depends("approver_ids.user_id")
     def _compute_user_ids(self) -> None:
         for request in self:
             request.user_ids = request.approver_ids.user_id
@@ -780,11 +785,19 @@ class ApprovalRequest(models.Model):
         for request in self:
             request.is_terminal = request.state in terminal
 
-    @api.depends("approver_ids", "approver_ids.state")
+    @api.depends(
+        "approver_ids.state",
+        "approver_ids.user_id",
+        "approver_ids.delegate_id",
+        "approver_ids.delegate_start_date",
+        "approver_ids.delegate_end_date",
+    )
     def _compute_pending_approver_ids(self) -> None:
         for request in self:
             pending = request.approver_ids.filtered(lambda a: a.state == "pending")
-            request.pending_approver_ids = pending.mapped("user_id")
+            request.pending_approver_ids = self.env["res.users"].union(
+                *(row._get_effective_approver() for row in pending)
+            )
 
     @api.depends(
         "approver_ids.state",
@@ -813,10 +826,6 @@ class ApprovalRequest(models.Model):
                 request.state = "new"
                 continue
 
-            required_approved = all(
-                a.state == "approved" for a in request.approver_ids.filtered("required")
-            )
-
             approval_threshold = request.approval_minimum
 
             state_counts = Counter(state_lst)
@@ -827,9 +836,7 @@ class ApprovalRequest(models.Model):
                 request.state = "cancelled"
             elif state_counts.get("new", 0) > 0:
                 request.state = "new"
-            elif required_approved and request._is_quorum_met(
-                state_counts, approval_threshold
-            ):
+            elif request._is_quorum_met(state_counts, approval_threshold):
                 request.state = "approved"
             else:
                 request.state = "pending"
@@ -841,7 +848,6 @@ class ApprovalRequest(models.Model):
                     state=request.state,
                     counts=dict(state_counts),
                     minimum=approval_threshold,
-                    required_ok=required_approved,
                     refusals=request._get_deciding_refusals().ids,
                     unmet=request._get_unmet_steps().ids
                     if request.approver_ids.step_ids
@@ -879,15 +885,20 @@ class ApprovalRequest(models.Model):
             )
             return not blocking
         approved = state_counts.get("approved", 0)
+        required_pending = self.approver_ids.filtered(
+            lambda row: row.required and row.state != "approved"
+        )
+        met = approved >= approval_threshold and not required_pending
         trace.DECISION.event(
             "quorum",
             request=self.id,
             rule="minimum",
             approved=approved,
             minimum=approval_threshold,
-            met=approved >= approval_threshold,
+            required_pending=required_pending.ids,
+            met=met,
         )
-        return approved >= approval_threshold
+        return met
 
     def _get_step_counts(self) -> dict[int, int]:
         self.check_singleton()
@@ -1122,6 +1133,20 @@ class ApprovalRequest(models.Model):
                 self.id,
             )
             return False
+
+    def _as_owner(self, record):
+        """`record` as this request's owner acts on it: as them, in their companies."""
+        self.check_singleton()
+        owner = self.request_owner_id
+        acting = record.with_user(owner).with_context(
+            allowed_company_ids=owner.company_ids.ids
+        )
+        company = record.company_id if "company_id" in record._fields else None
+        if company and company in owner.company_ids:
+            acting = acting.with_company(company)
+        if owner.id == SUPERUSER_ID:
+            acting = acting.sudo()
+        return acting
 
     def action_view_attachment(self) -> dict[str, Any]:
         self.check_singleton()

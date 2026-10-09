@@ -423,9 +423,6 @@ class MixinApprovalDocument(models.AbstractModel):
             return
 
         approved_amount = self.approval_request_id.amount
-        if not approved_amount:
-            return
-
         approved_currency = self.approval_request_id.currency_id
         comparable_amount = approved_amount
         if approved_currency and approved_currency != self.currency_id:

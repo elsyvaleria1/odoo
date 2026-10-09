@@ -160,7 +160,7 @@ class ApprovalRequest(models.Model):
         reason=None,
         note=None,
         date=None,
-    ) -> None:
+    ):
         """Record one fact per row it concerns, or one for the request itself.
 
         Called by every funnel that changes what is decided, BEFORE a funnel that
@@ -195,15 +195,7 @@ class ApprovalRequest(models.Model):
                 }
             )
         logs = self.env["approval.decision.log"].sudo().create(vals_list)
-        state_after = self.state
-        self.env.cr.execute(
-            SQL(
-                "UPDATE approval_decision_log SET state_after = %s WHERE id = ANY(%s)",
-                state_after,
-                logs.ids,
-            )
-        )
-        logs.invalidate_recordset(["state_after"])
+        self._stamp_state_after(logs)
         trace.DECISION.note(
             "logged",
             request=self.id,
@@ -212,3 +204,17 @@ class ApprovalRequest(models.Model):
             elevation=elevation,
             rows=len(vals_list),
         )
+        return logs
+
+    def _stamp_state_after(self, logs) -> None:
+        """What the request became, stamped again by a funnel that logs before it
+        erases the rows' decisions."""
+        self.check_singleton()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE approval_decision_log SET state_after = %s WHERE id = ANY(%s)",
+                self.state,
+                logs.ids,
+            )
+        )
+        logs.invalidate_recordset(["state_after"])

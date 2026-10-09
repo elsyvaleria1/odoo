@@ -76,6 +76,12 @@
                                 name="category_id"
                                 invisible="mode == 'advise' or origin == 'module'"
                                 required="mode != 'advise' and origin == 'manual'" />
+                            <field
+                                name="approve_on_invoke"
+                                invisible="mode != 'request'" />
+                            <field
+                                name="run_on_approval"
+                                invisible="mode != 'request'" />
                         </group>
                     </group>
                     <group string="Observed" invisible="not observation_count">

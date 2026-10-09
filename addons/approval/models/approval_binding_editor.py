@@ -1,6 +1,7 @@
 from typing import Any, Self
 
 from odoo import api, models
+from odoo.exceptions import UserError
 
 from . import approval_trace as trace
 
@@ -15,9 +16,7 @@ class ApprovalBinding(models.Model):
         The binding takes the shape a Studio approval rule always had: Request mode,
         approved on invoke, and the operation left to the next call.
         """
-        binding = self._get_binding_for_button(
-            model, method, action_id
-        ) or self._create_binding_for_button(model, method, action_id)
+        binding = self._get_or_create_binding_for_button(model, method, action_id)
         category = binding.category_id
         steps = category.step_ids
         sequence = min(max(steps.mapped("sequence"), default=0) + 1, 9)
@@ -45,9 +44,7 @@ class ApprovalBinding(models.Model):
     def action_open_button_steps(
         self, model: str, method=False, action_id=False
     ) -> dict[str, Any]:
-        binding = self._get_binding_for_button(
-            model, method, action_id
-        ) or self._create_binding_for_button(model, method, action_id)
+        binding = self._get_or_create_binding_for_button(model, method, action_id)
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Approval Steps: %(binding)s", binding=binding.name),
@@ -62,18 +59,48 @@ class ApprovalBinding(models.Model):
         }
 
     @api.model
-    def _get_binding_for_button(self, model: str, method, action_id) -> Self:
+    def _get_or_create_binding_for_button(self, model: str, method, action_id) -> Self:
+        """The button's request binding: its own, made one if it only observed or was
+        archived (the unique key holds those too), or a new one."""
         action = False if method else self._parse_button_action(action_id)
-        return self.search(
+        binding = self.with_context(active_test=False).search(
             [
                 ("model_name", "=", model),
                 ("method", "=", method or False),
                 ("action_id", "=", action),
+                ("verb", "=", False),
                 ("subject_domain", "=", False),
-                ("mode", "not in", ("advise", "act_decides")),
             ],
             limit=1,
         )
+        if not binding:
+            return self._create_binding_for_button(model, method, action_id)
+        if binding.mode == "act_decides":
+            trace.REFUSAL.event("button_moves_its_document", binding=binding.id)
+            raise UserError(
+                self.env._(
+                    "%(name)s is how its document decides its own approval: it takes "
+                    "no approval steps of its own.",
+                    name=binding.name,
+                )
+            )
+        if binding.active and binding.mode != "advise" and binding.category_id:
+            return binding
+        trace.EDITOR.note(
+            "binding_adopted",
+            binding=binding.id,
+            mode=binding.mode,
+            active=binding.active,
+        )
+        vals = {"active": True}
+        if binding.mode == "advise":
+            vals.update(mode="request", approve_on_invoke=True, run_on_approval=False)
+        if not binding.category_id:
+            vals["category_id"] = self._create_button_category(
+                binding.model_id, binding._get_operation_label()
+            ).id
+        binding.write(vals)
+        return binding
 
     @api.model
     def _create_binding_for_button(self, model: str, method, action_id) -> Self:
@@ -83,16 +110,6 @@ class ApprovalBinding(models.Model):
         ir_model = self.env["ir.model"]._get(model)
         action = False if method else self._parse_button_action(action_id)
         operation = method or self.env["ir.actions.actions"].browse(action).name
-        # A button's approval restricts who may press it; the person pressing is
-        # the one whose approval is recorded. That is self-approval by design.
-        category = self.env["approval.category"].create(
-            {
-                "name": self.env._(
-                    "%(model)s: %(operation)s", model=ir_model.name, operation=operation
-                ),
-                "allow_self_approval": True,
-            }
-        )
         return self.create(
             {
                 "model_id": ir_model.id,
@@ -101,6 +118,19 @@ class ApprovalBinding(models.Model):
                 "mode": "request",
                 "approve_on_invoke": True,
                 "run_on_approval": False,
-                "category_id": category.id,
+                "category_id": self._create_button_category(ir_model, operation).id,
+            }
+        )
+
+    @api.model
+    def _create_button_category(self, ir_model, operation: str):
+        # A button's approval restricts who may press it; the person pressing is
+        # the one whose approval is recorded. That is self-approval by design.
+        return self.env["approval.category"].create(
+            {
+                "name": self.env._(
+                    "%(model)s: %(operation)s", model=ir_model.name, operation=operation
+                ),
+                "allow_self_approval": True,
             }
         )

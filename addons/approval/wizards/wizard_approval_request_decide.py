@@ -174,13 +174,6 @@ class WizardApprovalRequestDecide(models.TransientModel):
                 "note": self.note or False,
             }
         )
-        request_vals = {}
-        if not request.refusal_reason_id:
-            request_vals["refusal_reason_id"] = self.refusal_reason_id.id
-        if not request.refusal_note:
-            request_vals["refusal_note"] = self.note or False
-        if request_vals:
-            request.sudo().write(request_vals)
 
     def action_confirm_change(self) -> dict:
         self.check_singleton()

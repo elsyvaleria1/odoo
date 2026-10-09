@@ -206,16 +206,17 @@ class ApprovalCategory(models.Model):
         string="Auto-Escalate Overdue Requests",
         default=False,
         tracking=True,
-        help="Automatically escalate overdue requests to escalation contact",
+        help="Escalate a request still pending past its priority's escalation age, "
+        "or waiting on an archived approver, to a manager: the escalation contact, "
+        "the approver's manager where HR supplies one, or else the company's first "
+        "approval manager. Off, the escalation cron only reminds the approvers.",
     )
     escalation_user_id = fields.Many2one(
         comodel_name="res.users",
         string="Escalation Contact",
         tracking=True,
-        help="User notified by the escalation cron when this category's "
-        "requests are overdue and no approver-specific manager is found "
-        "(see _get_escalation_manager). Leave empty to fall back to a "
-        "plain reminder to the pending approvers.",
+        help="Who this category's escalations go to when Auto-Escalate is on, "
+        "instead of the company's first approval manager.",
     )
     auto_expire_hours = fields.Integer(
         string="Auto-Expire After (Hours)",
@@ -650,7 +651,11 @@ class ApprovalCategory(models.Model):
     def _can_be_met_for(self, document) -> bool:
         self.check_singleton()
         company = document.company_id if "company_id" in document._fields else None
-        return all(step._can_be_met_for(document, company) for step in self.step_ids)
+        return all(
+            step._can_be_met_for(document, company)
+            for step in self.step_ids
+            if step._is_applicable_to_document(document)
+        )
 
     def _get_view_request(
         self, label: str, extra_domain: list | None = None

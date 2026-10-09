@@ -258,11 +258,10 @@ class TelegramApprovalNotifier(models.AbstractModel):
 
     @api.model
     def _refuse(self, approver, reason_id=None, note=None):
-        request = approver.request_id
-        request.write(
-            {"refusal_reason_id": reason_id or False, "refusal_note": note or False}
+        approver.write({"refusal_reason_id": reason_id or False, "note": note or False})
+        approver.request_id.with_context(skip_wizard=True).action_refuse(
+            approver=approver
         )
-        request.with_context(skip_wizard=True).action_refuse(approver=approver)
 
     @api.model
     def _request_change(self, approver, field, note=None):

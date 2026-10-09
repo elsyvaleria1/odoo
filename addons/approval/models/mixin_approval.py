@@ -321,7 +321,7 @@ class MixinApproval(models.AbstractModel):
             )
 
         vals = self._prepare_approval_request_values(category)
-        approval = self.env["approval.request"].create(vals)
+        approval = self.env["approval.request"]._create_raised([vals])
         trace.MIXIN.note(
             "request_raised",
             record=self,
@@ -506,8 +506,9 @@ class MixinApproval(models.AbstractModel):
         request's `_link_produced_documents` (or `_producing_documents`) window,
         which only server code opens. A bill or an order created from an
         approved request is covered by it; one a user points at that request is
-        not. Or the request has no subject and nobody has decided it yet: it is
-        bound to the record here, so it cannot be adopted twice. Anything else
+        not. Or the request is the writer's own, has no subject and nobody has
+        decided it yet: it is bound to the record here, so it cannot be adopted
+        twice, nor by someone it does not belong to. Anything else
         would lend the record a decision taken about something else.
         """
         request = (
@@ -524,7 +525,12 @@ class MixinApproval(models.AbstractModel):
                 and request._is_producing_documents()
             ):
                 continue
-            if not request.res_model and not request.res_id and request.state == "new":
+            if (
+                not request.res_model
+                and not request.res_id
+                and request.state == "new"
+                and (self.env.su or request.request_owner_id == self.env.user)
+            ):
                 request.write({"res_model": record._name, "res_id": record.id})
                 continue
             trace.REFUSAL.event(
@@ -882,12 +888,14 @@ class MixinApproval(models.AbstractModel):
         }
 
         for source_field, target_field in field_mapping.items():
-            if source_field in self._fields and self[source_field]:
-                value = self[source_field]
-                if hasattr(value, "id"):
-                    vals[target_field] = value.id
-                else:
-                    vals[target_field] = value
+            if source_field not in self._fields:
+                continue
+            value = self[source_field]
+            if isinstance(value, models.BaseModel):
+                value = value.id
+            # An amount of zero is what was approved, not the absence of one.
+            if value or isinstance(value, float):
+                vals[target_field] = value
 
         for name in self.env.transaction.admitted_names(vals["res_model"], self.id):
             if name.startswith("approval.binding_for:"):

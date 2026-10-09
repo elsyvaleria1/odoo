@@ -181,7 +181,7 @@ class TestApprovalBindingActions(common.TransactionCase):
             )
 
     def test_a_report_renders_once_an_approved_request_covers_the_record(self):
-        self._bind(self.report, mode="block", sudo_policy="enforce")
+        binding = self._bind(self.report, mode="block", sudo_policy="enforce")
         partner = self._partner()
         request = self.env["approval.request"].create(
             {
@@ -190,6 +190,7 @@ class TestApprovalBindingActions(common.TransactionCase):
                 "request_owner_id": self.requester.id,
                 "res_model": "res.partner",
                 "res_id": partner.id,
+                "binding_id": binding.id,
             }
         )
         request.action_confirm()

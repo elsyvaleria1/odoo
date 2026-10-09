@@ -137,9 +137,6 @@ class AccountMove(models.Model):
     def _check_approved_amount(self) -> None:
         self.check_singleton()
         approved_amount = self.approval_request_id.amount
-        if not approved_amount:
-            return
-
         approved_currency = self.approval_request_id.currency_id
         current_amount = abs(self.amount_total)
         comparable_amount = approved_amount

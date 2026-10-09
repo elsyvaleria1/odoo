@@ -35,6 +35,35 @@ class IrAccessSodFunction(models.Model):
             **spec,
             "approver_user_ids": frozenset(steps.member_ids.user_id._ids),
             "approver_group_ids": frozenset(steps.group_id._ids),
+            "approver_category_ids": frozenset(steps.category_id._ids),
+        }
+
+    def _get_holder_ids(self, users) -> set[int]:
+        """A delegate holds the duty of the rows they stand in for, from the day the
+        delegation is given: one that starts later is judged on what it gives."""
+        holders = super()._get_holder_ids(users)
+        categories = self._get_duty_spec().get("approver_category_ids")
+        if not categories:
+            return holders
+        excluded = self._get_duty_spec()["excluded"]
+        standing_in = (
+            self.env["approval.approver"]
+            .sudo()
+            .search(
+                [
+                    ("delegate_id", "in", users.ids),
+                    ("state", "in", ("pending", "waiting")),
+                    ("request_id.state", "=", "pending"),
+                    ("request_id.category_id", "in", list(categories)),
+                    ("delegate_end_date", ">=", fields.Date.context_today(self)),
+                ]
+            )
+            .delegate_id
+        )
+        return holders | {
+            user.id
+            for user in standing_in
+            if not excluded & frozenset(user.all_group_ids._ids)
         }
 
     def _get_approval_steps(self):
@@ -117,4 +146,16 @@ class ApprovalCategoryStepMember(models.Model):
     def unlink(self):
         result = super().unlink()
         self.env.registry.clear_cache("groups")
+        return result
+
+
+class ApprovalApprover(models.Model):
+    _inherit = "approval.approver"
+
+    def write(self, vals):
+        result = super().write(vals)
+        if vals.get("delegate_id"):
+            self.env["ir.access.sod.rule"]._check_users(
+                self.delegate_id, "approval_delegation"
+            )
         return result

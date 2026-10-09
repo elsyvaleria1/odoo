@@ -4,6 +4,8 @@ from odoo.exceptions import UserError
 
 from . import approval_trace as trace
 
+RAISE_ADMISSION = "approval.raise"
+
 
 class ApprovalStepUnstaffed(UserError):
     def __init__(self, message, step=None, company=None) -> None:

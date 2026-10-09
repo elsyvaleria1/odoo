@@ -74,7 +74,6 @@ dashboards.
 | `mail_activity.py` | extends `mail.activity` | Stores `approver_id`, the approver row an approval activity asks, and derives `approval_request_id` from it; an approval activity marked done by its row's effective approver approves, on the request or on the document |
 | `mail_activity_type.py` | extends `mail.activity.type` | Registers approval activity type metadata |
 | `models.py` | extends `base` | `get_views` flags every related model that has a Block or Request binding (`has_approval_bindings`) |
-| `res_groups.py` | extends `res.groups` | Drops the escalation-manager memo when group membership moves from the GROUP side |
 | `res_users.py` | extends `res.users` | `_is_approval_manager` seam, archive handover (SM-7), memo invalidation |
 
 ### Wizards (`wizards/`)
@@ -117,6 +116,7 @@ dashboards.
 | `test_binding.py` | `approval.binding`: wrapping and unwrapping, one wrapper per method, Observe and Block, superuser vs `sudo()` elevation, the caller's elevation rather than the binding's, the kill switch, every configuration-time refusal; Request mode — no duplicate while pending, one replay as the requester, no replay after re-approval, no borrowing the approver's rights, no run once the snapshot moved, Block covered by a separately approved request; approve on invoke — an approver's call runs the operation exactly once, a non-approver's only raises the request, one step of two waits; run on approval off leaves the operation to the next call; the ORM-API and private-method refusals, and a stored refused binding left unapplied; a refusal that stands, who may reopen it, and withdrawing across steps |
 | `test_binding_actions.py` | Action bindings: a blocked server action refused on the server — the call web_studio let through — request, replay as the requester and approve-on-invoke on a server action, a report refused and then rendered once covered, the PDF entry point gated too, `is_enforced`, and every constraint on what an action binding may be |
 | `test_binding_client.py` | The approval button's questions: the `get_views` flag, an ungated button, who may decide each step before any call, a check that raises the request and runs nothing, decisions assigned to steps and withdrawn by a later step, a decision under one step leaving the user's other step open and withdrawn from that step alone, a step of another button refused, a refusal reopened by its refuser only, a record the caller cannot read, an action button |
+| `test_binding_integrity.py` | A binding's coverage, selection and replay held against the caller: coverage only by its own requests, a condition read whole, the engine and system models out of reach, the replay in the owner's companies and with its arguments, the kill switch at the button, the button check running nothing |
 | `test_binding_editor.py` | Studio's editor on the engine: the first step binds the button as Studio did, further steps join it up to order nine, an action button named by xmlid, the approvers list keeping delegations, the steps action, the steps opening as a kanban with a quick-create card, a button whose steps are all archived no longer gated |
 | `test_binding_report_door.py` | The report route over HTTP: an uncovered record refused, and a context sent with the request not passing the gate |
 | `test_binding_studio_parity.py` | What a Studio rule did, held by steps and bindings, each test naming its Studio test: a record no step applies to is not gated, an exclusive approval counts toward the exclusive step first, an archived step is ignored in any context, a group member decides but only listed members are asked, a step holding decisions is archived not deleted, a binding's target is fixed once it has requests |
@@ -131,6 +131,7 @@ dashboards.
 | `test_prediction_and_snapshot.py` | On-demand outcome prediction, category snapshots (+ batched-query regression) |
 | `test_state_guards.py` | What each request state allows: submitted-request guards, locked fields, forged computed fields |
 | `test_decision_log.py` | The ledger: a decision logged with its actor, a reset that erases the rows but not the history, a withdrawal as a fact, a delegate logged acting for the approver, an elevated decision saying so, grants and revocations, the log refusing change and deletion even by the superuser, the history read through the request, shown on the form to an approver who is no manager, and hidden with a request the user cannot read |
+| `test_decision_concurrency.py` | Two transactions deciding one request: the later one fails to serialize and is retried on the rows the first decided, instead of leaving a fully approved request pending |
 | `test_decision_attribution.py` | decision attribution under delegation, decision-funnel scoping, change-request close-out, manual-approver preservation, escalation lookup, document-requirement language, batched round-opening |
 | `test_invariants.py` | invariants that must hold across the whole lifecycle (pending-review predicate, decision funnels) |
 | `test_multi_company.py` | Multi-company isolation across every company_id-scoped model |
@@ -138,6 +139,7 @@ dashboards.
 | `test_category.py` | Category configuration: sequence-code derivation |
 | `test_category_steps.py` | Steps: two one-of-two steps need one approval from each, per-step quorum, one row per user counting toward every step, exclusivity in both directions, group and expired members, step conditions, refusal, asking steps in order while deciding freely, notify lists, configuration that could never be met, and a category without steps untouched |
 | `test_request_revocation.py` | Revoking an approved request from outside its decisions (`_revoke`): refused or cancelled, the rows keep their decisions and the request its approval date, only an approved request is revoked, the reason is recorded, a reset gives a clean draft, withdraw is refused afterwards |
+| `test_routing_integrity.py` | Routing that cannot be gamed or stall: a change after which no step applies is refused, the owner neither staffs nor counts toward a step, an advisory step's required member holds nothing, archived members and delegates, the archived approver's successor asked, a reroute ending a delegation it supersedes, reach only within a delegation's window |
 | `test_routing_outcomes.py` | The routing contract: scripted readings of state, who could approve and who holds an activity after each decision, on categories built from steps -- required approvers, quorum, members in order, refusal, withdrawal, group queues, owner exclusion, conditions, approvers added by hand, delegation; every shipped category routing by steps and a configured category born with its pool step (`TestCategoriesRouteBySteps`) |
 | `test_request_grant.py` | Approving a pending request from outside its decisions (`_approve_without_decision`): no row is named as deciding and none stays pending, an earlier decision stays as given, only a pending request is granted, withdrawal is refused, a grant can still be revoked and reset; the source document being told once is `test_approval/tests/test_source_document.py` |
 | `test_request_verbs.py` | Who may submit, re-submit, cancel, reset and decide a request is its verb rows: the owner, the request's approvers and delegates, an approval manager; a stranger holds none, an approver cannot cancel, only a manager resets an approved request |
@@ -237,14 +239,13 @@ approval/
 |   +-- ir_attachment.py              # Attachment protection
 |   +-- mail_activity.py              # Activity extensions
 |   +-- mail_activity_type.py         # Activity type metadata
-|   +-- res_groups.py                 # Escalation-memo invalidation
 |   +-- res_users.py                  # Manager seam + archive handover
 +-- wizards/
 |   +-- wizard_approval_request_decide.py    # Refuse / request-change
 |   +-- wizard_approval_approver_delegate.py # Delegation setup
 +-- reports/
 |   +-- approval_request_report.xml   # QWeb PDF report action
-+-- tests/                            # 49 test modules + common.py
++-- tests/                            # 52 test modules + common.py
 +-- views/                            # 10 XML view files
 +-- data/                             # 6 XML data files
 +-- security/                         # Groups, rules, ACL
@@ -256,7 +257,7 @@ approval/
 | Metric | Count |
 |--------|-------|
 | Python files (non-test, incl. `__init__`/`__manifest__`) | 44 |
-| Python test files | 49 (+ `common.py`) |
+| Python test files | 52 (+ `common.py`) |
 | XML files (non-static) | 28 |
 | XML files (static templates) | 4 |
 | JS files | 25 |
@@ -353,12 +354,23 @@ Two-layer validation on all CRUD:
      `company_id`, and the source-document link `res_model`/`res_id`.
      Frozen for EVERYONE (sudo included). `date`/`reason` reopen via
      the request-a-change flow.
-   - `_SYSTEM_LOCKED_FIELDS` — system-managed: `approval_minimum`
-     (the threshold), `name`, `date_confirmed`, `category_snapshot`.
-     Frozen against NON-sudo (user/RPC) writers only; the privileged
-     writers are `action_confirm` (while still `new`), reset-to-draft
-     (sudo), and the approver sync (sudo). Confirmation-time writes pass
-     because state is still `new`.
+   - `_SYSTEM_LOCKED_FIELDS` — `name`, frozen against non-sudo writers
+     once submitted.
+   - Two state-independent sets refused to every non-sudo writer, on
+     create and on write, draft included (2026-10-09 review, S1): an owner
+     or approver writing `granted_by_user_id` approved a 2-of-2 request
+     alone. `_WORKFLOW_FIELDS` is what the engine records of the request's
+     course (`approval_minimum`, `category_snapshot`, `date_confirmed`,
+     `granted_by_user_id`, the `revoked_*` triple, `pending_change_field`,
+     the refusal reason and note, `applied_rule_ids`, the reminder and
+     escalation stamps, the run/replay stamps). `_SOURCE_LINK_FIELDS` is
+     what the request is about (`res_model`, `res_id`, `requester_id`,
+     `subject_key`, `operation`, `operation_snapshot`, `binding_id`,
+     `binding_snapshot`): set only at create, through
+     `approval.request._create_raised`, which admits the source record
+     (`approval.raise`) for the length of the create; the mixin, the
+     subjects mixin (sudo), the bindings and `approval_maintenance` raise
+     through it. The engine's own writes go through `sudo()`.
    - `priority` is intentionally NOT frozen — a framework field, editable
      in every state.
    - A third, state-independent set: `_COMPUTE_ONLY_FIELDS` —

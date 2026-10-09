@@ -1,10 +1,13 @@
 import logging
 from typing import Any
 
+import psycopg
+
 from odoo import fields, models
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.text import nl2br
+from odoo.tools import SQL
 
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
@@ -59,6 +62,8 @@ class ApprovalRequestLifecycle(models.Model):
                         before(request)
                     getattr(request.with_context(skip_wizard=True), action_method)()
                 success_count += 1
+            except psycopg.errors.OperationalError:
+                raise
             except (UserError, ValidationError) as e:
                 trace.LIFECYCLE.event(
                     "bulk_refused",
@@ -75,7 +80,7 @@ class ApprovalRequestLifecycle(models.Model):
                     ),
                     message_type="notification",
                 )
-            except Exception as e:
+            except Exception:
                 _logger.exception(
                     "Unexpected error in bulk %s for request %s",
                     action_label,
@@ -83,14 +88,6 @@ class ApprovalRequestLifecycle(models.Model):
                 )
                 failed_requests.append(
                     (request.name, self.env._("Unexpected error occurred"))
-                )
-                request.message_post(
-                    body=self.env._(
-                        "Bulk %(action)s failed with unexpected error: %(error)s",
-                        action=action_label,
-                        error=str(e),
-                    ),
-                    message_type="notification",
                 )
 
         trace.annotate(work=len(self))
@@ -303,11 +300,13 @@ class ApprovalRequestLifecycle(models.Model):
             partner_ids=self.request_owner_id.partner_id.ids,
         )
         self._notify_step_decision(approver, acting_user, decision, steps)
-        if decision == "refuse" and not all(
-            row._is_advisory_only() for row in approver
-        ):
+        deciding = approver.filtered(lambda row: not row._is_advisory_only())
+        if decision == "refuse" and deciding:
             self._flip_unsettled_approvers("refused")
-        self._get_user_approval_activities(user=acting_user).sudo().action_feedback()
+            self._stamp_refusal_metadata(
+                deciding[:1].refusal_reason_id, deciding[:1].note
+            )
+        self._get_approval_activities(user=acting_user).sudo().action_feedback()
         if decision == "approve" and self.state == "pending":
             self._refresh_turn_states()
             self.approver_ids.filtered(
@@ -498,31 +497,16 @@ class ApprovalRequestLifecycle(models.Model):
         self.check_singleton()
         if self.state in self._TERMINAL_STATES or self.state == "new":
             return False
-        target_state = self._get_parent_cancel_state()
-        trace.LIFECYCLE.event(
-            "cascade", request=self.id, was=self.state, target=target_state
+        trace.LIFECYCLE.event("cascade", request=self.id, was=self.state)
+        self._force_terminal(
+            "refused",
+            body=self.env._(
+                "Refused automatically because the parent document was cancelled.",
+            ),
+            refusal_reason=self.env.ref("approval.refusal_reason_parent_cancelled"),
+            refusal_note=self.env._("Parent document was cancelled."),
         )
-        if target_state == "refused":
-            self._force_terminal(
-                "refused",
-                body=self.env._(
-                    "Refused automatically because the parent document was cancelled.",
-                ),
-                refusal_reason=self.env.ref("approval.refusal_reason_parent_cancelled"),
-                refusal_note=self.env._("Parent document was cancelled."),
-            )
-        else:
-            self._force_terminal(
-                target_state,
-                body=self.env._(
-                    "Cancelled automatically because the parent document "
-                    "was cancelled.",
-                ),
-            )
         return True
-
-    def _get_parent_cancel_state(self) -> str:
-        return "refused"
 
     def _check_no_pending_change(self, action_verb: str) -> None:
         if any(self.mapped("pending_change_field")):
@@ -672,7 +656,7 @@ class ApprovalRequestLifecycle(models.Model):
         added = self._extend_approvers_live()
         undone = self.approver_ids.filtered(lambda a: a.state == "approved")
         if undone:
-            self._append_decision_log(
+            logs = self._append_decision_log(
                 "withdrawn",
                 rows=undone,
                 steps_by_row={row.id: row.decided_step_ids for row in undone},
@@ -686,6 +670,7 @@ class ApprovalRequestLifecycle(models.Model):
                     "decided_step_ids": [Command.clear()],
                 },
             )
+            self._stamp_state_after(logs)
             self._cancel_activities()
             self._open_approval_round(
                 self.approver_ids.filtered(
@@ -738,12 +723,14 @@ class ApprovalRequestLifecycle(models.Model):
             old_state = request.state
             request._check_confirm()
 
+            confirmed_vals = {
+                "category_snapshot": request._prepare_category_snapshot(),
+                "date_confirmed": fields.Datetime.now(),
+            }
             if not request.name:
-                request.name = request.category_id.sequence_id.next_by_id()
-
-            request.category_snapshot = request._prepare_category_snapshot()
-
-            request.write({"date_confirmed": fields.Datetime.now()})
+                confirmed_vals["name"] = request.category_id.sequence_id.next_by_id()
+            with request._recording():
+                request.write(confirmed_vals)
 
             auto_action = request._check_auto_action_rules()
             if auto_action:
@@ -858,8 +845,9 @@ class ApprovalRequestLifecycle(models.Model):
         self.check_singleton()
         request = self
         previous_state = request.state
-        request._append_decision_log("reset", note=note)
+        logs = request._append_decision_log("reset", note=note)
         request._close_pending_change()
+        request._cancel_activities()
         request.approver_ids.sudo().write(
             {
                 "flow_state": "new",
@@ -888,6 +876,7 @@ class ApprovalRequestLifecycle(models.Model):
             },
         )
         request._sync_approvers()
+        request._stamp_state_after(logs)
         if previous_state in self._TERMINAL_STATES:
             request.with_context(
                 approval_reset_from=previous_state
@@ -1025,7 +1014,7 @@ class ApprovalRequestLifecycle(models.Model):
 
             old_state = request.state
 
-            request._append_decision_log(
+            logs = request._append_decision_log(
                 "withdrawn",
                 rows=req_approver,
                 steps_by_row={row.id: row.decided_step_ids for row in req_approver},
@@ -1038,6 +1027,7 @@ class ApprovalRequestLifecycle(models.Model):
                     "decided_step_ids": [Command.clear()],
                 },
             )
+            request._stamp_state_after(logs)
 
             still_approved = request.state == "approved"
 
@@ -1058,18 +1048,27 @@ class ApprovalRequestLifecycle(models.Model):
                     request._refresh_turn_states()
                     request._retire_unasked_approval_activities()
 
-            acting_user = req_approver[:1]._get_effective_approver()
-            request.with_user(acting_user).sudo().message_post(
-                body=self.env._(
-                    "%(user)s withdrew their approval. The request is pending review again.",
+            acting_user = self.env.user
+            approver_user = req_approver[:1]._get_effective_approver()
+            withdrawn = (
+                self.env._("%(user)s withdrew their approval.", user=acting_user.name)
+                if approver_user == acting_user
+                else self.env._(
+                    "%(user)s withdrew %(approver)s's approval.",
                     user=acting_user.name,
+                    approver=approver_user.name,
                 )
+            )
+            outcome = (
+                self.env._("The request is pending review again.")
                 if not still_approved
                 else self.env._(
-                    "%(user)s withdrew their approval. The request stays "
-                    "approved: the remaining approvals still satisfy it.",
-                    user=acting_user.name,
-                ),
+                    "The request stays approved: the remaining approvals still "
+                    "satisfy it."
+                )
+            )
+            request.sudo().message_post(
+                body=f"{withdrawn} {outcome}",
                 author_id=acting_user.partner_id.id,
                 message_type="notification",
             )
@@ -1210,12 +1209,13 @@ class ApprovalRequestLifecycle(models.Model):
             )
         self._check_withdraw_allowed()
         old_state = self.state
-        self._append_decision_log(
+        logs = self._append_decision_log(
             "withdrawn", rows=approver, steps_by_row={approver.id: steps}
         )
         approver.sudo().write(
             {"decided_step_ids": [Command.unlink(step.id) for step in steps]},
         )
+        self._stamp_state_after(logs)
         if old_state == "approved" and self.state == "pending":
             parked = self.approver_ids.filtered(lambda a: a.state == "waiting")
             parked.sudo().write({"flow_state": "pending"})
@@ -1354,9 +1354,6 @@ class ApprovalRequestLifecycle(models.Model):
             domain.append(("user_id", "=", user.id))
         return self.env["mail.activity"].search(domain)
 
-    def _get_user_approval_activities(self, user: Any) -> Any:
-        return self._get_approval_activities(user=user)
-
     def _get_change_request_activities(self) -> Any:
         return self._get_request_activities(
             "approval.mail_activity_data_change_request"
@@ -1365,8 +1362,19 @@ class ApprovalRequestLifecycle(models.Model):
     def _lock_for_approval_action(self) -> None:
         if not self.ids:
             return
-
-        self.lock_for_update(wait=True)
+        # An UPDATE, not a SELECT FOR UPDATE: a decision often changes only the
+        # approver rows, so a transaction that read this request before another
+        # decided on it would lock it afterwards without conflict and decide on rows
+        # it no longer sees. Touching the row makes it fail to serialize instead,
+        # and the server retries it on fresh rows.
+        self.env.cr.execute(
+            SQL(
+                "UPDATE approval_request SET write_date = %s WHERE id = ANY(%s)",
+                self.env.cr.now(),
+                list(self.ids),
+            )
+        )
+        self.invalidate_recordset(["write_date"])
 
     def _lock_and_reload(self, with_approvers: bool = False) -> None:
         with trace.LIFECYCLE.span(
@@ -1428,6 +1436,17 @@ class ApprovalRequestLifecycle(models.Model):
                 continue
             old_state = request.state
             request._flip_unsettled_approvers(new_state)
+            if request.state != new_state:
+                trace.LIFECYCLE.event(
+                    "forced_past_decided_rows", request=request.id, now=new_state
+                )
+                request.sudo().write(
+                    {
+                        "revoked_state": new_state,
+                        "revoked_by_user_id": self.env.user.id,
+                        "date_revoked": fields.Datetime.now(),
+                    },
+                )
             request._stamp_refusal_metadata(refusal_reason, refusal_note)
             request._cancel_activities()
             request._close_pending_change()
@@ -1578,6 +1597,7 @@ class ApprovalRequestLifecycle(models.Model):
         )
         if (
             not request.binding_id
+            or request.binding_id.mode != "request"
             or not request.binding_id.run_on_approval
             or request.date_binding_replayed
             or not request.res_model

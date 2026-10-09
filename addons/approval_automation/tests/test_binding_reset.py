@@ -58,7 +58,7 @@ class TestApprovalBindingReset(common.TransactionCase):
         self.Binding._register_hook()
         return binding
 
-    def _approved_request(self, partner):
+    def _approved_request(self, partner, binding):
         request = self.env["approval.request"].create(
             {
                 "name": "Covering",
@@ -66,6 +66,7 @@ class TestApprovalBindingReset(common.TransactionCase):
                 "request_owner_id": self.requester.id,
                 "res_model": "res.partner",
                 "res_id": partner.id,
+                "binding_id": binding.id,
             }
         )
         request.action_confirm()
@@ -100,11 +101,11 @@ class TestApprovalBindingReset(common.TransactionCase):
         self.assertTrue(rule.filter_pre_domain, "an edit wiped the transition filter")
 
     def test_a_record_returning_to_the_condition_needs_approval_again(self):
-        self._bind(mode="block", sudo_policy="enforce")
+        binding = self._bind(mode="block", sudo_policy="enforce")
         partner = self.env["res.partner"].create(
             {"name": "Resettable", "city": "Start"}
         )
-        request = self._approved_request(partner)
+        request = self._approved_request(partner, binding)
         partner.city = "Reset"
         self.assertEqual(request.state, "new", "the covering approval was reset")
         with self.assertRaises(UserError):
@@ -113,9 +114,9 @@ class TestApprovalBindingReset(common.TransactionCase):
 
     def test_an_edit_by_a_user_who_cannot_manage_approvals_still_resets(self):
         """Resetting an approved request needs a manager; the rule's action runs elevated."""
-        self._bind(mode="block", sudo_policy="enforce")
+        binding = self._bind(mode="block", sudo_policy="enforce")
         partner = self.env["res.partner"].create({"name": "Plain", "city": "Start"})
-        request = self._approved_request(partner)
+        request = self._approved_request(partner, binding)
         partner.with_user(self.requester).city = "Reset"
         self.assertEqual(request.state, "new")
 
@@ -125,24 +126,24 @@ class TestApprovalBindingReset(common.TransactionCase):
         The rule does not fire for a write that leaves every trigger field unchanged,
         so only a real change within the condition exercises the transition filter.
         """
-        self._bind(
+        binding = self._bind(
             mode="block",
             sudo_policy="enforce",
             reset_domain="[('city', 'ilike', 'Reset')]",
         )
         partner = self.env["res.partner"].create({"name": "Already", "city": "Reset"})
-        request = self._approved_request(partner)
+        request = self._approved_request(partner, binding)
         partner.city = "Reset North"
         self.assertEqual(request.state, "approved")
         partner.with_user(self.requester).action_archive()
         self.assertFalse(partner.active)
 
     def test_leaving_and_re_entering_the_condition_is_a_transition(self):
-        self._bind(mode="block", sudo_policy="enforce")
+        binding = self._bind(mode="block", sudo_policy="enforce")
         partner = self.env["res.partner"].create(
             {"name": "Round trip", "city": "Reset"}
         )
-        request = self._approved_request(partner)
+        request = self._approved_request(partner, binding)
         partner.city = "Elsewhere"
         self.assertEqual(request.state, "approved")
         partner.city = "Reset"

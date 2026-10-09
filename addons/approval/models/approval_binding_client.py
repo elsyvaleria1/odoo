@@ -37,15 +37,20 @@ class ApprovalBinding(models.Model):
     def check_button_approval(
         self, model: str, res_id: int, method=False, action_id=False
     ) -> dict[str, Any]:
-        records = self._get_records_for_button(model, res_id, "write")
+        if not self._enabled():
+            return {"approved": True, "request_id": False}
         bindings = self._get_button_bindings(model, method, action_id)
-        if not records or not bindings:
+        if not bindings:
+            return {"approved": True, "request_id": False}
+        records = self._get_records_for_button(model, res_id, "write")
+        if not records:
             return {"approved": True, "request_id": False}
         result = self._gate(
             records,
             bindings,
             method or bindings[:1].action_id.name,
             lambda runnable: True,
+            mark_run=False,
         )
         trace.BUTTON.note(
             "checked",
@@ -161,14 +166,19 @@ class ApprovalBinding(models.Model):
     def _get_button_approval(
         self, model: str, res_id=False, method=False, action_id=False
     ) -> dict[str, Any]:
-        records = self._get_records_for_button(model, res_id)
+        ungated = {"gated": False, "approved": True, "request": False, "steps": []}
+        if not self._enabled():
+            return ungated
         bindings = self._get_button_bindings(model, method, action_id).filtered(
             lambda binding: binding.mode not in ("advise", "act_decides")
         )
+        if not bindings:
+            return ungated
+        records = self._get_records_for_button(model, res_id)
         if records:
             bindings = bindings.filtered(lambda binding: binding._get_selected(records))
         if not bindings:
-            return {"gated": False, "approved": True, "request": False, "steps": []}
+            return ungated
         waiting = bindings.filtered(
             lambda binding: (
                 not records or records.id not in binding._get_covered_ids(records)

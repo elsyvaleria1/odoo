@@ -1,5 +1,6 @@
 from . import (
     test_admission_not_in_context,
+    test_adoption_owner,
     test_approval_access,
     test_approval_mixin,
     test_approval_subjects,
@@ -8,6 +9,7 @@ from . import (
     test_coverage_integrity,
     test_decision_attribution,
     test_document_is_not_reachable,
+    test_gate_run_stamp,
     test_own_decision,
     test_rate_limit,
     test_source_document,

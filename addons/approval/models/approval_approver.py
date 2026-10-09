@@ -272,6 +272,17 @@ class ApprovalApprover(models.Model):
                         self.env._("Delegation end date must be after start date."),
                     )
 
+    def _may_delegate_to(self, delegate) -> bool:
+        """Whether `delegate` may cover this row: what _check_delegate_identity refuses."""
+        self.check_singleton()
+        request = self.request_id
+        others = request.approver_ids - self
+        return not (
+            delegate == self.user_id
+            or delegate in (request.request_owner_id | request._get_requester())
+            or delegate in others.user_id
+        )
+
     @api.constrains("delegate_id", "user_id", "request_id")
     def _check_delegate_identity(self) -> None:
         for approver in self:
@@ -394,20 +405,33 @@ class ApprovalApprover(models.Model):
             )
             if not misplaced:
                 continue
+            held = activities.filtered_domain(
+                [("approver_id", "=", approver.id), ("user_id", "=", holder.id)]
+            )
             trace.DELEGATION.event(
                 "activity_follows_effective_approver",
                 approver=approver.id,
                 holder=holder.id,
                 activities=misplaced.ids,
+                already_held=held.ids,
             )
-            misplaced.write({"user_id": holder.id})
+            if not held:
+                misplaced[:1].write({"user_id": holder.id})
+                misplaced = misplaced[1:]
+            misplaced.unlink()
 
     @api.model
     def cron_hand_delegated_activities_over(self) -> None:
-        """Move activities when a delegation window opens or closes today."""
-        self.search(
-            [("state", "=", "pending"), ("delegate_id", "!=", False)]
-        )._hand_activities_to_effective_approver()
+        """Move what a delegation gives when its window opens or closes today: the
+        activity, the reach into the document and the Decider group."""
+        rows = self.search(
+            [("state", "in", ("pending", "waiting")), ("delegate_id", "!=", False)]
+        )
+        rows._hand_activities_to_effective_approver()
+        requests = rows.request_id
+        self.env.add_to_compute(requests._fields["pending_user_ids"], requests)
+        requests.flush_recordset(["pending_user_ids"])
+        self.env["res.users.grant"]._sync_decider_grants(rows.delegate_id)
 
     def _raise_state_is_derived(self) -> None:
         trace.REFUSAL.event("approver_state_written", rows=self.ids, uid=self.env.uid)
@@ -568,12 +592,13 @@ class ApprovalApprover(models.Model):
 
         return self.request_id._get_decision_wizard_action("refuse")
 
-    def _create_activity(self):
+    def _create_activity(self, unlisted: bool = False):
         if not self:
             return
         if self.env.context.get("mail_activity_automation_skip"):
             return
-        self = self._filtered_notifiable()
+        if not unlisted:
+            self = self._filtered_notifiable()
         if not self:
             return
         default_type = self.env.ref("approval.mail_activity_data_approval")

@@ -169,12 +169,7 @@ class WizardApprovalApproverDelegate(models.TransientModel):
                 lambda a: a.state in self._delegatable_states(),
             )
 
-        skipped = approvers.filtered(
-            lambda a: (
-                self.delegate_id == a.request_id.request_owner_id
-                or self.delegate_id in (a.request_id.approver_ids - a).mapped("user_id")
-            ),
-        )
+        skipped = approvers.filtered(lambda a: not a._may_delegate_to(self.delegate_id))
         approvers -= skipped
 
         if not approvers:
@@ -217,7 +212,8 @@ class WizardApprovalApproverDelegate(models.TransientModel):
         if skipped:
             message += "\n\n" + self.env._(
                 "%(count)d approval(s) were skipped because %(delegate)s "
-                "is the request owner or already an approver on them.",
+                "asked for them, is whom they are for, or already holds an "
+                "approval on them.",
                 count=len(skipped),
                 delegate=self.delegate_id.name,
             )

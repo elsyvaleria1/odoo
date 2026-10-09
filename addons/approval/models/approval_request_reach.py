@@ -23,6 +23,8 @@ class ApprovalRequest(models.Model):
         "approver_ids.state",
         "approver_ids.user_id",
         "approver_ids.delegate_id",
+        "approver_ids.delegate_start_date",
+        "approver_ids.delegate_end_date",
     )
     def _compute_pending_user_ids(self) -> None:
         for request in self:
@@ -32,7 +34,9 @@ class ApprovalRequest(models.Model):
             rows = request.approver_ids.filtered(
                 lambda row: row.state in ("pending", "waiting")
             )
-            request.pending_user_ids = rows.user_id | rows.delegate_id
+            request.pending_user_ids = (
+                rows.user_id | rows.filtered("is_delegated").delegate_id
+            )
 
 
 DECIDER_SYNC = "approval.decider_sync"
@@ -76,10 +80,15 @@ class ResUsersGrant(models.Model):
     @api.model
     def _sync_decider_grants(self, users) -> None:
         group = self.env.ref("approval.group_approval_decider")
+        today = fields.Date.context_today(self)
         members = (
             self.env["approval.category.step.member"]
             .sudo()
-            .search([("user_id", "in", users.ids), ("step_id.active", "=", True)])
+            .search(
+                Domain("user_id", "in", users.ids)
+                & Domain("step_id.active", "=", True)
+                & (Domain("date_end", "=", False) | Domain("date_end", ">=", today))
+            )
         )
         delegations = (
             self.env["approval.approver"]
@@ -91,6 +100,7 @@ class ResUsersGrant(models.Model):
                     ("request_id.state", "=", "pending"),
                 ]
             )
+            .filtered("is_delegated")
         )
         ours = self.sudo().search(
             self._live_domain()

@@ -348,7 +348,7 @@ requester re-submits (`action_resubmit`).
 | `_revoke(new_state, body, ...)` | lifecycle.py | Overturns an **approved** request into `refused` or `cancelled` from outside its decisions (a validated leave refused by an officer): writes `revoked_state`, stamps the refusal metadata, cancels activities, notifies the source document once, runs `_refuse_approval_request()` for a refusal. Every approver row keeps its decision. A non-approved request raises `UserError`; `approved` as the target raises `ValueError` |
 | `_approve_without_decision(body, ...)` | lifecycle.py | Approves a **pending** request from outside its decisions (a leave the system validates): writes `granted_by_user_id`, turns pending rows to `waiting`, cancels activities, notifies the source document once. No row is recorded as deciding, and one decided before keeps its decision. A non-pending request raises `UserError` |
 | `_check_moved_from_source_document()` | lifecycle.py | Refuses withdraw, reset to draft, cancel and change requests on a request whose source model sets `_approval_request_follows_document` (`mixin.approval.state.sync`): such a request is decided here and moved otherwise from its document |
-| `_get_approval_activities(user=None)` | lifecycle.py | The approval activities asking this request's approvers, found through `mail.activity.approver_id` wherever they live. `_cancel_activities`, `_retire_unasked_approval_activities` and `_get_user_approval_activities` all read it |
+| `_get_approval_activities(user=None)` | lifecycle.py | The approval activities asking this request's approvers, found through `mail.activity.approver_id` wherever they live. `_cancel_activities` and `_retire_unasked_approval_activities` read it |
 | `_notify_if_terminal_transition()` | lifecycle.py | Fire source-doc hook once on entering a terminal state |
 | `_get_notifiable_source_document()` | lifecycle.py | The adopting document to tell, or None: registry, `mixin.approval` and two-way-link checks; returned under `sudo()` with `approval_acting_user_id` |
 | `_notify_source_document_progress()` | lifecycle.py | Calls the document's `_on_approval_progress()` after an approval that met a step while the request stays pending |
@@ -367,7 +367,6 @@ requester re-submits (`action_resubmit`).
 | `_check_confirm()` | lifecycle.py | Pre-confirm: approvers, documents (distinct-match), required fields |
 | `_check_reset_allowed()` | lifecycle.py | Hook: veto reset-to-draft (base blocks released source-doc links) |
 | `cron_smart_escalation()` | escalation.py | Priority-based reminder schedule (batched, limit 500/priority; skips requests with `pending_change_field` set; per-request savepoint) |
-| `_reconcile_delegation_activities()` | escalation.py | Runs first on every escalation tick: repoints an approval To-Do at the effective approver when a delegation was set (or lifted) after the round had already opened, closing the duplicate. Without it the activity stays in the principal's inbox for the life of the delegation |
 | `cron_auto_expire()` | escalation.py | **Cancel** (not refuse) requests past `auto_expire_hours` via `_force_terminal` |
 | `cron_consent_approval()` | escalation.py | Auto-approve after consent window; skips sequential categories, refused approvers, `pending_change_field`, `_can_consent_approve()` vetoes |
 | `_replay_bound_operation()` | Called from `_notify_if_terminal_transition` when a request becomes `approved`, AFTER `_notify_source_document_state_change`, so an adopter sees itself approved before the operation it gated runs. Hands off to `approval.binding._replay`; does nothing once `date_binding_replayed` is set, when the binding's `run_on_approval` is off, or while an invoking call is recording its own approval |
@@ -914,7 +913,7 @@ Kill switch: `ir.config_parameter` `approval.binding_enabled`.
 | `_check_action_available()` | A server action must run on the binding's model, and a report must print it; a report cannot be in `request` mode, because refusing to render rolls back the request that would have asked |
 | `_run_action_on(records)` | Replays a server action on `records`, in their environment, with `active_model` / `active_ids` set — through `run()`, so the gate still applies |
 | `_get_selected(records)` | The records the binding's domain selects, in one `filtered_domain` over the whole recordset |
-| `_get_covered_ids(records)` | The records an approval already stands for, in one pass. An adopter's own approved request is taken as it is — the mixin protects the fields approvers decide on and owns withdrawal. Any other record is covered by an approved request pointing at it in the binding's category, and, when this binding raised it, only while `binding_snapshot` still matches |
+| `_get_covered_ids(records)` | The records an approval already stands for, in one pass. An adopter's own approved request is taken as it is — the mixin protects the fields approvers decide on and owns withdrawal. Any other record only by an approved request this binding raised, and only while `binding_snapshot` still matches: a request in the same category raised by hand or by another binding covered every binding on the record (2026-10-09 review, S4) |
 | `_get_snapshot(record)` | The values the domain's paths read from the record now. No domain reads nothing, so its approval covers the operation whatever the record's state |
 | `_enforce(record, elevation, observations, covered_ids)` | One binding on one record. `elevation` is passed in rather than read from `self.env`: the binding is read through `sudo()`, so its own env reports every caller as elevated — which, under `bypass`, let an ordinary user straight through a Block gate |
 | `_elevation()` | `none`, `superuser` (uid is SUPERUSER_ID) or `self_elevated` |
@@ -1275,13 +1274,6 @@ hold both duties. `data/ir_access_sod_data.xml` ships "manage access and approve
 | File | `models/mail_activity_type.py` |
 |------|-------------------------------|
 | Method | `_get_model_info_by_xmlid()` registers approval activity type |
-
-### res.groups (extended)
-
-| File | `models/res_groups.py` |
-|------|------------------------|
-| Method | `write()` — when `user_ids`, `implied_ids` or `all_user_ids` move, calls `approval.request._invalidate_escalation_manager_cache()` |
-| Why | The default escalation manager is memoised per (transaction, company) by group membership. Membership can change from the GROUP side, which no `res.users` hook sees, and the memo would then hand escalations to someone who no longer holds the privilege |
 
 ### res.users (extended)
 

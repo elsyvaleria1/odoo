@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any
 
 from odoo import api, models
+from odoo.exceptions import UserError
 from odoo.fields import Command
 
 from . import approval_trace as trace
@@ -47,6 +48,8 @@ class ApprovalRequestRouting(models.Model):
             "approval_deadline_hours": cat.approval_deadline_hours,
             "sla_target_hours": cat.sla_target_hours,
             "sla_warning_pct": cat.sla_warning_pct,
+            "consent_approval_hours": cat.consent_approval_hours,
+            "auto_expire_hours": cat.auto_expire_hours,
             "rules": [
                 {
                     "name": r.name,
@@ -118,7 +121,11 @@ class ApprovalRequestRouting(models.Model):
         if remembered is not None:
             return rules & rules.browse(remembered)
         matched = rules.sudo().filtered(
-            lambda rule: self._rule_applies_to_company(rule) and rule._evaluate(self)
+            lambda rule: (
+                rule.active
+                and self._rule_applies_to_company(rule)
+                and rule._evaluate(self)
+            )
         )
         return matched.with_env(rules.env)
 
@@ -202,7 +209,8 @@ class ApprovalRequestRouting(models.Model):
                     ),
                     message_type="notification",
                 )
-                self.applied_rule_ids |= rule
+                with self._recording():
+                    self.applied_rule_ids |= rule
                 return True
 
             if rule.action_type == "auto_refuse":
@@ -226,7 +234,8 @@ class ApprovalRequestRouting(models.Model):
                     ),
                     message_type="notification",
                 )
-                self.applied_rule_ids |= rule
+                with self._recording():
+                    self.applied_rule_ids |= rule
                 if self.state == "refused":
                     self._refuse_approval_request()
                 return True
@@ -325,7 +334,8 @@ class ApprovalRequestRouting(models.Model):
                 desired.matched_rules
             )
             if desired_applied != request.applied_rule_ids:
-                request.applied_rule_ids = desired_applied
+                with request._recording():
+                    request.applied_rule_ids = desired_applied
 
             rows_to_delete.extend(
                 dup_approver.id for dup_approver in desired.duplicates
@@ -434,6 +444,18 @@ class ApprovalRequestRouting(models.Model):
         )
         if not arrived and not departed:
             return self.env["approval.approver"]
+        if not current:
+            trace.REFUSAL.event(
+                "reroute_leaves_no_step", request=self.id, departed=departed.ids
+            )
+            raise UserError(
+                self.env._(
+                    "After this change no approval step applies to %(name)s, so "
+                    "nobody would decide it. Cancel it and submit a new request "
+                    "instead.",
+                    name=self.display_name,
+                )
+            )
         for row in self.approver_ids:
             vals = desired.staging.get(row.user_id.id)
             staged = Step.browse(vals["step_ids"]) if vals else Step
@@ -452,6 +474,11 @@ class ApprovalRequestRouting(models.Model):
             for user_id, vals in desired.to_create.items()
             if set(vals["step_ids"]) & set(arrived.ids)
         }
+        superseded = desired.superseded_delegations.filtered(
+            lambda row: row.delegate_id.id in missing
+        )
+        if superseded:
+            self._retire_superseded_delegations(superseded)
         created = self._create_live_approver_rows(missing)
         for row in created:
             row.write({"step_ids": [Command.set(missing[row.user_id.id]["step_ids"])]})

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import ValidationError
+from odoo.fields import Command
 from odoo.tests import common, tagged
 
 from .common import (
@@ -98,7 +99,7 @@ class TestConditionalRules(common.TransactionCase):
             self._create_request(priority="3").approver_ids.user_id,
         )
 
-    def test_a_step_never_applies_by_an_archived_rule(self):
+    def test_a_step_is_never_conditioned_on_an_archived_rule(self):
         rule = self.env["approval.rule"].create(
             {
                 "name": "Archived Rule",
@@ -110,6 +111,16 @@ class TestConditionalRules(common.TransactionCase):
                 "active": False,
             }
         )
+        with self.assertRaises(ValidationError):
+            self.env["approval.category.step"].create(
+                {
+                    "category_id": self.category.id,
+                    "name": "By an archived rule",
+                    "minimum": 1,
+                    "when_rule_ids": [Command.link(rule.id)],
+                    "member_ids": [Command.create({"user_id": self.extra_approver.id})],
+                }
+            )
 
         request = self._create_request(amount=5000)
         self.assertNotIn(rule, request.applied_rule_ids)

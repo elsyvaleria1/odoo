@@ -473,9 +473,7 @@ class TestApprovalBinding(common.TransactionCase):
             "and the replay must not raise another request",
         )
 
-    def test_block_mode_passes_once_an_approved_request_points_at_the_record(self):
-        self._bind(mode="block", category_id=self.category.id, sudo_policy="enforce")
-        partner = self._partner()
+    def _approved_request_for(self, partner, binding=None):
         request = self.env["approval.request"].create(
             {
                 "name": "Approved separately",
@@ -483,10 +481,27 @@ class TestApprovalBinding(common.TransactionCase):
                 "request_owner_id": self.env.user.id,
                 "res_model": "res.partner",
                 "res_id": partner.id,
+                "binding_id": binding.id if binding else False,
             }
         )
         request.action_confirm()
         self._approve(request)
+        return request
+
+    def test_block_mode_ignores_an_approved_request_it_did_not_raise(self):
+        self._bind(mode="block", category_id=self.category.id, sudo_policy="enforce")
+        partner = self._partner()
+        self._approved_request_for(partner)
+        with self.assertRaises(UserError):
+            partner.action_archive()
+        self.assertTrue(partner.active)
+
+    def test_block_mode_passes_once_its_own_request_is_approved(self):
+        binding = self._bind(
+            mode="block", category_id=self.category.id, sudo_policy="enforce"
+        )
+        partner = self._partner()
+        self._approved_request_for(partner, binding)
         partner.action_archive()
         self.assertFalse(partner.active)
 
@@ -633,7 +648,7 @@ class TestApprovalBinding(common.TransactionCase):
 
     def test_invoke_records_only_the_steps_the_caller_may_decide(self):
         category = self.env["approval.category"].create(
-            {"name": "Invoke Steps", "approval_minimum": 1}
+            {"name": "Invoke Steps", "approval_minimum": 1, "allow_self_approval": True}
         )
         second = self._user("binding_inv_c", "base.group_partner_manager")
         for sequence, user in ((10, self.approver), (20, second)):

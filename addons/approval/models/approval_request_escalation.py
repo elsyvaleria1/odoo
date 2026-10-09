@@ -269,8 +269,6 @@ class ApprovalRequestEscalation(models.Model):
         now = fields.Datetime.now()
         reminders_sent = 0
 
-        self._reconcile_delegation_activities()
-
         for priority, rules in self._get_escalation_rules().items():
             reminder_threshold = now - timedelta(hours=rules["first_reminder"])
             escalation_threshold = now - timedelta(hours=rules["escalation"])
@@ -304,8 +302,12 @@ class ApprovalRequestEscalation(models.Model):
                 limit=CRON_BATCH_LIMIT,
             )
             acknowledged_by_count: dict[int, list[int]] = {}
+            # A request nobody could be reminded about is stamped all the same:
+            # left unstamped, the oldest of them would fill every later batch.
+            passed_over: list[int] = []
 
             for request in requests_to_remind:
+                did_work = 0
                 try:
                     with self.env.cr.savepoint():
                         did_work = self._escalate_or_remind_one(
@@ -316,9 +318,9 @@ class ApprovalRequestEscalation(models.Model):
                         "Smart escalation failed for request %s; skipping.",
                         request.id,
                     )
-                    continue
 
                 if not did_work:
+                    passed_over.append(request.id)
                     continue
 
                 acknowledged_by_count.setdefault(
@@ -327,8 +329,10 @@ class ApprovalRequestEscalation(models.Model):
                 ).append(request.id)
                 reminders_sent += 1
 
+            if passed_over:
+                self.browse(passed_over).write({"last_reminder_date": now})
             for prior_count, ids in acknowledged_by_count.items():
-                self.browse(ids).sudo().write(
+                self.browse(ids).write(
                     {
                         "last_reminder_date": now,
                         "reminder_count": prior_count + 1,
@@ -353,8 +357,10 @@ class ApprovalRequestEscalation(models.Model):
         # escalate again on every run: it does not clear itself, so binding it
         # to the flag alone re-sent the same notice daily for the life of the
         # request. Reset to draft clears the flag and re-opens escalation.
-        needs_escalation = not request.escalated_to_manager and (
-            has_stalled_approver or request.date_confirmed < escalation_threshold
+        needs_escalation = (
+            request.category_id.escalate_overdue
+            and not request.escalated_to_manager
+            and (has_stalled_approver or request.date_confirmed < escalation_threshold)
         )
         trace.ESCALATION.event(
             "triage",
@@ -374,56 +380,8 @@ class ApprovalRequestEscalation(models.Model):
         return did_work
 
     @api.model
-    def _reconcile_delegation_activities(self) -> None:
-        pending_approvers = self.env["approval.approver"].search(
-            [
-                ("state", "=", "pending"),
-                ("request_id.state", "=", "pending"),
-                ("delegate_id", "!=", False),
-            ],
-            order="id",
-            limit=CRON_BATCH_LIMIT,
-        )
-        for approver in pending_approvers:
-            request = approver.request_id
-            effective = approver._get_effective_approver()
-            asked = request._get_approval_activities()
-            correct = asked.filtered_domain([("user_id", "=", effective.id)])
-            stale = asked.filtered_domain(
-                [
-                    ("user_id", "!=", effective.id),
-                    ("user_id", "in", (approver.user_id | approver.delegate_id).ids),
-                ]
-            )
-            if not stale:
-                continue
-            trace.ESCALATION.event(
-                "delegation_activities",
-                approver=approver.id,
-                request=request.id,
-                effective=effective.id,
-                correct=correct.ids,
-                stale=stale.ids,
-            )
-            try:
-                with self.env.cr.savepoint():
-                    if correct:
-                        stale.action_feedback()
-                    else:
-                        stale[:1].sudo().write({"user_id": effective.id})
-                        stale[1:].action_feedback()
-            except Exception:
-                _logger.exception(
-                    "Delegation activity reconciliation failed for "
-                    "approver %s; skipping.",
-                    approver.id,
-                )
-
-    @api.model
     def cron_auto_expire(self) -> None:
-        expired_requests, hours_by_category = self._eligible_by_category_domain(
-            "auto_expire_hours",
-        )
+        expired_requests = self._get_past_window("auto_expire_hours")
         if not expired_requests:
             return
 
@@ -432,7 +390,7 @@ class ApprovalRequestEscalation(models.Model):
             body = self.env._(
                 "This request was automatically cancelled after exceeding "
                 "the %(hours)d-hour expiration window.",
-                hours=hours_by_category[request.category_id.id],
+                hours=request._get_snapshot_config("auto_expire_hours"),
             )
             try:
                 with self.env.cr.savepoint():
@@ -458,14 +416,22 @@ class ApprovalRequestEscalation(models.Model):
             _logger.info("Auto-expire: Cancelled %d expired requests", expired_count)
 
     @api.model
-    def _eligible_by_category_domain(
-        self,
-        hours_field: str,
-        extra_domain=None,
-    ) -> tuple:
+    def _get_past_window(self, hours_field: str, extra_domain=None):
+        """Pending requests past the `hours_field` window they were submitted under."""
+        now = fields.Datetime.now()
+        candidates = self._eligible_by_category_domain(hours_field, extra_domain)
+        return candidates.filtered(
+            lambda request: (
+                (hours := request._get_snapshot_config(hours_field))
+                and request.date_confirmed <= now - timedelta(hours=hours)
+            )
+        )[:CRON_BATCH_LIMIT]
+
+    @api.model
+    def _eligible_by_category_domain(self, hours_field: str, extra_domain=None):
         categories = self.env["approval.category"].search([(hours_field, ">", 0)])
         if not categories:
-            return self.browse(), {}
+            return self.browse()
 
         now = fields.Datetime.now()
         hours_by_category = {c.id: c[hours_field] for c in categories}
@@ -484,23 +450,21 @@ class ApprovalRequestEscalation(models.Model):
         domain = Domain([("state", "=", "pending")]) & windows
         if extra_domain:
             domain &= Domain(extra_domain)
-        requests = self.search(
-            domain,
-            order="date_confirmed asc",
-            limit=CRON_BATCH_LIMIT,
-        )
+        # Unlimited: the window a request was submitted under can be wider than its
+        # category's today, or closed, so the first rows found need not be due, and
+        # a limit here would keep the same undue ones at the head of every run.
+        requests = self.search(domain, order="date_confirmed asc")
         trace.CRON.event(
             "eligible_by_window",
             window=hours_field,
             categories=len(categories),
             requests=requests.ids,
-            capped=len(requests) == CRON_BATCH_LIMIT,
         )
-        return requests, hours_by_category
+        return requests
 
     @api.model
     def cron_consent_approval(self) -> None:
-        eligible, _hours = self._eligible_by_category_domain(
+        eligible = self._get_past_window(
             "consent_approval_hours",
             extra_domain=[("pending_change_field", "=", False)],
         )
@@ -508,7 +472,7 @@ class ApprovalRequestEscalation(models.Model):
         for request in eligible:
             try:
                 with self.env.cr.savepoint():
-                    if self._consent_approve_one(request, request.category_id):
+                    if self._consent_approve_one(request):
                         consent_count += 1
             except Exception:
                 _logger.exception(
@@ -524,7 +488,7 @@ class ApprovalRequestEscalation(models.Model):
                 consent_count,
             )
 
-    def _consent_approve_one(self, request, category) -> bool:
+    def _consent_approve_one(self, request) -> bool:
         if not request._can_consent_approve():
             return False
 
@@ -537,16 +501,17 @@ class ApprovalRequestEscalation(models.Model):
             return False
 
         old_state = request.state
+        hours = request._get_snapshot_config("consent_approval_hours")
         trace.ESCALATION.note(
             "consent_approve",
             request=request.id,
             rows=pending.ids,
-            hours=category.consent_approval_hours,
+            hours=hours,
         )
         pending.sudo()._approve_for_every_step(
             note=self.env._(
                 "No objection within the %(hours)d-hour consent window.",
-                hours=category.consent_approval_hours,
+                hours=hours,
             )
         )
         request._cancel_activities()
@@ -555,7 +520,7 @@ class ApprovalRequestEscalation(models.Model):
             body=self.env._(
                 "Auto-approved by consent: no objection received "
                 "within %(hours)d-hour window.",
-                hours=category.consent_approval_hours,
+                hours=hours,
             ),
             message_type="notification",
             subtype_xmlid="mail.mt_note",
@@ -758,6 +723,7 @@ class ApprovalRequestEscalation(models.Model):
                         "date_deadline": fields.Date.today(),
                     },
                 )
+                existing_activity[:1].action_notify()
             else:
                 approver._get_activity_target().activity_schedule(
                     activity_type_id=(

@@ -56,8 +56,8 @@ class MaintenanceOrder(models.Model):
         self.invalidate_recordset(["approval_request_id"])
         self._check_can_request_approval()
         category = self._get_approval_category()
-        approval = self.env["approval.request"].create(
-            self._prepare_approval_request_values(category)
+        approval = self.env["approval.request"]._create_raised(
+            [self._prepare_approval_request_values(category)]
         )
         self.write({"approval_request_id": approval.id})
         self.message_post(

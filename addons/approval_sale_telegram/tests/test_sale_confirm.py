@@ -98,6 +98,8 @@ class SaleConfirmTestBase(TelegramBotTestCase):
                 "request_owner_id": self.env.user.id,
                 "res_model": order._name,
                 "res_id": order.id,
+                "amount": order.amount_total,
+                "currency_id": order.currency_id.id,
             }
         )
         order.approval_request_id = request

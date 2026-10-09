@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 
@@ -117,6 +117,7 @@ class ApprovalCategoryStep(models.Model):
         column1="step_id",
         column2="rule_id",
         string="When Rules Match",
+        context={"active_test": False},
         help="The step applies only when every one of these rules matches the "
         "request, as the rule itself evaluates it: a figure, the source document, "
         "and the rule's company.",
@@ -127,6 +128,7 @@ class ApprovalCategoryStep(models.Model):
         column1="step_id",
         column2="rule_id",
         string="Unless Rules Match",
+        context={"active_test": False},
         help="The step does not apply when any of these rules matches the request.",
     )
 
@@ -284,8 +286,40 @@ class ApprovalCategoryStep(models.Model):
     def _domain_source_field(self) -> str:
         return "subject_domain"
 
+    @api.constrains("when_rule_ids", "unless_rule_ids", "category_id")
+    def _check_condition_rules(self) -> None:
+        for step in self:
+            rules = (step.when_rule_ids | step.unless_rule_ids).with_context(
+                active_test=False
+            )
+            foreign = rules.filtered(
+                lambda rule, category=step.category_id: (
+                    not rule.active
+                    or rule.action_type != "condition"
+                    or rule.category_id != category
+                )
+            )
+            if foreign:
+                trace.REFUSAL.event(
+                    "step_rule_not_a_condition", step=step.id, rules=foreign.ids
+                )
+                raise ValidationError(
+                    self.env._(
+                        "Step %(step)s can only be conditioned on active condition "
+                        "rules of its own category, not on %(rules)s.",
+                        step=step.name,
+                        rules=", ".join(foreign.mapped("name")),
+                    )
+                )
+
     @api.constrains(
-        "minimum", "member_ids", "group_id", "user_ids", "subject_user_path", "walk"
+        "minimum",
+        "member_ids",
+        "group_id",
+        "user_ids",
+        "subject_user_path",
+        "walk",
+        "counts_added_approvers",
     )
     def _check_pool(self) -> None:
         for step in self:
@@ -407,7 +441,9 @@ class ApprovalCategoryStep(models.Model):
         current = {
             member.user_id.id
             for member in self.member_ids
-            if not member.date_end or member.date_end >= today
+            # the superuser is archived by design and still acts
+            if (member.user_id.active or member.user_id.id == SUPERUSER_ID)
+            and (not member.date_end or member.date_end >= today)
         }
         from_document = self._get_source_user_ids(document, request)
         in_company = self._filter_company_user_ids(current | from_document, company)

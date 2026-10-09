@@ -4,7 +4,7 @@ from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
-from .common import ApprovalCommon
+from .common import ApprovalCommon, add_rule_step
 
 
 @tagged("post_install", "-at_install")
@@ -264,7 +264,6 @@ class TestLockedFields(ApprovalCommon):
             "request_owner_id": self.approver_1.id,
             "company_id": request.company_id.id,
             "name": "HACKED-0001",
-            "date_confirmed": "2020-01-01 00:00:00",
             "quantity": 7.0,
             "amount": 999.0,
         }
@@ -282,7 +281,7 @@ class TestLockedFields(ApprovalCommon):
         request = self._prepare_request(category)
         self.assertEqual(request.approval_minimum, 2)
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(AccessError):
             request.with_user(self.owner_user).write({"approval_minimum": 1})
 
         request.with_user(self.approver_1).action_approve()
@@ -308,3 +307,171 @@ class TestLockedFields(ApprovalCommon):
         self.assertFalse(request.date_confirmed)
         request.with_user(self.owner_user).write({"quantity": 4.0})
         self.assertEqual(request.quantity, 4.0)
+
+
+@tagged("post_install", "-at_install")
+class TestEngineOwnedFields(ApprovalCommon):
+    """Who may decide a request writes none of what records its course or its subject."""
+
+    FORGED = {
+        "granted_by_user_id": None,
+        "revoked_state": "refused",
+        "pending_change_field": "reason",
+        "refusal_note": "forged",
+        "approval_minimum": 0,
+        "date_confirmed": "2020-01-01 00:00:00",
+        "escalated_to_manager": True,
+        "reminder_count": 9,
+        "last_reminder_date": "2099-01-01 00:00:00",
+        "requester_id": None,
+        "subject_key": "access:1:edit",
+        "operation": "action_ship",
+        "res_model": "res.partner",
+        "res_id": None,
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.category = self._make_category(
+            name=f"Engine fields {self.id()}",
+            approvers=[self.approver_1, self.approver_2],
+            approval_minimum=2,
+        )
+
+    def _forged(self, user):
+        return {
+            field: {
+                "granted_by_user_id": user.id,
+                "requester_id": self.approver_1.id,
+                "res_id": self.partner.id,
+            }.get(field, value)
+            for field, value in self.FORGED.items()
+        }
+
+    def test_neither_owner_nor_approver_writes_them_on_a_pending_request(self):
+        request = self._prepare_request(self.category)
+        for user in (self.owner_user, self.approver_1, self.manager_user):
+            for field, value in self._forged(user).items():
+                with self.assertRaises(AccessError, msg=f"{user.login} wrote {field}"):
+                    request.with_user(user).write({field: value})
+        self.assertEqual(request.state, "pending")
+        self.assertFalse(request.granted_by_user_id)
+
+    def test_nor_on_a_draft(self):
+        draft = self._prepare_request(self.category, confirm=False)
+        for field, value in self._forged(self.owner_user).items():
+            with self.assertRaises(AccessError, msg=f"draft took {field}"):
+                draft.with_user(self.owner_user).write({field: value})
+
+    def test_nor_when_creating_one(self):
+        for field, value in self._forged(self.owner_user).items():
+            with self.assertRaises(AccessError, msg=f"create took {field}"):
+                self.env["approval.request"].with_user(self.owner_user).create(
+                    {
+                        "category_id": self.category.id,
+                        "request_owner_id": self.owner_user.id,
+                        field: value,
+                    }
+                )
+
+    def test_a_source_raises_its_request_with_its_link(self):
+        request = (
+            self.env["approval.request"]
+            .with_user(self.owner_user)
+            ._create_raised(
+                [
+                    {
+                        "category_id": self.category.id,
+                        "request_owner_id": self.owner_user.id,
+                        "res_model": "res.partner",
+                        "res_id": self.partner.id,
+                    }
+                ]
+            )
+        )
+        self.assertEqual(
+            (request.res_model, request.res_id), ("res.partner", self.partner.id)
+        )
+        with self.assertRaises(AccessError):
+            request.with_user(self.owner_user).write({"res_id": self.owner_user.id})
+
+    def test_an_owner_routes_through_rules_they_may_not_write(self):
+        rule = add_rule_step(
+            self.category,
+            self.approver_2,
+            name="Any priority",
+            condition_field="priority",
+            operator="gte",
+            threshold=0,
+        )
+        self.env["approval.rule"].create(
+            {
+                "name": "Small ones pass",
+                "category_id": self.category.id,
+                "condition_field": "amount",
+                "operator": "lt",
+                "threshold": 100,
+                "action_type": "auto_approve",
+            }
+        )
+        request = (
+            self.env["approval.request"]
+            .with_user(self.owner_user)
+            .create(
+                {
+                    "category_id": self.category.id,
+                    "request_owner_id": self.owner_user.id,
+                    "amount": 10,
+                }
+            )
+        )
+        self.assertIn(rule, request.applied_rule_ids)
+        request.with_user(self.owner_user).action_confirm()
+        self.assertEqual(request.state, "approved")
+
+    def test_an_owner_duplicates_their_request(self):
+        request = self._prepare_request(self.category)
+        clone = request.with_user(self.owner_user).copy()
+        self.assertEqual(clone.state, "new")
+        self.assertEqual(clone.approval_minimum, 2)
+
+    def _refuse_with_reason(self, request, user, reason):
+        row = request.approver_ids.filtered(lambda a: a.user_id == user)
+        self.env["wizard.approval.request.decide"].with_user(user).create(
+            {
+                "approver_id": row.id,
+                "decision_type": "refuse",
+                "refusal_reason_id": reason.id,
+                "note": "no",
+            }
+        ).action_confirm_refuse()
+
+    def test_a_deciding_refusal_gives_the_request_its_reason(self):
+        request = self._prepare_request(self.category)
+        reason = self.env.ref("approval.refusal_reason_policy_violation")
+        self._refuse_with_reason(request, self.approver_1, reason)
+        self.assertEqual(request.state, "refused")
+        self.assertEqual(request.refusal_reason_id, reason)
+        self.assertEqual(request.refusal_note, "no")
+
+    def test_an_advisory_refusal_gives_the_request_none(self):
+        category = self._make_category(
+            name=f"Advised {self.id()}", approvers=[self.approver_1]
+        )
+        add_rule_step(
+            category,
+            self.approver_2,
+            required=False,
+            name="Advice",
+            condition_field="priority",
+            operator="gte",
+            threshold=0,
+        )
+        request = self._prepare_request(category)
+        reason = self.env.ref("approval.refusal_reason_policy_violation")
+        self._refuse_with_reason(request, self.approver_2, reason)
+        self.assertEqual(request.state, "pending")
+        request.with_user(self.approver_1).action_approve()
+        self.assertEqual(request.state, "approved")
+        self.assertFalse(request.refusal_reason_id)
+        self.assertFalse(request.refusal_note)

@@ -47,3 +47,25 @@ class TestApprovalDuties(ApprovalCommon):
             self.env["res.users.grant"]._grant(
                 self.approver_2, self.payers, cause="manual"
             )
+
+    def _pending_row(self):
+        request = self._prepare_request(self.category)
+        return request.approver_ids.filtered(lambda a: a.user_id == self.approver_2)
+
+    def test_standing_in_for_an_approver_is_taking_on_their_duty(self):
+        with (
+            mute_logger("odoo.addons.base.models.ir_access_sod"),
+            self.assertRaises(AccessError),
+        ):
+            self._delegate_row(self._pending_row(), self.approver_1)
+
+    def test_a_delegate_given_the_other_duty_is_refused(self):
+        stand_in = self.env["res.users"].create(
+            {"name": "Stand In", "login": "duties_stand_in"}
+        )
+        self._delegate_row(self._pending_row(), stand_in)
+        with (
+            mute_logger("odoo.addons.base.models.ir_access_sod"),
+            self.assertRaises(AccessError),
+        ):
+            self.env["res.users.grant"]._grant(stand_in, self.payers, cause="manual")

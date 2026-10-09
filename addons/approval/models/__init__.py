@@ -39,6 +39,5 @@ from . import (
     mail_activity,
     mail_activity_type,
     models,
-    res_groups,
     res_users,
 )

@@ -765,3 +765,75 @@ class TestTerminalStateIsDefinedOnce(ApprovalCommon):
             "these views spell out the terminal states instead of asking "
             "is_terminal: %s" % offenders,
         )
+
+
+@tagged("post_install", "-at_install")
+class TestFunnelOutcomes(ApprovalCommon):
+    def _stuck_request(self):
+        category = self._make_category(name=f"Stuck {self.id()}", with_pool=False)
+        for sequence, exclusive in ((10, True), (20, False)):
+            self.env["approval.category.step"].create(
+                {
+                    "category_id": category.id,
+                    "name": f"Step {sequence}",
+                    "sequence": sequence,
+                    "exclusive": exclusive,
+                    "member_ids": [(0, 0, {"user_id": self.approver_1.id})],
+                }
+            )
+        request = self._prepare_request(category)
+        request.with_user(self.approver_1).action_approve()
+        self.assertEqual(request.state, "pending")
+        self.assertFalse(
+            request.approver_ids.filtered(lambda a: a.state in ("pending", "waiting"))
+        )
+        return request
+
+    def test_cancelling_a_request_with_every_row_decided_cancels_it(self):
+        request = self._stuck_request()
+        request.with_user(self.owner_user).action_cancel()
+        self.assertEqual(request.state, "cancelled")
+        self.assertTrue(request.date_cancelled)
+        request.with_user(self.manager_user).action_reset_to_draft()
+        self.assertEqual(request.state, "new")
+
+    def test_a_reset_closes_the_approvers_activities(self):
+        category = self._make_category(
+            name=f"Reset acts {self.id()}", approvers=[self.approver_1]
+        )
+        request = self._prepare_request(category)
+        self.assertTrue(request._get_approval_activities())
+        request._force_draft()
+        self.assertEqual(request.state, "new")
+        self.assertFalse(request._get_approval_activities())
+
+    def test_a_managers_withdrawal_is_told_as_theirs(self):
+        category = self._make_category(
+            name=f"Withdraw {self.id()}",
+            approvers=[self.approver_1, self.approver_2],
+            approval_minimum=2,
+        )
+        request = self._prepare_request(category)
+        request.with_user(self.approver_1).action_approve()
+        row = request.approver_ids.filtered(lambda a: a.user_id == self.approver_1)
+        request.with_user(self.manager_user).action_withdraw(row)
+        message = request.message_ids[:1]
+        self.assertEqual(message.author_id, self.manager_user.partner_id)
+        self.assertIn(self.approver_1.name, message.body)
+
+    def test_the_log_says_what_a_withdrawal_and_a_reset_left(self):
+        category = self._make_category(
+            name=f"State after {self.id()}", approvers=[self.approver_1]
+        )
+        request = self._prepare_request(category)
+        request.with_user(self.approver_1).action_approve()
+        self.assertEqual(request.state, "approved")
+        request.with_user(self.approver_1).action_withdraw()
+        withdrawn = request.decision_log_ids.filtered(
+            lambda log: log.verdict == "withdrawn"
+        )
+        self.assertEqual(withdrawn.state_after, "pending")
+        request.with_user(self.owner_user).action_cancel()
+        request.with_user(self.manager_user).action_reset_to_draft()
+        reset = request.decision_log_ids.filtered(lambda log: log.verdict == "reset")
+        self.assertEqual(reset.state_after, "new")

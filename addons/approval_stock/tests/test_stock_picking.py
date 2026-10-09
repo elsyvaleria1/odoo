@@ -209,6 +209,30 @@ class TestStockPickingApprovalRequired(TransactionCase):
             "transfer, so the next one serves it",
         )
 
+    def test_a_step_that_does_not_apply_does_not_disqualify_the_catch_all(self):
+        elsewhere = self.env["res.company"].create({"name": "Elsewhere"})
+        stranger = new_test_user(
+            self.env,
+            login="stock_catch_all_stranger",
+            company_id=elsewhere.id,
+            company_ids=[Command.set(elsewhere.ids)],
+        )
+        self.env["approval.category.step"].create(
+            {
+                "category_id": self.catch_all.id,
+                "name": "Only for other operations",
+                "sequence": 20,
+                "minimum": 1,
+                "member_ids": [Command.create({"user_id": stranger.id})],
+                "subject_model_id": self.env["ir.model"]._get_id("stock.picking"),
+                "subject_domain": repr([("picking_type_id", "=", 0)]),
+            }
+        )
+        picking = self._create_picking(location_id=self.restricted_location.id)
+
+        self.assertTrue(self.catch_all._can_be_met_for(picking))
+        self.assertEqual(picking._get_approval_category(), self.catch_all)
+
     def test_a_flag_with_no_category_at_all_does_not_brick_the_transfer(self):
         self.env["approval.category"].search(
             [("approval_type", "=", "stock"), ("target_model", "=", False)],

@@ -95,8 +95,8 @@ class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
 
     def test_a_document_refused_for_its_own_sake_still_ends_the_batch(self):
         plain, asked, _blocked = self._batch()
-        refusing = self._document("No category at all", None)
-        refusing.approval_required = True
+        refusing = self._document("Missing what approval reads", self.here)
+        refusing.partner_id = False
 
         with self.assertRaises(UserError):
             (plain | asked | refusing).action_ship()

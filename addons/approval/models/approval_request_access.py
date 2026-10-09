@@ -8,9 +8,10 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.fields import Command
 
 from . import approval_trace as trace
-from .approval_utils import is_approval_manager
+from .approval_utils import RAISE_ADMISSION, is_approval_manager
 
 _PRODUCING_REQUESTS = "approval.producing_request_ids"
+_RECORD_ADMISSION = "approval.record"
 
 
 class ApprovalRequestAccess(models.Model):
@@ -255,16 +256,46 @@ class ApprovalRequestAccess(models.Model):
         },
     )
 
-    _SYSTEM_LOCKED_FIELDS = frozenset(
+    _SYSTEM_LOCKED_FIELDS = frozenset({"name"})
+
+    # What the engine records about the request's course. Writing one is taking a
+    # decision, granting, revoking or silencing reminders without the funnel that
+    # does it, so only the engine's own elevated writes set them, in any state.
+    _WORKFLOW_FIELDS = frozenset(
         {
+            "applied_rule_ids",
             "approval_minimum",
-            "name",
-            "date_confirmed",
+            "binding_replay_error",
             "category_snapshot",
+            "date_binding_replayed",
+            "date_confirmed",
+            "date_operation_run",
+            "date_revoked",
+            "escalated_to_manager",
+            "granted_by_user_id",
+            "last_reminder_date",
+            "pending_change_field",
+            "refusal_note",
+            "refusal_reason_id",
+            "reminder_count",
+            "revoked_by_user_id",
+            "revoked_state",
+        },
+    )
+
+    # What the request is about. Its approval acts on that: it runs the operation,
+    # grants the subject, covers the document. The source raises the request with
+    # them (_create_raised), and nothing rewrites them afterwards.
+    _SOURCE_LINK_FIELDS = frozenset(
+        {
             "binding_id",
             "binding_snapshot",
-            "date_binding_replayed",
-            "binding_replay_error",
+            "operation",
+            "operation_snapshot",
+            "requester_id",
+            "res_id",
+            "res_model",
+            "subject_key",
         },
     )
 
@@ -310,6 +341,78 @@ class ApprovalRequestAccess(models.Model):
                     fields=", ".join(sorted(forged)),
                 ),
             )
+
+    @api.model
+    def _create_raised(self, vals_list: list[dict]) -> Self:
+        """Create the requests source records raise, each naming its source."""
+        with contextlib.ExitStack() as stack:
+            for vals in vals_list:
+                stack.enter_context(
+                    self.env.transaction.admitting(
+                        vals["res_model"], RAISE_ADMISSION, [vals["res_id"]]
+                    )
+                )
+            return self.create(vals_list)
+
+    @api.model
+    def _is_raised_by_source(self, vals: dict) -> bool:
+        return RAISE_ADMISSION in self.env.transaction.admitted_names(
+            vals.get("res_model") or "", vals.get("res_id") or 0
+        )
+
+    def _are_raised_by_their_sources(self) -> bool:
+        return all(
+            RAISE_ADMISSION
+            in self.env.transaction.admitted_names(request.res_model, request.res_id)
+            for request in self
+        )
+
+    @contextlib.contextmanager
+    def _recording(self) -> Iterator[None]:
+        """Let the engine write its own workflow fields on these requests, as the
+        user it acts for: in the transaction, which nothing an RPC caller sends
+        reaches, and for these ids only."""
+        with self.env.transaction.admitting(
+            "approval.request", _RECORD_ADMISSION, self.ids
+        ):
+            yield
+
+    def _is_recording(self) -> bool:
+        return bool(self) and set(self.ids) <= self.env.transaction.admitted_ids(
+            "approval.request", _RECORD_ADMISSION
+        )
+
+    def _check_engine_owned_fields(self, vals: dict, create: bool = False) -> None:
+        if self.env.su:
+            return
+        forged = vals.keys() & self._WORKFLOW_FIELDS
+        if forged and self._is_recording():
+            forged = set()
+        linked = vals.keys() & self._SOURCE_LINK_FIELDS
+        raised = (
+            self._is_raised_by_source(vals)
+            if create
+            else self._are_raised_by_their_sources()
+        )
+        if linked and not raised:
+            forged |= linked
+        if not forged:
+            return
+        trace.REFUSAL.event(
+            "engine_owned_fields",
+            requests=self.ids,
+            uid=self.env.uid,
+            create=create,
+            fields=sorted(forged),
+        )
+        raise AccessError(
+            self.env._(
+                "%(fields)s cannot be set on an approval request: the approval "
+                "workflow records them itself, from the decisions taken and the "
+                "document that raised the request.",
+                fields=", ".join(sorted(forged)),
+            ),
+        )
 
     def _check_locked_fields(self, vals: dict) -> None:
         locked = self._get_fields_locked()

@@ -24,6 +24,28 @@ class ResUsers(models.Model):
         return res
 
     def _approval_handover_on_archive(self) -> None:
+        covered = (
+            self.env["approval.approver"]
+            .sudo()
+            .search(
+                [
+                    ("delegate_id", "in", self.ids),
+                    ("state", "in", ("pending", "waiting")),
+                    ("request_id.state", "=", "pending"),
+                ],
+            )
+        )
+        if covered:
+            trace.DELEGATION.note(
+                "delegate_archived", delegates=self.ids, rows=covered.ids
+            )
+            covered.write(
+                {
+                    "delegate_id": False,
+                    "delegate_start_date": False,
+                    "delegate_end_date": False,
+                }
+            )
         rows = (
             self.env["approval.approver"]
             .sudo()
@@ -50,6 +72,7 @@ class ResUsers(models.Model):
             illegal_targets = (
                 departed
                 | request.request_owner_id
+                | request._get_requester()
                 | others.user_id
                 | others.delegate_id
             )
@@ -60,7 +83,7 @@ class ResUsers(models.Model):
                 and request.company_id in successor.company_ids
             )
 
-            request.sudo()._get_user_approval_activities(
+            request.sudo()._get_approval_activities(
                 user=departed,
             ).unlink()
 
@@ -83,7 +106,7 @@ class ResUsers(models.Model):
                     },
                 )
                 if row.state == "pending":
-                    row._create_activity()
+                    row._create_activity(unlisted=True)
                 request.sudo().message_post(
                     body=self.env._(
                         "Pending approval reassigned from %(old)s to "
