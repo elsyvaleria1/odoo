@@ -5,7 +5,7 @@ from psycopg import IntegrityError
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
-from odoo.addons.device.tests.common import DeviceHttpCase
+from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
 
 
 @tagged("post_install", "-at_install")
@@ -230,3 +230,8 @@ class TestDeviceVoip(DeviceHttpCase):
         )
         self.assertEqual(self._settings(phone).status_code, 200)
         self.assertEqual(self._settings(phone).status_code, 200)
+
+
+@tagged("post_install", "-at_install")
+class TestDeviceVoipWithoutSu(NarrowedReceiver, TestDeviceVoip):
+    pass

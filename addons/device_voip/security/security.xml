@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_hand_softphone" model="res.groups">
+        <field
+            name="name">Privilege: a handset's receiver hands it its user's softphone settings</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

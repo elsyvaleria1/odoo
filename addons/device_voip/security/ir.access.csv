@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_hand_softphone_settings,Hand a softphone: the settings of a user who carries a handset,base.model_res_users_settings,privilege_hand_softphone,permission,cr,,,"[('user_id.phone_device_ids', '!=', False)]"
