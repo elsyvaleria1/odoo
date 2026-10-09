@@ -65,7 +65,7 @@ class WebsiteForumHelpdesk(WebsiteForum):
 
     def _prepare_question_template_vals(self, forum, post, question):
         values = super()._prepare_question_template_vals(forum, post, question)
-        if not request.env.user.has_group("helpdesk.group_helpdesk_user"):
+        if not request.env["helpdesk.ticket"].has_access("create"):
             values["show_create_ticket"] = False
             return values
         teams_per_forum_read_group = request.env["team.team"]._read_group(
