@@ -2164,3 +2164,33 @@ class TestChartTemplateLoadStatements(TransactionCase):
             self.assertEqual(len(loaded.group_id.parent_id), count)
 
         self.assertQueriesConstant(load, small=50, large=60)
+
+
+@tagged("post_install", "-at_install")
+class TestChartTemplateQueuedAtCommit(TransactionCase):
+    def test_a_company_without_a_chart_loads_the_queued_one(self):
+        company = self.env["res.company"].create({"name": "Queued chart"})
+        with (
+            patch.object(AccountChartTemplate, "try_loading") as try_loading,
+            patch.object(AccountChartTemplate, "_load") as load,
+        ):
+            company._load_chart_template_at_commit("be", guessed=True)
+            company._load_chart_template_at_commit("generic_coa", guessed=False)
+        self.assertEqual(try_loading.call_args.args[:2], ("be", company))
+        self.assertEqual(load.call_args.args[:2], ("generic_coa", company))
+        self.assertEqual((try_loading.call_count, load.call_count), (1, 1))
+
+    def test_a_chart_loaded_before_commit_is_the_one_kept(self):
+        company = self.env["res.company"].create({"name": "Loaded chart"})
+        self.env["account.chart.template"].try_loading(
+            "generic_coa", company, install_demo=False
+        )
+        with (
+            patch.object(AccountChartTemplate, "try_loading") as try_loading,
+            patch.object(AccountChartTemplate, "_load") as load,
+        ):
+            company._load_chart_template_at_commit("be", guessed=True)
+            company._load_chart_template_at_commit("generic_coa", guessed=False)
+        try_loading.assert_not_called()
+        load.assert_not_called()
+        self.assertEqual(company.account_config_id.chart_template, "generic_coa")

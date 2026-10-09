@@ -167,10 +167,9 @@ class ResCompany(models.Model):
                 )
                 self.env.cr.precommit.add(
                     functools.partial(
-                        self.env["account.chart.template"]._load,
+                        company._load_chart_template_at_commit,
                         root_template,
-                        company,
-                        install_demo=False,
+                        guessed=False,
                     )
                 )
         companies._set_category_defaults()
@@ -706,13 +705,38 @@ class ResCompany(models.Model):
                 if template_code != "generic_coa":
                     self.env.cr.precommit.add(
                         functools.partial(
-                            env["account.chart.template"].try_loading,
+                            env["res.company"]
+                            .browse(company.id)
+                            ._load_chart_template_at_commit,
                             template_code,
-                            env["res.company"].browse(company.id),
+                            guessed=True,
                         )
                     )
 
         return res
+
+    def _load_chart_template_at_commit(self, template_code, *, guessed) -> None:
+        # creating a company, or giving it a country, queues a chart for the
+        # commit; a chart loaded since, explicitly or by the other queued load,
+        # is the one the company keeps, and loading this one over it would
+        # load a chart twice, or leave the company naming one chart over the
+        # data of another
+        self.check_singleton()
+        current = self.account_config_id.chart_template
+        _debug.logic(
+            "queued_chart_template",
+            company=self,
+            template_code=template_code,
+            guessed=guessed,
+            current=current,
+        )
+        if current:
+            return
+        ChartTemplate = self.env["account.chart.template"]
+        if guessed:
+            ChartTemplate.try_loading(template_code, self)
+        else:
+            ChartTemplate._load(template_code, self, install_demo=False)
 
     def _existing_accounting(self) -> bool:
         self.check_singleton()
