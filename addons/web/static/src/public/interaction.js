@@ -8,6 +8,7 @@ import {
     SKIP_IMPLICIT_UPDATE,
     toEventTargets,
 } from "@web/public/colibri";
+import { applyFragments } from "@web/public/fragments";
 import { makeAsyncHandler, makeButtonHandler } from "@web/public/minimal_dom";
 
 /**
@@ -364,5 +365,15 @@ export class Interaction {
      */
     mountComponent(el, C, props = null, position = "beforeend") {
         return this.__colibri__.mountComponent(el, C, props, position);
+    }
+
+    /**
+     * @param {import("@web/public/fragments").FragmentResponse} response
+     * @returns {Record<string, any>} the response's `data`
+     */
+    swapFragments(response) {
+        return applyFragments(response, {
+            interactions: this.services["public.interactions"],
+        });
     }
 }

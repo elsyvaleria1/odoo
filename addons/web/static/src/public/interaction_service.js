@@ -428,6 +428,27 @@ export class InteractionService {
         );
     }
 
+    /**
+     * Re-reads the dynamic content of every started interaction around `el`,
+     * after `el`'s subtree was replaced under them.
+     *
+     * @param {HTMLElement} el
+     * @returns {void}
+     */
+    updateEnclosing(el) {
+        for (const interaction of this.interactions) {
+            if (
+                interaction.el !== el &&
+                interaction.el.contains(el) &&
+                interaction.isReady &&
+                !interaction.isDestroyed &&
+                !interaction.isUpdating
+            ) {
+                interaction.updateContent();
+            }
+        }
+    }
+
     /** @returns {void} */
     stopDisconnectedInteractions() {
         this.stopMatching(

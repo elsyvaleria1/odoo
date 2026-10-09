@@ -76,7 +76,7 @@ export function morph(target, content, options = {}) {
  * @param {Markup | Element | DocumentFragment} content
  * @returns {DocumentFragment}
  */
-function toFragment(content) {
+export function toFragment(content) {
     if (isMarkup(content)) {
         const template = document.createElement("template");
         template.innerHTML = content.toString();
