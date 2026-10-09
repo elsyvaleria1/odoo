@@ -1,6 +1,8 @@
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
+from odoo.addons.point_of_sale.models.pos_processed_operation import pos_queueable
+
 
 class PosPrepDisplay(models.Model):
     _name = "pos.prep.display"
@@ -224,6 +226,7 @@ class PosPrepDisplay(models.Model):
             )
 
     # if needed the user can instantly reset a preparation display, deleting all its open orders.
+    @pos_queueable
     def reset(self) -> None:
         for preparation_display in self:
             preparation_display._get_open_orderlines_in_display().unlink()

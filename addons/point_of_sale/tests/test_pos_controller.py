@@ -8,6 +8,7 @@ import odoo
 from odoo.libs.json import loads as json_loads
 
 from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.addons.point_of_sale.controllers.main import _POS_MENU_URL
 from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCommon
 
 
@@ -512,6 +513,29 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
 
         res = self.url_open(
             url, headers={"Sec-Fetch-Mode": "navigate"}, allow_redirects=False
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(self.main_pos_config.session_ids), 1)
+
+    def test_pos_ui_navigation_from_another_site_does_not_open_a_session(self):
+        self.authenticate("pos_user", "pos_user")
+        url = f"/pos/ui/{self.main_pos_config.id}"
+
+        res = self.url_open(
+            url,
+            headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "cross-site"},
+            allow_redirects=False,
+        )
+
+        self.assertEqual(res.status_code, 303)
+        self.assertTrue(res.headers["Location"].endswith(_POS_MENU_URL))
+        self.assertFalse(self.main_pos_config.session_ids)
+
+        res = self.url_open(
+            url,
+            headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "same-site"},
+            allow_redirects=False,
         )
 
         self.assertEqual(res.status_code, 200)

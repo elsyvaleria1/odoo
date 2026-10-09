@@ -14,6 +14,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.models import PREFETCH_MAX
 from odoo.tools import frozendict, plaintext2html
 
+from odoo.addons.point_of_sale.models.pos_processed_operation import pos_queueable
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
@@ -2719,6 +2721,7 @@ class PosSession(models.Model):
             message += notes
             self.message_post(body=plaintext2html(message))
 
+    @pos_queueable
     def set_opening_control(self, cashbox_value: float, notes: str) -> None:
         self.check_singleton()
         self._lock_sessions(
@@ -2849,6 +2852,7 @@ class PosSession(models.Model):
             "partner_id": partner_id,
         }
 
+    @pos_queueable
     def try_cash_in_out(self, _type, amount, reason, partner_id, extras) -> None:
         if _type not in self.CASH_MOVE_TYPES:
             raise UserError(
@@ -2908,6 +2912,7 @@ class PosSession(models.Model):
             no_retrieve_partner=True
         ).create(vals_list)
 
+    @pos_queueable
     def remove_cash_in_out(self, absl_id, partner_id) -> None:
         self.check_singleton()
         if not self.env.user.has_group("account.group_account_basic"):
@@ -2939,6 +2944,7 @@ class PosSession(models.Model):
         absl.unlink()
         self.log_partner_message(partner_id, action, "CASH_IN_OUT_UNLINK")
 
+    @pos_queueable
     def log_partner_message(self, partner_id, action, message_type) -> None:
         if message_type == "ACTION_CANCELLED":
             body = self.env._("Action cancelled (%(ACTION)s)", ACTION=action)

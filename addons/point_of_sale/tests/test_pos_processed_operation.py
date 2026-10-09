@@ -5,8 +5,8 @@ from uuid import uuid4
 import requests
 
 from odoo import Command, fields
-from odoo.exceptions import AccessError
-from odoo.tests import tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import JsonRpcException, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.point_of_sale.models.pos_processed_operation import RETENTION_DAYS
@@ -25,13 +25,52 @@ class TestPosProcessedOperation(CommonPosTest):
         self.session = self.pos_config_usd.current_session_id
         self.Operation = self.env["pos.processed.operation"]
 
-    def _cash_in(self, operation, amount=10):
+    def _cash_in(self, operation, amount=10, context=None):
         return self.Operation._call_once(
             operation,
             "pos.session",
             "try_cash_in_out",
+            [[self.session.id], "in", amount, "float", False, {}],
+            {"context": context or {}},
             lambda: self.session.try_cash_in_out("in", amount, "float", False, {}),
         )
+
+    def test_the_operations_the_pos_client_queues_are_queueable(self):
+        queued = {
+            "pos.session": [
+                "write",
+                "try_cash_in_out",
+                "remove_cash_in_out",
+                "set_opening_control",
+                "log_partner_message",
+            ],
+            "pos.order": ["write"],
+            "pos.order.line": ["create"],
+            "product.template": ["write"],
+            "restaurant.table": ["create", "write"],
+            "restaurant.floor": ["write"],
+            "pos.prep.display": ["reset"],
+        }
+        for model, methods in queued.items():
+            if model not in self.env:
+                continue
+            for method in methods:
+                with self.subTest(model=model, method=method):
+                    self.assertTrue(self.Operation._is_queueable(model, method))
+
+    def test_only_pos_loaded_models_and_declared_methods_are_queueable(self):
+        for model, method in (
+            ("wizard.res.users.check.identity", "run_check"),
+            ("res.users.apikeys", "unlink"),
+            ("account.move.line", "write"),
+            ("pos.session", "close_session_from_ui"),
+            ("pos.session", "read"),
+            ("pos.processed.operation", "unlink"),
+            ("no.such.model", "create"),
+        ):
+            with self.subTest(model=model, method=method):
+                self.assertFalse(self.Operation._is_queueable(model, method))
+        self.assertTrue(self.Operation._is_queueable("res.partner", "unlink"))
 
     def test_a_replayed_operation_runs_once_and_answers_the_first_result(self):
         operation = str(uuid4())
@@ -42,10 +81,10 @@ class TestPosProcessedOperation(CommonPosTest):
             return self.env["res.partner"].create({"name": "replayed"}).ids
 
         first = self.Operation._call_once(
-            operation, "res.partner", "create", create_partner
+            operation, "res.partner", "create", [{}], {}, create_partner
         )
         second = self.Operation._call_once(
-            operation, "res.partner", "create", create_partner
+            operation, "res.partner", "create", [{}], {}, create_partner
         )
 
         self.assertEqual(len(calls), 1)
@@ -76,8 +115,78 @@ class TestPosProcessedOperation(CommonPosTest):
 
         with self.assertRaises(AccessError):
             self.Operation._call_once(
-                operation, "pos.session", "remove_cash_in_out", lambda: None
+                operation,
+                "pos.session",
+                "remove_cash_in_out",
+                [[self.session.id], "in", 10, "float", False, {}],
+                {},
+                lambda: None,
             )
+
+    def test_a_uuid_replayed_with_other_arguments_is_refused(self):
+        operation = str(uuid4())
+        lines_before = len(self.session.statement_line_ids)
+        self._cash_in(operation, amount=10)
+
+        with self.assertRaises(AccessError):
+            self._cash_in(operation, amount=20)
+
+        self.session.invalidate_recordset(["statement_line_ids"])
+        self.assertEqual(len(self.session.statement_line_ids), lines_before + 1)
+
+    def test_a_replay_under_another_context_answers_the_first_result(self):
+        operation = str(uuid4())
+        lines_before = len(self.session.statement_line_ids)
+
+        first = self._cash_in(operation, context={"lang": "en_US", "tz": "UTC"})
+        second = self._cash_in(operation, context={"lang": "fr_FR"})
+
+        self.assertEqual(first, second)
+        self.session.invalidate_recordset(["statement_line_ids"])
+        self.assertEqual(len(self.session.statement_line_ids), lines_before + 1)
+
+    def test_an_operation_recorded_without_a_digest_still_replays(self):
+        operation = str(uuid4())
+        self._cash_in(operation)
+        self.env.cr.execute(
+            "UPDATE pos_processed_operation SET arguments_digest = NULL "
+            "WHERE operation_uuid = %s",
+            [operation],
+        )
+        lines_before = len(self.session.statement_line_ids)
+
+        self._cash_in(operation, amount=20)
+
+        self.session.invalidate_recordset(["statement_line_ids"])
+        self.assertEqual(len(self.session.statement_line_ids), lines_before)
+
+    def test_a_replay_rechecks_the_users_access_to_the_model(self):
+        cashier = self.env["res.users"].create(
+            {
+                "name": "Demoted cashier",
+                "login": "demoted_cashier",
+                "group_ids": [
+                    Command.link(self.env.ref("point_of_sale.group_pos_user").id)
+                ],
+            }
+        )
+        Operation = self.Operation.with_user(cashier)
+        logged, created = str(uuid4()), str(uuid4())
+        Operation._call_once(
+            logged, "pos.session", "log_partner_message", [[1]], {}, lambda: None
+        )
+        Operation._call_once(created, "pos.order", "create", [[{}]], {}, lambda: [1])
+        cashier.group_ids -= self.env.ref("point_of_sale.group_pos_user")
+
+        for operation, model, method, args in (
+            (logged, "pos.session", "log_partner_message", [[1]]),
+            (created, "pos.order", "create", [[{}]]),
+        ):
+            with self.subTest(method=method), self.assertRaises(AccessError) as refused:
+                Operation._call_once(
+                    operation, model, method, args, {}, lambda: self.fail("ran")
+                )
+            self.assertNotIn("already processed", str(refused.exception))
 
     def test_another_user_cannot_read_an_operation_result(self):
         operation = str(uuid4())
@@ -94,7 +203,12 @@ class TestPosProcessedOperation(CommonPosTest):
 
         with self.assertRaises(AccessError):
             self.Operation.with_user(cashier)._call_once(
-                operation, "pos.session", "try_cash_in_out", lambda: None
+                operation,
+                "pos.session",
+                "try_cash_in_out",
+                [[self.session.id], "in", 10, "float", False, {}],
+                {},
+                lambda: None,
             )
 
     def test_a_failed_operation_leaves_no_record_of_itself(self):
@@ -106,7 +220,12 @@ class TestPosProcessedOperation(CommonPosTest):
         with self.assertRaises(AccessError):
             with self.env.cr.savepoint():
                 self.Operation._call_once(
-                    operation, "pos.session", "try_cash_in_out", fail
+                    operation,
+                    "pos.session",
+                    "try_cash_in_out",
+                    [[self.session.id], "in", 10, "float", False, {}],
+                    {},
+                    fail,
                 )
 
         lines_before = len(self.session.statement_line_ids)
@@ -119,10 +238,10 @@ class TestPosProcessedOperation(CommonPosTest):
         answer = {"zone": "a\u0000b", "after": [1.5, None, "\ud800"], "a": True}
 
         first = self.Operation._call_once(
-            operation, "res.partner", "create", lambda: answer
+            operation, "res.partner", "create", [{}], {}, lambda: answer
         )
         second = self.Operation._call_once(
-            operation, "res.partner", "create", lambda: self.fail("replayed")
+            operation, "res.partner", "create", [{}], {}, lambda: self.fail("replayed")
         )
 
         self.assertEqual(first, answer)
@@ -236,6 +355,78 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
                 )
                 self.assertTrue(Operation.search([("operation_uuid", "=", written)]))
 
+    def test_a_call_outside_the_queued_operations_is_a_plain_call(self):
+        settings = self.env["res.users.settings"]._get_or_create_for_user(self.pos_user)
+        for operation in (str(uuid4()), "not-a-uuid"):
+            with self.subTest(operation=operation):
+                self.call_jsonrpc(
+                    "/web/dataset/call_kw/res.users.settings/set_res_users_settings",
+                    {
+                        "model": "res.users.settings",
+                        "method": "set_res_users_settings",
+                        "args": [[settings.id], {"use_push_to_talk": True}],
+                        "kwargs": {"context": {"pos_operation_uuid": operation}},
+                    },
+                )
+
+                self.assertFalse(
+                    self.env["pos.processed.operation"].search_count(
+                        [("operation_uuid", "=", operation)]
+                    )
+                )
+
+    @mute_logger("odoo.http")
+    def test_a_cash_move_replayed_over_rpc_with_another_amount_is_refused(self):
+        operation = str(uuid4())
+        lines_before = len(self._cash_lines())
+        self._call(
+            "try_cash_in_out",
+            [[self.pos_session.id], "in", 10, "float", False, {}],
+            operation,
+        )
+
+        with self.assertRaises(JsonRpcException) as refused:
+            self._call(
+                "try_cash_in_out",
+                [[self.pos_session.id], "in", 1000, "float", False, {}],
+                operation,
+            )
+
+        self.assertEqual(str(refused.exception), "odoo.exceptions.AccessError")
+        self.assertEqual(len(self._cash_lines()), lines_before + 1)
+
+    @mute_logger("odoo.http")
+    def test_a_replay_over_rpc_after_losing_pos_access_is_refused(self):
+        operation = str(uuid4())
+        args = [[self.pos_session.id], "in", 10, "float", False, {}]
+        first = self._call("try_cash_in_out", args, operation)
+        self.assertEqual(self._call("try_cash_in_out", args, operation), first)
+        self.pos_user.group_ids -= self.env.ref("point_of_sale.group_pos_user")
+        self.env.flush_all()
+
+        with self.assertRaises(JsonRpcException) as refused:
+            self._call("try_cash_in_out", args, operation)
+
+        self.assertEqual(str(refused.exception), "odoo.exceptions.AccessError")
+
+    @mute_logger("odoo.http")
+    def test_malformed_kwargs_get_the_plain_call_kw_answer(self):
+        for kwargs in ([1, 2], "context"):
+            with (
+                self.subTest(kwargs=kwargs),
+                self.assertRaises(JsonRpcException) as refused,
+            ):
+                self.call_jsonrpc(
+                    "/web/dataset/call_kw/pos.session/read",
+                    {
+                        "model": "pos.session",
+                        "method": "read",
+                        "args": [[self.pos_session.id], ["name"]],
+                        "kwargs": kwargs,
+                    },
+                )
+            self.assertNotEqual(str(refused.exception), "builtins.AttributeError")
+
     @mute_logger("odoo.http")
     def test_a_malformed_operation_uuid_is_refused(self):
         lines_before = len(self._cash_lines())
@@ -278,6 +469,8 @@ class TestPosProcessedOperationConcurrency(PosRaceCase):
             operation,
             "pos.session",
             "try_cash_in_out",
+            [[session_id], "in", 10, "float", False, {}],
+            {},
             lambda: (
                 session.try_cash_in_out("in", 10, "float", False, {})
                 or session.statement_line_ids.ids
@@ -316,3 +509,43 @@ class TestPosProcessedOperationConcurrency(PosRaceCase):
         self.assertEqual(len(line_ids), 1, "the cash move must be booked once")
         self.assertEqual(outcome["result"], first_result[0])
         self.assertEqual(outcome["result"], line_ids)
+
+    def test_a_replay_of_an_operation_that_committed_then_failed_is_refused(self):
+        with self.leave_registry_test_mode():
+            session_id = self._commit_session()
+            operation = str(uuid4())
+            args = [[session_id], "in", 10, "float", False, {}]
+
+            with self.registry.cursor() as cr:
+                session = self._env(cr)["pos.session"].browse(session_id)
+
+                def commit_then_fail():
+                    session.try_cash_in_out("in", 10, "float", False, {})
+                    cr.commit()
+                    raise UserError("failed after its commit")
+
+                with self.assertRaises(UserError):
+                    self._env(cr)["pos.processed.operation"]._call_once(
+                        operation,
+                        "pos.session",
+                        "try_cash_in_out",
+                        args,
+                        {},
+                        commit_then_fail,
+                    )
+                cr.rollback()
+
+            with self.registry.cursor() as cr:
+                with self.assertRaisesRegex(UserError, "never recorded"):
+                    self._env(cr)["pos.processed.operation"]._call_once(
+                        operation,
+                        "pos.session",
+                        "try_cash_in_out",
+                        args,
+                        {},
+                        lambda: self.fail("ran again"),
+                    )
+                lines = (
+                    self._env(cr)["pos.session"].browse(session_id).statement_line_ids
+                )
+                self.assertEqual(len(lines), 1)

@@ -13,8 +13,11 @@ def migrate(cr, version):
         SELECT config.id, config.name,
                array_agg(session.name || ' (id ' || session.id || ')' ORDER BY session.id)
                    FILTER (WHERE session.rescue),
-               array_agg(session.name || ' (id ' || session.id || ')' ORDER BY session.id)
-                   FILTER (WHERE session.rescue IS NOT TRUE)
+               COALESCE(
+                   array_agg(session.name || ' (id ' || session.id || ')' ORDER BY session.id)
+                       FILTER (WHERE session.rescue IS NOT TRUE),
+                   '{}'
+               )
           FROM pos_session session
           JOIN pos_config config ON config.id = session.config_id
          WHERE session.state != 'closed'
@@ -29,12 +32,12 @@ def migrate(cr, version):
             "per point of sale and has no rescue sessions, and the points of sale "
             "below have an open rescue session beside another open session; "
             "point_of_sale stays at its previous version. Put the previous "
-            "point_of_sale code back in place, close either the rescue session or "
-            "the other open session of each point of sale listed, then run the "
-            "upgrade again. "
+            "point_of_sale code back in place, close the open sessions of each "
+            "point of sale listed until one is left, then run the upgrade again. "
             + "; ".join(
                 f"point of sale {config_name!r} (id {config_id}): rescue "
-                f"{', '.join(rescues)} open beside {', '.join(others)}"
+                f"{', '.join(rescues)} open "
+                + (f"beside {', '.join(others)}" if others else "together")
                 for config_id, config_name, rescues, others in shared
             )
         )

@@ -92,6 +92,24 @@ class TestPosRescueSessionMigration(TestPoSCommon):
         self.assertTrue(schema.column_exists(self.env.cr, "pos_session", "rescue"))
         self.assertIn("rescue IS NOT TRUE", self._open_session_index()[0])
 
+    def test_two_open_rescue_sessions_without_another_refuse_with_a_remedy(self):
+        config = self.other_currency_config
+        rescues = self._rescue_session(config) + self._rescue_session(config)
+
+        with self.assertRaises(ValueError) as refused:
+            self.script.migrate(self.env.cr, "19.0.1.0.12")
+
+        message = str(refused.exception)
+        _logger.debug("rescue migration refusal: %s", message)
+        self.assertIn("Put the previous point_of_sale code back in place", message)
+        self.assertIn(
+            f"point of sale {config.name!r} (id {config.id}): rescue "
+            f"(RESCUE FOR {config.name}) (id {rescues[0].id}), "
+            f"(RESCUE FOR {config.name}) (id {rescues[1].id}) open together",
+            message,
+        )
+        self.assertIn("rescue IS NOT TRUE", self._open_session_index()[0])
+
     def test_a_lone_open_rescue_session_becomes_the_current_one_with_a_warning(self):
         config = self.other_currency_config
         rescue = self._rescue_session(config)
@@ -147,6 +165,11 @@ class TestPosProcessedOperationMigration(TestPoSCommon):
             "text",
         )
         replayed = self.env["pos.processed.operation"]._call_once(
-            operation, "pos.session", "try_cash_in_out", lambda: self.fail("replayed")
+            operation,
+            "pos.session",
+            "try_cash_in_out",
+            [],
+            {},
+            lambda: self.fail("replayed"),
         )
         self.assertEqual(replayed, {"lines": [1, 2], "name": "é"})

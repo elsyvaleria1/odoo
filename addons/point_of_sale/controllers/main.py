@@ -97,6 +97,10 @@ class PosController(PortalAccount):
                     headers=[("Cache-Control", "no-store")],
                     status=409,
                 )
+            # the Lax session cookie rides along a navigation from another site
+            if request.httprequest.headers.get("Sec-Fetch-Site") == "cross-site":
+                _debug.logic("pos_ui_cross_site_open_refused", config=pos_config.id)
+                return request.redirect(_POS_MENU_URL)
             try:
                 with request.env.cr.savepoint():
                     pos_config.lock_for_update()
