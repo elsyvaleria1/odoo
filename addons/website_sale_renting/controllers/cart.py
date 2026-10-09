@@ -28,6 +28,7 @@ class Cart(WebsiteSaleCart):
             request.env,
             self._get_cart_lines_fragment(order_sudo),
             self._get_cart_total_fragment(order_sudo),
+            events=self._cart_updated_events(order_sudo),
             data={
                 "cart_quantity": order_sudo.cart_quantity,
                 "cart_ready": order_sudo._is_cart_ready(),

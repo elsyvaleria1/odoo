@@ -46,7 +46,6 @@ patch(WebsiteSale.prototype, {
             return;
         }
         const { start_date, end_date } = response.data;
-        wSaleUtils.updateCartNavBar(response.data);
         this.swapFragments(response);
         const format = this._isDurationWithHours() ? formatDateTime : formatDate;
         document.querySelector("input[name=renting_start_date]").value = format(

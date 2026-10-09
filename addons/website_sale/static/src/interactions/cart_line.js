@@ -1,9 +1,7 @@
 /** @odoo-module native */
-import { browser } from "@web/core/browser/browser";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
-import wSaleUtils from "@website_sale/js/website_sale_utils";
 
 export class CartLine extends Interaction {
     static selector = ".o_cart_product";
@@ -72,24 +70,14 @@ export class CartLine extends Interaction {
                 quantity: quantity,
             }),
         );
-        const data = response.data;
-        if (response.redirect) {
-            browser.sessionStorage.setItem("website_sale_cart_quantity", 0);
-            this.swapFragments(response);
-            return;
+        if (!response.redirect) {
+            // the morph leaves a focused field as typed: the server's quantity goes in first
+            this.el
+                .querySelectorAll(`.js_quantity[data-line-id="${lineId}"]`)
+                .forEach((input) => (input.value = response.data.quantity));
+            input.value = response.data.quantity;
         }
-        // the morph leaves a focused field as typed: the server's quantity goes in first
-        this.el
-            .querySelectorAll(`.js_quantity[data-line-id="${lineId}"]`)
-            .forEach((input) => (input.value = data.quantity));
-        input.value = data.quantity;
-
-        const bus = this.env.bus;
-        wSaleUtils.updateCartNavBar(data);
         this.swapFragments(response);
-        wSaleUtils.updateQuickReorderButton();
-        wSaleUtils.showWarning(data.warning);
-        bus.trigger("cart_amount_changed", [data.amount, data.minor_amount]);
     }
 }
 

@@ -222,7 +222,12 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
                 ],
             )
             self.assertEqual(response["data"]["quantity"], 3)
-            self.assertEqual(response["data"]["cart_quantity"], 3)
+            events = {event["name"]: event["detail"] for event in response["events"]}
+            self.assertEqual(events["website_sale:cart_updated"]["cart_quantity"], 3)
+            self.assertTrue(events["website_sale:cart_updated"]["quick_reorder"])
+            self.assertEqual(
+                events["payment:amount_changed"]["amount"], request.cart.amount_total
+            )
             self.assertIsNone(response["redirect"])
 
             emptied = self.WebsiteSaleCartController.update_cart(
@@ -230,7 +235,8 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
             )
             self.assertEqual(emptied["fragments"], [])
             self.assertEqual(emptied["redirect"], "/shop/cart")
-            self.assertEqual(emptied["data"]["cart_quantity"], 0)
+            self.assertEqual(emptied["events"][0]["name"], "website_sale:cart_updated")
+            self.assertEqual(emptied["events"][0]["detail"]["cart_quantity"], 0)
 
     def test_quick_add_answers_with_the_lines_summary_and_history(self):
         website = self.website.with_user(self.user_portal)

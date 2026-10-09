@@ -5,7 +5,6 @@ import { now, serializeDateTime } from "@web/core/l10n/dates";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
-import wSaleUtils from "@website_sale/js/website_sale_utils";
 
 export class QuickReorder extends Interaction {
     static selector = "#quick_reorder_sidebar";
@@ -134,9 +133,7 @@ export class QuickReorder extends Interaction {
                 ...(isCombo && { linked_products: linkedProducts }),
             }),
         );
-        wSaleUtils.updateCartNavBar(response.data);
         this.swapFragments(response);
-        wSaleUtils.updateQuickReorderButton();
 
         this._focusNextQuantityInput(currentButtonIndex);
     }

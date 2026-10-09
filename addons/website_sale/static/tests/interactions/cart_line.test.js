@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "@odoo/hoot";
+import { after, beforeEach, describe, expect, test } from "@odoo/hoot";
 import { click, queryOne } from "@odoo/hoot-dom";
 import { advanceTime, animationFrame } from "@odoo/hoot-mock";
 import {
@@ -101,15 +101,22 @@ test("emptying the cart follows the server's redirect", async () => {
     });
     onRpc("/shop/cart/update", () => ({
         fragments: [],
-        events: [],
+        events: [
+            {
+                name: "website_sale:cart_updated",
+                detail: { cart_quantity: 0, cart_ready: false, warning: "" },
+            },
+        ],
         redirect: "/shop/cart",
-        data: { quantity: 0, cart_quantity: 0, cart_ready: false },
+        data: { quantity: 0 },
     }));
+    const listener = (ev) => expect.step(`cart ${ev.detail.cart_quantity}`);
+    document.addEventListener("website_sale:cart_updated", listener);
+    after(() => document.removeEventListener("website_sale:cart_updated", listener));
     await startInteractions(page());
 
     await click(".js_delete_product");
     await animationFrame();
 
-    expect.verifySteps(["assign /shop/cart"]);
-    expect(browser.sessionStorage.getItem("website_sale_cart_quantity")).toBe("0");
+    expect.verifySteps(["cart 0", "assign /shop/cart"]);
 });

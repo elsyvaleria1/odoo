@@ -324,6 +324,7 @@ class Cart(PaymentPortal):
                 },
             ),
             self._get_quick_reorder_history_fragment(order_sudo),
+            events=self._cart_updated_events(order_sudo, quick_reorder=True),
             data=values,
         )
 
@@ -403,24 +404,45 @@ class Cart(PaymentPortal):
             product=product_id,
         )
 
-        values["cart_quantity"] = order_sudo.cart_quantity
-        values["cart_ready"] = order_sudo._is_cart_ready()
-        values["amount"] = order_sudo.amount_total
-        values["minor_amount"] = (
-            order_sudo
-            and payment_utils.major_to_minor_currency_units(
-                order_sudo.amount_total, order_sudo.currency_id
+        events = self._cart_updated_events(
+            order_sudo, warning=values.get("warning"), quick_reorder=True
+        )
+        if not order_sudo.cart_quantity:
+            return render_fragments(
+                request.env, events=events, redirect="/shop/cart", data=values
             )
-        ) or 0.0
-        if not values["cart_quantity"]:
-            return render_fragments(request.env, redirect="/shop/cart", data=values)
         return render_fragments(
             request.env,
             self._get_cart_lines_fragment(order_sudo),
             self._get_cart_total_fragment(order_sudo),
             self._get_quick_reorder_history_fragment(order_sudo),
+            events=events,
             data=values,
         )
+
+    def _cart_updated_events(self, order_sudo, warning=None, quick_reorder=False):
+        # what the page around the swapped cart follows: the header's cart
+        # badge and the warning (@website_sale/interactions/cart_updates), the
+        # express checkout's amount (@payment/interactions/express_checkout)
+        amount = order_sudo.amount_total
+        return {
+            "website_sale:cart_updated": {
+                "cart_quantity": order_sudo.cart_quantity,
+                "cart_ready": order_sudo._is_cart_ready(),
+                "warning": warning or "",
+                "quick_reorder": quick_reorder,
+            },
+            "payment:amount_changed": {
+                "amount": amount,
+                "minor_amount": (
+                    order_sudo
+                    and payment_utils.major_to_minor_currency_units(
+                        amount, order_sudo.currency_id
+                    )
+                )
+                or 0.0,
+            },
+        }
 
     def _prepare_order_history(self):
 
