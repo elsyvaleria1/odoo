@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { registry } from "@web/core/registry";
-import { redirect } from "@web/core/utils/urls";
 import { Interaction } from "@web/public/interaction";
+import { requestNavigation } from "@web/public/partial_navigation";
 
 export class PriceRange extends Interaction {
     static selector = "#o_wsale_price_range_option";
@@ -28,7 +28,7 @@ export class PriceRange extends Interaction {
         if (product_list_div) {
             product_list_div.classList.add("opacity-50");
         }
-        redirect(`${url.pathname}?${searchParams.toString()}`);
+        requestNavigation(range, `${url.pathname}?${searchParams.toString()}`);
     }
 }
 

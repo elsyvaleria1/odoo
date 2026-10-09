@@ -4,17 +4,7 @@ import * as wsTourUtils from "@website_sale/js/tours/tour_utils";
 registry.category("web_tour.tours").add("shop_buy_subscription_product", {
     url: "/shop",
     steps: () => [
-        {
-            content: "Search streaming write text",
-            trigger: 'form input[name="search"]',
-            run: "edit Streaming SUB Week",
-        },
-        {
-            content: "Search streaming click",
-            trigger: 'form:has(input[name="search"]) .oe_search_button',
-            run: "click",
-            expectUnloadPage: true,
-        },
+        ...wsTourUtils.searchProduct("Streaming SUB Week"),
         {
             content: "Select streaming",
             trigger: '.oe_product_cart:first a:contains("Streaming SUB Weekly")',
@@ -39,17 +29,7 @@ registry.category("web_tour.tours").add("shop_buy_subscription_product", {
             },
             expectUnloadPage: true,
         },
-        {
-            content: "Search streaming monthly write text",
-            trigger: 'form input[name="search"]',
-            run: "edit Streaming SUB month",
-        },
-        {
-            content: "Search streaming monthly click",
-            trigger: 'form:has(input[name="search"]) .oe_search_button',
-            run: "click",
-            expectUnloadPage: true,
-        },
+        ...wsTourUtils.searchProduct("Streaming SUB month"),
         {
             content: "Select streaming monthly",
             trigger: '.oe_product_cart:first a:contains("Streaming SUB Monthly")',

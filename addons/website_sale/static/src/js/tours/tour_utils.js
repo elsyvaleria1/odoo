@@ -310,7 +310,16 @@ export function payWithTransfer({
     }
 }
 
-export function searchProduct(productName, { select = false } = {}) {
+/**
+ * @param {string} productName
+ * @param {{ select?: boolean, expectUnloadPage?: boolean }} [options]
+ *   `expectUnloadPage` when searching from a page other than the shop, whose
+ *   search reloads instead of swapping the grid in place
+ */
+export function searchProduct(
+    productName,
+    { select = false, expectUnloadPage = false } = {},
+) {
     const steps = [
         {
             content: "Search for the product",
@@ -321,7 +330,11 @@ export function searchProduct(productName, { select = false } = {}) {
             content: `Search ${productName}`,
             trigger: `form:has(input[name="search"]) .oe_search_button`,
             run: "click",
-            expectUnloadPage: true,
+            expectUnloadPage,
+        },
+        {
+            content: `Results for ${productName}`,
+            trigger: `.o_wsale_category_title_is_search strong:text(${productName})`,
         },
     ];
     if (select) {
@@ -346,9 +359,19 @@ export function selectPriceList(pricelist) {
             content: "Click on pricelist",
             trigger: `span:contains(${pricelist})`,
             run: "click",
-            expectUnloadPage: true,
+        },
+        {
+            content: `${pricelist} is the selected pricelist`,
+            trigger: `div.o_pricelist_dropdown a[data-bs-toggle=dropdown]:contains(${pricelist})`,
         },
     ];
+}
+
+export function waitForPartialNavigation() {
+    return {
+        content: "Wait for the next page to be swapped in place",
+        trigger: "[data-partial-navigation]:not([aria-busy])",
+    };
 }
 
 export function waitForInteractionToLoad() {

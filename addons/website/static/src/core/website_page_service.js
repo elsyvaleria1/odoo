@@ -8,25 +8,30 @@ const log = makeLogger("website.service.page");
 
 export const websitePageService = {
     start() {
-        const htmlEl = document.querySelector("html");
-        const match = htmlEl.dataset.mainObject?.match(/(.+)\((-?\d+),(.*)\)/);
+        const htmlEl = document.documentElement;
         log.lifecycle("start", () => ({
             websiteId: htmlEl.dataset.websiteId,
             lang: htmlEl.getAttribute("lang"),
             mainObject: htmlEl.dataset.mainObject,
-            parsed: !!match,
         }));
 
+        // read from <html> on each access: an in-place navigation
+        // (web.partial_navigation) changes the page without restarting services
         return {
-            context: {
-                ...user.context,
-                website_id: htmlEl.dataset.websiteId | 0,
-                lang: jsToPyLocale(htmlEl.getAttribute("lang")) || "en_US",
-                user_lang: user.context.lang,
+            get context() {
+                return {
+                    ...user.context,
+                    website_id: htmlEl.dataset.websiteId | 0,
+                    lang: jsToPyLocale(htmlEl.getAttribute("lang")) || "en_US",
+                    user_lang: user.context.lang,
+                };
             },
-            mainObject: {
-                model: match && match[1],
-                id: match && match[2] | 0,
+            get mainObject() {
+                const match = htmlEl.dataset.mainObject?.match(/(.+)\((-?\d+),(.*)\)/);
+                return {
+                    model: match && match[1],
+                    id: match && match[2] | 0,
+                };
             },
         };
     },

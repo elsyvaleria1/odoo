@@ -670,7 +670,9 @@
                     t-attf-class="oe_website_sale                         {{opt_wsale_fullwidth and 'container-fluid o_wsale_page_fluid' or 'o_wsale_page_contained container'}}                         {{opt_wsale_categories_top and 'o_wsale_has_filmstrip'}}                         {{opt_wsale_floating_bar and 'o_wsale_has_floating_bar'}}                         {{hasLeftColumn and 'o_wsale_has_sidebar'}}                         {{editionPreviews and 'o_wsale_edit_preview_enabled'}}                         {{opt_wsale_design_grid and 'o_wsale_uses_grid_design'}}"
                     t-att-data-ppg="ppg"
                     t-att-data-ppr="ppr"
-                    t-att-data-default-sort="website.shop_default_sort">
+                    t-att-data-default-sort="website.shop_default_sort"
+                    data-fragment="website_sale.products"
+                    data-partial-navigation="#products_grid_before, #o_wsale_products_header, #o_wsale_floating_bar, #o_wsale_pager, #o_wsale_offcanvas">
                     <div class="row o_wsale_products_main_row flex-nowrap">
                         <aside
                             t-if="hasLeftColumn"

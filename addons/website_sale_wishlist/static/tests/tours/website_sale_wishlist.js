@@ -1,6 +1,7 @@
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { delay } from "@web/core/utils/concurrency";
+import { waitForPartialNavigation } from "@website_sale/js/tours/tour_utils";
 
 registry.category("web_tour.tours").add("shop_wishlist", {
     url: "/shop?search=Customizable Desk",
@@ -455,8 +456,8 @@ registry.category("web_tour.tours").add("shop_wishlist", {
                     .querySelector("form.o_wsale_products_searchbar_form button")
                     .click();
             },
-            expectUnloadPage: true,
         },
+        waitForPartialNavigation(),
         {
             content: "The product is in the wishlist",
             trigger:
@@ -490,8 +491,8 @@ registry.category("web_tour.tours").add("shop_wishlist", {
                     .querySelector("form.o_wsale_products_searchbar_form button")
                     .click();
             },
-            expectUnloadPage: true,
         },
+        waitForPartialNavigation(),
         {
             content: "The product is not in the wishlist",
             trigger:

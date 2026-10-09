@@ -1,4 +1,5 @@
 import { registry } from "@web/core/registry";
+import { waitForPartialNavigation } from "@website_sale/js/tours/tour_utils";
 
 registry
     .category("web_tour.tours")
@@ -9,20 +10,20 @@ registry
                 content: "Select first attribute value",
                 trigger: ".products_attributes_filters form.js_attributes input:eq(0)",
                 run: "click",
-                expectUnloadPage: true,
             },
+            waitForPartialNavigation(),
             {
                 content: "Select last attribute value",
                 trigger: ".products_attributes_filters form.js_attributes input:eq(3)",
                 run: "click",
-                expectUnloadPage: true,
             },
+            waitForPartialNavigation(),
             {
                 content: "Select page 2",
                 trigger: 'li a.page-link:contains("2")',
                 run: "click",
-                expectUnloadPage: true,
             },
+            waitForPartialNavigation(),
             {
                 content: "First attribute value should be checked",
                 trigger:

@@ -3,7 +3,38 @@
 
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
+import { Modal, Offcanvas } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
+
+// what a page says about itself in <head>, kept in step with the page shown
+const HEAD_SELECTORS = [
+    'link[rel="canonical"]',
+    'link[rel="alternate"][hreflang]',
+    'meta[name="description"]',
+    'meta[property^="og:"]',
+    'meta[name^="twitter:"]',
+].join(", ");
+
+/**
+ * The page metadata <html> carries (main object, view, website, lang).
+ *
+ * @param {Element} current
+ * @param {Element} next
+ */
+function syncPageAttributes(current, next) {
+    const isPageAttribute = (/** @type {string} */ name) =>
+        name.startsWith("data-") || name === "lang" || name === "dir";
+    for (const { name } of [...current.attributes]) {
+        if (isPageAttribute(name) && !next.hasAttribute(name)) {
+            current.removeAttribute(name);
+        }
+    }
+    for (const { name, value } of next.attributes) {
+        if (isPageAttribute(name)) {
+            current.setAttribute(name, value);
+        }
+    }
+}
 
 /**
  * Navigates to `url` in place when `el` sits in a partial navigation scope,
@@ -31,7 +62,9 @@ export function requestNavigation(el, url) {
  * `data-partial-navigation` (a CSS selector) are taken; anything else, and
  * any answer without the region, navigates as usual. An interaction that
  * builds its URL itself dispatches a cancelable, bubbling `o-navigate` event
- * with `detail.url`, and navigates on its own when nobody took it.
+ * with `detail.url`, and navigates on its own when nobody took it. After each
+ * in-place navigation, `window` receives an `o-partial-navigation` event
+ * (`detail.key`, `detail.url`) for code that otherwise runs on page load.
  */
 export class PartialNavigation extends Interaction {
     static selector = "[data-fragment][data-partial-navigation]";
@@ -46,8 +79,10 @@ export class PartialNavigation extends Interaction {
 
     setup() {
         this.key = this.el.dataset.fragment;
-        this.scopes = this.el.dataset.partialNavigation;
-        if (!browser.history.state?.partialNavigation) {
+        // a page embedded by a same-origin frame (the website builder's preview)
+        // navigates as usual: the embedder follows the page through its loads
+        this.scopes = window.frameElement ? null : this.el.dataset.partialNavigation;
+        if (this.scopes && !browser.history.state?.partialNavigation) {
             browser.history.replaceState(
                 { ...browser.history.state, partialNavigation: this.key },
                 "",
@@ -126,7 +161,7 @@ export class PartialNavigation extends Interaction {
 
     /** @param {PopStateEvent} ev */
     onPopState(ev) {
-        if (ev.state?.partialNavigation === this.key) {
+        if (this.scopes && ev.state?.partialNavigation === this.key) {
             this.navigate(browser.location.href, { push: false });
         }
     }
@@ -136,9 +171,25 @@ export class PartialNavigation extends Interaction {
      * @param {{ push: boolean }} options
      */
     async navigate(url, { push }) {
-        const response = await this.waitFor(
-            browser.fetch(url, { credentials: "same-origin" }),
-        );
+        // the morph would drop their `show` class but not the backdrop and
+        // scroll lock Bootstrap put on the body
+        for (const el of this.el.querySelectorAll(".offcanvas.show")) {
+            Offcanvas.getInstance(el)?.hide();
+        }
+        for (const el of this.el.querySelectorAll(".modal.show")) {
+            Modal.getInstance(el)?.hide();
+        }
+        // the swapped-in region carries no aria-busy, so the morph clears it
+        this.el.setAttribute("aria-busy", "true");
+        let response;
+        try {
+            response = await this.waitFor(
+                browser.fetch(url, { credentials: "same-origin" }),
+            );
+        } catch {
+            browser.location.assign(url);
+            return;
+        }
         const html = response.ok ? await this.waitFor(response.text()) : "";
         const page = new DOMParser().parseFromString(html, "text/html");
         const region = page.querySelector(`[data-fragment="${CSS.escape(this.key)}"]`);
@@ -157,6 +208,15 @@ export class PartialNavigation extends Interaction {
         if (title) {
             document.title = title;
         }
+        for (const el of document.head.querySelectorAll(HEAD_SELECTORS)) {
+            el.remove();
+        }
+        document.head.append(
+            ...[...page.head.querySelectorAll(HEAD_SELECTORS)].map((el) =>
+                document.importNode(el, true),
+            ),
+        );
+        syncPageAttributes(document.documentElement, page.documentElement);
         // the region may be display: contents, which has no box of its own
         const anchor = () => this.el.firstElementChild || this.el;
         const scrolledPast = anchor().getBoundingClientRect().top < 0;
@@ -170,10 +230,18 @@ export class PartialNavigation extends Interaction {
         if (scrolledPast) {
             (el.firstElementChild || el).scrollIntoView({ block: "start" });
         }
+        window.dispatchEvent(
+            new CustomEvent("o-partial-navigation", {
+                detail: { key: this.key, url: response.url },
+            }),
+        );
     }
 
     /** @param {Element} el */
     _isInScope(el) {
+        if (!this.scopes) {
+            return false;
+        }
         const scope = el.closest(this.scopes);
         return !!scope && this.el.contains(scope);
     }

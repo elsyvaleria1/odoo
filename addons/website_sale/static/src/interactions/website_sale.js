@@ -3,9 +3,10 @@ import { markup } from "@odoo/owl";
 import { hasTouch, isBrowserFirefox } from "@web/core/browser/feature_detection";
 import { registry } from "@web/core/registry";
 import { uniqueId } from "@web/core/utils/functions";
-import { redirect, url } from "@web/core/utils/urls";
+import { url } from "@web/core/utils/urls";
 import { Carousel, Collapse } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
+import { requestNavigation } from "@web/public/partial_navigation";
 import { ProductImageViewer } from "@website_sale/js/components/website_sale_image_viewer";
 import VariantMixin from "@website_sale/js/variant_mixin";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
@@ -393,7 +394,7 @@ export class WebsiteSale extends Interaction {
         if (tags.size) {
             searchParams.set("tags", [...tags].join(","));
         }
-        redirect(`${url.pathname}?${searchParams.toString()}`);
+        requestNavigation(form, `${url.pathname}?${searchParams.toString()}`);
     }
 
     /**
@@ -413,7 +414,7 @@ export class WebsiteSale extends Interaction {
             }
             const input = form.querySelector("input.search-query");
             searchParams.set(input.name, input.value);
-            redirect(`${url.pathname}?${searchParams.toString()}`);
+            requestNavigation(form, `${url.pathname}?${searchParams.toString()}`);
         }
     }
 

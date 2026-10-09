@@ -1,10 +1,11 @@
 // @ts-check
 
-import { describe, expect, test } from "@odoo/hoot";
+import { after, describe, expect, test } from "@odoo/hoot";
 import { click, queryOne } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
+import { Offcanvas } from "@web/libs/bootstrap";
 import { PartialNavigation, requestNavigation } from "@web/public/partial_navigation";
 
 import { startInteraction } from "./helpers.js";
@@ -155,4 +156,149 @@ test("requestNavigation navigates in place from a scope, and as usual from anywh
         "push portal.list /my/orders",
         "assign /my/orders",
     ]);
+});
+
+test("the head follows the page: canonical, description and alternates are replaced", async () => {
+    const head = (canonical, description) =>
+        `<link rel="canonical" href="${canonical}"/><meta name="description" content="${description}"/>`;
+    const stale = document
+        .createRange()
+        .createContextualFragment(head("https://shop.test/my/orders", "Your orders"));
+    document.head.append(stale);
+    after(() =>
+        document.head
+            .querySelectorAll('link[rel="canonical"], meta[name="description"]')
+            .forEach((el) => el.remove()),
+    );
+    await startInteraction(PartialNavigation, region(""));
+    serve(
+        () =>
+            `<html><head>${head("https://shop.test/my/orders?sortby=name", "Sorted")}</head><body>${region("")}</body></html>`,
+    );
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["fetch /my/orders?sortby=name", "push portal.list /my/orders"]);
+    expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+    expect(
+        document.head.querySelector('link[rel="canonical"]').getAttribute("href"),
+    ).toBe("https://shop.test/my/orders?sortby=name");
+    expect(
+        document.head.querySelector('meta[name="description"]').getAttribute("content"),
+    ).toBe("Sorted");
+});
+
+test("window hears o-partial-navigation once the region is swapped", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page("<tr><td>SO7</td></tr>"));
+    const listener = (ev) =>
+        expect.step(
+            `navigated ${ev.detail.key} ${document.querySelectorAll("tbody tr").length}`,
+        );
+    window.addEventListener("o-partial-navigation", listener);
+    after(() => window.removeEventListener("o-partial-navigation", listener));
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps([
+        "fetch /my/orders?sortby=name",
+        "push portal.list /my/orders",
+        "navigated portal.list 1",
+    ]);
+});
+
+test("an open offcanvas in the region is hidden before navigating", async () => {
+    await startInteraction(
+        PartialNavigation,
+        region("").replace(
+            "</nav>",
+            '</nav><div class="offcanvas show o_filters"></div>',
+        ),
+    );
+    serve(() => page(""));
+    patchWithCleanup(Offcanvas, {
+        getInstance: (el) => ({ hide: () => expect.step(`hide ${el.className}`) }),
+    });
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps([
+        "hide offcanvas show o_filters",
+        "fetch /my/orders?sortby=name",
+        "push portal.list /my/orders",
+    ]);
+});
+
+test("the region is aria-busy while the next page loads, and not once swapped in", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    let release;
+    patchWithCleanup(browser, {
+        fetch: () =>
+            new Promise((resolve) => {
+                release = () =>
+                    resolve(
+                        /** @type {Response} */ ({
+                            ok: true,
+                            url: "http://localhost/my/orders?sortby=name",
+                            text: async () => page("<tr><td>SO8</td></tr>"),
+                        }),
+                    );
+            }),
+    });
+    patchWithCleanup(browser.history, { pushState: () => {} });
+
+    await click(".o_sort");
+    expect("[data-fragment='portal.list']").toHaveAttribute("aria-busy", "true");
+    release();
+    await animationFrame();
+
+    expect("[data-fragment='portal.list']").not.toHaveAttribute("aria-busy");
+    expect("tbody tr").toHaveCount(1);
+});
+
+test("a fetch that fails falls back to a full navigation", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    patchWithCleanup(browser, {
+        fetch: () => Promise.reject(new TypeError("Failed to fetch")),
+    });
+    patchWithCleanup(browser.location, {
+        assign: (url) => expect.step(`assign ${new URL(String(url)).pathname}`),
+    });
+
+    await click(".o_next");
+    await animationFrame();
+
+    expect.verifySteps(["assign /my/orders/page/2"]);
+});
+
+test("<html> takes the next page's metadata: data attributes and lang", async () => {
+    const html = document.documentElement;
+    const before = { lang: html.getAttribute("lang"), main: html.dataset.mainObject };
+    after(() => {
+        html.setAttribute("lang", before.lang || "en");
+        if (before.main === undefined) {
+            delete html.dataset.mainObject;
+        } else {
+            html.dataset.mainObject = before.main;
+        }
+        delete html.dataset.staleMarker;
+    });
+    html.dataset.mainObject = "website.page(1,)";
+    html.dataset.staleMarker = "1";
+    await startInteraction(PartialNavigation, region(""));
+    serve(
+        () =>
+            `<html lang="fr-FR" data-main-object="product.public.category(5,)"><head></head><body>${region("")}</body></html>`,
+    );
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["fetch /my/orders?sortby=name", "push portal.list /my/orders"]);
+    expect(html.getAttribute("lang")).toBe("fr-FR");
+    expect(html.dataset.mainObject).toBe("product.public.category(5,)");
+    expect(html.dataset.staleMarker).toBe(undefined);
 });

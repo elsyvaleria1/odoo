@@ -364,6 +364,15 @@ class TestWebsiteSaleProductFilters(
                 "When displaying newest product templates, 16 unique templates should be shown",
             )
 
+    def test_shop_searches_in_place(self):
+        self.env["product.template"].create(
+            [
+                {"name": name, "website_published": True, "sale_ok": True}
+                for name in ("PN Lamp", "PN Chair")
+            ]
+        )
+        self.start_tour("/shop", "shop_partial_navigation")
+
     def test_shop_attribute_filters_remain_when_changing_page(self):
         self.env["product.attribute"].search([]).write({"visibility": "hidden"})
         self.color_attribute.visibility = "visible"

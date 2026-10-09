@@ -15,6 +15,7 @@ registry.category("web_tour.tours").add("website_sale_cart_notification_tax_incl
         }),
         ...tourUtils.searchProduct("website_sale_cart_notification_product_2", {
             select: true,
+            expectUnloadPage: true,
         }),
         {
             trigger: "#product_detail",
@@ -66,6 +67,7 @@ registry.category("web_tour.tours").add("website_sale_cart_notification_tax_excl
         }),
         ...tourUtils.searchProduct("website_sale_cart_notification_product_2", {
             select: true,
+            expectUnloadPage: true,
         }),
         {
             trigger: "#product_detail",
