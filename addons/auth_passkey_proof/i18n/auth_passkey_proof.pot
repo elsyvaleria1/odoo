@@ -1,0 +1,72 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* auth_passkey_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:43+0000\n"
+"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: auth_passkey_proof
+#: model:ir.model.fields,field_description:auth_passkey_proof.field_proof_method__code
+msgid "Code"
+msgstr ""
+
+#. module: auth_passkey_proof
+#. odoo-javascript
+#: code:addons/auth_passkey_proof/static/src/passkey_proof/passkey_proof.xml:0
+msgid "Confirm with your fingerprint, your face or your security key."
+msgstr ""
+
+#. module: auth_passkey_proof
+#: model:ir.model.fields,field_description:auth_passkey_proof.field_proof_method__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: auth_passkey_proof
+#: model:ir.model.fields,field_description:auth_passkey_proof.field_proof_method__id
+msgid "ID"
+msgstr ""
+
+#. module: auth_passkey_proof
+#. odoo-python
+#: code:addons/auth_passkey_proof/models/proof_method.py:0
+msgid "No passkey answered this request."
+msgstr ""
+
+#. module: auth_passkey_proof
+#. odoo-javascript
+#: code:addons/auth_passkey_proof/static/src/passkey_proof/passkey_proof.xml:0
+msgid "No passkey answered. Try again, or use another device."
+msgstr ""
+
+#. module: auth_passkey_proof
+#: model:ir.model.fields.selection,name:auth_passkey_proof.selection__proof_method__code__passkey
+#: model:proof.method,name:auth_passkey_proof.proof_method_passkey
+msgid "Passkey"
+msgstr ""
+
+#. module: auth_passkey_proof
+#: model:ir.model,name:auth_passkey_proof.model_proof_method
+msgid "Proof Method"
+msgstr ""
+
+#. module: auth_passkey_proof
+#. odoo-javascript
+#: code:addons/auth_passkey_proof/static/src/passkey_proof/passkey_proof.xml:0
+msgid "Use your passkey"
+msgstr ""
+
+#. module: auth_passkey_proof
+#. odoo-python
+#: code:addons/auth_passkey_proof/models/proof_method.py:0
+msgid "Your passkey did not confirm this request."
+msgstr ""

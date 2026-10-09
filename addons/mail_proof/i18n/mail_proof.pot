@@ -1,0 +1,133 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mail_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:43+0000\n"
+"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: mail_proof
+#: model:res.groups,comment:mail_proof.privilege_send_proof_code
+msgid ""
+"Asking a user or a contact for an email-code proof sends them the code at "
+"once. The user who asks holds no mail administration right for that: only "
+"the outgoing mail carrying the code, which is deleted once sent."
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_method__code
+msgid "Code"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_attempts
+msgid "Code Attempts"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_hash
+msgid "Code Hash"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__code_sent_to
+msgid "Code Sent To"
+msgstr ""
+
+#. module: mail_proof
+#. odoo-javascript
+#: code:addons/mail_proof/static/src/email_code_proof/email_code_proof.xml:0
+msgid "Code sent to"
+msgstr ""
+
+#. module: mail_proof
+#. odoo-javascript
+#: code:addons/mail_proof/static/src/email_code_proof/email_code_proof.xml:0
+msgid "Confirm"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__display_name
+#: model:ir.model.fields,field_description:mail_proof.field_proof_method__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields.selection,name:mail_proof.selection__proof_method__code__email_code
+#: model:proof.method,name:mail_proof.proof_method_email_code
+msgid "Email Code"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_hash
+msgid "HMAC of the one-time code sent by email, under the database secret."
+msgstr ""
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+msgid "Hello"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__id
+#: model:ir.model.fields,field_description:mail_proof.field_proof_method__id
+msgid "ID"
+msgstr ""
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+msgid "If you did not expect this, do not give the code to anyone."
+msgstr ""
+
+#. module: mail_proof
+#: model:res.groups,name:mail_proof.privilege_send_proof_code
+msgid "Privilege: a proof request mails its one-time code to the signer"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model,name:mail_proof.model_proof_challenge
+msgid "Proof Challenge"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model,name:mail_proof.model_proof_method
+msgid "Proof Method"
+msgstr ""
+
+#. module: mail_proof
+#: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_sent_to
+msgid "The address the code went to, masked."
+msgstr ""
+
+#. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "This code is not the one we sent."
+msgstr ""
+
+#. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Too many wrong codes. Start again to send a new one."
+msgstr ""
+
+#. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Your confirmation code"
+msgstr ""
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+msgid ""
+"is asking you to confirm the following. If you agree, give them this code:"
+msgstr ""

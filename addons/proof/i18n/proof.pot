@@ -1,0 +1,546 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:43+0000\n"
+"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid "%(contact)s has no way set up to prove it is them."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.constraint,message:proof.constraint_proof_evidence_nonce_uniq
+msgid "A proof challenge is answered once."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.constraint,message:proof.constraint_proof_challenge_token_hash_uniq
+msgid "A proof challenge token is unique."
+msgstr ""
+
+#. module: proof
+#: model:res.groups,comment:proof.privilege_record_proof
+msgid ""
+"A user asked to vouch for a record (an approval, a handover) receives a one-"
+"time challenge and, once their proof is accepted, the evidence row that "
+"records it. Nobody holds this privilege as a member: the proof module takes "
+"it for the one challenge and the one evidence row, and the user reads back "
+"only their own evidence."
+msgstr ""
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
+msgid "Act"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_method__active
+msgid "Active"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/proof_dialog/proof_dialog.xml:0
+msgid "Cancel"
+msgstr ""
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
+msgid "Chain"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__sequence
+msgid "Chain Position"
+msgstr ""
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_list
+msgid "Check Chain"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_method__code
+msgid "Code"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__possession
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__possession
+msgid "Code delivered to the signer's own channel"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/password_proof/password_proof.xml:0
+msgid "Confirm"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/proof_dialog/proof_dialog.js:0
+msgid "Confirm it is %s"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/proof_dialog/proof_dialog.js:0
+msgid "Confirm it is you"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__partner_id
+msgid "Contact"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__create_uid
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__create_uid
+#: model:ir.model.fields,field_description:proof.field_proof_method__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__create_date
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__create_date
+#: model:ir.model.fields,field_description:proof.field_proof_method__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__date
+msgid "Date"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__date_expire
+msgid "Date Expire"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__digest
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__digest
+msgid "Digest"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__display_name
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__display_name
+#: model:ir.model.fields,field_description:proof.field_proof_method__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.constraint,message:proof.constraint_proof_method_code_uniq
+msgid "Each proof method is declared once."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Every recorded proof is intact."
+msgstr ""
+
+#. module: proof
+#: model:ir.ui.menu,name:proof.menu_proof_evidence
+msgid "Evidence"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__facts
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__facts
+msgid "Facts"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__hash
+msgid "Hash"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__hash_version
+msgid "Hash Version"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__id
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__id
+#: model:ir.model.fields,field_description:proof.field_proof_method__id
+msgid "ID"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__ip
+msgid "IP Address"
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "Incorrect password."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__state__issued
+msgid "Issued"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__write_uid
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__write_uid
+#: model:ir.model.fields,field_description:proof.field_proof_method__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__write_date
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__write_date
+#: model:ir.model.fields,field_description:proof.field_proof_method__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__method_id
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_search
+msgid "Method"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__method_code
+msgid "Method Code"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__method_ids
+#: model:ir.ui.menu,name:proof.menu_proof_method
+msgid "Methods"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_method__name
+msgid "Name"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__nonce
+msgid "Nonce"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/proof_dialog/proof_dialog.xml:0
+msgid "None of the ways offered to prove it is you works in this browser."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__code__password
+#: model:proof.method,name:proof.proof_method_password
+msgid "Password"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__payload
+msgid "Payload"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__prev_hash
+msgid "Previous Hash"
+msgstr ""
+
+#. module: proof
+#: model:res.groups,name:proof.privilege_record_proof
+msgid "Privilege: a user proves who they are for an act they vouch for"
+msgstr ""
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
+msgid "Proof"
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Proof %(position)s is missing from the chain."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Proof %(position)s is not linked to the proof before it."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Proof %(position)s was changed after it was recorded."
+msgstr ""
+
+#. module: proof
+#: model:ir.model,name:proof.model_proof_challenge
+msgid "Proof Challenge"
+msgstr ""
+
+#. module: proof
+#: model:ir.actions.act_window,name:proof.action_proof_evidence
+#: model:ir.model,name:proof.model_proof_evidence
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_list
+msgid "Proof Evidence"
+msgstr ""
+
+#. module: proof
+#: model:ir.model,name:proof.model_proof_method
+msgid "Proof Method"
+msgstr ""
+
+#. module: proof
+#: model:ir.actions.act_window,name:proof.action_proof_method
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_method_list
+msgid "Proof Methods"
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Proof evidence chain"
+msgstr ""
+
+#. module: proof
+#: model:ir.ui.menu,name:proof.menu_proof
+msgid "Proofs of Identity"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__user_id
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_search
+msgid "Proven By"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__partner_id
+msgid "Proven By Contact"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__purpose
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__purpose
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_search
+msgid "Purpose"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__res_id
+msgid "Record"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__res_model
+msgid "Record Model"
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Recorded proof evidence cannot be changed."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Recorded proof evidence cannot be deleted."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__state__redeemed
+msgid "Redeemed"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__device_attested
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__device_attested
+msgid "Reported by a trusted device"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__res_id
+msgid "Res"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__res_model
+msgid "Res Model"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__shared_secret
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__shared_secret
+msgid "Secret shared with the server"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_method__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__cryptographic
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__cryptographic
+msgid "Signed by the user's own key"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__state
+msgid "State"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__strength
+#: model:ir.model.fields,field_description:proof.field_proof_method__strength
+msgid "Strength"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__summary
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__summary
+msgid "Summary"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__partner_id
+msgid "The contact asked to prove it is them, when it is not the user."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__partner_id
+msgid ""
+"The contact with no user account who proved it is them, through the user who"
+" asked them."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__facts
+msgid ""
+"The figures of the record the user vouched for, as the digest covers them."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__payload
+msgid "The proof as the method accepted it, kept so it can be checked again."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_method.py:0
+msgid "The proof method %(method)s is not available."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid ""
+"The record changed since you were asked to prove it. Review it and start "
+"again."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__user_id
+msgid ""
+"The user who proved it is them, or who asked the contact for the proof and "
+"entered it."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid "This proof method was not offered for this request."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid "This proof request expired or was already used. Start again."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid "This proof request was issued for another act."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid "This proof request was issued to someone else."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__token_hash
+msgid "Token Hash"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.constraint,message:proof.constraint_proof_evidence_sequence_uniq
+msgid "Two proofs cannot hold the same chain position."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__user_id
+msgid "User"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__user_agent
+msgid "User Agent"
+msgstr ""
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
+msgid "Vouched For"
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_method__strength
+msgid ""
+"What an accepted proof of this method rests on: a signature by a key only "
+"the user holds, a device the server trusts, a secret the server can check, "
+"or a code only the signer's own email or phone received."
+msgstr ""
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__summary
+msgid "What the user was shown when asked for the proof."
+msgstr ""
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid ""
+"You have no way set up to prove this is you. Ask an administrator which "
+"proof methods apply, and set one up."
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/password_proof/password_proof.xml:0
+msgid "Your password"
+msgstr ""
+
+#. module: proof
+#. odoo-javascript
+#: code:addons/proof/static/src/proof_dialog/proof_dialog.xml:0
+msgid "proves it is them, and you enter their answer."
+msgstr ""

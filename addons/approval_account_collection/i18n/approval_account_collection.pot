@@ -1,0 +1,229 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_account_collection
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:43+0000\n"
+"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "%(remittance)s is your own cash: someone else receives it."
+msgstr ""
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "Amount handed in"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model,name:approval_account_collection.model_approval_category
+msgid "Approval Category"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__date_approval_granted
+msgid "Approval Granted Date"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_progress
+msgid "Approval Progress"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_request_id
+msgid "Approval Request"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__date_approval_requested
+msgid "Approval Requested Date"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_required
+msgid "Approval Required"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_state
+msgid "Approval Status"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_user_ids
+msgid "Approvers"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__can_request_approval
+msgid "Can Request Approval"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:approval.category,name:approval_account_collection.approval_category_cash_hand_in
+#: model:ir.model.fields.selection,name:approval_account_collection.selection__approval_category__approval_type__collection_hand_in
+msgid "Cash Hand-in"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model,name:approval_account_collection.model_account_collection_remittance
+msgid "Collection Remittance"
+msgstr ""
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "Collections"
+msgstr ""
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "Collector"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_state
+msgid ""
+"Current approval status:\n"
+"        • new: Approval created but not submitted\n"
+"        • pending: Waiting for approvers\n"
+"        • approved: All required approvals obtained\n"
+"        • refused: Approval was refused (terminal)\n"
+"        • cancelled: Approval was retracted or expired (terminal)"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__date_approval_requested
+msgid "Date and time when approval was requested for this document"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__date_approval_granted
+msgid "Date and time when final approval was granted"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_pending_user_ids
+msgid "Deciding Now"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__display_name
+#: model:ir.model.fields,field_description:approval_account_collection.field_approval_category__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: approval_account_collection
+#: model_terms:ir.ui.view,arch_db:approval_account_collection.view_account_collection_remittance_form
+msgid "Hand-in Approval"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__id
+#: model:ir.model.fields,field_description:approval_account_collection.field_approval_category__id
+msgid "ID"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_request_id
+msgid ""
+"Link to the approval request for this document. Automatically created when "
+"approval is requested."
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__pending_approver_ids
+msgid "Pending Approvers"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_progress
+msgid "Percentage of approvals completed (approved / total approvers)"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__receiver_id
+msgid "Received By"
+msgstr ""
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "Received by"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_chain_preview
+msgid ""
+"The approvers asking for approval would route this document to now, in the "
+"order they decide. Nothing is written to find them."
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__receiver_id
+msgid ""
+"The treasury user who asked to validate a cash hand-in: the party who "
+"receives the cash from the collector and approves it with them."
+msgstr ""
+
+#. module: approval_account_collection
+#. odoo-python
+#: code:addons/approval_account_collection/models/account_collection_remittance.py:0
+msgid "Till"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_user_ids
+msgid "Users who need to approve this document"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__pending_approver_ids
+msgid "Users who still need to approve this document"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__can_request_approval
+msgid "Whether approval can be requested (all required fields filled)"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_required
+msgid "Whether this document requires approval based on current rules"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,field_description:approval_account_collection.field_account_collection_remittance__approval_chain_preview
+msgid "Who Will Approve"
+msgstr ""
+
+#. module: approval_account_collection
+#: model:ir.model.fields,help:approval_account_collection.field_account_collection_remittance__approval_pending_user_ids
+msgid "Who is deciding this document's approval request right now."
+msgstr ""

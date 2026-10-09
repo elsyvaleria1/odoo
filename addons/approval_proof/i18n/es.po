@@ -1,0 +1,220 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:43+0000\n"
+"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_category.py:0
+msgid ""
+"%(category)s asks for a proof of identity, so its requests cannot be "
+"approved by consent."
+msgstr ""
+"%(category)s pide una comprobación de identidad, por lo que sus solicitudes "
+"no pueden aprobarse por consentimiento."
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_category.py:0
+msgid ""
+"%(category)s asks for a proof of identity: choose the proof methods it "
+"accepts."
+msgstr ""
+"%(category)s pide una comprobación de identidad: elija los métodos de "
+"comprobación que acepta."
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_approver.py:0
+msgid ""
+"%(category)s is decided by the approvers themselves: %(user)s cannot hand "
+"their approval to someone else."
+msgstr ""
+"%(category)s la deciden los propios aprobadores: %(user)s no puede delegar "
+"su aprobación en otra persona."
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid ""
+"%(request)s needs a proof that it is you before your decision counts. Decide"
+" it from the request, or from your approval activity, one request at a time."
+msgstr ""
+"%(request)s necesita una comprobación de que es usted antes de que cuente su"
+" decisión. Decida desde la solicitud o desde su actividad de aprobación, una"
+" solicitud a la vez."
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "%(shown)s and %(more)s more"
+msgstr "%(shown)s y %(more)s más"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_category__proof_method_ids
+msgid "Accepted Proof Methods"
+msgstr "Métodos de comprobación aceptados"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_category__allow_delegation
+msgid "Allow Delegation"
+msgstr "Permitir delegación"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Amount"
+msgstr "Monto"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_approval_category
+msgid "Approval Category"
+msgstr "Categoría de aprobación"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_approval_decision_log
+msgid "Approval Decision"
+msgstr "Decisión de aprobación"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_proof_evidence__approval_decision_log_ids
+msgid "Approval Decision Log"
+msgstr "Registro de decisiones de aprobación"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_wizard_approval_request_decide
+msgid "Approval Decision Wizard"
+msgstr "Asistente de decisión de aprobación"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_approval_request
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_proof
+#: model:ir.model.fields.selection,name:approval_proof.selection__approval_category__proof_verdicts__approve
+msgid "Approvals"
+msgstr "Aprobaciones"
+
+#. module: approval_proof
+#: model:ir.model.fields.selection,name:approval_proof.selection__approval_category__proof_verdicts__approve_refuse
+msgid "Approvals and refusals"
+msgstr "Aprobaciones y rechazos"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Approve"
+msgstr "Aprobar"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_approval_approver
+msgid "Approver"
+msgstr "Aprobador"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Decision"
+msgstr "Decisión"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_approver__display_name
+#: model:ir.model.fields,field_description:approval_proof.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_proof.field_approval_decision_log__display_name
+#: model:ir.model.fields,field_description:approval_proof.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_proof.field_proof_evidence__display_name
+#: model:ir.model.fields,field_description:approval_proof.field_wizard_approval_request_decide__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Document"
+msgstr "Documento"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_approver__id
+#: model:ir.model.fields,field_description:approval_proof.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_proof.field_approval_decision_log__id
+#: model:ir.model.fields,field_description:approval_proof.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_proof.field_proof_evidence__id
+#: model:ir.model.fields,field_description:approval_proof.field_wizard_approval_request_decide__id
+msgid "ID"
+msgstr "ID"
+
+#. module: approval_proof
+#: model:ir.model.fields.selection,name:approval_proof.selection__approval_category__proof_verdicts__none
+msgid "No proof"
+msgstr "Sin comprobación"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_decision_log__evidence_id
+msgid "Proof"
+msgstr "Comprobación"
+
+#. module: approval_proof
+#: model:ir.model,name:approval_proof.model_proof_evidence
+msgid "Proof Evidence"
+msgstr "Evidencia de comprobación"
+
+#. module: approval_proof
+#: model_terms:ir.ui.view,arch_db:approval_proof.view_approval_category_form
+msgid "Proof of Identity"
+msgstr "Comprobación de identidad"
+
+#. module: approval_proof
+#: model:ir.model.fields,field_description:approval_proof.field_approval_category__proof_verdicts
+msgid "Proof of Identity For"
+msgstr "Comprobación de identidad para"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Refuse"
+msgstr "Rechazar"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Request"
+msgstr "Solicitud"
+
+#. module: approval_proof
+#. odoo-python
+#: code:addons/approval_proof/models/approval_request.py:0
+msgid "Unknown decision: %s"
+msgstr "Decisión desconocida: %s"
+
+#. module: approval_proof
+#: model:ir.model.fields,help:approval_proof.field_approval_category__allow_delegation
+msgid ""
+"Whether an approver may have someone else decide in their place. A handover "
+"is acknowledged by the people who handed and received: turn it off there."
+msgstr ""
+"Si un aprobador puede hacer que otra persona decida en su lugar. Una entrega"
+" la reconocen quienes entregaron y recibieron: desactívelo en ese caso."
+
+#. module: approval_proof
+#: model:ir.model.fields,help:approval_proof.field_approval_category__proof_verdicts
+msgid ""
+"Which decisions count only once the approver proves it is them, with a proof"
+" covering the request's figures. A refusal that says a handover did not "
+"happen accuses the other party: prove it too."
+msgstr ""
+"Qué decisiones cuentan solo cuando el aprobador comprueba que es él, con una"
+" comprobación que cubre las cifras de la solicitud. Un rechazo que dice que "
+"una entrega no ocurrió acusa a la otra parte: compruébelo también."
