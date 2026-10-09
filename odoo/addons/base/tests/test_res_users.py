@@ -1,4 +1,5 @@
 import threading
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -871,9 +872,22 @@ class TestContextGetPartnerInvalidation(TransactionCase):
         )
 
 
+class _AttemptRequest:
+    def __init__(self, addr):
+        self.httprequest = SimpleNamespace(remote_addr=addr)
+        self.after_release = []
+
+    def call_after_release(self, func):
+        self.after_release.append(func)
+
+    def release(self):
+        pending, self.after_release = self.after_release, []
+        for func in pending:
+            func()
+
+
 @tagged("post_install", "-at_install")
 class TestLoginCooldown(TransactionCase):
-    registry_test_mode = False
     _REQUEST = "odoo.addons.base.models.res_users.request"
 
     def setUp(self):
@@ -881,44 +895,39 @@ class TestLoginCooldown(TransactionCase):
         icp = self.env["ir.config_parameter"].sudo()
         icp.set_param("base.login_cooldown_after", "2")
         icp.set_param("base.login_cooldown_duration", "60")
-        self.addCleanup(self._purge_cooldown_rows)
 
-    def _purge_cooldown_rows(self):
-        with self.env.registry.cursor() as cr:
-            cr.execute(
-                "DELETE FROM res_users_login_cooldown WHERE source LIKE ANY(%s)",
-                [
-                    [
-                        "8.8.8.8",
-                        "7.7.7.7",
-                        "8.8.4.4",
-                        "1.1.1.1",
-                        "9.9.9.9",
-                        "203.0.113.%",
-                        "198.51.100.%",
-                    ]
-                ],
-            )
+    @contextmanager
+    def _attempt(self, addr):
+        request = _AttemptRequest(addr)
+        try:
+            with patch(self._REQUEST, request):
+                yield request
+        finally:
+            request.release()
 
-    @staticmethod
-    def _request(addr):
-        return SimpleNamespace(httprequest=SimpleNamespace(remote_addr=addr))
-
-    def _fail_once(self, users):
-        with self.assertRaises(AccessDenied), users._assert_can_auth(user=self.env.uid):
+    def _fail_once(self, users, addr, user=None):
+        with (
+            self._attempt(addr),
+            self.assertRaises(AccessDenied),
+            users._assert_can_auth(user=user or self.env.uid),
+        ):
             raise AccessDenied
+
+    def _failures(self, source):
+        return self.env["res.users"]._get_login_failure_state(source)[0]
 
     @mute_logger("odoo.addons.base.models.res_users")
     def test_cooldown_after_threshold(self):
         users = self.env["res.users"]
-        with patch(self._REQUEST, self._request("8.8.8.8")):
-            self._fail_once(users)
-            self._fail_once(users)
-            with (
-                self.assertRaises(AccessDenied),
-                users._assert_can_auth(user=self.env.uid),
-            ):
-                pass
+        self._fail_once(users, "8.8.8.8")
+        self._fail_once(users, "8.8.8.8")
+        with (
+            self._attempt("8.8.8.8"),
+            self.assertRaises(AccessDenied),
+            users._assert_can_auth(user=self.env.uid),
+        ):
+            pass
+        self.assertEqual(self._failures("8.8.8.8"), 2, "a refusal is not a failure")
 
     @mute_logger("odoo.addons.base.models.res_users")
     def test_change_password_is_rate_limited(self):
@@ -930,35 +939,30 @@ class TestLoginCooldown(TransactionCase):
             }
         )
         as_target = self.env["res.users"].with_user(target)
-        with patch(self._REQUEST, self._request("7.7.7.7")):
-            for _ in range(2):
-                with self.assertRaises(AccessDenied):
-                    as_target.change_password("wrong", "irrelevant")
-            with self.assertRaises(AccessDenied):
-                as_target.change_password(
-                    "correct-horse-battery", "a-brand-new-password"
-                )
+        for _ in range(2):
+            with self._attempt("7.7.7.7"), self.assertRaises(AccessDenied):
+                as_target.change_password("wrong", "irrelevant")
+        with self._attempt("7.7.7.7"), self.assertRaises(AccessDenied):
+            as_target.change_password("correct-horse-battery", "a-brand-new-password")
 
     def test_success_resets_counter(self):
         users = self.env["res.users"]
-        with patch(self._REQUEST, self._request("8.8.4.4")):
-            self._fail_once(users)
-            with users._assert_can_auth(user=self.env.uid):
+        for _ in range(2):
+            self._fail_once(users, "8.8.4.4")
+            self.assertEqual(self._failures("8.8.4.4"), 1)
+            with self._attempt("8.8.4.4"), users._assert_can_auth(user=self.env.uid):
                 pass
-            self._fail_once(users)
-            with users._assert_can_auth(user=self.env.uid):
-                pass
+            self.assertEqual(self._failures("8.8.4.4"), 0)
 
     def test_disabled_when_cooldown_after_zero(self):
         self.env["ir.config_parameter"].sudo().set_param(
             "base.login_cooldown_after", "0"
         )
         users = self.env["res.users"]
-        with patch(self._REQUEST, self._request("1.1.1.1")):
-            for _ in range(5):
-                self._fail_once(users)
-            with users._assert_can_auth(user=self.env.uid):
-                pass
+        for _ in range(5):
+            self._fail_once(users, "1.1.1.1")
+        with self._attempt("1.1.1.1"), users._assert_can_auth(user=self.env.uid):
+            pass
 
     def test_no_request_is_noop(self):
         users = self.env["res.users"]
@@ -967,46 +971,54 @@ class TestLoginCooldown(TransactionCase):
                 pass
 
     @mute_logger("odoo.addons.base.models.res_users")
-    def test_a_failure_is_counted_under_a_test_cursor(self):
-        # HttpCase runs the registry in test mode: the ledger's own cursor then
-        # shares a transaction that has run queries, where the isolation level
-        # can no longer be set. No assertRaises: its savepoint would roll back
-        # the ledger's write along with the failed login.
-        self.registry_enter_test_mode()
+    def test_an_attempt_writes_the_ledger_once_its_cursor_is_released(self):
         users = self.env["res.users"]
-        refused = False
-        with patch(self._REQUEST, self._request("9.9.9.9")):
-            try:
-                with users._assert_can_auth(user=self.env.uid):
-                    raise AccessDenied
-            except AccessDenied:
-                refused = True
-        self.assertTrue(refused)
-        failures, _last = users._get_login_failure_state("9.9.9.9")
-        self.assertEqual(failures, 1)
+
+        def no_second_cursor():
+            return patch.object(
+                self.registry, "cursor", side_effect=AssertionError("second cursor")
+            )
+
+        failed = _AttemptRequest("9.9.9.9")
+        with (
+            patch(self._REQUEST, failed),
+            no_second_cursor(),
+            self.assertRaises(AccessDenied),
+            users._assert_can_auth(user=self.env.uid),
+        ):
+            raise AccessDenied
+        self.assertEqual(self._failures("9.9.9.9"), 0)
+        failed.release()
+        self.assertEqual(self._failures("9.9.9.9"), 1, "it outlives the rollback")
+
+        succeeded = _AttemptRequest("9.9.9.9")
+        with (
+            patch(self._REQUEST, succeeded),
+            no_second_cursor(),
+            users._assert_can_auth(user=self.env.uid),
+        ):
+            pass
+        self.assertEqual(self._failures("9.9.9.9"), 1)
+        succeeded.release()
+        self.assertEqual(self._failures("9.9.9.9"), 0)
 
     @mute_logger("odoo.addons.base.models.res_users")
     def test_cooldown_with_non_numeric_login(self):
         users = self.env["res.users"]
         login = "bob@example.com"
-        with patch(self._REQUEST, self._request("9.9.9.9")):
-            for _ in range(2):
-                with (
-                    self.assertRaises(AccessDenied),
-                    users._assert_can_auth(user=login),
-                ):
-                    raise AccessDenied
-            with (
-                self.assertRaises(AccessDenied),
-                users._assert_can_auth(user=login),
-            ):
-                pass
+        for _ in range(2):
+            self._fail_once(users, "9.9.9.9", user=login)
+        with (
+            self._attempt("9.9.9.9"),
+            self.assertRaises(AccessDenied),
+            users._assert_can_auth(user=login),
+        ):
+            pass
 
     @mute_logger("odoo.addons.base.models.res_users")
     def test_stale_failure_entries_are_pruned(self):
         users = self.env["res.users"]
-        with patch(self._REQUEST, self._request("203.0.113.7")):
-            self._fail_once(users)
+        self._fail_once(users, "203.0.113.7")
 
         now = datetime.now(UTC).replace(tzinfo=None)
         stale = now - timedelta(seconds=120)
@@ -1025,8 +1037,7 @@ class TestLoginCooldown(TransactionCase):
                 [fresh_source, now],
             )
 
-        with patch(self._REQUEST, self._request("203.0.113.8")):
-            self._fail_once(users)
+        self._fail_once(users, "203.0.113.8")
 
         with self.env.registry.cursor() as cr:
             cr.execute("SELECT source FROM res_users_login_cooldown")
@@ -1046,27 +1057,39 @@ class TestLoginCooldown(TransactionCase):
         racer = threading.Thread(
             target=cooldown.record_failure, args=(source, timedelta(seconds=60))
         )
-        with self.env.registry.cursor() as cr:
-            cr.execute(
-                "INSERT INTO res_users_login_cooldown (source, failures, last_failure) "
-                "VALUES (%s, 1, %s)",
-                [source, datetime.now(UTC).replace(tzinfo=None)],
-            )
-            racer.start()
-            racer.join(0.5)
-            self.assertTrue(racer.is_alive(), "the racer waits on the first row")
-        racer.join(10)
-        self.assertFalse(racer.is_alive())
-        self.assertEqual(cooldown.state(source)[0], 2)
+        with self.leave_registry_test_mode():
+            try:
+                with self.registry.cursor() as cr:
+                    cr.execute(
+                        "INSERT INTO res_users_login_cooldown (source, failures, last_failure) "
+                        "VALUES (%s, 1, %s)",
+                        [source, datetime.now(UTC).replace(tzinfo=None)],
+                    )
+                    racer.start()
+                    racer.join(0.5)
+                    self.assertTrue(
+                        racer.is_alive(), "the racer waits on the first row"
+                    )
+                racer.join(10)
+                self.assertFalse(racer.is_alive())
+                with self.registry.cursor() as cr:
+                    self.assertEqual(cooldown.state(cr, source)[0], 2)
+            finally:
+                with self.registry.cursor() as cr:
+                    cr.execute(
+                        "DELETE FROM res_users_login_cooldown WHERE source = %s",
+                        [source],
+                    )
 
     def test_a_success_without_failures_touches_no_ledger(self):
         users = self.env["res.users"]
         with (
-            patch(self._REQUEST, self._request("203.0.113.51")),
+            self._attempt("203.0.113.51") as request,
             patch.object(type(users), "_clear_login_failures") as clear,
         ):
             with users._assert_can_auth(user=self.env.uid):
                 pass
+            self.assertEqual(request.after_release, [])
         clear.assert_not_called()
 
 

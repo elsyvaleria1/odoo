@@ -99,9 +99,9 @@ class Request(
             self.env.cr.close()
 
     def call_after_release(self, func: Callable[[], object]) -> None:
-        # for a write a read-only attempt cannot make: it runs once the
-        # attempt's cursor is back in the pool, on a cursor of its own, so a
-        # request never holds two connections at once
+        # for a write the attempt's cursor cannot make, being read-only or
+        # about to roll back: it runs once that cursor is back in the pool, on
+        # a cursor of its own, so a request never holds two connections at once
         self._after_release.append(func)
 
     def _run_after_release(self) -> None:

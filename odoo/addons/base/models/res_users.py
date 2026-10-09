@@ -5,7 +5,7 @@ import logging
 import time
 import typing
 import uuid
-from functools import wraps
+from functools import partial, wraps
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Self
 
@@ -2026,18 +2026,21 @@ class ResUsers(models.Model):
         return LoginCooldown(self.pool)
 
     def _get_login_failure_state(self, source: str) -> tuple[int, datetime.datetime]:
-        failures, last_failure = self._login_cooldown().state(source)
+        failures, last_failure = self._login_cooldown().state(self.env.cr, source)
         _debug.logic("login_failure_state", source=source, failures=failures)
         return failures, last_failure
 
     def _record_login_failure(self, source: str) -> None:
         delay = self._get_login_cooldown_duration()
         _debug.lifecycle("login_failure_recorded", source=source, delay_s=delay)
-        self._login_cooldown().record_failure(source, datetime.timedelta(seconds=delay))
+        record = self._login_cooldown().record_failure
+        request.call_after_release(
+            partial(record, source, datetime.timedelta(seconds=delay))
+        )
 
     def _clear_login_failures(self, source: str) -> None:
         _debug.lifecycle("login_failures_cleared", source=source)
-        self._login_cooldown().clear(source)
+        request.call_after_release(partial(self._login_cooldown().clear, source))
 
     @contextlib.contextmanager
     def _assert_can_auth(self, user: int | str | None = None) -> Generator[None]:

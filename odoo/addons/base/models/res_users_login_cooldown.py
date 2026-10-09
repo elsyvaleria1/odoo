@@ -34,8 +34,9 @@ class ResUsersLoginCooldown(models.Model):
 
 
 class LoginCooldown:
-    """The login-failure ledger, kept in its own transaction: a failed login
-    rolls its transaction back, and the failure has to outlive it."""
+    """The login-failure ledger, read on the caller's cursor and written on a
+    cursor of its own: a failed login rolls its transaction back, and the
+    failure has to outlive it."""
 
     __slots__ = ("registry",)
 
@@ -46,14 +47,21 @@ class LoginCooldown:
         env = api.Environment(cr, SUPERUSER_ID, {})
         return env["res.users.login.cooldown"]
 
-    def state(self, source: str) -> tuple[int, datetime.datetime]:
-        with self.registry.cursor() as cr:
-            row = self._rows(cr).search([("source", "=", source)], limit=1)
-            if not row:
-                _debug.logic("cooldown_state", source=source, failures=0)
-                return 0, _EPOCH
-            _debug.logic("cooldown_state", source=source, failures=row.failures)
-            return row.failures, row.last_failure.replace(tzinfo=datetime.UTC)
+    def state(self, cr, source: str) -> tuple[int, datetime.datetime]:
+        cr.execute(
+            SQL(
+                "SELECT failures, last_failure FROM res_users_login_cooldown"
+                " WHERE source = %s",
+                source,
+            )
+        )
+        row = cr.fetchone()
+        if not row:
+            _debug.logic("cooldown_state", source=source, failures=0)
+            return 0, _EPOCH
+        failures, last_failure = row
+        _debug.logic("cooldown_state", source=source, failures=failures)
+        return failures, last_failure.replace(tzinfo=datetime.UTC)
 
     def record_failure(self, source: str, delay: datetime.timedelta) -> None:
         now = fields.Datetime.now()

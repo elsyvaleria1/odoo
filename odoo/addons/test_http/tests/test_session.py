@@ -1,6 +1,8 @@
+import collections
 import contextlib
 import datetime
 import os
+import threading
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -321,6 +323,72 @@ class TestHttpSession(TestHttpBase):
         res = self.multidb_url_open("/test_http/greeting-user")
         res.raise_for_status()
         self.assertEqual(res.status_code, 200, "Should not be redirected to /web/login")
+
+    @contextlib.contextmanager
+    def _cursors_held_at_open(self):
+        acquire = self.registry.cursor
+        opened = collections.defaultdict(list)
+        held = []
+
+        def cursor(*args, **kwargs):
+            mine = opened[threading.get_ident()]
+            if open_now := sum(not cr.closed for cr in mine):
+                held.append(open_now)
+            mine.append(acquire(*args, **kwargs))
+            return mine[-1]
+
+        with patch.object(self.registry, "cursor", cursor):
+            yield held
+
+    def _authenticate_jsonrpc(self, url_open, password):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": None,
+            "method": "call",
+            "params": {"db": get_db_name(), "login": "admin", "password": password},
+        }
+        res = url_open(
+            "/web/session/authenticate", data=json_dumps(payload), headers=CT_JSON
+        )
+        res.raise_for_status()
+        return res.json()
+
+    def _cooldown_failures(self):
+        self.env.cr.execute(
+            "SELECT failures FROM res_users_login_cooldown WHERE source = %s",
+            [HOST],
+        )
+        row = self.env.cr.fetchone()
+        return row[0] if row else 0
+
+    def _assert_a_login_holds_one_connection(self, url_open):
+        with self._cursors_held_at_open() as held:
+            refused = self._authenticate_jsonrpc(url_open, "wrong")
+            failures = self._cooldown_failures()
+            accepted = self._authenticate_jsonrpc(url_open, "admin")
+        self.assertEqual(held, [], "a cursor was still open when another opened")
+        self.assertIn("error", refused)
+        self.assertEqual(failures, 1, "the refused login is counted")
+        self.assertIn("result", accepted)
+        self.assertEqual(self._cooldown_failures(), 0, "the success clears the count")
+
+    @mute_logger("odoo.addons.base.models.res_users", "odoo.http")
+    def test_session04b_a_login_holds_one_connection(self):
+        self._assert_a_login_holds_one_connection(self.db_url_open)
+
+    @mute_logger("odoo.addons.base.models.res_users", "odoo.http")
+    def test_session04c_a_login_without_a_database_holds_one_connection(self):
+        self.dbs_served = [get_db_name(), "another_database"]
+        serve_nodb = odoo.http.Request._serve_nodb
+        served_nodb = []
+
+        def spy(request):
+            served_nodb.append(request.httprequest.path)
+            return serve_nodb(request)
+
+        with patch.object(odoo.http.Request, "_serve_nodb", spy):
+            self._assert_a_login_holds_one_connection(self.multidb_url_open)
+        self.assertEqual(served_nodb, ["/web/session/authenticate"] * 2)
 
     def test_session05_default_lang(self):
         self.env["res.lang"]._activate_lang("en_US")

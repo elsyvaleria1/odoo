@@ -39,7 +39,7 @@ Give each concurrent run its own `-d` and its own `-p` / `--gevent-port`.
 | | `TestErrorPageOffFrontend` | HttpCase | `_serve_error_page` from a `website=False` route answers the page with the status it asks for |
 | `test_translations_route.py` | `TestWebsiteTranslations` | HttpCase | `/website/translations` serves the server-side allow-list in the language its caller names, never redirects or writes the language cookie, and a caller cannot grow the shared ormcache |
 | `test_res_lang.py` | `TestFormCreate` | unit | `res.lang` stays creatable through the form view this module extends (`url_code` must not be required) |
-| `test_mock_request_cursor.py` | `TestMockRequestCursor` | HttpCase | the test thread may open its own `registry.cursor()` under a `MockRequest` (the login cooldown does), and a `MockRequest` does not stop `authenticate()` |
+| `test_mock_request_cursor.py` | `TestMockRequestCursor` | HttpCase | the test thread may open its own `registry.cursor()` under a `MockRequest`, and a `MockRequest` does not stop `authenticate()` |
 
 ## Why some of it is unit and not HttpCase
 

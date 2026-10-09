@@ -199,6 +199,8 @@ class _RequestServeMixin(RequestState):
             if exc.code is not None:
                 raise
             return self._serve_aborted(exc)
+        finally:
+            self._run_after_release()
 
     def _prepare_nodb_not_found_response(self, exc: NotFound) -> Response:
         _debug.logic(
