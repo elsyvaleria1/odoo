@@ -42,5 +42,8 @@
         "website.website_builder_assets": [
             "website_event_exhibitor/static/src/website_builder/**/*",
         ],
+        "web.assets_tests": [
+            "website_event_exhibitor/static/tests/tours/*.js",
+        ],
     },
 }

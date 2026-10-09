@@ -3,7 +3,10 @@
 
     <template id="tracks_session" name="Event Tracks">
         <t t-call="website_event.layout">
-            <div class="o_wevent_online o_wesession_index container">
+            <div
+                class="o_wevent_online o_wesession_index container"
+                data-fragment="website_event_track.tracks_session"
+                data-partial-navigation=".post_link, .o_wevent_search">
                 <t
                     t-set="option_track_wishlist"
                     t-value="not event.is_done and is_view_active('website_event_track.session_topbar_wishlist')" />

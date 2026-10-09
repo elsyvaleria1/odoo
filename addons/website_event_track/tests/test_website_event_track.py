@@ -28,6 +28,29 @@ class TestWebsiteEventTrack(TestEventOnlineCommon, HttpCase):
             ]
         )
 
+    def test_tracks_filter_in_place(self):
+        keynote = self.env["event.track.tag"].create({"name": "PN Keynote", "color": 3})
+        self.env["event.track"].create(
+            [
+                {
+                    "name": "PN Opening",
+                    "event_id": self.event_0.id,
+                    "date": self.event_0.date_begin,
+                    "is_published": True,
+                    "tag_ids": [(6, 0, keynote.ids)],
+                },
+                {
+                    "name": "PN Closing",
+                    "event_id": self.event_0.id,
+                    "date": self.event_0.date_begin,
+                    "is_published": True,
+                },
+            ]
+        )
+        self.start_tour(
+            f"{self.event_0.website_url}/track", "tracks_partial_navigation"
+        )
+
     @freeze_time("2020-07-05")
     def test_email_reminder_tour(self):
         for user in [self.demo_user, self.env["res.users"]]:
