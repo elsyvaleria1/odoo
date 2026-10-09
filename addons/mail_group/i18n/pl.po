@@ -383,6 +383,7 @@ msgstr "Zawsze pozwalać"
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "An email with instructions has been sent."
 msgstr "Wiadomość e-mail z instrukcjami została wysłana."
 
@@ -493,6 +494,7 @@ msgstr "Wybierz lub skonfiguruj niestandardową domenę"
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_form
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_kanban
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Closed"
 msgstr "Zamknięte"
 
@@ -1205,6 +1207,11 @@ msgid "Permanent Ban"
 msgstr "Stały ban"
 
 #. module: mail_group
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
+msgid "Please enter a valid email address."
+msgstr "Wprowadź prawidłowy adres e-mail."
+
+#. module: mail_group
 #: model:ir.model.fields,help:mail_group.field_mail_group__alias_contact
 msgid ""
 "Policy to post a message on the document using the mailgateway.\n"
@@ -1394,6 +1401,7 @@ msgstr "Temat"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Subscribe"
 msgstr "Zaprenumeruj"
 
@@ -1494,12 +1502,14 @@ msgstr "Rekordem wiadomości powinna być grupa."
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is already subscribed."
 msgstr "Ta wiadomość e-mail jest już subskrybowana."
 
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is not subscribed."
 msgstr "Ta wiadomość e-mail nie jest subskrybowana."
 
@@ -1527,6 +1537,7 @@ msgstr "Do sprawdzenia"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Unsubscribe"
 msgstr "Wypisz się"
 
@@ -1677,6 +1688,7 @@ msgstr "zrezygnował z subskrypcji"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "your email..."
 msgstr "twój adres..."
 

@@ -333,6 +333,7 @@ msgstr "Tillad altid"
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "An email with instructions has been sent."
 msgstr ""
 
@@ -441,6 +442,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_form
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_kanban
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Closed"
 msgstr ""
 
@@ -1134,6 +1136,11 @@ msgid "Permanent Ban"
 msgstr "Permanent banlysning"
 
 #. module: mail_group
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
+msgid "Please enter a valid email address."
+msgstr "Indtast venligst en gyldig e-mailadresse."
+
+#. module: mail_group
 #: model:ir.model.fields,help:mail_group.field_mail_group__alias_contact
 msgid ""
 "Policy to post a message on the document using the mailgateway.\n"
@@ -1321,6 +1328,7 @@ msgstr "Emne"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Subscribe"
 msgstr "Tilmeld"
 
@@ -1418,12 +1426,14 @@ msgstr ""
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is already subscribed."
 msgstr ""
 
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is not subscribed."
 msgstr ""
 
@@ -1451,6 +1461,7 @@ msgstr "Til gennemgang"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Unsubscribe"
 msgstr "Afmeld"
 
@@ -1601,6 +1612,7 @@ msgstr ""
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "your email..."
 msgstr "din e-mail..."
 

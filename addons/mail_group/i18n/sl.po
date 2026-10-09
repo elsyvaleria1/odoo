@@ -342,6 +342,7 @@ msgstr "Vedno dovoli"
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "An email with instructions has been sent."
 msgstr "E-poštno sporočilo z navodili je bilo poslano."
 
@@ -452,6 +453,7 @@ msgstr "Izberite ali konfigurirajte domeno po meri"
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_form
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_kanban
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Closed"
 msgstr ""
 
@@ -1152,6 +1154,11 @@ msgid "Permanent Ban"
 msgstr "Trajna prepoved"
 
 #. module: mail_group
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
+msgid "Please enter a valid email address."
+msgstr ""
+
+#. module: mail_group
 #: model:ir.model.fields,help:mail_group.field_mail_group__alias_contact
 msgid ""
 "Policy to post a message on the document using the mailgateway.\n"
@@ -1340,6 +1347,7 @@ msgstr "Zadeva"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Subscribe"
 msgstr "Naroči se"
 
@@ -1440,12 +1448,14 @@ msgstr "Zapis sporočila mora biti skupina."
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is already subscribed."
 msgstr "Na to e-poštno sporočilo ste že naročeni."
 
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is not subscribed."
 msgstr "Na to e-pošto niste naročeni."
 
@@ -1473,6 +1483,7 @@ msgstr "Za pregled"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Unsubscribe"
 msgstr "Odjavi se"
 
@@ -1624,6 +1635,7 @@ msgstr "odjavljen/a od"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "your email..."
 msgstr "vaša e-pošta..."
 

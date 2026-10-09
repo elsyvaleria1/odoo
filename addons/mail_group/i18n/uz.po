@@ -408,6 +408,7 @@ msgstr "Doimo ruxsat berish"
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "An email with instructions has been sent."
 msgstr "Ko‘rsatmalar bilan elektron xat yuborildi."
 
@@ -537,6 +538,7 @@ msgstr "Maxsus domenni tanlang yoki sozlang"
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_kanban
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Closed"
 msgstr "Yopiq"
 
@@ -1366,6 +1368,11 @@ msgid "Permanent Ban"
 msgstr "Doimiy taqiq"
 
 #. module: mail_group
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
+msgid "Please enter a valid email address."
+msgstr "Iltimos, to‘g‘ri elektron pochta manzilini kiriting."
+
+#. module: mail_group
 #: model:ir.model.fields,help:mail_group.field_mail_group__alias_contact
 #, fuzzy
 msgid ""
@@ -1586,6 +1593,7 @@ msgstr "Mavzu"
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Subscribe"
 msgstr "Obuna bo‘lish"
 
@@ -1701,6 +1709,7 @@ msgstr "Xabarning yozuvi guruh bo‘lishi kerak."
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is already subscribed."
 msgstr "Bu elektron pochta allaqachon obuna qilingan."
 
@@ -1708,6 +1717,7 @@ msgstr "Bu elektron pochta allaqachon obuna qilingan."
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is not subscribed."
 msgstr "Bu elektron pochtaga obuna qilinmagan."
 
@@ -1740,6 +1750,7 @@ msgstr "Ko‘rib chiqish"
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Unsubscribe"
 msgstr "Obunani bekor qilish"
 
@@ -1922,5 +1933,6 @@ msgstr "obunani bekor qildi"
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "your email..."
 msgstr "elektron pochta manzilingiz..."

@@ -1,3 +1,5 @@
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 import babel.dates
 import werkzeug
 
@@ -9,6 +11,7 @@ from odoo.tools.misc import get_lang
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.portal.controllers.portal import pager as portal_pager
+from odoo.addons.web.controllers.utils import Fragment, fragments_or_redirect
 
 _lt = LazyTranslate(__name__)
 
@@ -98,6 +101,11 @@ class PortalMailGroup(http.Controller):
                     for group in mail_groups
                 ],
                 "email": email_normalized,
+                "token": kw.get("token"),
+                "subscription_group": int(kw["subscription_group"])
+                if str(kw.get("subscription_group", "")).isdigit()
+                else 0,
+                "subscription_status": kw.get("subscription_status"),
                 "is_mail_group_manager": request.env.user.has_group(
                     "mail_group.group_mail_group_manager"
                 ),
@@ -275,35 +283,92 @@ class PortalMailGroup(http.Controller):
 
     @http.route("/group/subscribe", type="jsonrpc", auth="public", website=True)
     def group_subscribe(self, group_id=0, email=None, token=None, **kw):
-        group_sudo, is_member, partner_id = self._group_subscription_get_group(
-            group_id, email, token
-        )
-
-        if is_member:
-            return "is_already_member"
-
-        if not request.env.user._is_public():
-            group_sudo._join_group(request.env.user.email, partner_id)
-            return "added"
-
-        group_sudo._send_subscribe_confirmation_email(email)
-        return "email_sent"
+        return self._group_subscription_change(group_id, email, token, True)[1]
 
     @http.route("/group/unsubscribe", type="jsonrpc", auth="public", website=True)
     def group_unsubscribe(self, group_id=0, email=None, token=None, **kw):
+        return self._group_subscription_change(group_id, email, token, False)[1]
+
+    @http.route(
+        "/group/<int:group_id>/subscription",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
+    )
+    def group_subscription(
+        self,
+        group_id,
+        action="subscribe",
+        email=None,
+        token=None,
+        redirect=None,
+        force_unsubscribe=None,
+        **kw,
+    ):
+        group_sudo, status = self._group_subscription_change(
+            group_id, email, token, action != "unsubscribe"
+        )
+        back = redirect or "/groups"
+        values = {
+            "group": group_sudo,
+            "email": email,
+            "token": token,
+            "force_unsubscribe": bool(force_unsubscribe),
+            "is_member": bool(
+                group_sudo._find_member(
+                    email,
+                    None
+                    if request.env.user._is_public()
+                    else request.env.user.partner_id.id,
+                )
+            ),
+            "subscription_status": status,
+            "subscription_redirect": back,
+        }
+        page = urlsplit(back)
+        query = [
+            (key, value)
+            for key, value in parse_qsl(page.query)
+            if key not in ("subscription_group", "subscription_status")
+        ] + [("subscription_group", group_sudo.id), ("subscription_status", status)]
+        return fragments_or_redirect(
+            request.env,
+            urlunsplit(page._replace(query=urlencode(query))),
+            Fragment(
+                "mail_group.group_subscription",
+                values,
+                key=f"mail_group.subscription.{group_sudo.id}",
+            ),
+            Fragment(
+                "mail_group.group_members_count",
+                values,
+                key=f"mail_group.members.{group_sudo.id}",
+            ),
+        )
+
+    def _group_subscription_change(self, group_id, email, token, subscribe):
         group_sudo, is_member, partner_id = self._group_subscription_get_group(
             group_id, email, token
         )
-
+        public = request.env.user._is_public()
+        if public and not tools.email_normalize(email or ""):
+            return group_sudo, "invalid_email"
+        if subscribe:
+            if is_member:
+                return group_sudo, "is_already_member"
+            if not public:
+                group_sudo._join_group(request.env.user.email, partner_id)
+                return group_sudo, "added"
+            group_sudo._send_subscribe_confirmation_email(email)
+            return group_sudo, "email_sent"
         if not is_member:
-            return "is_not_member"
-
-        if not request.env.user._is_public():
+            return group_sudo, "is_not_member"
+        if not public:
             group_sudo._leave_group(request.env.user.email, partner_id)
-            return "removed"
-
+            return group_sudo, "removed"
         group_sudo._send_unsubscribe_confirmation_email(email)
-        return "email_sent"
+        return group_sudo, "email_sent"
 
     def _group_subscription_get_group(self, group_id, email, token):
         group = request.env["mail.group"].browse(int(group_id)).exists()

@@ -338,6 +338,7 @@ msgstr "อนุญาตเสมอ"
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "An email with instructions has been sent."
 msgstr "ส่งอีเมลพร้อมคำแนะนำแล้ว"
 
@@ -445,6 +446,7 @@ msgstr "เลือกหรือกำหนดค่าโดเมนที
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_form
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_group_view_kanban
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Closed"
 msgstr ""
 
@@ -1130,6 +1132,11 @@ msgid "Permanent Ban"
 msgstr "การแบนอย่างถาวร"
 
 #. module: mail_group
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
+msgid "Please enter a valid email address."
+msgstr ""
+
+#. module: mail_group
 #: model:ir.model.fields,help:mail_group.field_mail_group__alias_contact
 msgid ""
 "Policy to post a message on the document using the mailgateway.\n"
@@ -1316,6 +1323,7 @@ msgstr "หัวเรื่อง"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Subscribe"
 msgstr "ติดตาม"
 
@@ -1413,12 +1421,14 @@ msgstr "การบันทึกข้อความควรเป็นก
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is already subscribed."
 msgstr "อีเมลนี้ได้สมัครรับข่าวสารแล้ว"
 
 #. module: mail_group
 #. odoo-javascript
 #: code:addons/mail_group/static/src/interactions/mail_group.js:0
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "This email is not subscribed."
 msgstr "อีเมลนี้ไม่ได้สมัครรับข้อมูล"
 
@@ -1446,6 +1456,7 @@ msgstr "จะทบทวน"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "Unsubscribe"
 msgstr "ยกเลิกการเป็นสมาชิก"
 
@@ -1596,6 +1607,7 @@ msgstr "ยกเลิกการสมัครจาก"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.mail_groups
+#: model_terms:ir.ui.view,arch_db:mail_group.group_subscription
 msgid "your email..."
 msgstr "อีเมลของคุณ..."
 
