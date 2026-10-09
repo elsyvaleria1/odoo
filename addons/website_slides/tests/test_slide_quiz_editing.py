@@ -63,7 +63,7 @@ class TestQuizEditing(HttpCase, common.SlidesCase):
             q for q in data["slide_questions"] if q["id"] == self.question_1.id
         )
 
-        self._rpc(
+        result = self._rpc(
             "/slides/slide/quiz/question_add_or_update",
             {
                 "slide_id": self.slide_3.id,
@@ -90,3 +90,18 @@ class TestQuizEditing(HttpCase, common.SlidesCase):
             "editing a question must not erase which answer is correct",
         )
         self.assertEqual(correct.answer_score, 1.0)
+        self.assertEqual(set(result), {"question_html"})
+        self.assertIn(question["question"], result["question_html"])
+
+    def test_question_add_or_update_answers_a_dict_on_every_outcome(self):
+        self.authenticate("user_officer", "user_officer")
+        missing_slide = self._rpc(
+            "/slides/slide/quiz/question_add_or_update",
+            {
+                "slide_id": -1,
+                "question": "Q",
+                "sequence": 1,
+                "answer_ids": [],
+            },
+        )
+        self.assertEqual(missing_slide, {"error": "slide_wrong"})

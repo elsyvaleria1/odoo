@@ -1543,7 +1543,7 @@ class WebsiteSlides(WebsiteProfile):
     )
     def slide_quiz_question_add_or_update(
         self, slide_id, question, sequence, answer_ids, existing_question_id=None
-    ):
+    ) -> dict[str, str]:
         fetch_res = self._get_slide(slide_id)
         if fetch_res.get("error"):
             return fetch_res
@@ -1607,13 +1607,15 @@ class WebsiteSlides(WebsiteProfile):
                 for a in survey_question.suggested_answer_ids
             ],
         }
-        return request.env["ir.qweb"]._render(
-            "website_slides.lesson_content_quiz_question",
-            {
-                "slide": slide,
-                "question": question_data,
-            },
-        )
+        return {
+            "question_html": request.env["ir.qweb"]._render(
+                "website_slides.lesson_content_quiz_question",
+                {
+                    "slide": slide,
+                    "question": question_data,
+                },
+            )
+        }
 
     @http.route("/slides/slide/quiz/get", type="jsonrpc", auth="public", website=True)
     def slide_quiz_get(self, slide_id):

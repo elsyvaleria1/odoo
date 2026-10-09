@@ -161,21 +161,25 @@ export class QuestionFormBehavior {
 
         if (this._isValidForm(form)) {
             const values = this._serializeForm(form);
-            const renderedQuestion = await this.host.waitFor(
+            const result = await this.host.waitFor(
                 rpc("/slides/slide/quiz/question_add_or_update", values),
             );
 
-            if (typeof renderedQuestion === "object" && renderedQuestion.error) {
+            if (result.error) {
                 errorContainer.classList.remove("d-none");
                 errorContainer.querySelector(
                     ".o_wslides_js_quiz_validation_error_text",
-                ).textContent = renderedQuestion.error;
+                ).textContent = result.error;
             } else if (options.update) {
                 errorContainer.classList.add("d-none");
-                this.onDisplayUpdated(this, renderedQuestion, this.editedQuestionEl);
+                this.onDisplayUpdated(
+                    this,
+                    result.question_html,
+                    this.editedQuestionEl,
+                );
             } else {
                 errorContainer.classList.add("d-none");
-                this.onDisplayCreated(this, renderedQuestion);
+                this.onDisplayCreated(this, result.question_html);
             }
         } else {
             errorContainer.classList.remove("d-none");
