@@ -36,8 +36,14 @@ msgid ""
 "Approved amount: %(approved)s\n"
 "Current amount: %(current)s\n"
 "\n"
-"Please refuse the current approval and request a new one with the updated amount."
+"Undo the change, or reset the approval to draft and submit it again for the updated amount."
 msgstr ""
+"El importe de %(document)s cambió después de otorgada la aprobación.\n"
+"\n"
+"Importe aprobado: %(approved)s\n"
+"Importe actual: %(current)s\n"
+"\n"
+"Deshaga el cambio, o regrese la aprobación a borrador y envíela de nuevo por el importe actualizado."
 
 #. module: approval_product
 #. odoo-python

@@ -24,14 +24,14 @@ msgid ""
 "Approved amount: %(symbol_approved)s %(approved)s\n"
 "Current amount: %(symbol_current)s %(current)s\n"
 "\n"
-"Please refuse the current approval and request a new one with the updated amount."
+"Undo the change, or reset the approval to draft and submit it again for the updated amount."
 msgstr ""
 "El importe de %(document)s cambió después de otorgada la aprobación.\n"
 "\n"
 "Importe aprobado: %(symbol_approved)s %(approved)s\n"
 "Importe actual: %(symbol_current)s %(current)s\n"
 "\n"
-"Rechace la aprobación actual y solicite una nueva con el importe actualizado."
+"Deshaga el cambio, o regrese la aprobación a borrador y envíela de nuevo por el importe actualizado."
 
 #. module: approval_account
 #. odoo-python

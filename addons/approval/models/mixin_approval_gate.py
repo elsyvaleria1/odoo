@@ -324,7 +324,8 @@ class MixinApprovalGate(models.AbstractModel):
             raise UserError(
                 self.env._(
                     "What was approved is no longer what is there: %(name)s changed "
-                    "after its approval was granted. Ask for approval again.",
+                    "after its approval was granted. Undo the change, or reset the "
+                    "approval to draft and submit it again.",
                     name=self.display_name,
                 )
             )

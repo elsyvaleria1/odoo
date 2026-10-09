@@ -1139,6 +1139,22 @@ class HrEmployee(models.Model):
             self._write_private_address(address_vals)
         return res
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_change_request_reviewed(self):
+        # the change requests go with the employee by an SQL cascade, which skips
+        # their own refusal to be deleted while reviewed: it is asked here
+        reviewed = self.env["hr.employee.change.request"].search(
+            [("employee_id", "in", self.ids)]
+        ).filtered(lambda change: change.approval_state in ("new", "pending"))
+        if reviewed:
+            raise UserError(
+                self.env._(
+                    "Cannot delete %(employees)s: a change request is being "
+                    "reviewed. Refuse or cancel its approval first.",
+                    employees=", ".join(reviewed.employee_id.mapped("name")),
+                )
+            )
+
     @api.model
     def _selection_installed_langs(self):
         return self.env["res.lang"].get_installed()

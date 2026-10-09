@@ -32,12 +32,8 @@ class BaseModuleInstallRequest(models.Model):
             "context": {"default_module_id": self.module_id.id},
         }
 
-    def _get_domain_approval_category(self):
-        category = self.env.ref(
-            "approval_base_install_request.approval_category_module_activation",
-            raise_if_not_found=False,
-        )
-        return [("id", "=", category.id)] if category else []
+    def _get_approval_category_xmlid(self) -> str:
+        return "approval_base_install_request.approval_category_module_activation"
 
     def _get_fields_approval_protected(self):
         return ["module_id", "body_html"]

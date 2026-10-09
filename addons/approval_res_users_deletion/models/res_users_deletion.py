@@ -32,12 +32,8 @@ class ResUsersDeletion(models.Model):
             ("approval_state", "in", ("approved", False))
         ]
 
-    def _get_domain_approval_category(self) -> list[Any]:
-        category = self.env.ref(
-            "approval_res_users_deletion.approval_category_account_deletion",
-            raise_if_not_found=False,
-        )
-        return [("id", "=", category.id)] if category else []
+    def _get_approval_category_xmlid(self) -> str:
+        return "approval_res_users_deletion.approval_category_account_deletion"
 
     def _get_fields_approval_protected(self) -> list[str]:
         return ["user_id"]

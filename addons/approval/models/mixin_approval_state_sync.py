@@ -49,21 +49,6 @@ class MixinApprovalStateSync(models.AbstractModel):
     def _apply_approval_sync_outcome(self, kind: str) -> None:
         raise NotImplementedError
 
-    def _get_approval_category_xmlid(self) -> str | None:
-        return None
-
-    def _get_domain_approval_category(self) -> list[Any]:
-        xmlid = self._get_approval_category_xmlid()
-        category = xmlid and self.env.ref(xmlid, raise_if_not_found=False)
-        if category:
-            trace.SYNC.event(
-                "category_by_xmlid", record=self, xmlid=xmlid, category=category.id
-            )
-            return [("id", "=", category.id)]
-        if xmlid:
-            trace.DEGRADED.event("category_xmlid_missing", record=self, xmlid=xmlid)
-        return super()._get_domain_approval_category()
-
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)

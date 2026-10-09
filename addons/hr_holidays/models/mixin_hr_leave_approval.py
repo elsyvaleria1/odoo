@@ -289,14 +289,11 @@ class MixinHrLeaveApproval(models.AbstractModel):
             return step_type
         return first if self.state == "confirm" else second
 
-    def _get_approval_outcome_states(self):
-        raise NotImplementedError
-
     def _check_approval_sync_policy(self, kind) -> None:
-        self._check_approval_update(self._get_approval_outcome_states()[kind])
+        self._check_approval_update(self._get_approval_outcome_value(kind))
 
     def _apply_approval_sync_outcome(self, kind) -> None:
-        self._apply_approval_state(self._get_approval_outcome_states()[kind])
+        self._apply_approval_state(self._get_approval_outcome_value(kind))
 
     def _apply_approval_state(self, state):
         raise NotImplementedError

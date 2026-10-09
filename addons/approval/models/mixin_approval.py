@@ -766,7 +766,19 @@ class MixinApproval(models.AbstractModel):
                     message_type="notification",
                 )
 
+    def _get_approval_category_xmlid(self) -> str | None:
+        return None
+
     def _get_domain_approval_category(self) -> list[Any]:
+        xmlid = self._get_approval_category_xmlid()
+        category = xmlid and self.env.ref(xmlid, raise_if_not_found=False)
+        if category:
+            trace.MIXIN.event(
+                "category_by_xmlid", record=self, xmlid=xmlid, category=category.id
+            )
+            return [("id", "=", category.id)]
+        if xmlid:
+            trace.DEGRADED.event("category_xmlid_missing", record=self, xmlid=xmlid)
         return []
 
     def _get_candidate_approval_categories(self) -> "ApprovalCategory":  # noqa: UP037 — ORM methods are runtime-introspected (api_doc, /json/2); the TYPE_CHECKING import means the class isn't in the runtime namespace, so the annotation must stay quoted.

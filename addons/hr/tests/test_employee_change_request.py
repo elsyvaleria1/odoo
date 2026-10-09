@@ -169,3 +169,11 @@ class TestEmployeeChangeRequest(TransactionCase):
         self._decide(request, "approve")
         self.employee.invalidate_recordset(["private_street"])
         self.assertEqual(self.employee.private_street, "Reviewed Street")
+
+    def test_an_employee_whose_change_is_reviewed_is_not_deleted(self):
+        request = self._raise_request(private_street="Gone Street")
+        with self.assertRaisesRegex(UserError, "being reviewed"):
+            self.employee.unlink()
+        self._decide(request, "refuse")
+        self.employee.unlink()
+        self.assertFalse(request.exists())

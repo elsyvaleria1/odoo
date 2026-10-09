@@ -2155,14 +2155,6 @@ is approved, validated or refused."
             "cancel": "cancelled",
         }
 
-    def _get_approval_outcome_states(self):
-        return {
-            "progress": "validate1",
-            "approved": "validate",
-            "refused": "refuse",
-            "cancelled": "cancel",
-        }
-
     def _apply_approval_state(self, state):
         self.check_singleton()
         if state == "validate1":

@@ -139,6 +139,21 @@ class TestApprovalGate(ApprovalCommon):
             document.action_ship()
         self.assertEqual(document.ship_count, 0)
 
+    def test_a_grant_reset_and_submitted_again_covers_the_changed_document(self):
+        document = self._document(runs_on_approval=False)
+        document.action_ship()
+        self._approve(document)
+        document.sudo().amount_total = 400.0
+        with self.assertRaises(UserError):
+            document.action_ship()
+        request = document.approval_request_id
+        request.action_reset_to_draft()
+        request.action_confirm()
+        self.assertEqual(request.amount, 400.0)
+        self._approve(document)
+        document.action_ship()
+        self.assertEqual(document.ship_count, 1)
+
     def test_what_needs_no_approval_goes_through_beside_what_does(self):
         gated = self._document("Gated one")
         plain = self._document("Plain one", test_category_id=False)

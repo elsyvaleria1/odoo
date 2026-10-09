@@ -545,7 +545,8 @@ What the engine asks of any record a request is raised for, whichever adopter sh
 | `_refuse_pending_approval()` | Reverse cascade: the document is cancelled → `_refuse_cascade()` on a new or pending linked request (lifecycle `action_cancel`, adopters' own cancels) |
 | `action_view_approval_request()` | Open the linked request form |
 | `_clear_refused_approval_link()` | Release a refused/cancelled link so a reopened document can request a fresh approval |
-| `_get_domain_approval_category()` | **Override**: domain to find category |
+| `_get_domain_approval_category()` | **Override**: domain to find category. Default: the category `_get_approval_category_xmlid()` names, if any |
+| `_get_approval_category_xmlid()` | Optional: the one category the document's requests belong to, by xmlid |
 | `_get_fields_approval_required()` | **Override**: required fields before approval |
 | `_prepare_approval_request_values()` | **Override**: customize request creation values. Honours `approval_binding_for` = (model, id, binding) in context, only when it names this record, so a binding-raised request knows its operation and a nested document cannot inherit the link |
 | `_on_approval_state_changed()` | **Dispatcher — do NOT override.** Routes to `_on_approval_approved` / `_on_approval_refused` / `_on_approval_cancelled` / `_on_approval_revoked` / `_on_approval_reset`. Base posts a chatter note per state; for the `pending` revocation it also schedules a To-Do for the responsible user on activity-enabled models. See conventions.md |
@@ -604,7 +605,6 @@ pattern, a document the engine moves through `_on_approval_approved` and friends
 | `_apply_approval_sync_outcome(kind)` | Moves the document for a kind, through the document's overridable methods. Required |
 | `_get_approval_outcome_value(kind)` | The state a request-side outcome lands the document in, whose verb the decider must hold. Default: the one value mapped to that kind |
 | `_access_verbs` (on the adopter) | One verb per value of the state field, `at_create=False`, each with `ir.access` rows and a shipped `approval.binding` in mode `act_decides` |
-| `_get_approval_category_xmlid()` | Optional: the category the document's requests belong to |
 | `_is_approval_request_required()` | Whether a pending document raises a request: its state is `pending` and `_can_raise_approval_request()` holds |
 | `_can_raise_approval_request()` | Whether the document may hold a request at all, whatever its state: none yet, and a category applies. Adopters add their own exclusions here |
 

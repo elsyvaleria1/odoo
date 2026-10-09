@@ -1417,13 +1417,11 @@ class HrLeaveAllocation(models.Model):
             "refuse": "refused",
         }
 
-    def _get_approval_outcome_states(self):
-        return {
-            "progress": "validate1",
-            "approved": "validate",
-            "refused": "refuse",
-            "cancelled": "refuse",
-        }
+    def _get_approval_outcome_value(self, kind):
+        # an allocation has no cancelled state: a cancelled request refuses it
+        if kind == "cancelled":
+            return "refuse"
+        return super()._get_approval_outcome_value(kind)
 
     def _apply_approval_state(self, state):
         self.check_singleton()
