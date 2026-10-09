@@ -522,19 +522,21 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
         self.authenticate("pos_user", "pos_user")
         url = f"/pos/ui/{self.main_pos_config.id}"
 
+        for site in ("cross-site", "same-site"):
+            with self.subTest(site=site):
+                res = self.url_open(
+                    url,
+                    headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": site},
+                    allow_redirects=False,
+                )
+
+                self.assertEqual(res.status_code, 303)
+                self.assertTrue(res.headers["Location"].endswith(_POS_MENU_URL))
+                self.assertFalse(self.main_pos_config.session_ids)
+
         res = self.url_open(
             url,
-            headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "cross-site"},
-            allow_redirects=False,
-        )
-
-        self.assertEqual(res.status_code, 303)
-        self.assertTrue(res.headers["Location"].endswith(_POS_MENU_URL))
-        self.assertFalse(self.main_pos_config.session_ids)
-
-        res = self.url_open(
-            url,
-            headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "same-site"},
+            headers={"Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "same-origin"},
             allow_redirects=False,
         )
 

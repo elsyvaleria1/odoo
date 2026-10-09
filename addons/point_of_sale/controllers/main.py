@@ -97,9 +97,15 @@ class PosController(PortalAccount):
                     headers=[("Cache-Control", "no-store")],
                     status=409,
                 )
-            # the Lax session cookie rides along a navigation from another site
-            if request.httprequest.headers.get("Sec-Fetch-Site") == "cross-site":
-                _debug.logic("pos_ui_cross_site_open_refused", config=pos_config.id)
+            # the Lax session cookie rides along a navigation from another site,
+            # and a sibling subdomain of a shared parent domain is not ours either
+            fetch_site = request.httprequest.headers.get("Sec-Fetch-Site")
+            if fetch_site not in (None, "same-origin", "none"):
+                _debug.logic(
+                    "pos_ui_foreign_site_open_refused",
+                    config=pos_config.id,
+                    site=fetch_site,
+                )
                 return request.redirect(_POS_MENU_URL)
             try:
                 with request.env.cr.savepoint():
