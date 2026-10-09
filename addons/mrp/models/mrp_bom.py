@@ -569,18 +569,35 @@ class MrpBom(models.Model):
         )
         self.show_copy_operations_button = exist_operation
 
+    def _get_production_warehouses(self) -> dict:
+        Warehouse = self.env["stock.warehouse"]
+        default_by_company = Warehouse._get_default_by_company(
+            self.company_id | self.env.company
+        )
+        return {
+            bom: bom.picking_type_id.warehouse_id
+            or default_by_company.get(
+                (bom.company_id or self.env.company).id, Warehouse
+            )
+            for bom in self
+        }
+
+    def _get_production_warehouse(self):
+        self.check_singleton()
+        return self._get_production_warehouses()[self]
+
     def action_compute_bom_days(self) -> dict | None:
         report = self.env["report.mrp.report_bom_structure"].with_context(
             minimized=True
         )
         incomplete = self.browse()
+        warehouses = self._get_production_warehouses()
         with _debug.perf("bom_days_computed", cr=self.env.cr, boms=self) as span:
             for boms in self.grouped("company_id").values():
                 company_report = report._with_bom_company(boms[:1])
-                warehouse = company_report._get_default_warehouse(boms[:1])
                 for bom in boms.with_env(company_report.env):
                     bom_data = company_report._get_bom_data(
-                        bom, warehouse, bom.product_id, ignore_stock=True
+                        bom, warehouses[bom], bom.product_id, ignore_stock=True
                     )
                     bom.days_to_prepare_mo = report._get_max_component_delay(
                         bom_data["components"]

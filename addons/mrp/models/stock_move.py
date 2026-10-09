@@ -868,6 +868,9 @@ class StockMove(models.Model):
         res = super()._get_source_document()
         return res or self._get_production()
 
+    def _get_handling_document(self):
+        return super()._get_handling_document() or self._get_production()
+
     def _get_upstream_documents_and_responsibles(self, visited):
         if self.production_id and self.production_id.state not in ("done", "cancel"):
             return [

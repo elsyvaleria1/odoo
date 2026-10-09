@@ -498,20 +498,69 @@ class TestPickedSerialFreedWhenConsumed(TestMoveLineCommon):
         self.assertEqual(first.move_ids.state, "confirmed")
         self.assertEqual(self._on_hand(product), {serials.name: (0.0, 0.0)})
 
-    def test_the_other_picked_serials_of_the_move_stay_picked(self):
-        product, _serials = self._serials("picked-sn-keep", 3)
+    def _picked_pair_losing_one(self, name):
+        product, serials = self._serials(name, 3)
         delivery = self._delivery(product, 2, assign=True)
         reserved = delivery.move_ids.move_line_ids.trace_id
         delivery.move_ids.picked = True
+        scrap = self._scrap(product, reserved[0])
+        return product, delivery, reserved, serials - reserved, scrap
 
-        self._scrap(product, reserved[0])
-
-        line = delivery.move_ids.move_line_ids
-        self.assertEqual((line.trace_id, line.picked), (reserved[1], True))
-        self.assertEqual(
-            self._on_hand(product)[reserved[0].name],
-            (0.0, 0.0),
+    def test_a_consumed_pick_leaves_its_gap_proposed_beside_the_other_picks(self):
+        product, delivery, reserved, spare, _scrap = self._picked_pair_losing_one(
+            "picked-sn-gap"
         )
+
+        lines = delivery.move_ids.move_line_ids
+        self.assertEqual(
+            {(line.trace_id, line.picked) for line in lines},
+            {(reserved[1], True), (spare, False)},
+        )
+        self.assertTrue(delivery.move_ids.picked)
+        self.assertEqual(self._on_hand(product)[reserved[0].name], (0.0, 0.0))
+
+    def test_the_transfer_says_which_serial_left_and_how(self):
+        _product, delivery, reserved, _spare, scrap = self._picked_pair_losing_one(
+            "picked-sn-note"
+        )
+
+        notes = delivery.message_ids.filtered(
+            lambda message: reserved[0].name in (message.body or "")
+        )
+        self.assertEqual(len(notes), 1)
+        self.assertIn(scrap.name, notes.body)
+
+    def test_an_unconfirmed_proposal_is_not_delivered(self):
+        product, delivery, reserved, spare, _scrap = self._picked_pair_losing_one(
+            "picked-sn-ignored"
+        )
+
+        delivery.button_validate(cancel_backorder_ids=delivery.ids)
+
+        self.assertEqual(delivery.move_ids.move_line_ids.trace_id, reserved[1])
+        self.assertEqual(self._on_hand(product)[spare.name], (1.0, 0.0))
+
+    def test_a_confirmed_proposal_completes_the_transfer(self):
+        product, delivery, reserved, spare, _scrap = self._picked_pair_losing_one(
+            "picked-sn-confirmed"
+        )
+
+        delivery.move_ids.move_line_ids.picked = True
+        delivery.button_validate()
+
+        self.assertEqual(delivery.state, "done")
+        self.assertEqual(delivery.move_ids.move_line_ids.trace_id, reserved[1] | spare)
+        self.assertEqual(self._on_hand(product)[spare.name], (0.0, 0.0))
+
+    def test_checking_availability_still_proposes_nothing_on_a_picked_move(self):
+        product, _serials = self._serials("picked-sn-assign", 3)
+        delivery = self._delivery(product, 2, assign=True)
+        delivery.move_ids.move_line_ids[1].unlink()
+        delivery.move_ids.picked = True
+
+        delivery.action_assign()
+
+        self.assertEqual(len(delivery.move_ids.move_line_ids), 1)
 
     def test_two_transfers_validating_one_serial_are_refused(self):
         product, serials = self._serials("picked-sn-twice", 1)

@@ -260,6 +260,9 @@ class StockMove(models.Model):
     def _get_source_document(self):
         return self.repair_id or super()._get_source_document()
 
+    def _get_handling_document(self):
+        return self.repair_id or super()._get_handling_document()
+
     def _set_repair_locations(self) -> None:
         _debug.logic("repair_locations_set", moves=self)
         moves_per_repair = self.filtered(

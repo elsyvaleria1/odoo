@@ -403,9 +403,9 @@ class TestBomAndReports(TestMrpCommon):
         )
 
     def _structure(self, bom, **context):
-        return self.bom_structure.with_context(
-            warehouse_id=self.warehouse_1.id, **context
-        )._get_report_data(bom.id)["lines"]
+        return self.bom_structure.with_context(**context)._get_report_data(
+            bom.id, warehouse_id=self.warehouse_1.id
+        )["lines"]
 
     def test_producible_reads_a_sub_bom_line_in_its_own_unit(self):
         finished = self._storable("Finished")

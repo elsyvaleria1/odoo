@@ -992,6 +992,17 @@ class StockWarehouse(models.Model):
             self._update_route_names(new_name)
 
     @api.model
+    def _get_default_by_company(self, companies) -> dict:
+        warehouses = self.search(
+            [("company_id", "in", companies.ids)],
+            order="company_id, sequence, id",
+        )
+        default_by_company = {}
+        for warehouse in warehouses:
+            default_by_company.setdefault(warehouse.company_id.id, warehouse)
+        return default_by_company
+
+    @api.model
     def _raise_missing_warehouse(self) -> None:
         if not self.env.registry.ready:
             return

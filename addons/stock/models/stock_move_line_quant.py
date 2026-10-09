@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Self
 
+from markupsafe import Markup
+
 from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.fields import Command, Domain
@@ -272,9 +274,44 @@ class StockMoveLineQuant(models.Model):
         (move_to_reassign - moves_to_sever).filtered(
             lambda m: m.procure_method != "make_to_stock"
         ).procure_method = "make_to_stock"
+        consumed_picks = move_line_to_unlink.filtered("picked")
+        notes = self._prepare_consumed_pick_notes(consumed_picks)
         move_line_to_unlink.unlink()
         moves_to_sever.filtered("picked").picked = False
-        move_to_reassign[::-1]._action_assign()
+        # A picked move keeps its operator's lines; the gap a consumed pick
+        # left is reserved beside them, unpicked, for the operator to confirm.
+        refill = (move_to_reassign - moves_to_sever).filtered("picked")
+        move_to_reassign[::-1].with_context(
+            reserve_picked_move_ids=refill.ids
+        )._action_assign()
+        for document, lines in notes.items():
+            document.message_post(
+                body=Markup("<br/>").join(lines), subtype_xmlid="mail.mt_note"
+            )
+
+    def _prepare_consumed_pick_notes(self, consumed_picks) -> dict:
+        self.check_singleton()
+        notes = defaultdict(list)
+        for line in consumed_picks:
+            document = line.move_id._get_handling_document()
+            if not document:
+                continue
+            notes[document].append(
+                self.env._(
+                    "%(trace)s left %(location)s with %(consumer)s: the line that"
+                    " had picked it is removed.",
+                    trace=line.trace_id.display_name,
+                    location=line.location_id.display_name,
+                    consumer=self.reference or self.move_id.display_name,
+                )
+            )
+        _debug.logic(
+            "consumed_pick_notes",
+            line=self.id,
+            picks=consumed_picks,
+            documents=len(notes),
+        )
+        return notes
 
     def _get_outdated_candidates(self, ml_ids_to_ignore) -> Self:
         self.check_singleton()

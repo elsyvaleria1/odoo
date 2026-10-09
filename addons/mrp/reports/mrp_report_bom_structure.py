@@ -18,14 +18,13 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
     _name = "report.mrp.report_bom_structure"
     _description = "BOM Overview Report"
 
-    @api.model
-    def _get_default_warehouse(self, bom):
-        if warehouse_id := self.env.context.get("warehouse_id"):
-            return self.env["stock.warehouse"].browse(warehouse_id)
-        company = bom.company_id or self.env.company
-        return self.env["stock.warehouse"].search(
-            [("company_id", "=", company.id)], limit=1
-        )
+    def _with_warehouse(self, warehouse) -> Self:
+        # The product quantity API takes its warehouse from the context: the
+        # report sets it from its warehouse argument, so stock, forecasts and
+        # routes are read in one warehouse.
+        if self.env.context.get("warehouse_id") == warehouse.id:
+            return self
+        return self.with_context(warehouse_id=warehouse.id)
 
     def _warm_tree_quantities(self, bom, product) -> None:
         products = product
@@ -86,12 +85,20 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         }
 
     @api.model
-    def _get_report_data(self, bom_id, searchQty=0, searchVariant=False):
-        self = self._with_bom_company(self.env["mrp.bom"].browse(bom_id))
+    def _get_report_data(
+        self, bom_id, searchQty=0, searchVariant=False, warehouse_id=False
+    ):
+        bom = self.env["mrp.bom"].browse(bom_id)
+        warehouse = (
+            self.env["stock.warehouse"].browse(warehouse_id)
+            if warehouse_id
+            else bom._get_production_warehouse()
+        )
+        self = self._with_bom_company(bom)._with_warehouse(warehouse)
         self = self.with_context(
             bom_cost_share_cache=self.env["mrp.bom"]._get_explosion_scratch()
         )
-        bom = self.env["mrp.bom"].browse(bom_id)
+        bom = bom.with_env(self.env)
         bom_quantity = searchQty or bom.product_qty or 1
 
         if searchVariant:
@@ -105,7 +112,6 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 ).product_variant_ids[:1]
             )
 
-        warehouse = self._get_default_warehouse(bom)
         self._warm_tree_quantities(bom, product)
 
         with _debug.perf(
@@ -324,6 +330,10 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         ignore_stock=False,
         simulated_leaves_per_workcenter=False,
     ):
+        if self.env.context.get("warehouse_id") != warehouse.id:
+            self = self._with_warehouse(warehouse)
+            bom = bom.with_env(self.env)
+            product = product and product.with_env(self.env)
         is_minimized = self.env.context.get("minimized", False)
         if not product:
             product = bom.product_id or bom.product_tmpl_id.product_variant_id
@@ -793,8 +803,10 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
 
     @api.model
     def _get_pdf_line(self, bom_id, product_id=False, qty=1):
-        self = self._with_bom_company(self.env["mrp.bom"].browse(bom_id))
         bom = self.env["mrp.bom"].browse(bom_id)
+        warehouse = bom._get_production_warehouse()
+        self = self._with_bom_company(bom)._with_warehouse(warehouse)
+        bom = bom.with_env(self.env)
         if product_id:
             product = self.env["product.product"].browse(int(product_id))
         else:
@@ -806,9 +818,9 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 ).product_variant_ids[:1]
             )
 
-        warehouse = self._get_default_warehouse(bom)
+        # The printed structure shows quantities and costs, never stock.
         data = self._get_bom_data(
-            bom, warehouse, product=product, line_qty=qty, level=0
+            bom, warehouse, product=product, line_qty=qty, level=0, ignore_stock=True
         )
         data["lines"] = self._get_bom_array_lines(data, 1)
         return data

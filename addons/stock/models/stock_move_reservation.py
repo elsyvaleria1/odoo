@@ -86,9 +86,10 @@ class StockMoveReservation(models.Model):
         )
 
     def _prepare_reservation_run(self) -> tuple:
+        refillable_ids = set(self.env.context.get("reserve_picked_move_ids", ()))
         moves_to_assign = self.filtered(
             lambda m: (
-                not m.picked
+                (not m.picked or m.id in refillable_ids)
                 and m.state in ["confirmed", "waiting", "partially_available"]
             ),
         )
@@ -166,10 +167,11 @@ class StockMoveReservation(models.Model):
             len(ledger.move_line_vals),
             ledger.get_total_pending(),
         )
+        # what reservation proposes is never picked, whatever the move is
         self.env["stock.move.line"].with_context(
             quants_cache=quants_cache,
             preserve_state=True,
-        ).create(ledger.move_line_vals)
+        ).create([dict(vals, picked=False) for vals in ledger.move_line_vals])
         _logger.debug(
             "_action_assign: %s assigned, %s partially available",
             len(assigned_moves_ids),

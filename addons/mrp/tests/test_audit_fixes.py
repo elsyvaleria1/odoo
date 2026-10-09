@@ -129,11 +129,13 @@ class TestMrpAuditFixes(TestMrpCommon):
                 ],
             }
         )
-        self.env["stock.quant"]._update_available_quantity(
-            component, self.env.ref("stock.stock_location_stock"), 28.0
-        )
+        stock = self.env.ref("stock.stock_location_stock")
+        self.env["stock.quant"]._update_available_quantity(component, stock, 28.0)
         data = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom.id, searchQty=1, searchVariant=False
+            bom_id=bom.id,
+            searchQty=1,
+            searchVariant=False,
+            warehouse_id=stock.warehouse_id.id,
         )
         comp_rows = [
             line

@@ -51,7 +51,7 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
         options["bom_overview_warehouse_id"] = (
             kept.get("bom_overview_warehouse_id")
             if kept.get("bom_overview_warehouse_id") in warehouses.ids
-            else warehouses[:1].id
+            else (bom._get_production_warehouse() if bom else warehouses[:1]).id
         )
         options["bom_overview_warehouses"] = [
             {"id": warehouse.id, "name": warehouse.display_name}
@@ -86,14 +86,11 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
         if not options.get("bom_overview_bom_id"):
             return []
 
-        data = (
-            self.env["report.mrp.report_bom_structure"]
-            .with_context(warehouse_id=options["bom_overview_warehouse_id"])
-            ._get_report_data(
-                bom_id=options["bom_overview_bom_id"],
-                searchQty=options["bom_overview_quantity"],
-                searchVariant=options["bom_overview_variant_id"],
-            )
+        data = self.env["report.mrp.report_bom_structure"]._get_report_data(
+            bom_id=options["bom_overview_bom_id"],
+            searchQty=options["bom_overview_quantity"],
+            searchVariant=options["bom_overview_variant_id"],
+            warehouse_id=options["bom_overview_warehouse_id"],
         )
         lines = []
         self._collect_lines(report, options, data["lines"], lines)

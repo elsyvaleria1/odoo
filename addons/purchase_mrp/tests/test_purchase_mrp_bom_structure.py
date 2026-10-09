@@ -91,9 +91,9 @@ class TestPurchaseMrpBomStructure(AccountTestInvoicingCommon):
             self._buy_lead_days(), 3 + 4, "vendor delay + days to purchase"
         )
 
-        data = self.report.with_context(
-            warehouse_id=self.warehouse.id
-        )._get_report_data(bom_id=self.bom.id)
+        data = self.report._get_report_data(
+            bom_id=self.bom.id, warehouse_id=self.warehouse.id
+        )
         component = data["lines"]["components"][0]
         self.assertEqual(component["lead_time"], self._buy_lead_days())
         self.assertEqual(component["availability_delay"], self._buy_lead_days())

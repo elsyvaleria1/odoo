@@ -383,10 +383,8 @@ class TestSubcontractingDropshippingFlows(
             }
         )
 
-        report = (
-            self.env["report.mrp.report_bom_structure"]
-            .with_context(warehouse_id=warehouse.id)
-            ._get_report_data(bom_subcontract.id)
+        report = self.env["report.mrp.report_bom_structure"]._get_report_data(
+            bom_subcontract.id, warehouse_id=warehouse.id
         )
         component_lines = report.get("lines", []).get("components", [])
         self.assertEqual(component_lines[0]["product_id"], compo_drop.id)
@@ -398,10 +396,8 @@ class TestSubcontractingDropshippingFlows(
             "Despite the RR linked to it, it should still display the Buy route",
         )
 
-        report = (
-            self.env["report.mrp.report_bom_structure"]
-            .with_context(warehouse_id=warehouse.id)
-            ._get_report_data(bom_local.id)
+        report = self.env["report.mrp.report_bom_structure"]._get_report_data(
+            bom_local.id, warehouse_id=warehouse.id
         )
         component_lines = report.get("lines", []).get("components", [])
         self.assertEqual(component_lines[0]["product_id"], compo_drop.id)

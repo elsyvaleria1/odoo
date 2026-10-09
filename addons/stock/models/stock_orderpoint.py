@@ -431,19 +431,11 @@ class StockWarehouseOrderpoint(models.Model):
                 alternative.display_name if alternative else ""
             )
 
-    def _get_default_warehouse_by_company(self, companies):
-        warehouses = self.env["stock.warehouse"].search(
-            [("company_id", "in", companies.ids)],
-            order="company_id, sequence, id",
-        )
-        default_by_company = {}
-        for warehouse in warehouses:
-            default_by_company.setdefault(warehouse.company_id.id, warehouse)
-        return default_by_company
-
     @api.depends("location_id", "company_id")
     def _compute_warehouse_id(self) -> None:
-        default_by_company = self._get_default_warehouse_by_company(self.company_id)
+        default_by_company = self.env["stock.warehouse"]._get_default_by_company(
+            self.company_id
+        )
         for orderpoint in self:
             if orderpoint.location_id.warehouse_id:
                 orderpoint.warehouse_id = orderpoint.location_id.warehouse_id
@@ -457,7 +449,7 @@ class StockWarehouseOrderpoint(models.Model):
 
     @api.depends("warehouse_id", "company_id")
     def _compute_location_id(self):
-        default_by_company = self._get_default_warehouse_by_company(
+        default_by_company = self.env["stock.warehouse"]._get_default_by_company(
             (self - self.filtered("warehouse_id")).company_id,
         )
         for orderpoint in self:

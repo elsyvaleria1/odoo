@@ -1275,13 +1275,19 @@ class TestBoM(TestMrpCommon):
         )
 
         report_values = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom_pickaxe.id, searchQty=1, searchVariant=False
+            bom_id=bom_pickaxe.id,
+            searchQty=1,
+            searchVariant=False,
+            warehouse_id=location.warehouse_id.id,
         )
         self.assertEqual(report_values["lines"]["operations_time"], 15.0)
         self.assertEqual(report_values["lines"]["producible_qty"], 0)
 
         report_values = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom_pickaxe.id, searchQty=2, searchVariant=False
+            bom_id=bom_pickaxe.id,
+            searchQty=2,
+            searchVariant=False,
+            warehouse_id=location.warehouse_id.id,
         )
         self.assertEqual(report_values["lines"]["operations_time"], 30.0)
         self.assertEqual(report_values["lines"]["producible_qty"], 0)
@@ -1309,7 +1315,10 @@ class TestBoM(TestMrpCommon):
         )
 
         report_values = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom_pickaxe.id, searchQty=1, searchVariant=False
+            bom_id=bom_pickaxe.id,
+            searchQty=1,
+            searchVariant=False,
+            warehouse_id=location.warehouse_id.id,
         )
         self.assertEqual(report_values["lines"]["operations_time"], 15.0)
         self.assertEqual(report_values["lines"]["producible_qty"], 0)
@@ -1317,7 +1326,12 @@ class TestBoM(TestMrpCommon):
         with self.assertRaises(exceptions.UserError):
             report_values = self.env[
                 "report.mrp.report_bom_structure"
-            ]._get_report_data(bom_id=bom_pickaxe.id, searchQty=2, searchVariant=False)
+            ]._get_report_data(
+                bom_id=bom_pickaxe.id,
+                searchQty=2,
+                searchVariant=False,
+                warehouse_id=location.warehouse_id.id,
+            )
             self.assertEqual(report_values["lines"]["operations_time"], 15.0)
             self.assertEqual(report_values["lines"]["producible_qty"], 0)
 
@@ -1328,7 +1342,10 @@ class TestBoM(TestMrpCommon):
         self.assertEqual(iron.qty_free, 3)
 
         report_values = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom_pickaxe.id, searchQty=1, searchVariant=False
+            bom_id=bom_pickaxe.id,
+            searchQty=1,
+            searchVariant=False,
+            warehouse_id=location.warehouse_id.id,
         )
         self.assertEqual(report_values["lines"]["operations_time"], 15.0)
         self.assertEqual(report_values["lines"]["producible_qty"], 1)
@@ -1340,7 +1357,10 @@ class TestBoM(TestMrpCommon):
         self.assertEqual(iron.qty_free, 6)
 
         report_values = self.env["report.mrp.report_bom_structure"]._get_report_data(
-            bom_id=bom_pickaxe.id, searchQty=1, searchVariant=False
+            bom_id=bom_pickaxe.id,
+            searchQty=1,
+            searchVariant=False,
+            warehouse_id=location.warehouse_id.id,
         )
         self.assertEqual(report_values["lines"]["operations_time"], 15.0)
         self.assertEqual(report_values["lines"]["producible_qty"], 2)
@@ -1348,7 +1368,12 @@ class TestBoM(TestMrpCommon):
         with self.assertRaises(exceptions.UserError):
             report_values = self.env[
                 "report.mrp.report_bom_structure"
-            ]._get_report_data(bom_id=bom_pickaxe.id, searchQty=2, searchVariant=False)
+            ]._get_report_data(
+                bom_id=bom_pickaxe.id,
+                searchQty=2,
+                searchVariant=False,
+                warehouse_id=location.warehouse_id.id,
+            )
             self.assertEqual(report_values["lines"]["operations_time"], 15.0)
             self.assertEqual(report_values["lines"]["producible_qty"], 2)
 

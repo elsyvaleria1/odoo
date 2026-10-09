@@ -473,6 +473,12 @@ class TestOrderGuards(TestMrpCommon):
 
         line = production.move_raw_ids.move_line_ids
         self.assertEqual((line.trace_id, line.picked), (second, False))
+        self.assertTrue(
+            production.message_ids.filtered(
+                lambda message: first.name in (message.body or "")
+            ),
+            "the order must say which serial left it",
+        )
         production.qty_producing = 1
         production.move_raw_ids.picked = True
         production.button_mark_done()

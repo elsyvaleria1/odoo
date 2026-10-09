@@ -2027,7 +2027,9 @@ class TestRentalPicking(TestRentalCommon):
             [
                 {
                     "product_id": mto_product.id,
-                    "move_dest_ids": rental_order.picking_ids.move_ids[0].ids,
+                    "move_dest_ids": rental_order.picking_ids.filtered(
+                        lambda picking: picking.picking_type_code == "outgoing"
+                    ).move_ids.ids,
                 }
             ],
         )
@@ -2078,7 +2080,9 @@ class TestRentalPicking(TestRentalCommon):
                     "bom_id": bom.id,
                     "product_id": mto_product.id,
                     "product_uom_qty": rental_order.line_ids.product_qty,
-                    "move_dest_ids": rental_order.picking_ids.move_ids[0].ids,
+                    "move_dest_ids": rental_order.picking_ids.filtered(
+                        lambda picking: picking.picking_type_code == "outgoing"
+                    ).move_ids.ids,
                 }
             ],
         )

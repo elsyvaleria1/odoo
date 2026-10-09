@@ -90,7 +90,10 @@ class StockMove(models.Model):
                     sale_lines.reserved_trace_ids - moves.move_line_ids.trace_id
                 )
                 to_assign_move_lines = moves.move_line_ids.filtered_domain(
-                    [("trace_id", "not in", sale_lines.reserved_trace_ids.ids)]
+                    [
+                        ("trace_id", "not in", sale_lines.reserved_trace_ids.ids),
+                        ("picked", "=", False),
+                    ]
                 )
                 for line, lot in zip(
                     to_assign_move_lines, free_reserved_lots, strict=False

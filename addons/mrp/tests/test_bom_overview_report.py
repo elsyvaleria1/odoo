@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo import Command, fields
 from odoo.tests import Form, tagged
 
@@ -37,10 +39,10 @@ class TestBomOverviewReport(TestMrpCommon):
 
     def test_every_component_of_the_data_layer_is_a_line_under_the_product(self):
         options = self._options()
-        data = self.data_layer.with_context(
-            warehouse_id=options["bom_overview_warehouse_id"]
-        )._get_report_data(
-            bom_id=self.bom_1.id, searchQty=options["bom_overview_quantity"]
+        data = self.data_layer._get_report_data(
+            bom_id=self.bom_1.id,
+            searchQty=options["bom_overview_quantity"],
+            warehouse_id=options["bom_overview_warehouse_id"],
         )
         lines = self.report._get_lines(options)
         names = [line["name"] for line in lines]
@@ -83,10 +85,10 @@ class TestBomOverviewReport(TestMrpCommon):
 
     def test_the_cost_column_carries_the_bom_cost_of_the_data_layer(self):
         options = self._options()
-        data = self.data_layer.with_context(
-            warehouse_id=options["bom_overview_warehouse_id"]
-        )._get_report_data(
-            bom_id=self.bom_1.id, searchQty=options["bom_overview_quantity"]
+        data = self.data_layer._get_report_data(
+            bom_id=self.bom_1.id,
+            searchQty=options["bom_overview_quantity"],
+            warehouse_id=options["bom_overview_warehouse_id"],
         )
         summary = self.report._get_lines(options)[0]
         values = {
@@ -187,9 +189,9 @@ class TestBomOverviewReport(TestMrpCommon):
         return sub_assembly, parent_bom
 
     def _structure(self, bom):
-        return self.data_layer.with_context(
-            warehouse_id=self.warehouse_1.id
-        )._get_report_data(bom.id)["lines"]
+        return self.data_layer._get_report_data(
+            bom.id, warehouse_id=self.warehouse_1.id
+        )["lines"]
 
     def test_lead_time_is_the_schedulers_everywhere(self):
         sub_assembly, parent_bom = self._sub_assembly_chain()
@@ -308,3 +310,75 @@ class TestBomOverviewReport(TestMrpCommon):
             self.assertIn(line.product_id.display_name, html)
         for operation in self.bom_2.operation_ids:
             self.assertIn(operation.name, html)
+
+
+@tagged("post_install", "-at_install")
+class TestBomReportWarehouse(TestMrpCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.data_layer = cls.env["report.mrp.report_bom_structure"]
+        cls.warehouse_2 = cls.env["stock.warehouse"].create(
+            {"name": "Second Plant", "code": "SPL", "sequence": 50}
+        )
+        cls.finished, cls.component = cls.env["product.product"].create(
+            [
+                {"name": "Plant Finished", "is_storable": True},
+                {"name": "Plant Component", "is_storable": True},
+            ]
+        )
+        for warehouse, quantity in ((cls.warehouse_1, 3), (cls.warehouse_2, 5)):
+            cls.env["stock.quant"]._update_available_quantity(
+                cls.component, warehouse.lot_stock_id, quantity
+            )
+        cls.bom = cls.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": cls.finished.product_tmpl_id.id,
+                "picking_type_id": cls.warehouse_2.manu_type_id.id,
+                "bom_line_ids": [Command.create({"product_id": cls.component.id})],
+            }
+        )
+
+    def _available(self, data):
+        return data["lines"]["components"][0]["quantity_available"]
+
+    def test_a_bom_is_produced_in_its_operation_types_warehouse(self):
+        self.assertEqual(self.bom._get_production_warehouse(), self.warehouse_2)
+        self.bom.picking_type_id = False
+        self.assertEqual(
+            self.bom._get_production_warehouse(),
+            self.env["stock.warehouse"].search(
+                [("company_id", "=", self.env.company.id)], limit=1
+            ),
+        )
+
+    def test_without_a_warehouse_the_report_reads_where_the_bom_produces(self):
+        self.assertEqual(
+            self._available(self.data_layer._get_report_data(self.bom.id)), 5
+        )
+
+    def test_the_warehouse_asked_for_is_the_one_read(self):
+        data = self.data_layer._get_report_data(
+            self.bom.id, warehouse_id=self.warehouse_1.id
+        )
+        self.assertEqual(self._available(data), 3)
+
+    def test_the_engine_reads_stock_in_the_warehouse_it_is_given(self):
+        data = self.data_layer._get_bom_data(self.bom, self.warehouse_1)
+        self.assertEqual(data["components"][0]["quantity_available"], 3)
+
+    def test_the_overview_opens_on_the_boms_warehouse(self):
+        options = (
+            self.env.ref("mrp.bom_overview_report")
+            .with_context(active_model="mrp.bom", active_id=self.bom.id)
+            .get_options({})
+        )
+        self.assertEqual(options["bom_overview_warehouse_id"], self.warehouse_2.id)
+
+    def test_the_printed_structure_reads_no_stock(self):
+        with patch.object(
+            type(self.data_layer),
+            "_get_quantities_info",
+            side_effect=AssertionError("the printed structure reads stock"),
+        ):
+            self.data_layer._get_pdf_line(self.bom.id)
