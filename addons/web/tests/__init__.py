@@ -50,6 +50,7 @@ from . import test_report_layout_audit
 from . import test_report_modernization
 from . import test_report_rendering
 from . import test_reports
+from . import test_render_fragments
 from . import test_request_context
 from . import test_res_partner_properties
 from . import test_res_users

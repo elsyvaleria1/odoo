@@ -1,9 +1,12 @@
 import collections
 import logging
-from collections.abc import Iterator
-from typing import Any
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass, field
+from typing import Any, Literal, TypedDict
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+import lxml.html
+from lxml import etree
 from werkzeug.urls import iri_to_uri
 
 from odoo import http
@@ -291,3 +294,84 @@ def _get_login_redirect_url(uid: int, redirect: str | None = None) -> str:
 
 def is_user_internal(uid: int) -> bool:
     return request.env["res.users"].browse(uid)._is_internal()
+
+
+type FragmentSwap = Literal["morph", "inner", "outer"]
+
+
+@dataclass(frozen=True, slots=True)
+class Fragment:
+    template: str
+    values: Mapping[str, Any] = field(default_factory=dict)
+    key: str | None = None
+    swap: FragmentSwap = "morph"
+
+
+class RenderedFragment(TypedDict):
+    key: str
+    html: str
+    swap: FragmentSwap
+
+
+class FragmentEvent(TypedDict):
+    name: str
+    detail: Mapping[str, Any]
+
+
+class FragmentResponse(TypedDict):
+    fragments: list[RenderedFragment]
+    events: list[FragmentEvent]
+    redirect: str | None
+    data: Mapping[str, Any]
+
+
+def render_fragments(
+    env: Any,
+    *fragments: Fragment,
+    events: Mapping[str, Mapping[str, Any]] | None = None,
+    redirect: str | None = None,
+    data: Mapping[str, Any] | None = None,
+) -> FragmentResponse:
+    if redirect is not None and not _is_local_url(redirect):
+        raise ValueError(f"fragment redirect must be a local URL, got {redirect!r}")
+    View = env["ir.ui.view"]
+    rendered: list[RenderedFragment] = []
+    for fragment in fragments:
+        key = fragment.key or fragment.template
+        if any(done["key"] == key for done in rendered):
+            raise ValueError(f"fragment key {key!r} is rendered twice")
+        html = str(View._render_template(fragment.template, dict(fragment.values)))
+        _check_fragment_root(html, key)
+        rendered.append({"key": key, "html": html, "swap": fragment.swap})
+    return {
+        "fragments": rendered,
+        "events": [
+            {"name": name, "detail": detail or {}}
+            for name, detail in (events or {}).items()
+        ],
+        "redirect": redirect,
+        "data": data or {},
+    }
+
+
+def _check_fragment_root(html: str, key: str) -> None:
+    try:
+        nodes = lxml.html.fragments_fromstring(html)
+    except etree.ParserError:
+        nodes = []
+    elements = [
+        node
+        for node in nodes
+        if not isinstance(node, str) and node.tag is not etree.Comment
+    ]
+    stray_text = any(node.strip() for node in nodes if isinstance(node, str))
+    if (
+        len(elements) != 1
+        or stray_text
+        or (elements[0].tail or "").strip()
+        or elements[0].get("data-fragment") != key
+    ):
+        raise ValueError(
+            f"fragment {key!r} must render one root element carrying "
+            f'data-fragment="{key}"'
+        )
