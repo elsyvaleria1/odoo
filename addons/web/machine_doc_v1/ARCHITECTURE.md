@@ -78,7 +78,7 @@ Top-level layout of `addons/web/` (detailed maps are separate docs):
 |------|----------|-----|
 | `controllers/` | 24 `.py` — HTTP endpoints (22 Controller classes, 76 route handlers) | `ROUTE_MAP.md` |
 | `models/` | 28 `.py` — ORM extensions (27 model files: web_read, web_read_group, ir_http, …) | `MODEL_MAP.md` |
-| `static/src/` | 903 JavaScript/OWL source files across 249 directories (FSD layers) | `DIRECTORY_MAP.md` |
+| `static/src/` | 904 JavaScript/OWL source files across 249 directories (FSD layers) | `DIRECTORY_MAP.md` |
 | `static/lib/` | 19 directories (18 vendored libraries + generated `popper_compat/`) — DO NOT MODIFY | `static/lib/versions.json` |
 | `static/tests/` | 844 `.js` (incl. 774 `*.test.js` Hoot suites), mirroring the `static/src/` tree | `TEST_TAGS.md` |
 | `tests/` | 82 Python test files (`test_*.py`) | `TEST_TAGS.md` |
@@ -102,7 +102,7 @@ Layered organization under `static/src/`:
 | **Webclient** | `webclient/` | App shell: home menu, navbar, menus, actions, user menu, colour scheme, density, debug/profiling, Studio upsell | 99 JS |
 | **Search** | `search/` | Search model and mixins, search bar, facets, filters, group-by, favorites, embedded actions bar | 40 JS |
 | **Model** | `model/` | Client-side relational data model (`RelationalRecord`, `StaticList`, groups, save orchestration) | 53 JS |
-| **Public** | `public/` | Public (anonymous) page features; all run on `public.interactions`. Frontend app boot is `public/public_boot.js` (+ `public_boot_instance.js`, kept out of the test bundles via a `remove` directive); early-boot `lazyloader.js` / `minimal_dom.js` also live here. | 21 JS |
+| **Public** | `public/` | Public (anonymous) page features; all run on `public.interactions`. Frontend app boot is `public/public_boot.js` (+ `public_boot_instance.js`, kept out of the test bundles via a `remove` directive); early-boot `lazyloader.js` / `minimal_dom.js` also live here. | 22 JS |
 | **Vendored-in-src** | `libs/` | FontAwesome 7 icon CSS/webfonts + its JS glue, and `popper_compat.js` — vendored inside `src/` (unlike `static/lib/`) | 2 JS |
 
 There is no `services/` layer. Every service is filed with the concern it serves,
@@ -498,7 +498,7 @@ includes it.
 | Python (controllers) | 24 (22 Controller classes across 20 route-bearing files + `__init__.py`, `export_writers.py`, `json_helpers.py`, `utils.py`) |
 | Python (models) | 28 (27 model files + `__init__.py`) |
 | Python (tests) | 82 (`test_*.py`; 84 files incl. `__init__.py` and the `tests/bundle_services.py` helper) |
-| JavaScript (src) | 903 (901 carry `@ts-check`; `module_loader.js` + `service_worker.js` are the two exclusions) |
+| JavaScript (src) | 904 (902 carry `@ts-check`; `module_loader.js` + `service_worker.js` are the two exclusions) |
 | JavaScript (tests) | 844 (incl. 774 `*.test.js` Hoot suites) |
 | JavaScript (vendored libs) | 93 |
 | SCSS/CSS | 213 (34 in `static/src/scss/` shared base; remaining 179 co-located with JS components) |

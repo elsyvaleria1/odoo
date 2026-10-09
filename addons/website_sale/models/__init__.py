@@ -5,6 +5,7 @@ from . import delivery_carrier
 from . import digest
 from . import ir_http
 from . import ir_module_module
+from . import ir_websocket
 from . import payment_token
 from . import product_attribute
 from . import product_feed

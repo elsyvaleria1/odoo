@@ -1,5 +1,8 @@
 from odoo import http
+from odoo.libs.json import loads as json_loads
 from odoo.tests import HttpCase, tagged
+
+from odoo.addons.website_sale.tests.common import MockRequest
 
 
 @tagged("post_install", "-at_install")
@@ -74,3 +77,38 @@ class TestCartLineForm(HttpCase):
         self.assertEqual(payload["fragments"], [])
         self.assertEqual(payload["redirect"], "/shop/cart")
         self.assertFalse(self.line.exists())
+
+    def test_a_cart_change_tells_the_visitors_other_tabs_by_bus(self):
+        self._post_line({"X-Odoo-Tab": "tab-a"}, quantity=4)
+
+        channel = [self.env.cr.dbname, "sale.order", self.line.order_id.id]
+        notices = [
+            json_loads(row.message)
+            for row in self.env["bus.bus"].sudo().search([])
+            if json_loads(row.channel) == channel
+        ]
+        notice = next(
+            notice["payload"]
+            for notice in reversed(notices)
+            if notice["type"] == "fragment.invalidated"
+        )
+        self.assertEqual(notice["origin"], "tab-a")
+        self.assertIn("website_sale.cart_lines", notice["keys"])
+        self.assertEqual(
+            notice["events"]["website_sale:cart_updated"]["cart_quantity"], 4
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestCartBusChannel(HttpCase):
+    def test_a_session_with_a_cart_hears_its_channel(self):
+        website = self.env["website"].get_current_website()
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.env.ref("base.public_partner").id,
+                "website_id": website.id,
+            }
+        )
+        with MockRequest(self.env, website=website, sale_order_id=order.id):
+            channels = self.env["ir.websocket"]._get_bus_channels([])
+        self.assertIn(order, channels)

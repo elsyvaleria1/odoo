@@ -9,6 +9,7 @@ import { rpc } from "@web/core/network";
 import { patch } from "@web/core/utils/patch";
 import { redirect } from "@web/core/utils/urls";
 import { Tooltip } from "@web/libs/bootstrap";
+import { TAB_HEADER, TAB_ID } from "@web/public/tab_id";
 import { patchDynamicContent } from "@web/public/utils";
 import { WebsiteSale } from "@website_sale/interactions/website_sale";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
@@ -40,7 +41,9 @@ patch(WebsiteSale.prototype, {
 
     async _checkNewDatesOnCart() {
         const response = await this.waitFor(
-            rpc("/shop/cart/update_renting", this._getSerializedRentingDates()),
+            rpc("/shop/cart/update_renting", this._getSerializedRentingDates(), {
+                headers: { [TAB_HEADER]: TAB_ID },
+            }),
         );
         if (!response) {
             return;

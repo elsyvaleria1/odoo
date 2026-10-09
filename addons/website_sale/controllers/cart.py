@@ -455,28 +455,9 @@ class Cart(PaymentPortal):
         ], {"events": events, "data": values}
 
     def _cart_updated_events(self, order_sudo, warning=None, quick_reorder=False):
-        # what the page around the swapped cart follows: the header's cart
-        # badge and the warning (@website_sale/interactions/cart_updates), the
-        # express checkout's amount (@payment/interactions/express_checkout)
-        amount = order_sudo.amount_total
-        return {
-            "website_sale:cart_updated": {
-                "cart_quantity": order_sudo.cart_quantity,
-                "cart_ready": order_sudo._is_cart_ready(),
-                "warning": warning or "",
-                "quick_reorder": quick_reorder,
-            },
-            "payment:amount_changed": {
-                "amount": amount,
-                "minor_amount": (
-                    order_sudo
-                    and payment_utils.major_to_minor_currency_units(
-                        amount, order_sudo.currency_id
-                    )
-                )
-                or 0.0,
-            },
-        }
+        return order_sudo._cart_page_events(
+            warning=warning, quick_reorder=quick_reorder
+        )
 
     def _prepare_order_history(self):
 

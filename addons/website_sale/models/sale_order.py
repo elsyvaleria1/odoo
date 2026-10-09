@@ -9,6 +9,7 @@ from odoo.fields import Command, Domain
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.payment import utils as payment_utils
 from odoo.addons.website_sale.models.website import (
     FISCAL_POSITION_SESSION_CACHE_KEY,
     PRICELIST_SELECTED_SESSION_CACHE_KEY,
@@ -391,6 +392,7 @@ class SaleOrder(models.Model):
 
         if not self.env.context.get("skip_cart_verification"):
             self._sync_cart_after_update()
+        self._notify_cart_changed()
 
         return {
             "added_qty": quantity,
@@ -490,6 +492,7 @@ class SaleOrder(models.Model):
 
         if warning:
             (order_line or self).shop_warning = warning
+        self._notify_cart_changed()
 
         return {
             "added_qty": added_qty,
@@ -497,6 +500,53 @@ class SaleOrder(models.Model):
             "quantity": quantity,
             "warning": warning,
         }
+
+    def _cart_page_events(self, warning=None, quick_reorder=False) -> dict:
+        # what the page around the cart follows: the header's cart badge and
+        # the warning (@website_sale/interactions/cart_updates), the express
+        # checkout's amount (@payment/interactions/express_checkout)
+        amount = self.amount_total
+        return {
+            "website_sale:cart_updated": {
+                "cart_quantity": self.cart_quantity,
+                "cart_ready": self._is_cart_ready(),
+                "warning": warning or "",
+                "quick_reorder": quick_reorder,
+            },
+            "payment:amount_changed": {
+                "amount": amount,
+                "minor_amount": (
+                    self
+                    and payment_utils.major_to_minor_currency_units(
+                        amount, self.currency_id
+                    )
+                )
+                or 0.0,
+            },
+        }
+
+    # the regions a page shows of the cart, re-read by the visitor's other
+    # tabs when the cart changes (@bus/public/live_fragments)
+    _CART_FRAGMENT_KEYS = (
+        "website_sale.cart_lines",
+        "website_sale.total",
+        "website_sale.quick_reorder_history",
+    )
+
+    def _notify_cart_changed(self) -> None:
+        if not self:
+            return
+        # the tab that made the change (@web/public/tab_id) already shows it
+        origin = request.httprequest.headers.get("X-Odoo-Tab") if request else None
+        self.env["bus.bus"]._sendone(
+            self,
+            "fragment.invalidated",
+            {
+                "keys": list(self._CART_FRAGMENT_KEYS),
+                "events": self._cart_page_events(),
+                "origin": origin if isinstance(origin, str) else None,
+            },
+        )
 
     def _get_updated_quantity(
         self, order_line, product_id, new_qty, uom_id, **kwargs

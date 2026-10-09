@@ -6,6 +6,7 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { Interaction } from "@web/public/interaction";
 import { PARTIAL_NAVIGATION_HEADER, swapPage } from "@web/public/page_swap";
+import { TAB_HEADER, TAB_ID } from "@web/public/tab_id";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
 // web/controllers/utils.py's FRAGMENTS_HEADER: the route may answer with the
@@ -130,6 +131,7 @@ export class FragmentForm extends Interaction {
                 credentials: "same-origin",
                 headers: {
                     [FRAGMENTS_HEADER]: "1",
+                    [TAB_HEADER]: TAB_ID,
                     [PARTIAL_NAVIGATION_HEADER]: regions
                         .map((region) => region.dataset.fragment)
                         .join(","),

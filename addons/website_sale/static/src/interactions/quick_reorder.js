@@ -5,6 +5,7 @@ import { now, serializeDateTime } from "@web/core/l10n/dates";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
+import { TAB_HEADER, TAB_ID } from "@web/public/tab_id";
 
 export class QuickReorder extends Interaction {
     static selector = "#quick_reorder_sidebar";
@@ -126,12 +127,16 @@ export class QuickReorder extends Interaction {
         }
 
         const response = await this.waitFor(
-            rpc("/shop/cart/quick_add", {
-                product_template_id: productTemplateId,
-                product_id: productId,
-                quantity: quantity,
-                ...(isCombo && { linked_products: linkedProducts }),
-            }),
+            rpc(
+                "/shop/cart/quick_add",
+                {
+                    product_template_id: productTemplateId,
+                    product_id: productId,
+                    quantity: quantity,
+                    ...(isCombo && { linked_products: linkedProducts }),
+                },
+                { headers: { [TAB_HEADER]: TAB_ID } },
+            ),
         );
         this.swapFragments(response);
 

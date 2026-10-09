@@ -7,7 +7,9 @@
             t-value="request.session.get('website_sale_cart_quantity', request.cart.cart_quantity) or 0" />
         <t t-set="show_cart" t-value="website.has_ecommerce_access()" />
         <li t-attf-class="#{_item_class} divider d-none" />
-        <li t-attf-class="o_wsale_my_cart #{not show_cart and 'd-none'} #{_item_class}">
+        <li
+            t-attf-class="o_wsale_my_cart #{not show_cart and 'd-none'} #{_item_class}"
+            t-att-data-fragment-live="'' if website_sale_cart_quantity else None">
             <a
                 href="/shop/cart"
                 t-attf-class="#{_link_class}"
@@ -2997,7 +2999,10 @@
     </template>
 
     <template id="cart_lines" name="Shopping Cart Lines">
-        <div class="d-contents" data-fragment="website_sale.cart_lines">
+        <div
+            class="d-contents"
+            data-fragment="website_sale.cart_lines"
+            data-fragment-live="">
             <div
                 t-if="not website_sale_order or not website_sale_order.website_order_line"
                 class="js_cart_lines w-100">
@@ -3359,7 +3364,10 @@
     </template>
 
     <template id="quick_reorder_history">
-        <div class="d-contents" data-fragment="website_sale.quick_reorder_history">
+        <div
+            class="d-contents"
+            data-fragment="website_sale.quick_reorder_history"
+            data-fragment-live="">
             <div
                 class="o_wsale_quick_reorder_line_group ps-sm-3"
                 t-foreach="order_history or []"
@@ -4194,7 +4202,8 @@
         <div
             t-if="website_sale_order and website_sale_order.website_order_line"
             t-attf-class="o_cart_total #{_cart_total_classes}"
-            t-att-data-fragment="'website_sale.total_no_promotions' if hide_promotions else 'website_sale.total'">
+            t-att-data-fragment="'website_sale.total_no_promotions' if hide_promotions else 'website_sale.total'"
+            data-fragment-live="">
             <table class="table mb-0">
                 <tr
                     t-if="website_sale_order._has_deliverable_products()"

@@ -25,6 +25,7 @@
         ],
         "web.assets_frontend": [
             "bus/static/src/*.js",
+            "bus/static/src/public/**/*",
             "bus/static/src/services/**/*.js",
             (
                 "remove",
@@ -42,6 +43,9 @@
         ],
         "web.assets_unit_tests": [
             "bus/static/tests/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "bus/static/src/public/**/*",
         ],
         "bus.websocket_worker_assets": [
             "bus/static/src/workers/*",
