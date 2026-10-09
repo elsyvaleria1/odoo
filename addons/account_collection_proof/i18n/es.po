@@ -1,0 +1,177 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* account_collection_proof
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 20:48+0000\n"
+"PO-Revision-Date: 2026-10-09 20:48+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Amount"
+msgstr "Importe"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__confirmation_sent_to
+msgid "Answered From"
+msgstr "Respondido desde"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__confirmation_date
+msgid "Answered On"
+msgstr "Respondido el"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Check date"
+msgstr "Fecha del cheque"
+
+#. module: account_collection_proof
+#: model:ir.model,name:account_collection_proof.model_account_collection_remittance
+msgid "Collection Remittance"
+msgstr "Rendición de cobranza"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,help:account_collection_proof.field_account_collection_remittance__count_payment_unconfirmed
+msgid ""
+"Collections in this remittance whose customer has not confirmed them: still "
+"waiting, unreachable, unanswered or disputed."
+msgstr ""
+"Cobros de esta rendición que su cliente no ha confirmado: en espera, "
+"ilocalizable, sin respuesta o disputados."
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__confirmation_challenge_ids
+msgid "Confirmation Requests"
+msgstr "Solicitudes de confirmación"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__confirmation_state
+msgid "Contact Confirmation"
+msgstr "Confirmación del contacto"
+
+#. module: account_collection_proof
+#: model_terms:ir.ui.view,arch_db:account_collection_proof.view_account_payment_form
+msgid "Customer Is Here: Confirm With a Code"
+msgstr "El cliente está aquí: confirmar con un código"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_collection_remittance__display_name
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_collection_remittance__count_payment_disputed
+#: model_terms:ir.ui.view,arch_db:account_collection_proof.view_account_payment_search
+msgid "Disputed by the Customer"
+msgstr "Disputado por el cliente"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "I confirm this collection (%(sent_to)s)."
+msgstr "Confirmo este cobro (%(sent_to)s)."
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_collection_remittance__id
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_payment__id
+msgid "ID"
+msgstr "ID"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,field_description:account_collection_proof.field_account_collection_remittance__count_payment_unconfirmed
+#: model_terms:ir.ui.view,arch_db:account_collection_proof.view_account_payment_search
+msgid "Not Confirmed by the Customer"
+msgstr "No confirmado por el cliente"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Paid in"
+msgstr "Pagado en"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Paid on"
+msgstr "Pagado el"
+
+#. module: account_collection_proof
+#: model:ir.model,name:account_collection_proof.model_account_payment
+msgid "Payments"
+msgstr "Pagos"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Receipt"
+msgstr "Recibo"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Received by"
+msgstr "Recibido por"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Reference"
+msgstr "Referencia"
+
+#. module: account_collection_proof
+#: model:ir.model.fields,help:account_collection_proof.field_account_payment__confirmation_sent_to
+msgid "The channel the contact answered on, masked."
+msgstr "El canal en el que respondió el contacto, enmascarado."
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "The customer did not answer whether they paid this."
+msgstr "El cliente no respondió si pagó esto."
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "The customer did not confirm this collection"
+msgstr "El cliente no confirmó este cobro"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "The customer disputes this collection"
+msgstr "El cliente disputa este cobro"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "This collection is not right (%(sent_to)s). %(reason)s"
+msgstr "Este cobro no es correcto (%(sent_to)s). %(reason)s"
+
+#. module: account_collection_proof
+#. odoo-python
+#: code:addons/account_collection_proof/models/account_payment.py:0
+msgid "Your receipt"
+msgstr "Su recibo"
+
+#. module: account_collection_proof
+#: model_terms:ir.ui.view,arch_db:account_collection_proof.view_account_collection_remittance_form
+msgid "of them disputed."
+msgstr "de ellos disputados."
+
+#. module: account_collection_proof
+#: model_terms:ir.ui.view,arch_db:account_collection_proof.view_account_collection_remittance_form
+msgid "of these collections are not confirmed by their customer,"
+msgstr "de estos cobros no están confirmados por su cliente,"

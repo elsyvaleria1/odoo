@@ -1,3 +1,5 @@
+from itertools import starmap
+
 from odoo import fields, models
 from odoo.exceptions import UserError
 
@@ -130,12 +132,15 @@ class ProofMethod(models.Model):
                     company=tg.bold(company),
                 ),
                 *self._get_summary_lines(challenge),
+                *starmap(tg.link, challenge._get_record_links()),
                 "",
                 env._("Is this right?"),
             ]
         )
-        response = chat.bot_id.send_message(
-            chat.chat_id,
+        # through the outbox: sent once the asking transaction commits, so a
+        # collection rolled back never reaches its customer
+        ledger = chat.bot_id._queue_text(
+            chat,
             text,
             reply_markup=kb.confirm_cancel(
                 env._("Confirm, this is right"),
@@ -144,10 +149,7 @@ class ProofMethod(models.Model):
                 f"{CALLBACK}{delivery.id}:d",
             ),
         )
-        if not response:
-            delivery.state = "failed"
-            return delivery
-        delivery.ref = str(response["result"]["message_id"])
+        delivery.ref = str(ledger.id)
         return delivery
 
     def _withdraw_delivery(self, delivery: models.BaseModel) -> None:
@@ -155,11 +157,19 @@ class ProofMethod(models.Model):
         if self.code != "telegram_confirm":
             super()._withdraw_delivery(delivery)
             return
-        chat = operating(self.env["telegram.chat"]).browse(int(delivery.address))
-        if delivery.ref and chat.exists():
-            chat.bot_id.edit_message_reply_markup(
-                chat.chat_id, int(delivery.ref), reply_markup=None
+        ledger = self._get_delivery_ledger(delivery)
+        if ledger.msg_uid:
+            ledger.bot_id.edit_message_reply_markup(
+                ledger.chat_id.chat_id, int(ledger.msg_uid), reply_markup=None
             )
+
+    def _get_delivery_ledger(self, delivery: models.BaseModel) -> models.BaseModel:
+        """The outbox row that carried the message, whose Telegram id the
+        contact's button press names once it went out."""
+        ledger = operating(self.env["telegram.message"])
+        if not (delivery.ref or "").isdigit():
+            return ledger
+        return ledger.browse(int(delivery.ref)).exists()
 
     def _get_summary_lines(self, challenge: models.BaseModel) -> list[str]:
         return [

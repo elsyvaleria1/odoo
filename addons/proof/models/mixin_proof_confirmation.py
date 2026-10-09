@@ -128,6 +128,11 @@ class MixinProofConfirmation(models.AbstractModel):
         """What the contact is shown, as label/value pairs, in their language."""
         raise NotImplementedError
 
+    def _get_confirmation_links(self) -> list[tuple[str, str]]:
+        """Links sent along with what the contact confirms, as label/URL pairs
+        in their language: their receipt, for instance."""
+        return []
+
     def _get_confirmation_lifetime(self) -> timedelta:
         return CONFIRMATION_LIFETIME
 

@@ -45,7 +45,8 @@ class ProofDelivery(models.Model):
         string="Message Reference",
         index="btree_not_null",
         readonly=True,
-        help="The channel's own id of the message, which an answer replies to.",
+        help="The channel's reference of the message: its own id, or the record "
+        "that carries it out, which an answer replies to.",
     )
     state = fields.Selection(
         selection=[

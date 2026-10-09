@@ -65,6 +65,7 @@ class ProofMethod(models.Model):
                     "summary": challenge.summary or [],
                     "reminder": reminder,
                     "date_expire": challenge.date_expire,
+                    "links": challenge._get_record_links(),
                 },
             )
         )
@@ -74,6 +75,7 @@ class ProofMethod(models.Model):
             signer,
             env._("Reminder: please confirm") if reminder else env._("Please confirm"),
             body,
+            queued=True,
         )
         return delivery
 
@@ -115,6 +117,7 @@ class ProofMethod(models.Model):
         signer: models.BaseModel,
         subject: str,
         body: str,
+        queued: bool = False,
     ) -> None:
         mail = (
             self.env["mail.mail"]
@@ -135,8 +138,10 @@ class ProofMethod(models.Model):
                 }
             )
         )
-        # sent now: a signer at the counter waits for their code
-        mail.send(raise_exception=False)
+        # a code goes now, its signer waits at the counter; a confirmation
+        # waits in the queue for the asking transaction to commit
+        if not queued:
+            mail.send(raise_exception=False)
 
     def _mask_email(self, email: str) -> str:
         local, _at, domain = (email or "").partition("@")

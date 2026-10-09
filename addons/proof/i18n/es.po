@@ -190,6 +190,7 @@ msgid "Confirmation Requests"
 msgstr "Solicitudes de confirmación"
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__confirmed
@@ -209,6 +210,7 @@ msgid "Contact Confirmation"
 msgstr "Confirmación del contacto"
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__unreachable
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__unreachable
 msgid "Contact Unreachable"
 msgstr "Contacto ilocalizable"
@@ -260,6 +262,7 @@ msgid "Display Name"
 msgstr "Nombre para mostrar"
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__disputed
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__disputed
@@ -410,6 +413,7 @@ msgstr ""
 " navegador."
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__expired
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
 msgid "Not Answered"
 msgstr "Sin respuesta"
@@ -666,10 +670,12 @@ msgstr ""
 
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_delivery__ref
-msgid "The channel's own id of the message, which an answer replies to."
+msgid ""
+"The channel's reference of the message: its own id, or the record that "
+"carries it out, which an answer replies to."
 msgstr ""
-"El identificador propio del canal del mensaje, al que responde una "
-"respuesta."
+"La referencia del canal para el mensaje: su propio identificador o el "
+"registro que lo envía, al que responde una respuesta."
 
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_challenge__partner_id
@@ -819,6 +825,7 @@ msgid "Vouched For"
 msgstr "Respaldado"
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__pending
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__pending
 msgid "Waiting for the Contact"
 msgstr "Esperando al contacto"
@@ -910,3 +917,8 @@ msgstr "comprueba que es quien dice ser, y usted captura su respuesta."
 #: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
 msgid "to confirm the following."
 msgstr "confirmar lo siguiente."
+
+#~ msgid "The channel's own id of the message, which an answer replies to."
+#~ msgstr ""
+#~ "El identificador propio del canal del mensaje, al que responde una "
+#~ "respuesta."

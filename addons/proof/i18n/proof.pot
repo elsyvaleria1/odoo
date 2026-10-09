@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:24+0000\n"
-"PO-Revision-Date: 2026-10-09 20:24+0000\n"
+"POT-Creation-Date: 2026-10-09 20:48+0000\n"
+"PO-Revision-Date: 2026-10-09 20:48+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -179,6 +179,7 @@ msgid "Confirmation Requests"
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__confirmed
@@ -198,6 +199,7 @@ msgid "Contact Confirmation"
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__unreachable
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__unreachable
 msgid "Contact Unreachable"
 msgstr ""
@@ -249,6 +251,7 @@ msgid "Display Name"
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__disputed
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__disputed
@@ -395,6 +398,7 @@ msgid "None of the ways offered to prove it is you works in this browser."
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__expired
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
 msgid "Not Answered"
 msgstr ""
@@ -645,7 +649,9 @@ msgstr ""
 
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_delivery__ref
-msgid "The channel's own id of the message, which an answer replies to."
+msgid ""
+"The channel's reference of the message: its own id, or the record that "
+"carries it out, which an answer replies to."
 msgstr ""
 
 #. module: proof
@@ -780,6 +786,7 @@ msgid "Vouched For"
 msgstr ""
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__pending
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__pending
 msgid "Waiting for the Contact"
 msgstr ""

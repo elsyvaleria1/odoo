@@ -2,7 +2,6 @@ import re
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
-from odoo.libs.json import loads as json_loads
 from odoo.tests import new_test_user, tagged
 
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
@@ -43,19 +42,25 @@ class TestTelegramProof(TelegramBotTestCase):
         cls.update_id = 9900
 
     def _ask(self, partner=None):
-        with self.mock_api_gateway_post() as post:
-            challenge = (
-                self.env["proof.challenge"]
-                .with_user(self.collector)
-                ._issue_confirmation(
-                    self.subject,
-                    "test.collection",
-                    self.facts,
-                    partner or self.customer,
-                    summary=self.summary,
-                )
+        challenge = (
+            self.env["proof.challenge"]
+            .with_user(self.collector)
+            ._issue_confirmation(
+                self.subject,
+                "test.collection",
+                self.facts,
+                partner or self.customer,
+                summary=self.summary,
             )
-        return challenge.sudo(), [call.kwargs["json"] for call in post.call_args_list]
+            .sudo()
+        )
+        ledgers = self.env["telegram.message"].browse(
+            [int(delivery.ref) for delivery in challenge.delivery_ids]
+        )
+        # what the outbox job does once the asking transaction commits
+        for ledger in ledgers:
+            ledger.write({"state": "sent", "msg_uid": "1"})
+        return challenge, ledgers
 
     def _update(self, payload):
         type(self).update_id += 1
@@ -89,23 +94,23 @@ class TestTelegramProof(TelegramBotTestCase):
             }
         )
 
-    def test_the_contact_gets_the_facts_with_two_buttons(self):
-        challenge, sent = self._ask()
+    def test_the_contact_gets_the_facts_with_two_buttons_once_committed(self):
+        challenge, ledger = self._ask()
 
         (delivery,) = challenge.delivery_ids
-        (message,) = sent
-        self.assertEqual(message["chat_id"], CUSTOMER_CHAT)
-        self.assertIn("$ 5,000.00", message["text"])
-        buttons = json_loads(message["reply_markup"])["inline_keyboard"][0]
+        self.assertEqual(ledger.chat_id.chat_id, CUSTOMER_CHAT)
+        self.assertEqual(ledger.api_method, "sendMessage")
+        self.assertIn("$ 5,000.00", ledger.payload["text"])
+        buttons = ledger.payload["reply_markup"]["inline_keyboard"][0]
         self.assertEqual(
             [button["callback_data"] for button in buttons],
             [f"prf:{delivery.id}:c", f"prf:{delivery.id}:d"],
         )
-        self.assertEqual((delivery.state, delivery.ref), ("sent", "1"))
+        self.assertEqual((delivery.state, delivery.ref), ("sent", str(ledger.id)))
         self.assertEqual(delivery.sent_to, "Telegram")
 
     def test_confirm_in_their_chat_is_their_answer(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
 
         reply = self._press(f"prf:{challenge.delivery_ids.id}:c")
 
@@ -123,7 +128,7 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertIsNone(self.env["proof.evidence"]._get_chain_error())
 
     def test_a_button_pressed_elsewhere_answers_nothing(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
         data = f"prf:{challenge.delivery_ids.id}:c"
 
         for reply in (
@@ -136,7 +141,7 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(challenge.state, "issued")
 
     def test_an_unbound_account_no_longer_answers_for_the_contact(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
         self.env["telegram.chat"].search(
             [("chat_id", "=", CUSTOMER_CHAT)]
         ).account_id.binding_id._revoke("admin")
@@ -147,7 +152,7 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(challenge.state, "issued")
 
     def test_not_right_then_their_words_reach_the_record(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
         with patch.object(
             type(self.env["res.partner"]), "_on_confirmation_comment", create=True
         ) as comment:
@@ -160,7 +165,7 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(call.args[-1], "I paid 500, not 5,000")
 
     def test_a_second_press_is_refused(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
         self._press(f"prf:{challenge.delivery_ids.id}:c")
 
         reply = self._press(f"prf:{challenge.delivery_ids.id}:d")
@@ -169,7 +174,7 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(challenge.verdict, "confirmed")
 
     def test_a_withdrawn_request_loses_its_buttons(self):
-        challenge, _sent = self._ask()
+        challenge, _ledger = self._ask()
 
         with self.mock_api_gateway_post() as post:
             challenge._withdraw()
@@ -179,12 +184,12 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(challenge.delivery_ids.state, "withdrawn")
 
     def test_a_contact_no_bound_chat_reaches_is_unreachable(self):
-        challenge, sent = self._ask(
+        challenge, ledgers = self._ask(
             partner=self.env["res.partner"].create({"name": "Offline"})
         )
 
         self.assertFalse(challenge.delivery_ids)
-        self.assertFalse(sent)
+        self.assertFalse(ledgers)
 
     def test_the_code_reaches_their_chat_with_the_facts(self):
         method = self.env.ref("telegram_proof.proof_method_telegram_code")

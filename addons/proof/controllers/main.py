@@ -13,6 +13,7 @@ class ProofAnswer(http.Controller):
         link="proof.delivery:delivery_id",
         methods=["GET"],
         sitemap=False,
+        website=True,
     )
     def proof_answer(self, delivery_id, error=None, **kwargs):
         delivery = request.link_subject
@@ -40,6 +41,7 @@ class ProofAnswer(http.Controller):
         link_role="comment",
         methods=["POST"],
         sitemap=False,
+        website=True,
     )
     def proof_answer_submit(self, delivery_id, verdict="", reason="", **kwargs):
         delivery = request.link_subject

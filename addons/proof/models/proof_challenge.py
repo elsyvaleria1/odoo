@@ -304,9 +304,28 @@ class ProofChallenge(models.Model):
             delivery.state = "withdrawn"
             delivery.method_id._withdraw_delivery(delivery)
 
+    def _get_record_links(self) -> list[tuple[str, str]]:
+        """The links the record sends along with what its contact confirms, in
+        the contact's language."""
+        self.check_singleton()
+        record = (
+            self.env[self.res_model]
+            .with_context(lang=self.partner_id.lang or self.env.lang)
+            .browse(self.res_id)
+            .exists()
+        )
+        if not record or not hasattr(record, "_get_confirmation_links"):
+            return []
+        return record._get_confirmation_links()
+
     def _notify_record(self, hook: str, *args: Any) -> None:
         self.check_singleton()
-        record = self.env[self.res_model].browse(self.res_id).exists()
+        # the contact answers from outside, as no user of ours and inside no
+        # company: the record hears it as the user who asked them
+        context = dict(self.env.context)
+        context.pop("allowed_company_ids", None)
+        asker_env = self.env(user=self.user_id.id, context=context)
+        record = asker_env[self.res_model].browse(self.res_id).exists()
         # a record outside the confirmation mixin asked its contact directly
         # and follows the answer from the challenge
         if record and hasattr(record, hook):

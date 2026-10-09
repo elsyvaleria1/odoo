@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_collection_remittance_form" model="ir.ui.view">
+        <field
+            name="name">account.collection.remittance.form.inherit.account.collection.proof</field>
+        <field name="model">account.collection.remittance</field>
+        <field
+            name="inherit_id"
+            ref="account_collection.view_account_collection_remittance_form" />
+        <field name="arch" type="xml">
+            <sheet position="before">
+                <div
+                    class="alert alert-warning mb-0"
+                    role="alert"
+                    invisible="not count_payment_unconfirmed">
+                    <field name="count_payment_unconfirmed" class="fw-bold" />
+                    of these collections are not confirmed by their customer,
+                    <field name="count_payment_disputed" class="fw-bold" />
+                    of them disputed.
+                </div>
+            </sheet>
+        </field>
+    </record>
+
+</odoo>

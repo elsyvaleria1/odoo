@@ -54,6 +54,9 @@
                     Confirm or report a problem
                 </a>
             </p>
+            <p t-foreach="links" t-as="link">
+                <a t-att-href="link[1]" t-out="link[0]" />
+            </p>
             <p style="color: #777;">
                 The link works until <t t-out="date_expire" t-options="{'widget': 'datetime'}" />. If something is not right, tell us on the same page.
             </p>

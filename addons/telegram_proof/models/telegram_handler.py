@@ -32,7 +32,8 @@ class TelegramHandlerProof(models.AbstractModel):
             or not delivery
             or delivery.method_id.code != "telegram_confirm"
             or delivery.address != str(chat.id)
-            or delivery.ref != str(message_id)
+            or delivery.method_id._get_delivery_ledger(delivery).msg_uid
+            != str(message_id)
             or chat.account_id.binding_id.partner_id != delivery.partner_id
         ):
             bot.send_message(chat.chat_id, tr._("That button is no longer valid."))
