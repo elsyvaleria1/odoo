@@ -9,6 +9,18 @@ export class PaymentStripe extends PaymentInterface {
     setup() {
         super.setup(...arguments);
         this.createStripeTerminal();
+        this.resumePendingCaptures();
+    }
+
+    resumePendingCaptures() {
+        for (const line of this.pos.models["pos.payment"].getAll()) {
+            if (
+                line.payment_method_id?.id === this.payment_method_id.id &&
+                line.getPaymentStatus() === "waitingCapture"
+            ) {
+                this.resumeCapture(line);
+            }
+        }
     }
 
     stripeUnexpectedDisconnect() {
@@ -190,10 +202,10 @@ export class PaymentStripe extends PaymentInterface {
             return false;
         } else {
             line.setPaymentStatus("waitingCapture");
+            line.transaction_id = collectPaymentMethod.paymentIntent.id;
             const processPayment = await this.terminal.processPayment(
                 collectPaymentMethod.paymentIntent,
             );
-            line.transaction_id = collectPaymentMethod.paymentIntent.id;
             if (processPayment.error) {
                 this._showError(
                     processPayment.error.message,
@@ -209,8 +221,11 @@ export class PaymentStripe extends PaymentInterface {
                 if (captured_card_type && captured_transaction_id) {
                     line.card_type = captured_card_type;
                     line.transaction_id = captured_transaction_id;
-                } else {
-                    await this.captureAfterPayment(processPayment, line);
+                } else if (
+                    (await this.captureAfterPayment(processPayment, line)) === false
+                ) {
+                    line.setPaymentStatus("retry");
+                    return false;
                 }
 
                 line.setPaymentStatus("done");
@@ -254,12 +269,30 @@ export class PaymentStripe extends PaymentInterface {
         const capturePayment = await this.capturePayment(
             processPayment.paymentIntent.id,
         );
+        if (!capturePayment) {
+            return false;
+        }
         if (capturePayment.charges) {
             line.card_type = this.getCardBrandFromPaymentMethodDetails(
                 capturePayment.charges.data[0].payment_method_details,
             );
         }
         line.transaction_id = capturePayment.id;
+        return true;
+    }
+
+    // After a reload the reader's outcome is unknown: a failed capture may be
+    // one that already succeeded, so it is left to the cashier, never retried.
+    async resumeCapture(line) {
+        const paymentIntentId = line.transaction_id;
+        const captured =
+            Boolean(paymentIntentId?.startsWith("pi_")) &&
+            (await this.captureAfterPayment(
+                { paymentIntent: { id: paymentIntentId } },
+                line,
+            )) !== false;
+        line.setPaymentStatus(captured ? "done" : "force_done");
+        return captured;
     }
 
     async capturePayment(paymentIntentId) {

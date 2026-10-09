@@ -20,7 +20,7 @@
             "pos_stripe/static/src/**/*",
         ],
         "web.assets_unit_tests": [
-            "pos_stripe/static/tests/unit/data/**/*",
+            "pos_stripe/static/tests/unit/**/*",
         ],
     },
 }
