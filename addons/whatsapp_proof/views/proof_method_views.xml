@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_proof_method_list" model="ir.ui.view">
+        <field name="name">proof.method.list.inherit.whatsapp.proof</field>
+        <field name="model">proof.method</field>
+        <field name="inherit_id" ref="proof.view_proof_method_list" />
+        <field name="arch" type="xml">
+            <field name="strength" position="after">
+                <field
+                    name="wa_template_id"
+                    optional="show"
+                    options="{'no_create': True}"
+                    invisible="code != 'whatsapp_confirm'" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

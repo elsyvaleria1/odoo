@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="proof_method_whatsapp_confirm" model="proof.method">
+        <field name="name">WhatsApp Confirmation</field>
+        <field name="code">whatsapp_confirm</field>
+        <field name="mode">confirm</field>
+        <field name="strength">possession</field>
+        <field name="sequence">52</field>
+    </record>
+
+</odoo>

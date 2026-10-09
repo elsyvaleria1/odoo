@@ -480,6 +480,12 @@ class WhatsappAccount(models.Model):
             )
         )
 
+    def _on_button_reply(self, parent_whatsapp_message, message) -> None:
+        """A contact pressed a quick-reply button of ``parent_whatsapp_message``
+        (empty when the reply names no message of ours): ``message`` is the
+        inbound message as WhatsApp sent it, its ``button`` the pressed one's
+        ``text`` and ``payload``. The reply is still posted to its channel."""
+
     def _process_messages(self, value) -> None:
         """
         This method is used for processing messages with the values received via webhook.
@@ -503,6 +509,7 @@ class WhatsappAccount(models.Model):
         for messages in value.get("messages", []):
             parent_msg_id = False
             parent_id = False
+            parent_whatsapp_message = self.env["whatsapp.message"]
             channel = False
             sender_name = value.get("contacts", [{}])[0].get("profile", {}).get("name")
             sender_mobile = messages["from"]
@@ -538,6 +545,7 @@ class WhatsappAccount(models.Model):
                 kwargs["body"] = plaintext2html(messages["text"]["body"])
             elif message_type == "button":
                 kwargs["body"] = messages["button"]["text"]
+                self._on_button_reply(parent_whatsapp_message, messages)
             elif message_type in ("document", "image", "audio", "video", "sticker"):
                 filename = messages[message_type].get("filename")
                 is_voice = messages[message_type].get("voice")
