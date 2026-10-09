@@ -97,8 +97,12 @@ export class ProductTemplateAccounting extends Base {
         )
             .filter((rule) => rule.pricelist_id.id === pricelist.id && !rule.product_id)
             .sort(byMinQtyThenId);
+        const ruleVariant =
+            product ||
+            (productTmpl.product_variant_ids.length === 1 &&
+                productTmpl.product_variant_ids[0]);
         const productRules = (
-            product?.backLink?.("<-product.pricelist.item.product_id") || []
+            ruleVariant?.backLink?.("<-product.pricelist.item.product_id") || []
         )
             .filter((rule) => rule.pricelist_id.id === pricelist.id)
             .sort(byMinQtyThenId);
@@ -142,7 +146,7 @@ export class ProductTemplateAccounting extends Base {
                 price = this.getPrice(
                     rule.base_pricelist_id,
                     quantity,
-                    0,
+                    price_extra,
                     true,
                     variant,
                 );
