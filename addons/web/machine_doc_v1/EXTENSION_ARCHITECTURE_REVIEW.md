@@ -153,7 +153,7 @@ so any chain through them breaks.** The true figures are therefore floors.
 
 ### Survived unchanged
 
-- `@ts-check` on **896 of 898** files — the two exclusions are
+- `@ts-check` on **897 of 899** files — the two exclusions are
   `module_loader.js` and `service_worker.js`.
 
   This read *756 of 763, exact* from the first revision until 2026-08-16, and
@@ -243,12 +243,12 @@ hooks during setup, then carry on*.
 This replaces the draft's weaker "2,447 `any`s" framing, which was true but not
 the point.
 
-`addons/web` is well typed internally: 896 of 898 files carry `@ts-check`.
+`addons/web` is well typed internally: 897 of 899 files carry `@ts-check`.
 Outside it, essentially nothing does:
 
 | tree | files with `@ts-check` |
 |---|---|
-| `addons/web` | 896 |
+| `addons/web` | 897 |
 | all other `odoo/addons` JS (4,997 files) | **40** |
 | `enterprise` | **10** |
 

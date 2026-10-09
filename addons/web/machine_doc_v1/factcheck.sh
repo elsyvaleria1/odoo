@@ -509,8 +509,8 @@ assert_eq "SW answers a hashed asset only from the kept copy" \
     "$(grep -cE "^[[:space:]]+event.respondWith\(keptHashedAsset\(" "$WEB/static/src/service_worker.js")" "1"
 
 # ------- Security: XSS surface (NEW assertions) -------
-assert_eq ".innerHTML = usages (gated: isMarkup() in html.js, instanceof Markup in colibri.js)" \
-    "$(grep -rhE "\.innerHTML[[:space:]]*=[^=]" "$WEB/static/src" --include="*.js" 2>/dev/null | wc -l)" "2"
+assert_eq ".innerHTML = usages (gated: isMarkup() in html.js and morph.js, instanceof Markup in colibri.js)" \
+    "$(grep -rhE "\.innerHTML[[:space:]]*=[^=]" "$WEB/static/src" --include="*.js" 2>/dev/null | wc -l)" "3"
 assert_eq ".outerHTML = usages" \
     "$(grep -rhE "\.outerHTML[[:space:]]*=[^=]" "$WEB/static/src" --include="*.js" 2>/dev/null | wc -l)" "0"
 assert_eq "eval()/new Function() usages (gated: template_compile_cache.js rehydrates OWL's own compiler output from the origin's IndexedDB)" \
