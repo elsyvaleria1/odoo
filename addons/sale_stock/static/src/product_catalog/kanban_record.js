@@ -1,16 +1,15 @@
 /** @odoo-module native */
-import { ProductCatalogKanbanRecord } from "@product/product_catalog/kanban_record";
-import { useProductCatalogContext } from "@product/product_catalog/product_catalog_context";
+import {
+    ProductCatalogKanbanRecord,
+    productCatalogOrderLines,
+} from "@product/product_catalog/kanban_record";
 import { patch } from "@web/core/utils/patch";
 
 import { ProductCatalogSaleOrderLine } from "./sale_order_line/sale_order_line.js";
 
-patch(ProductCatalogKanbanRecord.prototype, {
-    setup() {
-        super.setup(...arguments);
-        this.catalogContext = useProductCatalogContext();
-    },
+productCatalogOrderLines.add("sale.order", ProductCatalogSaleOrderLine);
 
+patch(ProductCatalogKanbanRecord.prototype, {
     updateQuantity(quantity) {
         if (
             this.catalogContext.orderResModel !== "sale.order" ||
@@ -28,12 +27,5 @@ patch(ProductCatalogKanbanRecord.prototype, {
                 Math.max(quantity, this.productCatalogData.deliveredQty),
             );
         }
-    },
-
-    get orderLineComponent() {
-        if (this.catalogContext.orderResModel === "sale.order") {
-            return ProductCatalogSaleOrderLine;
-        }
-        return super.orderLineComponent;
     },
 });

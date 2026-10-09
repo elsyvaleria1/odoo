@@ -1,7 +1,13 @@
 /** @odoo-module native */
+import { productCatalogOrderLines } from "@product/product_catalog/kanban_record";
 import { PurchaseProductCatalogKanbanRecord } from "@purchase/product_catalog/kanban_record";
 
 import { ProductCatalogPurchaseSuggestOrderLine } from "./purchase_order_line.js";
+
+// purchase registers its own line for the same model; this one replaces it.
+productCatalogOrderLines.add("purchase.order", ProductCatalogPurchaseSuggestOrderLine, {
+    force: true,
+});
 
 export class ProductCatalogPurchaseSuggestKanbanRecord extends PurchaseProductCatalogKanbanRecord {
     getRecordClasses(...args) {
@@ -15,10 +21,6 @@ export class ProductCatalogPurchaseSuggestKanbanRecord extends PurchaseProductCa
             return classes + " o_hide_suggest_qty";
         }
         return classes;
-    }
-
-    get orderLineComponent() {
-        return ProductCatalogPurchaseSuggestOrderLine;
     }
 
     addProduct() {

@@ -1,10 +1,11 @@
 /** @odoo-module native */
-import { ProductCatalogKanbanRecord } from "@product/product_catalog/kanban_record";
+import {
+    ProductCatalogKanbanRecord,
+    productCatalogOrderLines,
+} from "@product/product_catalog/kanban_record";
 
 import { ProductCatalogPurchaseOrderLine } from "./purchase_order_line/purchase_order_line.js";
 
-export class PurchaseProductCatalogKanbanRecord extends ProductCatalogKanbanRecord {
-    get orderLineComponent() {
-        return ProductCatalogPurchaseOrderLine;
-    }
-}
+productCatalogOrderLines.add("purchase.order", ProductCatalogPurchaseOrderLine);
+
+export class PurchaseProductCatalogKanbanRecord extends ProductCatalogKanbanRecord {}
