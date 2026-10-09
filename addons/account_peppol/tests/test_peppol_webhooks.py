@@ -113,3 +113,36 @@ class TestPeppolWebhooks(AccountTestInvoicingCommon, HttpCase):
             refusal.mapped("channel_name"),
             ["account_edi_proxy_client.user: peppol_new_message"],
         )
+
+    def test_a_company_without_a_peppol_user_resolves_no_proxy_user(self):
+        # a proxy user whose id is the company's, as the dropped legacy
+        # fallback read the company id the token names
+        ProxyUser = self.env["account_edi_proxy_client.user"]
+        Company = self.env["res.company"]
+        company = Company.create({"name": "Sin Peppol 0"})
+        fillers = 0
+        while not ProxyUser.browse(company.id).exists():
+            if ProxyUser.with_context(active_test=False).search(
+                [("id", ">", company.id)], limit=1
+            ):
+                company = Company.create({"name": f"Sin Peppol {company.id}"})
+                continue
+            fillers += 1
+            ProxyUser.create(
+                {
+                    "id_client": f"filler-{fillers}",
+                    "proxy_type": "peppol",
+                    "edi_mode": "test",
+                    "edi_identification": "filler",
+                    "private_key_id": self.proxy_user.private_key_id.id,
+                    "refresh_token": "filler",
+                    "active": False,
+                }
+            )
+        endpoint = company._get_peppol_webhook_endpoint()
+
+        resolved = ProxyUser._get_user_from_token(
+            ProxyUser._generate_webhook_token(company), endpoint
+        )
+
+        self.assertIsNone(resolved)
