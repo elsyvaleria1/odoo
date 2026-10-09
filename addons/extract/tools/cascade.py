@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
+
+import psycopg
 
 from odoo.libs.documents import GENERATIVE, Document
 
@@ -67,6 +70,18 @@ def run(
     return result
 
 
+@contextmanager
+def _engine_attempt(env):
+    # an engine that fails is rolled back with what it wrote, so the next
+    # strategy and the caller keep a working transaction; a database error is
+    # not the engine's verdict and goes on, a concurrency loss to be retried
+    if env is None:
+        yield
+        return
+    with env.cr.savepoint():
+        yield
+
+
 def _is_two_phase(extractor) -> bool:
     return hasattr(extractor, "submit") and hasattr(extractor, "poll")
 
@@ -83,7 +98,10 @@ def _resume(result, pending: dict, allow_pending: bool, env) -> bool:
         return True
 
     try:
-        answer = extractor.poll(pending.get("handle"), env=env)
+        with _engine_attempt(env):
+            answer = extractor.poll(pending.get("handle"), env=env)
+    except psycopg.Error:
+        raise
     except Exception:
         _logger.exception("%s failed while being asked again", name)
         result.ran.append(name)
@@ -104,7 +122,10 @@ def _resume(result, pending: dict, allow_pending: bool, env) -> bool:
 
 def _submit(result, extractor, source, doc_type, wanted, env) -> bool:
     try:
-        handle = extractor.submit(source, doc_type, wanted, env=env)
+        with _engine_attempt(env):
+            handle = extractor.submit(source, doc_type, wanted, env=env)
+    except psycopg.Error:
+        raise
     except Exception:
         _logger.exception("%s would not accept the document", extractor.name)
         result.ran.append(extractor.name)
@@ -133,7 +154,10 @@ def _wanted(result: ExtractionResult) -> tuple[str, ...]:
 
 def _run_one(extractor, source, doc_type, wanted, env):
     try:
-        return extractor.extract(source, doc_type, wanted, env=env)
+        with _engine_attempt(env):
+            return extractor.extract(source, doc_type, wanted, env=env)
+    except psycopg.Error:
+        raise
     except Exception:
         _logger.exception(
             "Extractor %r failed on %r; continuing with the next strategy",

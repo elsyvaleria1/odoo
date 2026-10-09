@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import psycopg
+
 from odoo import api, fields, models
 from odoo.libs.documents import METERED, Document
 
@@ -259,6 +261,9 @@ class MixinExtract(models.AbstractModel):
                 allow_pending=allow_pending,
                 pending=pending if pending and "strategy" in pending else None,
             )
+        except psycopg.Error:
+            # not an extraction's verdict: the job retries or fails it
+            raise
         except Exception as e:
             _logger.exception("Extraction failed on %s %s", self._name, self.id)
             self.write({"extract_state": "failed", "extract_error": str(e)})

@@ -1,8 +1,10 @@
 import contextlib
 
+import psycopg
 import pymupdf
 
 from odoo.tests.common import TransactionCase, tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.extract.tools import FREE, GENERATIVE, BaseExtractor
 from odoo.addons.extract.tools import extractors as registry
@@ -100,6 +102,46 @@ class TestExtractMixin(TransactionCase):
 
         self.assertEqual(attachment.extract_state, "partial")
         self.assertFalse(attachment.extract_result)
+
+    def test_a_database_error_in_an_engine_reaches_the_job_and_spares_the_transaction(
+        self,
+    ):
+        class _Broken(_Stub):
+            def extract(self, source, doc_type, wanted, env=None):
+                env.cr.execute("SELECT * FROM extract_no_such_table")
+
+        with _only(_Broken({})), mute_logger("odoo.db.cursor"):
+            attachment = self._attachment()
+            with self.assertRaises(psycopg.errors.UndefinedTable):
+                attachment.action_extract()
+
+        self.env.cr.execute("SELECT 1")
+        self.assertEqual(self.env.cr.fetchone(), (1,))
+
+    def test_an_engine_that_broke_the_transaction_is_rolled_back_and_the_next_runs(
+        self,
+    ):
+        class _Swallowing(_Stub):
+            name = "mixin_test_swallowing"
+
+            def extract(self, source, doc_type, wanted, env=None):
+                try:
+                    env.cr.execute("SELECT * FROM extract_no_such_table")
+                except psycopg.Error as error:
+                    raise ValueError("the engine gave up") from error
+
+        after = _Stub({"title": "after the broken one"})
+        with (
+            _only(_Swallowing({}), after),
+            mute_logger("odoo.db.cursor", "odoo.addons.extract.tools.cascade"),
+        ):
+            attachment = self._attachment()
+            attachment.action_extract()
+
+        self.assertEqual(after.calls, 1, "the next strategy ran")
+        self.assertIn(attachment.extract_state, ("done", "partial"))
+        self.env.cr.execute("SELECT 1")
+        self.assertEqual(self.env.cr.fetchone(), (1,))
 
     def test_a_record_with_no_document_says_so(self):
         attachment = self.env["ir.attachment"].create(
