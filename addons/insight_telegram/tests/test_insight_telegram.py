@@ -901,7 +901,7 @@ class TestWriteOperations(TransactionCase):
             }
 
         removal = write_ops.check(self.env, remove([2, order.line_ids[0].id]))
-        self.assertIn("Quitar:", "\n".join(write_ops.describe(self.env, [removal])))
+        self.assertIn("(se quita)", "\n".join(write_ops.describe(self.env, [removal])))
         write_ops.apply(self.env(su=True), [removal], [], self.env.user)
         self.assertEqual(len(order.line_ids), 1, "a draft line is removed")
         for operation in (
@@ -941,6 +941,52 @@ class TestWriteOperations(TransactionCase):
         picked = write_ops.set_company(self.env, operations, self.env.company.id)
         self.assertFalse(write_ops.needs_company(self.env, picked))
         self.assertEqual(picked[0]["values"]["company_id"], self.env.company.id)
+
+    def test_a_change_shows_the_document_as_it_will_stand(self):
+        customer, product = self._sale()
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": customer.id,
+                "line_ids": [
+                    Command.create(
+                        {"product_id": product.id, "product_qty": 10, "price_unit": 5}
+                    ),
+                    Command.create(
+                        {"product_id": product.id, "product_qty": 3, "price_unit": 7}
+                    ),
+                ],
+            }
+        )
+        first, second = order.line_ids
+        operation = write_ops.check(
+            self.env,
+            {
+                "op": "write",
+                "model": "sale.order",
+                "ids": [order.id],
+                "values": {
+                    "line_ids": [
+                        [1, first.id, {"price_unit": 6}],
+                        [2, second.id],
+                        [
+                            0,
+                            0,
+                            {
+                                "product_id": product.id,
+                                "product_qty": 4,
+                                "price_unit": 0,
+                            },
+                        ],
+                    ]
+                },
+            },
+        )
+        text = "\n".join(write_ops.describe(self.env, [operation]))
+        self.assertIn("✏️", text, "the changed line is marked")
+        self.assertIn("(se quita)", text)
+        self.assertIn("➕", text)
+        # 10 × 6 + 4 × 0; the removed 3 × 7 is not counted
+        self.assertIn("Total: $60.00", text.replace("$ ", "$"))
 
     def test_a_proposal_reads_as_the_screen_shows_it(self):
         customer, product = self._sale()
@@ -989,6 +1035,27 @@ class TestWriteOperations(TransactionCase):
         self.assertNotIn("product_id", text)
         self.assertNotIn(f"={customer.id}", text)
         self.assertIn("«confirm»", text)
+
+    def test_a_computed_field_is_refused_even_in_lines(self):
+        customer, product = self._sale()
+        line = self.env["sale.order.line"]
+        computed = next(
+            name
+            for name, field in line._fields.items()
+            if field.readonly and field.compute and not field.inverse and field.store
+        )
+        with self.assertRaisesRegex(write_ops.OperationError, "computed"):
+            write_ops.check(
+                self.env,
+                {
+                    "op": "create",
+                    "model": "sale.order",
+                    "values": {
+                        "partner_id": customer.id,
+                        "line_ids": [[0, 0, {"product_id": product.id, computed: 1}]],
+                    },
+                },
+            )
 
     def test_an_unknown_field_is_explained(self):
         with self.assertRaisesRegex(write_ops.OperationError, "no field"):

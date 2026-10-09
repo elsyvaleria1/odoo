@@ -466,6 +466,9 @@ class OdooTools:
                 spec["selection"] = _selection(records, field)
             if not field.store:
                 spec["stored"] = False
+            if field.readonly and field.compute and not field.inverse:
+                # a proposal setting it is refused: the figure would be lost
+                spec["computed"] = True
             described[name] = spec
         return {"model": records._name, "fields": described}
 

@@ -107,6 +107,7 @@ def check(env, operation) -> dict:
             raise OperationError(
                 f"{model_name} has no field {', '.join(unknown)}; call describe_model."
             )
+        _check_editable(model, values)
         for name, value in values.items():
             if model._fields[name].type in ("one2many", "many2many"):
                 _check_lines(model, normalized.get("ids"), name, value)
@@ -126,6 +127,34 @@ def check(env, operation) -> dict:
     if operation.get("attach_files"):
         normalized["attach_files"] = True
     return normalized
+
+
+def _check_editable(model, values, path="") -> None:
+    """Refuse a value for a field the screens do not edit, here or in the
+    lines an x2many command creates or changes: a computed field without an
+    inverse keeps its computed value, so the figure asked for would be lost
+    silently (price_unit_product_uom for price_unit)."""
+    for name, value in values.items():
+        field = model._fields.get(name)
+        if field is None:
+            raise OperationError(
+                f"{path}{model._name} has no field {name}; call describe_model."
+            )
+        if field.readonly and field.compute and not field.inverse:
+            raise OperationError(
+                f"{path}{name} is computed and cannot be set; call describe_model "
+                f"on {model._name} and set the editable field it comes from."
+            )
+        if field.type in ("one2many", "many2many") and isinstance(value, list):
+            comodel = model.env[field.comodel_name]
+            for command in value:
+                if (
+                    isinstance(command, (list, tuple))
+                    and len(command) > 2
+                    and command[0] in (0, 1)
+                    and isinstance(command[2], dict)
+                ):
+                    _check_editable(comodel, command[2], f"{path}{name}: ")
 
 
 REMOVE_COMMANDS = (2, 3)
@@ -210,7 +239,13 @@ def describe(env, operations) -> list:
             names = _records_text(model, operation["ids"])
             if operation["op"] == "write":
                 lines.append(f"**{number}. Modificar {label} {names}**")
-                lines += _values_lines(model, operation["values"])
+                ids = operation["ids"]
+                record = (
+                    model.browse(ids[0]).exists()
+                    if len(ids) == 1 and isinstance(ids[0], int)
+                    else model.browse()
+                )
+                lines += _values_lines(model, operation["values"], record)
             else:
                 lines.append(
                     f"**{number}. {label} {names}:** botón {_button_text(model, operation['method'])}"
@@ -269,15 +304,23 @@ def _number(value) -> str:
 QUANTITY_FIELDS = ("product_qty", "product_uom_qty", "quantity")
 
 
-def _values_lines(model, values) -> list:
+def _values_lines(model, values, record=None) -> list:
     currency = _currency(model, values)
+    if record and "currency_id" in record._fields and record.currency_id:
+        currency = record.currency_id
     lines = []
     for name, value in values.items():
         field = model._fields[name]
-        if field.type in ("one2many", "many2many") and isinstance(value, list):
-            lines += _relation_lines(
-                model.env[field.comodel_name], field, value, currency
-            )
+        comodel = model.env[field.comodel_name] if field.relational else None
+        if (
+            record
+            and field.type == "one2many"
+            and isinstance(value, list)
+            and _is_priced(comodel)
+        ):
+            lines += _resulting_lines(comodel, field, record[name], value, currency)
+        elif field.type in ("one2many", "many2many") and isinstance(value, list):
+            lines += _relation_lines(comodel, field, value, currency)
         else:
             lines.append(
                 f"• {_label(model, field)}: {_value_text(model, field, value, currency)}"
@@ -340,6 +383,80 @@ def _relation_lines(comodel, field, commands, currency) -> list:
     if priced and len(lines) > 2:
         lines.append(f"   **Total: {_money(total, currency)}** (antes de impuestos)")
     return lines
+
+
+def _quantity_field(comodel):
+    return next((name for name in QUANTITY_FIELDS if name in comodel._fields), None)
+
+
+def _is_priced(comodel) -> bool:
+    """Whether a line model has a product, a quantity and a unit price."""
+    return bool(
+        "product_id" in comodel._fields
+        and "price_unit" in comodel._fields
+        and _quantity_field(comodel)
+    )
+
+
+def _resulting_lines(comodel, field, existing, commands, currency) -> list:
+    """The lines of a document as they will stand once `commands` apply to
+    the `existing` ones: every row, marked when it changes, and the total
+    that results, so the person checks the document and not the edit."""
+    quantity_name = _quantity_field(comodel)
+    rows = {
+        line.id: {
+            "product_id": line.product_id.id,
+            "quantity": line[quantity_name],
+            "price_unit": line.price_unit,
+            "mark": "",
+        }
+        for line in existing
+    }
+    added = []
+    for command in commands:
+        if not isinstance(command, (list, tuple)) or not command:
+            continue
+        code = command[0]
+        values = command[2] if len(command) > 2 and isinstance(command[2], dict) else {}
+        if code == 1 and command[1] in rows:
+            row = rows[command[1]]
+            row.update(_row_values(values, quantity_name))
+            row["mark"] = "✏️ "
+        elif code in REMOVE_COMMANDS and command[1] in rows:
+            rows[command[1]]["mark"] = "❌ "
+        elif code == 0:
+            added.append({"product_id": False, "quantity": 0.0, "price_unit": 0.0})
+            added[-1].update(_row_values(values, quantity_name))
+            added[-1]["mark"] = "➕ "
+    lines = [f"• {_label(comodel, field)} (cómo queda):"]
+    total = 0.0
+    for row in [*rows.values(), *added]:
+        product = comodel.env["product.product"].browse(row["product_id"]).exists()
+        quantity, price = row["quantity"] or 0.0, row["price_unit"] or 0.0
+        subtotal = quantity * price
+        text = (
+            f"{product.display_name or '—'} — {_number(quantity)} × "
+            f"{_money(price, currency)} = {_money(subtotal, currency)}"
+        )
+        if row["mark"] == "❌ ":
+            lines.append(f"   ❌ {text} (se quita)")
+            continue
+        total += subtotal
+        lines.append(f"   {row['mark'] or '◦ '}{text}")
+    lines.append(f"   **Total: {_money(total, currency)}** (antes de impuestos)")
+    return lines
+
+
+def _row_values(values, quantity_name) -> dict:
+    found = {}
+    if "product_id" in values:
+        found["product_id"] = values["product_id"]
+    quantity = next((values[name] for name in QUANTITY_FIELDS if name in values), None)
+    if quantity is not None:
+        found["quantity"] = quantity
+    if "price_unit" in values:
+        found["price_unit"] = values["price_unit"]
+    return found
 
 
 def _row_text(comodel, values, currency):
