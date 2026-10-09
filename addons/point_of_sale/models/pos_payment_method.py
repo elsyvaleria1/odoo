@@ -11,6 +11,7 @@ class PosPaymentMethod(models.Model):
     _description = "Point of Sale Payment Methods"
     _order = "sequence, id"
     _inherit = ["mixin.pos.load", "mixin.credential.holder"]
+    _check_company_auto = True
     _credential_holder_field = "terminal_credential_id"
     _credential_purpose = "pos:payment_method"
     _access_anchors = frozendict(

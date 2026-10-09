@@ -2,7 +2,7 @@ import logging
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.point_of_sale.tests.common import PosLazySessionCommon
 
@@ -67,3 +67,34 @@ class TestPosPaymentMethodOpenSessions(PosLazySessionCommon):
                 calls,
             )
             self.assertEqual(len(calls), int(enabled))
+
+
+@tagged("post_install", "-at_install")
+class TestPosPaymentMethodCompany(TransactionCase):
+    def test_its_journal_belongs_to_its_company(self):
+        other_company = self.env["res.company"].create({"name": "Other company"})
+        other_journal = self.env["account.journal"].create(
+            {
+                "name": "Other bank",
+                "type": "bank",
+                "code": "OBNK",
+                "company_id": other_company.id,
+            }
+        )
+        own_journal = self.env["account.journal"].search(
+            [
+                *self.env["account.journal"]._check_company_domain(self.env.company),
+                ("type", "=", "bank"),
+            ],
+            limit=1,
+        )
+
+        with self.assertRaises(UserError):
+            self.env["pos.payment.method"].create(
+                {"name": "Foreign bank", "journal_id": other_journal.id}
+            )
+        method = self.env["pos.payment.method"].create(
+            {"name": "Own bank", "journal_id": own_journal.id}
+        )
+        with self.assertRaises(UserError):
+            method.journal_id = other_journal
