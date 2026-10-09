@@ -10,7 +10,7 @@ class MailActivity(models.Model):
         string="Workflow Step",
         index="btree_not_null",
         ondelete="cascade",
-        write_groups="base.group_system",
+        write_classification="automation.workflow_step_link",
         help="The Approval step waiting on this activity",
     )
 

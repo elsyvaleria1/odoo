@@ -17,6 +17,7 @@
     "data": [
         "security/res_groups.xml",
         "security/ir.access.csv",
+        "security/ir_access.xml",
         "data/ir_cron_data.xml",
         "data/digest_data.xml",
         "data/ir_sequence_data.xml",

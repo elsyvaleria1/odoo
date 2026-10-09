@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_class_workflow_step_link" model="ir.access.class">
+        <field name="name">automation.workflow_step_link</field>
+        <field
+            name="description">The workflow step an activity answers. Everyone who reads the activity reads it; only system administrators repoint it.</field>
+    </record>
+
+    <record id="access_workflow_step_link_system" model="ir.access">
+        <field name="name">automation.workflow_step_link: system administrators</field>
+        <field name="group_id" ref="base.group_system" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_workflow_step_link" />
+    </record>
+
+</odoo>

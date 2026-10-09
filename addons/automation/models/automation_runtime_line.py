@@ -76,7 +76,10 @@ class AutomationRuntimeLine(models.Model):
         inverse_name="line_id",
         readonly=True,
     )
-    approval_round = fields.Integer(copy=False, readonly=True)
+    approval_round = fields.Integer(
+        copy=False,
+        readonly=True,
+    )
     approval_mode = fields.Selection(
         selection=[("all", "All"), ("any", "Any")],
         copy=False,

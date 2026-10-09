@@ -12,9 +12,9 @@ class AutomationApproval(models.Model):
 
     line_id = fields.Many2one(
         comodel_name="automation.runtime.line",
+        index=True,
         required=True,
         ondelete="cascade",
-        index=True,
     )
     round = fields.Integer(required=True)
     user_id = fields.Many2one(
@@ -24,8 +24,8 @@ class AutomationApproval(models.Model):
     )
     activity_id = fields.Many2one(
         comodel_name="mail.activity",
-        ondelete="set null",
         index="btree_not_null",
+        ondelete="set null",
     )
     state = fields.Selection(
         selection=[
@@ -33,11 +33,14 @@ class AutomationApproval(models.Model):
             ("approved", "Approved"),
             ("withdrawn", "Withdrawn"),
         ],
-        required=True,
         default="pending",
         readonly=True,
+        required=True,
     )
-    needs_settlement = fields.Boolean(default=False, readonly=True)
+    needs_settlement = fields.Boolean(
+        default=False,
+        readonly=True,
+    )
     decided_at = fields.Datetime(readonly=True)
     decided_by_id = fields.Many2one(
         comodel_name="res.users",
