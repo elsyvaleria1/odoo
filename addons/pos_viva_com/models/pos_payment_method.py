@@ -1,4 +1,5 @@
 import logging
+import re
 
 import requests
 
@@ -16,6 +17,9 @@ TIMEOUT = 10
 class PosPaymentMethod(models.Model):
     _name = "pos.payment.method"
     _inherit = ["pos.payment.method", "mixin.integration.connected"]
+
+    # `<order uuid> - <uuid>/<pos.session id>`, see payment_viva_com.js
+    _VIVA_COM_MERCHANT_TRNS = re.compile(r"([\w -]+)/(\d+)")
 
     @api.model
     def _receiver_for_viva_com_notification(self, **path_args):
@@ -257,28 +261,47 @@ class PosPaymentMethod(models.Model):
                 )
             }
 
-    def _notify_session_status(self, data_webhook):
+    def _get_viva_com_terminal_method(self, terminal_id):
+        self.check_singleton()
+        if isinstance(terminal_id, bool) or not isinstance(terminal_id, str | int):
+            return self.browse()
+        return self.search(
+            [
+                ("use_payment_terminal", "=", "viva_com"),
+                ("company_id", "=", self.company_id.id),
+                ("viva_com_merchant_id", "=", self.viva_com_merchant_id),
+                ("viva_com_terminal_id", "=", str(terminal_id)),
+            ],
+            limit=1,
+        )
+
+    def _get_viva_com_merchant_trns_sessions(self, merchant_trns):
+        match = isinstance(
+            merchant_trns, str
+        ) and self._VIVA_COM_MERCHANT_TRNS.fullmatch(merchant_trns)
+        if not match:
+            return None
+        return match.group(1), self.env["pos.session"].browse(int(match.group(2)))
+
+    def _notify_session_status(self, session_id, pos_session, data_webhook):
         # Send a request to confirm the status of the sesions_id
         # Need wait to the status of sesions_id is updated setted in session headers; code 202
-
-        MerchantTrns = data_webhook.get("MerchantTrns")
-        if not MerchantTrns:
-            return self._send_notification(
-                {
-                    "error": self.env._(
-                        "Your transaction with Viva.com failed. Please try again later."
-                    )
-                }
+        self.check_singleton()
+        if (
+            not pos_session.exists()
+            or self not in pos_session.config_id.payment_method_ids
+        ):
+            _logger.warning(
+                "Viva.com notified terminal %s of POS session %s, which does not use it.",
+                self.viva_com_terminal_id,
+                pos_session.id,
             )
-        session_id, pos_session_id = MerchantTrns.split(
-            "/"
-        )  # Split to retrieve pos_sessions_id
-        endpoint = f"sessions/{session_id}"
-        data = self._call_viva_com(endpoint, "get")
+            return
+        data = self._call_viva_com(f"sessions/{session_id}", "get")
 
         if data.get("success"):
             data.update(
-                {"pos_session_id": pos_session_id, "data_webhook": data_webhook}
+                {"pos_session_id": pos_session.id, "data_webhook": data_webhook}
             )
             self._send_notification(data)
         else:
@@ -290,7 +313,6 @@ class PosPaymentMethod(models.Model):
                     )
                 }
             )
-        return None
 
     def _send_notification(self, data):
         # Send a notification to the point of sale channel to indicate that the transaction are finish
