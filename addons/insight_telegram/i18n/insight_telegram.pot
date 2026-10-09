@@ -6,14 +6,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 23:14+0000\n"
-"PO-Revision-Date: 2026-10-08 23:14+0000\n"
+"POT-Creation-Date: 2026-10-09 19:59+0000\n"
+"PO-Revision-Date: 2026-10-09 19:59+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid " (%(days)s days late)"
+msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
@@ -25,6 +31,20 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "%(free)s free"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid ""
+"%(label)s in %(company)s: **%(pending)s** (%(count)s documents), overdue "
+"%(overdue)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(label)s: **%(amount)s** (%(count)s payments)"
 msgstr ""
 
 #. module: insight_telegram
@@ -43,6 +63,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "(the number in brackets is the late ones)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Account statement of %(name)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -308,6 +334,12 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Movements from %(start)s to %(end)s:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "No bank or cash journal found."
 msgstr ""
 
@@ -315,6 +347,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "No employee with a contract found."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No movements in that period."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "No payments in that period."
 msgstr ""
 
 #. module: insight_telegram
@@ -344,7 +388,31 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Open documents, oldest due first:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "Overdue: **%(amount)s**"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Paid to suppliers"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Payable"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Payments received and made"
 msgstr ""
 
 #. module: insight_telegram
@@ -420,6 +488,18 @@ msgid "Questions about Odoo"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Receivable"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Received from customers"
+msgstr ""
+
+#. module: insight_telegram
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_search
 msgid "Report"
 msgstr ""
@@ -454,6 +534,13 @@ msgstr ""
 #. module: insight_telegram
 #: model:ir.model,name:insight_telegram.model_telegram_handler_insight
 msgid "Telegram: Ask Odoo"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid ""
+"Tell me whose account statement you want: the customer's or supplier's name."
 msgstr ""
 
 #. module: insight_telegram
@@ -582,7 +669,19 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "account statements"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "bank and cash balances"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "bills received"
 msgstr ""
 
 #. module: insight_telegram
@@ -593,14 +692,50 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "credit notes issued"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "credit notes received"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "employees"
 msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "invoiced"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "invoicing"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "payments made"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "payments received"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "payments received and made"
 msgstr ""
 
 #. module: insight_telegram

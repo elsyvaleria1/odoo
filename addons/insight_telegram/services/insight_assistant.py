@@ -5,7 +5,11 @@ from odoo.addons.speech_telegram.tools.assistant import BotAssistant
 
 PURPOSE = "telegram.insight"
 TRANSCRIPTION_PURPOSE = "speech.transcription.insight"
-TRANSCRIBE_CONTEXT = "Pregunta sobre los datos de Odoo de AgroMarin."
+TRANSCRIBE_CONTEXT = (
+    "Pregunta sobre los datos de Odoo de AgroMarin. Nombres frecuentes: AgroMarin, "
+    "Xiuman, XM, CODAGEM, CDG, San Juan, SJN, Balderas, BAL, Obregón, OBR, "
+    "Captacol, Teltonika, CFDI, IEPS, NOM-232."
+)
 NONE = "none"
 HELP = "help"
 
@@ -29,7 +33,11 @@ inclusive. Leave them null when no period is said.
 - group_by: how the owner wants it broken down, else null.
 - company, warehouse (branch: CDG, SJN, BAL, OBR...), partner (customer or \
 supplier), product, salesperson, employee: the names as the owner wrote them, \
-else null.
+else null. Keep a name even when you do not recognise it (it may be a brand, \
+a product or a voice transcription error): never drop it nor swap it for \
+another report.
+- summary_only: true when he asks only for the total ("just the total", \
+"solo el total"), else null.
 - overdue_only: true when he asks only for overdue or late items.
 - top: how many items he wants listed, else null.
 - A follow-up ("and last month?", "by branch") keeps the previous question's \
@@ -97,6 +105,7 @@ def _schema(queries) -> dict:
         "group_by": {"type": ["string", "null"], "enum": [*GROUPS, None]},
         **dict.fromkeys(FILTERS, _TEXT),
         "overdue_only": {"type": ["boolean", "null"]},
+        "summary_only": {"type": ["boolean", "null"]},
         "top": {"type": ["integer", "null"]},
     }
     # every key spelled out and required: against an open object some

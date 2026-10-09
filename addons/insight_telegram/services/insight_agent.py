@@ -25,6 +25,15 @@ Method:
 - When unsure of the model, call find_models; before using a field you have \
 not seen described, call describe_model: this fork renames many fields.
 - Prefer aggregate_records and count_records over listing records.
+- Where things live in this fork: payments received or made are \
+account.payment (state in_process or paid, payment_type inbound or outbound, \
+date, partner_id, amount_company_currency_signed); invoices and bills are \
+account.move (move_type out_invoice/out_refund/in_invoice/in_refund, state \
+posted, invoice_date, invoice_date_due, amount_residual_signed); confirmed \
+sales and purchase orders have state "done" (not "sale"/"purchase"); stock \
+on hand is stock.quant in internal locations; employees are hr.employee and \
+their wage is on current_version_id.wage; contacts are res.partner. You can \
+read all of them: never answer that you have no access.
 - Datetimes are stored in UTC; the owner lives in {tz}. Today is {today}.
 - Records of every company are visible: {companies}. Say which company a \
 figure belongs to when it matters, and never add amounts in different \

@@ -266,6 +266,70 @@ class TestCatalog(TransactionCase):
         self.assertIn("Ask Probe Earner", text)
         self.assertIn("$23,456.00", text)
 
+    def test_a_statement_asks_whose_it_is(self):
+        text = self._answer("statement")
+        self.assertIn("customer's or supplier's name", text)
+
+    def test_a_statement_lists_what_a_customer_owes(self):
+        if "account.move" not in self.env:
+            self.skipTest("account is not installed")
+        journal = self.env["account.journal"].search([("type", "=", "sale")], limit=1)
+        if not journal:
+            self.skipTest("no sale journal: no chart of accounts on this database")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Debtor"})
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": customer.id,
+                "journal_id": journal.id,
+                "invoice_date": self.today,
+                "invoice_line_ids": [
+                    Command.create({"name": "Ask probe line", "price_unit": 500.0})
+                ],
+            }
+        )
+        invoice.action_post()
+        text = self._answer("statement", partner="Ask Probe Debtor")
+        self.assertIn("Account statement of Ask Probe Debtor", text)
+        self.assertIn("Receivable in", text)
+        self.assertIn(invoice.name, text)
+        self.assertIn("invoiced", text)
+
+    def test_summary_only_answers_the_total(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        first = self.env["res.partner"].create({"name": "Ask Probe Summary A"})
+        second = self.env["res.partner"].create({"name": "Ask Probe Summary B"})
+        self._confirmed_order(first, 100)
+        self._confirmed_order(second, 200)
+        text = self._answer(
+            "sales", partner="Ask Probe Summary", group_by="partner", summary_only=True
+        )
+        self.assertIn("Total:", text)
+        self.assertNotIn("• Ask Probe Summary", text)
+
+    def test_payments_list_who_paid_today(self):
+        if "account.payment" not in self.env:
+            self.skipTest("account is not installed")
+        journal = self.env["account.journal"].search([("type", "=", "bank")], limit=1)
+        if not journal:
+            self.skipTest("no bank journal on this database")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Payer"})
+        payment = self.env["account.payment"].create(
+            {
+                "payment_type": "inbound",
+                "partner_type": "customer",
+                "partner_id": customer.id,
+                "amount": 321.0,
+                "journal_id": journal.id,
+            }
+        )
+        payment.action_post()
+        text = self._answer("payments")
+        self.assertIn("Received from customers", text)
+        self.assertIn("Ask Probe Payer", text)
+        self.assertIn("$321.00", text)
+
     def test_every_report_runs_on_an_empty_period(self):
         # a report must answer, not crash, whatever the data
         for key in catalog.available_queries(self.env):

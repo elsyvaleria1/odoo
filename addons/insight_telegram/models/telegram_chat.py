@@ -183,6 +183,8 @@ def _help_text(tr_env, queries, with_agent):
         "cash": tr_env._("bank and cash balances"),
         "deliveries": tr_env._("pending deliveries"),
         "production": tr_env._("production"),
+        "payments": tr_env._("payments received and made"),
+        "statement": tr_env._("account statements"),
         "salaries": tr_env._("salaries"),
         "headcount": tr_env._("employees"),
     }

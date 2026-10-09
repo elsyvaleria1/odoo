@@ -164,7 +164,7 @@ def _label(ask, value):
 
 def money_report(ask, title, model, domain, amount, currency_path, groups):
     """Total an amount by currency, and by the asked grouping."""
-    group_path = groups.get(ask.group)
+    group_path = None if ask.params.get("summary_only") else groups.get(ask.group)
     by = [currency_path] + ([group_path] if group_path else [])
     rows = ask.env[model]._read_group(domain, by, [f"{amount}:sum", "__count"])
     lines = [f"**{title}**", ask.period_label()] if title else []
@@ -398,6 +398,8 @@ def _balance_report(ask, title, move_types, sign):
                 amount=money(sign * late.get(currency, 0.0), currency),
             )
         )
+        if ask.params.get("summary_only"):
+            continue
         lines += _ranked(
             ask,
             [
@@ -577,7 +579,8 @@ def run_cash(ask):
         currency = journal.currency_id or journal.company_id.currency_id
         amount = foreign if journal.currency_id else balance
         totals[currency] += amount
-        lines.append(f"• {journal.name}: {money(amount, currency)}")
+        if not ask.params.get("summary_only"):
+            lines.append(f"• {journal.name}: {money(amount, currency)}")
     lines += [
         ask.env._(
             "Total %(currency)s: **%(amount)s**",
@@ -774,6 +777,204 @@ def run_salaries(ask):
     return lines
 
 
+def run_payments(ask):
+    """Payments received from customers or made to suppliers in a period:
+    who paid, and how much."""
+    domain = [("state", "in", ("in_process", "paid"))]
+    domain += ask.filter_domain(
+        {
+            "company": ("company_id", "res.company", ("name",), None),
+            "partner": ("partner_id", "res.partner", ("name", "vat"), None),
+        }
+    )
+    if not (ask.params.get("date_from") or ask.params.get("date_to")):
+        ask.params["date_from"] = ask.params["date_to"] = ask.today.isoformat()
+    domain += ask.date_range("date")
+    title = ask.env._("Payments received and made")
+    group_path = (
+        None
+        if ask.params.get("summary_only")
+        else (
+            {"company": "company_id", "month": "date:month"}.get(
+                ask.group, "partner_id"
+            )
+        )
+    )
+    Payment = ask.env["account.payment"]
+    lines = ["**" + title + "**", ask.period_label()]
+    rows = Payment._read_group(
+        domain,
+        ["payment_type", "company_id.currency_id"]
+        + ([group_path] if group_path else []),
+        ["amount_company_currency_signed:sum", "__count"],
+    )
+    if not rows:
+        lines.append(ask.env._("No payments in that period."))
+        return lines
+    labels = {
+        "inbound": ask.env._("Received from customers"),
+        "outbound": ask.env._("Paid to suppliers"),
+    }
+    by_side = defaultdict(list)
+    for row in rows:
+        by_side[(row[0], row[1])].append(row)
+    for (payment_type, currency), side_rows in sorted(
+        by_side.items(), key=lambda item: item[0][0]
+    ):
+        total = sum(abs(row[-2]) for row in side_rows)
+        count = sum(row[-1] for row in side_rows)
+        lines.append(
+            ask.env._(
+                "%(label)s: **%(amount)s** (%(count)s payments)",
+                label=labels.get(payment_type, payment_type),
+                amount=money(total, currency),
+                count=count,
+            )
+        )
+        if group_path:
+            lines += _ranked(
+                ask,
+                [(_label(ask, row[2]), abs(row[3]), row[4]) for row in side_rows],
+                lambda value, currency=currency: money(value, currency),
+                by_date=ask.group == "month",
+            )
+    return lines
+
+
+STATEMENT_DAYS = 90
+STATEMENT_DOCUMENTS = 15
+
+
+def run_statement(ask):
+    """A customer's or supplier's account statement over every company: what
+    is open, what is overdue, and what was invoiced and paid lately."""
+    name = (ask.params.get("partner") or "").strip()
+    if not name:
+        return [
+            ask.env._(
+                "Tell me whose account statement you want: the customer's or "
+                "supplier's name."
+            )
+        ]
+    partners = ask.matches("res.partner", name, ("name", "vat"))
+    company_domain = ask.filter_domain(
+        {"company": ("company_id", "res.company", ("name",), None)}
+    )
+    if ask.params.get("date_from") or ask.params.get("date_to"):
+        start, end = ask.period()
+    else:
+        start, end = ask.today - timedelta(days=STATEMENT_DAYS), ask.today
+    title = ask.env._("Account statement of %(name)s", name=partners[:1].display_name)
+    lines = [
+        "**" + title + "**",
+        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
+    ]
+    Move = ask.env["account.move"]
+    base = [
+        ("partner_id", "child_of", partners.ids),
+        ("state", "=", "posted"),
+        ("move_type", "in", ("out_invoice", "out_refund", "in_invoice", "in_refund")),
+    ] + company_domain
+    open_moves = Move.search(
+        base + [("amount_residual_signed", "!=", 0)],
+        order="invoice_date_due asc, id asc",
+    )
+    # receivable and payable, per company and currency: amounts of different
+    # companies or currencies are never added together
+    sides = (
+        (("out_invoice", "out_refund"), 1, ask.env._("Receivable")),
+        (("in_invoice", "in_refund"), -1, ask.env._("Payable")),
+    )
+    for move_types, sign, label in sides:
+        moves = open_moves.filtered(lambda m, t=move_types: m.move_type in t)
+        totals = defaultdict(lambda: [0.0, 0.0, 0])
+        for move in moves:
+            entry = totals[(move.company_id, move.company_id.currency_id)]
+            entry[0] += sign * move.amount_residual_signed
+            if move.invoice_date_due and move.invoice_date_due < ask.today:
+                entry[1] += sign * move.amount_residual_signed
+            entry[2] += 1
+        for (company, currency), (pending, overdue, count) in totals.items():
+            lines.append(
+                ask.env._(
+                    "%(label)s in %(company)s: **%(pending)s** (%(count)s documents), "
+                    "overdue %(overdue)s",
+                    label=label,
+                    company=company.display_name,
+                    pending=money(pending, currency),
+                    count=count,
+                    overdue=money(overdue, currency),
+                )
+            )
+    if not open_moves:
+        lines.append(ask.env._("Nothing pending."))
+    else:
+        lines.append(ask.env._("Open documents, oldest due first:"))
+        for move in open_moves[:STATEMENT_DOCUMENTS]:
+            sign = 1 if move.move_type in ("out_invoice", "out_refund") else -1
+            due = move.invoice_date_due
+            late = (ask.today - due).days if due and due < ask.today else 0
+            lines.append(
+                f"• {move.name} · {move.company_id.display_name} · "
+                + (ask.format_day(due) if due else "-")
+                + f": {money(sign * move.amount_residual_signed, move.company_id.currency_id)}"
+                + (ask.env._(" (%(days)s days late)", days=late) if late else "")
+            )
+        if len(open_moves) > STATEMENT_DOCUMENTS:
+            lines.append(
+                ask.env._(
+                    "… and %(count)s more", count=len(open_moves) - STATEMENT_DOCUMENTS
+                )
+            )
+    lines.append(
+        ask.env._(
+            "Movements from %(start)s to %(end)s:",
+            start=ask.format_day(start),
+            end=ask.format_day(end),
+        )
+    )
+    invoiced = Move._read_group(
+        base + [("invoice_date", ">=", start), ("invoice_date", "<=", end)],
+        ["company_id", "move_type"],
+        ["amount_total_signed:sum", "__count"],
+    )
+    labels = {
+        "out_invoice": ask.env._("invoiced"),
+        "out_refund": ask.env._("credit notes issued"),
+        "in_invoice": ask.env._("bills received"),
+        "in_refund": ask.env._("credit notes received"),
+    }
+    for company, move_type, amount, count in invoiced:
+        lines.append(
+            f"• {company.display_name} · {labels[move_type]}: "
+            f"{money(abs(amount), company.currency_id)} ({count})"
+        )
+    payments = ask.env["account.payment"]._read_group(
+        [
+            ("partner_id", "child_of", partners.ids),
+            ("state", "in", ("in_process", "paid")),
+            ("date", ">=", start),
+            ("date", "<=", end),
+        ]
+        + company_domain,
+        ["company_id", "payment_type"],
+        ["amount_company_currency_signed:sum", "__count"],
+    )
+    for company, payment_type, amount, count in payments:
+        label = (
+            ask.env._("payments received")
+            if payment_type == "inbound"
+            else ask.env._("payments made")
+        )
+        lines.append(
+            f"• {company.display_name} · {label}: "
+            f"{money(abs(amount), company.currency_id)} ({count})"
+        )
+    if not invoiced and not payments:
+        lines.append(ask.env._("No movements in that period."))
+    return lines
+
+
 GROUPS = ("company", "warehouse", "salesperson", "partner", "product", "month")
 FILTERS = ("company", "warehouse", "partner", "product", "salesperson", "employee")
 
@@ -872,6 +1073,27 @@ QUERIES = {
             ("product",),
             ("company", "product", "warehouse"),
             requires="mrp.production",
+        ),
+        Query(
+            "payments",
+            "Payments (cobros, pagos) received from customers or made to "
+            "suppliers in a period: who paid today, which customers paid or "
+            "settled their debt, collections by customer, company or month. "
+            "Today when no period is said.",
+            run_payments,
+            ("company", "partner", "month"),
+            ("company", "partner"),
+            requires="account.payment",
+        ),
+        Query(
+            "statement",
+            "The account statement (estado de cuenta) of one customer or "
+            "supplier across every company: open and overdue invoices and "
+            "bills, what was invoiced and paid in a period. Needs the partner.",
+            run_statement,
+            (),
+            ("company", "partner"),
+            requires="account.move",
         ),
         Query(
             "salaries",
