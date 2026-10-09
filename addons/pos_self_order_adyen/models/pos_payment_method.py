@@ -4,17 +4,9 @@ from datetime import UTC, datetime
 from odoo import api, models
 from odoo.fields import Domain
 
-from odoo.addons.pos_adyen.models.pos_payment_method import UNPREDICTABLE_ADYEN_DATA
-
 
 class PosPaymentMethod(models.Model):
     _inherit = "pos.payment.method"
-
-    @api.model
-    def _prepare_acquirer_data(self):
-        res = super()._prepare_acquirer_data()
-        res["metadata.self_order_id"] = UNPREDICTABLE_ADYEN_DATA
-        return res
 
     def _payment_request_from_kiosk(self, order):
         if self.use_payment_terminal != "adyen":
@@ -45,8 +37,6 @@ class PosPaymentMethod(models.Model):
                                     timespec="seconds"
                                 ),  # date and time of the request in UTC format.
                             },
-                            "SaleToAcquirerData": "metadata.self_order_id="
-                            + str(order.id),
                         },
                         "PaymentTransaction": {
                             "AmountsReq": {
@@ -58,7 +48,8 @@ class PosPaymentMethod(models.Model):
                 },
             }
 
-            req = self.proxy_adyen_request(data)
+            self._adyen_sign_payment_request(data, self_order_id=order.id)
+            req = self._proxy_adyen_request_direct(data, "terminal_request")
 
             return req and (isinstance(req, bool) or not req.get("error"))
 

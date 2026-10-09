@@ -2,6 +2,8 @@ import logging
 import pprint
 from urllib.parse import parse_qs
 
+from werkzeug.exceptions import Forbidden
+
 from odoo import http
 from odoo.http import request
 from odoo.libs.json import dumps as json_dumps
@@ -25,7 +27,6 @@ class PosAdyenController(http.Controller):
     def notification(self):
         adyen_pm_sudo = request.admission.subject
         data = request.admission.extra["data"]
-        _logger.info("notification received from adyen:\n%s", pprint.pformat(data))
         # The HMAC is removed to prevent anyone from using it in place of Adyen.
         adyen_additional_response = data["SaleToPOIResponse"]["PaymentResponse"][
             "Response"
@@ -39,7 +40,16 @@ class PosAdyenController(http.Controller):
         ] = adyen_additional_response.replace("&" + pos_hmac_metadata_raw, "").replace(
             pos_hmac_metadata_raw, ""
         )
-        return self._process_payment_response(data, adyen_pm_sudo)
+        _logger.info("notification received from adyen:\n%s", pprint.pformat(data))
+        pending = adyen_pm_sudo._adyen_consume_pending_request(data)
+        if pending is None:
+            raise Forbidden
+        response = data["SaleToPOIResponse"]["PaymentResponse"]["Response"]
+        if response.get(
+            "Result"
+        ) == "Success" and not adyen_pm_sudo._adyen_confirm_payment(data, pending):
+            data = adyen_pm_sudo._adyen_unconfirmed(data)
+        return self._process_payment_response(data, adyen_pm_sudo, pending)
 
     @staticmethod
     def _get_additional_data_from_unparsed(adyen_additional_response, data_key):
@@ -53,7 +63,7 @@ class PosAdyenController(http.Controller):
         data_value = parsed_adyen_additional_response.get(data_key)
         return data_value[0] if data_value and len(data_value) == 1 else None
 
-    def _process_payment_response(self, data, adyen_pm_sudo):
+    def _process_payment_response(self, data, adyen_pm_sudo, pending):
         transaction_id = data["SaleToPOIResponse"]["PaymentResponse"]["SaleData"][
             "SaleTransactionID"
         ]["TransactionID"]

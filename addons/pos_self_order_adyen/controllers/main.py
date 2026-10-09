@@ -9,26 +9,12 @@ _logger = logging.getLogger(__name__)
 
 
 class PosSelfAdyenController(PosAdyenController):
-    def _process_payment_response(self, data, adyen_pm_sudo):
-        self_order_id = None
-        try:
-            self_order_id = PosAdyenController._get_additional_data_from_unparsed(
-                data["SaleToPOIResponse"]["PaymentResponse"]["Response"][
-                    "AdditionalResponse"
-                ],
-                "metadata.self_order_id",
-            )
-        except KeyError:
-            self_order_id = None
-
+    def _process_payment_response(self, data, adyen_pm_sudo, pending):
+        self_order_id = pending.get("self_order_id")
         if not self_order_id:
-            return super()._process_payment_response(data, adyen_pm_sudo)
+            return super()._process_payment_response(data, adyen_pm_sudo, pending)
 
-        order_sudo = (
-            request.env["pos.order"]
-            .sudo()
-            .search([("id", "=", self_order_id)], limit=1)
-        )
+        order_sudo = request.env["pos.order"].sudo().browse(self_order_id).exists()
         if not order_sudo:
             _logger.warning(
                 "Received an Adyen event notification for the self order #%d that does not exist (anymore)",

@@ -3,6 +3,7 @@ from unittest.mock import patch
 from requests import Response
 
 from odoo.libs.guarded_http import GuardedSession
+from odoo.libs.json import loads as json_loads
 from odoo.tests.common import tagged
 
 from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCommon
@@ -45,6 +46,16 @@ class TestAdyenPoS(TestPointOfSaleHttpCommon):
                 type(self.env["pos.payment.method"]),
                 "_is_inbound_request_authentic",
                 lambda self, headers, body: True,
+            ),
+            patch.object(
+                type(self.env["pos.payment.method"]),
+                "_adyen_pending_request_for",
+                lambda self, data: json_loads(self.sudo().adyen_pending_request),
+            ),
+            patch.object(
+                type(self.env["pos.payment.method"]),
+                "_adyen_confirm_payment",
+                lambda self, data, pending: True,
             ),
         ):
             self.start_pos_tour("PosAdyenTour")

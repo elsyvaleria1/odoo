@@ -1,10 +1,13 @@
 import logging
 import pprint
-from urllib.parse import parse_qs
+import random
+import re
+from urllib.parse import parse_qs, urlencode
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessDenied, UserError, ValidationError
 from odoo.http import request
+from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tools import consteq, hmac, register_signed_scope
 
@@ -13,6 +16,19 @@ from odoo.addons.integration.tools.admission import Acknowledged, json_get
 _logger = logging.getLogger(__name__)
 
 UNPREDICTABLE_ADYEN_DATA = object()  # sentinel
+POS_HMAC_METADATA = re.compile(r"(metadata\.pos_hmac=)[^&]*")
+
+
+def redact_pos_hmac(data):
+    if isinstance(data, dict):
+        return {key: redact_pos_hmac(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [redact_pos_hmac(value) for value in data]
+    if isinstance(data, str):
+        return POS_HMAC_METADATA.sub(r"\1<redacted>", data)
+    return data
+
+
 PAYMENT_SCOPE = register_signed_scope(
     "pos_adyen_payment",
     purpose="bind an Adyen terminal notification to the sale, service, terminal "
@@ -92,7 +108,135 @@ class PosPaymentMethod(models.Model):
             )
         except KeyError, TypeError:
             return False
-        return bool(pos_hmac) and consteq(pos_hmac, expected)
+        return (
+            bool(pos_hmac)
+            and consteq(pos_hmac, expected)
+            and self._adyen_pending_request_for(data) is not None
+        )
+
+    def _adyen_pending_request_for(self, data):
+        pending_json = self.adyen_pending_request
+        if not pending_json:
+            return None
+        pending = json_loads(pending_json)
+        try:
+            msg_header = data["SaleToPOIResponse"]["MessageHeader"]
+            response = data["SaleToPOIResponse"]["PaymentResponse"]
+            notified = (
+                msg_header["SaleID"],
+                msg_header["ServiceID"],
+                msg_header["POIID"],
+                response["SaleData"]["SaleTransactionID"]["TransactionID"],
+            )
+            if notified != (
+                pending["sale_id"],
+                pending["service_id"],
+                self.adyen_terminal_identifier,
+                pending["transaction_id"],
+            ):
+                return None
+            if response["Response"].get(
+                "Result"
+            ) == "Success" and not self._adyen_amounts_match(
+                response["PaymentResult"]["AmountsResp"], pending
+            ):
+                return None
+        except KeyError, TypeError, AttributeError:
+            return None
+        return pending
+
+    def _adyen_amounts_match(self, amounts, pending) -> bool:
+        authorized = amounts["AuthorizedAmount"]
+        tip = amounts.get("TipAmount") or 0
+        if amounts.get("Currency", pending["currency"]) != pending["currency"]:
+            return False
+        if not all(
+            isinstance(value, int | float) and not isinstance(value, bool)
+            for value in (authorized, tip)
+        ):
+            return False
+        currency = (
+            self.env["res.currency"]
+            .with_context(active_test=False)
+            .search([("name", "=", pending["currency"])], limit=1)
+        )
+        return bool(currency) and not currency.compare_amounts(
+            authorized - tip, pending["amount"]
+        )
+
+    def _adyen_consume_pending_request(self, data):
+        pending = self._adyen_pending_request_for(data)
+        if pending is not None:
+            self.adyen_pending_request = False
+        return pending
+
+    def _adyen_confirm_payment(self, data, pending) -> bool:
+        """Whether Adyen itself reports the notified payment as approved for
+        the amount notified: cloud Terminal API event notifications carry no
+        signature of Adyen's, so a Success is only taken from Adyen's API."""
+        status_request = {
+            "SaleToPOIRequest": {
+                "MessageHeader": {
+                    "ProtocolVersion": "3.0",
+                    "MessageClass": "Service",
+                    "MessageCategory": "TransactionStatus",
+                    "MessageType": "Request",
+                    "SaleID": pending["sale_id"],
+                    "ServiceID": str(random.randrange(10**9, 10**10)),
+                    "POIID": self.adyen_terminal_identifier,
+                },
+                "TransactionStatusRequest": {
+                    "MessageReference": {
+                        "MessageCategory": "Payment",
+                        "SaleID": pending["sale_id"],
+                        "ServiceID": pending["service_id"],
+                    },
+                },
+            },
+        }
+        try:
+            reply = self._proxy_adyen_request_direct(
+                status_request, "transaction_status"
+            )
+            status = reply["SaleToPOIResponse"]["TransactionStatusResponse"]
+            payment = status["RepeatedMessageResponse"]["RepeatedResponseMessageBody"][
+                "PaymentResponse"
+            ]
+            confirmed_amounts = payment["PaymentResult"]["AmountsResp"]
+            notified_amounts = data["SaleToPOIResponse"]["PaymentResponse"][
+                "PaymentResult"
+            ]["AmountsResp"]
+            return (
+                status["Response"]["Result"] == "Success"
+                and payment["Response"]["Result"] == "Success"
+                and payment["SaleData"]["SaleTransactionID"]["TransactionID"]
+                == pending["transaction_id"]
+                and self._adyen_amounts_match(confirmed_amounts, pending)
+                and confirmed_amounts["AuthorizedAmount"]
+                == notified_amounts["AuthorizedAmount"]
+            )
+        except KeyError, TypeError, ValueError, OSError:
+            _logger.warning(
+                "Adyen could not confirm the payment of request %s on %s",
+                pending["service_id"],
+                self.adyen_terminal_identifier,
+                exc_info=True,
+            )
+            return False
+
+    @api.model
+    def _adyen_unconfirmed(self, data):
+        response = data["SaleToPOIResponse"]["PaymentResponse"]["Response"]
+        response["Result"] = "Failure"
+        response["AdditionalResponse"] = urlencode(
+            {
+                "message": self.env._(
+                    "Adyen did not confirm this payment: check the terminal "
+                    "before charging the customer again."
+                )
+            }
+        )
+        return data
 
     def _integration_connection_service(self):
         if self.use_payment_terminal == "adyen":
@@ -128,6 +272,11 @@ class PosPaymentMethod(models.Model):
         copy=False,
         groups="base.group_erp_manager",
     )  # used to buffer the latest asynchronous notification from Adyen.
+    adyen_pending_request = fields.Char(
+        copy=False,
+        classification="base.internal",
+        groups="base.group_erp_manager",
+    )
     adyen_event_url = fields.Char(
         string="Event URL",
         default=lambda self: f"{self.get_base_url()}/pos_adyen/notification",
@@ -180,10 +329,13 @@ class PosPaymentMethod(models.Model):
     def _get_adyen_endpoints(self) -> dict:
         return {
             "terminal_request": "https://terminal-api-%s.adyen.com/async",
+            "transaction_status": "https://terminal-api-%s.adyen.com/sync",
         }
 
     def _is_write_forbidden(self, fields) -> bool:
-        return super()._is_write_forbidden(fields - {"adyen_latest_response"})
+        return super()._is_write_forbidden(
+            fields - {"adyen_latest_response", "adyen_pending_request"}
+        )
 
     def get_latest_adyen_status(self):
         self.check_singleton()
@@ -204,16 +356,6 @@ class PosPaymentMethod(models.Model):
             raise AccessDenied
         if not data:
             raise UserError(self.env._("Invalid Adyen request"))
-
-        if (
-            "SaleToPOIRequest" in data
-            and data["SaleToPOIRequest"]["MessageHeader"]["MessageCategory"]
-            == "Payment"
-            and "PaymentRequest" in data["SaleToPOIRequest"]
-        ):  # Clear only if it is a payment request
-            self.sudo().adyen_latest_response = (
-                ""  # avoid handling old responses multiple times
-            )
 
         if not operation:
             operation = "terminal_request"
@@ -325,22 +467,7 @@ class PosPaymentMethod(models.Model):
             is_payment_request_with_acquirer_data
             or is_payment_request_without_acquirer_data
         ):
-            acquirer_data = data["SaleToPOIRequest"]["PaymentRequest"]["SaleData"].get(
-                "SaleToAcquirerData"
-            )
-            msg_header = data["SaleToPOIRequest"]["MessageHeader"]
-            metadata = "metadata.pos_hmac=" + self._get_hmac(
-                msg_header["SaleID"],
-                msg_header["ServiceID"],
-                msg_header["POIID"],
-                data["SaleToPOIRequest"]["PaymentRequest"]["SaleData"][
-                    "SaleTransactionID"
-                ]["TransactionID"],
-            )
-
-            data["SaleToPOIRequest"]["PaymentRequest"]["SaleData"][
-                "SaleToAcquirerData"
-            ] = acquirer_data + "&" + metadata if acquirer_data else metadata
+            self._adyen_sign_payment_request(data)
 
         return self._proxy_adyen_request_direct(data, operation)
 
@@ -406,6 +533,43 @@ class PosPaymentMethod(models.Model):
     def _prepare_acquirer_data(self):
         return {"tenderOption": "AskGratuity", "authorisationType": "PreAuth"}
 
+    def _adyen_sign_payment_request(self, data, self_order_id=False) -> None:
+        """Sign a payment request and record it as the one notification this
+        terminal may next answer, for the order it pays when a kiosk sent it."""
+        msg_header = data["SaleToPOIRequest"]["MessageHeader"]
+        payment_request = data["SaleToPOIRequest"]["PaymentRequest"]
+        sale_data = payment_request["SaleData"]
+        amounts = payment_request["PaymentTransaction"]["AmountsReq"]
+        transaction_id = sale_data["SaleTransactionID"]["TransactionID"]
+        amount = amounts["RequestedAmount"]
+        if not isinstance(amount, int | float) or isinstance(amount, bool):
+            raise UserError(self.env._("Invalid Adyen request"))
+        metadata = "metadata.pos_hmac=" + self._get_hmac(
+            msg_header["SaleID"],
+            msg_header["ServiceID"],
+            msg_header["POIID"],
+            transaction_id,
+        )
+        acquirer_data = sale_data.get("SaleToAcquirerData")
+        sale_data["SaleToAcquirerData"] = (
+            f"{acquirer_data}&{metadata}" if acquirer_data else metadata
+        )
+        self.sudo().write(
+            {
+                "adyen_latest_response": "",
+                "adyen_pending_request": json_dumps(
+                    {
+                        "sale_id": msg_header["SaleID"],
+                        "service_id": msg_header["ServiceID"],
+                        "transaction_id": transaction_id,
+                        "currency": amounts["Currency"],
+                        "amount": amount,
+                        "self_order_id": self_order_id,
+                    }
+                ),
+            }
+        )
+
     @api.model
     def _get_hmac(self, sale_id, service_id, poi_id, sale_transaction_id):
         return hmac(
@@ -419,7 +583,9 @@ class PosPaymentMethod(models.Model):
         TIMEOUT = 10
 
         _logger.info(
-            "Request to Adyen by user #%d:\n%s", self.env.uid, pprint.pformat(data)
+            "Request to Adyen by user #%d:\n%s",
+            self.env.uid,
+            pprint.pformat(redact_pos_hmac(data)),
         )
 
         environment = "test" if self.sudo().adyen_test_mode else "live"
