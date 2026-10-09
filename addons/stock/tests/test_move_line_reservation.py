@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tools import OrderedSet
 
@@ -414,6 +414,134 @@ class TestFreeReservationOrder(TestMoveLineCommon):
         self.assertEqual(
             list(caller_set), [], "the caller's set must come back untouched"
         )
+
+
+class TestPickedSerialFreedWhenConsumed(TestMoveLineCommon):
+    def _serials(self, name, count):
+        product = self._product(name, tracking="serial")
+        serials = self.env["product.trace"].create(
+            [
+                {"name": f"{name}-{index}", "product_id": product.id}
+                for index in range(count)
+            ]
+        )
+        for serial in serials:
+            self._stock(product, 1, lot=serial)
+        return product, serials
+
+    def _delivery_picking_by_hand(self, product, serial):
+        delivery = self._delivery(product, 1)
+        self.MoveLine.create(
+            {
+                "move_id": delivery.move_ids.id,
+                "picking_id": delivery.id,
+                "product_id": product.id,
+                "trace_id": serial.id,
+                "quantity": 1,
+                "picked": True,
+                "location_id": self.stock_location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        return delivery
+
+    def _scrap(self, product, serial):
+        scrap = self.env["stock.scrap"].create(
+            {
+                "product_id": product.id,
+                "trace_id": serial.id,
+                "scrap_qty": 1,
+                "location_id": self.stock_location.id,
+            }
+        )
+        scrap._action_done()
+        return scrap
+
+    def _on_hand(self, product):
+        self.env.invalidate_all()
+        return {
+            quant.trace_id.name: (quant.quantity, quant.reserved_quantity)
+            for quant in self.Quant.search(
+                [
+                    ("product_id", "=", product.id),
+                    ("location_id", "=", self.stock_location.id),
+                ]
+            )
+        }
+
+    def test_a_scrapped_serial_leaves_the_delivery_that_picked_it(self):
+        product, serials = self._serials("picked-sn-scrap", 2)
+        delivery = self._delivery(product, 1, assign=True)
+        picked = delivery.move_ids.move_line_ids.trace_id
+        delivery.move_ids.picked = True
+
+        self._scrap(product, picked)
+
+        line = delivery.move_ids.move_line_ids
+        self.assertEqual(line.trace_id, serials - picked)
+        self.assertFalse(delivery.move_ids.picked)
+        delivery.move_ids.picked = True
+        delivery.button_validate()
+        self.assertEqual(
+            self._on_hand(product),
+            {picked.name: (0.0, 0.0), (serials - picked).name: (0.0, 0.0)},
+        )
+
+    def test_a_serial_delivered_elsewhere_leaves_the_delivery_that_picked_it(self):
+        product, serials = self._serials("picked-sn-deliver", 1)
+        first = self._delivery(product, 1, assign=True)
+        first.move_ids.picked = True
+        second = self._delivery_picking_by_hand(product, serials)
+        second.button_validate()
+
+        self.assertFalse(first.move_ids.move_line_ids)
+        self.assertEqual(first.move_ids.state, "confirmed")
+        self.assertEqual(self._on_hand(product), {serials.name: (0.0, 0.0)})
+
+    def test_the_other_picked_serials_of_the_move_stay_picked(self):
+        product, _serials = self._serials("picked-sn-keep", 3)
+        delivery = self._delivery(product, 2, assign=True)
+        reserved = delivery.move_ids.move_line_ids.trace_id
+        delivery.move_ids.picked = True
+
+        self._scrap(product, reserved[0])
+
+        line = delivery.move_ids.move_line_ids
+        self.assertEqual((line.trace_id, line.picked), (reserved[1], True))
+        self.assertEqual(
+            self._on_hand(product)[reserved[0].name],
+            (0.0, 0.0),
+        )
+
+    def test_two_transfers_validating_one_serial_are_refused(self):
+        product, serials = self._serials("picked-sn-twice", 1)
+        first = self._delivery(product, 1, assign=True)
+        first.move_ids.picked = True
+        second = self._delivery_picking_by_hand(product, serials)
+        with self.assertRaisesRegex(ValidationError, "already been assigned"):
+            (first | second).button_validate()
+
+    def test_a_picked_lot_line_keeps_its_quantity(self):
+        product = self._product("picked-lot", tracking="lot")
+        lot = self.env["product.trace"].create(
+            {"name": "picked-lot-1", "product_id": product.id}
+        )
+        self._stock(product, 5, lot=lot)
+        delivery = self._delivery(product, 5, assign=True)
+        delivery.move_ids.picked = True
+
+        scrap = self.env["stock.scrap"].create(
+            {
+                "product_id": product.id,
+                "trace_id": lot.id,
+                "scrap_qty": 2,
+                "location_id": self.stock_location.id,
+            }
+        )
+        scrap._action_done()
+
+        line = delivery.move_ids.move_line_ids
+        self.assertEqual((line.quantity, line.picked), (5.0, True))
 
 
 @tagged("post_install", "-at_install")

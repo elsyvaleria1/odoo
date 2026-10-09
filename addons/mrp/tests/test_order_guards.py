@@ -424,7 +424,7 @@ class TestOrderGuards(TestMrpCommon):
         )
         self.assertEqual(production.move_raw_ids.product_uom_qty, 24)
 
-    def test_a_scrapped_serial_picked_on_an_order_is_not_consumed_too(self):
+    def _engine_order_with_its_serial_picked(self):
         engine = self.env["product.product"].create(
             {"name": "Engine", "is_storable": True, "tracking": "serial"}
         )
@@ -446,6 +446,40 @@ class TestOrderGuards(TestMrpCommon):
         production.action_assign()
         self.assertEqual(production.move_raw_ids.move_line_ids.trace_id, first)
         production.move_raw_ids.picked = True
+        return engine, first, second, production
+
+    def _engine_quantities(self, engine):
+        return {
+            quant.trace_id: quant.quantity
+            for quant in self.env["stock.quant"].search(
+                [
+                    ("product_id", "=", engine.id),
+                    ("location_id", "=", self.stock_location.id),
+                ]
+            )
+        }
+
+    def test_a_serial_scrapped_outside_the_order_leaves_its_picked_components(self):
+        engine, first, second, production = self._engine_order_with_its_serial_picked()
+
+        self.env["stock.scrap"].create(
+            {
+                "product_id": engine.id,
+                "trace_id": first.id,
+                "scrap_qty": 1,
+                "location_id": self.stock_location.id,
+            }
+        ).action_validate()
+
+        line = production.move_raw_ids.move_line_ids
+        self.assertEqual((line.trace_id, line.picked), (second, False))
+        production.qty_producing = 1
+        production.move_raw_ids.picked = True
+        production.button_mark_done()
+        self.assertEqual(self._engine_quantities(engine), {first: 0.0, second: 0.0})
+
+    def test_a_scrapped_serial_picked_on_an_order_is_not_consumed_too(self):
+        engine, first, second, production = self._engine_order_with_its_serial_picked()
 
         self.env["stock.scrap"].create(
             {
@@ -462,16 +496,9 @@ class TestOrderGuards(TestMrpCommon):
         production.button_mark_done()
 
         self.assertEqual(production.move_raw_ids.move_line_ids.trace_id, second)
-        quantities = {
-            quant.trace_id: quant.quantity
-            for quant in self.env["stock.quant"].search(
-                [
-                    ("product_id", "=", engine.id),
-                    ("location_id", "=", self.stock_location.id),
-                ]
-            )
-        }
-        self.assertFalse(any(quantity < 0 for quantity in quantities.values()))
+        self.assertFalse(
+            any(quantity < 0 for quantity in self._engine_quantities(engine).values())
+        )
 
     def test_confirming_a_serial_order_in_dozens_keeps_edited_components(self):
         dozen = self.env.ref("uom.product_uom_dozen")
@@ -739,6 +766,21 @@ class TestProductionStatementGuards(TransactionCase):
         without = marked(6, 0) - marked(2, 0)
         with_operations = marked(6, 1) - marked(2, 1)
         self.assertLessEqual(with_operations - without, 1)
+
+    def test_marking_done_writes_one_link_per_order(self):
+        def marked(count):
+            productions = self._reserved(count)
+            return self.statements(
+                productions,
+                lambda productions: productions.with_context(
+                    skip_consumption=True
+                ).button_mark_done(),
+            )
+
+        marked(1)
+        # The consume-line insert: one x2many value per order, and a write
+        # carries one value for all its records.
+        self.assertLessEqual(marked(6) - marked(2), 4 * 1)
 
     def test_backorder_split_grows_by_its_line_writes_only(self):
         def split(count):

@@ -3538,6 +3538,7 @@ class MrpProduction(models.Model):
             ],
         )
         self.workorder_ids._settle_duration_for_posting()
+        finish_move_ids_by_quantity = defaultdict(list)
         for order in self:
             finish_moves = order._get_main_finished_moves().filtered(
                 lambda m: m.state not in ("done", "cancel")
@@ -3545,10 +3546,14 @@ class MrpProduction(models.Model):
             for move in finish_moves:
                 if move.has_tracking != "none" and not move.trace_ids:
                     move.trace_ids = order.trace_producing_ids.ids
-                move.quantity = move.product_uom_id.round(
+                quantity = move.product_uom_id.round(
                     (order.qty_producing - order.qty_produced) * move.unit_factor,
                     rounding_method="HALF-UP",
                 )
+                finish_move_ids_by_quantity[quantity].append(move.id)
+        for quantity, move_ids in finish_move_ids_by_quantity.items():
+            self.env["stock.move"].browse(move_ids).quantity = quantity
+        for order in self:
             order.with_company(order.company_id)._update_finished_moves_price_unit(
                 moves_to_do_by_order[order.id]
             )
@@ -3566,13 +3571,18 @@ class MrpProduction(models.Model):
             moves_to_finish = moves_to_finish._action_done(
                 cancel_backorder=cancel_backorder
             )
+        finished_lines = moves_to_finish.move_line_ids
         finished_lines_by_order = defaultdict(
             lambda: self.env["stock.move.line"],
             [
-                (key, self.env["stock.move.line"].concat(*values))
+                (
+                    key,
+                    self.env["stock.move.line"]
+                    .concat(*values)
+                    .with_prefetch(finished_lines._prefetch_ids),
+                )
                 for key, values in tools_groupby(
-                    moves_to_finish.move_line_ids,
-                    key=lambda line: line.move_id.production_id.id,
+                    finished_lines, key=lambda line: line.move_id.production_id.id
                 )
             ],
         )

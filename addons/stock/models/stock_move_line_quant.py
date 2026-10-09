@@ -171,14 +171,16 @@ class StockMoveLineQuant(models.Model):
         return tuple(overrides.get(name, self[name]) for name in RESERVATION_KEY_FIELDS)
 
     @api.model
-    def _get_domain_outstanding_reservation(self):
-        return Domain(
+    def _get_domain_outstanding_reservation(self, include_picked=False):
+        domain = Domain(
             [
                 ("state", "not in", ["done", "cancel"]),
                 ("quantity_product_uom", ">", 0.0),
-                ("picked", "=", False),
             ]
         )
+        if include_picked:
+            return domain
+        return domain & Domain("picked", "=", False)
 
     def _update_quant_reservations(self, deltas) -> None:
         for (product, location, lot, package, owner), quantity in deltas.items():
@@ -271,6 +273,7 @@ class StockMoveLineQuant(models.Model):
             lambda m: m.procure_method != "make_to_stock"
         ).procure_method = "make_to_stock"
         move_line_to_unlink.unlink()
+        moves_to_sever.filtered("picked").picked = False
         move_to_reassign[::-1]._action_assign()
 
     def _get_outdated_candidates(self, ml_ids_to_ignore) -> Self:
@@ -280,11 +283,16 @@ class StockMoveLineQuant(models.Model):
             date = candidate.picking_id.date_planned or candidate.move_id.date
             return (
                 candidate.picking_id != self.move_id.picking_id,
+                candidate.picked,
                 -date.timestamp() if date else 0,
                 -candidate.id,
             )
 
-        domain = self._get_domain_outstanding_reservation()
+        # A serial is in one place: once it has left, a picked line still
+        # claiming it would consume it a second time.
+        domain = self._get_domain_outstanding_reservation(
+            include_picked=bool(self.trace_id) and self.product_id.tracking == "serial"
+        )
         domain &= Domain(
             [(name, "=", self[name].id) for name in RESERVATION_KEY_FIELDS]
         )
@@ -452,12 +460,13 @@ class StockMoveLineQuant(models.Model):
 
     @_debug.perf.timed
     def _update_quants_done(self) -> None:
-        ml_ids_to_ignore = OrderedSet()
+        # Lines done together never free one another: a line freed mid-loop
+        # would be unlinked before its turn.
+        ml_ids_to_ignore = OrderedSet(self.ids)
         for ml in self.with_context(quants_cache=self._get_quants_cache()):
             ml.with_context(bypass_entire_pack=True)._update_quants_and_reservations(
                 release_reserved=True, ml_ids_to_ignore=ml_ids_to_ignore
             )
-            ml_ids_to_ignore.add(ml.id)
 
     def get_move_line_quant_match(
         self, move_id, dirty_move_line_ids, dirty_quant_ids

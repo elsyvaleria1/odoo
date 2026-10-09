@@ -138,13 +138,8 @@ class StockScrap(models.Model):
                 in scrapped
             )
         )
-        moves = lines.move_id
         lines.picked = False
-        res = super()._action_done()
-        moves.filtered(
-            lambda move: move.picked and not move.move_line_ids
-        ).picked = False
-        return res
+        return super()._action_done()
 
     def _is_available_qty_check_required(self) -> bool:
         return bool(super()._is_available_qty_check_required() or self.product_is_kit)
