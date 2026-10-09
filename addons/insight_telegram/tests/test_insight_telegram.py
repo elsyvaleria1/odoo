@@ -6,7 +6,7 @@ from unittest.mock import PropertyMock, patch
 
 from psycopg import errors as pg_errors
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged
@@ -461,6 +461,20 @@ class TestCatalog(TransactionCase):
     def test_a_missing_partner_is_said(self):
         with self.assertRaises(catalog.NotFound):
             documents.collect(self.env, "guarantee", {"partner": "Nobody 7c1e"})
+
+    def test_a_name_is_found_word_by_word_and_without_accents(self):
+        victor = self.env["res.partner"].create(
+            {"name": "Victor Hugo Juarez Hernandez Probe"}
+        )
+        self.env.flush_all()
+        with self.reader.env() as env:
+            self.assertEqual(
+                catalog.find(env, "res.partner", "Victor Juárez Probe").ids, victor.ids
+            )
+            self.assertEqual(
+                catalog.find(env, "res.partner", "juarez victor probe").ids, victor.ids
+            )
+            self.assertFalse(catalog.find(env, "res.partner", "Victor Ramirez Probe"))
 
     def test_every_report_runs_on_an_empty_period(self):
         # a report must answer, not crash, whatever the data
@@ -1150,3 +1164,51 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertEqual(collect.call_args.args[1], "statement")
         self.assertEqual(collect.call_args.args[2]["partner_id"], 7)
         self.assertEqual(send.call_count, 1)
+
+    def test_a_reply_to_the_agent_goes_back_to_it_with_the_files(self):
+        from odoo.addons.insight_telegram.models.telegram_chat import (
+            _answers_the_agent,
+        )
+
+        now = fields.Datetime.to_string(fields.Datetime.now())
+        asked = [
+            {
+                "interpretation": {"query": "none"},
+                "answer": "¿Confirmas que es Versa?",
+                "at": now,
+            }
+        ]
+        self.assertTrue(_answers_the_agent(asked))
+        told = [{"interpretation": {"query": "none"}, "answer": "Listo.", "at": now}]
+        self.assertFalse(_answers_the_agent(told))
+        report = [
+            {"interpretation": {"query": "sales"}, "answer": "¿Algo más?", "at": now}
+        ]
+        self.assertFalse(_answers_the_agent(report))
+        self.test_chat._set_context(
+            "telegram_insight_files",
+            {"files": [["big", "photo.jpg", "image/jpeg"]], "at": now},
+        )
+        self.test_chat._set_context(
+            "telegram_insight_history",
+            [
+                {
+                    "question": "orden para versa",
+                    "interpretation": {"query": "none"},
+                    "answer": "¿Confirmas que es Agroquímicos Versa?",
+                    "at": now,
+                }
+            ],
+        )
+        with patch.object(
+            type(self.test_chat),
+            "_insight_download",
+            return_value=[("photo.jpg", b"\xff\xd8jpeg", "image/jpeg")],
+        ) as download:
+            _sent, mocks = self._job(
+                {"text": "Sí, agroquímicos versa"}, agent=("Va.", [])
+            )
+        self.assertFalse(mocks[1].called, "the reply skips the classifier")
+        self.assertEqual(
+            download.call_args.args[1], [("big", "photo.jpg", "image/jpeg")]
+        )

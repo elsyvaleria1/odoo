@@ -1,4 +1,4 @@
-from .catalog import NotFound
+from .catalog import NotFound, find
 
 MAX_FILES = 5
 
@@ -51,9 +51,7 @@ def _partner(env, params):
     name = (params.get("partner") or "").strip()
     if not name:
         raise NotFound(env._("Tell me whose documents you want: the name."))
-    found = env["res.partner"].search(
-        ["|", ("name", "ilike", name), ("vat", "ilike", name)], limit=20
-    )
+    found = find(env, "res.partner", name, ("name", "vat"))
     if not found:
         raise NotFound(env._("I could not find «%(value)s».", value=name))
     return found[:1].commercial_partner_id

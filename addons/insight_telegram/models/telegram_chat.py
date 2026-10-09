@@ -30,6 +30,7 @@ DEFAULT_TZ = "America/Mexico_City"
 CHUNK_LIMIT = 3800
 AGENT = "agent"
 PENDING_KEY = "telegram_insight_pending"
+FILES_KEY = "telegram_insight_files"
 # changes not authorized within this long are dropped
 PENDING_TTL = timedelta(hours=1)
 _AUTHORIZE_WORDS = ("autoriz", "authoriz", "confirmo", "apruebo")
@@ -75,6 +76,14 @@ class TelegramChat(models.Model):
 
         question = (message.get("text") or message.get("caption") or "").strip()
         attached = _files_of(message)
+        if attached:
+            chat._set_context(
+                FILES_KEY,
+                {
+                    "files": [list(item) for item in attached],
+                    "at": fields.Datetime.to_string(fields.Datetime.now()),
+                },
+            )
         if not question and not attached:
             heard = assistant.hear(chat, message)
             question = (heard.text or "").strip()
@@ -118,6 +127,14 @@ class TelegramChat(models.Model):
                     "query": "none",
                     "files": [name for _i, name, _m in attached],
                 }
+            elif (
+                _answers_the_agent(chat._insight_history())
+                and InsightAgent(bot).available
+            ):
+                # the agent asked something last: this is the reply, it goes back,
+                # with the files the conversation was about
+                interpretation = {"query": "none", "follow_up": True}
+                attached = chat._insight_recent_files()
             else:
                 interpretation = assistant.interpret(
                     question, chat._insight_history(), queries, today=today.isoformat()
@@ -381,6 +398,16 @@ class TelegramChat(models.Model):
                 name = (record.display_name or report.name).replace("/", "-")
                 bot.send_document(chat.chat_id, content, f"{name}.pdf")
 
+    def _insight_recent_files(self) -> list:
+        """The files sent in this chat lately, for a follow-up about them."""
+        recent = self._get_context(FILES_KEY)
+        if not recent:
+            return []
+        cutoff = fields.Datetime.to_string(fields.Datetime.now() - FOLLOW_UP_WINDOW)
+        if recent.get("at", "") < cutoff:
+            return []
+        return [tuple(item) for item in recent.get("files", [])]
+
     def _insight_pending(self):
         """The changes waiting for this chat's authorization, if still fresh."""
         pending = self._get_context(PENDING_KEY)
@@ -428,6 +455,24 @@ def _statement_buttons(tr_env, extras, interpretation):
     if not interpretation.get("detail"):
         buttons.insert(0, kb.button(tr_env._("📋 Breakdown"), f"ins_det:{partner_id}"))
     return kb.keyboard(buttons)
+
+
+# how recent the agent's question must be for a message to be its reply
+FOLLOW_UP_WINDOW = timedelta(minutes=30)
+
+
+def _answers_the_agent(history) -> bool:
+    """Whether the last exchange is the agent asking the person something, so
+    the next message is their reply and belongs to the agent."""
+    if not history:
+        return False
+    last = history[-1]
+    if (last.get("interpretation") or {}).get("query") != "none":
+        return False
+    cutoff = fields.Datetime.to_string(fields.Datetime.now() - FOLLOW_UP_WINDOW)
+    if last.get("at", "") < cutoff:
+        return False
+    return "?" in (last.get("answer") or "")[-400:]
 
 
 def _decision(text):

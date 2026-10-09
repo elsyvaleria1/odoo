@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
@@ -6,6 +7,8 @@ import pytz
 from babel.dates import format_date
 
 from odoo import fields
+from odoo.fields import Domain
+from odoo.tools import SQL, remove_accents
 
 TOP = 10
 MAX_TOP = 30
@@ -97,12 +100,9 @@ class Ask:
         return self.env.lang or "es_MX"
 
     def matches(self, model, value, fields_=("name",), extra=None):
-        """The records of `model` whose name contains `value`, noted in the
+        """The records of `model` whose name matches `value`, noted in the
         answer when the name is ambiguous."""
-        domain = list(extra or [])
-        terms = [(name, "ilike", value) for name in fields_]
-        domain += ["|"] * (len(terms) - 1) + terms
-        found = self.env[model].search(domain, limit=MAX_MATCHES)
+        found = find(self.env, model, value, fields_, extra)
         if not found:
             raise NotFound(self.env._("I could not find «%(value)s».", value=value))
         if len(found) > 1:
@@ -129,6 +129,66 @@ class Ask:
                 operator = "child_of" if model == "res.partner" else "in"
                 domain.append((path, operator, ids))
         return domain
+
+
+_WORD = re.compile(r"\w{2,}")
+
+
+def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
+    """The records of `model` a person means by `value`, as said or dictated.
+
+    The whole phrase first; else every word of it, in any order and with
+    anything between them ("Victor Juárez" is "Victor Hugo Juarez
+    Hernandez"); else the same ignoring accents. Contacts that trade the most
+    come first.
+    """
+    Model = env[model]
+    base = list(extra or [])
+    order = (
+        "customer_rank desc, supplier_rank desc, id" if model == "res.partner" else None
+    )
+    phrase = Domain.OR(Domain(name, "ilike", value) for name in fields_)
+    found = Model.search(Domain(base) & phrase, limit=limit, order=order)
+    if found:
+        return found
+    words = _WORD.findall(value or "")
+    if not words:
+        return found
+    by_word = Domain.AND(
+        Domain.OR(
+            Domain(name, "ilike", variant)
+            for name in fields_
+            for variant in {word, remove_accents(word)}
+        )
+        for word in words
+    )
+    found = Model.search(Domain(base) & by_word, limit=limit, order=order)
+    if found or model != "res.partner":
+        return found
+    # contacts keep their accents in plain text: unaccent both sides, where
+    # the database has the extension
+    env.cr.execute("SELECT 1 FROM pg_extension WHERE extname = 'unaccent'")
+    if not env.cr.fetchone():
+        return found
+    clauses = SQL(" AND ").join(
+        SQL("unaccent(name) ILIKE unaccent(%s)", f"%{word}%") for word in words
+    )
+    try:
+        with env.cr.savepoint():
+            env.cr.execute(
+                SQL(
+                    "SELECT id FROM res_partner WHERE active AND %s LIMIT %s",
+                    clauses,
+                    limit,
+                )
+            )
+            ids = [row[0] for row in env.cr.fetchall()]
+    except Exception:
+        # a database without the unaccent extension: nothing more to try
+        return found
+    return Model.search(
+        Domain(base) & Domain("id", "in", ids), limit=limit, order=order
+    )
 
 
 class NotFound(Exception):

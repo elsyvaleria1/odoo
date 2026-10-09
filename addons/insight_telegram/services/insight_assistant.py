@@ -56,6 +56,9 @@ documents ("desglósalo", "el detalle"), else null.
 - top: how many items he wants listed, else null.
 - A follow-up ("and last month?", "by branch") keeps the previous question's \
 report and parameters, changing only what it says.
+- When the previous interpretation was "{none}" and this message answers \
+what the assistant asked (a yes, a name, a choice, a quantity), answer \
+"{none}" too: the assistant goes on with it.
 """
 
 
