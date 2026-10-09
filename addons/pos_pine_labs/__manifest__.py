@@ -21,7 +21,7 @@
             "pos_pine_labs/static/src/**/*",
         ],
         "web.assets_unit_tests": [
-            "pos_pine_labs/static/tests/unit/data/**/*",
+            "pos_pine_labs/static/tests/unit/**/*",
         ],
     },
 }

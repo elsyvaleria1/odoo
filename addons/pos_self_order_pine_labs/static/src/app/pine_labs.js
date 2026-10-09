@@ -51,13 +51,11 @@ export class PineLabs {
 
     async cancelPayment(order) {
         try {
-            // We need to provide the amount in paisa since Pine Labs processes amounts in paisa.
-            // The conversion rate between INR and paisa is set as 1 INR = 100 paisa.
             const data = {
                 plutusTransactionReferenceID: localStorage.getItem(
                     "plutusTransactionReferenceID",
                 ),
-                amount: order.amount_total * 100,
+                amount: order.currency.toMinorUnits(order.amount_total),
             };
             const cancelResponse = await rpc(
                 "/pos-self-order/pine-labs-cancel-transaction/",

@@ -20,7 +20,7 @@
             "pos_restaurant_adyen/static/src/**/*",
         ],
         "web.assets_unit_tests": [
-            "pos_restaurant_adyen/static/tests/unit/data/**/*",
+            "pos_restaurant_adyen/static/tests/unit/**/*",
         ],
     },
     "auto_install": True,

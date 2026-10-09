@@ -22,9 +22,7 @@ patch(PaymentAdyen.prototype, {
         const data = {
             originalReference: line.transaction_id,
             modificationAmount: {
-                value: parseInt(
-                    line.amount * Math.pow(10, this.pos.currency.decimal_places),
-                ),
+                value: this.pos.currency.toMinorUnits(line.amount),
                 currency: this.pos.currency.name,
             },
             merchantAccount: this.payment_method_id.adyen_merchant_account,

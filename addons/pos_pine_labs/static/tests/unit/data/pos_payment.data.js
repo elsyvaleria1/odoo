@@ -3,6 +3,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PosPayment.prototype, {
     _load_pos_data_fields() {
-        return [...super._load_pos_data_fields(), "pine_labs_plutus_transaction_ref"];
+        const fields = super._load_pos_data_fields();
+        return fields.length ? [...fields, "pine_labs_plutus_transaction_ref"] : fields;
     },
 });

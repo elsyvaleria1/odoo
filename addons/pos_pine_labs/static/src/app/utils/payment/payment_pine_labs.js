@@ -163,7 +163,7 @@ export class PaymentPineLabs extends PaymentInterface {
         const paymentLine = this.pendingPineLabsPaymentLine();
         const data = {
             plutusTransactionReferenceID: paymentLine.pine_labs_plutus_transaction_ref,
-            amount: paymentLine.amount * 100, // We need to provide the amount in paisa since Pine Labs processes amounts in paisa.
+            amount: this.pos.currency.toMinorUnits(paymentLine.amount),
         };
 
         const response = await this._callPineLabs(
@@ -202,10 +202,9 @@ export class PaymentPineLabs extends PaymentInterface {
                 crypto.randomUUID().replaceAll("-", ""),
         });
 
-        // Assume that the Pine Labs terminal payment method is configured with INR (Indian Rupees) as the currency_id in the POS config.
-        // The conversion rate between INR and paisa is set as 1 INR = 100 paisa.
+        // Pine Labs takes the amount in paisa, the minor unit of INR
         const data = {
-            amount: paymentLine.amount * 100, // We need to provide the amount in paisa since Pine Labs processes amounts in paisa.
+            amount: this.pos.currency.toMinorUnits(paymentLine.amount),
             transactionNumber: paymentLine.payment_ref_no,
             sequenceNumber: sequenceNumber, // In the case of multiple transactions for the same order, it is important to follow the correct sequence of transactions.
         };
