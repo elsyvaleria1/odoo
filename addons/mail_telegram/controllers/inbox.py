@@ -66,6 +66,7 @@ class TelegramInboxController(http.Controller):
         user = bot._mini_app_user(telegram_user_id)
         if not user:
             return {"error": "auth"}
+        bot = operating(bot.with_env(user.env))
         account = bot.env["telegram.account"].search(
             [("tg_user_id", "=", str(telegram_user_id))], limit=1
         )

@@ -1,4 +1,5 @@
 import time
+from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import AccessError
@@ -182,9 +183,9 @@ class TestInboxRoutes(InboxRouteCase):
         # Telegram's WebView sends its own language, es-ES, where the database
         # may have only es_MX: that is no reason to refuse the caller
         self.assertFalse(
-            self.env["res.lang"].with_context(active_test=True).search(
-                [("code", "=", "es_ES")]
-            )
+            self.env["res.lang"]
+            .with_context(active_test=True)
+            .search([("code", "=", "es_ES")])
         )
         self.env.flush_all()
         response = self.url_open(
@@ -244,3 +245,33 @@ class TestInboxRoutes(InboxRouteCase):
 
         self.assertEqual(thread(ours).get("title"), "Rancho Otro")
         self.assertEqual(thread(main), {"error": "access"})
+
+    def test_the_bot_acts_as_the_bound_user_not_the_superuser(self):
+        other_company = self.env["res.company"].create({"name": "Otra empresa"})
+        foreign = self.env["res.partner"].create(
+            {"name": "Rancho Ajeno", "company_id": other_company.id}
+        )
+        bots = type(self.env["telegram.bot"])
+        can_deliver_mail = bots._can_deliver_mail
+        seen = {}
+
+        def spy(bot, account, user):
+            seen["acting"] = (bot.env.uid, bot.env.su)
+            try:
+                bot.env["res.partner"].browse(foreign.id).read(["name"])
+            except AccessError:
+                seen["foreign"] = "refused"
+            else:
+                seen["foreign"] = "read"
+            return can_deliver_mail(bot, account, user)
+
+        with patch.object(bots, "_can_deliver_mail", spy):
+            body = self._rpc(
+                "overview",
+                bot_id=self.test_bot.id,
+                init_data=self._signed(int(self.test_chat.chat_id)),
+            )
+
+        self.assertIn("notifications", body["result"], body)
+        self.assertEqual(seen["acting"], (self.test_user.id, False))
+        self.assertEqual(seen["foreign"], "refused")
