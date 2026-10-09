@@ -44,7 +44,7 @@ import { Mutex } from "@web/core/utils/concurrency";
 import { effect } from "@web/core/utils/reactive";
 import { renderToElement } from "@web/core/utils/render";
 import { debounce } from "@web/core/utils/timing";
-import { AlertDialog } from "@web/ui/dialog";
+import { AlertDialog, ConfirmationDialog } from "@web/ui/dialog";
 import { FormViewDialog } from "@web/views/view_dialogs";
 
 import { SelectionPopup } from "../components/popups/selection_popup/selection_popup.js";
@@ -293,19 +293,42 @@ export class PosStore extends WithLazyGetterTrap {
 
     async reloadData(fullReload = false) {
         log.lifecycle("reloadData", () => ({ fullReload }));
-        const orders = this.models["pos.order"].getAll();
-        this.device.saveUnusedNumber(orders);
-        if (!this.data.network.offline) {
-            await this.data.syncData().catch(() => {});
+        // the reload clears the server cache: a till that cannot reach the
+        // server would have nothing left to start from
+        if (!(await this.data.isServerReachable())) {
+            this.dialog.add(AlertDialog, {
+                title: _t("Reload Data needs the server"),
+                body: _t(
+                    "This register cannot reach the server. Reloading its data now would leave it unable to start, so nothing was changed. Try again once the connection is back.",
+                ),
+            });
+            return false;
         }
-        await this.data.resetIndexedDBKeepingQueue();
+        await this.data.syncData().catch(() => {});
+        try {
+            await this.syncAllOrders();
+        } catch (error) {
+            logPosMessage(
+                "Store",
+                "reloadData",
+                "Some orders could not be synced before the reload; they are kept on this device",
+                CONSOLE_COLOR,
+                [error],
+            );
+        }
+        await this.data.resetServerCacheForReload();
         const url = new URL(window.location.href);
 
         if (fullReload) {
             url.searchParams.set("limited_loading", "0");
         }
 
-        window.location.href = url.href;
+        this.reloadPage(url.href);
+        return true;
+    }
+
+    reloadPage(href) {
+        window.location.href = href;
     }
 
     async showLoginScreen() {
@@ -555,10 +578,14 @@ export class PosStore extends WithLazyGetterTrap {
     }
     // a cash move still queued would be missing from the counted balance, and
     // its replay after the close is refused by the closed session
-    async sendPendingOperations() {
+    async sendPendingOperations(retry) {
         const network = this.data.network;
-        if (network.unsyncData.length && !network.offline) {
-            await this.data.syncData().catch(() => {});
+        if (network.unsyncData.length) {
+            if (network.offline) {
+                await this.data.checkConnectivity();
+            } else {
+                await this.data.syncData().catch(() => {});
+            }
         }
         const pending = network.unsyncData.length;
         log.logic("sendPendingOperations", () => ({
@@ -571,19 +598,22 @@ export class PosStore extends WithLazyGetterTrap {
         const operations = network.unsyncData
             .map((entry) => `• ${this.data.describeQueuedOperation(entry)}`)
             .join("\n");
-        this.dialog.add(AlertDialog, {
+        this.dialog.add(ConfirmationDialog, {
             title: _t("Operations not sent yet"),
             body: _t(
-                "These operations made on this register have not reached the server yet:\n%(operations)s\nThe register cannot be closed until they are sent. Check the connection and try again.",
+                "These operations made on this register have not reached the server yet:\n%(operations)s\nThe register cannot be closed until they are sent: once the session is closed, this register can no longer send them. Check the connection and retry. If they still cannot be sent, leave the Point of Sale, record them in the backend and close the session from there.",
                 { operations },
             ),
+            confirmLabel: _t("Retry now"),
+            confirm: () => retry?.(),
+            cancel: () => {},
         });
         return false;
     }
 
     async closeSession() {
         log.logic("closeSession", () => ({ session: this.session?.id }));
-        if (!(await this.sendPendingOperations())) {
+        if (!(await this.sendPendingOperations(() => this.closeSession()))) {
             return;
         }
         await this.pushOrdersWithClosingPopup();

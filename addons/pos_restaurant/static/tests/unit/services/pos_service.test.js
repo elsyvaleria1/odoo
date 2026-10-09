@@ -5,7 +5,11 @@ import {
     waitUntilOrdersSynced,
 } from "@point_of_sale/../tests/unit/utils";
 import { definePosRestaurantModels } from "@pos_restaurant/../tests/unit/data/generate_model_definitions";
-import { MockServer } from "@web/../tests/web_test_helpers";
+import {
+    MockServer,
+    patchTranslations,
+    patchWithCleanup,
+} from "@web/../tests/web_test_helpers";
 import { formatValue, now } from "@web/core/l10n/dates";
 
 definePosRestaurantModels();
@@ -476,5 +480,26 @@ describe("restaurant pos_store.js", () => {
             expect(course1).not.toBe(course2);
             expect(order.lines[0].course_id).toBe(course1);
         });
+    });
+
+    test("a preset change is counted under the preset's own name, not a translation of it", async () => {
+        patchTranslations({ pos_restaurant: { Takeaway: "WRONG" } });
+        const store = await setupPosEnv();
+        const order = await getFilledOrder(store);
+        const preset = store.models["pos.preset"].getAll()[0];
+        preset.name = "Takeaway";
+        order.preset_id = preset;
+        order.last_order_preparation_change = { lines: { any: {} } };
+        patchWithCleanup(store, {
+            getOrderChanges: () => ({
+                orderlines: {},
+                noteUpdate: {},
+                modeUpdate: true,
+            }),
+        });
+
+        const categories = store.getCategoryCount(order);
+
+        expect(categories.map((category) => category.name)).toInclude("Takeaway");
     });
 });

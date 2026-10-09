@@ -8,8 +8,7 @@
                 <div><t t-out="this.props.date" /></div>
             </div>
             <div class="pos-receipt-center-align">
-                CASH
-                <t t-out="this.props.translatedType.toUpperCase()" />
+                <t t-out="this.props.label.toUpperCase()" />
             </div>
             <div class="pt-3">
                 AMOUNT

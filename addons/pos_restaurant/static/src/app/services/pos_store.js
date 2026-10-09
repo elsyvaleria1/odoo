@@ -500,8 +500,7 @@ patch(PosStore.prototype, {
             orderChanges.modeUpdate &&
             Object.keys(order.last_order_preparation_change.lines).length
         ) {
-            const displayName = _t(order.preset_id?.name);
-            categories["modeUpdate"] = { count: 1, name: displayName };
+            categories["modeUpdate"] = { count: 1, name: order.preset_id?.name };
         }
 
         return [

@@ -66,8 +66,8 @@ export class CashMovePopup extends Component {
         const endMove = log.perf("[session:cash_move] try_cash_in_out");
 
         const type = this.state.type;
-        const translatedType = _t(type);
-        const extras = { formattedAmount, translatedType };
+        const label = type === "in" ? _t("Cash In") : _t("Cash Out");
+        const extras = { formattedAmount };
         const reason = this.state.reason.trim();
 
         const result = await this.pos.data.call(
@@ -86,7 +86,7 @@ export class CashMovePopup extends Component {
         const queued = isQueued(result);
         endMove({ session: this.pos.session.id, type, amount, queued });
         await this.pos.logEmployeeMessage(
-            `${_t("Cash")} ${translatedType} - ${_t("Amount")}: ${formattedAmount}`,
+            `${label} - ${_t("Amount")}: ${formattedAmount}`,
             "CASH_DRAWER_ACTION",
         );
         const order = this.pos.models["pos.order"].create({
@@ -106,7 +106,7 @@ export class CashMovePopup extends Component {
         try {
             await this.printer.print(CashMoveReceipt, {
                 reason,
-                translatedType,
+                label,
                 order: order,
                 formattedAmount,
                 date: new Date().toLocaleString(),
@@ -117,8 +117,16 @@ export class CashMovePopup extends Component {
 
         this.props.getPayload?.(true);
         this.props.close();
+        const sent =
+            type === "in"
+                ? _t("Successfully made a cash in of %(amount)s.", {
+                      amount: formattedAmount,
+                  })
+                : _t("Successfully made a cash out of %(amount)s.", {
+                      amount: formattedAmount,
+                  });
         if (queued) {
-            this.notification.add(
+            const closeWarning = this.notification.add(
                 type === "in"
                     ? _t(
                           "The cash in of %(amount)s has not reached the server yet. It is kept on this device and sent automatically; the register cannot be closed until it is.",
@@ -130,12 +138,16 @@ export class CashMovePopup extends Component {
                       ),
                 { type: "warning", sticky: true },
             );
+            // a dead-lettered move keeps the warning: its alert says why
+            this.pos.data.waitForReplay(result.uuid).then((replayed) => {
+                if (replayed) {
+                    closeWarning();
+                    this.notification.add(sent, { autocloseDelay: 3000 });
+                }
+            });
             return;
         }
-        this.notification.add(
-            _t("Successfully made a cash %s of %s.", type, formattedAmount),
-            { autocloseDelay: 3000 },
-        );
+        this.notification.add(sent, { autocloseDelay: 3000 });
     }
     onClickButton(type) {
         this.state.type = type;

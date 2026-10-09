@@ -236,7 +236,7 @@ export class ClosePosPopup extends Component {
     }
     async closeSession() {
         const endClose = log.perf("[session:close] closeSession");
-        if (!(await this.pos.sendPendingOperations())) {
+        if (!(await this.pos.sendPendingOperations(() => this.confirm()))) {
             endClose({ stoppedAt: "pendingOperations" });
             return;
         }

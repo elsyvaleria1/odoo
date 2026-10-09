@@ -174,6 +174,77 @@ describe("pos_store.js resilience", () => {
         });
     });
 
+    describe("reloadData", () => {
+        const patchReload = (store, { offline = false } = {}) => {
+            const cleared = [];
+            patchWithCleanup(store.data, {
+                isServerReachable: async () => {
+                    expect.step("ping");
+                    return !offline;
+                },
+                syncData: async () => expect.step("replay queue"),
+            });
+            patchWithCleanup(store.data.indexedDB, {
+                dbStores: [
+                    ["uuid", "pos.order"],
+                    ["uuid", "pos.order.line"],
+                    ["uuid", "pos.payment"],
+                    ["id", "product.product"],
+                ],
+                clear: async (stores) => {
+                    cleared.push(...stores);
+                    return true;
+                },
+                close: () => {},
+                reset: async () => expect.step("database deleted"),
+            });
+            patchWithCleanup(store.device, {
+                saveUnusedNumber: () => {
+                    throw new Error("order numbers handed back for reuse");
+                },
+            });
+            patchWithCleanup(store, {
+                reloadPage: () => expect.step("reload"),
+            });
+            return cleared;
+        };
+
+        test("Reload Data syncs the orders first and keeps the ones still unsynced", async () => {
+            const store = await setupPosEnv();
+            const order = await getFilledOrder(store);
+            const cleared = patchReload(store);
+            patchWithCleanup(store, {
+                syncAllOrders: async () => {
+                    expect.step("sync orders");
+                    throw new Error("server refused the order");
+                },
+            });
+
+            expect(await store.reloadData()).toBe(true);
+
+            expect.verifySteps(["ping", "replay queue", "sync orders", "reload"]);
+            expect(cleared).toEqual(["product.product"]);
+            expect(store.models["pos.order"].getBy("uuid", order.uuid)).toBe(order);
+        });
+
+        test("Reload Data refuses while the server cannot be reached", async () => {
+            const store = await setupPosEnv();
+            const cleared = patchReload(store, { offline: true });
+            const shown = [];
+            patchWithCleanup(store.dialog, {
+                add: (_component, props) => shown.push(props),
+            });
+
+            expect(await store.reloadData()).toBe(false);
+
+            expect.verifySteps(["ping"]);
+            expect(cleared).toEqual([]);
+            expect(shown.map((props) => props.title)).toEqual([
+                "Reload Data needs the server",
+            ]);
+        });
+    });
+
     describe("closeSession", () => {
         test("closing sends the queued operations first and refuses while any is pending", async () => {
             const store = await setupPosEnv();
@@ -189,6 +260,9 @@ describe("pos_store.js resilience", () => {
                 },
             });
             data.network.offline = true;
+            patchWithCleanup(data, {
+                checkConnectivity: async () => expect.step("connectivity"),
+            });
             data.network.unsyncData = [
                 {
                     args: [
@@ -215,9 +289,11 @@ describe("pos_store.js resilience", () => {
 
             await store.closeSession();
 
-            expect.verifySteps([]);
+            expect.verifySteps(["connectivity"]);
             expect(shown).toHaveLength(1);
             expect(shown[0].body).toInclude("Cash in of $ 9.00 (float)");
+            expect(shown[0].body).toInclude("close the session from there");
+            expect(shown[0].confirmLabel).toBe("Retry now");
 
             data.network.offline = false;
             patchWithCleanup(data.orm, {
@@ -227,7 +303,7 @@ describe("pos_store.js resilience", () => {
                 },
             });
 
-            await store.closeSession();
+            await shown[0].confirm();
 
             expect.verifySteps(["try_cash_in_out", "closing info"]);
             expect(data.network.unsyncData).toHaveLength(0);

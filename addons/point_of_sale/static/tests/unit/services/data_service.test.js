@@ -673,26 +673,32 @@ describe("data_service", () => {
         );
     });
 
-    test("Reload Data clears every local store but the operations the server has not seen", async () => {
+    test("Reload Data clears only the server cache, after writing the latest local changes", async () => {
         const store = await setupPosEnv();
         const data = store.data;
         let cleared;
+        patchWithCleanup(data, {
+            syncLocalDataInIndexedDB: async () => expect.step("flushed"),
+        });
         patchWithCleanup(data.indexedDB, {
             dbStores: [
                 ["uuid", "pos.order"],
+                ["uuid", "pos.order.line"],
+                ["uuid", "pos.payment"],
                 ["id", "product.product"],
                 ["uuid", UNSYNC_QUEUE_STORE],
             ],
             clear: async (stores) => {
+                expect.step("cleared");
                 cleared = stores;
                 return true;
             },
             close: () => expect.step("closed"),
         });
 
-        await data.resetIndexedDBKeepingQueue();
+        await data.resetServerCacheForReload();
 
-        expect(cleared).toEqual(["pos.order", "product.product"]);
-        expect.verifySteps(["closed"]);
+        expect(cleared).toEqual(["product.product"]);
+        expect.verifySteps(["flushed", "cleared", "closed"]);
     });
 });

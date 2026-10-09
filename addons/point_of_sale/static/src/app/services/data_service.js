@@ -112,6 +112,7 @@ export class PosData extends SignalStore {
 
         this.localUnsyncedPaidOrderUuids = new Set();
         this.queueRetry = markRaw({ attempt: 0, timeout: null });
+        this.replayWaiters = markRaw(new Map());
 
         const endSetup = log.perf("setup");
         log.lifecycle("setup", () => ({
@@ -139,6 +140,16 @@ export class PosData extends SignalStore {
         this.device = new DeviceIdentifierSequence({ orm: this.orm });
         await this.device.initialize();
         endInit({ identifier: this.device.identifier });
+    }
+
+    async isServerReachable() {
+        try {
+            await rpc("/pos/ping");
+            return true;
+        } catch (error) {
+            log.logic("isServerReachable: no", () => ({ error: error?.message }));
+            return false;
+        }
     }
 
     async checkConnectivity() {
@@ -210,27 +221,40 @@ export class PosData extends SignalStore {
         return `point-of-sale-${odoo.pos_config_id}-${odoo.info?.db}`;
     }
 
-    async resetIndexedDB() {
-        log.lifecycle("[idb] reset", () => ({ db: this.databaseName }));
-        await this.indexedDB.reset();
-    }
-
-    // the offline queue holds operations the server has not seen: only their
-    // replay may remove them. The connection is closed so that no flush, on
-    // pagehide or debounced, writes rows back before the reload
-    async resetIndexedDBKeepingQueue() {
-        const stores = this.indexedDB.dbStores
-            .map(([, storeName]) => storeName)
-            .filter((storeName) => storeName !== UNSYNC_QUEUE_STORE);
-        log.lifecycle("[idb] reset, queue kept", () => ({
+    // what the server has not seen (orders, their children, the offline queue)
+    // stays; the latest local changes are written first, and the connection
+    // closes so that no later write puts server rows back before the reload
+    async resetServerCacheForReload() {
+        log.lifecycle("[idb] reset server cache for reload", () => ({
             db: this.databaseName,
-            stores: stores.length,
             queued: this.network.unsyncData.length,
         }));
         this.debouncedSynchronizeLocalDataInIndexedDB.cancel();
-        const cleared = await this.indexedDB.clear(stores);
+        await this.syncLocalDataInIndexedDB({ onlyDirty: true });
+        const cleared = await this.clearServerCacheInIndexedDB();
         this.indexedDB.close();
         return cleared;
+    }
+
+    // true once the queued operation reached the server, false once it is
+    // dead-lettered; never settles if the page goes first
+    waitForReplay(uuid) {
+        if (!this.network.unsyncData.some((entry) => entry.uuid === uuid)) {
+            return Promise.resolve(
+                !this.network.deadSyncData.some((entry) => entry.uuid === uuid),
+            );
+        }
+        let waiter = this.replayWaiters.get(uuid);
+        if (!waiter) {
+            waiter = Promise.withResolvers();
+            this.replayWaiters.set(uuid, waiter);
+        }
+        return waiter.promise;
+    }
+
+    settleReplayWaiter(uuid, sent) {
+        this.replayWaiters.get(uuid)?.resolve(sent);
+        this.replayWaiters.delete(uuid);
     }
 
     get serverCacheStores() {
@@ -1473,6 +1497,7 @@ export class PosData extends SignalStore {
                         replayed++;
                         this.network.unsyncData.shift();
                         this._unpersistQueueEntry(data.uuid);
+                        this.settleReplayWaiter(data.uuid, true);
                         const params = data.args[0];
                         if ((data.restored || data.sent) && params?.type === "write") {
                             await this.readBackReplayedWrite(params, {
@@ -1516,6 +1541,7 @@ export class PosData extends SignalStore {
                         this._unpersistQueueEntry(data.uuid);
                         this.network.deadSyncData.push({ ...data, error });
                         dead.push({ ...data, error });
+                        this.settleReplayWaiter(data.uuid, false);
                         log.lifecycle("[queue] dead", () => ({
                             uuid: data.uuid,
                             dead: this.network.deadSyncData.length,

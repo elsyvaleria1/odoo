@@ -7,7 +7,7 @@ export class CashMoveReceipt extends Component {
     static components = { ReceiptHeader };
     static props = {
         reason: t.string(),
-        translatedType: t.string(),
+        label: t.string(),
         formattedAmount: t.string(),
         date: t.string(),
         order: t.object(),
