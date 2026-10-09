@@ -341,3 +341,78 @@ describe("pos.order - loyalty", () => {
         expect(loyaltyStats2[0].points.balance).toBe(3);
     });
 });
+
+describe("discount rewards need a positive order total", () => {
+    const addLine = async (store, order, tmplId, qty, price_unit) =>
+        await store.addLineToOrder(
+            {
+                product_tmpl_id: store.models["product.template"].get(tmplId),
+                qty,
+                price_unit,
+            },
+            order,
+            { force: true },
+            false,
+        );
+
+    const orderWithLoyaltyCard = (store, { isRefund = false } = {}) => {
+        const order = store.addNewOrder();
+        order.is_refund = isRefund;
+        order.pricelist_id = store.models["product.pricelist"].get(1);
+        order.uiState.couponPointChanges = {
+            1: { coupon_id: 1, program_id: 1, points: 0 },
+        };
+        return order;
+    };
+
+    const offersDiscount = (order) =>
+        order.getClaimableRewards().some(({ reward }) => reward.id === 1);
+
+    test("a refund is not offered a discount reward, a sale is", async () => {
+        const store = await setupPosEnv();
+        const sale = orderWithLoyaltyCard(store);
+        await addLine(store, sale, 9, 1, 9);
+        const refund = orderWithLoyaltyCard(store, { isRefund: true });
+        await addLine(store, refund, 9, -1, 9);
+
+        expect(offersDiscount(sale)).toBe(true);
+        expect(offersDiscount(refund)).toBe(false);
+    });
+
+    test("a discount reward cannot be applied to a refund", async () => {
+        const store = await setupPosEnv();
+        const refund = orderWithLoyaltyCard(store, { isRefund: true });
+        await addLine(store, refund, 9, -1, 9);
+
+        const reward = store.models["loyalty.reward"].get(1);
+
+        expect(refund._getRewardLineValues({ reward, coupon_id: 1 })).toEqual([]);
+        expect(refund._applyReward(reward, 1)).not.toBe(true);
+    });
+
+    test("an exchange with a positive net is offered the discount, capped at its net", async () => {
+        const store = await setupPosEnv();
+        const exchange = orderWithLoyaltyCard(store);
+        await addLine(store, exchange, 6, -1, 2);
+        await addLine(store, exchange, 9, 1, 9);
+        const reward = store.models["loyalty.reward"].get(1);
+
+        expect(exchange.priceIncl).toBeGreaterThan(0);
+        expect(offersDiscount(exchange)).toBe(true);
+        const lines = exchange._getRewardLineValues({ reward, coupon_id: 1 });
+        const discount = lines.reduce((sum, line) => sum + line.price_unit, 0);
+        expect(discount).toBeCloseTo(-0.1 * exchange.priceExcl);
+    });
+
+    test("the cheapest line of an exchange is the cheapest product sold, never one returned", async () => {
+        const store = await setupPosEnv();
+        const exchange = orderWithLoyaltyCard(store);
+        const returned = await addLine(store, exchange, 6, -1, 2);
+        const sold = await addLine(store, exchange, 9, 1, 9);
+        const reward = {
+            all_discount_product_ids: [returned.product_id, sold.product_id],
+        };
+
+        expect(exchange._getCheapestLine(reward)).toBe(sold);
+    });
+});

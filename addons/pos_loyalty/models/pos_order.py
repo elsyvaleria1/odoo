@@ -1,8 +1,11 @@
 import base64
+import logging
 from collections import defaultdict
 
 from odoo import Command, models
 from odoo.tools import float_compare
+
+_logger = logging.getLogger(__name__)
 
 
 class PosOrder(models.Model):
@@ -108,6 +111,7 @@ class PosOrder(models.Model):
 
         self._check_existing_loyalty_cards(coupon_data)
         self._remove_duplicate_coupon_data(coupon_data)
+        self._waive_discounts_without_a_positive_total(coupon_data)
         self._process_existing_gift_cards(coupon_data)
 
         # Map negative id to newly created ids.
@@ -316,6 +320,40 @@ class PosOrder(models.Model):
             coupon_data.pop(key, None)
 
         return updated_gift_cards
+
+    def _get_discount_lines_without_a_positive_total(self):
+        self.check_singleton()
+        reward_lines = self.lines.filtered("is_reward_line")
+        goods_total = sum((self.lines - reward_lines).mapped("price_subtotal_incl"))
+        if self.currency_id.compare_amounts(goods_total, 0) > 0:
+            return self.env["pos.order.line"]
+        return reward_lines.filtered(
+            lambda line: line.reward_id.reward_type == "discount"
+        )
+
+    def _waive_discounts_without_a_positive_total(self, coupon_data) -> None:
+        # the till already applied the discount, so only its point cost can still be withheld
+        discount_lines = self._get_discount_lines_without_a_positive_total()
+        if not discount_lines:
+            return
+        waived = 0.0
+        for coupon_vals in coupon_data.values():
+            line_codes = set(coupon_vals.get("line_codes", ()))
+            cost = sum(
+                line.points_cost
+                for line in discount_lines
+                if line.reward_identifier_code in line_codes
+            )
+            coupon_vals["points"] += cost
+            waived += cost
+        if waived:
+            _logger.warning(
+                "PoS order %s carries discount rewards %s without a positive total; "
+                "their %s points were not charged",
+                self.name,
+                discount_lines.reward_id.ids,
+                waived,
+            )
 
     def _check_existing_loyalty_cards(self, coupon_data) -> None:
         coupon_key_to_modify = []

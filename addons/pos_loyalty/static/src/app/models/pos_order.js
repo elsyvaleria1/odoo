@@ -811,7 +811,7 @@ patch(PosOrder.prototype, {
         const result = [];
         const totalWithTax = this.priceIncl;
         const totalWithoutTax = this.priceExcl;
-        const totalIsZero = totalWithTax === 0;
+        const orderIsDiscountable = this._isDiscountable();
         const globalDiscountLines = this._getGlobalDiscountLines();
         const globalDiscountPercent = globalDiscountLines.length
             ? globalDiscountLines[0].reward_id.discount
@@ -864,7 +864,7 @@ patch(PosOrder.prototype, {
                 ) {
                     continue;
                 }
-                if (reward.reward_type === "discount" && totalIsZero) {
+                if (reward.reward_type === "discount" && !orderIsDiscountable) {
                     continue;
                 }
                 let unclaimedQty;
@@ -1036,6 +1036,9 @@ patch(PosOrder.prototype, {
         }
         return { discountable, discountablePerTax };
     },
+    _isDiscountable() {
+        return this.currency.round(this.priceIncl) > 0;
+    },
     /**
      * @param {loyalty.reward} reward
      * @returns the cheapest line from all the lines where the program is applicable
@@ -1048,7 +1051,7 @@ patch(PosOrder.prototype, {
             (line) =>
                 !line.combo_parent_id &&
                 !line.reward_id &&
-                line.getQuantity() &&
+                line.getQuantity() > 0 &&
                 applicableProductIds.has(line.getProduct().id),
         );
         return filtered_lines.toSorted(
@@ -1227,6 +1230,9 @@ patch(PosOrder.prototype, {
         }
         if (!getDiscountable) {
             return _t("Unknown discount type");
+        }
+        if (!this._isDiscountable()) {
+            return [];
         }
         let { discountable, discountablePerTax } = getDiscountable(reward);
         discountable = Math.min(this.priceIncl, discountable);

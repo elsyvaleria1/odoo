@@ -8,3 +8,4 @@ from . import test_js
 from . import test_gift_card_status
 from . import test_program_pricelists
 from . import test_partial_load
+from . import test_discount_reward_total

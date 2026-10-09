@@ -173,17 +173,4 @@ describe("combo totals on refunds — sign convention", () => {
         expect(plainRefund.pointsForPrograms([program])[program.id]).toEqual([]);
         expect(comboRefund.pointsForPrograms([program])[program.id]).toEqual([]);
     });
-
-    test("on a refund the cheapest line is the cheapest product, not the dearest", async () => {
-        const store = await setupPosEnv();
-        const order = store.addNewOrder();
-        order.is_refund = true;
-        const cheap = await addLine(store, order, 6, -1, { price_unit: 2 });
-        const dear = await addLine(store, order, 9, -1, { price_unit: 9 });
-
-        const reward = {
-            all_discount_product_ids: [cheap.product_id, dear.product_id],
-        };
-        expect(order._getCheapestLine(reward)).toBe(cheap);
-    });
 });
