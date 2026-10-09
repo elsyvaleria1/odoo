@@ -4,8 +4,10 @@ from unittest.mock import MagicMock, patch
 
 from odoo.tests import TransactionCase, new_test_user, tagged
 
+from ..models.bus import channel_with_db
 from ..models.ir_websocket import MAX_CHANNEL_LENGTH, MAX_SUBSCRIBED_CHANNELS
-from .common import WebsocketCase, channel_key, channel_keys
+from ..tools.channel_capability import channel_capability, channel_target
+from .common import TEST_CHANNEL, WebsocketCase, channel_key, channel_keys
 
 
 @tagged("-at_install", "post_install")
@@ -129,20 +131,13 @@ class TestSubscribeDataValidation(TransactionCase):
         data = self.env["ir.websocket"]._prepare_subscribe_data([], -5)
         self.assertEqual(data["last"], 0)
 
-    def test_unsubscribable_channels_are_filtered(self):
-        IrWebsocketModel = type(self.env["ir.websocket"])
-        with patch.object(
-            IrWebsocketModel,
-            "_is_subscribable_channel",
-            lambda self, channel: channel != "denied",
-        ):
-            data = self.env["ir.websocket"]._prepare_subscribe_data(
-                ["allowed", "denied"], 0
-            )
-        self.assertIn("allowed", data["channels"])
-        self.assertNotIn("denied", data["channels"])
-
-    def test_every_channel_is_subscribable_by_default(self):
-        data = self.env["ir.websocket"]._prepare_subscribe_data(["a", "b"], 0)
-        self.assertIn("a", data["channels"])
-        self.assertIn("b", data["channels"])
+    def test_a_name_the_client_makes_up_is_refused(self):
+        capability = channel_capability(self.env, TEST_CHANNEL, "7")
+        data = self.env["ir.websocket"]._prepare_subscribe_data(
+            ["made_up", "broadcast", capability], 0
+        )
+        channels = data["channels"]
+        self.assertEqual([c for c in channels if isinstance(c, str)], [])
+        self.assertIn(channel_target(self.env, TEST_CHANNEL, "7"), channels)
+        self.assertIn(channel_with_db(self.env.cr.dbname, "broadcast"), channels)
+        self.assertIn(self.env.user.partner_id, channels)

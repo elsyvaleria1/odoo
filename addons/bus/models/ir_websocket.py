@@ -5,7 +5,7 @@ from odoo.tools.misc import OrderedSet
 
 from ..tools.channel_capability import resolve_capability
 from ..websocket import wsrequest
-from .bus import dispatch
+from .bus import channel_with_db, dispatch
 
 MAX_SUBSCRIBED_CHANNELS = 4096
 MAX_CHANNEL_LENGTH = 512
@@ -16,7 +16,8 @@ class IrWebsocket(models.AbstractModel):
     _description = "websocket message handling"
 
     def _get_bus_channels(self, channels):
-        channels = [*channels, "broadcast", *self.env.user.all_group_ids]
+        broadcast = channel_with_db(self.env.cr.dbname, "broadcast")
+        channels = [*channels, broadcast, *self.env.user.all_group_ids]
         if not self.env.user._is_public():
             channels = [*channels, self.env.user.partner_id]
         return channels
@@ -43,18 +44,13 @@ class IrWebsocket(models.AbstractModel):
         last = max(0, last)
         if last:
             last = 0 if last > self.env["bus.bus"].sudo()._bus_last_id() else last
+        channels = [resolve_capability(self.env, c) or c for c in channels]
+        # What an override did not turn into a channel of its own is a name the
+        # client made up, and a made-up name is one anyone can say.
         channels = [
-            resolve_capability(self.env, c) or c
-            for c in channels
-            if self._is_subscribable_channel(c)
+            c for c in self._get_bus_channels(channels) if not isinstance(c, str)
         ]
-        return {
-            "channels": OrderedSet(self._get_bus_channels(list(channels))),
-            "last": last,
-        }
-
-    def _is_subscribable_channel(self, channel) -> bool:
-        return True
+        return {"channels": OrderedSet(channels), "last": last}
 
     def _after_subscribe_data(self, data):
         pass

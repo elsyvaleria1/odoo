@@ -558,9 +558,9 @@ class TestWebsocketHubOverHttp(WebsocketCase):
         cookie = self._shared_session_cookie()
         websockets = [self.websocket_connect(cookie=cookie) for _ in range(200)]
         for websocket in websockets:
-            self.subscribe(websocket, ["hub_broadcast"], last)
-        self.env["bus.bus"]._sendone("hub_broadcast", "hub_type", "hello")
-        self.trigger_notification_dispatching(["hub_broadcast"])
+            self.subscribe(websocket, [self.channel("hub_broadcast")], last)
+        self.env["bus.bus"]._sendone(self.target("hub_broadcast"), "hub_type", "hello")
+        self.trigger_notification_dispatching([self.target("hub_broadcast")])
         for websocket in websockets:
             notifications = json_loads(websocket.recv())
             self.assertEqual(len(notifications), 1)

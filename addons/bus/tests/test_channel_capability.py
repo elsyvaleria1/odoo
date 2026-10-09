@@ -4,16 +4,10 @@ from odoo.tests import TransactionCase, tagged
 from ..tools.channel_capability import (
     channel_capability,
     channel_target,
-    register_channel_scope,
     resolve_capability,
 )
+from .common import TEST_CHANNEL as TEST_SCOPE
 from .common import WebsocketCase
-
-TEST_SCOPE = register_channel_scope(
-    "bus_test",
-    purpose="tests of the bus channel capabilities",
-    lifetime="undated: test channels",
-)
 
 
 @tagged("-at_install", "post_install")

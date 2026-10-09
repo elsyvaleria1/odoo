@@ -77,7 +77,10 @@ class TestWebsocketCaryall(WebsocketCase):
                 json_dumps(
                     {
                         "event_name": "subscribe",
-                        "data": {"channels": [f"dropped_{index}"], "last": 0},
+                        "data": {
+                            "channels": [self.channel(f"dropped_{index}")],
+                            "last": 0,
+                        },
                     }
                 )
             )
@@ -165,46 +168,52 @@ class TestWebsocketCaryall(WebsocketCase):
         new_test_user(self.env, login="test_user", password="Password!1")
         user_session = self.authenticate("test_user", "Password!1")
         websocket = self.websocket_connect(cookie=f"session_id={user_session.sid};")
-        self.subscribe(websocket, ["channel1"], self.env["bus.bus"]._bus_last_id())
+        self.subscribe(
+            websocket, [self.channel("channel1")], self.env["bus.bus"]._bus_last_id()
+        )
         self.url_open("/web/session/logout")
-        self.env["bus.bus"]._sendone("channel1", "notif type", "message")
-        self.trigger_notification_dispatching(["channel1"])
+        self.env["bus.bus"]._sendone(self.target("channel1"), "notif type", "message")
+        self.trigger_notification_dispatching([self.target("channel1")])
         self.assert_close_with_code(websocket, CloseCode.SESSION_EXPIRED)
 
     def test_channel_subscription_disconnect(self):
         websocket = self.websocket_connect()
-        self.subscribe(websocket, ["my_channel"], self.env["bus.bus"]._bus_last_id())
-        self.assertIn(
-            (self.env.registry.db_name, "my_channel"), dispatch._channels_to_ws
+        self.subscribe(
+            websocket, [self.channel("my_channel")], self.env["bus.bus"]._bus_last_id()
         )
+        self.assertIn(self.target("my_channel"), dispatch._channels_to_ws)
         websocket.close(CloseCode.CLEAN)
         self.wait_remaining_websocket_connections()
-        self.assertNotIn(
-            (self.env.registry.db_name, "my_channel"), dispatch._channels_to_ws
-        )
+        self.assertNotIn(self.target("my_channel"), dispatch._channels_to_ws)
 
     def test_channel_subscription_update(self):
         websocket = self.websocket_connect()
-        self.subscribe(websocket, ["my_channel"], self.env["bus.bus"]._bus_last_id())
-        self.assertIn(
-            (self.env.registry.db_name, "my_channel"), dispatch._channels_to_ws
+        self.subscribe(
+            websocket, [self.channel("my_channel")], self.env["bus.bus"]._bus_last_id()
         )
-        self.subscribe(websocket, ["my_channel_2"], self.env["bus.bus"]._bus_last_id())
-        self.assertNotIn(
-            (self.env.registry.db_name, "my_channel"), dispatch._channels_to_ws
+        self.assertIn(self.target("my_channel"), dispatch._channels_to_ws)
+        self.subscribe(
+            websocket,
+            [self.channel("my_channel_2")],
+            self.env["bus.bus"]._bus_last_id(),
         )
+        self.assertNotIn(self.target("my_channel"), dispatch._channels_to_ws)
 
     def test_trigger_notification(self):
         websocket = self.websocket_connect()
-        self.subscribe(websocket, ["my_channel"], self.env["bus.bus"]._bus_last_id())
-        self.env["bus.bus"]._sendone("my_channel", "notif_type", "message")
-        self.trigger_notification_dispatching(["my_channel"])
+        self.subscribe(
+            websocket, [self.channel("my_channel")], self.env["bus.bus"]._bus_last_id()
+        )
+        self.env["bus.bus"]._sendone(self.target("my_channel"), "notif_type", "message")
+        self.trigger_notification_dispatching([self.target("my_channel")])
         notifications = json_loads(websocket.recv())
         self.assertEqual(1, len(notifications))
         self.assertEqual(notifications[0]["message"]["type"], "notif_type")
         self.assertEqual(notifications[0]["message"]["payload"], "message")
-        self.env["bus.bus"]._sendone("my_channel", "notif_type", "another_message")
-        self.trigger_notification_dispatching(["my_channel"])
+        self.env["bus.bus"]._sendone(
+            self.target("my_channel"), "notif_type", "another_message"
+        )
+        self.trigger_notification_dispatching([self.target("my_channel")])
         notifications = json_loads(websocket.recv())
         self.assertEqual(1, len(notifications))
         self.assertEqual(notifications[0]["message"]["type"], "notif_type")
@@ -231,9 +240,11 @@ class TestWebsocketCaryall(WebsocketCase):
                 any("Invalid websocket request" in line for line in capture.output),
                 f"payload {data!r} should be rejected with a warning",
             )
-        self.subscribe(websocket, ["my_channel"], self.env["bus.bus"]._bus_last_id())
-        self.env["bus.bus"]._sendone("my_channel", "notif_type", "message")
-        self.trigger_notification_dispatching(["my_channel"])
+        self.subscribe(
+            websocket, [self.channel("my_channel")], self.env["bus.bus"]._bus_last_id()
+        )
+        self.env["bus.bus"]._sendone(self.target("my_channel"), "notif_type", "message")
+        self.trigger_notification_dispatching([self.target("my_channel")])
         notifications = json_loads(websocket.recv())
         self.assertEqual(1, len(notifications))
         self.assertEqual(notifications[0]["message"]["payload"], "message")
@@ -241,9 +252,9 @@ class TestWebsocketCaryall(WebsocketCase):
     def test_subscribe_without_last_defaults_to_zero(self):
         self.env["bus.bus"].sudo().search([]).unlink()
         websocket = self.websocket_connect()
-        self.subscribe(websocket, ["my_channel"])
-        self.env["bus.bus"]._sendone("my_channel", "notif_type", "message")
-        self.trigger_notification_dispatching(["my_channel"])
+        self.subscribe(websocket, [self.channel("my_channel")])
+        self.env["bus.bus"]._sendone(self.target("my_channel"), "notif_type", "message")
+        self.trigger_notification_dispatching([self.target("my_channel")])
         notifications = json_loads(websocket.recv())
         self.assertEqual(1, len(notifications))
         self.assertEqual(notifications[0]["message"]["type"], "notif_type")
@@ -252,9 +263,11 @@ class TestWebsocketCaryall(WebsocketCase):
         websocket = self.websocket_connect()
         self.session.context["lang"] = "fr_LU"
         http.root.session_store.save(self.session)
-        self.subscribe(websocket, ["my_channel"], self.env["bus.bus"]._bus_last_id())
-        self.env["bus.bus"]._sendone("my_channel", "notif_type", "message")
-        self.trigger_notification_dispatching(["my_channel"])
+        self.subscribe(
+            websocket, [self.channel("my_channel")], self.env["bus.bus"]._bus_last_id()
+        )
+        self.env["bus.bus"]._sendone(self.target("my_channel"), "notif_type", "message")
+        self.trigger_notification_dispatching([self.target("my_channel")])
         notifications = json_loads(websocket.recv())
         self.assertEqual(1, len(notifications))
         self.assertEqual(notifications[0]["message"]["type"], "notif_type")
@@ -270,7 +283,9 @@ class TestWebsocketCaryall(WebsocketCase):
             Websocket, "subscribe", side_effect=Websocket.subscribe, autospec=True
         ) as mock:
             websocket = self.websocket_connect()
-            self.subscribe(websocket, ["my_channel"], client_last_notification_id)
+            self.subscribe(
+                websocket, [self.channel("my_channel")], client_last_notification_id
+            )
             self.assertEqual(mock.call_args[0][1], 0)
 
     def test_subscribe_lower_last_notification_id(self):
@@ -283,7 +298,9 @@ class TestWebsocketCaryall(WebsocketCase):
             Websocket, "subscribe", side_effect=Websocket.subscribe, autospec=True
         ) as mock:
             websocket = self.websocket_connect()
-            self.subscribe(websocket, ["my_channel"], client_last_notification_id)
+            self.subscribe(
+                websocket, [self.channel("my_channel")], client_last_notification_id
+            )
             self.assertEqual(mock.call_args[0][1], client_last_notification_id)
 
     def test_subscribe_to_custom_channel(self):
@@ -460,15 +477,19 @@ class TestWebsocketCaryall(WebsocketCase):
             "odoo.addons.bus.websocket.is_session_valid", wraps=is_session_valid
         ) as check_session_spy:
             self.subscribe(
-                websocket, ["ttl_channel"], self.env["bus.bus"]._bus_last_id()
+                websocket,
+                [self.channel("ttl_channel")],
+                self.env["bus.bus"]._bus_last_id(),
             )
             self.assertEqual(
                 check_session_spy.call_count,
                 1,
                 "The post-subscribe dispatch should have validated the session",
             )
-            self.env["bus.bus"]._sendone("ttl_channel", "notif_type", "message")
-            self.trigger_notification_dispatching(["ttl_channel"])
+            self.env["bus.bus"]._sendone(
+                self.target("ttl_channel"), "notif_type", "message"
+            )
+            self.trigger_notification_dispatching([self.target("ttl_channel")])
             notifications = json_loads(websocket.recv())
             self.assertEqual(len(notifications), 1)
             self.assertEqual(
@@ -477,7 +498,9 @@ class TestWebsocketCaryall(WebsocketCase):
                 "A dispatch within the TTL should reuse the cached validation",
             )
             self.subscribe(
-                websocket, ["ttl_channel"], self.env["bus.bus"]._bus_last_id()
+                websocket,
+                [self.channel("ttl_channel")],
+                self.env["bus.bus"]._bus_last_id(),
             )
             self.assertEqual(
                 check_session_spy.call_count,
@@ -494,10 +517,14 @@ class TestWebsocketCaryall(WebsocketCase):
             "odoo.addons.bus.websocket.is_session_valid", wraps=is_session_valid
         ) as check_session_spy:
             self.subscribe(
-                websocket, ["ttl_channel"], self.env["bus.bus"]._bus_last_id()
+                websocket,
+                [self.channel("ttl_channel")],
+                self.env["bus.bus"]._bus_last_id(),
             )
-            self.env["bus.bus"]._sendone("ttl_channel", "notif_type", "message")
-            self.trigger_notification_dispatching(["ttl_channel"])
+            self.env["bus.bus"]._sendone(
+                self.target("ttl_channel"), "notif_type", "message"
+            )
+            self.trigger_notification_dispatching([self.target("ttl_channel")])
             json_loads(websocket.recv())
             self.assertEqual(
                 check_session_spy.call_count,

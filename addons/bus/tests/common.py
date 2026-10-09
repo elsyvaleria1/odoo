@@ -28,7 +28,18 @@ from odoo.tests.common import (
 )
 
 from ..models.bus import channel_with_db, dispatch, hashable
+from ..tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+)
 from ..websocket import CloseCode, Websocket, WebsocketConnectionHandler
+
+TEST_CHANNEL = register_channel_scope(
+    "bus_test",
+    purpose="tests of the bus: a channel a test names",
+    lifetime="undated: test channels",
+)
 
 
 def channel_key(env, channel):
@@ -128,6 +139,14 @@ class WebsocketCase(HttpCase):
         ):
             return super().assertCanOpenTestCursor()
         raise BadRequest("Opening a cursor from an unknown method in websocket test.")
+
+    def channel(self, name):
+        """The capability a test's client subscribes to ``name`` with."""
+        return channel_capability(self.env, TEST_CHANNEL, name)
+
+    def target(self, name):
+        """The channel a test's server sends ``name`` to."""
+        return channel_target(self.env, TEST_CHANNEL, name)
 
     def websocket_connect(self, *args, ping_after_connect=True, **kwargs):
         if "cookie" not in kwargs:
