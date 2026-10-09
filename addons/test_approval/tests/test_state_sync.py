@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 from odoo import SUPERUSER_ID
 from odoo.api import MODULE_UNINSTALL_FLAG
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
+from odoo.addons.approval.models.approval_utils import ApprovalStepUnstaffed
 from odoo.addons.approval.tests.common import ApprovalCommon
 
 
@@ -60,6 +63,43 @@ class TestApprovalStateSync(ApprovalCommon):
         request = document.sudo().approval_request_id
         self.assertEqual(request.state, "pending")
         self.assertEqual(request.request_owner_id, self.owner_user)
+
+    def test_a_batch_created_pending_keeps_a_document_no_step_staffs(self):
+        Synced = self.registry["approval.test.synced.document"]
+        raise_requests = Synced._raise_approval_requests
+
+        def unstaffed_for_one(records):
+            if "Unstaffed" in records.mapped("name"):
+                raise ApprovalStepUnstaffed("nobody may approve it here")
+            return raise_requests(records)
+
+        category = self._category()
+        model = self.env["approval.test.synced.document"]
+        with patch.object(Synced, "_raise_approval_requests", unstaffed_for_one):
+            documents = (
+                model.with_user(self.owner_user)
+                .sudo()
+                .create(
+                    [
+                        {
+                            "name": name,
+                            "test_category_id": category.id,
+                            "state": "submitted",
+                        }
+                        for name in ("Staffed", "Unstaffed", "Also staffed")
+                    ]
+                )
+            )
+        staffed = documents.filtered(lambda document: document.name != "Unstaffed")
+        unstaffed = documents - staffed
+        self.assertEqual(staffed.approval_request_id.mapped("state"), ["pending"] * 2)
+        self.assertFalse(unstaffed.approval_request_id)
+        self.assertTrue(
+            any(
+                "nobody may approve it here" in body
+                for body in unstaffed.message_ids.mapped("body")
+            )
+        )
 
     def test_a_document_moved_to_pending_raises_its_request(self):
         document = self._document()

@@ -73,16 +73,16 @@ class TestAuditRegressions(AccountApprovalCommon):
         move.approval_request_id.with_user(self.approver).action_approve()
         return move
 
-    def test_posting_an_edited_approved_move_is_refused(self):
+    def test_posting_an_edited_approved_move_asks_again(self):
         move = self._approved_move(price=1000.0)
         self.assertEqual(move.approval_state, "approved")
         self.assertEqual(move.approval_request_id.amount, 1000.0)
 
         move.invoice_line_ids[0].price_unit = 9999.0
 
-        with self.assertRaises(UserError):
-            move.action_post()
+        move.action_post()
         self.assertEqual(move.state, "draft")
+        self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_posting_an_unchanged_approved_move_still_works(self):
         move = self._approved_move(price=1000.0)
@@ -102,9 +102,9 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
         self.assertEqual(move.amount_total, move.approval_request_id.amount)
 
-        with self.assertRaises(UserError):
-            move.action_post()
+        move.action_post()
         self.assertEqual(move.state, "draft")
+        self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_another_partner_is_not_what_was_approved(self):
         """A bill approved for one vendor does not post for another: the change
@@ -114,9 +114,9 @@ class TestAuditRegressions(AccountApprovalCommon):
         move.partner_id = self.partner_b
 
         self.assertEqual(move.approval_state, "new")
-        with self.assertRaises(UserError):
-            move.action_post()
+        move.action_post()
         self.assertEqual(move.state, "draft")
+        self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_an_amount_change_keeps_the_approval_for_the_post_recheck(self):
         move = self._approved_move(price=1000.0)
@@ -274,9 +274,9 @@ class TestAuditRegressions(AccountApprovalCommon):
             "the partner flag must keep the requirement on, so this case "
             "exercises the comparison and not the fallback below",
         )
-        with self.assertRaises(UserError):
-            move.action_post()
+        move.action_post()
         self.assertEqual(move.state, "draft")
+        self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_approved_move_is_rechecked_after_falling_out_of_range(self):
         """R2-01: dropping out of every category's range must not free the move.
@@ -297,9 +297,9 @@ class TestAuditRegressions(AccountApprovalCommon):
             move.approval_required,
             "the swap is expected to drop the move below the category range",
         )
-        with self.assertRaises(UserError):
-            move.action_post()
+        move.action_post()
         self.assertEqual(move.state, "draft")
+        self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_approved_amount_error_labels_each_currency(self):
         """R2-08: the approved figure must carry the request's own symbol."""

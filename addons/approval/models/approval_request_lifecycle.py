@@ -899,6 +899,9 @@ class ApprovalRequestLifecycle(models.Model):
                 "reminder_count": 0,
                 "escalated_to_manager": False,
                 "applied_rule_ids": [Command.clear()],
+                # a new cycle's grant has not run the gate's operation, whatever
+                # the last one ran; a binding's replay stays once for good
+                "date_operation_run": False,
             },
         )
         request._sync_approvers()

@@ -71,7 +71,7 @@ class TestApprovalGate(ApprovalCommon):
         document.action_ship()
         self.assertEqual(document.ship_count, 2, "a covered call runs; nothing replays")
 
-    def _asked_by_owner(self):
+    def _asked_by_owner(self, **values):
         access = self.env["ir.access"].create(
             {
                 "name": "approval.test.gated requester",
@@ -81,7 +81,7 @@ class TestApprovalGate(ApprovalCommon):
                 "operation": "ru",
             }
         )
-        document = self._document()
+        document = self._document(**values)
         document.with_user(self.owner_user).action_ship()
         self.assertEqual(document.approval_request_id.request_owner_id, self.owner_user)
         return document, access
@@ -130,29 +130,68 @@ class TestApprovalGate(ApprovalCommon):
             document.action_bill()
         self.assertEqual(document.bill_count, 0)
 
-    def test_a_document_changed_after_its_grant_is_refused(self):
+    def test_a_document_changed_after_its_grant_asks_again(self):
+        document, _access = self._asked_by_owner(runs_on_approval=False)
+        request = document.approval_request_id
+        self._approve(document)
+        document.sudo().amount_total = 400.0
+        document.with_user(self.owner_user).action_ship()
+        self.assertEqual(document.ship_count, 0)
+        self.assertEqual(document.approval_request_id, request, "its own request")
+        self.assertEqual(request.state, "pending")
+        self.assertEqual(request.amount, 400.0, "submitted for what is there now")
+        self._approve(document)
+        document.with_user(self.owner_user).action_ship()
+        self.assertEqual(document.ship_count, 1)
+
+    def test_a_grant_running_on_what_it_does_not_cover_is_left_as_decided(self):
+        document = self._document()
+        document.action_ship()
+        request = document.approval_request_id
+        document.sudo().amount_total = 400.0
+        self._approve(document)
+        self.assertEqual(request.state, "approved", "not undone in its own cascade")
+        self.assertEqual(document.ship_count, 0)
+        self.assertTrue(
+            any(
+                "could not go through" in body
+                for body in document.message_ids.mapped("body")
+            )
+        )
+        document.action_ship()
+        self.assertEqual(request.state, "pending")
+        self.assertEqual(request.amount, 400.0)
+
+    def test_a_path_that_cannot_ask_refuses_a_grant_the_document_outgrew(self):
         document = self._document(runs_on_approval=False)
         document.action_ship()
         self._approve(document)
         document.sudo().amount_total = 400.0
         with self.assertRaises(UserError):
-            document.action_ship()
+            document.action_ship_from_elsewhere()
+        self.assertEqual(document.ship_count, 0)
+        self.assertEqual(document.approval_state, "approved")
+
+    def test_a_request_reset_to_draft_asks_again_from_the_operation(self):
+        document, _access = self._asked_by_owner(runs_on_approval=False)
+        request = document.approval_request_id
+        self._approve(document)
+        request._force_draft()
+        document.with_user(self.owner_user).action_ship()
+        self.assertEqual(request.state, "pending")
         self.assertEqual(document.ship_count, 0)
 
-    def test_a_grant_reset_and_submitted_again_covers_the_changed_document(self):
-        document = self._document(runs_on_approval=False)
+    def test_a_new_cycle_of_a_spent_grant_runs_again(self):
+        document = self._document()
         document.action_ship()
         self._approve(document)
-        document.sudo().amount_total = 400.0
-        with self.assertRaises(UserError):
-            document.action_ship()
         request = document.approval_request_id
-        request.action_reset_to_draft()
+        self.assertTrue(request.date_operation_run)
+        request._force_draft()
+        self.assertFalse(request.date_operation_run)
         request.action_confirm()
-        self.assertEqual(request.amount, 400.0)
         self._approve(document)
-        document.action_ship()
-        self.assertEqual(document.ship_count, 1)
+        self.assertEqual(document.ship_count, 2)
 
     def test_what_needs_no_approval_goes_through_beside_what_does(self):
         gated = self._document("Gated one")

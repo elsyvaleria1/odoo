@@ -424,7 +424,7 @@ class TestPurchaseApprovalFlows(TransactionCase):
         with self.assertRaises(AccessError):
             approval.with_user(self.purchase_user).action_approve()
 
-    def test_a_line_swapped_at_the_same_amount_is_not_what_was_approved(self):
+    def test_a_line_swapped_at_the_same_amount_asks_again(self):
         self.company.po_auto_confirm_on_approval = False
         po = self.env["purchase.order"].create(
             {
@@ -448,10 +448,91 @@ class TestPurchaseApprovalFlows(TransactionCase):
         )
 
         po.line_ids.write({"product_id": other.id, "price_unit": 75.0})
-        self.assertEqual(po.amount_total, po.approval_request_id.amount)
+        approval = po.approval_request_id
+        self.assertEqual(po.amount_total, approval.amount)
 
-        with self.assertRaisesRegex(UserError, "no longer what is there"):
-            po.action_confirm()
+        po.action_confirm()
+        self.assertEqual(po.state, "draft")
+        self.assertEqual(po.approval_request_id, approval)
+        self.assertEqual(approval.state, "pending", "submitted again")
+        self.assertIn(
+            other.id, [line[0] for line in approval.operation_snapshot["lines"]]
+        )
+
+    def test_the_approval_of_an_order_not_yet_confirmed_can_be_withdrawn(self):
+        self.company.po_auto_confirm_on_approval = False
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 50.0,
+                            "price_unit": 75.0,
+                        }
+                    )
+                ],
+            },
+        )
+        po.action_confirm()
+        approval = po.approval_request_id
+        approval.with_user(self.approver_user).action_approve()
+        approval.with_user(self.approver_user).action_withdraw()
+        self.assertEqual(approval.state, "pending")
+
+    def test_the_approval_an_order_was_confirmed_on_is_not_withdrawn(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 50.0,
+                            "price_unit": 75.0,
+                        }
+                    )
+                ],
+            },
+        )
+        po.action_confirm()
+        approval = po.approval_request_id
+        approval.with_user(self.approver_user).action_approve()
+        self.assertNotEqual(po.state, "draft")
+        with self.assertRaisesRegex(UserError, "already went through"):
+            approval.with_user(self.approver_user).action_withdraw()
+
+    def test_an_order_edited_after_approval_is_asked_again_by_its_buyer(self):
+        self.company.po_auto_confirm_on_approval = False
+        po = (
+            self.env["purchase.order"]
+            .with_user(self.purchase_user)
+            .create(
+                {
+                    "partner_id": self.vendor.id,
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "product_id": self.product.id,
+                                "product_qty": 50.0,
+                                "price_unit": 75.0,
+                            }
+                        )
+                    ],
+                },
+            )
+        )
+        po.action_confirm()
+        approval = po.approval_request_id
+        approval.with_user(self.approver_user).action_approve()
+        po.write({"line_ids": [Command.update(po.line_ids.id, {"price_unit": 150.0})]})
+        self.assertEqual(approval.state, "new", "the edit took the approval back")
+
+        po.action_confirm()
+        self.assertEqual(po.state, "draft")
+        self.assertEqual(approval.state, "pending")
+        self.assertEqual(approval.amount, po.amount_total)
 
     def test_an_order_approved_at_zero_does_not_confirm_at_another_amount(self):
         po = self.env["purchase.order"].create(
@@ -478,8 +559,9 @@ class TestPurchaseApprovalFlows(TransactionCase):
         )
         approval.invalidate_recordset(["amount"])
         po.action_unlock()
-        with self.assertRaisesRegex(UserError, "amount has changed"):
-            po.action_confirm()
+        po.action_confirm()
+        self.assertEqual(approval.state, "pending", "asked again, not confirmed on it")
+        self.assertEqual(approval.amount, po.amount_total)
 
     def test_mixin_flow_no_approval_for_low_amount(self):
         po = self.env["purchase.order"].create(
@@ -636,7 +718,7 @@ class TestPurchaseApprovalFlows(TransactionCase):
             "Order was sent for re-approval instead of being confirmed",
         )
 
-    def test_amount_check_blocks_modified_approved_po(self):
+    def test_an_approved_po_whose_amount_changed_asks_again(self):
         po = self.env["purchase.order"].create(
             {
                 "partner_id": self.vendor.id,
@@ -664,14 +746,10 @@ class TestPurchaseApprovalFlows(TransactionCase):
         po.action_unlock()
         po.line_ids.price_unit = 150.0
 
-        with self.assertRaises(UserError) as cm:
-            po.action_confirm()
-
-        self.assertIn(
-            "amount has changed",
-            str(cm.exception).lower(),
-            "Error should mention amount change",
-        )
+        po.action_confirm()
+        self.assertEqual(po.approval_request_id, approval)
+        self.assertEqual(approval.state, "pending", "asked again, not confirmed on it")
+        self.assertEqual(approval.amount, po.amount_total)
 
     def test_approval_reason_includes_vendor_notes(self):
         self.vendor.po_approval_notes = (

@@ -222,7 +222,15 @@ class ErrorIncident(models.Model):
         if not request:
             return
         _debug.logic("autofix.approval_spent", incident=self.id, request=request.id)
-        if reason and request.state not in request._TERMINAL_STATES | {"new"}:
+        if request.state == "new":
+            # reset to draft and never submitted again: cancelled, not orphaned
+            request._force_terminal(
+                "cancelled",
+                body=self.env._(
+                    "Cancelled: %s.", reason or self.env._("the fix moved on")
+                ),
+            )
+        elif reason and request.state not in request._TERMINAL_STATES:
             request._force_terminal(
                 "refused",
                 body=self.env._("Refused: %s.", reason),

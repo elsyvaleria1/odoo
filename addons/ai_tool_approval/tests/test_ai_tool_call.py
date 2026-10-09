@@ -133,8 +133,12 @@ class TestAiToolCall(ApprovalCommon):
         call.approval_request_id.with_user(self.approver_1).action_approve()
         self.assertNotEqual(call.state, "applied")
         self.assertEqual(self.partner.name, "Cliente")
-        with self.assertRaises(UserError):
-            call.action_apply()
+        request = call.approval_request_id
+        self.assertEqual(request.state, "approved", "left as decided")
+        call.action_apply()
+        self.assertEqual(self.partner.name, "Cliente")
+        self.assertEqual(request.state, "pending", "asked again for what is there")
+        self.assertEqual(request.operation_snapshot["arguments"], {"name": "Otro"})
 
     def test_a_failure_is_kept_on_the_call(self):
         self.tool.code = "raise UserError('the tool broke')"

@@ -815,8 +815,9 @@ class TestStockApprovalCoversPerProduct(TransactionCase):
             move.quantity = 10
             move.picked = True
 
-        with self.assertRaises(UserError, msg="20 picked against 15 approved"):
-            picking.button_validate()
+        picking.button_validate()
+        self.assertNotEqual(picking.state, "done", "20 picked against 15 approved")
+        self.assertEqual(picking.approval_state, "pending", "asked again for 20")
 
     def test_a_move_counted_in_another_unit_is_not_what_was_approved(self):
         picking = self._approved_two_move_picking()
@@ -824,9 +825,9 @@ class TestStockApprovalCoversPerProduct(TransactionCase):
 
         move.product_uom_id = self.env.ref("uom.product_uom_dozen")
 
-        with self.assertRaises(UserError, msg="5 dozen against 5 units approved"):
-            picking.button_validate()
-        self.assertNotEqual(picking.state, "done")
+        picking.button_validate()
+        self.assertNotEqual(picking.state, "done", "5 dozen against 5 units approved")
+        self.assertEqual(picking.approval_state, "pending", "asked again")
 
     def test_the_grant_still_covers_the_approved_total(self):
         picking = self._approved_two_move_picking()

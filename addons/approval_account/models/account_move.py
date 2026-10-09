@@ -160,8 +160,8 @@ class AccountMove(models.Model):
                 "%(document)s amount has changed since approval was granted.\n\n"
                 "Approved amount: %(symbol_approved)s %(approved)s\n"
                 "Current amount: %(symbol_current)s %(current)s\n\n"
-                "Undo the change, or reset the approval to draft and submit it "
-                "again for the updated amount.",
+                "Undo the change, or run the operation from the document, which "
+                "asks for approval of the updated amount.",
                 document=self._move_type_label(),
                 symbol_approved=approved_currency.symbol or self.currency_id.symbol,
                 symbol_current=self.currency_id.symbol,

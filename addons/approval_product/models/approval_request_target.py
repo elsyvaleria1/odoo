@@ -100,7 +100,15 @@ class ApprovalRequest(models.Model):
         }
 
     def _check_withdraw_blocked_by(self, documents, label) -> None:
-        active = documents.filtered(lambda document: document.state != "cancel")
+        # the document a request was raised about is held by the engine's own
+        # acted-on guard: counted here, a draft order refused every withdrawal
+        sources = {(request.res_model, request.res_id) for request in self.sudo()}
+        active = documents.filtered(
+            lambda document: (
+                document.state != "cancel"
+                and (document._name, document.id) not in sources
+            )
+        )
         self._raise_withdraw_blocked(active, label)
 
     def _get_target_documents(self):

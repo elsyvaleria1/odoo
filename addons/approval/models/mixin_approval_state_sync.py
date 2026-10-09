@@ -143,7 +143,9 @@ class MixinApprovalStateSync(models.AbstractModel):
         # data) keeps the direct flow. A user's sudo() keeps their uid, so it still asks.
         if self.env.uid == SUPERUSER_ID or self.env.context.get("import_file"):
             return
-        for record in self.sudo():
+        records = self.sudo()
+        needing = records.browse()
+        for record in records:
             needs = record._is_approval_request_required()
             trace.SYNC.event(
                 "raise_on_create",
@@ -153,6 +155,19 @@ class MixinApprovalStateSync(models.AbstractModel):
                 raises=needs,
             )
             if needs:
+                needing |= record
+        if not needing:
+            return
+        # Flush before the savepoint, so what is already pending is checked in the
+        # env that produced it rather than by the savepoint's own flush.
+        self.env.flush_all()
+        try:
+            with self.env.cr.savepoint():
+                needing._raise_approval_requests()
+        except ApprovalStepUnstaffed:
+            # one record's company staffs no step: find which, and keep the rest
+            trace.SYNC.event("batch_not_raised_unstaffed", records=needing)
+            for record in needing:
                 record._raise_approval_request_on_create()
 
     def _raise_approval_request_on_create(self) -> None:

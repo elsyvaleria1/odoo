@@ -182,6 +182,15 @@ class TestConfirmEnforcement(TestApprovalMaintenanceSetup):
         self.assertEqual(order.state, "draft")
         self.assertEqual(order.approval_state, "new")
 
+    def test_confirming_again_opens_the_draft_its_owner_completes(self):
+        order = self._create_order()
+        order.action_confirm()
+        request = order.approval_request_id
+        result = order.action_confirm()
+        self.assertEqual(result.get("res_model"), "approval.request")
+        self.assertEqual(result.get("res_id"), request.id)
+        self.assertEqual(request.state, "new", "left to its owner to complete")
+
     def test_confirming_raises_while_the_approval_is_pending(self):
         order = self._create_order()
         order.write(

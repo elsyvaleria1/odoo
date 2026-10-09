@@ -303,8 +303,8 @@ class StockPicking(models.Model):
                 raise UserError(
                     self.env._(
                         "%(product)s moves more than the %(allowed)s approved on "
-                        "%(name)s. Reset the approval to draft and submit it "
-                        "again, or move no more than was approved.",
+                        "%(name)s. Move no more than was approved, or validate "
+                        "from the transfer, which asks for approval again.",
                         product=move.product_id.display_name,
                         allowed=allowed or 0.0,
                         name=self.display_name,

@@ -460,8 +460,8 @@ class MixinApprovalDocument(models.AbstractModel):
                 "%(document)s amount has changed since approval was granted.\n\n"
                 "Approved amount: %(approved)s\n"
                 "Current amount: %(current)s\n\n"
-                "Undo the change, or reset the approval to draft and submit it "
-                "again for the updated amount.",
+                "Undo the change, or run the operation from the document, which "
+                "asks for approval of the updated amount.",
                 document=self._get_approval_document_label(),
                 approved=self._format_approval_amount(
                     approved_amount,

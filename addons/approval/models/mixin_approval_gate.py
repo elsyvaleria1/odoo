@@ -5,6 +5,7 @@ from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
 
 ASK_ADMISSION = "approval.ask:"
+GRANT_RUN_ADMISSION = "approval.grant_run"
 
 
 class MixinApprovalGate(models.AbstractModel):
@@ -34,15 +35,72 @@ class MixinApprovalGate(models.AbstractModel):
             operation=operation,
             ran=len(ready),
         )
+        drafted = need_approval.filtered(
+            lambda record: record._get_own_approval_request().state == "new"
+        )
+        if len(self) == 1 and drafted:
+            return drafted._submit_drafted_approval(operation)
+        asked, blocked = drafted._submit_drafted_approval_each(operation)
+        fresh = need_approval - drafted
         with self.env.transaction.admitting(
-            need_approval._name, ASK_ADMISSION + operation, need_approval.ids
+            fresh._name, ASK_ADMISSION + operation, fresh.ids
         ):
             if len(self) == 1:
-                return need_approval.action_create_approval_request()
-            asked, blocked = need_approval._ask_approval_each()
+                return fresh.action_create_approval_request()
+            if fresh:
+                fresh_asked, fresh_blocked = fresh._ask_approval_each()
+                asked |= fresh_asked
+                blocked += fresh_blocked
         return self._get_approval_asked_notification(
             operation, ready, asked, result, blocked
         )
+
+    def _submit_drafted_approval(self, operation):
+        """Ask again with the document's own request, back in draft: reset by a
+        manager, by a change to what it protects, or because it no longer covered
+        the document. Submitting it takes the document's figures as they are now.
+
+        The operation used to refuse it as pending, though nobody was deciding,
+        and asking anew said a request already exists.
+        """
+        self.check_singleton()
+        # asking again is the operation's, as raising is: whoever may run it need
+        # not be able to read the request its first asker raised
+        request = self._get_own_approval_request()
+        if not self._submits_approval_request_on_raise():
+            trace.MIXIN.note(
+                "drafted_approval_left_to_owner", record=self, operation=operation
+            )
+            return self._get_approval_submitted_action(request)
+        trace.MIXIN.note("drafted_approval_submitted", record=self, operation=operation)
+        request.action_confirm()
+        self.message_post(
+            body=self.env._(
+                "%(request)s was submitted again for %(operation)s, for what "
+                "%(name)s holds now.",
+                request=request.display_name,
+                operation=operation,
+                name=self.display_name,
+            ),
+            message_type="notification",
+        )
+        return self._get_approval_submitted_action(request)
+
+    def _submit_drafted_approval_each(self, operation) -> tuple:
+        asked = self.browse()
+        blocked = []
+        for record in self:
+            try:
+                with self.env.cr.savepoint():
+                    record._submit_drafted_approval(operation)
+            except ApprovalStepUnstaffed as error:
+                trace.MIXIN.event(
+                    "drafted_approval_unstaffed", record=record, operation=operation
+                )
+                blocked.append((record, error))
+            else:
+                asked |= record
+        return asked, blocked
 
     def _ask_approval_each(self) -> tuple:
         """Raise the batch's requests together, and keep the batch when a company
@@ -166,7 +224,7 @@ class MixinApprovalGate(models.AbstractModel):
             if state and not record._approval_request_gates(operation):
                 other_operation = bool(record._get_own_approval_request())
                 state = False
-            if state in ("new", "pending"):
+            if state == "pending":
                 trace.REFUSAL.event(
                     "operation_approval_pending", record=record, operation=operation
                 )
@@ -177,9 +235,23 @@ class MixinApprovalGate(models.AbstractModel):
                         name=record.display_name,
                     )
                 )
-            if state == "approved":
-                record._check_approval_covers(operation)
-                ready |= record
+            if state == "new":
+                need_approval |= record
+            elif state == "approved":
+                if record.id in self.env.transaction.admitted_ids(
+                    record._name, GRANT_RUN_ADMISSION
+                ):
+                    # the grant running its own operation: what it does not cover
+                    # is refused into its failure note, and the request is left
+                    # as decided -- resetting it here would undo the approval
+                    # inside its own cascade
+                    record._check_approval_covers(operation)
+                    ready |= record
+                elif record._is_approval_covering(operation):
+                    ready |= record
+                else:
+                    record._reset_approval_not_covering(operation)
+                    need_approval |= record
             elif not record.approval_required:
                 ready |= record
             elif state and record._is_approval_reasked_after_refusal(operation):
@@ -207,6 +279,8 @@ class MixinApprovalGate(models.AbstractModel):
         empty when it is the request that produced the document."""
         self.check_singleton()
         request = self.approval_request_id.sudo()
+        if not request:
+            return request
         return request if request.get_source_document() == self else request.browse()
 
     def _release_approval_of_other_operation(self, operation) -> None:
@@ -324,11 +398,46 @@ class MixinApprovalGate(models.AbstractModel):
             raise UserError(
                 self.env._(
                     "What was approved is no longer what is there: %(name)s changed "
-                    "after its approval was granted. Undo the change, or reset the "
-                    "approval to draft and submit it again.",
+                    "after its approval was granted. Undo the change, or run the "
+                    "operation from the document, which asks for approval again.",
                     name=self.display_name,
                 )
             )
+
+    def _is_approval_covering(self, operation) -> bool:
+        try:
+            self._check_approval_covers(operation)
+        except UserError as error:
+            trace.MIXIN.event(
+                "approval_no_longer_covers",
+                record=self,
+                operation=operation,
+                reason=str(error),
+            )
+            return False
+        return True
+
+    def _reset_approval_not_covering(self, operation) -> None:
+        """Send a grant the document outgrew back to draft, as a change to what it
+        protects does: the operation then asks again with it. Refusing told the
+        caller to ask again, which only an approval manager could do."""
+        self.check_singleton()
+        request = self._get_own_approval_request()
+        request._check_reset_allowed()
+        trace.MIXIN.note(
+            "approval_reset_not_covering",
+            record=self,
+            operation=operation,
+            request=request.id,
+        )
+        request._force_draft(
+            note=self.env._(
+                "%(name)s changed after its approval was granted, so the approval "
+                "no longer covers %(operation)s.",
+                name=self.display_name,
+                operation=operation,
+            )
+        )
 
     def _run_admitted(self, operation, run):
         return self.env["approval.binding"]._run_admitted(self, operation, run)
@@ -436,7 +545,10 @@ class MixinApprovalGate(models.AbstractModel):
             return
         trace.MIXIN.note("operation_on_approval", record=self, operation=operation)
         document = request._as_owner(self)
-        with self._approval_side_effect(self._get_operation_failure_note(operation)):
+        with (
+            self._approval_side_effect(self._get_operation_failure_note(operation)),
+            self.env.transaction.admitting(self._name, GRANT_RUN_ADMISSION, self.ids),
+        ):
             # Stamped first, so the door it opens does not run it again, and inside
             # the savepoint, so an operation that fails is not counted as run.
             request.date_operation_run = fields.Datetime.now()

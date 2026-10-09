@@ -201,7 +201,7 @@ class MixinApproval(models.AbstractModel):
     def _compute_approval_pending_user_ids(self) -> None:
         for record in self:
             record.approval_pending_user_ids = (
-                record.approval_request_id.sudo().pending_user_ids
+                record._get_engine_approval_request().pending_user_ids
             )
 
     def _search_approval_pending_user_ids(self, operator: str, value: Any) -> Domain:
@@ -299,11 +299,18 @@ class MixinApproval(models.AbstractModel):
             )
         return category
 
+    def _get_engine_approval_request(self):
+        """The linked request as the engine acts on it: whoever may act on the
+        document -- cancel it, edit what it protects -- need not be able to read
+        the request it raised, and what follows is the engine's, not theirs."""
+        self.check_singleton()
+        return self.approval_request_id.sudo()
+
     def _refuse_pending_approval(self) -> None:
         for record in self.filtered(
             lambda r: r.approval_request_id and r.approval_state in ("new", "pending")
         ):
-            if record.approval_request_id._refuse_cascade():
+            if record._get_engine_approval_request()._refuse_cascade():
                 record.message_post(
                     body=self.env._(
                         "Approval request refused: the document was cancelled."
@@ -366,7 +373,7 @@ class MixinApproval(models.AbstractModel):
                 "type": "success",
                 "title": self.env._("Approval Requested"),
                 "message": self.env._(
-                    "Approval request '%s' has been created and submitted.",
+                    "Approval request '%s' has been submitted.",
                     approval.name,
                 ),
                 "sticky": False,
@@ -605,7 +612,7 @@ class MixinApproval(models.AbstractModel):
         for record, _fields_changed in invalidated:
             # Refuse the edit rather than leave an approval standing that no
             # longer describes the document, where the request cannot be reset.
-            record.approval_request_id.sudo()._check_reset_allowed()
+            record._get_engine_approval_request()._check_reset_allowed()
         result = super().write(vals)
         for record, fields_changed in invalidated:
             record._reset_approval_for_subject_change(fields_changed)
@@ -689,7 +696,7 @@ class MixinApproval(models.AbstractModel):
             request=self.approval_request_id.id,
             fields=fields_changed,
         )
-        self.approval_request_id.sudo()._force_draft(
+        self._get_engine_approval_request()._force_draft(
             note=self.env._(
                 "The approved document changed (%(fields)s) by %(user)s, so the "
                 "approval no longer covers it.",

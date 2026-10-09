@@ -404,6 +404,28 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         )
         self.assertEqual(len(incident.fix_run_ids), runs, "nothing dispatched again")
 
+    def test_a_push_after_its_approval_was_reset_cancels_the_draft(self):
+        incident, pull = self._pushed(checks="success")
+        incident.with_user(self.admin).action_autofix_merge()
+        request = incident.approval_request_id
+        request._force_draft()
+        self.env["integration.github.pull"]._upsert_from_github(
+            REPOSITORY,
+            {
+                "number": 7,
+                "title": "Fix x",
+                "state": "open",
+                "head": {
+                    "ref": pull.head_ref,
+                    "sha": "c" * 40,
+                    "repo": {"full_name": REPOSITORY},
+                },
+                "base": {"ref": "19.0-marin"},
+            },
+        )
+        self.assertFalse(incident.approval_request_id)
+        self.assertEqual(request.state, "cancelled", "not left in draft, unlinked")
+
     def test_a_pull_request_closed_on_github_refuses_its_pending_approval(self):
         incident, pull = self._pushed(checks="success")
         incident.with_user(self.admin).action_autofix_merge()

@@ -1201,8 +1201,8 @@ msgstr "Aprobación rechazada"
 #. module: approval
 #. odoo-python
 #: code:addons/approval/models/mixin_approval.py:0
-msgid "Approval request '%s' has been created and submitted."
-msgstr ""
+msgid "Approval request '%s' has been submitted."
+msgstr "La solicitud de aprobación '%s' fue enviada."
 
 #. module: approval
 #. odoo-python

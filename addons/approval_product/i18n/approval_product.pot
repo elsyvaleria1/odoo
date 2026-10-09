@@ -36,7 +36,7 @@ msgid ""
 "Approved amount: %(approved)s\n"
 "Current amount: %(current)s\n"
 "\n"
-"Undo the change, or reset the approval to draft and submit it again for the updated amount."
+"Undo the change, or run the operation from the document, which asks for approval of the updated amount."
 msgstr ""
 
 #. module: approval_product
