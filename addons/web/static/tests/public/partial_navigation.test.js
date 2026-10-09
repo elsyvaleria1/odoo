@@ -5,7 +5,7 @@ import { click, queryOne } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
-import { PartialNavigation } from "@web/public/partial_navigation";
+import { PartialNavigation, requestNavigation } from "@web/public/partial_navigation";
 
 import { startInteraction } from "./helpers.js";
 
@@ -135,5 +135,24 @@ test("going back re-reads the page in place without pushing", async () => {
     expect("tbody tr").toHaveCount(1);
     expect.verifySteps([
         `fetch ${new URL(browser.location.href).pathname}${new URL(browser.location.href).search}`,
+    ]);
+});
+
+test("requestNavigation navigates in place from a scope, and as usual from anywhere else", async () => {
+    await startInteraction(
+        PartialNavigation,
+        `${region("")}<p class="o_outside">out</p>`,
+    );
+    serve(() => page("<tr><td>SO4</td></tr>"));
+
+    requestNavigation(queryOne(".o_search"), "/my/orders?search=SO4");
+    await animationFrame();
+    requestNavigation(queryOne(".o_outside"), "/my/orders?search=SO5");
+    await animationFrame();
+
+    expect.verifySteps([
+        "fetch /my/orders?search=SO4",
+        "push portal.list /my/orders",
+        "assign /my/orders",
     ]);
 });

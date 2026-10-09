@@ -6,6 +6,24 @@ import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
 /**
+ * Navigates to `url` in place when `el` sits in a partial navigation scope,
+ * and as usual otherwise.
+ *
+ * @param {Element} el
+ * @param {string} url
+ */
+export function requestNavigation(el, url) {
+    const request = new CustomEvent("o-navigate", {
+        bubbles: true,
+        cancelable: true,
+        detail: { url },
+    });
+    if (el.dispatchEvent(request)) {
+        browser.location.assign(new URL(url, browser.location.href).href);
+    }
+}
+
+/**
  * Turns the links and GET forms of a page region into in-place navigation:
  * the target URL is fetched as a whole page, the region carrying the same
  * `data-fragment` key is morphed in from it, and the URL goes into the

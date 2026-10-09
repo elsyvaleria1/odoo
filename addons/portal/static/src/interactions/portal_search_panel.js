@@ -2,6 +2,7 @@
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
+import { requestNavigation } from "@web/public/partial_navigation";
 
 export class PortalSearchPanel extends Interaction {
     static selector = ".o_portal_search_panel";
@@ -43,14 +44,7 @@ export class PortalSearchPanel extends Interaction {
             this.el.querySelector("input[name=search]")?.value || "",
         );
         url.pathname = url.pathname.replace(/\/page\/\d+\/?$/, "");
-        const navigate = new CustomEvent("o-navigate", {
-            bubbles: true,
-            cancelable: true,
-            detail: { url: url.toString() },
-        });
-        if (this.el.dispatchEvent(navigate)) {
-            browser.location.assign(url.toString());
-        }
+        requestNavigation(this.el, url.toString());
     }
 
     onDropdownItemClick(ev, currentTargetEl) {
