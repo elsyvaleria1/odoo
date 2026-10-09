@@ -8,6 +8,7 @@
     "author": "AgroMarin",
     "license": "LGPL-3",
     "depends": [
+        "account",
         "integration_machine_learning",
         "speech_telegram",
         "telegram",

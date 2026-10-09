@@ -309,8 +309,9 @@ class TelegramChat(models.Model):
         whatever the person's own companies are, as the bot writes in
         superuser mode. One operates when it has accounting journals; a shell
         company without any (the database's default one) is left out."""
-        companies = self.env["res.company"].sudo().search([])
-        operating = self.env["account.journal"].sudo().search([]).company_id
+        system = self.env["res.company"].sudo().env
+        companies = system["res.company"].search([])
+        operating = system["account.journal"].search([]).company_id
         return (companies & operating or companies).sorted("display_name")
 
     def _insight_company_buttons(self, tr_env):

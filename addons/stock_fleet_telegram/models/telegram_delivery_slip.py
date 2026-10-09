@@ -33,8 +33,8 @@ class TelegramDeliverySlip(models.Model):
     )
     chat_id = fields.Many2one(
         comodel_name="telegram.chat",
-        required=True,
         index=True,
+        required=True,
         ondelete="cascade",
     )
     state = fields.Selection(
@@ -79,13 +79,10 @@ class TelegramDeliverySlip(models.Model):
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         related="picking_id.partner_id",
-        store=True,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
         related="picking_id.company_id",
-        store=True,
-        index="btree_not_null",
     )
     file_id = fields.Char(help="Telegram's id to download the file.")
     file_name = fields.Char()

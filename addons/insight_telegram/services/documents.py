@@ -206,10 +206,13 @@ def main_report(env, model):
     """The PDF report a record of `model` is printed with, or nothing."""
     Report = env["ir.actions.report"]
     base = [("model", "=", model), ("report_type", "=", "qweb-pdf")]
-    for name in MAIN_REPORTS.get(model, ()):
-        report = Report.search(base + [("report_name", "=", name)], limit=1)
-        if report:
-            return report
+    names = MAIN_REPORTS.get(model, ())
+    if names:
+        found = Report.search(base + [("report_name", "in", names)])
+        by_name = {report.report_name: report for report in found}
+        for name in names:
+            if name in by_name:
+                return by_name[name]
     return Report.search(
         base + [("binding_model_id", "!=", False)], limit=1, order="id"
     )

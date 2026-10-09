@@ -376,8 +376,10 @@ class TestCatalog(TransactionCase):
         )
         self.assertEqual(tools.tools()[0]["name"], "run_report")
         self.env.flush_all()
-        result = json_loads(tools.call("run_report", {"report": "headcount"}))
-        self.assertIn("Active employees", result["report"])
+        # a report of what the module depends on: headcount needs hr, which
+        # it reads only where installed
+        result = json_loads(tools.call("run_report", {"report": "payments"}))
+        self.assertIn("No payments in that period.", result["report"])
         result = json_loads(tools.call("run_report", {"report": "weather"}))
         self.assertIn("No report", result["error"])
 

@@ -63,8 +63,8 @@ class StockDeliverySlipReceipt(models.Model):
     telegram_chat_id = fields.Many2one(
         comodel_name="telegram.chat",
         index="btree_not_null",
-        ondelete="set null",
         readonly=True,
+        ondelete="set null",
         help="The chat whose slips this batch gathers while it is open.",
     )
     slip_ids = fields.One2many(
