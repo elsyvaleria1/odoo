@@ -110,10 +110,17 @@ export class ComboConfiguratorDialog extends Component {
         }
     }
 
-    /** @param {Number} quantity */
+    /**
+     * @param {Number} quantity
+     * @return {Boolean} whether the quantity changed; when it did not (a value
+     *   clamped back to the current one), QuantityButtons resets its input
+     */
     async setQuantity(quantity) {
         if (quantity <= 0) {
             quantity = 1;
+        }
+        if (this.state.quantity === quantity) {
+            return false;
         }
         this.state.quantity = quantity;
         this.state.basePrice = await this._priceRequests.add(
