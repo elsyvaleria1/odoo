@@ -260,6 +260,39 @@ class TestPosRefundQuantities(TestPoSCommon):
         self.assertEqual(over.state, "paid")
         self.assertEqual(line.refunded_qty, 3)
         self.assertIn("returns more than was sold", over.message_ids[0].body)
+        self.assertTrue(over.is_over_refund)
+
+    def test_the_till_that_synced_an_over_refund_reads_the_flag_back(self):
+        line = self.original.lines
+        within = self.create_ui_order_data(
+            [
+                {
+                    "product": self.product,
+                    "quantity": -2,
+                    "refunded_orderline_id": line.id,
+                }
+            ],
+            pos_order_ui_args={"is_refund": True},
+        )
+        over = self.create_ui_order_data(
+            [
+                {
+                    "product": self.product,
+                    "quantity": -1,
+                    "refunded_orderline_id": line.id,
+                }
+            ],
+            pos_order_ui_args={"is_refund": True},
+        )
+
+        flags = {
+            row["uuid"]: row["is_over_refund"]
+            for data in (within, over)
+            for row in self.env["pos.order"].sync_from_ui([data])["pos.order"]
+            if row["uuid"] == data["uuid"]
+        }
+
+        self.assertEqual(flags, {within["uuid"]: False, over["uuid"]: True})
 
     def test_a_draft_refund_does_not_block_a_paid_one(self):
         line = self.original.lines

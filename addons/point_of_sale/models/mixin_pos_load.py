@@ -3,6 +3,7 @@ from typing import Self
 from odoo import api, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import frozendict
 
 _debug = DebugLog(__name__)
 
@@ -13,6 +14,7 @@ class MixinPosLoad(models.AbstractModel):
 
     _pos_data_incremental = False
     _pos_data_incremental_fields = ("write_date",)
+    _pos_data_till_writes = frozendict()
 
     @api.model
     def _load_pos_data_search_read(self, data, config):

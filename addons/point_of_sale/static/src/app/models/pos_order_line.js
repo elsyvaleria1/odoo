@@ -381,7 +381,15 @@ export class PosOrderline extends PosOrderlineAccounting {
             if (oldQty) {
                 comboLine.combo_qty_per_parent = comboLine.qty / oldQty;
             }
-            comboLine.setQuantity((comboLine.combo_qty_per_parent || 1) * quant, true);
+            const share = oldQty
+                ? comboLine.combo_qty_per_parent
+                : comboLine.combo_qty_per_parent || 1;
+            log.logic("setQuantity: combo share", () => ({
+                line: comboLine.uuid,
+                share,
+                known: Boolean(oldQty || comboLine.combo_qty_per_parent),
+            }));
+            comboLine.setQuantity(share * quant, true);
         }
         return true;
     }

@@ -384,6 +384,63 @@ test("a combo this device first sees at zero scales by the share the server stor
     expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([6, 3]);
 });
 
+test("a combo zeroed before its first sync sends the shares its till knows", async () => {
+    const store = await setupPosEnv();
+    const order = store.addNewOrder();
+    await store.addLineToOrder(
+        {
+            product_tmpl_id: store.models["product.template"].get(7),
+            payload: [
+                [
+                    {
+                        combo_item_id: store.models["product.combo.item"].get(1),
+                        qty: 2,
+                    },
+                    {
+                        combo_item_id: store.models["product.combo.item"].get(3),
+                        qty: 1,
+                    },
+                ],
+            ],
+            qty: 1,
+        },
+        order,
+    );
+    const parent = order.lines.find((line) => line.combo_line_ids.length);
+    const shares = parent.combo_line_ids.map((line) => line.combo_qty_per_parent);
+    expect(shares).toEqual([2, 1]);
+
+    parent.setQuantity(0);
+    const sent = order
+        .serializeForORM()
+        .lines.map(([, , vals]) => vals)
+        .filter((vals) =>
+            parent.combo_line_ids.some((line) => line.uuid === vals.uuid),
+        );
+
+    expect(sent.map((vals) => [vals.qty, vals.combo_qty_per_parent])).toEqual([
+        [0, 2],
+        [0, 1],
+    ]);
+});
+
+test("a combo item left at zero under a combo stays there when the combo grows", async () => {
+    const store = await setupPosEnv();
+    const models = store.models;
+    const rows = getAllPricesData();
+    rows["pos.order"][1].state = "draft";
+    for (const row of [...rows["pos.order"], ...rows["pos.order.line"]]) {
+        row.uuid = `remote-${row.id}`;
+    }
+    rows["pos.order.line"].find((line) => line.id === 4).qty = 0;
+    models.loadConnectedData(rows);
+    const parent = models["pos.order.line"].get(2);
+
+    parent.setQuantity(3);
+
+    expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([6, 0]);
+});
+
 test("combo items of an all-zero base price split the parent price without NaN", () => {
     const ProductPrice = { round: (x) => x };
     const parentProduct = { getPrice: () => 100 };

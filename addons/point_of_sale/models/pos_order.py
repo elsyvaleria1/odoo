@@ -15,7 +15,7 @@ from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
-from odoo.tools import float_is_zero, float_repr, float_round, formatLang
+from odoo.tools import float_is_zero, float_repr, float_round, formatLang, frozendict
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -32,6 +32,7 @@ class PosOrder(models.Model):
     ]
     _description = "Point of Sale Orders"
     _order = "date_order desc, name desc, id desc"
+    _pos_data_till_writes = frozendict({"is_over_refund": False})
     _mailing_enabled = True
 
     # the POS bus's and self-order's credential: a device's (decision G1),
@@ -165,6 +166,11 @@ class PosOrder(models.Model):
         help="Provenance: this order was created by refunding another. It "
         "carries no amount's sign -- `price_subtotal`, `total_cost` and "
         "`amount_total` each carry their own.",
+    )
+    is_over_refund = fields.Boolean(
+        string="Refunds More Than Sold",
+        copy=False,
+        readonly=True,
     )
     state = fields.Selection(
         selection=[
@@ -418,6 +424,7 @@ class PosOrder(models.Model):
             "invoice_state",
             "is_edited",
             "is_invoiced",
+            "is_over_refund",
             "is_refund",
             "is_tipped",
             "is_total_cost_computed",
@@ -463,6 +470,7 @@ class PosOrder(models.Model):
     def _process_order(self, order, existing_order):
         """Persist a UI payload without consuming commands needed by extensions."""
         order = deepcopy(order)
+        till_combo_shares = self._pop_till_combo_shares(order)
         draft = order.get("state") == "draft"
         pos_session = self.env["pos.session"].browse(order.get("session_id"))
         _debug.pipeline(
@@ -591,6 +599,7 @@ class PosOrder(models.Model):
             pos_order.write(order)
 
         pos_order._link_uuid_relations(record_uuid_mapping)
+        pos_order.lines._keep_till_combo_shares(till_combo_shares)
         self._check_single_refund_origin(pos_order.lines.refunded_orderline_id.order_id)
 
         pos_order = pos_order.with_company(pos_order.company_id)
@@ -599,6 +608,17 @@ class PosOrder(models.Model):
         if not draft:
             pos_order._flag_over_refund()
         return result
+
+    @api.model
+    def _pop_till_combo_shares(self, order) -> dict:
+        shares = {}
+        for command in order.get("lines") or ():
+            if len(command) < 3 or not isinstance(command[2], dict):
+                continue
+            share = command[2].pop("combo_qty_per_parent", None)
+            if share and command[2].get("uuid"):
+                shares[command[2]["uuid"]] = share
+        return shares
 
     def _link_uuid_relations(self, record_uuid_mapping) -> None:
         """Resolve deferred relations in batches, then write each owner once."""
@@ -1750,6 +1770,7 @@ class PosOrder(models.Model):
                 self.name,
                 over_refunded.ids,
             )
+            self.is_over_refund = True
             self.message_post(
                 body=self.env._(
                     "This refund returns more than was sold: %(lines)s",

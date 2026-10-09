@@ -1,9 +1,13 @@
 from odoo import Command, api, fields, models
+from odoo.tools import frozendict
 
 
 class EventRegistration(models.Model):
     _name = "event.registration"
     _inherit = ["event.registration", "mixin.pos.load"]
+    _pos_data_till_writes = frozendict(
+        dict.fromkeys(("email", "phone", "name", "company_name", "event_slot_id"), True)
+    )
 
     pos_order_id = fields.Many2one(
         related="pos_order_line_id.order_id",

@@ -1491,6 +1491,7 @@ export class PosStore extends WithLazyGetterTrap {
                     price_type: "original",
                     order_id: order,
                     qty: comboItem.qty * values.qty,
+                    combo_qty_per_parent: comboItem.qty,
                     attribute_value_ids: comboItem.attribute_value_ids?.map((attr) => [
                         "link",
                         attr,
@@ -1882,6 +1883,99 @@ export class PosStore extends WithLazyGetterTrap {
     }
 
     postSyncAllOrders(orders) {}
+
+    async refreshRefundedQuantities(lines) {
+        const ids = [
+            ...new Set(lines.filter((line) => line?.isSynced).map((line) => line.id)),
+        ];
+        if (!ids.length) {
+            return false;
+        }
+        try {
+            await this.data.read("pos.order.line", ids);
+            return true;
+        } catch (error) {
+            if (!(error instanceof ConnectionLostError)) {
+                throw error;
+            }
+            log.logic("refreshRefundedQuantities: offline", () => ({ ids }));
+            return false;
+        }
+    }
+
+    /**
+     * @param {{ line: Object, qty: number }[]} refunds what each sold line is
+     *     to return
+     * @param {Object} [refundOrder] the order already holding these refunds
+     */
+    async checkRefundableQuantities(refunds, refundOrder = null) {
+        const refreshed = await this.refreshRefundedQuantities(
+            refunds.map(({ line }) => line),
+        );
+        const exceeded = refunds
+            .map(({ line, qty }) => {
+                const ownQty = refundOrder
+                    ? line.refund_orderline_ids
+                          .filter(
+                              (refund) => refund.order_id?.uuid === refundOrder.uuid,
+                          )
+                          .reduce((acc, refund) => acc - refund.qty, 0)
+                    : 0;
+                return {
+                    line,
+                    qty,
+                    refundable: line.qty - (line.refundedQty - ownQty),
+                };
+            })
+            .filter(({ line, qty, refundable }) => {
+                const excess = qty - refundable;
+                return (
+                    line.qty > 0 &&
+                    excess > 0 &&
+                    !line.product_id.uom_id?.isZero(excess)
+                );
+            });
+        log.logic("checkRefundableQuantities", () => ({
+            refreshed,
+            refundOrder: refundOrder?.uuid,
+            refunds: refunds.map(({ line, qty }) => ({ line: line.uuid, qty })),
+            exceeded: exceeded.map(({ line, refundable }) => ({
+                line: line.uuid,
+                refundable,
+            })),
+        }));
+        if (!exceeded.length) {
+            return true;
+        }
+        const shown = exceeded.filter(({ line }) => !line.combo_parent_id);
+        this.dialog.add(AlertDialog, {
+            title: _t("Maximum Exceeded"),
+            body: (shown.length ? shown : exceeded)
+                .map(({ line, qty, refundable }) =>
+                    _t(
+                        "%(product)s: %(requested)s requested while only %(refundable)s can still be refunded.",
+                        {
+                            product: line.getFullProductName(),
+                            requested: qty,
+                            refundable: Math.max(0, refundable),
+                        },
+                    ),
+                )
+                .join("\n"),
+        });
+        return false;
+    }
+
+    notifyOverRefund(order) {
+        this.notification.add(
+            _t(
+                "Refund %s returns more than was sold. It is flagged on the order for review.",
+                order.pos_reference || order.name,
+            ),
+            { type: "warning", sticky: true },
+        );
+    }
+
     async syncAllOrders(options = {}) {
         return this.pushOrderMutex.exec(() => this._syncAllOrders(options));
     }
@@ -1966,6 +2060,7 @@ export class PosStore extends WithLazyGetterTrap {
             };
 
             const endOrderSync = log.perf(`syncAllOrders [order:${order.uuid}]`);
+            const wasOverRefund = order.is_over_refund;
             try {
                 const serialized = order.serializeForORM({
                     deferClear: true,
@@ -2060,6 +2155,13 @@ export class PosStore extends WithLazyGetterTrap {
                             delete order.uiState?.lineToRefund[refundedOrderLine.uuid];
                         }
                     }
+                }
+
+                if (order.is_over_refund && !wasOverRefund) {
+                    log.logic("syncAllOrders: server flagged an over-refund", () => ({
+                        order: order.uuid,
+                    }));
+                    this.notifyOverRefund(order);
                 }
 
                 await this.postSyncAllOrders(newData["pos.order"] ?? []);

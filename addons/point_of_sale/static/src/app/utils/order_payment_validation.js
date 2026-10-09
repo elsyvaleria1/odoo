@@ -572,6 +572,10 @@ export default class OrderPaymentValidation {
             return reject("invalidEmptyOrder");
         }
 
+        if (!(await this.checkRefundableQuantities())) {
+            return reject("overRefund");
+        }
+
         log.logic("isOrderValid: accepted", () => ({
             order: this.orderUuid,
             isForceValidate,
@@ -579,6 +583,28 @@ export default class OrderPaymentValidation {
             amountPaid: this.order.amountPaid,
         }));
         return true;
+    }
+
+    async checkRefundableQuantities() {
+        const refundBySoldLine = new Map();
+        for (const line of this.order.lines) {
+            const sold = line.refunded_orderline_id;
+            if (sold) {
+                const refund = refundBySoldLine.get(sold.uuid) ?? {
+                    line: sold,
+                    qty: 0,
+                };
+                refund.qty -= line.qty;
+                refundBySoldLine.set(sold.uuid, refund);
+            }
+        }
+        if (!refundBySoldLine.size) {
+            return true;
+        }
+        return await this.pos.checkRefundableQuantities(
+            [...refundBySoldLine.values()],
+            this.order,
+        );
     }
 
     async _askForCustomerIfRequired() {

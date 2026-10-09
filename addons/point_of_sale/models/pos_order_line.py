@@ -20,6 +20,7 @@ class PosOrderLine(models.Model):
     _description = "Point of Sale Order Lines"
     _rec_name = "product_id"
     _inherit = ["mixin.pos.load"]
+    _pos_data_till_writes = frozendict({"combo_qty_per_parent": True})
     _access_anchors = frozendict(
         {
             "company": models.Anchor("company_id", shared=False),
@@ -184,6 +185,7 @@ class PosOrderLine(models.Model):
         compute="_compute_combo_qty_per_parent",
         precompute=True,
         store=True,
+        readonly=False,
         help="Quantity of this combo item in one combo; kept while the combo is at zero.",
     )
 
@@ -241,6 +243,24 @@ class PosOrderLine(models.Model):
         for line in self:
             if line.combo_parent_id.qty:
                 line.combo_qty_per_parent = line.qty / line.combo_parent_id.qty
+
+    def _keep_till_combo_shares(self, shares_by_uuid) -> None:
+        if not shares_by_uuid:
+            return
+        # the quantities say the share while the combo has some; at zero they
+        # cannot, and only the till that zeroed it still knows
+        at_zero = self.filtered(
+            lambda line: (
+                line.uuid in shares_by_uuid
+                and line.combo_parent_id
+                and not line.combo_parent_id.qty
+            )
+        )
+        _debug.logic("combo_shares_from_till", lines=at_zero, shares=shares_by_uuid)
+        for share, lines in at_zero.grouped(
+            lambda line: shares_by_uuid[line.uuid]
+        ).items():
+            lines.combo_qty_per_parent = share
 
     @api.depends(
         "refund_orderline_ids",

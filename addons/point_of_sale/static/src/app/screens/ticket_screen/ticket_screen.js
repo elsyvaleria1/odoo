@@ -440,6 +440,9 @@ export class TicketScreen extends Component {
         if (refundableDetails.length === 0) {
             return;
         }
+        if (!(await this.pos.checkRefundableQuantities(refundableDetails))) {
+            return;
+        }
         const destinationOrder = this._getEmptyOrder(partner);
         log.pipeline("onDoRefund: destination", () => ({
             order: order.uuid,

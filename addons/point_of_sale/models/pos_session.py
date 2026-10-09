@@ -236,10 +236,11 @@ class PosSession(models.Model):
 
     @api.model
     def _describe_field_relation(self, model, name, params):
+        till_writes = getattr(self.env[model], "_pos_data_till_writes", {})
         relation = {
             "name": name,
             "type": params.type,
-            "compute": bool(params.compute),
+            "compute": not till_writes.get(name, not params.compute),
             "related": bool(params.related),
         }
         if not params.comodel_name:
