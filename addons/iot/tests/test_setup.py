@@ -102,3 +102,16 @@ class TestBoxEnrolment(HttpCase):
         )
         self.assertEqual(devices.identifier, "serial_ttyS1")
         self.assertEqual(devices.connection_state, "connected")
+
+    def test_the_first_box_is_answered_the_channel_it_creates(self):
+        self.env["ir.config_parameter"].sudo().set_param("iot.ws_channel", False)
+        token = self._hand_out_token()
+
+        channel = self._setup(self._payload(token), {})
+        self.env.invalidate_all()
+
+        self.assertTrue(channel, "the first box was answered no channel")
+        self.assertEqual(
+            channel,
+            self.env["ir.config_parameter"].sudo().get_param("iot.ws_channel"),
+        )

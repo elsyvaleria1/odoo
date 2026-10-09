@@ -15,9 +15,8 @@ class IotChannel(models.AbstractModel):
         ir_config_parameter = self.env["ir.config_parameter"].sudo()
         ws_channel = ir_config_parameter.get_param("iot.ws_channel")
         if not ws_channel:
-            ws_channel = ir_config_parameter.set_param(
-                "iot.ws_channel", f"iot_channel-{secrets.token_hex(16)}"
-            )
+            ws_channel = f"iot_channel-{secrets.token_hex(16)}"
+            ir_config_parameter.set_param("iot.ws_channel", ws_channel)
 
         return ws_channel
 
