@@ -238,7 +238,9 @@ export class PartnerList extends Component {
         return request;
     }
     async getPartnerPage(query) {
-        let domain = [];
+        if (!query) {
+            return this.getRankedPartnerPage();
+        }
         const offsets = this.globalState.offsetBySearch;
         const offset = Object.hasOwn(offsets, query) ? offsets[query] : 0;
         log.logic("getNewPartners", () => ({
@@ -246,26 +248,75 @@ export class PartnerList extends Component {
             offset,
             loaded: this.loadedPartnerIds.size,
         }));
-        if (query) {
-            const search_fields = [
-                "name",
-                "parent_name",
-                "phone_mobile_search",
-                "email",
-                "barcode",
-                "street",
-                "zip",
-                "city",
-                "state_id",
-                "country_id",
-                "vat",
-            ];
-            domain = [
-                ...Array(search_fields.length - 1).fill("|"),
-                ...search_fields.map((field) => [field, "ilike", query + "%"]),
-            ];
+        const search_fields = [
+            "name",
+            "parent_name",
+            "phone_mobile_search",
+            "email",
+            "barcode",
+            "street",
+            "zip",
+            "city",
+            "state_id",
+            "country_id",
+            "vat",
+        ];
+        const domain = [
+            ...Array(search_fields.length - 1).fill("|"),
+            ...search_fields.map((field) => [field, "ilike", query + "%"]),
+        ];
+        const partners = await this.fetchPartners(query, domain, offset);
+        this.globalState.offsetBySearch = {
+            ...this.globalState.offsetBySearch,
+            [query]: offset + partners.length,
+        };
+        if (!partners.length) {
+            this.exhaustedQueries.add(query);
         }
-
+        return partners;
+    }
+    async getRankedPartnerPage() {
+        const ids = await this.nextRankedPartnerIds();
+        log.logic("getNewPartners: ranked", () => ({
+            ids: ids.length,
+            loaded: this.loadedPartnerIds.size,
+        }));
+        if (!ids.length) {
+            this.exhaustedQueries.add("");
+            return [];
+        }
+        try {
+            return await this.fetchPartners("", [["id", "in", ids]], 0);
+        } catch (error) {
+            this.globalState.rankedPages.unshift(ids);
+            throw error;
+        }
+    }
+    async nextRankedPartnerIds() {
+        const state = this.globalState;
+        const known = this.pos.models["res.partner"];
+        for (;;) {
+            while (state.rankedPages.length) {
+                const ids = state.rankedPages.shift().filter((id) => !known.get(id));
+                if (ids.length) {
+                    return ids;
+                }
+            }
+            // One ranking serves several pages: it counts every order of the
+            // company, so asking for it page by page repeats that count each time.
+            const pages = await this.pos.data.call(
+                "pos.config",
+                "get_ranked_partner_pages",
+                [[this.pos.config.id], state.rankedOffset],
+            );
+            if (!pages.length) {
+                return [];
+            }
+            state.rankedOffset += pages.reduce((count, page) => count + page.length, 0);
+            state.rankedPages.push(...pages);
+        }
+    }
+    async fetchPartners(query, domain, offset) {
         const endFetch = log.perf("getNewPartners");
         try {
             const result = await this.pos.data.callRelated(
@@ -273,16 +324,7 @@ export class PartnerList extends Component {
                 "get_new_partner",
                 [this.pos.config.id, domain, offset],
             );
-
             const partners = result["res.partner"];
-            this.globalState.offsetBySearch = {
-                ...this.globalState.offsetBySearch,
-                [query]: offset + partners.length,
-            };
-            if (!partners.length) {
-                this.exhaustedQueries.add(query);
-            }
-
             let added = 0;
             for (const partner of partners) {
                 if (!this.loadedPartnerIds.has(partner.id)) {
@@ -291,7 +333,6 @@ export class PartnerList extends Component {
                     added++;
                 }
             }
-
             endFetch({
                 query,
                 offset,

@@ -18,6 +18,7 @@ declare_authority_keys("point_of_sale", "bypass_payment_method_ids_forbidden_cha
 
 DEFAULT_LIMIT_LOAD_PRODUCT = 5000
 DEFAULT_LIMIT_LOAD_PARTNER = 100
+RANKED_PARTNER_PAGES_PER_CALL = 10
 
 
 class PosConfig(models.Model):
@@ -1647,6 +1648,29 @@ class PosConfig(models.Model):
     @_debug.perf.timed
     def get_limited_partners_loading(self, offset=0):
         self.check_singleton()
+        return [
+            (partner_id,)
+            for partner_id in self._get_ranked_partner_ids(
+                offset, self._get_limited_partner_count()
+            )
+        ]
+
+    @_debug.perf.timed
+    def get_ranked_partner_pages(self, offset) -> list[list[int]]:
+        self.check_singleton()
+        self.check_access("read")
+        page_size = self._get_limited_partner_count()
+        if not page_size:
+            return []
+        ranked = self._get_ranked_partner_ids(
+            offset, min(page_size * RANKED_PARTNER_PAGES_PER_CALL, 2**63 - 1)
+        )
+        return [
+            ranked[start : start + page_size]
+            for start in range(0, len(ranked), page_size)
+        ]
+
+    def _get_ranked_partner_ids(self, offset, limit) -> list[int]:
         partners = self.env["res.partner"]
         query = partners._search(
             partners._get_picker_domain()
@@ -1679,9 +1703,9 @@ class PosConfig(models.Model):
             partner,
             partner,
         )
-        query.limit = self._get_limited_partner_count()
+        query.limit = limit
         query.offset = offset
-        return self.env.execute_query(query.select())
+        return [row[0] for row in self.env.execute_query(query.select())]
 
     def action_pos_config_modal_edit(self) -> dict:
         return {

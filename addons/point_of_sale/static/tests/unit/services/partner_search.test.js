@@ -23,14 +23,23 @@ async function setupPartnerList() {
     store.dialog.add(PartnerList, { getPayload() {} });
     await animationFrame();
     const requests = [];
+    const rankings = [];
     patchWithCleanup(store.data, {
         callRelated(model, method, args) {
             const response = new Deferred();
             requests.push({ args, response });
             return response;
         },
+        call(model, method, args) {
+            if (method !== "get_ranked_partner_pages") {
+                return super.call(...arguments);
+            }
+            const response = new Deferred();
+            rankings.push({ args, response });
+            return response;
+        },
     });
-    return { list, requests };
+    return { list, requests, rankings };
 }
 
 test("a delayed partner page advances the offset for its original search", async () => {
@@ -200,17 +209,50 @@ test("a failed search reports failure rather than an empty result", async () => 
 });
 
 test("a failed scroll fetch is handled and can be retried", async () => {
-    const { list, requests } = await setupPartnerList();
+    const { list, requests, rankings } = await setupPartnerList();
     list.modalContent.dispatchEvent(new Event("scroll"));
     await advanceTime(300);
+    expect(rankings).toHaveLength(1);
+    rankings[0].response.resolve([[990001]]);
+    await animationFrame();
     expect(requests).toHaveLength(1);
     requests[0].response.reject(new Error("Offline"));
     await animationFrame();
     expect(list.state.loading).toBe(false);
     list.modalContent.dispatchEvent(new Event("scroll"));
     await advanceTime(300);
+    expect(rankings).toHaveLength(1);
     expect(requests).toHaveLength(2);
+    expect(requests[1].args[1]).toEqual([["id", "in", [990001]]]);
     requests[1].response.resolve({ "res.partner": [] });
     await animationFrame();
+    expect(list.state.loading).toBe(false);
+});
+
+test("one ranking serves several scroll pages and skips loaded partners", async () => {
+    const { list, requests, rankings } = await setupPartnerList();
+    const loaded = list.state.initialPartners[0].id;
+    const first = list.getNewPartners();
+    await animationFrame();
+    expect(rankings[0].args[1]).toBe(0);
+    rankings[0].response.resolve([[loaded], [loaded, 990001], [990002]]);
+    await animationFrame();
+    expect(requests[0].args[1]).toEqual([["id", "in", [990001]]]);
+    expect(requests[0].args[2]).toBe(0);
+    requests[0].response.resolve({ "res.partner": [] });
+    await first;
+    const second = list.getNewPartners();
+    await animationFrame();
+    expect(rankings).toHaveLength(1);
+    expect(requests[1].args[1]).toEqual([["id", "in", [990002]]]);
+    requests[1].response.resolve({ "res.partner": [] });
+    await second;
+    const third = list.getNewPartners();
+    await animationFrame();
+    expect(rankings).toHaveLength(2);
+    expect(rankings[1].args[1]).toBe(4);
+    rankings[1].response.resolve([]);
+    expect(await third).toEqual([]);
+    expect(requests).toHaveLength(2);
     expect(list.state.loading).toBe(false);
 });

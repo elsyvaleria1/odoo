@@ -188,6 +188,8 @@ export class PosStore extends WithLazyGetterTrap {
             },
             partnerList: {
                 offsetBySearch: {},
+                rankedPages: [],
+                rankedOffset: 0,
             },
         };
         this.pendingOrder = {
@@ -492,9 +494,11 @@ export class PosStore extends WithLazyGetterTrap {
         this.currency = this.config.currency_id;
         this.pickingType = this.data.models["stock.picking.type"].getFirst();
         this.models = this.data.models;
-        this.screenState.partnerList.offsetBySearch = {
-            "": this.models["res.partner"].length,
-        };
+        Object.assign(this.screenState.partnerList, {
+            offsetBySearch: {},
+            rankedPages: [],
+            rankedOffset: 0,
+        });
 
         const models = Object.keys(this.models);
         const dynamicModels = this.data.opts.dynamicModels;

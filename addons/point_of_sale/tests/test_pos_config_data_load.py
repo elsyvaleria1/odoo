@@ -11,6 +11,7 @@ from odoo.tests import new_test_user
 from odoo.addons.point_of_sale.models.pos_config import (
     DEFAULT_LIMIT_LOAD_PARTNER,
     DEFAULT_LIMIT_LOAD_PRODUCT,
+    RANKED_PARTNER_PAGES_PER_CALL,
 )
 from odoo.addons.point_of_sale.tests.common import (
     PosLazySessionCommon,
@@ -411,6 +412,84 @@ class TestPosConfigDataLoad(TestPoSCommon):
             seen += [row[0] for row in self.config.get_limited_partners_loading(offset)]
         self.assertEqual(len(seen), len(set(seen)), "paging returned a partner twice")
 
+    def test_ranked_pages_tile_the_partners_and_count_only_this_company(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", "2"
+        )
+        Partner = self.env["res.partner"]
+        often, sometimes, once, twin_a, twin_b, plain, brand = Partner.create(
+            [
+                {"name": "Tile Often"},
+                {"name": "Tile Sometimes"},
+                {"name": "Tile Once"},
+                {"name": "Tile Twin"},
+                {"name": "Tile Twin"},
+                {"name": "Tile Plain"},
+                {"name": "Tile Aaa Brand", "is_manufacturer": True},
+            ]
+        )
+        Partner.create(
+            [
+                {"name": f"Tile Filler {i}"}
+                for i in range(2 * RANKED_PARTNER_PAGES_PER_CALL)
+            ]
+        )
+        elsewhere = self.env["res.company"].create({"name": "Tile elsewhere"})
+        session = self.open_new_session()
+        orders = self.env["pos.order"].create(
+            [
+                {
+                    "session_id": session.id,
+                    "partner_id": partner.id,
+                    "amount_tax": 0,
+                    "amount_total": 0,
+                    "amount_paid": 0,
+                    "amount_return": 0,
+                }
+                for partner in (often,) * 3 + (sometimes,) * 7 + (once,)
+            ]
+        )
+        orders.filtered(lambda o: o.partner_id == sometimes)[:5].sudo().write(
+            {"company_id": elsewhere.id}
+        )
+        eligible = Partner.search(
+            Partner._get_picker_domain()
+            & fields.Domain("company_id", "in", [self.config.company_id.id, False])
+        )
+
+        paged = []
+        offset = 0
+        while page := self.config.get_limited_partners_loading(offset):
+            self.assertLessEqual(len(page), 2)
+            paged += [row[0] for row in page]
+            offset += len(page)
+
+        self.assertEqual(len(paged), len(set(paged)), "a partner came back twice")
+        self.assertEqual(set(paged), set(eligible.ids), "a partner was skipped")
+
+        windowed = []
+        calls = 0
+        while pages := self.config.get_ranked_partner_pages(len(windowed)):
+            calls += 1
+            self.assertLessEqual(len(pages), RANKED_PARTNER_PAGES_PER_CALL)
+            self.assertTrue(all(0 < len(page) <= 2 for page in pages))
+            windowed += [partner_id for page in pages for partner_id in page]
+        self.assertEqual(windowed, paged)
+        self.assertEqual(calls, -(-len(paged) // (2 * RANKED_PARTNER_PAGES_PER_CALL)))
+        ours = (often | sometimes | once | twin_a | twin_b | plain | brand).ids
+        self.assertEqual(
+            [partner_id for partner_id in paged if partner_id in ours],
+            [
+                often.id,
+                sometimes.id,
+                once.id,
+                plain.id,
+                twin_a.id,
+                twin_b.id,
+                brand.id,
+            ],
+        )
+
     def test_archived_partners_do_not_consume_the_load_limit(self):
         archived = self.env["res.partner"].create(
             {"name": "Archived Partner", "company_id": self.env.company.id}
@@ -489,6 +568,17 @@ class TestPosConfigLoadLimits(PosLazySessionCommon):
         data = self._ensure_session().load_data([])
         self.assertTrue(data["product.template"])
         self.assertTrue(data["res.partner"])
+
+    def test_a_ranked_window_beyond_the_bigint_range_is_one_page(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "point_of_sale.limited_customer_count", str(2**63 - 1)
+        )
+        pages = self.pos_config_usd.get_ranked_partner_pages(0)
+        self.assertEqual(len(pages), 1)
+        self.assertEqual(
+            pages[0],
+            [row[0] for row in self.pos_config_usd.get_limited_partners_loading()],
+        )
 
     def test_negative_limits_fall_back_to_the_defaults(self):
         parameters = self.env["ir.config_parameter"].sudo()
