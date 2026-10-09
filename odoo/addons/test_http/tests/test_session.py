@@ -849,37 +849,6 @@ class TestSessionRotation(HttpCase):
         )
         self.assertEqual(get_amount_sessions(session_three), 0)
 
-    def test_session_rotation_excluded_on_websocket_poll(self):
-        from odoo.http import SESSION_ROTATION_EXCLUDED_PATHS
-
-        self.assertIn("/websocket/peek_notifications", SESSION_ROTATION_EXCLUDED_PATHS)
-
-        self.authenticate("admin", "admin")
-        self.url_open("/odoo")
-        session_one = self.opener.cookies["session_id"]
-
-        session_obj = root.session_store.get(session_one)
-        session_obj["create_time"] -= SESSION_ROTATION_INTERVAL
-        root.session_store.save(session_obj)
-
-        self.url_open("/websocket/peek_notifications", data={})
-        self.assertEqual(
-            self.opener.cookies.get("session_id", session_one),
-            session_one,
-            "websocket polling endpoints must not trigger session rotation",
-        )
-
-        self.url_open("/odoo")
-        session_two = self.opener.cookies["session_id"]
-        self.assertNotEqual(
-            session_one, session_two, "non-excluded paths still rotate as expected"
-        )
-
-        self.logout()
-        root.session_store.remove_sessions_for_identifiers(
-            [session_two[:STORED_SESSION_BYTES]]
-        )
-
     def test_session_token_lookup_does_not_clear_cache(self):
         with patch.object(self.env.registry, "clear_cache") as mock_clear:
             result = self.env["res.users"].browse(99999999)._get_session_token_values()

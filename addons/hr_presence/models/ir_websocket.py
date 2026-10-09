@@ -1,5 +1,4 @@
 from odoo import fields, models
-from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.bus.websocket import wsrequest
@@ -24,8 +23,7 @@ class IrWebsocket(models.AbstractModel):
         company = employee.company_id
         if not company.hr_config_id.hr_presence_control_ip:
             return
-        req = request or wsrequest
-        ip_address = req.httprequest.remote_addr
+        ip_address = wsrequest.httprequest.remote_addr
         if ip_address not in company._hr_presence_valid_ips():
             _debug.logic("presence_ip_rejected", employee=employee, ip=ip_address)
             return

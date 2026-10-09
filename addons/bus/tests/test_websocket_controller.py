@@ -5,7 +5,6 @@ from urllib.parse import urlsplit
 
 import psycopg
 
-from odoo.http import SESSION_ROTATION_INTERVAL, root
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import JsonRpcException, common
 from odoo.tools import mute_logger
@@ -17,102 +16,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 
 class TestWebsocketController(HttpCaseWithUserDemo):
-    def test_websocket_peek(self):
-        result = self.call_jsonrpc(
-            "/websocket/peek_notifications",
-            {
-                "channels": [],
-                "last": 0,
-                "is_first_poll": True,
-            },
-        )
-
-        self.assertIsNotNone(result)
-        channels = result.get("channels")
-        self.assertIsNotNone(channels)
-        self.assertIsInstance(channels, list)
-        notifications = result.get("notifications")
-        self.assertIsNotNone(notifications)
-        self.assertIsInstance(notifications, list)
-
-        result = self.call_jsonrpc(
-            "/websocket/peek_notifications",
-            {
-                "channels": [],
-                "last": 0,
-                "is_first_poll": False,
-            },
-        )
-
-        self.assertIsNotNone(result)
-
-    def test_websocket_peek_session_expired_login(self):
-        self.call_jsonrpc(
-            "/websocket/peek_notifications",
-            {
-                "channels": [],
-                "last": 0,
-                "is_first_poll": True,
-            },
-        )
-
-        self.authenticate("admin", "admin")
-        with self.assertRaisesRegex(JsonRpcException, "SessionExpired"):
-            self.call_jsonrpc(
-                "/websocket/peek_notifications",
-                {
-                    "channels": [],
-                    "last": 0,
-                    "is_first_poll": False,
-                },
-            )
-
-    def test_websocket_peek_session_expired_logout(self):
-        self.authenticate("demo", "demo")
-        self.call_jsonrpc(
-            "/websocket/peek_notifications",
-            {
-                "channels": [],
-                "last": 0,
-                "is_first_poll": True,
-            },
-        )
-        self.url_open("/web/session/logout")
-        with self.assertRaisesRegex(JsonRpcException, "SessionExpired"):
-            self.call_jsonrpc(
-                "/websocket/peek_notifications",
-                {
-                    "channels": [],
-                    "last": 0,
-                    "is_first_poll": False,
-                },
-            )
-
-    def test_do_not_rotate_session(self):
-        self.authenticate("admin", "admin")
-        self.url_open("/odoo")
-        original_session = self.opener.cookies["session_id"]
-        original_session_obj = root.session_store.get(original_session)
-        original_session_obj["create_time"] -= SESSION_ROTATION_INTERVAL
-        root.session_store.save(original_session_obj)
-        self.call_jsonrpc(
-            "/websocket/peek_notifications",
-            {
-                "channels": [],
-                "last": 0,
-                "is_first_poll": True,
-            },
-        )
-        self.assertEqual(self.opener.cookies["session_id"], original_session)
-        self.url_open("/odoo")
-        self.assertNotEqual(self.opener.cookies["session_id"], original_session)
-        original_session = self.opener.cookies["session_id"]
-        original_session_obj = root.session_store.get(original_session)
-        original_session_obj["create_time"] -= SESSION_ROTATION_INTERVAL
-        root.session_store.save(original_session_obj)
-        self.call_jsonrpc("/websocket/on_closed")
-        self.assertEqual(self.opener.cookies["session_id"], original_session)
-
     def test_has_missed_notifications_rejects_non_integer(self):
         for bad_value in ("1", None, 1.5, [1], {"id": 1}, True):
             with (

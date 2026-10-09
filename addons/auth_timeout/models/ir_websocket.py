@@ -1,5 +1,5 @@
 from odoo import models
-from odoo.http import request, root
+from odoo.http import root
 
 from odoo.addons.bus.websocket import wsrequest
 
@@ -17,10 +17,9 @@ class IrWebsocket(models.AbstractModel):
         :param float inactivity_period: Duration of user inactivity in milliseconds.
         :return: None
         """
-        #  This method can either be called due to an http (/websocket/update_bus_presence)
-        # or a websocket request.
-        req = request or wsrequest
-        self.env["ir.http"]._set_session_inactivity(req.session, inactivity_period)
+        self.env["ir.http"]._set_session_inactivity(
+            wsrequest.session, inactivity_period
+        )
         super()._update_mail_presence(inactivity_period)
 
     def _on_websocket_closed(self, cookies):

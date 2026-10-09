@@ -13,6 +13,7 @@ from odoo.tests import new_test_user, tagged
 
 from odoo.addons.bus.models.bus import channel_with_db, json_dump
 from odoo.addons.bus.tests.common import WebsocketCase
+from odoo.addons.bus.websocket import CloseCode
 from odoo.addons.mail.models.mail_presence import AWAY_TIMER
 
 
@@ -118,3 +119,15 @@ class TestIrWebsocket(WebsocketCase):
         self.assertEqual(
             notification["message"]["payload"]["partner_id"], away_user.partner_id.id
         )
+
+    def test_a_closed_websocket_sets_its_user_offline(self):
+        bob = new_test_user(self.env, login="bob_user", groups="base.group_user")
+        session = self.authenticate("bob_user", "bob_user")
+        self.env["mail.presence"]._update_presence(bob)
+        presence = self.env["mail.presence"].search([("user_id", "=", bob.id)])
+        self.assertEqual(presence.status, "online")
+        websocket = self.websocket_connect(cookie=f"session_id={session.sid};")
+        websocket.close(CloseCode.CLEAN)
+        self.wait_remaining_websocket_connections()
+        presence.invalidate_recordset(["status"])
+        self.assertEqual(presence.status, "offline")

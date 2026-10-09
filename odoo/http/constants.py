@@ -172,17 +172,6 @@ SESSION_ROTATION_INTERVAL = 60 * 60 * 3
 
 SESSION_DELETION_TIMER = 120
 
-SESSION_ROTATION_EXCLUDED_PATHS: set[str] = set()
-
-
-def register_session_rotation_excluded_paths(*paths: str) -> None:
-    SESSION_ROTATION_EXCLUDED_PATHS.update(paths)
-    _debug.lifecycle(
-        "http.session_rotation_excluded_paths.registered",
-        paths=len(SESSION_ROTATION_EXCLUDED_PATHS),
-    )
-
-
 STORED_SESSION_BYTES = 42
 
 ISSUED_SID_KEY = "_issued_sid"

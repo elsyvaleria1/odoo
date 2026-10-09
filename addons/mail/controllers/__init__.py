@@ -10,6 +10,5 @@ from . import messaging_menu
 from . import thread
 from . import webclient
 from . import webmanifest
-from . import websocket
 
 from . import discuss

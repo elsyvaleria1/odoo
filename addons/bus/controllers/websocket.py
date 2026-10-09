@@ -2,7 +2,6 @@ from urllib.parse import urlsplit
 
 from odoo.http import (
     Controller,
-    SessionExpiredException,
     request,
     resolve_cors_same_host,
     route,
@@ -10,7 +9,7 @@ from odoo.http import (
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import config
 
-from ..models.bus import channel_with_db, dispatch
+from ..models.bus import dispatch
 from ..websocket import WebsocketConnectionHandler
 
 
@@ -54,28 +53,6 @@ class WebsocketController(Controller):
         data = json_dumps({"status": "pass" if healthy else "fail"})
         headers = [("Content-Type", "application/json"), ("Cache-Control", "no-store")]
         return request.prepare_response(data, headers, status=200 if healthy else 503)
-
-    @route("/websocket/peek_notifications", type="jsonrpc", auth="public", cors="*")
-    def peek_notifications(self, channels, last, is_first_poll=False):
-        if is_first_poll:
-            request.session["is_websocket_session"] = True
-        elif "is_websocket_session" not in request.session:
-            raise SessionExpiredException
-        subscribe_data = request.env["ir.websocket"]._prepare_subscribe_data(
-            channels, last
-        )
-        request.env["ir.websocket"]._after_subscribe_data(subscribe_data)
-        channels_with_db = [
-            channel_with_db(request.db, c) for c in subscribe_data["channels"]
-        ]
-        notifications = request.env["bus.bus"]._poll(
-            channels_with_db, subscribe_data["last"]
-        )
-        return {"channels": channels_with_db, "notifications": notifications}
-
-    @route("/websocket/on_closed", type="jsonrpc", auth="public", cors="*")
-    def on_websocket_closed(self):
-        request.env["ir.websocket"]._on_websocket_closed(request.cookies)
 
     @route(
         "/bus/websocket_worker_bundle",

@@ -12,7 +12,6 @@ from .constants import (
     SAFE_HTTP_METHODS,
     SESSION_DELETION_TIMER,
     SESSION_LIFETIME,
-    SESSION_ROTATION_EXCLUDED_PATHS,
     SESSION_ROTATION_INTERVAL,
     STATIC_CACHE,
     STATIC_CACHE_LONG,
@@ -20,7 +19,6 @@ from .constants import (
     prepare_default_session,
     is_select_db_path,
     register_select_db_paths,
-    register_session_rotation_excluded_paths,
 )
 
 from .exceptions import (
@@ -159,7 +157,6 @@ __all__ = [
     "SAFE_HTTP_METHODS",
     "SESSION_DELETION_TIMER",
     "SESSION_LIFETIME",
-    "SESSION_ROTATION_EXCLUDED_PATHS",
     "SESSION_ROTATION_INTERVAL",
     "STATIC_CACHE",
     "STATIC_CACHE_LONG",
@@ -244,7 +241,6 @@ __all__ = [
     "prepare_rule_kwargs",
     "register_routing_parameters",
     "register_select_db_paths",
-    "register_session_rotation_excluded_paths",
     "request",
     "resolve_cors_same_host",
     "rewind_uploaded_files",

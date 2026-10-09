@@ -13,7 +13,6 @@ from ._cookies import get_cookie_identity
 from ._protocols import RequestState
 from .constants import (
     SESSION_LIFETIME,
-    SESSION_ROTATION_EXCLUDED_PATHS,
     SESSION_ROTATION_INTERVAL,
     prepare_default_session,
 )
@@ -243,7 +242,6 @@ class _RequestSessionMixin(RequestState):
         return bool(
             session.uid
             and time.time() >= session["create_time"] + SESSION_ROTATION_INTERVAL
-            and self.httprequest.path not in SESSION_ROTATION_EXCLUDED_PATHS
         )
 
     def _stage_session_save(self, env: odoo.api.Environment) -> None:

@@ -1096,7 +1096,7 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
                 "_update_mail_presence",
                 lambda self, inactivity_period: None,
             ),
-            patch("odoo.addons.hr_presence.models.ir_websocket.request", FakeRequest),
+            patch("odoo.addons.hr_presence.models.ir_websocket.wsrequest", FakeRequest),
         ):
             websocket._update_mail_presence(0)
         employee.invalidate_recordset()
