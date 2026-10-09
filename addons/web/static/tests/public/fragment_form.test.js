@@ -83,6 +83,22 @@ test("the submitter's name and value are posted", async () => {
     expect.verifySteps(["post /shop/cart/line 1 csrf_token=t0k3n&quantity=2&remove=1"]);
 });
 
+test("a control named action or method does not hide the form's own", async () => {
+    await startInteraction(
+        FragmentForm,
+        `<form data-fragment="cart.line" data-fragment-form="" method="post" action="/shop/cart/line">
+            <input name="method" type="hidden" value="m"/>
+            <button class="o_act" type="submit" name="action" value="go">Go</button>
+        </form>`,
+    );
+    serve(() => line(1));
+
+    await click(".o_act");
+    await animationFrame();
+
+    expect.verifySteps(["post /shop/cart/line 1 method=m&action=go"]);
+});
+
 test("a field marked data-submit-on-change submits the form", async () => {
     await startInteraction(FragmentForm, line(1));
     serve(() => line(3));

@@ -113,7 +113,8 @@ export class FragmentShell {
             submitter?.getAttribute("formaction") || form.getAttribute("action") || "";
         const url = new URL(action, window.location.href);
         const body = new FormData(form, submitter);
-        if (form.method === "get") {
+        // the attribute: a control named "method" shadows form.method
+        if ((form.getAttribute("method") || "get").toLowerCase() === "get") {
             url.search = new URLSearchParams(/** @type {any} */ ([...body])).toString();
             this.visit(url.href);
         } else {

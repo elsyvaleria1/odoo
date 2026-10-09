@@ -225,7 +225,8 @@ export class PartialNavigation extends Interaction {
         const form = /** @type {HTMLFormElement} */ (ev.target);
         if (
             ev.defaultPrevented ||
-            form.method.toLowerCase() !== "get" ||
+            // the attribute: a control named "method" shadows form.method
+            (form.getAttribute("method") || "get").toLowerCase() !== "get" ||
             !this._isInScope(form)
         ) {
             return;

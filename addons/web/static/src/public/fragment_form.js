@@ -65,7 +65,12 @@ export class FragmentForm extends Interaction {
     /** @param {SubmitEvent} ev */
     async onSubmit(ev) {
         const form = /** @type {HTMLFormElement} */ (this.el);
-        if (ev.defaultPrevented || form.method !== "post") {
+        // attributes, not the properties: a control named "method" or
+        // "action" shadows form.method and form.action
+        if (
+            ev.defaultPrevented ||
+            (form.getAttribute("method") || "").toLowerCase() !== "post"
+        ) {
             return;
         }
         if (this.native) {
@@ -84,11 +89,9 @@ export class FragmentForm extends Interaction {
             if (form.dataset.confirm && !(await this.confirm(form.dataset.confirm))) {
                 return;
             }
-            const action = submitter?.getAttribute("formaction");
-            await this.post(
-                body,
-                action ? new URL(action, browser.location.href).href : form.action,
-            );
+            const action =
+                submitter?.getAttribute("formaction") || form.getAttribute("action");
+            await this.post(body, new URL(action || "", browser.location.href).href);
         } catch {
             this.native = true;
             form.requestSubmit(submitter);
