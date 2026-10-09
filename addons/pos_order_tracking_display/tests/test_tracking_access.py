@@ -57,3 +57,49 @@ class TestOrderTrackingAccess(HttpCase):
         kitchen = [name for target, name in sent if target == self._target("till")]
         self.assertEqual(tracking, ["NEW_ORDERS"])
         self.assertEqual(kitchen, ["LOAD_ORDERS", "NOTIFICATION"])
+
+    def test_the_open_tracking_screen_hears_new_orders_over_the_bus(self):
+        code = """
+            (async () => {
+                const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                const shows = (text) => document.body.innerText.includes(text);
+                await wait(2000);
+                await fetch("/web/dataset/call_kw/pos.prep.state/change_state_stage", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "call",
+                        params: {
+                            model: "pos.prep.state",
+                            method: "change_state_stage",
+                            args: [[], {}, %(display)s],
+                            kwargs: {},
+                        },
+                    }),
+                });
+                for (let i = 0; i < 100 && !shows("7031"); i++) {
+                    await wait(100);
+                }
+                if (shows("7031")) {
+                    console.log("test successful");
+                } else {
+                    console.error("the new order never reached the tracking screen");
+                }
+            })();
+        """ % {"display": self.display.id}
+        calls = []
+
+        def get_pos_orders(_display):
+            # the first call renders the page: the order must come by the bus
+            calls.append(None)
+            pending = ["7031"] if len(calls) > 1 else []
+            return {"done": [], "notDone": pending, "ordersCompletedReadyDate": {}}
+
+        with patch.object(type(self.display), "_get_pos_orders", get_pos_orders):
+            self.browser_js(
+                f"/pos-order-tracking/?access_token={self.display._tracking_token()}",
+                code,
+                login="admin",
+                timeout=60,
+            )
