@@ -4,15 +4,40 @@ import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
+/** @type {{ records: Record<string, number[]>, answer: Promise<any> } | null} */
+let pendingFollowState = null;
+
+/**
+ * Asks who follows the record, in one request for every widget starting in
+ * the same tick: a forum question renders one per tag.
+ *
+ * @param {string} model
+ * @param {number} id
+ * @returns {Promise<[{ is_user: boolean, email: string }, Record<string, number[]>]>}
+ */
+function fetchFollowState(model, id) {
+    if (!pendingFollowState) {
+        const records = {};
+        pendingFollowState = {
+            records,
+            answer: Promise.resolve().then(() => {
+                pendingFollowState = null;
+                return rpc("/website_mail/is_follower", { records });
+            }),
+        };
+    }
+    (pendingFollowState.records[model] ||= []).push(id);
+    return pendingFollowState.answer;
+}
+
 export class Follow extends Interaction {
-    static selector = "#wrapwrap";
-    static selectorHas = ".js_follow";
+    static selector = ".js_follow";
     dynamicContent = {
-        ".js_follow > .d-none": {
+        ":scope > .d-none": {
             "t-att-class": () => ({ "d-none": false }),
         },
         ".js_follow_btn, .js_unfollow_btn": {
-            "t-on-click.prevent.withTarget": this.onToggleFollowClick,
+            "t-on-click.prevent": this.onToggleFollowClick,
         },
     };
 
@@ -22,55 +47,33 @@ export class Follow extends Interaction {
     }
 
     async willStart() {
-        const jsFollowEls = this.el.querySelectorAll(".js_follow");
-
-        const records = {};
-        for (const jsFollowEl of jsFollowEls) {
-            const model = jsFollowEl.dataset.object;
-            if (!(model in records)) {
-                records[model] = [];
-            }
-            records[model].push(parseInt(jsFollowEl.dataset.id));
-        }
-
-        const promises = [
-            rpc("/website_mail/is_follower", { records: records }),
-            this.captcha.load(),
-        ];
-        const [data] = await this.waitFor(Promise.all(promises));
-
-        this.isUser = data[0].is_user;
-        for (const jsFollowEl of jsFollowEls) {
-            const model = jsFollowEl.dataset.object;
-            const email = data[0].email;
-            const needToEnable =
-                model in data[1] &&
-                data[1][model].includes(parseInt(jsFollowEl.dataset.id));
-            this.toggleSubscription(needToEnable, email, jsFollowEl);
-            jsFollowEl.classList.remove("d-none");
-        }
+        const model = this.el.dataset.object;
+        const id = parseInt(this.el.dataset.id);
+        const [[user, followed]] = await this.waitFor(
+            Promise.all([fetchFollowState(model, id), this.captcha.load()]),
+        );
+        this.isUser = user.is_user;
+        this.toggleSubscription(Boolean(followed[model]?.includes(id)), user.email);
+        this.el.classList.remove("d-none");
     }
 
     /**
      * @param {boolean} follow
      * @param {string} email
-     * @param {HTMLElement} jsFollowEl
      */
-    toggleSubscription(follow, email, jsFollowEl) {
+    toggleSubscription(follow, email) {
         this.updateSubscriptionDOM(
-            follow || (!email && jsFollowEl.dataset.unsubscribe),
+            follow || (!email && this.el.dataset.unsubscribe),
             email,
-            jsFollowEl,
         );
     }
 
     /**
      * @param {boolean} follow
      * @param {string} email
-     * @param {HTMLElement} jsFollowEl
      */
-    updateSubscriptionDOM(follow, email, jsFollowEl) {
-        const jsFollowEmailEl = jsFollowEl.querySelector("input.js_follow_email");
+    updateSubscriptionDOM(follow, email) {
+        const jsFollowEmailEl = this.el.querySelector("input.js_follow_email");
         if (jsFollowEmailEl) {
             jsFollowEmailEl.setAttribute("value", email || "");
             if (email && (follow || this.isUser)) {
@@ -79,35 +82,27 @@ export class Follow extends Interaction {
                 jsFollowEmailEl.removeAttribute("disabled");
             }
         }
-        jsFollowEl.dataset.follow = follow ? "on" : "off";
+        this.el.dataset.follow = follow ? "on" : "off";
     }
 
-    /**
-     * @param {HTMLElement} jsFollowEl
-     * @param {boolean} status
-     */
-    toggleEmailError(jsFollowEl, status) {
-        jsFollowEl.classList.toggle("o_has_error", status);
-        const formEls = jsFollowEl.querySelectorAll(".form-control, .form-select");
+    /** @param {boolean} status */
+    toggleEmailError(status) {
+        this.el.classList.toggle("o_has_error", status);
+        const formEls = this.el.querySelectorAll(".form-control, .form-select");
         for (const formEl of formEls) {
             formEl.classList.toggle("is-invalid", status);
         }
     }
 
-    /**
-     * @param {MouseEvent} ev
-     * @param {HTMLElement} currentTargetEl
-     */
-    async onToggleFollowClick(ev, currentTargetEl) {
-        const jsFollowEl = currentTargetEl.closest(".js_follow");
-        let email = jsFollowEl.querySelector(".js_follow_email");
+    async onToggleFollowClick() {
+        let email = this.el.querySelector(".js_follow_email");
 
         if (email && !/.+@.+/.test(email.value)) {
-            this.toggleEmailError(jsFollowEl, true);
+            this.toggleEmailError(true);
             return false;
         }
 
-        this.toggleEmailError(jsFollowEl, false);
+        this.toggleEmailError(false);
         email = email ? email.value : false;
         if (email || this.isUser) {
             const tokenCaptcha = await this.captcha.getToken("website_mail_follow");
@@ -123,15 +118,15 @@ export class Follow extends Interaction {
 
             const data = await this.waitFor(
                 rpc("/website_mail/follow", {
-                    id: parseInt(jsFollowEl.dataset.id),
-                    object: jsFollowEl.dataset.object,
-                    message_is_follower: jsFollowEl.dataset.follow || "off",
+                    id: parseInt(this.el.dataset.id),
+                    object: this.el.dataset.object,
+                    message_is_follower: this.el.dataset.follow || "off",
                     email: email,
                     ...(token ? { captcha_token: token } : {}),
                 }),
             );
 
-            this.toggleSubscription(data, email, jsFollowEl);
+            this.toggleSubscription(data, email);
         }
     }
 }

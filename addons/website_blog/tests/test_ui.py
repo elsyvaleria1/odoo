@@ -63,6 +63,11 @@ class TestWebsiteBlogUi(odoo.tests.HttpCase, TestWebsiteBlogCommon):
             login="admin",
         )
 
+    def test_follow_after_opening_a_blog_in_place(self):
+        self.env.ref("website_blog.opt_blog_sidebar_show").active = True
+        self.env["blog.blog"].create({"name": "zzz Other Blog"})
+        self.start_tour("/blog", "blog_follow_in_place")
+
     def test_autocomplete_with_date(self):
         self.env.ref("website_blog.opt_blog_sidebar_show").active = True
         self.env.ref("website_blog.opt_sidebar_blog_index_follow_us").active = False

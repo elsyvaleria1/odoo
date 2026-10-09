@@ -32,3 +32,14 @@ test("each widget reads its own record's follow state on initial render", async 
     expect('.js_follow[data-id="4"]').toHaveAttribute("data-follow", "on");
     expect('.js_follow[data-id="7"]').toHaveAttribute("data-follow", "off");
 });
+
+test("the widgets starting together share one follow state request", async () => {
+    onRpc("/website_mail/is_follower", async (request) => {
+        const { params } = await request.json();
+        expect.step(JSON.stringify(params.records));
+        return [{ is_user: false, email: "" }, { "res.partner": [7] }];
+    });
+    await startInteractions(template);
+    expect.verifySteps(['{"res.partner":[4,7]}']);
+    expect('.js_follow[data-id="7"]').toHaveAttribute("data-follow", "on");
+});
