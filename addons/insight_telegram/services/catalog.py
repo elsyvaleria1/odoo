@@ -973,7 +973,7 @@ def run_credit(ask):
     for document in documents[:CREDIT_DOCUMENTS]:
         kind = document.document_type_id
         tags = []
-        if document.is_guarantor:
+        if "is_guarantor" in document._fields and document.is_guarantor:
             tags.append(ask.env._("guarantor's"))
         if "has_collateral" in kind._fields and kind.has_collateral:
             tags.append(
