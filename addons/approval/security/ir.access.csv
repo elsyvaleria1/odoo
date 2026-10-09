@@ -56,3 +56,5 @@ access_approval_authority_limit_own,Authority Limit: a user reads their own limi
 access_approval_authority_limit_walk,Authority Limit: a walking step reads every limit,model_approval_authority_limit,privilege_walk_authority,permission,r,,,
 access_res_users_grant_walk,res.users.grant: a walking step reads the grants limits qualify,base.model_res_users_grant,privilege_walk_authority,permission,r,,,
 access_res_users_grant_approval_manager,res.users.grant: approval administrators read the grants they set limits on,base.model_res_users_grant,group_approval_manager,permission,r,,,
+privilege_read_delegations_approver,approval.approver: a segregation-of-duties check reads the delegations standing on pending requests,model_approval_approver,privilege_read_delegations,permission,r,,,
+privilege_read_delegations_request,approval.request: a segregation-of-duties check reads which requests a delegation stands on,model_approval_request,privilege_read_delegations,permission,r,,,

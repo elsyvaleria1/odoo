@@ -48,7 +48,10 @@ class IrAccessSodFunction(models.Model):
         excluded = self._get_duty_spec()["excluded"]
         standing_in = (
             self.env["approval.approver"]
-            .sudo()
+            .with_privilege(
+                "approval.privilege_read_delegations",
+                reason="a segregation-of-duties check reads who stands in for a duty",
+            )
             .search(
                 [
                     ("delegate_id", "in", users.ids),
