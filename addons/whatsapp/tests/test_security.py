@@ -124,6 +124,42 @@ class WhatsAppControllerSecurity(MockIncomingWhatsApp, WhatsAppSecurityCase):
                 self.assertEqual(response.status_code, 401)
                 self.assertEqual(response.json()["error"], "authentication_failed")
 
+    def test_a_business_account_with_two_phones_is_verified_by_either(self):
+        for second_secret in ("1234567890abcdef", "a-second-app-secret"):
+            with self.subTest(same_app=second_secret == "1234567890abcdef"):
+                second_phone = self.env["whatsapp.account"].create(
+                    {
+                        "account_uid": self.whatsapp_account.account_uid,
+                        "app_secret": second_secret,
+                        "app_uid": "contact",
+                        "name": f"odoo account, phone of {second_secret}",
+                        "notify_user_ids": self.whatsapp_account.notify_user_ids.ids,
+                        "phone_uid": f"second-{second_secret}",
+                        "token": "team leader",
+                    }
+                )
+                body = json_dumps_bytes(
+                    {"entry": [{"id": self.whatsapp_account.account_uid}]}
+                )
+                for account in (self.whatsapp_account, second_phone):
+                    sig = hmac.new(
+                        account.app_secret.encode(), body, hashlib.sha256
+                    ).hexdigest()
+                    response = self._make_webhook_request(
+                        account,
+                        message_data=body,
+                        headers={"X-Hub-Signature-256": f"sha256={sig}"},
+                    )
+                    self.assertEqual(response.status_code, 200)
+                forged = hmac.new(b"not-a-secret", body, hashlib.sha256).hexdigest()
+                response = self._make_webhook_request(
+                    second_phone,
+                    message_data=body,
+                    headers={"X-Hub-Signature-256": f"sha256={forged}"},
+                )
+                self.assertEqual(response.status_code, 401)
+                second_phone.unlink()
+
     def test_an_unknown_account_is_refused_and_recorded(self):
         response = self._make_webhook_request(
             self.whatsapp_account,

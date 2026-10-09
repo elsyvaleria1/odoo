@@ -27,15 +27,17 @@ class Webhook(http.Controller):
         data = admission.json()
         for entry in data["entry"]:
             account_id = entry["id"]
-            account = (
+            # Every entry of one delivery is signed with one app secret; an
+            # entry naming an account of another app fails its own check.
+            accounts = (
                 request.env["whatsapp.account"]
                 .sudo()
                 .search([("account_uid", "=", account_id)])
             )
-            # Every entry of one delivery is signed with one app secret; an
-            # entry naming an account of another app fails its own check.
-            if account != admission.subject and not account._is_webhook_signature_valid(
-                dict(request.httprequest.headers), admission.body
+            if account_id != admission.subject.account_uid and not (
+                accounts._webhook_signer(
+                    dict(request.httprequest.headers), admission.body
+                )
             ):
                 raise Forbidden
 

@@ -168,9 +168,15 @@ class WhatsappAccount(models.Model):
             account_uid = data["entry"][0]["id"]
         except ValueError, KeyError, IndexError, TypeError:
             return Resolution(self.browse(), claimed="no business account in the body")
-        account = self.sudo().search([("account_uid", "=", account_uid)], limit=1)
-        if not account:
+        accounts = self.sudo().search([("account_uid", "=", account_uid)])
+        if not accounts:
             return Resolution(self.browse(), claimed=f"account {account_uid}"[:64])
+        account = (
+            accounts._webhook_signer(
+                dict(request.httprequest.headers), request.httprequest.get_data()
+            )
+            or accounts[:1]
+        )
         return Resolution(account, verify=account._is_webhook_signature_valid)
 
     @api.model
@@ -208,6 +214,14 @@ class WhatsappAccount(models.Model):
                 account.sudo().webhook_verify_token, token
             ),
         )
+
+    def _webhook_signer(self, headers, body):
+        """The account of these whose app secret signed `body`, or none: the
+        phones of one business account are one account row each, and Meta
+        signs with the secret of the app each was registered under."""
+        return self.filtered(
+            lambda account: account._is_webhook_signature_valid(headers, body)
+        )[:1]
 
     def _is_webhook_signature_valid(self, headers, body) -> bool:
         """Whatsapp will sign all requests it makes to our endpoint."""
