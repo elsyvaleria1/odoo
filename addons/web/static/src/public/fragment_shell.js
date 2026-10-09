@@ -138,10 +138,33 @@ export class FragmentShell {
             return;
         }
         const page = parsePage(await response.text());
+        if (!this.hasRegionOf(page)) {
+            // a page of something else: the browser shows it, not the shell
+            this.leave(response.url);
+            return;
+        }
         if (push) {
             window.history.pushState({ fragmentShell: true }, "", response.url);
         }
         this.swapPage(page);
+    }
+
+    /** @param {string} url */
+    leave(url) {
+        window.location.assign(url);
+    }
+
+    /** @param {Document} page */
+    hasRegionOf(page) {
+        return [
+            .../** @type {NodeListOf<HTMLElement>} */ (
+                this.root.querySelectorAll("[data-fragment]")
+            ),
+        ].some((region) =>
+            page.querySelector(
+                `[data-fragment="${CSS.escape(region.dataset.fragment || "")}"]`,
+            ),
+        );
     }
 
     /**
@@ -168,6 +191,10 @@ export class FragmentShell {
                 return;
             }
             const page = parsePage(await response.text());
+            if (!this.hasRegionOf(page)) {
+                this.leave(response.url);
+                return;
+            }
             if (new URL(response.url).pathname !== window.location.pathname) {
                 window.history.pushState({ fragmentShell: true }, "", response.url);
             } else {
@@ -214,7 +241,7 @@ export class FragmentShell {
 
     /**
      * Morphs each region of the shell from its counterpart in `page`, and the
-     * title.
+     * title and language.
      *
      * @param {Document} page
      */
@@ -222,6 +249,10 @@ export class FragmentShell {
         const title = page.querySelector("title")?.textContent;
         if (title) {
             document.title = title;
+        }
+        const lang = page.documentElement.getAttribute("lang");
+        if (lang) {
+            document.documentElement.setAttribute("lang", lang);
         }
         for (const region of /** @type {NodeListOf<HTMLElement>} */ (
             this.root.querySelectorAll("[data-fragment]")

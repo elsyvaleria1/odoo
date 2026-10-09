@@ -530,7 +530,7 @@ for p in sorted(pathlib.Path(sys.argv[1]).rglob("*.js")):
 print(n)
 PYEOF
 )
-assert_eq "markup() trust-hatch import sites" "${markup_importers:-PARSE_FAILED}" "15"
+assert_eq "markup() trust-hatch import sites" "${markup_importers:-PARSE_FAILED}" "14"
 
 # startViewTransition cannot wrap OWL's render; lock its absence so the
 # feature cannot half-return without the docs moving with it.

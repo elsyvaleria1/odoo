@@ -1,10 +1,6 @@
 // @ts-check
 /** @odoo-module native */
 
-// owl's Markup, structurally: naming owl here, even in a type, would bundle it
-// into the standalone builds the morph is part of (@web/public/fragment_shell)
-/** @typedef {InstanceType<typeof String>} Markup */
-
 // Ported from htmx 4.0.0's built-in morph (bigskysoftware/htmx, branch `four`,
 // src/htmx.js `__morph`), itself derived from idiomorph; both are 0BSD.
 
@@ -37,7 +33,7 @@ const SCAN_LIMIT = 10;
  * `data-morph-preserve` is left exactly as it is, attributes and children.
  *
  * @param {Element} target
- * @param {Markup | Element | DocumentFragment} content
+ * @param {Element | DocumentFragment} content
  * @param {MorphOptions} [options]
  */
 export function morph(target, content, options = {}) {
@@ -74,15 +70,10 @@ export function morph(target, content, options = {}) {
 }
 
 /**
- * @param {Markup | Element | DocumentFragment} content
+ * @param {Element | DocumentFragment} content
  * @returns {DocumentFragment}
  */
-export function toFragment(content) {
-    if (content instanceof String) {
-        const template = document.createElement("template");
-        template.innerHTML = content.toString();
-        return template.content;
-    }
+function toFragment(content) {
     if (content instanceof DocumentFragment) {
         return content;
     }
@@ -92,7 +83,7 @@ export function toFragment(content) {
         return fragment;
     }
     throw new TypeError(
-        "morph takes Markup, an Element or a DocumentFragment, not a plain string",
+        "morph takes an Element or a DocumentFragment; parse markup first",
     );
 }
 

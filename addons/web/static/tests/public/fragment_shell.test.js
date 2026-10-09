@@ -70,9 +70,13 @@ function serve(answer) {
 }
 
 test("a link visits the page in place with the shell's headers", async () => {
+    const lang = document.documentElement.lang;
+    after(() => {
+        document.documentElement.lang = lang;
+    });
     startShell(list("<li>a</li>"));
     serve(() => ({
-        html: `<html><head><title>Page 2</title></head><body>${list("<li>b</li>")}</body></html>`,
+        html: `<html lang="es-MX"><head><title>Page 2</title></head><body>${list("<li>b</li>")}</body></html>`,
     }));
     const section = queryOne("[data-fragment='app.list']");
 
@@ -83,6 +87,21 @@ test("a link visits the page in place with the shell's headers", async () => {
     expect(queryOne("[data-fragment='app.list']")).toBe(section);
     expect("li").toHaveText("b");
     expect(document.title).toBe("Page 2");
+    expect(document.documentElement.lang).toBe("es-MX");
+});
+
+test("a page without the shell's regions is left to the browser", async () => {
+    const shell = startShell(list("<li>a</li>"));
+    serve(() => ({ html: "<html><body><p>Backend</p></body></html>" }));
+    patchWithCleanup(shell, {
+        leave: (url) => expect.step(`leave ${new URL(url).pathname}`),
+    });
+
+    await click(".o_next");
+    await animationFrame();
+
+    expect.verifySteps(["GET /app/list?page=2 init", "leave /app/list"]);
+    expect("li").toHaveText("a");
 });
 
 test("a link marked data-no-fragment is left to the browser", async () => {

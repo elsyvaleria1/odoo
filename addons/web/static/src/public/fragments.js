@@ -1,9 +1,8 @@
 // @ts-check
 /** @odoo-module native */
 
-import { markup } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
-import { morph, toFragment } from "@web/core/utils/dom/morph";
+import { morph } from "@web/core/utils/dom/morph";
 
 /** @typedef {import("@web/public/interaction_service").InteractionService} InteractionService */
 
@@ -63,7 +62,7 @@ export function applyFragments(response, { interactions, root = document }) {
  */
 export function swapFragment(target, html, swap, interactions) {
     interactions.stopInteractions(target);
-    const swapped = swapInto(target, markup(html), swap);
+    const swapped = swapInto(target, html, swap);
     interactions.startInteractions(swapped);
     interactions.updateEnclosing(swapped);
     swapped.dispatchEvent(new CustomEvent("o-fragment-swapped", { bubbles: true }));
@@ -72,12 +71,14 @@ export function swapFragment(target, html, swap, interactions) {
 
 /**
  * @param {HTMLElement} target
- * @param {import("@odoo/owl").Markup} html
+ * @param {string} html trusted server markup
  * @param {"morph" | "inner" | "outer"} swap
  * @returns {HTMLElement} the element now standing where `target` stood
  */
 function swapInto(target, html, swap) {
-    const newRoot = /** @type {HTMLElement} */ (toFragment(html).firstElementChild);
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const newRoot = /** @type {HTMLElement} */ (template.content.firstElementChild);
     if (swap === "outer") {
         target.replaceWith(newRoot);
         return newRoot;
