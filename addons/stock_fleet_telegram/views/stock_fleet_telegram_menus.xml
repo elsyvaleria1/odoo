@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_stock_delivery_slip_receipt"
+        parent="stock.menu_stock_transfers"
+        action="action_stock_delivery_slip_receipt"
+        sequence="25"
+        groups="stock_fleet.group_delivery_proof_reviewer" />
+
+</odoo>

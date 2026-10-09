@@ -1,0 +1,11 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_telegram_delivery_slip_user,telegram.delivery.slip.user,model_telegram_delivery_slip,base.group_user,permission,r,own,partner,
+access_telegram_delivery_slip_manager,telegram.delivery.slip.manager,model_telegram_delivery_slip,base.group_system,permission,crud,,,
+telegram_delivery_slip_privilege_operate,telegram.delivery.slip: the bot keeps the slips of the chats it serves,model_telegram_delivery_slip,telegram.privilege_operate_bot,permission,cru,,,
+telegram_delivery_slip_reviewer,telegram.delivery.slip: reviewers take a slip off the batch whose paper did not arrive,model_telegram_delivery_slip,stock_fleet.group_delivery_proof_reviewer,permission,ru,,,
+access_stock_delivery_slip_receipt_user,stock.delivery.slip.receipt.user,model_stock_delivery_slip_receipt,stock.group_stock_user,permission,r,,,
+access_stock_delivery_slip_receipt_reviewer,stock.delivery.slip.receipt.reviewer,model_stock_delivery_slip_receipt,stock_fleet.group_delivery_proof_reviewer,permission,cru,,,
+access_stock_delivery_slip_receipt_manager,stock.delivery.slip.receipt.manager,model_stock_delivery_slip_receipt,base.group_system,permission,crud,,,
+stock_delivery_slip_receipt_privilege_operate,stock.delivery.slip.receipt: the bot gathers the slips of the chats it serves in batches,model_stock_delivery_slip_receipt,telegram.privilege_operate_bot,permission,cru,,,
+stock_delivery_slip_receipt_comp_rule,Signed Delivery Slip Receipt: multi-company,model_stock_delivery_slip_receipt,base.group_everyone,guard,crud,company,,
+telegram_delivery_slip_comp_rule,Telegram Delivery Slip: multi-company,model_telegram_delivery_slip,base.group_everyone,guard,crud,company,,

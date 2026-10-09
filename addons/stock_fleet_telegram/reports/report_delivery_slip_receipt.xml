@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_delivery_slip_receipt_document">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=lang)" />
+            <div class="page">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h3>Delivery Slip Reception</h3>
+                        <div><strong>Folio:</strong> <span t-field="o.name" /></div>
+                        <div><strong>Delivered by:</strong> <span t-field="o.delivered_by_id" /></div>
+                        <div><strong>Received by:</strong> <span t-field="o.received_by_id" /></div>
+                        <div t-if="o.date_receipt">
+                            <strong>Date:</strong> <span t-field="o.date_receipt" />
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-sm table-bordered o_main_table">
+                    <thead>
+                        <tr>
+                            <th class="text-start">Delivered On</th>
+                            <th class="text-start">Delivery Order</th>
+                            <th class="text-start">Source Document</th>
+                            <th class="text-start">Customer Name</th>
+                            <th class="text-start">Validated On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="o.slip_ids" t-as="slip">
+                            <td><span t-field="slip.create_date" t-options="{'widget': 'date'}" /></td>
+                            <td><span t-field="slip.picking_id.name" /></td>
+                            <td><span t-field="slip.origin" /></td>
+                            <td><span t-field="slip.partner_id.name" /></td>
+                            <td><span t-field="slip.date_done" t-options="{'widget': 'date'}" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    <strong>Total:</strong>
+                    <t t-out="len(o.slip_ids)" /> signed delivery slips
+                </p>
+                <p t-if="o.note"><strong>Notes:</strong> <span t-field="o.note" /></p>
+                <div
+                    class="text-center"
+                    style="margin-top: 25mm; page-break-inside: avoid;">
+                    <div
+                        style="display: inline-block; width: 42%; border-top: 1px solid #000; padding-top: 2mm;">
+                        Delivered by<br />
+                        <span t-field="o.delivered_by_id" />
+                    </div>
+                    <div style="display: inline-block; width: 10%;" />
+                    <div
+                        style="display: inline-block; width: 42%; border-top: 1px solid #000; padding-top: 2mm;">
+                        Received by<br />
+                        <span t-field="o.received_by_id" />
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_delivery_slip_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t
+                    t-set="lang"
+                    t-value="o.company_id.partner_id.lang or o.received_by_id.lang or o.env.lang" />
+                <t
+                    t-call="stock_fleet_telegram.report_delivery_slip_receipt_document"
+                    t-lang="lang" />
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_delivery_slip_receipt" model="ir.actions.report">
+        <field name="name">Delivery Slip Reception</field>
+        <field name="model">stock.delivery.slip.receipt</field>
+        <field name="report_type">qweb-pdf</field>
+        <field
+            name="report_name">stock_fleet_telegram.report_delivery_slip_receipt</field>
+        <field
+            name="report_file">stock_fleet_telegram.report_delivery_slip_receipt</field>
+        <field
+            name="print_report_name">'Delivery Slip Reception %s' % object.name</field>
+        <!-- No report cache: a reprint follows the batch as it is now. -->
+        <field name="attachment" eval="False" />
+        <field name="attachment_use" eval="False" />
+        <field name="binding_model_id" ref="model_stock_delivery_slip_receipt" />
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>

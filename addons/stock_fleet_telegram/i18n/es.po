@@ -17,46 +17,219 @@ msgstr ""
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "%(command)s - Send the photo of a delivery slip the customer signed."
-msgstr "%(command)s - Envía la foto de una remisión firmada por el cliente."
+msgid "%(command)s - Send the photos or PDFs of the delivery slips the customer signed, then press Finish to hand the papers to administration."
+msgstr "%(command)s - Envía las fotos o PDF de las remisiones que firmó el cliente y toca Terminar para entregar los papeles a administración."
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "%(picking)s for %(customer)s. %(action)s"
-msgstr "%(picking)s para %(customer)s. %(action)s"
+msgid "%(file)s weighs more than 20 MB, the most Telegram lets a bot download. Send a photo of the slip instead."
+msgstr "%(file)s pesa más de 20 MB, lo máximo que Telegram deja descargar a un bot. Mejor envía una foto de la remisión."
 
 #. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "%(picking)s: signed slip filed."
-msgstr "%(picking)s: remisión firmada registrada."
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s (%(partner)s) delivered: I validated it and filed the signed slip on it."
+msgstr "%(picking)s (%(partner)s) entregada: la validé y le guardé la remisión firmada."
 
 #. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "%(picking)s: signed slip filed. Hand the paper in by %(due)s."
-msgstr ""
-"%(picking)s: remisión firmada registrada. Entrega el papel a más tardar el "
-"%(due)s."
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s (%(partner)s) delivered: I validated it with the signed slip it already had."
+msgstr "%(picking)s (%(partner)s) entregada: la validé con la remisión firmada que ya tenía."
 
 #. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s (%(partner)s): signed slip filed."
+msgstr "%(picking)s (%(partner)s): remisión firmada guardada."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s (%(partner)s): signed slip filed. It is still to be validated: %(reason)s."
+msgstr "%(picking)s (%(partner)s): remisión firmada guardada. Falta validarla: %(reason)s."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s already has its signed slip, from %(user)s; I did not file the photo."
+msgstr "%(picking)s ya tiene su remisión firmada, de %(user)s; no guardé la foto."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s already has the customer's signature, from %(user)s; I did not file the photo."
+msgstr "%(picking)s ya tiene la firma del cliente, de %(user)s; no guardé la foto."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s is not a delivery."
+msgstr "%(picking)s no es una entrega."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "%(picking)s is not ready to deliver: the step before it has not been validated in the warehouse."
+msgstr "%(picking)s no está lista para entregarse: el paso anterior no se ha validado en el almacén."
+
+#. module: stock_fleet_telegram
+#: model:ir.actions.report,print_report_name:stock_fleet_telegram.action_report_delivery_slip_receipt
+msgid "'Delivery Slip Reception %s' % object.name"
+msgstr "'Recepción de remisiones %s' % object.name"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Date:</strong>"
+msgstr "<strong>Fecha:</strong>"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Delivered by:</strong>"
+msgstr "<strong>Entregó:</strong>"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Folio:</strong>"
+msgstr "<strong>Folio:</strong>"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Notes:</strong>"
+msgstr "<strong>Notas:</strong>"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Received by:</strong>"
+msgstr "<strong>Recibió:</strong>"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "<strong>Total:</strong>"
+msgstr "<strong>Total:</strong>"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "Administration already awaits its paper from %(user)s."
+msgstr "Administración ya espera su papel de %(user)s."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "Administration already received the signed paper of %(picking)s; I did not file the photo."
+msgstr "Administración ya recibió el papel firmado de %(picking)s; no guardé la foto."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__bot_id
+msgid "Bot"
+msgstr "Bot"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
 msgid "Cancel"
 msgstr "Cancelar"
 
 #. module: stock_fleet_telegram
-#. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "Cancelled; nothing was filed."
-msgstr "Cancelado; no se registró nada."
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__stock_delivery_slip_receipt__state__cancel
+msgid "Cancelled"
+msgstr "Cancelado"
 
 #. module: stock_fleet_telegram
-#. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "Confirm"
-msgstr "Confirmar"
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Cancelling a confirmed batch marks its papers as not received again. Continue?"
+msgstr "Cancelar una recepción confirmada vuelve a marcar sus papeles como no recibidos. ¿Continuar?"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__chat_id
+msgid "Chat"
+msgstr "Chat"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__checksum
+msgid "Checksum"
+msgstr "Suma de verificación"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__choice
+msgid "Chosen by the sender"
+msgstr "Elegida por quien la envió"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__code
+msgid "Code on the slip"
+msgstr "Código de la remisión"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__company_id model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Confirm Receipt"
+msgstr "Confirmar recepción"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__partner_id
+msgid "Contact"
+msgstr "Contacto"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__create_uid model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__create_date model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Customer Name"
+msgstr "Nombre del cliente"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__date_done
+msgid "Date at which the transfer was processed. Cancelling never sets it."
+msgstr "Fecha en que se procesó el traslado. Cancelarlo nunca la establece."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__outcome__delivered
+msgid "Delivered"
+msgstr "Entregada"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__delivered_by_id model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "Delivered By"
+msgstr "Entregó"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Delivered On"
+msgstr "Entregada el"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Delivered by<br/>"
+msgstr "Entregó<br/>"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__outcome
+msgid "Delivered: the bot validated the delivery order with the slip. Slip Filed: the slip is on it, and whoever validates it no longer lacks it."
+msgstr "Entregada: el bot validó la salida con la remisión. Remisión guardada: la remisión ya está en ella, y a quien la valide ya no le falta."
 
 #. module: stock_fleet_telegram
 #. odoo-python
@@ -65,33 +238,240 @@ msgid "Deliveries"
 msgstr "Entregas"
 
 #. module: stock_fleet_telegram
-#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__display_name
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__picking_id model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "Delivery Order"
+msgstr "Salida"
+
+#. module: stock_fleet_telegram
+#: model:ir.actions.act_window,name:stock_fleet_telegram.action_stock_delivery_slip_receipt model:ir.actions.report,name:stock_fleet_telegram.action_report_delivery_slip_receipt model:ir.ui.menu,name:stock_fleet_telegram.menu_stock_delivery_slip_receipt model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Delivery Slip Reception"
+msgstr "Recepción de remisiones"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "Delivery Slip Reception %s.pdf"
+msgstr "Recepción de remisiones %s.pdf"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__slip_ids
+msgid "Delivery Slips"
+msgstr "Remisiones"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "Delivery slip reception %(name)s confirmed: %(count)s slips, delivered by %(deliverer)s, received by %(receiver)s."
+msgstr "Recepción de remisiones %(name)s confirmada: %(count)s remisiones, entregó %(deliverer)s, recibió %(receiver)s."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__display_name model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_picking__display_name model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__display_name model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
 
 #. module: stock_fleet_telegram
-#. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "I could not read which delivery this is. Which one?"
-msgstr "No pude leer de qué entrega se trata. ¿Cuál es?"
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__stock_delivery_slip_receipt__state__draft
+msgid "Draft"
+msgstr "Borrador"
 
 #. module: stock_fleet_telegram
-#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__id
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__error_message
+msgid "Error Message"
+msgstr "Mensaje de error"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__file_id
+msgid "File"
+msgstr "Archivo"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__file_name
+msgid "File Name"
+msgstr "Nombre del archivo"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__file_unique_id
+msgid "File Unique"
+msgstr "Identificador único del archivo"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Finish"
+msgstr "Terminar"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__name
+msgid "Folio"
+msgstr "Folio"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__found_by
+msgid "Found By"
+msgstr "Encontrada por"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "Hand the paper in by %(due)s."
+msgstr "Entrega el papel a más tardar el %(due)s."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__found_by
+msgid "How the delivery order was found on the file."
+msgstr "Cómo se encontró la salida en el archivo."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "I could not read %(file)s as an image; send it as a photo."
+msgstr "No pude leer %(file)s como imagen; envíala como foto."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "I could not read the QR code or the delivery number on the slip, and no delivery of yours is waiting for one. Send it again in focus, with the whole slip in view."
+msgstr "No pude leer el código QR ni el número de la salida en la remisión, y no tienes ninguna entrega esperando su remisión. Envíala de nuevo enfocada, con toda la remisión a la vista."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "I could not tell which delivery this slip is. Which one?"
+msgstr "No supe de qué entrega es esta remisión. ¿Cuál es?"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__id model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_picking__id model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__id model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_handler_stock_fleet__id
 msgid "ID"
 msgstr "ID"
 
 #. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_error model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "In Progress"
+msgstr "En proceso"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "It is marked delivered and the photo filed as its signed slip."
-msgstr ""
-"Se marca como entregada y la foto se registra como su remisión firmada."
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "It is still to be validated: %(reason)s."
+msgstr "Falta validarla: %(reason)s."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__write_uid model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__write_date model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_stock_delivery_slip_receipt
+msgid "No delivery slips to receive"
+msgstr "No hay remisiones por recibir"
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "No delivery of yours is waiting for its slip."
-msgstr "Ninguna entrega tuya espera su remisión."
+msgid "None of these"
+msgstr "Ninguna de estas"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Not Arrived"
+msgstr "No llegó"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__note
+msgid "Note"
+msgstr "Nota"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Notes..."
+msgstr "Notas..."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Nothing filed for that slip."
+msgstr "No guardé nada de esa remisión."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__found_by__text
+msgid "Number and customer printed"
+msgstr "Número y cliente impresos"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__candidate_ids
+msgid "Offered Delivery Orders"
+msgstr "Salidas ofrecidas"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "Only an open batch can be confirmed."
+msgstr "Solo se puede confirmar una recepción abierta."
 
 #. module: stock_fleet_telegram
 #. odoo-python
@@ -100,28 +480,209 @@ msgid "Only whoever delivers sends signed slips here."
 msgstr "Sólo quien entrega envía aquí remisiones firmadas."
 
 #. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Open delivery order"
+msgstr "Abrir salida"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__outcome
+msgid "Outcome"
+msgstr "Resultado"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Paper did not arrive"
+msgstr "El papel no llegó"
+
+#. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "Send a delivery slip the customer signed"
-msgstr "Enviar una remisión firmada por el cliente"
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "Paper reception reverted: batch %s cancelled."
+msgstr "Recepción del papel revertida: se canceló la recepción %s."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__website_message_ids
+msgid "Portal Messages"
+msgstr "Mensajes del portal"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__website_message_ids
+msgid "Portal communication history for this record."
+msgstr "Historial de comunicación del portal de este registro."
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Print Receipt"
+msgstr "Imprimir recepción"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__receipt_id
+msgid "Receipt Batch"
+msgstr "Recepción de papeles"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__stock_delivery_slip_receipt__state__done model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "Received"
+msgstr "Recibido"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__received_by_id
+msgid "Received By"
+msgstr "Recibió"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__date_receipt model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "Received On"
+msgstr "Recibido el"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Received by<br/>"
+msgstr "Recibió<br/>"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__state__done
+msgid "Recorded"
+msgstr "Registrada"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__origin
+msgid "Reference of the document"
+msgstr "Referencia del documento"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__state__error
+msgid "Refused"
+msgstr "Rechazada"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__checksum
+msgid "SHA-1 of the file's bytes: the same photo sent again from the gallery gets a new Telegram id but the same checksum."
+msgstr "SHA-1 del contenido del archivo: la misma foto enviada otra vez desde la galería recibe otro id de Telegram, pero la misma suma."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Error de envío del SMS"
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "Send it as a photo, please."
-msgstr "Envíala como foto, por favor."
+msgid "Send the delivery slips the customer signed"
+msgstr "Enviar las remisiones que firmó el cliente"
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
 msgid ""
-"Send the photo of the delivery slip the customer signed, with its QR code in view.\n"
+"Send the photo or PDF of each delivery slip the customer signed, one slip per photo, as many as you have, with its QR code in view. A delivery on the trip you drive is marked delivered; any other gets its slip filed, ready to be validated. When you are done, press Finish.\n"
 "\n"
 "/cancelar stops at any time."
 msgstr ""
-"Envía la foto de la remisión que firmó el cliente, con su código QR a la vista.\n"
+"Envía la foto o el PDF de cada remisión que firmó el cliente, una remisión por foto, las que tengas, con su código QR a la vista. Una entrega del viaje que manejas queda entregada; cualquier otra se queda con su remisión, lista para validarse. Cuando termines, toca Terminar.\n"
 "\n"
-"/cancelar detiene el proceso en cualquier momento."
+"/cancelar detiene todo en cualquier momento."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Send the slip as a photo or a PDF: I find the delivery on the signed paper, never from a typed number."
+msgstr "Envía la remisión como foto o PDF: la entrega la encuentro en el papel firmado, nunca por un número escrito."
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid ""
+"Sent from Telegram by whoever delivered the goods. Check each\n"
+"                        delivery slip against the paper received; remove the lines whose\n"
+"                        paper did not arrive, then confirm."
+msgstr ""
+"Enviado desde Telegram por quien entregó la mercancía. Revisa cada\n"
+"                        remisión contra el papel recibido; quita las líneas cuyo\n"
+"                        papel no llegó y luego confirma."
+
+#. module: stock_fleet_telegram
+#: model:ir.model,name:stock_fleet_telegram.model_stock_delivery_slip_receipt model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_form
+msgid "Signed Delivery Slip Receipt"
+msgstr "Recepción de remisiones firmadas"
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_list
+msgid "Signed Delivery Slip Receipts"
+msgstr "Recepciones de remisiones firmadas"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "Signed delivery slip received through Telegram."
+msgstr "Remisión firmada recibida por Telegram."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "Signed slip received on paper in batch %s."
+msgstr "Remisión firmada recibida en papel en la recepción %s."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__outcome__filed
+msgid "Slip Filed"
+msgstr "Remisión guardada"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__slip_count
+msgid "Slips"
+msgstr "Remisiones"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid ""
+"Slips to hand in: %(count)s\n"
+"\n"
+"%(list)s\n"
+"\n"
+"Hand the signed papers to administration; it confirms them against this list."
+msgstr ""
+"Remisiones por entregar: %(count)s\n"
+"\n"
+"%(list)s\n"
+"\n"
+"Entrega los papeles firmados a administración; los coteja contra esta lista."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
+msgid "Something went wrong with that slip; send it again."
+msgstr "Algo falló con esa remisión; envíala de nuevo."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__origin model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Source Document"
+msgstr "Documento origen"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__state model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__state
+msgid "State"
+msgstr "Estado"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_stock_delivery_slip_receipt__telegram_chat_id
+msgid "Telegram Chat"
+msgstr "Chat de Telegram"
+
+#. module: stock_fleet_telegram
+#: model:ir.model,name:stock_fleet_telegram.model_telegram_delivery_slip
+msgid "Telegram Delivery Slip"
+msgstr "Remisión de Telegram"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__file_unique_id
+msgid "Telegram's id for the file's content, the same however many times it is sent: a file sent again is recognized and not read twice."
+msgstr "Id de Telegram para el contenido del archivo, el mismo sin importar cuántas veces se envíe: un archivo reenviado se reconoce y no se lee dos veces."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__file_id
+msgid "Telegram's id to download the file."
+msgstr "Id de Telegram para descargar el archivo."
 
 #. module: stock_fleet_telegram
 #: model:ir.model,name:stock_fleet_telegram.model_telegram_handler_stock_fleet
@@ -137,29 +698,190 @@ msgstr "Ese botón ya no es válido."
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "That delivery is no longer waiting for its slip."
-msgstr "Esa entrega ya no espera su remisión."
+msgid "That same file was already filed on %(picking)s. If you were asked for another photo, take a new one."
+msgstr "Ese mismo archivo ya se guardó en %(picking)s. Si te pidieron otra foto, toma una nueva."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "The batch has no delivery slip left to receive."
+msgstr "La recepción ya no tiene remisiones por recibir."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__receipt_id
+msgid "The batch whose paper administration receives this slip in."
+msgstr "La recepción en la que administración recibe el papel de esta remisión."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__telegram_chat_id
+msgid "The chat whose slips this batch gathers while it is open."
+msgstr "El chat cuyas remisiones reúne esta recepción mientras está abierta."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_telegram_delivery_slip__candidate_ids
+msgid "The delivery orders the sender was offered to choose from: a button names one of these or none."
+msgstr "Las salidas que se le ofrecieron a quien envió la remisión: cada botón nombra una de ellas o ninguna."
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "The photo did not arrive; send it again."
-msgstr "La foto no llegó; envíala de nuevo."
+msgid "The file did not arrive; send it again."
+msgstr "El archivo no llegó; envíalo de nuevo."
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_delivery_slip_receipt.py:0
+msgid "The paper of %(pickings)s was already received. Remove it from this batch before confirming."
+msgstr "El papel de %(pickings)s ya se recibió. Quítalo de esta recepción antes de confirmar."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__telegram_delivery_slip__state__pending
+msgid "To Identify"
+msgstr "Por identificar"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields.selection,name:stock_fleet_telegram.selection__stock_delivery_slip_receipt__state__submitted model_terms:ir.ui.view,arch_db:stock_fleet_telegram.view_stock_delivery_slip_receipt_search
+msgid "To Receive"
+msgstr "Por recibir"
+
+#. module: stock_fleet_telegram
+#: model:ir.model,name:stock_fleet_telegram.model_stock_picking
+msgid "Transfer"
+msgstr "Traslado"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,field_description:stock_fleet_telegram.field_telegram_delivery_slip__date_done model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "Validated On"
+msgstr "Validada el"
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__delivered_by_id
+msgid "Who delivered the goods and hands the signed slips over: the user who sent their photos through Telegram."
+msgstr "Quien entregó la mercancía y entrega las remisiones firmadas: el usuario que mandó sus fotos por Telegram."
+
+#. module: stock_fleet_telegram
+#: model:ir.model.fields,help:stock_fleet_telegram.field_stock_delivery_slip_receipt__received_by_id
+msgid "Who received the signed slips on paper. Set on confirmation when left empty."
+msgstr "Quien recibió las remisiones firmadas en papel. Si se deja vacío, se llena al confirmar."
+
+#. module: stock_fleet_telegram
+#: model_terms:ir.actions.act_window,help:stock_fleet_telegram.action_stock_delivery_slip_receipt
+msgid ""
+"Whoever delivers sends the signed slips through Telegram with\n"
+"                /entrega and closes the list with its Finish button; the list lands\n"
+"                here to be confirmed against the paper."
+msgstr ""
+"Quien entrega envía las remisiones firmadas por Telegram con\n"
+"                /entrega y cierra la lista con su botón Terminar; la lista llega\n"
+"                aquí para cotejarse contra el papel."
 
 #. module: stock_fleet_telegram
 #. odoo-python
 #: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "The photo is filed as its signed slip."
-msgstr "La foto se registra como su remisión firmada."
+msgid "You have no slip left to hand in."
+msgstr "No te quedan remisiones por entregar."
 
 #. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "The slip was not filed: %(reason)s"
-msgstr "La remisión no se registró: %(reason)s"
+#: code:addons/stock_fleet_telegram/models/stock_picking.py:0
+msgid "it is not on a trip"
+msgstr "no va en ningún viaje"
 
 #. module: stock_fleet_telegram
 #. odoo-python
-#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0
-msgid "a signed delivery slip"
-msgstr "una remisión firmada"
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "it needs an answer only Odoo asks; validate it there"
+msgstr "necesita una respuesta que solo pide Odoo; valídala ahí"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_picking.py:0
+msgid "only the driver of trip %(trip)s marks it delivered"
+msgstr "solo el operador del viaje %(trip)s la marca como entregada"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_handler.py:0 model_terms:ir.ui.view,arch_db:stock_fleet_telegram.report_delivery_slip_receipt_document
+msgid "signed delivery slips"
+msgstr "remisiones firmadas"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/telegram_delivery_slip.py:0
+msgid "the file"
+msgstr "el archivo"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_picking.py:0
+msgid "trip %(trip)s has not departed"
+msgstr "el viaje %(trip)s no ha salido"
+
+#. module: stock_fleet_telegram
+#. odoo-python
+#: code:addons/stock_fleet_telegram/models/stock_picking.py:0
+msgid "trip %(trip)s is already closed"
+msgstr "el viaje %(trip)s ya está cerrado"
+
+#~ msgid "'Recepcion de remisiones %s' % object.name"
+#~ msgstr "'Recepcion de remisiones %s' % object.name"
+
+#~ msgid "validating it needs an answer only Odoo asks; validate it there"
+#~ msgstr "para validarla hace falta una respuesta que solo pide Odoo; valídala ahí"
+
+#~ msgid "%(command)s - Send the photo of a delivery slip the customer signed."
+#~ msgstr "%(command)s - Envía la foto de una remisión firmada por el cliente."
+
+#~ msgid "%(picking)s for %(customer)s. %(action)s"
+#~ msgstr "%(picking)s para %(customer)s. %(action)s"
+
+#~ msgid "%(picking)s: signed slip filed."
+#~ msgstr "%(picking)s: remisión firmada registrada."
+
+#~ msgid "%(picking)s: signed slip filed. Hand the paper in by %(due)s."
+#~ msgstr "%(picking)s: remisión firmada registrada. Entrega el papel a más tardar el %(due)s."
+
+#~ msgid "Cancelled; nothing was filed."
+#~ msgstr "Cancelado; no se registró nada."
+
+#~ msgid "Confirm"
+#~ msgstr "Confirmar"
+
+#~ msgid "I could not read which delivery this is. Which one?"
+#~ msgstr "No pude leer de qué entrega se trata. ¿Cuál es?"
+
+#~ msgid "It is marked delivered and the photo filed as its signed slip."
+#~ msgstr "Se marca como entregada y la foto se registra como su remisión firmada."
+
+#~ msgid "No delivery of yours is waiting for its slip."
+#~ msgstr "Ninguna entrega tuya espera su remisión."
+
+#~ msgid "Send a delivery slip the customer signed"
+#~ msgstr "Enviar una remisión firmada por el cliente"
+
+#~ msgid "Send it as a photo, please."
+#~ msgstr "Envíala como foto, por favor."
+
+#~ msgid ""
+#~ "Send the photo of the delivery slip the customer signed, with its QR code in view.\n"
+#~ "\n"
+#~ "/cancelar stops at any time."
+#~ msgstr ""
+#~ "Envía la foto de la remisión que firmó el cliente, con su código QR a la vista.\n"
+#~ "\n"
+#~ "/cancelar detiene el proceso en cualquier momento."
+
+#~ msgid "That delivery is no longer waiting for its slip."
+#~ msgstr "Esa entrega ya no espera su remisión."
+
+#~ msgid "The photo did not arrive; send it again."
+#~ msgstr "La foto no llegó; envíala de nuevo."
+
+#~ msgid "The photo is filed as its signed slip."
+#~ msgstr "La foto se registra como su remisión firmada."
+
+#~ msgid "The slip was not filed: %(reason)s"
+#~ msgstr "La remisión no se registró: %(reason)s"
+
+#~ msgid "a signed delivery slip"
+#~ msgstr "una remisión firmada"
