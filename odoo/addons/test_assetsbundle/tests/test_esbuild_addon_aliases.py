@@ -37,3 +37,19 @@ class TestEsbuildAddonAliases(BaseCase):
             ),
             1,
         )
+
+    def test_an_unreadable_manifest_does_not_shadow_the_module(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first, second = root / "odoo" / "addons", root / "l10n"
+            for path, manifest in ((first, "{oops"), (second, "{}")):
+                module = path / "l10n_broken"
+                (module / "static" / "src").mkdir(parents=True)
+                (module / "__manifest__.py").write_text(manifest)
+
+            aliases = self._aliases(root / "odoo", [first, second])
+
+        self.assertEqual(
+            [alias for alias in aliases if alias.startswith("--alias:@l10n_broken=")],
+            ["--alias:@l10n_broken=./../l10n/l10n_broken/static/src"],
+        )
