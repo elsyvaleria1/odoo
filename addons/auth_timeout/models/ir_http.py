@@ -127,7 +127,8 @@ class IrHttp(models.AbstractModel):
         if credential.get("type") in ("totp", "totp_mail"):
             credential["token"] = int(re.sub(r"\s", "", credential["token"]))
 
-        auth = user._check_credentials(credential, {"interactive": True})
+        with user._assert_can_auth(user=user.id):
+            auth = user._check_credentials(credential, {"interactive": True})
 
         if first_fa and first_fa != auth["auth_method"]:
             request.session.pop("identity-check-1fa")

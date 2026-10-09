@@ -357,13 +357,13 @@ class AccessMixin(_ModelStubs):
             if not policy.model_allowed(env, self._name, operation):
                 return Domain.FALSE
             return policy.record_domain(env, self._name, operation)
-        if not self.sudo(False).browse().has_access(operation):
-            return Domain.FALSE
         if operation != "read":
             raise ValueError(
                 f"{self._name} decides {operation!r} access in Python: no domain "
                 f"states it"
             )
+        if not self.sudo(False).browse().has_access(operation):
+            return Domain.FALSE
         query = self.sudo(False).with_context(active_test=False)._search([])
         return Domain("id", "in", query)
 

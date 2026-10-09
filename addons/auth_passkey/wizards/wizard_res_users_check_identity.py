@@ -21,7 +21,9 @@ class WizardResUsersCheckIdentity(models.TransientModel):
                     "webauthn_response": self.env.context.get("password"),
                     "type": "webauthn",
                 }
-                self.create_uid._check_credentials(credential, {"interactive": True})
+                user = self.create_uid
+                with user._assert_can_auth(user=user.id):
+                    user._check_credentials(credential, {"interactive": True})
             except AccessDenied:
                 raise UserError(
                     self.env._(

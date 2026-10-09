@@ -8,6 +8,7 @@ import odoo.http
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 from odoo.tests.common import HOST
+from odoo.tools import mute_logger
 
 from odoo.addons.auth_totp.controllers.home import TRUSTED_DEVICE_COOKIE
 from odoo.addons.auth_totp.models.totp import TOTP
@@ -352,6 +353,22 @@ class TestAuthTimeoutHttp(HttpCase):
 
         # Check a full login is required
         self.assertSessionExpired()
+
+    @mute_logger("odoo.addons.base.models.res_users")
+    def test_check_identity_is_behind_the_login_cooldown(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "base.login_cooldown_after", "2"
+        )
+        group = self.user.group_ids[0]
+        session_id = self.authenticate(self.user.login, self.user.login).sid
+        group.lock_timeout_inactivity = 15
+        self.set_session_next_check_identity(session_id, time.time())
+
+        for _attempt in range(2):
+            self.check_identity({"type": "password", "password": "wrong"})
+        self.check_identity({"type": "password", "password": self.user.login})
+
+        self.assertMustCheckIdentity()
 
     def test_authentication_methods(self):
         group = self.user.group_ids[0]

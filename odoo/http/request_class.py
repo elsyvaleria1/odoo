@@ -128,6 +128,12 @@ class Request(
 
     @property
     def session_binding_verdict(self) -> bool | None:
+        # read on the primary before the replica was borrowed, it stands in
+        # for that read only while the request reads the replica: on a primary
+        # cursor -- a write route, a promoted or retried attempt, a replica
+        # given up -- the binding is read again on that cursor's snapshot
+        if self.fresh_primary_cursor is not None:
+            return None
         found = getattr(self.scratch, "session_binding", None)
         session = self.session
         if found is None or found[:2] != (session.sid, session.uid):

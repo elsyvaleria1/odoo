@@ -502,6 +502,35 @@ class TestDevice(TestHttpBase):
         self.assertEqual(held_at_primary, [], "a replica cursor was held")
         self.assertEqual(len(prechecks), 2)
 
+    def test_a_write_route_reads_the_binding_again_on_its_primary_cursor(self):
+        self.authenticate(self.user_internal.login, self.user_internal.login)
+        self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
+        acquire = self.registry.cursor
+        replica_cursors = []
+        prechecks = []
+
+        def cursor(readonly=False, *, primary=False, before_replica=None, **kwargs):
+            if primary or not readonly:
+                return acquire(readonly, primary=primary, **kwargs)
+            if before_replica is not None:
+                prechecks.append(before_replica)
+                before_replica()
+                # revoked after the replica's verdict, before the write
+                self.user_internal.auth_client_ids._revoke()
+            replica_cursors.append(acquire(readonly, **kwargs))
+            return replica_cursors[-1]
+
+        def readonly_pool(cr):
+            return any(cr is replica for replica in replica_cursors)
+
+        with (
+            patch.object(self.registry, "cursor", cursor),
+            patch.object(TestCursor, "readonly_pool", property(readonly_pool)),
+        ):
+            res = self.hit("2024-01-01 08:00:01", "/test_http/greeting-user?readonly=0")
+        self.assertEqual(len(prechecks), 1)
+        self.assertIn("/web/login", res.url)
+
     def test_deletion_invalidate_sid(self):
         session = self.authenticate(self.user_internal.login, self.user_internal.login)
         self.hit("2024-01-01 08:00:00", "/test_http/greeting-user?readonly=0")
