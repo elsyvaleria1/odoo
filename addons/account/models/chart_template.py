@@ -106,6 +106,21 @@ def template(template=None, model="template_data"):
     return decorator
 
 
+class XmlidIndex:
+    __slots__ = ("checked", "companies", "existing", "generation", "lru", "targets")
+
+    def __init__(self, lru):
+        self.lru = lru
+        self.generation = lru.generation
+        self.targets = {}
+        self.companies = set()
+        self.checked = defaultdict(set)
+        self.existing = defaultdict(set)
+
+    def is_current(self, lru) -> bool:
+        return lru is self.lru and lru.generation == self.generation
+
+
 class AccountChartTemplate(models.AbstractModel):
     _name = "account.chart.template"
     _description = "Account Chart Template"
@@ -775,6 +790,7 @@ class AccountChartTemplate(models.AbstractModel):
     def _pre_reload_creates_into_updates(self, data) -> None:
         for model_name, records in data.items():
             _fields = self.env[model_name]._fields
+            to_check = []
             for xmlid, values in records.items():
                 x2manyfields = [
                     fname
@@ -789,8 +805,11 @@ class AccountChartTemplate(models.AbstractModel):
                     rec = self.env[model_name].browse(xmlid).exists()
                 else:
                     rec = self.ref(xmlid, raise_if_not_found=False)
-                if not rec:
-                    continue
+                if rec:
+                    to_check.append((rec, values, x2manyfields))
+            prefetch_ids = [rec.id for rec, _values, _fnames in to_check]
+            for rec, values, x2manyfields in to_check:
+                rec = rec.with_prefetch(prefetch_ids)
                 for fname in x2manyfields:
                     for i, (line, (command, _id, vals)) in enumerate(
                         zip(rec[fname], values[fname], strict=False)
@@ -1258,6 +1277,7 @@ class AccountChartTemplate(models.AbstractModel):
         for model, model_data in self._load_in_dependency_order(
             list(deepcopy(data).items())
         ):
+            self._prefetch_xmlids(model, model_data.values())
             all_records_vals = [
                 self._load_record_vals(model, xml_id, record_vals)
                 for xml_id, record_vals in model_data.items()
@@ -1274,6 +1294,70 @@ class AccountChartTemplate(models.AbstractModel):
         return created_records
 
     def _load_model_records(self, Model, all_records_vals):
+        relinks = [
+            self._relink_values(Model, record_vals) for record_vals in all_records_vals
+        ]
+        for fname in dict.fromkeys(
+            fname for values in relinks if values for fname in values
+        ):
+            linked = [
+                (record_vals["values"]["id"], values[fname])
+                for record_vals, values in zip(all_records_vals, relinks, strict=True)
+                if values and fname in values
+            ]
+            records = Model.browse([record_id for record_id, _value in linked])
+            records._write_x2many_multi(fname, [value for _id, value in linked])
+        loaded = self._load_model_records_by_kind(
+            Model,
+            [
+                record_vals
+                for record_vals, values in zip(all_records_vals, relinks, strict=True)
+                if not values
+            ],
+        )
+        if not any(relinks):
+            return loaded
+        loaded_ids = iter(loaded.ids)
+        return Model.browse(
+            [
+                record_vals["values"]["id"] if values else next(loaded_ids)
+                for record_vals, values in zip(all_records_vals, relinks, strict=True)
+            ]
+        )
+
+    def _relink_values(self, Model, record_vals):
+        # the second pass over a template model only links records loaded by
+        # the first: its many2many values go in one statement per field
+        # instead of one write per record
+        values = record_vals["values"]
+        if (
+            Model._name not in TEMPLATE_MODELS
+            or record_vals["xml_id"]
+            or not values.get("id")
+            or len(values) < 2
+        ):
+            return None
+        relinks = {}
+        for fname, value in values.items():
+            if fname == "id":
+                continue
+            field = Model._fields.get(fname)
+            if (
+                field is None
+                or field.type != "many2many"
+                or not field.store
+                or field.compute
+                or field.inverse
+            ):
+                return None
+            match value:
+                case [(Command.SET, _, list() | tuple())]:
+                    relinks[fname] = value
+                case _:
+                    return None
+        return relinks
+
+    def _load_model_records_by_kind(self, Model, all_records_vals):
         loaded = []
         for is_company_record, records_vals in itertools.groupby(
             all_records_vals, key=self._is_company_record_vals
@@ -1297,42 +1381,57 @@ class AccountChartTemplate(models.AbstractModel):
     @_debug.perf.timed
     def _post_load_journal_accounts(self, company) -> None:
         _debug.lifecycle("_post_load_journal_accounts", records=self)
+        config = company.account_config_id
+        journals_by_vals = defaultdict(lambda: self.env["account.journal"])
         for journal in self.env["account.journal"].search(
             [
                 ("type", "in", ["cash", "bank", "credit"]),
                 ("company_id", "=", company.id),
             ]
         ):
-            journal.suspense_account_id = (
-                journal.suspense_account_id
-                or company.account_config_id.account_journal_suspense_account_id
+            vals = (
+                (
+                    "suspense_account_id",
+                    (
+                        journal.suspense_account_id
+                        or config.account_journal_suspense_account_id
+                    ).id,
+                ),
+                (
+                    "profit_account_id",
+                    (
+                        journal.profit_account_id
+                        or config.default_cash_difference_income_account_id
+                    ).id,
+                ),
+                (
+                    "loss_account_id",
+                    (
+                        journal.loss_account_id
+                        or config.default_cash_difference_expense_account_id
+                    ).id,
+                ),
             )
-            journal.profit_account_id = (
-                journal.profit_account_id
-                or company.account_config_id.default_cash_difference_income_account_id
-            )
-            journal.loss_account_id = (
-                journal.loss_account_id
-                or company.account_config_id.default_cash_difference_expense_account_id
-            )
+            journals_by_vals[vals] |= journal
+        for vals, journals in journals_by_vals.items():
+            journals.write(dict(vals))
             if _debug.logic.enabled:
                 _debug.logic(
                     "liquidity_journal_accounts",
                     company=company,
-                    journal=journal,
-                    suspense=journal.suspense_account_id,
-                    profit=journal.profit_account_id,
-                    loss=journal.loss_account_id,
+                    journals=journals,
+                    **dict(vals),
                 )
 
-        if not company.account_config_id.tax_cash_basis_journal_id:
-            company.account_config_id.tax_cash_basis_journal_id = self.ref(
-                "caba", raise_if_not_found=False
-            )
-        if not company.account_config_id.currency_exchange_journal_id:
-            company.account_config_id.currency_exchange_journal_id = self.ref(
-                "exch", raise_if_not_found=False
-            )
+        config_vals = {}
+        if not config.tax_cash_basis_journal_id:
+            caba = self.ref("caba", raise_if_not_found=False)
+            config_vals["tax_cash_basis_journal_id"] = caba.id if caba else False
+        if not config.currency_exchange_journal_id:
+            exch = self.ref("exch", raise_if_not_found=False)
+            config_vals["currency_exchange_journal_id"] = exch.id if exch else False
+        if config_vals:
+            config.write(config_vals)
 
         sale_journal = self.ref("sale", raise_if_not_found=False)
         if sale_journal and company.account_config_id.income_account_id:
@@ -2118,16 +2217,108 @@ class AccountChartTemplate(models.AbstractModel):
         return f"account.{company.id}_{xmlid}"
 
     def ref(self, xmlid, raise_if_not_found=True):
-        company_xmlid = self.company_xmlid(xmlid)
         if "." in xmlid:
-            return self.env.ref(company_xmlid, raise_if_not_found)
-        return self.env.ref(company_xmlid, raise_if_not_found=False) or self.env.ref(
-            self.company_xmlid(xmlid, self.env.company.root_id), raise_if_not_found
-        )
+            index = self._xmlid_index()
+            if xmlid in index.targets:
+                record = self._xmlid_index_record(index, xmlid)
+                if record or not raise_if_not_found:
+                    return record
+            return self.env.ref(xmlid, raise_if_not_found)
+        company = self.env.company
+        root = company.root_id
+        for owner in (company, root) if company != root else (company,):
+            if record := self._company_xmlid_record(owner, xmlid):
+                return record
+        if raise_if_not_found:
+            return self.env.ref(self.company_xmlid(xmlid, root))
+        return None
+
+    def _xmlid_index(self):
+        # a load resolves thousands of external ids, mostly the company's own
+        # and mostly ones not created yet; every record it creates clears the
+        # external id cache, so they are answered from an index of the cache's
+        # current state: one query for all of a company's ids, one for the
+        # other ids a batch of values names, one per model for their records
+        lru = self.pool.ormcache_lrus["xmlid"]
+        index = self.env.cr.cache.get(XmlidIndex)
+        if index is None or not index.is_current(lru):
+            index = self.env.cr.cache[XmlidIndex] = XmlidIndex(lru)
+        return index
+
+    def _xmlid_index_record(self, index, xmlid):
+        target = index.targets.get(xmlid)
+        if not target:
+            return None
+        model, res_id = target
+        checked = index.checked[model]
+        if res_id not in checked:
+            unchecked = {
+                rid
+                for name, rid in filter(None, index.targets.values())
+                if name == model and rid not in checked
+            }
+            index.existing[model].update(
+                self.env[model].browse(unchecked).exists()._ids
+            )
+            checked.update(unchecked)
+        if res_id not in index.existing[model]:
+            return None
+        return self.env[model].browse(res_id)
+
+    def _company_xmlid_record(self, company, xmlid):
+        index = self._xmlid_index()
+        if company.id not in index.companies:
+            index.targets.update(
+                self.env["ir.model.data"]._xmlid_targets_by_prefix(
+                    "account", f"{company.id}_"
+                )
+            )
+            index.companies.add(company.id)
+        return self._xmlid_index_record(index, self.company_xmlid(xmlid, company))
+
+    def _prefetch_xmlids(self, model, records_values) -> None:
+        xmlids = set()
+        for values in records_values:
+            self._collect_xmlids(self.env[model], values, xmlids)
+        index = self._xmlid_index()
+        if missing := [
+            xmlid for xmlid in xmlids if "." in xmlid and xmlid not in index.targets
+        ]:
+            index.targets.update(self.env["ir.model.data"]._xmlid_targets(missing))
+
+    def _collect_xmlids(self, Model, values, xmlids) -> None:
+        for fname, value in values.items():
+            field = Model._fields.get(fname)
+            if field is None or not value:
+                continue
+            if isinstance(value, str) and field.type in (
+                "many2one",
+                "integer",
+                "many2one_reference",
+            ):
+                xmlids.add(value)
+            elif field.type in ("one2many", "many2many"):
+                if isinstance(value, str):
+                    xmlids.update(value.split(","))
+                    continue
+                for command in value:
+                    match command:
+                        case (Command.CREATE | Command.UPDATE, _, dict() as subvalues):
+                            self._collect_xmlids(
+                                self.env[field.comodel_name], subvalues, xmlids
+                            )
+                        case (Command.SET, _, list() | tuple() as subvalues):
+                            xmlids.update(v for v in subvalues if isinstance(v, str))
+                        case (Command.LINK, str() as subvalue, *_):
+                            xmlids.add(subvalue)
 
     def _get_parent_template(self, code):
+        return self._parent_templates(
+            self._get_chart_template_mapping(get_all=True), code
+        )
+
+    def _parent_templates(self, template_mapping, code):
         parents = []
-        template_mapping = self._get_chart_template_mapping(get_all=True)
         while template_mapping.get(code):
             parents.append(code)
             code = template_mapping.get(code).get("parent")
@@ -2301,14 +2492,14 @@ class AccountChartTemplate(models.AbstractModel):
     @_debug.perf.timed
     def _prepare_csv_vals(self, template_code, model, module=None):
         Model = self.env[model]
+        template_mapping = self._get_chart_template_mapping(get_all=True)
         if module is None:
-            module = self._get_chart_template_mapping(get_all=True)[template_code][
-                "module"
-            ]
+            module = template_mapping[template_code]["module"]
         assert re.fullmatch(r"[a-z0-9_]+", module)
 
         res = defaultdict(dict)
-        for template in self._get_parent_template(template_code)[::-1] or [""]:
+        templates = self._parent_templates(template_mapping, template_code)[::-1]
+        for template in templates or [""]:
             suffix = f"-{template}" if template else ""
             filename = f"{module}/data/template/{model}{suffix}.csv"
             try:

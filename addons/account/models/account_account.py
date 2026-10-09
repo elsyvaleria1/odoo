@@ -780,8 +780,15 @@ class AccountAccount(models.Model):
             if self.env.company in companies or not companies:
                 companies = self.env.company | companies
 
-            for vals in vals_list_for_company:
+            for index, vals in enumerate(vals_list_for_company):
                 self._update_vals_with_code(vals, companies, cache)
+                # the inverse of `code` writes each new account on its own, and
+                # every write searches the move lines of that account
+                if vals.get("code") and not companies[0].parent_id:
+                    vals_list_for_company[index] = {
+                        **{key: value for key, value in vals.items() if key != "code"},
+                        "code_store": vals["code"],
+                    }
 
             new_accounts = super(
                 AccountAccount,
@@ -794,6 +801,7 @@ class AccountAccount(models.Model):
                     ),
                 ),
             ).create(vals_list_for_company)
+            new_accounts._check_account_code()
 
             records_list.append(new_accounts)
 

@@ -164,6 +164,62 @@ class IrModelData(models.Model):
         return data.model, data.res_id
 
     @api.model
+    def _xmlid_targets_by_prefix(
+        self, module: str, name_prefix: str
+    ) -> dict[str, tuple[str, int]]:
+        self.flush_model(["module", "name", "model", "res_id"])
+        targets = {
+            f"{module}.{name}": (model, res_id)
+            for name, model, res_id in self.env.execute_query(
+                SQL(
+                    "SELECT name, model, res_id FROM ir_model_data"
+                    " WHERE module = %s AND name LIKE %s AND res_id IS NOT NULL"
+                    " AND res_id != 0",
+                    module,
+                    f"{tools.escape_psql(name_prefix)}%",
+                )
+            )
+        }
+        _debug.perf.count(
+            "xmlid_targets_by_prefix",
+            module=module,
+            prefix=name_prefix,
+            found=len(targets),
+        )
+        return targets
+
+    @api.model
+    def _xmlid_targets(
+        self, xml_ids: Collection[str]
+    ) -> dict[str, tuple[str, int] | None]:
+        names_by_module = defaultdict(set)
+        for xml_id in xml_ids:
+            if "." in xml_id:
+                module, name = xml_id.split(".", 1)
+                names_by_module[module].add(name)
+        targets: dict[str, tuple[str, int] | None] = dict.fromkeys(xml_ids)
+        if not names_by_module:
+            return targets
+        self.flush_model(["module", "name", "model", "res_id"])
+        for module, name, model, res_id in self.env.execute_query(
+            SQL(
+                "SELECT module, name, model, res_id FROM ir_model_data WHERE %s",
+                SQL(" OR ").join(
+                    SQL("(module = %s AND name = ANY(%s))", module, sorted(names))
+                    for module, names in names_by_module.items()
+                ),
+            )
+        ):
+            if res_id:
+                targets[f"{module}.{name}"] = (model, res_id)
+        _debug.perf.count(
+            "xmlid_targets",
+            requested=len(targets),
+            found=sum(1 for target in targets.values() if target),
+        )
+        return targets
+
+    @api.model
     def _get_xmlid_target(self, xmlid: str) -> tuple[str, int]:
         target = self._xmlid_target(xmlid)
         if target is None:

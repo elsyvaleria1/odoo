@@ -447,8 +447,9 @@ class AccountTax(models.Model):
 
     @api.constrains("children_tax_ids", "type_tax_use")
     def _check_children_scope(self) -> None:
+        any_cycle = self._has_cycle("children_tax_ids")
         for tax in self:
-            if tax._has_cycle("children_tax_ids"):
+            if any_cycle and tax._has_cycle("children_tax_ids"):
                 raise ValidationError(
                     self.env._("Recursion found for tax “%s”.", tax.name)
                 )

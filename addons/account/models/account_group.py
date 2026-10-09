@@ -4,8 +4,11 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.tools.authority_keys import declare_authority_keys
 
 _debug = DebugLog(__name__)
+
+declare_authority_keys("account", "account_group_parents_relinking")
 
 
 class AccountGroup(models.Model):
@@ -82,6 +85,8 @@ class AccountGroup(models.Model):
     @api.constrains("parent_id")
     @_debug.perf.timed
     def _check_parent_not_circular(self) -> None:
+        if self.env.context.get("account_group_parents_relinking"):
+            return
         if self._has_cycle():
             raise ValidationError(
                 self.env._("You cannot create recursive groups."),
@@ -192,6 +197,7 @@ class AccountGroup(models.Model):
         # encloses its own, within the same company; a company's groups number in
         # the hundreds, so the match is made in Python rather than a self-join
         updated = 0
+        relinked_ids = []
         Group = self.env["account.group"].sudo().with_context(active_test=False)
         groups_by_company = Group.search([("company_id", "in", company_ids)]).grouped(
             "company_id"
@@ -224,9 +230,14 @@ class AccountGroup(models.Model):
                 )
                 if child.parent_id.id != parent_id:
                     child_ids_by_parent_id[parent_id].append(child.id)
+            # every relink would flush and run its own cycle check: they run
+            # once, over all of them, when the relinking is done
+            relinking = Group.with_context(account_group_parents_relinking=True)
             for parent_id, child_ids in child_ids_by_parent_id.items():
-                Group.browse(child_ids).parent_id = parent_id
+                relinking.browse(child_ids).parent_id = parent_id
+                relinked_ids.extend(child_ids)
                 updated += len(child_ids)
+        Group.browse(relinked_ids)._check_parent_not_circular()
         _debug.perf.count("group_parents_relinked", rows=updated)
 
     def _normalize_vals(self, vals):

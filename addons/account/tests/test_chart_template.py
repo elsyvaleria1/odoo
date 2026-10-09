@@ -6,7 +6,7 @@ from markupsafe import Markup
 
 from odoo import Command
 from odoo.exceptions import RedirectWarning, UserError
-from odoo.tests import tagged
+from odoo.tests import TransactionCase, tagged, warmup
 
 from odoo.addons.account.models.chart_template import (
     TEMPLATE_MODELS,
@@ -2082,3 +2082,14 @@ class TestChartTemplate(AccountTestInvoicingCommon):
                     "names a template record; anything else must be skipped rather "
                     "than mis-keyed by splitting on the first underscore",
                 )
+
+
+@tagged("post_install", "-at_install")
+class TestChartTemplateLoadStatements(TransactionCase):
+    @warmup
+    def test_generic_coa_load_on_a_new_company(self):
+        company = self.env["res.company"].create({"name": "Statement count"})
+        with self.assertQueryCount(459):
+            self.env["account.chart.template"].try_loading(
+                "generic_coa", company, install_demo=False
+            )

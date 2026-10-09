@@ -1,4 +1,5 @@
 import contextlib
+import functools
 from importlib import import_module
 from inspect import getmembers, isclass, isfunction, ismodule
 
@@ -48,6 +49,20 @@ def template_function(f):
     )
 
 
+@functools.cache
+def template_data_functions(module_name):
+    try:
+        python_module = import_module(f"odoo.addons.{module_name}.models")
+    except ModuleNotFoundError:
+        return None
+    return tuple(
+        fct
+        for _name, mdl in getmembers(python_module, template_module)
+        for _name, cls in getmembers(mdl, template_class)
+        for _name, fct in getmembers(cls, template_function)
+    )
+
+
 class IrModuleModule(models.Model):
     _inherit = "ir.module.module"
 
@@ -68,11 +83,9 @@ class IrModuleModule(models.Model):
         for module in self:
             templates = {}
             if module.category_id == chart_category or module.name == "account":
-                try:
-                    python_module = import_module(f"odoo.addons.{module.name}.models")
-                except ModuleNotFoundError:
+                functions = template_data_functions(module.name)
+                if functions is None:
                     _debug.logic("template_models_missing", module_name=module.name)
-                    templates = {}
                 else:
                     templates = {
                         fct._l10n_template[0]: {
@@ -84,9 +97,7 @@ class IrModuleModule(models.Model):
                             "installed": module.state == "installed",
                             "module": module.name,
                         }
-                        for _name, mdl in getmembers(python_module, template_module)
-                        for _name, cls in getmembers(mdl, template_class)
-                        for _name, fct in getmembers(cls, template_function)
+                        for fct in functions
                         if (template_values := fct(ChartTemplate))
                     }
 
