@@ -100,20 +100,22 @@ class ReportProductReport_Pricelist(models.AbstractModel):
         if not products:
             return []
 
-        if len(products) * len(quantities) > self.MAX_PRICE_COMPUTATIONS:
-            raise UserError(
-                self.env._(
-                    "Too many products and quantity columns requested together."
-                    " Reduce either to print this report."
-                )
-            )
-
         variants_by_tmpl = {}
         if is_product_tmpl:
             for product in products:
                 if product.product_variant_count > 1:
                     variants_by_tmpl[product.id] = product.product_variant_ids
         all_variants = self.env["product.product"].union(*variants_by_tmpl.values())
+
+        if (len(products) + len(all_variants)) * len(
+            quantities
+        ) > self.MAX_PRICE_COMPUTATIONS:
+            raise UserError(
+                self.env._(
+                    "Too many products and quantity columns requested together."
+                    " Reduce either to print this report."
+                )
+            )
 
         prices_by_qty = {}
         variant_prices_by_qty = {}

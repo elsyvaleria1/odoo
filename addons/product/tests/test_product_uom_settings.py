@@ -166,7 +166,7 @@ class TestTheSettingsBlockCarriesEveryUnit(UomSettingsCommon):
 
     FIELDS = (
         "product_weight_in_lbs",
-        "product_volume_volume_in_cubic_feet",
+        "product_volume_in_cubic_feet",
         "product_odometer_in_mi",
         "product_area_in_square_ft",
         "product_power_in_hp",

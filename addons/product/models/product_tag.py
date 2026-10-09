@@ -73,6 +73,8 @@ class ProductTag(models.Model):
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)
+        if default and "name" in default:
+            return vals_list
         return [
             vals if vals is None else dict(vals, name=self.env._("%s (copy)", tag.name))
             for tag, vals in zip(self, vals_list, strict=True)

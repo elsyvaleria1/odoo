@@ -1235,7 +1235,7 @@ class TestVariantsArchive(ProductVariantsCommon):
         Product = self.env["product.product"]
 
         def unlink(self):
-            raise Exception("just")
+            raise UserError("just")
 
         self.patch(type(Product), "unlink", unlink)
 
@@ -1260,7 +1260,7 @@ class TestVariantsArchive(ProductVariantsCommon):
         Product = self.env["product.product"]
 
         def unlink(slef):
-            raise Exception("just")
+            raise UserError("just")
 
         self.patch(type(Product), "unlink", unlink)
 
@@ -1318,7 +1318,7 @@ class TestVariantsArchive(ProductVariantsCommon):
         Product = self.env["product.product"]
 
         def unlink(slef):
-            raise Exception("just")
+            raise UserError("just")
 
         self.patch(type(Product), "unlink", unlink)
 
@@ -1369,7 +1369,7 @@ class TestVariantsArchive(ProductVariantsCommon):
         Product = self.env["product.product"]
 
         def unlink(slef):
-            raise Exception("just")
+            raise UserError("just")
 
         self.patch(type(Product), "unlink", unlink)
 
@@ -2256,7 +2256,7 @@ class TestVariantCombinationIntegrityOnRemoval(ProductVariantsCommon):
         super().setUp()
 
         def undeletable(records):
-            raise Exception("this variant is referenced elsewhere")
+            raise UserError("this variant is referenced elsewhere")
 
         self.patch(type(self.env["product.product"]), "unlink", undeletable)
 

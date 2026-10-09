@@ -7,7 +7,7 @@ _debug = DebugLog(__name__)
 
 class ProductCatalogController(Controller):
     @staticmethod
-    def _get_order(res_model, order_id, allow_unsaved=False):
+    def _get_order(res_model, order_id, allow_unsaved=False, for_write=False):
         env = request.env
         if res_model not in env.registry or not isinstance(
             env[res_model], env.registry["mixin.product.catalog"]
@@ -26,6 +26,10 @@ class ProductCatalogController(Controller):
         order = env[res_model].browse(order_id).exists()
         if not order:
             raise UserError(request.env._("The requested record does not exist."))
+        if for_write and order._is_readonly():
+            raise UserError(
+                request.env._("You cannot edit the products of a read-only record.")
+            )
         return order
 
     @route(
@@ -46,11 +50,7 @@ class ProductCatalogController(Controller):
     def product_catalog_update_order_line_info(
         self, res_model, order_id, product_id, quantity=0, **kwargs
     ):
-        order = self._get_order(res_model, order_id)
-        if order._is_readonly():
-            raise UserError(
-                request.env._("You cannot edit the products of a read-only record.")
-            )
+        order = self._get_order(res_model, order_id, for_write=True)
         return order.with_company(order.company_id)._update_order_line_info(
             product_id,
             quantity,
@@ -80,7 +80,7 @@ class ProductCatalogController(Controller):
             "route",
             handler="ProductCatalogController.product_catalog_create_section",
         )
-        order = self._get_order(res_model, order_id)
+        order = self._get_order(res_model, order_id, for_write=True)
         return order.with_company(order.company_id)._create_section(
             child_field,
             name,
@@ -101,7 +101,7 @@ class ProductCatalogController(Controller):
             "route",
             handler="ProductCatalogController.product_catalog_resequence_sections",
         )
-        order = self._get_order(res_model, order_id)
+        order = self._get_order(res_model, order_id, for_write=True)
         return order.with_company(order.company_id)._resequence_sections(
             sections,
             child_field,

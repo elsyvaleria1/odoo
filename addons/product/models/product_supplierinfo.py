@@ -121,12 +121,14 @@ class ProductSupplierinfo(models.Model):
     @api.depends("product_id", "product_tmpl_id")
     def _compute_product_uom_id(self):
         for rec in self:
-            if not rec.product_uom_id:
-                rec.product_uom_id = (
-                    rec.product_id.uom_id
-                    if rec.product_id
-                    else rec.product_tmpl_id.uom_id
-                )
+            product_uom = (
+                rec.product_id.uom_id if rec.product_id else rec.product_tmpl_id.uom_id
+            )
+            if not rec.product_uom_id or (
+                product_uom
+                and not rec.product_uom_id._has_common_reference(product_uom)
+            ):
+                rec.product_uom_id = product_uom
 
     @api.depends(
         "discount", "price", "product_uom_id", "product_id", "product_tmpl_id.uom_id"
@@ -218,7 +220,7 @@ class ProductSupplierinfo(models.Model):
     ) -> Self:
         return self.filtered(
             lambda s: (
-                (not s.company_id or s.company_id.id == company_id.id)
+                (not s.company_id or s.company_id in company_id.parent_ids)
                 and (
                     s.partner_id.sudo().active
                     and (not s.product_id or s.product_id == product_id)

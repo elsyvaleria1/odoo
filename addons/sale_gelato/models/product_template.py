@@ -156,7 +156,7 @@ class ProductTemplate(models.Model):
             variants_without_gelato = self.env["product.product"].search(
                 [("product_tmpl_id", "=", self.id), ("gelato_product_uid", "=", False)]
             )
-            variants_without_gelato.unlink()
+            variants_without_gelato._unlink_or_archive()
 
     def _create_print_images_from_gelato_info(self, template_info) -> None:
         for print_image_data in template_info["variants"][0]["imagePlaceholders"]:

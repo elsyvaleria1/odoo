@@ -33,3 +33,5 @@ from . import test_unlink_where_possible
 from . import test_product_category_company
 from . import test_product_packaging_barcodes
 from . import test_ptav_write_keyword
+from . import test_variant_lifecycle
+from . import test_pricing_scope

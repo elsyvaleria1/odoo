@@ -8,7 +8,7 @@ from odoo.db.errors import PG_USER_FAULT_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL
+from odoo.tools import SQL, format_list
 
 from .wizard_product_template_merge_line import _can_commit, _logger
 
@@ -202,7 +202,9 @@ class WizardProductTemplateMerge(models.TransientModel):
             return frozenset(values.product_attribute_value_id.ids)
 
         dst_variants = dst_template.with_context(active_test=False).product_variant_ids
-        dst_by_combination = {combination(variant): variant for variant in dst_variants}
+        dst_by_combination = {}
+        for variant in dst_variants.sorted(lambda variant: not variant.active):
+            dst_by_combination.setdefault(combination(variant), variant)
 
         pairs = {}
         for variant in src_template.with_context(active_test=False).product_variant_ids:
@@ -343,14 +345,17 @@ class WizardProductTemplateMerge(models.TransientModel):
         dst_template.message_post(
             body=self.env._(
                 "Merged with the following products: %s",
-                [
-                    self.env._(
-                        "%(product)s (ID %(id)s)",
-                        product=template.display_name,
-                        id=template.id,
-                    )
-                    for template in src_templates
-                ],
+                format_list(
+                    self.env,
+                    [
+                        self.env._(
+                            "%(product)s (ID %(id)s)",
+                            product=template.display_name,
+                            id=template.id,
+                        )
+                        for template in src_templates
+                    ],
+                ),
             )
         )
 
@@ -442,20 +447,18 @@ class WizardProductTemplateMerge(models.TransientModel):
     def _get_excluded_templates(
         self, template_ids: list[int], models: dict[str, str]
     ) -> set[int]:
-        templates = (
+        variants = (
             self.env["product.template"]
             .browse(template_ids)
             .with_context(active_test=False)
+            .product_variant_ids
         )
         return {
-            template.id
-            for template in templates
-            if any(
-                self.env[model].search_count(
-                    [(field, "in", template.product_variant_ids.ids)]
-                )
-                for model, field in models.items()
-            )
+            variant.product_tmpl_id.id
+            for model, field in models.items()
+            for (variant,) in self.env[model]
+            .sudo()
+            ._read_group([(field, "in", variants.ids)], [field])
         }
 
     def _create_merge_lines_from_query(self, query: SQL) -> None:

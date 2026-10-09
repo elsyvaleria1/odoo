@@ -1,6 +1,7 @@
 from typing import Self
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 
 class ProductAttributeValue(models.Model):
@@ -63,6 +64,8 @@ class ProductAttributeValue(models.Model):
         )
 
     def write(self, vals):
+        if "attribute_id" in vals:
+            self._check_not_carried_when_moved(vals["attribute_id"])
         invalidate = "sequence" in vals and any(
             record.sequence != vals["sequence"] for record in self
         )
@@ -71,6 +74,22 @@ class ProductAttributeValue(models.Model):
             self.env.flush_all()
             self.env.invalidate_all()
         return res
+
+    def _check_not_carried_when_moved(self, attribute_id) -> None:
+        carried = self.filtered(
+            lambda pav: (
+                pav.attribute_id.id != attribute_id and pav.pav_attribute_line_ids
+            )
+        )
+        if carried:
+            raise UserError(
+                self.env._(
+                    "You cannot change the attribute of %(names)s because it is"
+                    " used on: %(usage)s",
+                    names=", ".join(carried.mapped("display_name")),
+                    usage=carried._usage_label(),
+                )
+            )
 
     def unlink(self):
         PTAV = self.env["product.template.attribute.value"].with_context(

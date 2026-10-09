@@ -723,39 +723,35 @@ class TestProductAttributeValueConfig(TestProductAttributeValueCommon):
         for exclusion in computer_ram_32.exclude_for:
             computer_ram_32.write({"exclude_for": [(2, exclusion.id, 0)]})
 
-        computer_ram_32.write(
-            {
-                "exclude_for": [
-                    (
-                        0,
-                        computer_ram_32.exclude_for.id,
-                        {
-                            "product_tmpl_id": self.computer.id,
-                            "value_ids": [
-                                (
-                                    6,
-                                    0,
-                                    [
-                                        computer_hdd_1.id,
-                                        computer_hdd_2.id,
-                                        computer_hdd_4.id,
-                                        computer_ssd_256.id,
-                                        computer_ssd_512.id,
-                                    ],
-                                )
-                            ],
-                        },
-                    )
-                ]
-            }
-        )
-
-        self.assertEqual(
-            self.computer._get_first_possible_combination(),
-            self.env["product.template.attribute.value"],
-        )
-        gen = self.computer._get_possible_combinations()
-        self.assertIsNone(next(gen, None))
+        with self.assertRaises(
+            UserError, msg="excluding every remaining combination is refused"
+        ):
+            computer_ram_32.write(
+                {
+                    "exclude_for": [
+                        (
+                            0,
+                            computer_ram_32.exclude_for.id,
+                            {
+                                "product_tmpl_id": self.computer.id,
+                                "value_ids": [
+                                    (
+                                        6,
+                                        0,
+                                        [
+                                            computer_hdd_1.id,
+                                            computer_hdd_2.id,
+                                            computer_hdd_4.id,
+                                            computer_ssd_256.id,
+                                            computer_ssd_512.id,
+                                        ],
+                                    )
+                                ],
+                            },
+                        )
+                    ]
+                }
+            )
 
         mouse = self.env["product.template"].create({"name": "Mouse"})
         self.assertTrue(

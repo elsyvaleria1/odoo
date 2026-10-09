@@ -13,8 +13,10 @@ class MixinProductLabelReport(models.AbstractModel):
 
     def _get_report_values(self, docids, data):
         data = data or {}
-        layout = self.env["wizard.product.product.print.label"].browse(
-            self._get_label_id(data.get("layout_wizard"))
+        layout = (
+            self.env["wizard.product.product.print.label"]
+            .browse(self._get_label_id(data.get("layout_wizard")))
+            .exists()
         )
 
         if data.get("studio") and docids and not data.get("active_model"):

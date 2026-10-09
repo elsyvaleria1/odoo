@@ -62,8 +62,8 @@ class TestUpdateProductAttributeValueWizard(ProductVariantsCommon):
             self.env, self.color_attribute_red.action_update_prices()
         ).save()
 
-        self.assertEqual(wizard.customized_product_count, 1)
-        self.assertIn("already customized", wizard.message)
+        self.assertEqual(wizard.changed_product_count, 1)
+        self.assertIn("currently use a different extra price", wizard.message)
 
         wizard.action_confirm()
         self.assertEqual(ptav.price_extra, 0.0, "The customization is overwritten")

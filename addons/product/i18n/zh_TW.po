@@ -1252,12 +1252,12 @@ msgid "Creation"
 msgstr "建立"
 
 #. module: product
-#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_volume_in_cubic_feet__1
+#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_in_cubic_feet__1
 msgid "Cubic Feet (ft³)"
 msgstr "立方英尺（ft³）"
 
 #. module: product
-#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_volume_in_cubic_feet__0
+#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_in_cubic_feet__0
 msgid "Cubic Meters (m³)"
 msgstr "立方米（m³）"
 
@@ -4325,7 +4325,7 @@ msgid "Volume"
 msgstr "音量"
 
 #. module: product
-#: model:ir.model.fields,field_description:product.field_res_config_settings__product_volume_volume_in_cubic_feet
+#: model:ir.model.fields,field_description:product.field_res_config_settings__product_volume_in_cubic_feet
 msgid "Volume unit of measure"
 msgstr "體積度量單位"
 

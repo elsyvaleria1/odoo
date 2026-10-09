@@ -1,4 +1,5 @@
 from odoo import api, models
+from odoo.fields import Domain
 
 
 class ResCompany(models.Model):
@@ -14,12 +15,13 @@ class ResCompany(models.Model):
         if not vals.get("currency_id"):
             return super().write(vals)
 
+        previous_currency = {company: company.currency_id for company in self}
         enabled_pricelists = self.env.user.has_group("product.group_product_pricelist")
         res = super(
             ResCompany, self.with_context(disable_company_pricelist_creation=True)
         ).write(vals)
 
-        self._realign_default_pricelist_currency()
+        self._realign_default_pricelist_currency(previous_currency)
 
         if not enabled_pricelists and self.env.user.has_group(
             "product.group_product_pricelist"
@@ -28,27 +30,31 @@ class ResCompany(models.Model):
 
         return res
 
-    def _realign_default_pricelist_currency(self) -> None:
-        if not self:
+    @api.model
+    def _realign_default_pricelist_currency(self, previous_currency) -> None:
+        domains = [
+            Domain("company_id", "=", company.id)
+            & Domain("currency_id", "=", currency.id)
+            for company, currency in previous_currency.items()
+            if currency and currency != company.currency_id
+        ]
+        if not domains:
             return
-        Pricelist = self.env["product.pricelist"].sudo()
-        candidates = Pricelist.with_context(active_test=False).search(
-            [("company_id", "in", self.ids)],
-        )
-        if not candidates:
-            return
-        with_rules = set(
-            self.env["product.pricelist.item"]
+        candidates = (
+            self.env["product.pricelist"]
             .sudo()
             .with_context(active_test=False)
-            ._read_group([("pricelist_id", "in", candidates.ids)], ["pricelist_id"])
+            .search(Domain.OR(domains))
         )
+        with_rules = {
+            pricelist
+            for (pricelist,) in self.env["product.pricelist.item"]
+            .sudo()
+            ._read_group([("pricelist_id", "in", candidates.ids)], ["pricelist_id"])
+        }
         for pricelist in candidates:
-            if (pricelist,) in with_rules:
-                continue
-            company_currency = pricelist.company_id.currency_id
-            if company_currency and pricelist.currency_id != company_currency:
-                pricelist.currency_id = company_currency
+            if pricelist not in with_rules:
+                pricelist.currency_id = pricelist.company_id.currency_id
 
     def _activate_or_create_pricelists(self) -> None:
         if self.env.context.get("disable_company_pricelist_creation"):

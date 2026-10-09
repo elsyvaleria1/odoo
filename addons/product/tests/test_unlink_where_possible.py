@@ -1,3 +1,5 @@
+from odoo.exceptions import UserError
+
 from odoo.addons.product.tests.common import ProductCommon
 
 
@@ -105,7 +107,7 @@ class TestUnlinkWherePossible(ProductCommon):
 
         def delete(records):
             if blocked in records:
-                raise ValueError("blocked")
+                raise UserError("blocked")
             records._unlink_without_fallback()
 
         remainder = unlink_where_possible(ptavs, delete)

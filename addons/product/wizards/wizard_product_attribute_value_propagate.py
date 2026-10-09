@@ -1,5 +1,8 @@
+from collections import defaultdict
+
 from odoo import api, fields, models
 from odoo.fields import Command
+from odoo.tools import formatLang
 
 
 class WizardProductAttributeValuePropagate(models.TransientModel):
@@ -19,11 +22,9 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
     )
     message = fields.Char(compute="_compute_message")
     product_count = fields.Integer(compute="_compute_product_counts")
-    customized_product_count = fields.Integer(compute="_compute_product_counts")
+    changed_product_count = fields.Integer(compute="_compute_product_counts")
 
-    @api.depends(
-        "product_count", "customized_product_count", "mode", "attribute_value_id"
-    )
+    @api.depends("product_count", "changed_product_count", "mode", "attribute_value_id")
     def _compute_message(self) -> None:
         self.message = ""
         for wizard in self:
@@ -34,110 +35,105 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
                     product_count=wizard.product_count,
                 )
             elif wizard.mode == "update_extra_price":
-                if wizard.customized_product_count:
-                    wizard.message = self.env._(
-                        "You are about to update the extra price of %(product_count)s"
-                        " products, including %(customized_count)s with a price"
-                        " already customized away from the previous default. Their"
-                        " custom price will be overwritten.",
-                        product_count=wizard.product_count,
-                        customized_count=wizard.customized_product_count,
-                    )
-                else:
-                    wizard.message = self.env._(
-                        "You are about to update the extra price of %s products.",
-                        wizard.product_count,
-                    )
+                wizard.message = self.env._(
+                    'You are about to set the extra price of "%(attribute_value)s"'
+                    " to %(price)s on %(product_count)s products. %(changed_count)s"
+                    " of them currently use a different extra price, which will be"
+                    " overwritten.",
+                    attribute_value=wizard.attribute_value_id.name,
+                    price=formatLang(
+                        self.env,
+                        wizard.attribute_value_id.default_extra_price,
+                        dp="Product Price",
+                    ),
+                    product_count=wizard.product_count,
+                    changed_count=wizard.changed_product_count,
+                )
 
-    def _get_product_count_key(self) -> tuple | None:
+    def _get_domain_company(self) -> list:
+        return [("product_tmpl_id.company_id", "in", self.env.companies.ids + [False])]
+
+    def _get_domain_target_templates(self) -> list:
+        return [("product_tmpl_id.active", "=", True), *self._get_domain_company()]
+
+    def _get_domain_lines_to_extend(self) -> list:
         self.check_singleton()
-        if self.mode == "add":
-            return ("add", self.attribute_value_id.attribute_id.id)
-        if self.mode == "update_extra_price":
-            return ("update_extra_price", self.attribute_value_id.id)
-        return None
+        return [
+            ("attribute_id", "=", self.attribute_value_id.attribute_id.id),
+            ("value_ids", "not in", self.attribute_value_id.ids),
+            *self._get_domain_target_templates(),
+        ]
 
-    @api.model
-    def _get_domain_product_count(self, key) -> list:
-        mode, record_id = key
-        if mode == "add":
-            return [("attribute_line_ids.attribute_id", "=", record_id)]
-        return [("attribute_line_ids.value_ids", "=", record_id)]
+    def _get_domain_values_to_reprice(self) -> list:
+        self.check_singleton()
+        # Archived values and templates are repriced too, though not counted:
+        # reactivating one keeps its stored price_extra.
+        return [
+            ("product_attribute_value_id", "=", self.attribute_value_id.id),
+            *self._get_domain_company(),
+        ]
 
     @api.depends("mode", "attribute_value_id")
     def _compute_product_counts(self) -> None:
         self.product_count = 0
-        self.customized_product_count = 0
-        ProductTemplate = self.env["product.template"]
-        keys_by_wizard = {wizard: wizard._get_product_count_key() for wizard in self}
-        counts = {
-            key: ProductTemplate.search_count(self._get_domain_product_count(key))
-            for key in set(keys_by_wizard.values()) - {None}
-        }
-        customized = self._get_customized_counts_per_value()
-        for wizard in self:
-            wizard.product_count = counts.get(keys_by_wizard[wizard], 0)
-            wizard.customized_product_count = customized.get(
-                wizard.attribute_value_id.id, 0
+        self.changed_product_count = 0
+        adding = self.filtered(lambda wizard: wizard.mode == "add")
+        repricing = self.filtered(lambda wizard: wizard.mode == "update_extra_price")
+        if values := adding.attribute_value_id:
+            Line = self.env["product.template.attribute.line"]
+            lines_per_attribute = dict(
+                Line._read_group(
+                    [
+                        ("attribute_id", "in", values.attribute_id.ids),
+                        *self._get_domain_target_templates(),
+                    ],
+                    ["attribute_id"],
+                    ["__count"],
+                )
             )
-
-    def _get_customized_counts_per_value(self):
-        """How many templates price each attribute value away from its default.
-
-        One `_read_group` for the whole recordset rather than a `search_count`
-        per wizard: the count cannot be expressed as a domain, because the
-        threshold it compares against -- the value's own `default_extra_price`
-        -- differs per row, and a domain cannot compare two fields. Grouping by
-        (value, price) instead returns one row per distinct price actually in
-        use, which is a handful, and the comparison happens over those.
-
-        :return: {product.attribute.value id: count of templates priced away}
-        :rtype: dict
-        """
-        wizards = self.filtered(
-            lambda wizard: (
-                wizard.mode == "update_extra_price" and wizard.attribute_value_id
+            lines_per_value = dict(
+                Line._read_group(
+                    [
+                        ("value_ids", "in", values.ids),
+                        *self._get_domain_target_templates(),
+                    ],
+                    ["value_ids"],
+                    ["__count"],
+                )
             )
-        )
-        values = wizards.attribute_value_id
-        if not values:
-            return {}
-        default_per_value = {value.id: value.default_extra_price for value in values}
-        counts = {}
-        groups = self.env["product.template.attribute.value"]._read_group(
-            [
-                ("product_attribute_value_id", "in", values.ids),
-                ("product_tmpl_id.company_id", "in", self.env.companies.ids + [False]),
-            ],
-            groupby=["product_attribute_value_id", "price_extra"],
-            aggregates=["__count"],
-        )
-        for value, price_extra, count in groups:
-            if price_extra != default_per_value[value.id]:
-                counts[value.id] = counts.get(value.id, 0) + count
-        return counts
+            for wizard in adding:
+                value = wizard.attribute_value_id
+                wizard.product_count = lines_per_attribute.get(
+                    value.attribute_id, 0
+                ) - lines_per_value.get(value, 0)
+        if values := repricing.attribute_value_id:
+            per_value = defaultdict(lambda: [0, 0])
+            for value, price_extra, count in self.env[
+                "product.template.attribute.value"
+            ]._read_group(
+                [
+                    ("product_attribute_value_id", "in", values.ids),
+                    ("ptav_active", "=", True),
+                    *self._get_domain_target_templates(),
+                ],
+                ["product_attribute_value_id", "price_extra"],
+                ["__count"],
+            ):
+                per_value[value][0] += count
+                if price_extra != value.default_extra_price:
+                    per_value[value][1] += count
+            for wizard in repricing:
+                wizard.product_count, wizard.changed_product_count = per_value[
+                    wizard.attribute_value_id
+                ]
 
     def action_confirm(self):
         self.check_singleton()
         if self.mode == "add":
-            self._add_value_to_existing_attribute_lines()
+            self.env["product.template.attribute.line"].search(
+                self._get_domain_lines_to_extend()
+            ).write({"value_ids": [Command.link(self.attribute_value_id.id)]})
         elif self.mode == "update_extra_price":
-            self._update_extra_price_on_existing_products()
-
-    def _add_value_to_existing_attribute_lines(self) -> None:
-        ptals = self.env["product.template.attribute.line"].search(
-            [
-                ("attribute_id", "=", self.attribute_value_id.attribute_id.id),
-                ("product_tmpl_id.company_id", "in", self.env.companies.ids + [False]),
-            ]
-        )
-        ptals.write({"value_ids": [Command.link(self.attribute_value_id.id)]})
-
-    def _update_extra_price_on_existing_products(self) -> None:
-        ptavs = self.env["product.template.attribute.value"].search(
-            [
-                ("product_attribute_value_id", "=", self.attribute_value_id.id),
-                ("product_tmpl_id.company_id", "in", self.env.companies.ids + [False]),
-            ]
-        )
-        ptavs.write({"price_extra": self.attribute_value_id.default_extra_price})
+            self.env["product.template.attribute.value"].search(
+                self._get_domain_values_to_reprice()
+            ).write({"price_extra": self.attribute_value_id.default_extra_price})

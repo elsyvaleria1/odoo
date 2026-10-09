@@ -47,6 +47,12 @@ class ProductTemplateAttributeExclusion(models.Model):
         return res
 
     def write(self, vals):
+        if not vals.keys() & {
+            "product_template_attribute_value_id",
+            "product_tmpl_id",
+            "value_ids",
+        }:
+            return super().write(vals)
         templates = self.env["product.template"]
         if "product_tmpl_id" in vals:
             templates = self.product_tmpl_id

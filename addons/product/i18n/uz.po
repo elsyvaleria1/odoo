@@ -1444,13 +1444,13 @@ msgid "Creation"
 msgstr "Yaratish"
 
 #. module: product
-#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_volume_in_cubic_feet__1
+#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_in_cubic_feet__1
 #, fuzzy
 msgid "Cubic Feet (ft³)"
 msgstr "Kub fut (ft³)"
 
 #. module: product
-#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_volume_in_cubic_feet__0
+#: model:ir.model.fields.selection,name:product.selection__res_config_settings__product_volume_in_cubic_feet__0
 #, fuzzy
 msgid "Cubic Meters (m³)"
 msgstr "Kub metr (m³)"
@@ -5083,7 +5083,7 @@ msgid "Volume"
 msgstr "Hajm"
 
 #. module: product
-#: model:ir.model.fields,field_description:product.field_res_config_settings__product_volume_volume_in_cubic_feet
+#: model:ir.model.fields,field_description:product.field_res_config_settings__product_volume_in_cubic_feet
 #, fuzzy
 msgid "Volume unit of measure"
 msgstr "Hajm o‘lchov birligi"

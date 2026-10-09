@@ -7,7 +7,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.sql import SQL
 from odoo.tools.image import is_image_size_above
-from odoo.tools.misc import unique
+from odoo.tools.misc import OrderedSet, unique
 
 _logger = logging.getLogger(__name__)
 PRICE_CONTEXT_KEYS = ["pricelist", "quantity", "uom", "date"]
@@ -346,12 +346,8 @@ class ProductTemplate(models.Model):
         for template in self:
             if not template.uom_id:
                 continue
-            incompatible = template.uom_ids.browse(
-                [
-                    uom.id
-                    for uom in template.uom_ids
-                    if not uom._has_common_reference(template.uom_id)
-                ]
+            incompatible = template.uom_ids.filtered(
+                lambda uom, unit=template.uom_id: not uom._has_common_reference(unit)
             )
             if incompatible:
                 raise ValidationError(
@@ -508,13 +504,13 @@ class ProductTemplate(models.Model):
                 or any(ptal._is_configurable() for ptal in product.attribute_line_ids)
             )
 
-    @api.depends("attribute_line_ids.attribute_id")
+    @api.depends(
+        "attribute_line_ids.value_ids",
+        "attribute_line_ids.attribute_id.create_variant",
+    )
     def _compute_is_dynamically_created(self) -> None:
         for template in self:
-            template.is_dynamically_created = any(
-                line.attribute_id.create_variant == "dynamic"
-                for line in template.attribute_line_ids
-            )
+            template.is_dynamically_created = template.has_dynamic_attributes()
 
     @api.depends("product_variant_ids")
     def _compute_product_variant_id(self) -> None:
@@ -555,11 +551,9 @@ class ProductTemplate(models.Model):
     def _compute_barcode(self) -> None:
         self._compute_template_field_from_variant_field("barcode")
 
-    @api.depends("type")
     def _compute_weight_uom_name(self) -> None:
         self.weight_uom_name = self._get_weight_uom_name_from_ir_config_parameter()
 
-    @api.depends("type")
     def _compute_volume_uom_name(self) -> None:
         self.volume_uom_name = self._get_volume_uom_name_from_ir_config_parameter()
 
@@ -1025,6 +1019,17 @@ class ProductTemplate(models.Model):
                 )
                 variants_to_activate += current_variants_to_activate
 
+            if (
+                all_variants
+                and not current_variants_to_create
+                and not current_variants_to_activate
+                and not tmpl_id.has_dynamic_attributes()
+            ):
+                raise UserError(
+                    self.env._(
+                        "This configuration of product attributes, values, and exclusions would lead to no possible variant. Please archive or delete your product directly if intended."
+                    )
+                )
             variants_to_unlink += all_variants - current_variants_to_activate
 
         if variants_to_activate:
@@ -1035,12 +1040,6 @@ class ProductTemplate(models.Model):
             Product.create(variants_to_create)
         if variants_to_unlink:
             variants_to_unlink._unlink_or_archive()
-            if self.exists() != self:
-                raise UserError(
-                    self.env._(
-                        "This configuration of product attributes, values, and exclusions would lead to no possible variant. Please archive or delete your product directly if intended."
-                    )
-                )
             combo_items_to_unlink = self.env["product.combo.item"].search(
                 [("product_id", "in", variants_to_unlink.ids)]
             )
@@ -1186,21 +1185,22 @@ class ProductTemplate(models.Model):
         if not parent_combination:
             return {}
 
+        all_value_ids = self.attribute_line_ids.product_template_value_ids.ids
         result = {}
-        for product_attribute_value in parent_combination:
-            for filter_line in product_attribute_value.exclude_for.filtered(
-                lambda filter_line: filter_line.product_tmpl_id == self
+        for parent_value in parent_combination:
+            for exclusion in parent_value.exclude_for.filtered(
+                lambda exclusion: exclusion.product_tmpl_id == self
             ):
-                if filter_line.value_ids:
-                    result[product_attribute_value.id] = filter_line.value_ids.ids
-                else:
-                    result[product_attribute_value.id] = (
-                        filter_line.product_tmpl_id.mapped(
-                            "attribute_line_ids.product_template_value_ids"
-                        ).ids
-                    )
+                excluded = result.setdefault(parent_value.id, OrderedSet())
+                excluded.update(exclusion.value_ids.ids or all_value_ids)
+        return {value_id: list(ids) for value_id, ids in result.items()}
 
-        return result
+    def _is_excluded_by_parent(self, parent_combination) -> bool:
+        self.check_singleton()
+        return any(
+            exclusion.product_tmpl_id == self and not exclusion.value_ids
+            for exclusion in parent_combination.exclude_for
+        )
 
     def _get_mapped_attribute_names(self, parent_combination=None) -> dict:
         self.check_singleton()
@@ -1642,14 +1642,17 @@ class ProductTemplate(models.Model):
         elif not variant or not variant.active:
             return False
 
-        parent_exclusions = self._get_parent_attribute_exclusions(parent_combination)
-        if parent_exclusions:
-            for exclusions_values in parent_exclusions.values():
-                for exclusion in exclusions_values:
-                    if exclusion in combination.ids:
-                        return False
-
-        return True
+        if not parent_combination:
+            return True
+        if self._is_excluded_by_parent(parent_combination):
+            return False
+        combination_ids = set(combination.ids)
+        return not any(
+            combination_ids.intersection(excluded_ids)
+            for excluded_ids in self._get_parent_attribute_exclusions(
+                parent_combination
+            ).values()
+        )
 
     @api.model
     def _demo_configure_variants(self) -> None:

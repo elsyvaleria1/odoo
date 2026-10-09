@@ -383,8 +383,10 @@ class ProductPricelist(models.Model):
             self.search(pl_domain & Domain("country_group_ids", "=", False), limit=1)
             or self.browse(
                 get_param_id(f"res.partner.property_product_pricelist_{company_id}")
-            )
-            or self.browse(get_param_id("res.partner.property_product_pricelist"))
+            ).exists()
+            or self.browse(
+                get_param_id("res.partner.property_product_pricelist")
+            ).exists()
             or self.search(pl_domain, limit=1)
         )
 

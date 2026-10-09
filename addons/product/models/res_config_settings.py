@@ -25,7 +25,7 @@ class ResConfigSettings(models.TransientModel):
         default="0",
         config_parameter="product.weight_in_lbs",
     )
-    product_volume_volume_in_cubic_feet = fields.Selection(
+    product_volume_in_cubic_feet = fields.Selection(
         selection=[
             ("0", "Cubic Meters (m³)"),
             ("1", "Cubic Feet (ft³)"),
@@ -75,7 +75,7 @@ class ResConfigSettings(models.TransientModel):
     )
 
     @api.onchange("group_product_pricelist")
-    def _onchange_group_sale_pricelist(self) -> dict | None:
+    def _onchange_group_product_pricelist(self) -> dict | None:
         if not self.group_product_pricelist:
             active_pricelist = (
                 self.env["product.pricelist"]

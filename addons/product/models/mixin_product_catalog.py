@@ -75,12 +75,16 @@ class MixinProductCatalog(models.AbstractModel):
                 )
 
         default_data = self._get_order_line_values(child_field)
-        products = self.env["product.product"].browse(product_ids)
-        product_data = self._get_product_catalog_order_data(products, **kwargs)
-
-        for product_id, data in product_data.items():
-            if product_id in order_line_info:
-                continue
+        products = self.env["product.product"].browse(
+            [
+                product_id
+                for product_id in product_ids
+                if product_id not in order_line_info
+            ]
+        )
+        for product_id, data in self._get_product_catalog_order_data(
+            products, **kwargs
+        ).items():
             order_line_info[product_id] = {**default_data, **data}
 
         return order_line_info

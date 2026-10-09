@@ -426,7 +426,7 @@ class ProductPricelistItem(models.Model):
     def _compute_is_pricelist_required(self) -> None:
         self.is_pricelist_required = True
 
-    @api.depends("pricelist_id.company_id", "product_tmpl_id")
+    @api.depends("pricelist_id.company_id", "product_tmpl_id.company_id")
     def _compute_company_id(self):
         for item in self:
             item.company_id = (

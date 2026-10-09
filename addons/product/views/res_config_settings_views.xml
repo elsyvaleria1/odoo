@@ -22,7 +22,7 @@
                         string="Volume"
                         help="Define your volume unit of measure">
                         <field
-                            name="product_volume_volume_in_cubic_feet"
+                            name="product_volume_in_cubic_feet"
                             widget="radio"
                             class="o_light_label" />
                     </setting>

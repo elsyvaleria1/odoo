@@ -104,7 +104,9 @@ class ProductTemplateAttributeLine(models.Model):
                             " %(product_src)s to the product %(product_dest)s.",
                             attribute=ptal.attribute_id.display_name,
                             product_src=ptal.product_tmpl_id.display_name,
-                            product_dest=values["product_tmpl_id"],
+                            product_dest=self.env["product.template"]
+                            .browse(values["product_tmpl_id"])
+                            .display_name,
                         )
                     )
 
@@ -117,7 +119,9 @@ class ProductTemplateAttributeLine(models.Model):
                             " %(attribute_src)s into the attribute %(attribute_dest)s.",
                             product=ptal.product_tmpl_id.display_name,
                             attribute_src=ptal.attribute_id.display_name,
-                            attribute_dest=values["attribute_id"],
+                            attribute_dest=self.env["product.attribute"]
+                            .browse(values["attribute_id"])
+                            .display_name,
                         )
                     )
         if not values.get("active", True):

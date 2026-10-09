@@ -45,6 +45,7 @@ class ProductProduct(models.Model):
     # there is no one column that could hold it.
     is_user_favorite = fields.Boolean(
         related="product_tmpl_id.is_user_favorite",
+        string="My Favorite",
         readonly=False,
     )
     active = fields.Boolean(
@@ -287,55 +288,58 @@ class ProductProduct(models.Model):
         return res
 
     def copy(self, default=None):
-
-        templates_to_copy = self.product_tmpl_id
-        new_templates = templates_to_copy.copy(default=default)
-        new_product_list = [
-            new_template.product_variant_id
-            or new_template._create_first_product_variant()
-            for new_template in new_templates
-        ]
-        return self.env["product.product"].concat(*new_product_list)
+        templates = self.product_tmpl_id
+        new_template_by_template = dict(
+            zip(templates, templates.copy(default=default), strict=True)
+        )
+        new_products = self.browse()
+        for product in self:
+            new_template = new_template_by_template[product.product_tmpl_id]
+            values = (
+                product.product_template_attribute_value_ids.product_attribute_value_id
+            )
+            combination = (
+                new_template.attribute_line_ids.product_template_value_ids.filtered(
+                    lambda ptav, values=values: (
+                        ptav.product_attribute_value_id in values
+                    )
+                )
+            )
+            new_products |= (
+                new_template._create_product_variant(combination)
+                or new_template.product_variant_id
+                or new_template._create_first_product_variant()
+            )
+        return new_products
 
     def unlink(self):
-        if self.env.context.get("create_product_product") is False:
-            res = super().unlink()
-            self.env.registry.clear_cache("product_variants")
-            return res
-
-        unlink_products_ids = set()
-        unlink_templates_ids = set()
-
-        existing_products = self.exists()
-        product_ids_by_template_id = {
-            template.id: set(ids)
-            for template, ids in self.with_context(active_test=False)._read_group(
-                domain=[
-                    ("product_tmpl_id", "in", existing_products.product_tmpl_id.ids),
-                ],
-                groupby=["product_tmpl_id"],
-                aggregates=["id:array_agg"],
-            )
-        }
-        for product in existing_products.with_context(bin_size=False):
+        products = self.exists()
+        for product in products.with_context(bin_size=False):
             if product.image_variant_1920 and not product.product_tmpl_id.image_1920:
                 product.product_tmpl_id.image_1920 = product.image_variant_1920
-            has_other_products = product_ids_by_template_id.get(
-                product.product_tmpl_id.id,
-                set(),
-            ) - {product.id}
-            if (
-                not has_other_products
-                and not product.product_tmpl_id.has_dynamic_attributes()
-            ):
-                unlink_templates_ids.add(product.product_tmpl_id.id)
-            unlink_products_ids.add(product.id)
-        unlink_products = self.env["product.product"].browse(unlink_products_ids)
-        res = super(ProductProduct, unlink_products).unlink()
-        unlink_templates = self.env["product.template"].browse(unlink_templates_ids)
-        unlink_templates.unlink()
+        emptied_templates = self.env["product.template"]
+        if self.env.context.get("create_product_product") is not False:
+            emptied_templates = products._get_templates_emptied_by_unlink()
+        res = super(ProductProduct, products).unlink()
+        emptied_templates.unlink()
         self.env.registry.clear_cache("product_variants")
         return res
+
+    def _get_templates_emptied_by_unlink(self):
+        unlink_ids = set(self.ids)
+        product_ids_by_template = dict(
+            self.with_context(active_test=False)._read_group(
+                [("product_tmpl_id", "in", self.product_tmpl_id.ids)],
+                ["product_tmpl_id"],
+                ["id:array_agg"],
+            )
+        )
+        return self.product_tmpl_id.filtered(
+            lambda template: (
+                unlink_ids.issuperset(product_ids_by_template.get(template, ()))
+                and not template.has_dynamic_attributes()
+            )
+        )
 
     @api.depends("product_template_attribute_value_ids")
     def _compute_import_attribute_values(self) -> None:
@@ -460,23 +464,10 @@ class ProductProduct(models.Model):
         "seller_ids.product_id",
     )
     def _compute_code(self) -> None:
-        read_access = self.env["product.supplierinfo"].has_access("read")
         partner_id = self.env.context.get("partner_id")
         for product in self:
-            product.code = product.default_code
-            if read_access and partner_id:
-                for supplier_info in product.seller_ids:
-                    if supplier_info.partner_id.id == partner_id:
-                        if (
-                            supplier_info.product_id
-                            and supplier_info.product_id != product
-                        ):
-                            continue
-                        product.code = (
-                            supplier_info.product_code or product.default_code
-                        )
-                        if product == supplier_info.product_id:
-                            break
+            seller = product._get_contextual_partner_seller(partner_id)
+            product.code = seller.product_code or product.default_code
 
     @api.depends(
         "default_code",
@@ -484,22 +475,14 @@ class ProductProduct(models.Model):
         "code",
         "display_name",
         "seller_ids.partner_id",
+        "seller_ids.product_id",
         "seller_ids.product_name",
     )
     @api.depends_context("partner_id")
     def _compute_partner_ref(self) -> None:
         partner_id = self.env.context.get("partner_id")
         for product in self:
-            matched_seller = False
-            if partner_id:
-                matched_seller = next(
-                    (
-                        seller
-                        for seller in product.seller_ids
-                        if seller.partner_id.id == partner_id
-                    ),
-                    False,
-                )
+            matched_seller = product._get_contextual_partner_seller(partner_id)
             if matched_seller:
                 product_name = (
                     matched_seller.product_name or product.default_code or product.name
@@ -637,16 +620,6 @@ class ProductProduct(models.Model):
 
     def _inverse_image_1920(self):
         return self._set_template_field("image_1920", "image_variant_1920")
-
-    @api.model
-    def _search(self, domain, *args, **kwargs):
-        if self.env.context.get("search_default_categ_id"):
-            domain = Domain(domain) & Domain(
-                "categ_id",
-                "child_of",
-                self.env.context["search_default_categ_id"],
-            )
-        return super()._search(domain, *args, **kwargs)
 
     @api.model
     def _search_display_name(self, operator, value):
@@ -1003,6 +976,19 @@ class ProductProduct(models.Model):
         if company_id:
             domain.append(("company_id", "in", (False, company_id)))
         return domain
+
+    def _get_contextual_partner_seller(self, partner_id):
+        self.check_singleton()
+        SupplierInfo = self.env["product.supplierinfo"]
+        if not partner_id or not SupplierInfo.has_access("read"):
+            return SupplierInfo
+        sellers = self.seller_ids.filtered(
+            lambda seller: (
+                seller.partner_id.id == partner_id
+                and (not seller.product_id or seller.product_id == self)
+            )
+        )
+        return sellers.filtered("product_id")[:1] or sellers[:1]
 
     def _get_filtered_sellers(
         self,
@@ -1516,17 +1502,16 @@ class ProductProduct(models.Model):
     def _is_uom_change_warning_required(self) -> bool:
         return False
 
-    def _unlink_or_archive(self, check_access=True) -> None:
-        if check_access:
-            self.check_access("unlink")
-            self.check_access("write")
-            self = self.sudo()
-            to_unlink = self._filtered_to_unlink()
-            to_archive = self - to_unlink
-            to_archive.write({"active": False})
-            self = to_unlink
-
-        undeletable = unlink_where_possible(self, lambda products: products.unlink())
+    def _unlink_or_archive(self) -> None:
+        self.check_access("unlink")
+        self.check_access("write")
+        products = self.sudo()
+        to_unlink = products._filtered_to_unlink()
+        (products - to_unlink).write({"active": False})
+        undeletable = unlink_where_possible(
+            to_unlink,
+            lambda batch: batch.with_context(create_product_product=False).unlink(),
+        )
         undeletable.filtered("active").write({"active": False})
 
     def _is_variant_possible(self, parent_combination=None) -> bool:
@@ -1557,7 +1542,7 @@ class ProductProduct(models.Model):
         # all -- _has_order_lines already probes the same rows this way.
         Model = self.env[model].sudo()
         if domain is None:
-            domain = [("product_id", "in", self.ids)]
+            domain = [(product_field, "in", self.ids)]
         to_write = Model.browse()
         for uom, product, records in Model._read_group(
             domain, ["product_uom_id", product_field], ["id:recordset"]

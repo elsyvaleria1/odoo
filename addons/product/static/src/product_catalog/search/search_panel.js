@@ -112,7 +112,7 @@ export class ProductCatalogSearchPanel extends SearchPanel {
                 }),
             );
 
-            if (section) {
+            if (section?.id) {
                 const sections = this.state.sections;
                 let newLineCount = 0;
 
