@@ -46,7 +46,9 @@ class HrExpenseStripeCard(models.Model):
 
     name = fields.Char(
         compute="_compute_name",
+        precompute=True,
         store=True,
+        readonly=False,
         required=True,
     )
     stripe_id = fields.Char(
@@ -375,8 +377,7 @@ class HrExpenseStripeCard(models.Model):
     @api.depends("employee_id")
     def _compute_name(self):
         for card in self:
-            if card.employee_id and not card.name:
-                card.name = card.employee_id.name
+            card.name = card.name or card.employee_id.name
 
     @api.depends("employee_id")
     def _compute_from_employee(self) -> None:
