@@ -27,6 +27,8 @@ DEFAULT_TZ = "America/Mexico_City"
 # Below Telegram's 4096 so a chunk never needs truncating once tags are added.
 CHUNK_LIMIT = 3800
 AGENT = "agent"
+# below this, the classifier doubts its report answers the question
+CONFIDENCE_FLOOR = 0.6
 _BOLD = re.compile(r"\*\*(.+?)\*\*")
 
 
@@ -87,7 +89,7 @@ class TelegramChat(models.Model):
             if key == HELP:
                 answer = _help_text(tr_env, queries, InsightAgent(bot).available)
                 answered_by = HELP
-            elif key in queries:
+            elif key in queries and not _needs_agent(interpretation, bot):
                 with reader.env() as env:
                     answer = catalog.answer(
                         env, queries[key], interpretation, tz=tz, today=today
@@ -134,7 +136,7 @@ class TelegramChat(models.Model):
         if not agent.available:
             return ""
         bot.send_chat_action(chat, "typing")
-        tools = OdooTools(reader)
+        tools = OdooTools(reader, available_queries(self.env), tz=tz, today=today)
         history = [
             exchange for exchange in chat._insight_history() if exchange.get("answer")
         ]
@@ -168,6 +170,18 @@ class TelegramChat(models.Model):
             }
         )
         self._set_context(HISTORY_KEY, history[-HISTORY_SIZE:])
+
+
+def _needs_agent(interpretation, bot):
+    """Whether a question the classifier routed to a report should go to the
+    agent instead: the classifier doubts the report answers it, and the bot
+    runs an agent, which can still run that report and more."""
+    confidence = interpretation.get("confidence")
+    return (
+        isinstance(confidence, int | float)
+        and confidence < CONFIDENCE_FLOOR
+        and InsightAgent(bot).available
+    )
 
 
 def _help_text(tr_env, queries, with_agent):

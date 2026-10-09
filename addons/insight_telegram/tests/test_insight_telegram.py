@@ -330,6 +330,20 @@ class TestCatalog(TransactionCase):
         self.assertIn("Ask Probe Payer", text)
         self.assertIn("$321.00", text)
 
+    def test_the_agent_can_run_an_exact_report(self):
+        tools = OdooTools(
+            self.reader,
+            catalog.available_queries(self.env),
+            tz="America/Mexico_City",
+            today=self.today,
+        )
+        self.assertEqual(tools.tools()[0]["name"], "run_report")
+        self.env.flush_all()
+        result = json_loads(tools.call("run_report", {"report": "headcount"}))
+        self.assertIn("Active employees", result["report"])
+        result = json_loads(tools.call("run_report", {"report": "weather"}))
+        self.assertIn("No report", result["error"])
+
     def test_every_report_runs_on_an_empty_period(self):
         # a report must answer, not crash, whatever the data
         for key in catalog.available_queries(self.env):
@@ -586,3 +600,36 @@ class TestInsightHandler(TelegramBotTestCase):
         tool_result = seen[1][-1]["content"][0]
         self.assertEqual(tool_result["tool_use_id"], "call_1")
         self.assertEqual(json_loads(tool_result["content"]), {"count": 3})
+
+    def test_a_doubtful_report_goes_to_the_agent(self):
+        with (
+            patch.object(
+                InsightAgent, "available", new_callable=PropertyMock, return_value=True
+            ),
+            patch.object(InsightAgent, "answer", return_value="Comparado.") as agent,
+        ):
+            sent = self._run_job(
+                "¿Vendimos más de lo que cobramos?",
+                {"query": "sales", "confidence": 0.3},
+            )
+        self.assertEqual(agent.call_count, 1)
+        self.assertIn("Comparado.", sent)
+        log = self.env["telegram.insight.log"].search(
+            [("bot_id", "=", self.test_bot.id)]
+        )
+        self.assertEqual(log.query, "agent")
+
+    def test_a_confident_report_answers_itself(self):
+        if "hr.employee" not in self.env:
+            self.skipTest("hr is not installed")
+        with (
+            patch.object(
+                InsightAgent, "available", new_callable=PropertyMock, return_value=True
+            ),
+            patch.object(InsightAgent, "answer") as agent,
+        ):
+            sent = self._run_job(
+                "¿Cuántos empleados hay?", {"query": "headcount", "confidence": 0.9}
+            )
+        self.assertFalse(agent.called)
+        self.assertIn("Active employees", sent)

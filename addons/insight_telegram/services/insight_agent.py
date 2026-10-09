@@ -22,6 +22,12 @@ anything, say you can only consult and that it must be done in Odoo.
 
 Method:
 - Never invent a figure: every number comes from a tool call made now.
+- When run_report covers the question or part of it, call it first: its \
+figures are exact. Combine several reports for a comparison, and explore with \
+the other tools only what no report covers.
+- Read the question generously: answer what the owner is after, not only the \
+literal words; if it is ambiguous, answer the most likely reading and say \
+which one you took.
 - When unsure of the model, call find_models; before using a field you have \
 not seen described, call describe_model: this fork renames many fields.
 - Prefer aggregate_records and count_records over listing records.
@@ -92,6 +98,10 @@ class InsightAgent(BotAssistant):
             messages.append({"role": "assistant", "content": exchange["answer"]})
         messages.append({"role": "user", "content": question})
 
+        # the tools this answer may use: the reader's own, reports included,
+        # or the exploration tools alone
+        tools_of = getattr(reader, "tools", None)
+        self._tool_specs = tools_of() if tools_of else [dict(t) for t in TOOLS]
         for round_number in range(MAX_ROUNDS + 1):
             last = round_number == MAX_ROUNDS
             if on_round and round_number:
@@ -118,7 +128,7 @@ class InsightAgent(BotAssistant):
         return ""
 
     def _turn(self, model, system, messages, *, last):
-        tools = [dict(tool) for tool in TOOLS]
+        tools = list(self._tool_specs)
         # the tool list is the same every round: caching it with the system
         # prompt makes every round after the first read it from the cache
         tools[-1]["cache_control"] = {"type": "ephemeral"}

@@ -36,6 +36,9 @@ supplier), product, salesperson, employee: the names as the owner wrote them, \
 else null. Keep a name even when you do not recognise it (it may be a brand, \
 a product or a voice transcription error): never drop it nor swap it for \
 another report.
+- confidence: from 0 to 1, how sure you are that the report you picked \
+answers what he is after. Below 0.6 means the question needs more than one \
+report, a comparison, or data no report has.
 - summary_only: true when he asks only for the total ("just the total", \
 "solo el total"), else null.
 - overdue_only: true when he asks only for overdue or late items.
@@ -106,6 +109,7 @@ def _schema(queries) -> dict:
         **dict.fromkeys(FILTERS, _TEXT),
         "overdue_only": {"type": ["boolean", "null"]},
         "summary_only": {"type": ["boolean", "null"]},
+        "confidence": {"type": "number"},
         "top": {"type": ["integer", "null"]},
     }
     # every key spelled out and required: against an open object some

@@ -5,6 +5,8 @@ from odoo import models
 from odoo.fields import Domain
 from odoo.libs.json import dumps as json_dumps
 
+from . import catalog
+
 _logger = logging.getLogger(__name__)
 
 DEFAULT_LIMIT = 50
@@ -128,8 +130,59 @@ class OdooTools:
     instance keeps secret stays out, also as a filter, an order or a grouping.
     """
 
-    def __init__(self, reader) -> None:
+    def __init__(self, reader, queries=None, *, tz="UTC", today=None) -> None:
         self._reader = reader
+        self._queries = queries or {}
+        self._tz = tz
+        self._today = today
+
+    def tools(self) -> list:
+        """The tool specs the model gets: the catalogued reports first, when
+        there are any, then the exploration tools."""
+        if not self._queries:
+            return [dict(tool) for tool in TOOLS]
+        reports = "\n".join(
+            f"- {key}: {query.description}" for key, query in self._queries.items()
+        )
+        run_report = {
+            "name": "run_report",
+            "description": (
+                "Run one of the company's exact reports and get its answer as "
+                "text. Its figures are exact: prefer it whenever a report "
+                "covers the question or part of it, and explore with the other "
+                "tools only what no report covers. Reports:\n" + reports
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "report": {"type": "string", "enum": list(self._queries)},
+                    "date_from": {"type": "string", "description": "ISO date"},
+                    "date_to": {"type": "string", "description": "ISO date"},
+                    "group_by": {
+                        "type": "string",
+                        "enum": [
+                            "company",
+                            "warehouse",
+                            "salesperson",
+                            "partner",
+                            "product",
+                            "month",
+                        ],
+                    },
+                    "company": {"type": "string"},
+                    "warehouse": {"type": "string"},
+                    "partner": {"type": "string"},
+                    "product": {"type": "string"},
+                    "salesperson": {"type": "string"},
+                    "employee": {"type": "string"},
+                    "overdue_only": {"type": "boolean"},
+                    "summary_only": {"type": "boolean"},
+                    "top": {"type": "integer"},
+                },
+                "required": ["report"],
+            },
+        }
+        return [run_report, *(dict(tool) for tool in TOOLS)]
 
     def call(self, name, arguments) -> str:
         """Run tool `name` and return its answer as JSON text.
@@ -167,6 +220,14 @@ class OdooTools:
                 f"{company.name} (id {company.id}, {company.currency_id.name})"
                 for company in companies
             )
+
+    def _tool_run_report(self, env, report="", **params) -> dict:
+        query = self._queries.get(report)
+        if query is None:
+            raise ReaderError(f"No report {report!r}; use one of the listed ones.")
+        return {
+            "report": catalog.answer(env, query, params, tz=self._tz, today=self._today)
+        }
 
     # -- tools ----------------------------------------------------------------
 
