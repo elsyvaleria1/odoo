@@ -137,6 +137,12 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
         self.assertEqual(self.uploaded[0]["Amount"], 1999)
         self.assertIsInstance(self.uploaded[0]["Amount"], int)
 
+    def test_a_half_paisa_rounds_up(self):
+        order = self._order(10)
+        order.amount_total = 10.005
+
+        self.assertEqual(self.pine_labs._pine_labs_paisa(order), 1001)
+
     def test_its_own_transaction_pays_the_order_once(self):
         order = self._order(500)
         plutus = self._request(order)

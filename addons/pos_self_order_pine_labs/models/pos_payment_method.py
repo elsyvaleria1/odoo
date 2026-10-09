@@ -2,6 +2,7 @@ import uuid
 
 from odoo import api, models
 from odoo.fields import Domain
+from odoo.tools import float_round
 
 
 class PosPaymentMethod(models.Model):
@@ -28,8 +29,14 @@ class PosPaymentMethod(models.Model):
     @api.model
     def _pine_labs_paisa(self, order) -> int:
         # Pine Labs takes whole paisa; amount_total * 100 is a float such as
-        # 1998.9999999999998, which it refuses or truncates
-        return round(order.currency_id.round(order.amount_total) * 100)
+        # 1998.9999999999998. Half-up, as payment.utils and the till's
+        # ResCurrency.toMinorUnits round, never round()'s half-to-even
+        return int(
+            float_round(
+                order.amount_total * 10**order.currency_id.decimal_places,
+                precision_digits=0,
+            )
+        )
 
     @api.model
     def _load_pos_self_data_domain(self, data, config):
