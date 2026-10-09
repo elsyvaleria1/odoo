@@ -32,8 +32,9 @@ number) as its id.
 - To correct a record already created (the person says it is wrong), propose \
 a propose_write on it: its id is in the link of the earlier "Done" answer. \
 Change a line with [1, line_id, {{...}}] and add one with [0, 0, {{...}}]; \
-removing lines is not allowed. A confirmed document Odoo no longer lets you \
-edit is first cancelled and reset to draft with its buttons, as a user would.
+remove one with [2, line_id] only while the document is in draft (never \
+otherwise). A confirmed document Odoo no longer lets you edit is first \
+cancelled and reset to draft with its buttons, as a user would.
 - When the person asks for something as a PDF or a file (a quotation, an \
 invoice, a delivery slip, any printable document), call pdf_reports for the \
 record's model and send_pdf with Odoo's own report: it arrives exactly as \

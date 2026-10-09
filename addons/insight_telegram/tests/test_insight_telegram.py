@@ -836,23 +836,46 @@ class TestWriteOperations(TransactionCase):
             ):
                 write_ops.check(self.env, operation)
 
-    def test_removing_lines_is_refused(self):
-        customer, _product = self._sale()
-        order = self.env["sale.order"].create({"partner_id": customer.id})
-        for command in ([2, 1], [3, 1], [5]):
+    def test_a_draft_line_may_be_removed_and_nothing_else(self):
+        customer, product = self._sale()
+        line = [0, 0, {"product_id": product.id, "product_qty": 1}]
+        order = self.env["sale.order"].create(
+            {"partner_id": customer.id, "line_ids": [line, line]}
+        )
+        other = self.env["sale.order"].create(
+            {"partner_id": customer.id, "line_ids": [line]}
+        )
+
+        def remove(command, ids=None):
+            return {
+                "op": "write",
+                "model": "sale.order",
+                "ids": ids or [order.id],
+                "values": {"line_ids": [command]},
+            }
+
+        removal = write_ops.check(self.env, remove([2, order.line_ids[0].id]))
+        self.assertIn("Quitar:", "\n".join(write_ops.describe(self.env, [removal])))
+        write_ops.apply(self.env(su=True), [removal], [], self.env.user)
+        self.assertEqual(len(order.line_ids), 1, "a draft line is removed")
+        for operation in (
+            remove([5]),
+            remove([2, other.line_ids.id]),
+            remove([2, order.line_ids.id], ids=["ref:1"]),
+            {
+                "op": "create",
+                "model": "sale.order",
+                "values": {"partner_id": customer.id, "line_ids": [[2, 1]]},
+            },
+        ):
             with (
-                self.subTest(command=command),
-                self.assertRaisesRegex(write_ops.OperationError, "deleting"),
+                self.subTest(operation=operation),
+                self.assertRaises(write_ops.OperationError),
             ):
-                write_ops.check(
-                    self.env,
-                    {
-                        "op": "write",
-                        "model": "sale.order",
-                        "ids": [order.id],
-                        "values": {"line_ids": [command]},
-                    },
-                )
+                write_ops.check(self.env, operation)
+        order.action_confirm()
+        with self.assertRaisesRegex(write_ops.OperationError, "draft"):
+            write_ops.check(self.env, remove([2, order.line_ids.id]))
 
     def test_a_proposal_reads_as_the_screen_shows_it(self):
         customer, product = self._sale()

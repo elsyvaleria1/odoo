@@ -108,15 +108,8 @@ def check(env, operation) -> dict:
                 f"{model_name} has no field {', '.join(unknown)}; call describe_model."
             )
         for name, value in values.items():
-            if model._fields[name].type in ("one2many", "many2many") and any(
-                isinstance(command, (list, tuple))
-                and command
-                and command[0] in (2, 3, 5)
-                for command in (value if isinstance(value, list) else [])
-            ):
-                raise OperationError(
-                    f"{name}: removing lines is deleting, which the bot never does."
-                )
+            if model._fields[name].type in ("one2many", "many2many"):
+                _check_lines(model, normalized.get("ids"), name, value)
         normalized["values"] = values
     if op == "action":
         method = (operation.get("method") or "").strip()
@@ -133,6 +126,45 @@ def check(env, operation) -> dict:
     if operation.get("attach_files"):
         normalized["attach_files"] = True
     return normalized
+
+
+REMOVE_COMMANDS = (2, 3)
+ROW_COMMANDS = (1, 2, 3)
+
+
+def _check_lines(model, ids, name, commands) -> None:
+    """Refuse x2many commands that delete beyond what a user may on screen:
+    a draft document's own lines may be removed one by one, nothing else."""
+    if not isinstance(commands, list):
+        return
+    for command in commands:
+        if not isinstance(command, (list, tuple)) or not command:
+            continue
+        code = command[0]
+        if code == 5 or (code in REMOVE_COMMANDS and not ids):
+            raise OperationError(
+                f"{name}: lines are removed one by one, and only from a draft "
+                "document that already exists."
+            )
+        if code not in ROW_COMMANDS:
+            continue
+        if not ids or any(not isinstance(ident, int) for ident in ids):
+            raise OperationError(
+                f"{name}: a line is changed or removed on an existing record, by id."
+            )
+        records = model.browse(ids).exists()
+        if command[1] not in records[name].ids:
+            raise OperationError(
+                f"{name}: line {command[1]!r} does not belong to {model._name} {ids}."
+            )
+        if code in REMOVE_COMMANDS and (
+            "state" not in model._fields
+            or any(record.state != "draft" for record in records)
+        ):
+            raise OperationError(
+                f"{name}: lines are removed only while the document is in draft; "
+                "removing them is deleting, which the bot never does otherwise."
+            )
 
 
 def describe(env, operations) -> list:
@@ -269,8 +301,8 @@ def _relation_lines(comodel, field, commands, currency) -> list:
         elif code in (4, 6):
             ids = [command[1]] if code == 4 else list(command[2] or [])
             lines.append(f"   ◦ {_records_text(comodel, ids)}")
-        elif code in (2, 3, 5):
-            lines.append("   ◦ Quitar renglones")
+        elif code in REMOVE_COMMANDS:
+            lines.append(f"   ◦ Quitar: {_records_text(comodel, [command[1]])}")
     if priced and len(lines) > 2:
         lines.append(f"   **Total: {_money(total, currency)}** (antes de impuestos)")
     return lines
