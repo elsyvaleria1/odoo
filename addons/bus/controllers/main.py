@@ -1,26 +1,9 @@
 from werkzeug.exceptions import BadRequest
 
 from odoo.http import Controller, request, route
-from odoo.libs.json import dumps, loads
 
 
 class BusController(Controller):
-    @route("/bus/get_model_definitions", methods=["POST"], type="http", auth="user")
-    def get_model_definitions(self, model_names_to_fetch, **kwargs):
-        model_names = loads(model_names_to_fetch)
-        if not isinstance(model_names, list) or not all(
-            isinstance(name, str) for name in model_names
-        ):
-            raise BadRequest("model_names_to_fetch must be a JSON array of strings")
-        unknown = [name for name in model_names if name not in request.env]
-        if unknown:
-            raise BadRequest(f"Unknown models: {', '.join(sorted(unknown))}")
-        return request.prepare_response(
-            dumps(
-                request.env["ir.model"]._get_model_definitions(model_names),
-            )
-        )
-
     @route("/bus/has_missed_notifications", type="jsonrpc", auth="public")
     def has_missed_notifications(self, last_notification_id) -> bool:
         if not isinstance(last_notification_id, int) or isinstance(

@@ -218,7 +218,7 @@ class TestWebsocketHub(BaseCase):
         idle = [self._connect() for _ in range(5)]
         busy, busy_peer, _gauge = self._connect()
         for ws, _peer, _gauge in [*idle, (busy, busy_peer, None)]:
-            ws._channels = {("db", "chan")}
+            ws._channels = frozenset({("db", "chan")})
             ws._session_validated_until = float("inf")
             ws._validated_session_sid = ws._session.sid
         one_by_one = []
@@ -260,7 +260,7 @@ class TestWebsocketHub(BaseCase):
     def test_a_round_checks_its_due_sessions_on_its_cursor_and_closes_the_expired(self):
         trusted, due, expired = (self._connect() for _ in range(3))
         for index, (ws, _peer, _gauge) in enumerate((trusted, due, expired)):
-            ws._channels = {("db", "chan")}
+            ws._channels = frozenset({("db", "chan")})
             ws._session = MagicMock(db="db", sid=f"sid{index}", uid=index + 1)
             ws._validated_session_sid = ws._session.sid
         trusted[0]._session_validated_until = float("inf")
@@ -323,7 +323,7 @@ class TestWebsocketHub(BaseCase):
     def test_a_session_gone_from_the_store_closes_alone_in_its_round(self):
         kept, gone = self._connect(), self._connect()
         for index, (ws, _peer, _gauge) in enumerate((kept, gone)):
-            ws._channels = {("db", "chan")}
+            ws._channels = frozenset({("db", "chan")})
             ws._session = MagicMock(db="db", sid=f"sid{index}", uid=index + 1)
             ws._validated_session_sid = ws._session.sid
             ws._session_validated_until = 0.0
@@ -363,6 +363,53 @@ class TestWebsocketHub(BaseCase):
         self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.SESSION_EXPIRED)
         self.assertEqual(acquire.call_count, 1, "the round kept its one cursor")
         self.assertEqual(poll.call_count, 1)
+
+    def test_a_revoked_session_closes_its_connection_and_not_the_round(self):
+        connections = [self._connect() for _ in range(4)]
+        for index, (ws, _peer, _gauge) in enumerate(connections):
+            ws._channels = frozenset({("db", "chan")})
+            ws._session = MagicMock(db="db", sid=f"sid{index}", uid=index + 1)
+            ws._validated_session_sid = ws._session.sid
+            ws._session_validated_until = 0.0
+        *trusted, revoked = connections
+        revoked_session = revoked[0]._session
+        notifications = [{"id": 11, "message": {"type": "t", "payload": 1}}]
+        env = MagicMock()
+        poll = env.__getitem__.return_value._poll_batch
+        poll.return_value = (notifications, False)
+        cursor = MagicMock()
+        cursor.__enter__.return_value = MagicMock()
+
+        def follow_session_chain(session):
+            if session is revoked_session:
+                raise SessionExpiredException("Session was revoked")
+            return session
+
+        with (
+            patch(
+                "odoo.addons.bus.websocket.acquire_cursor", return_value=cursor
+            ) as acquire,
+            patch.object(Websocket, "new_env", return_value=env),
+            patch(
+                "odoo.addons.bus.websocket._follow_session_chain",
+                side_effect=follow_session_chain,
+            ),
+            patch("odoo.addons.bus.websocket.is_session_valid", return_value=True),
+            self.assertNoLogs("odoo.addons.bus.websocket", "WARNING"),
+        ):
+            poll_round = dispatch.open_poll_round()
+            websocket_module._wake_websockets(
+                [ws for ws, _peer, _gauge in connections], poll_round
+            )
+            for _ws, peer, _gauge in trusted:
+                opcode, payload = peer.frame()
+                self.assertEqual(opcode, Opcode.TEXT)
+                self.assertEqual(json_loads(payload), notifications)
+            opcode, payload = revoked[1].frame()
+        self.assertEqual(opcode, Opcode.CLOSE)
+        self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.SESSION_EXPIRED)
+        self.assertEqual(acquire.call_count, 1, "one cursor for the round")
+        self.assertEqual(poll.call_count, 1, "one question for the round")
 
     def test_a_connection_keeps_a_view_of_its_session_not_the_session(self):
         ws, _peer, _gauge = self._connect()

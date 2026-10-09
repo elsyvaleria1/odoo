@@ -18,6 +18,7 @@ from ..models.bus import (
     hashable,
     json_dump,
 )
+from ..websocket import ConnectionState
 
 
 @tagged("-at_install", "post_install")
@@ -76,12 +77,12 @@ class TestGetNotifyPayloads(BaseCase):
 
     def test_small_payload_not_split(self):
         channels = [("db", "model", i) for i in range(5)]
-        payloads = get_notify_payloads(channels)
+        payloads = get_notify_payloads(map(json_dump, channels))
         self.assertEqual(len(payloads), 1)
 
     def test_large_payload_split(self):
         channels = [("db", "model_name", i) for i in range(2000)]
-        payloads = get_notify_payloads(channels)
+        payloads = get_notify_payloads(map(json_dump, channels))
         self.assertGreater(len(payloads), 1)
         parsed = []
         for payload in payloads:
@@ -98,24 +99,34 @@ class TestGetNotifyPayloads(BaseCase):
         size_3 = (item_len + 1) * 3 + 1
         with patch.object(bus_module, "NOTIFY_PAYLOAD_MAX_LENGTH", size_3):
             self.assertEqual(
-                [len(json_loads(p)) for p in get_notify_payloads(channels)], [2, 1]
+                [
+                    len(json_loads(p))
+                    for p in get_notify_payloads(map(json_dump, channels))
+                ],
+                [2, 1],
             )
         with patch.object(bus_module, "NOTIFY_PAYLOAD_MAX_LENGTH", size_3 + 1):
             self.assertEqual(
-                [len(json_loads(p)) for p in get_notify_payloads(channels)], [3]
+                [
+                    len(json_loads(p))
+                    for p in get_notify_payloads(map(json_dump, channels))
+                ],
+                [3],
             )
 
     def test_single_oversized_channel_skipped(self):
         fat_channel = ("db", "x" * 10000, 1)
         with self.assertLogs("odoo.addons.bus.models.bus", "WARNING"):
-            self.assertEqual(get_notify_payloads([fat_channel]), [])
+            self.assertEqual(get_notify_payloads([json_dump(fat_channel)]), [])
 
     def test_oversized_channel_skipped_others_kept(self):
         small_before = ("db", "before", 1)
         fat_channel = ("db", "x" * 10000, 1)
         small_after = ("db", "after", 2)
         with self.assertLogs("odoo.addons.bus.models.bus", "WARNING"):
-            payloads = get_notify_payloads([small_before, fat_channel, small_after])
+            payloads = get_notify_payloads(
+                map(json_dump, [small_before, fat_channel, small_after])
+            )
         self.assertEqual(len(payloads), 1)
         self.assertEqual(
             json_loads(payloads[0]), [["db", "before", 1], ["db", "after", 2]]
@@ -131,12 +142,8 @@ class TestImDispatchChannelManagement(TransactionCase):
 
     def _make_ws(self):
         ws = MagicMock()
-        ws._channels = set()
-
-        def subscribe_side_effect(channels, last):
-            ws._channels = channels
-
-        ws.subscribe.side_effect = subscribe_side_effect
+        ws._channels = frozenset()
+        ws.state = ConnectionState.OPEN
         ws.trigger_notification_dispatching = MagicMock()
         return ws
 
@@ -188,6 +195,37 @@ class TestImDispatchChannelManagement(TransactionCase):
         d.unsubscribe(ws1)
         self.assertEqual(len(d._channels_to_ws[key]), 1)
         self.assertIn(ws2, d._channels_to_ws[key])
+
+    def test_a_closed_websocket_is_not_subscribed(self):
+        d = self._make_dispatch()
+        ws = self._make_ws()
+        ws.state = ConnectionState.CLOSED
+        d.subscribe(["ch1"], last=0, db="testdb", websocket=ws)
+        self.assertEqual(d._channels_to_ws, {})
+        ws.subscribe.assert_not_called()
+
+    def test_a_close_racing_a_subscribe_leaves_nothing_behind(self):
+        d = self._make_dispatch()
+        ws = self._make_ws()
+
+        def close():
+            ws.state = ConnectionState.CLOSED
+            d.unsubscribe(ws)
+
+        closer = threading.Thread(target=close)
+        discard = d._discard
+
+        def close_while_subscribing(websocket, channels):
+            if not closer.is_alive() and closer.ident is None:
+                closer.start()
+                closer.join(0.2)
+            discard(websocket, channels)
+
+        with patch.object(d, "_discard", side_effect=close_while_subscribing):
+            d.subscribe(["ch1", "ch2"], last=0, db="testdb", websocket=ws)
+            closer.join(5)
+        self.assertFalse(closer.is_alive())
+        self.assertEqual(d._channels_to_ws, {})
 
     def test_collect_websockets_matches_subscription(self):
         d = self._make_dispatch()

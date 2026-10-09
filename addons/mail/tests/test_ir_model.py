@@ -55,14 +55,13 @@ class TestIrModelMail(TransactionCase):
         self.assertFalse(report.exists())
         self.assertTrue(kept.exists())
 
-    def test_both_definition_readers_annotate_alike(self):
-        IrModel = self.env["ir.model"]
-        by_name = IrModel._get_definitions(["res.partner"])["res.partner"]
-        by_fetch = IrModel._get_model_definitions(["res.partner"])["res.partner"]
-        for definition in (by_name, by_fetch):
-            self.assertTrue(definition["has_activities"])
-            self.assertTrue(definition["fields"]["email"]["tracking"])
-            self.assertNotIn("tracking", definition["fields"]["comment"])
+    def test_definitions_carry_tracking_and_activities(self):
+        definition = self.env["ir.model"]._get_definitions(["res.partner"])[
+            "res.partner"
+        ]
+        self.assertTrue(definition["has_activities"])
+        self.assertTrue(definition["fields"]["email"]["tracking"])
+        self.assertNotIn("tracking", definition["fields"]["comment"])
 
     def test_a_custom_thread_model_reflects_its_mixins_without_a_false_module(self):
         model = self.env["ir.model"].create(

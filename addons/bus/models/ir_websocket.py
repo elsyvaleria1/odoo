@@ -3,8 +3,8 @@ from odoo.http import SessionExpiredException
 from odoo.service import security
 from odoo.tools.misc import OrderedSet
 
-from ..models.bus import dispatch
 from ..websocket import wsrequest
+from .bus import dispatch
 
 MAX_SUBSCRIBED_CHANNELS = 4096
 MAX_CHANNEL_LENGTH = 512
@@ -73,7 +73,6 @@ class IrWebsocket(models.AbstractModel):
             if not security.is_session_valid(
                 wsrequest.session, self.env, wsrequest, fresh_primary_cr=self.env.cr
             ):
-                wsrequest.session.logout(keep_db=True)
                 raise SessionExpiredException
         else:
             public_user_id = self.env["ir.model.data"]._xmlid_to_res_id(

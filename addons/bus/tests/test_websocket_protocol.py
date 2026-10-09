@@ -484,13 +484,13 @@ class TestNotificationDispatchState(BaseCase):
 class TestSessionValidityCache(BaseCase):
     def _make_ws(self, clock, session):
         ws = Websocket.__new__(Websocket)
-        ws._clock = time.monotonic
         ws._clock = clock
+        ws._db = "db"
         ws._session = session
         ws._session_validated_until = 0.0
         ws._validated_session_sid = None
         ws._waiting_for_dispatch = True
-        ws._channels = set()
+        ws._channels = frozenset()
         ws._dispatch_state = NotificationDispatchState(10, clock=clock)
         ws.SESSION_VALIDITY_JITTER = 0
         return ws
@@ -882,9 +882,17 @@ class TestOpenConnection(BaseCase):
                 WebsocketConnectionHandler, "_handle_public_configuration"
             ) as public_config_mock,
         ):
-            with self.assertRaises(BadRequest):
+            with (
+                self.assertRaises(BadRequest),
+                self.assertLogs("odoo.addons.bus.websocket", "WARNING") as logs,
+            ):
                 WebsocketConnectionHandler.open_connection(request, "19.0-5")
         public_config_mock.assert_not_called()
+        self.assertEqual(
+            [record.levelname for record in logs.records],
+            ["WARNING"],
+            "a client's bad handshake is not a server error",
+        )
 
 
 @tagged("-at_install", "post_install")

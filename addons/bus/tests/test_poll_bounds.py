@@ -131,7 +131,7 @@ class TestDispatchRearm(BaseCase):
         ws._clock = time.monotonic
         ws.state = ConnectionState.OPEN
         ws._db = "somedb"
-        ws._channels = {("somedb", "chan")}
+        ws._channels = frozenset({("somedb", "chan")})
         ws._waiting_for_dispatch = False
         ws._dispatch_state = NotificationDispatchState(NOTIFICATION_HOLD_BACK_SECONDS)
         session = MagicMock()
@@ -194,7 +194,7 @@ class TestDispatchRoundSharesOnePoll(BaseCase):
         ws._clock = time.monotonic
         ws.state = ConnectionState.OPEN
         ws._db = "somedb"
-        ws._channels = {("somedb", "chan")}
+        ws._channels = frozenset({("somedb", "chan")})
         ws._waiting_for_dispatch = False
         ws._dispatch_state = NotificationDispatchState(NOTIFICATION_HOLD_BACK_SECONDS)
         session = MagicMock()

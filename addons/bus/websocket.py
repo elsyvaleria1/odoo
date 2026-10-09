@@ -50,6 +50,7 @@ from .tools.websocket_codec import (
     DATA_OP,
     CloseCode,
     CloseFrame,
+    ConnectionState,
     Frame,
     FrameParser,
     InvalidCloseCodeError,
@@ -137,12 +138,6 @@ class _ServerClock:
 class LifecycleEvent(IntEnum):
     OPEN = 0
     CLOSE = 1
-
-
-class ConnectionState(IntEnum):
-    OPEN = 0
-    CLOSING = 1
-    CLOSED = 2
 
 
 _public_session_lock = threading.Lock()
@@ -345,18 +340,17 @@ class Websocket:
         cookies,
         *,
         clock=None,
-        request_db=None,
         httprequest=None,
         outdated=False,
         gauge=None,
     ) -> None:
         self._clock = clock if clock is not None else _ServerClock.monotonic
         self._session = SessionView.of(session)
-        self._cookies = cookies
         self._db = session.db
-        self._request_db = request_db if request_db is not None else session.db
         self._handshake = (
-            HandshakeFacts.of(httprequest, cookies) if httprequest is not None else None
+            HandshakeFacts.of(httprequest, cookies)
+            if httprequest is not None
+            else HandshakeFacts(cookies, None, None)
         )
         self._outdated = outdated
         self._gauge = gauge
@@ -371,7 +365,7 @@ class Websocket:
         self._fragments_opcode = None
         self._frame_started_at = None
         self._waiting_for_dispatch = False
-        self._channels = set()
+        self._channels = frozenset()
         self._session_validated_until = 0.0
         self._validated_session_sid = None
         self._dispatch_state = NotificationDispatchState(
@@ -410,8 +404,7 @@ class Websocket:
         cls.__event_callbacks[LifecycleEvent.CLOSE].add(func)
         return func
 
-    def subscribe(self, channels, last) -> None:
-        self._channels = channels
+    def subscribe(self, last) -> None:
         self._session_validated_until = 0.0
         self._dispatch_state.initialize_last_id(last)
         self.trigger_notification_dispatching()
@@ -689,7 +682,7 @@ class Websocket:
 
     def _message_job(self, message) -> None:
         WebsocketConnectionHandler._serve_message(
-            self._request_db, self._handshake, self, message
+            self._db, self._handshake, self, message
         )
 
     def _dispatch_job(self) -> None:
@@ -936,7 +929,8 @@ class Websocket:
                 env = self.new_env(cr, self._session)
                 retrying(
                     functools.partial(
-                        env["ir.websocket"]._on_websocket_closed, self._cookies
+                        env["ir.websocket"]._on_websocket_closed,
+                        self._handshake.cookies,
                     ),
                     env,
                 )
@@ -972,14 +966,14 @@ class Websocket:
         if code is CloseCode.SERVER_ERROR:
             reason = None
             try:
-                registry = Registry(self._session.db)
+                registry = Registry(self._db)
                 sequence = registry.registry_sequence
                 registry = registry.check_signaling()
                 registry_reloaded = sequence != registry.registry_sequence
             except Exception:
                 _logger.debug(
                     "Registry signaling check failed for %s",
-                    self._session.db,
+                    self._db,
                     exc_info=True,
                 )
                 registry_reloaded = False
@@ -1070,7 +1064,6 @@ class Websocket:
     def _dispatch_bus_notifications(self) -> None:
         now = self._clock()
         must_validate = self._session_check_due(now)
-        session = self._session
         self._waiting_for_dispatch = False
         # Subscribers to a busy channel converge on one cursor, so a dispatch
         # round asks the same question once per connection. Each wake
@@ -1088,7 +1081,7 @@ class Websocket:
         if poll_round is not None:
             cached = dispatch.poll_memo_get(poll_round, memo_key)
         if must_validate or cached is None:
-            with acquire_cursor(session.db) as cr:
+            with acquire_cursor(self._db) as cr:
                 if must_validate and not self._revalidate_session(cr, now):
                     raise SessionExpiredException
                 if cached is None:
@@ -1110,8 +1103,8 @@ class Websocket:
 
     def _dispatch_key(self) -> tuple:
         return (
-            self._session.db,
-            frozenset(self._channels),
+            self._db,
+            self._channels,
             self._dispatch_state.last_id,
             tuple(self._dispatch_state.ignore_ids),
         )
@@ -1239,21 +1232,18 @@ class SessionView:
     is loaded by sid where it is needed, when a message is served and when the
     session is checked again."""
 
-    __slots__ = ("context", "db", "sid", "uid")
+    __slots__ = ("context", "sid", "uid")
 
-    def __init__(self, sid, uid, db, context) -> None:
+    def __init__(self, sid, uid, context) -> None:
         self.sid = sid
         self.uid = uid
-        self.db = db
         self.context = context
 
     @classmethod
     def of(cls, session) -> SessionView:
         if isinstance(session, SessionView):
             return session
-        return cls(
-            session.sid, session.uid, session.db, frozendict(session.context or {})
-        )
+        return cls(session.sid, session.uid, frozendict(session.context or {}))
 
 
 def _follow_session_chain(initial_session: SessionView) -> Session:
@@ -1370,7 +1360,7 @@ class WebsocketConnectionHandler:
                 "Websocket unavailable on this port. Use the evented service port."
             ) from err
         except HTTPException as exc:
-            _logger.error(exc)
+            _logger.warning("Websocket handshake refused: %s", exc)
             raise
         if _hub.stopping:
             raise ServiceUnavailable(
@@ -1394,7 +1384,6 @@ class WebsocketConnectionHandler:
                 httprequest.raw_environ["odoo.socket"],
                 public_session or request.session,
                 httprequest.cookies,
-                request_db=request.db,
                 httprequest=httprequest,
                 outdated=bool(httprequest.user_agent) and version != cls._VERSION,
                 gauge=gauge,

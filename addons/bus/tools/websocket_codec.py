@@ -33,6 +33,12 @@ class CloseCode(IntEnum):
     KILL_NOW = 4003
 
 
+class ConnectionState(IntEnum):
+    OPEN = 0
+    CLOSING = 1
+    CLOSED = 2
+
+
 DATA_OP = {Opcode.TEXT, Opcode.BINARY}
 CTRL_OP = {Opcode.CLOSE, Opcode.PING, Opcode.PONG}
 HEARTBEAT_OP = {Opcode.PING, Opcode.PONG}

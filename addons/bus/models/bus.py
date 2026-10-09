@@ -19,6 +19,8 @@ from odoo.service.server import CommonServer
 from odoo.tools import SQL
 from odoo.tools.json import json_default
 
+from ..tools.websocket_codec import ConnectionState
+
 _logger = logging.getLogger(__name__)
 
 POLL_LOOKBACK_SECONDS = 50
@@ -150,8 +152,7 @@ def get_notify_payloads(channels):
     payloads = []
     items = []
     items_len = 0
-    for channel in channels:
-        item = json_dump(channel)
+    for item in channels:
         item_len = len(item.encode())
         if item_len + 2 >= NOTIFY_PAYLOAD_MAX_LENGTH:
             _logger.error(
@@ -222,10 +223,10 @@ class BusBus(models.Model):
     @api.model
     def _sendone(self, target, notification_type, message) -> None:
         self._add_commit_hooks()
-        channel = channel_with_db(self.env.cr.dbname, target)
+        channel = json_dump(channel_with_db(self.env.cr.dbname, target))
         self.env.cr.precommit.data["bus.bus.values"].append(
             {
-                "channel": json_dump(channel),
+                "channel": channel,
                 "message": json_dump(
                     {
                         "type": notification_type,
@@ -237,32 +238,35 @@ class BusBus(models.Model):
         self.env.cr.postcommit.data["bus.bus.channels"].add(channel)
 
     def _add_commit_hooks(self) -> None:
-        if "bus.bus.values" not in self.env.cr.precommit.data:
-            self.env.cr.precommit.data.setdefault_list("bus.bus.values")
+        cr = self.env.cr
+        if "bus.bus.values" not in cr.precommit.data:
+            cr.precommit.data.setdefault_list("bus.bus.values")
 
-            @self.env.cr.precommit.add
+            @cr.precommit.add
             def create_bus():
-                self.sudo().create(self.env.cr.precommit.data.pop("bus.bus.values"))
+                # A row's id is drawn here, and a flush (a savepoint) can run
+                # this long before the commit that makes the row visible.
+                cr.postcommit.data.setdefault("bus.bus.first_insert", time.monotonic())
+                self.sudo().create(cr.precommit.data.pop("bus.bus.values"))
 
-        if "bus.bus.channels" not in self.env.cr.postcommit.data:
-            self.env.cr.postcommit.data.setdefault_set("bus.bus.channels")
-            self.env.cr.postcommit.data["bus.bus.first_sendone"] = time.monotonic()
+        if "bus.bus.channels" not in cr.postcommit.data:
+            cr.postcommit.data.setdefault_set("bus.bus.channels")
 
-            cr_ref = self.env.cr
-
-            @cr_ref.postcommit.add
+            @cr.postcommit.add
             def notify():
-                channels = list(cr_ref.postcommit.data.pop("bus.bus.channels"))
-                held_for = time.monotonic() - cr_ref.postcommit.data.pop(
-                    "bus.bus.first_sendone", time.monotonic()
+                channels = list(cr.postcommit.data.pop("bus.bus.channels"))
+                inserted_at = cr.postcommit.data.pop("bus.bus.first_insert", None)
+                held_for = (
+                    0.0 if inserted_at is None else time.monotonic() - inserted_at
                 )
                 if held_for > NOTIFICATION_HOLD_BACK_SECONDS:
                     _logger.warning(
-                        "Bus notification created %.1fs before its commit, "
+                        "Bus notification inserted %.1fs before its commit, "
                         "beyond the %ds hold-back window: it may never be "
                         "dispatched to clients that received other "
-                        "notifications meanwhile. Create bus notifications as "
-                        "close to the commit as possible. Channels: %.300s",
+                        "notifications meanwhile. A savepoint flushes pending "
+                        "bus notifications; send them after the transaction's "
+                        "long-running part. Channels: %.300s",
                         held_for,
                         NOTIFICATION_HOLD_BACK_SECONDS,
                         channels,
@@ -406,28 +410,32 @@ class ImDispatch(threading.Thread):
             self._ever_started = True
 
     def subscribe(self, channels, last, db, websocket) -> None:
-        channels = {hashable(channel_with_db(db, c)) for c in channels}
-        outdated_channels = websocket._channels - channels
+        channels = frozenset(hashable(channel_with_db(db, c)) for c in channels)
+        # A connection closes on the loop thread while its subscribe runs on a
+        # job thread: checked and recorded under the lock its unsubscribe
+        # takes, a closed one is never registered again, and an unsubscribe
+        # always sees the channels it has to remove.
         with self._lock:
+            if websocket.state is not ConnectionState.OPEN:
+                return
+            self._discard(websocket, websocket._channels - channels)
             for channel in channels:
                 self._channels_to_ws.setdefault(channel, set()).add(websocket)
-            for channel in outdated_channels:
-                ws_set = self._channels_to_ws.get(channel)
-                if ws_set is not None:
-                    ws_set.discard(websocket)
-                    if not ws_set:
-                        del self._channels_to_ws[channel]
-        websocket.subscribe(channels, last)
+            websocket._channels = channels
+        websocket.subscribe(last)
         self._start_if_stopped()
 
     def unsubscribe(self, websocket) -> None:
         with self._lock:
-            for channel in websocket._channels:
-                ws_set = self._channels_to_ws.get(channel)
-                if ws_set is not None:
-                    ws_set.discard(websocket)
-                    if not ws_set:
-                        del self._channels_to_ws[channel]
+            self._discard(websocket, websocket._channels)
+
+    def _discard(self, websocket, channels) -> None:
+        for channel in channels:
+            ws_set = self._channels_to_ws.get(channel)
+            if ws_set is not None:
+                ws_set.discard(websocket)
+                if not ws_set:
+                    del self._channels_to_ws[channel]
 
     def loop(self) -> None:
         _logger.info("Bus.loop listen imbus on db postgres")

@@ -105,10 +105,10 @@ export class WebsocketWorker {
     SEEN_NOTIFICATION_MAX_COUNT = 10_000;
     // Pacing for the reconnect flush of `messageWaitQueue`.
     //
-    // The server rate-limits INCOMING frames (`Websocket._limit_rate`:
-    // `websocket_rate_limit_burst` frames, default 10, per
-    // `burst * websocket_rate_limit_delay` seconds, default 2s) and answers a
-    // breach by closing with TRY_LATER. Flushing the queue in one tight loop
+    // The server rate-limits INCOMING frames (`Websocket._limit_rate`, a GCRA
+    // bucket: a burst of `websocket_rate_limit_burst` frames, default 10, then
+    // one per `websocket_rate_limit_delay`, default 0.2s) and answers a breach
+    // by closing with TRY_LATER. Flushing the queue in one tight loop
     // therefore killed the connection outright as soon as 10 messages had
     // piled up while offline -- measured exactly: 9 queued messages survive,
     // 10 close the freshly opened socket. Two uncoordinated subsystems, one
@@ -116,7 +116,7 @@ export class WebsocketWorker {
     //
     // 4 frames per second stays under the server's *sustainable* rate
     // (1/delay = 5/s) rather than merely under its burst, so the limiter's
-    // sliding window never fills no matter how long the queue is.
+    // bucket never empties no matter how long the queue is.
     FLUSH_CHUNK_SIZE = 4;
     FLUSH_CHUNK_DELAY = 1000;
     // Nothing bounded the offline queue. Presence/keepalive-style messages are

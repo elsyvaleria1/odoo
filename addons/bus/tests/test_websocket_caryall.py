@@ -1,4 +1,6 @@
 import os
+import socket
+import struct
 import time
 import weakref
 from collections import defaultdict
@@ -18,6 +20,7 @@ from ..models.bus import dispatch
 from ..models.ir_websocket import IrWebsocket
 from ..websocket import (
     CloseCode,
+    ConnectionState,
     Frame,
     Opcode,
     TimeoutManager,
@@ -88,6 +91,35 @@ class TestWebsocketCaryall(WebsocketCase):
             time.sleep(0.01)
         self.assertEqual(len(websocket_module._open_websockets()), 0)
         self.assert_released(served)
+
+    def test_a_connection_dropped_while_subscribing_is_not_left_subscribed(self):
+        reset_on_close = struct.pack("ii", 1, 0)
+        for index in range(20):
+            ws = self.websocket_connect()
+            ws.send(
+                json_dumps(
+                    {
+                        "event_name": "subscribe",
+                        "data": {"channels": [f"dropped_{index}"], "last": 0},
+                    }
+                )
+            )
+            ws.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, reset_on_close)
+            ws.sock.close()
+            ws.connected = False
+        self.wait_remaining_websocket_connections()
+        deadline = time.monotonic() + 5
+        while websocket_module._open_websockets() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        with dispatch._lock:
+            subscribed = {
+                websocket
+                for websockets in dispatch._channels_to_ws.values()
+                for websocket in websockets
+            }
+        self.assertEqual(
+            [ws for ws in subscribed if ws.state is not ConnectionState.OPEN], []
+        )
 
     def test_timeout_manager_no_response_timeout(self):
         clock = ManualClock()
@@ -262,7 +294,7 @@ class TestWebsocketCaryall(WebsocketCase):
         ) as mock:
             websocket = self.websocket_connect()
             self.subscribe(websocket, ["my_channel"], client_last_notification_id)
-            self.assertEqual(mock.call_args[0][2], 0)
+            self.assertEqual(mock.call_args[0][1], 0)
 
     def test_subscribe_lower_last_notification_id(self):
         server_last_notification_id = (
@@ -275,7 +307,7 @@ class TestWebsocketCaryall(WebsocketCase):
         ) as mock:
             websocket = self.websocket_connect()
             self.subscribe(websocket, ["my_channel"], client_last_notification_id)
-            self.assertEqual(mock.call_args[0][2], client_last_notification_id)
+            self.assertEqual(mock.call_args[0][1], client_last_notification_id)
 
     def test_subscribe_to_custom_channel(self):
         channel = self.env["res.partner"].create({"name": "John"})

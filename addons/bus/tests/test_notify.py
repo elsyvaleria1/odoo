@@ -22,7 +22,7 @@ class NotifyTests(TransactionCase):
         channel = ("dummy_db", "dummy_model", 12345)
         channels = [channel]
         self.assertLess(len(json_dump(channels).encode()), NOTIFY_PAYLOAD_MAX_LENGTH)
-        payloads = get_notify_payloads(channels)
+        payloads = get_notify_payloads(map(json_dump, channels))
         self.assertEqual(
             len(payloads),
             1,
@@ -31,7 +31,7 @@ class NotifyTests(TransactionCase):
         )
         channels = [channel] * 100
         self.assertLess(len(json_dump(channels).encode()), NOTIFY_PAYLOAD_MAX_LENGTH)
-        payloads = get_notify_payloads(channels)
+        payloads = get_notify_payloads(map(json_dump, channels))
         self.assertEqual(
             len(payloads),
             1,
@@ -43,7 +43,7 @@ class NotifyTests(TransactionCase):
         self.assertGreaterEqual(
             len(json_dump(channels).encode()), NOTIFY_PAYLOAD_MAX_LENGTH
         )
-        payloads = get_notify_payloads(channels)
+        payloads = get_notify_payloads(map(json_dump, channels))
         self.assertGreater(
             len(payloads),
             1,
@@ -58,7 +58,7 @@ class NotifyTests(TransactionCase):
             len(json_dump(channels).encode()), NOTIFY_PAYLOAD_MAX_LENGTH
         )
         with self.assertLogs("odoo.addons.bus.models.bus", "WARNING"):
-            payloads = get_notify_payloads(channels)
+            payloads = get_notify_payloads(map(json_dump, channels))
         self.assertEqual(
             payloads,
             [],

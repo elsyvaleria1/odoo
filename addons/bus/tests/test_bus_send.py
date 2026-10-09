@@ -1,8 +1,11 @@
 import time
+from types import SimpleNamespace
 from unittest.mock import patch
 
+from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged
 
+from ..models import bus as bus_module
 from ..models.bus import NOTIFICATION_HOLD_BACK_SECONDS
 
 
@@ -151,7 +154,7 @@ class TestEnsureHooks(TransactionCase):
         self.env.cr.precommit.run()
         channels = list(self.env.cr.postcommit.data.get("bus.bus.channels", []))
         same_channel_entries = [
-            c for c in channels if isinstance(c, tuple) and c[-1] == "same_channel"
+            c for c in channels if json_loads(c)[-1] == "same_channel"
         ]
         self.assertEqual(
             len(same_channel_entries),
@@ -184,17 +187,30 @@ class TestEnsureHooks(TransactionCase):
 class TestSlowTransactionWarning(TransactionCase):
     def test_warns_when_held_longer_than_the_hold_back_window(self):
         self.env["bus.bus"]._sendone("slow_chan", "type", "message")
-        self.env.cr.postcommit.data["bus.bus.first_sendone"] = (
+        self.env.cr.precommit.run()
+        self.env.cr.postcommit.data["bus.bus.first_insert"] = (
             time.monotonic() - NOTIFICATION_HOLD_BACK_SECONDS - 5
         )
         with (
             patch("odoo.addons.bus.models.bus._send_pg_notify"),
             self.assertLogs("odoo.addons.bus.models.bus", level="WARNING") as log,
         ):
-            self.env.cr.precommit.run()
             self.env.cr.postcommit.run()
         self.assertIn("beyond the", log.output[0])
         self.assertIn("slow_chan", log.output[0])
+
+    def test_the_window_opens_at_the_insert_not_at_the_send(self):
+        now = [0.0]
+        with (
+            patch.object(bus_module, "time", SimpleNamespace(monotonic=lambda: now[0])),
+            patch("odoo.addons.bus.models.bus._send_pg_notify"),
+        ):
+            self.env["bus.bus"]._sendone("late_chan", "type", "message")
+            now[0] = 100.0
+            self.env.cr.precommit.run()
+            now[0] = 101.0
+            with self.assertNoLogs("odoo.addons.bus.models.bus", level="WARNING"):
+                self.env.cr.postcommit.run()
 
     def test_no_warning_for_a_prompt_transaction(self):
         self.env["bus.bus"]._sendone("fast_chan", "type", "message")

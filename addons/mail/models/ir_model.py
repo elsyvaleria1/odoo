@@ -195,14 +195,7 @@ class IrModel(models.Model):
         return attrs
 
     def _get_definitions(self, model_names: list[str]) -> dict:
-        return self._mail_annotate_definitions(super()._get_definitions(model_names))
-
-    def _get_model_definitions(self, model_names_to_fetch: list[str]) -> dict:
-        return self._mail_annotate_definitions(
-            super()._get_model_definitions(model_names_to_fetch)
-        )
-
-    def _mail_annotate_definitions(self, model_definitions: dict) -> dict:
+        model_definitions = super()._get_definitions(model_names)
         for model_name, model_definition in model_definitions.items():
             model = self.env[model_name]
             if isinstance(model, self.env.registry["mixin.mail.thread"]):
