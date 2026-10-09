@@ -36,6 +36,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
         help="A security token issued directly to the merchant by Pine Labs.",
     )
     pine_labs_allowed_payment_mode = fields.Selection(

@@ -89,6 +89,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
         help="Log into Viva.com then navigate to Settings > API Access > Access credentials",
     )
     viva_com_client_id = fields.Char(
@@ -100,6 +101,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
         help="Log into Viva.com then navigate to Settings > API Access > POS APIs Credentials",
     )
     viva_com_terminal_id = fields.Char(
@@ -111,11 +113,13 @@ class PosPaymentMethod(models.Model):
         inverse="_inverse_credential_doors",
         default="Bearer Token",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
     )
     viva_com_webhook_verification_key = fields.Char(
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
     )
     viva_com_latest_response = fields.Json()  # not used anymore, to remove in master
     viva_com_test_mode = fields.Boolean(
@@ -125,6 +129,7 @@ class PosPaymentMethod(models.Model):
     viva_com_webhook_endpoint = fields.Char(
         compute="_compute_viva_com_webhook_endpoint",
         readonly=True,
+        groups="point_of_sale.group_pos_manager",
     )
 
     def _viva_com_account_get_endpoint(self) -> str:
@@ -143,11 +148,12 @@ class PosPaymentMethod(models.Model):
         return "https://www.vivapayments.com"
 
     def _compute_viva_com_webhook_endpoint(self) -> None:
-        web_base_url = self.get_base_url()
-        self.viva_com_webhook_endpoint = (
-            f"{web_base_url}/pos_viva_com/notification?company_id={self.company_id.id}"
-            f"&token={self.viva_com_webhook_verification_key}"
-        )
+        for method in self:
+            method.viva_com_webhook_endpoint = (
+                f"{method.get_base_url()}/pos_viva_com/notification"
+                f"?company_id={method.company_id.id}"
+                f"&token={method.viva_com_webhook_verification_key}"
+            )
 
     def _is_write_forbidden(self, fields) -> bool:
         # Allow the modification of these fields even if a pos_session is open
@@ -191,8 +197,9 @@ class PosPaymentMethod(models.Model):
             )
 
     def _call_viva_com(self, endpoint, action, data=None, should_retry=True):
-        with self._viva_com_session(should_retry) as session:
-            return self._call_viva_com_with(session, endpoint, action, data)
+        method = self.sudo()
+        with method._viva_com_session(should_retry) as session:
+            return method._call_viva_com_with(session, endpoint, action, data)
 
     def _viva_com_session(self, should_retry=True):
         options = {}

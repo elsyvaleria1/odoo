@@ -1,3 +1,5 @@
+from odoo import Command
+from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 
@@ -30,15 +32,18 @@ class TestGloryCredentials(TransactionCase):
             copy.terminal_credential_id, self.method.terminal_credential_id
         )
 
-    def test_a_pos_user_reads_the_password_the_pos_loads(self):
+    def test_a_pos_user_reads_no_password_but_the_till_loads_it(self):
         cashier = new_test_user(
             self.env, "glory_cashier", groups="point_of_sale.group_pos_user"
         )
-
-        self.assertIn("glory_password", self.method._load_pos_data_fields(None))
-        self.assertEqual(
-            self.method.with_user(cashier).read(["glory_password"])[0][
-                "glory_password"
-            ],
-            "pw",
+        till = self.env["pos.config"].create(
+            {"name": "Glory till", "payment_method_ids": [Command.link(self.method.id)]}
         )
+        PaymentMethod = self.env["pos.payment.method"].with_user(cashier)
+
+        with self.assertRaises(AccessError):
+            self.method.with_user(cashier).read(["glory_password"])
+        self.assertIn("glory_password", PaymentMethod._load_pos_data_fields(till))
+        [row] = PaymentMethod._load_pos_data_read(self.method.with_user(cashier), till)
+        self.assertEqual(row["glory_password"], "pw")
+        self.assertEqual(row["glory_username"], "cashier")

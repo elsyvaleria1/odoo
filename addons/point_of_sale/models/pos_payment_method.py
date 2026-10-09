@@ -179,6 +179,34 @@ class PosPaymentMethod(models.Model):
             "default_qr",
         ]
 
+    @api.model
+    def _load_pos_data_till_secret_fields(self, config) -> list[str]:
+        """The secrets of a device the till drives from the browser itself.
+
+        Each is listed in `_load_pos_data_fields` too, and is restricted to
+        managers: a cashier cannot read it, the till it operates loads it.
+        """
+        return []
+
+    @api.model
+    def _load_pos_data_read(self, records, config):
+        secrets = self._load_pos_data_till_secret_fields(config)
+        if not secrets:
+            return super()._load_pos_data_read(records, config)
+        config.check_singleton()
+        records = records._filtered_access("read")
+        rows = records.read(
+            [f for f in self._load_pos_data_fields(config) if f not in secrets],
+            load=False,
+        )
+        held = {
+            method.id: method for method in (records & config.payment_method_ids).sudo()
+        }
+        for row in rows:
+            method = held.get(row["id"])
+            row.update({name: method[name] if method else False for name in secrets})
+        return rows
+
     @api.depends("type", "payment_method_type")
     def _compute_hide_use_payment_terminal(self) -> None:
         no_terminals = not bool(self._fields["use_payment_terminal"].selection(self))

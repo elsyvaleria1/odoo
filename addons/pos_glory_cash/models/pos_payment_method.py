@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class PosPaymentMethod(models.Model):
@@ -14,6 +14,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
+        groups="point_of_sale.group_pos_manager",
     )
 
     def _selection_payment_method_types(self):
@@ -27,3 +28,9 @@ class PosPaymentMethod(models.Model):
             "glory_username",
             "glory_password",
         ]
+
+    @api.model
+    def _load_pos_data_till_secret_fields(self, config) -> list[str]:
+        # the browser logs into the cash machine over its local websocket,
+        # which the server cannot reach
+        return [*super()._load_pos_data_till_secret_fields(config), "glory_password"]

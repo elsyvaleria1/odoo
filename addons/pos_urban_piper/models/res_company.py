@@ -15,5 +15,6 @@ class ResCompany(models.Model):
         string="UrbanPiper API Key",
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
+        groups="point_of_sale.group_pos_manager",
         help="The API key for accessing the UrbanPiper services.",
     )

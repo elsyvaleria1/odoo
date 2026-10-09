@@ -25,7 +25,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        classification="base.internal",
+        groups="point_of_sale.group_pos_manager",
     )
     tyro_integrated_receipts = fields.Boolean(
         string="Integrated Receipts",
@@ -55,6 +55,15 @@ class PosPaymentMethod(models.Model):
             "tyro_surcharge_product_id",
         ]
         return params
+
+    @api.model
+    def _load_pos_data_till_secret_fields(self, config) -> list[str]:
+        # Tyro's iClient runs in the browser and authenticates to the terminal
+        # with the integration key itself: the till cannot work without it
+        return [
+            *super()._load_pos_data_till_secret_fields(config),
+            "tyro_integration_key",
+        ]
 
     def action_pair_tyro_terminal(self) -> dict:
         self.check_singleton()
@@ -86,7 +95,7 @@ class PosPaymentMethod(models.Model):
                 "tyro_mode": self.tyro_mode,
                 "merchant_id": self.tyro_merchant_id,
                 "terminal_id": self.tyro_terminal_id,
-                "integration_key": self.sudo().tyro_integration_key,
+                "integration_key": self.tyro_integration_key,
             },
             "context": {
                 "footer": False,

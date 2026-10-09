@@ -40,7 +40,7 @@ class UrbanPiperClient:
         """
         headers = {
             "Authorization": f"apikey {self.config.env.company.pos_urbanpiper_username}:"
-            f"{self.config.env.company.pos_urbanpiper_apikey}",
+            f"{self.config.env.company.sudo().pos_urbanpiper_apikey}",
             "Content-Type": "application/json",
         }
         urbanpiper_url = (
