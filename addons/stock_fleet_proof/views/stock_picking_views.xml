@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_picking_form" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.stock.fleet.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_fleet.view_picking_form_delivery_proof" />
+        <field name="arch" type="xml">
+            <field name="delivery_proof_date" position="after">
+                <field
+                    name="confirmation_state"
+                    widget="badge"
+                    invisible="not confirmation_state"
+                    decoration-danger="confirmation_state == 'disputed'"
+                    decoration-info="confirmation_state == 'pending'"
+                    decoration-success="confirmation_state == 'confirmed'"
+                    decoration-warning="confirmation_state in ('unreachable', 'expired')" />
+                <field name="confirmation_date" invisible="not confirmation_date" />
+                <field
+                    name="confirmation_sent_to"
+                    invisible="not confirmation_sent_to" />
+                <widget
+                    name="proof_button"
+                    string="Customer Is Here: Confirm With a Code"
+                    invisible="not delivery_proof_required or state == 'cancel' or confirmation_state in ('confirmed', 'disputed')"
+                    issue="action_issue_confirmation_code"
+                    submit="action_prove_confirmation_code" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_picking_list" model="ir.ui.view">
+        <field name="name">stock.picking.list.inherit.stock.fleet.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_fleet.view_picking_list_delivery_proof" />
+        <field name="arch" type="xml">
+            <field name="delivery_proof_ok" position="after">
+                <field
+                    name="confirmation_state"
+                    widget="badge"
+                    optional="show"
+                    decoration-danger="confirmation_state == 'disputed'"
+                    decoration-info="confirmation_state == 'pending'"
+                    decoration-success="confirmation_state == 'confirmed'"
+                    decoration-warning="confirmation_state in ('unreachable', 'expired')" />
+            </field>
+        </field>
+    </record>
+
+    <record id="view_picking_search" model="ir.ui.view">
+        <field name="name">stock.picking.search.inherit.stock.fleet.proof</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock_fleet.view_picking_search_delivery_proof" />
+        <field name="arch" type="xml">
+            <filter name="delivery_proof_rejected" position="after">
+                <filter
+                    name="customer_disputed"
+                    string="Disputed by the Customer"
+                    domain="[('confirmation_state', '=', 'disputed')]" />
+                <filter
+                    name="customer_unconfirmed"
+                    string="Not Confirmed by the Customer"
+                    domain="[('state', '=', 'done'), ('confirmation_state', 'in', ('pending', 'unreachable', 'expired'))]" />
+            </filter>
+        </field>
+    </record>
+
+</odoo>
