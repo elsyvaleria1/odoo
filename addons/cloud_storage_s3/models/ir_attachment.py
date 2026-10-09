@@ -1,7 +1,10 @@
+import base64
+import hashlib
 import logging
 import uuid
 from collections import defaultdict
 from itertools import batched
+from pathlib import Path
 from typing import Self
 
 from odoo import api, fields, models
@@ -243,6 +246,138 @@ class IrAttachment(models.Model):
             "response_status": 200,
         }
 
+    def _s3_move_refusal(self) -> str | None:
+        self.check_singleton()
+        if self.type != "binary":
+            return "not_binary"
+        if self.res_field:
+            # a field's bytes are read through the field, never through a URL
+            return "field_attachment"
+        if not self.store_fname or "://" in self.store_fname:
+            return "not_in_filestore"
+        if not self.file_size:
+            return "empty"
+        return None
+
+    def _s3_move_to_cloud(self) -> dict[str, list[int]]:
+        """Upload each filestore attachment to the bucket and serve it from there.
+
+        :return: attachment ids by outcome, ``moved`` or the reason for a skip
+        :rtype: dict
+        """
+        icp = self.env["ir.config_parameter"].sudo()
+        bucket = icp.get_param(s3.PARAM_BUCKET)
+        region = icp.get_param(s3.PARAM_REGION)
+        endpoint = s3.get_endpoint(self.env)
+        client = s3.get_client(self.env)
+        outcome = defaultdict(list)
+        for attach in self:
+            reason = attach._s3_move_refusal()
+            if reason:
+                outcome[reason].append(attach.id)
+                continue
+            try:
+                key, reason = attach._s3_upload_verified(client, bucket)
+            except Exception:
+                _logger.warning(
+                    "S3 move: attachment %s was not uploaded", attach.id, exc_info=True
+                )
+                key, reason = None, "error"
+            if reason:
+                outcome[reason].append(attach.id)
+                continue
+            # The local file stays referenced, so writing ``type`` back to
+            # ``binary`` undoes the move until _s3_release_local_files runs.
+            # Only type and url are written: content values would recompute
+            # file_size, checksum and index_content from empty bytes.
+            attach.write(
+                {
+                    "type": "cloud_storage",
+                    "url": s3.object_url(bucket, region, key, endpoint),
+                }
+            )
+            outcome["moved"].append(attach.id)
+        return dict(outcome)
+
+    def _s3_upload_verified(self, client, bucket) -> tuple[str | None, str | None]:
+        """Upload the filestore file and check the stored object against it.
+
+        :return: the object key and ``None``, or ``None`` and the refusal
+        :rtype: tuple
+        """
+        self.check_singleton()
+        path = Path(self._get_full_path(self.store_fname))
+        digest = hashlib.md5(usedforsecurity=False)
+        size = 0
+        with path.open("rb") as f:
+            while block := f.read(1 << 20):
+                digest.update(block)
+                size += len(block)
+        if size != self.file_size:
+            return None, "size_mismatch"
+        key = self._generate_cloud_storage_blob_name()
+        with path.open("rb") as f:
+            client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=f,
+                ContentLength=size,
+                ContentType=self.mimetype or "application/octet-stream",
+                # the store rejects a body whose MD5 differs from this one
+                ContentMD5=base64.b64encode(digest.digest()).decode(),
+            )
+        head = client.head_object(Bucket=bucket, Key=key)
+        if (
+            head["ContentLength"] != size
+            or head["ETag"].strip('"') != digest.hexdigest()
+        ):
+            return None, "verify_failed"
+        return key, None
+
+    def _s3_release_local_files(self) -> dict[str, list[int]]:
+        """Drop the filestore copy of attachments the bucket already holds.
+
+        :return: attachment ids by outcome, ``released`` or the reason for a skip
+        :rtype: dict
+        """
+        client = s3.get_client(self.env)
+        outcome = defaultdict(list)
+        fnames = []
+        for attach in self:
+            info = attach.type == "cloud_storage" and attach._parse_s3_url()
+            if not info or not attach.store_fname or "://" in attach.store_fname:
+                outcome["not_releasable"].append(attach.id)
+                continue
+            try:
+                head = client.head_object(
+                    Bucket=info["bucket_name"], Key=info["blob_name"]
+                )
+            except Exception:
+                _logger.warning(
+                    "S3 release: object of attachment %s is not readable",
+                    attach.id,
+                    exc_info=True,
+                )
+                outcome["error"].append(attach.id)
+                continue
+            if head["ContentLength"] != attach.file_size:
+                outcome["verify_failed"].append(attach.id)
+                continue
+            outcome["released"].append(attach.id)
+            fnames.append(attach.store_fname)
+        released = self.browse(outcome.get("released", []))
+        if released:
+            # write() drops store_fname from its values, so the column is set
+            # here; the garbage collector keeps files other rows still use
+            self.flush_model(["store_fname"])
+            self.env.cr.execute(
+                "UPDATE ir_attachment SET store_fname = NULL WHERE id = ANY(%s)",
+                [released.ids],
+            )
+            released.invalidate_recordset(["store_fname", "raw", "datas"])
+            self._remove_stored_file_multi(fnames)
+        return dict(outcome)
+
     def unlink(self):
         if not self._s3_is_enabled():
             return super().unlink()
@@ -255,7 +390,22 @@ class IrAttachment(models.Model):
                 blobs_by_bucket[info["bucket_name"]].append(info["blob_name"])
             elif attach.s3_blob_name and hybrid_bucket:
                 hybrid_candidates.append(attach.s3_blob_name)
+        cloud_urls = {attach.url for attach in self if attach.type == "cloud_storage"}
         res = super().unlink()
+        if cloud_urls:
+            # a copied document shares its source's url, and so its blob
+            endpoint = s3.get_endpoint(self.env)
+            shared_keys = set()
+            for url in (
+                self.sudo()
+                ._with_field_rows()
+                .search([("url", "in", list(cloud_urls))])
+                .mapped("url")
+            ):
+                if info := s3.parse_object_url(url, None, endpoint):
+                    shared_keys.add((info["bucket_name"], info["blob_name"]))
+            for bucket, blobs in blobs_by_bucket.items():
+                blobs[:] = [b for b in blobs if (bucket, b) not in shared_keys]
         if hybrid_candidates:
             still_used = set(
                 self.sudo()

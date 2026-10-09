@@ -1,3 +1,4 @@
+import hashlib
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
@@ -366,6 +367,140 @@ class TestCloudStorageS3Endpoint(TestCloudStorageS3Common):
     def test_uninstall_drops_the_endpoint(self):
         uninstall_hook(self.env)
         self.assertFalse(self.env["ir.config_parameter"].get_param(s3.PARAM_ENDPOINT))
+
+
+class TestCloudStorageS3Move(TestCloudStorageS3Common):
+    def setUp(self):
+        super().setUp()
+        self.env["ir.config_parameter"].set_param(
+            "cloud_storage_s3_storage_mode", "s3_only"
+        )
+        self.data = b"%PDF-1.4 agromarin move test"
+        self.mock_s3_client.head_object.side_effect = None
+        self.mock_s3_client.head_object.return_value = {
+            "ContentLength": len(self.data),
+            "ETag": f'"{hashlib.md5(self.data, usedforsecurity=False).hexdigest()}"',
+        }
+
+    def _local(self, **vals):
+        return self.env["ir.attachment"].create(
+            [
+                {
+                    "name": "contrato.pdf",
+                    "raw": self.data,
+                    "res_model": "res.partner",
+                    "res_id": 1,
+                    **vals,
+                }
+            ]
+        )
+
+    def test_move_serves_from_the_bucket_and_keeps_metadata(self):
+        attachment = self._local()
+        before = attachment.read(
+            ["checksum", "file_size", "index_content", "mimetype", "store_fname"]
+        )[0]
+        outcome = attachment._s3_move_to_cloud()
+        self.assertEqual(outcome, {"moved": attachment.ids})
+        self.assertEqual(attachment.type, "cloud_storage")
+        info = attachment._get_s3_info()
+        self.assertEqual(info["bucket_name"], self.bucket_name)
+        after = attachment.read(list(before) + ["id"])[0]
+        for field, value in before.items():
+            self.assertEqual(after[field], value, field)
+        call = self.mock_s3_client.put_object.call_args.kwargs
+        self.assertEqual(call["Key"], info["blob_name"])
+        self.assertEqual(call["ContentLength"], len(self.data))
+        self.assertEqual(call["ContentType"], "application/pdf")
+        self.assertTrue(call["ContentMD5"])
+
+    def test_move_is_undone_by_writing_the_type_back(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        attachment.write({"type": "binary", "url": False})
+        self.assertEqual(attachment.raw, self.data)
+
+    def test_move_refuses_what_it_cannot_serve(self):
+        empty = self._local(name="empty.txt", raw=b"")
+        field = self._local(name="image_128", res_field="image_128")
+        outcome = (empty | field)._s3_move_to_cloud()
+        # Odoo keeps an empty file inline, never in the filestore
+        self.assertEqual(
+            outcome, {"not_in_filestore": empty.ids, "field_attachment": field.ids}
+        )
+        self.mock_s3_client.put_object.assert_not_called()
+
+    def test_move_keeps_local_when_the_store_disagrees(self):
+        attachment = self._local()
+        self.mock_s3_client.head_object.return_value = {
+            "ContentLength": len(self.data),
+            "ETag": '"0000"',
+        }
+        outcome = attachment._s3_move_to_cloud()
+        self.assertEqual(outcome, {"verify_failed": attachment.ids})
+        self.assertEqual(attachment.type, "binary")
+
+    def test_move_keeps_local_when_the_upload_fails(self):
+        attachment = self._local()
+        self.mock_s3_client.put_object.side_effect = ClientError(
+            {"Error": {"Code": "BadDigest"}}, "PutObject"
+        )
+        with self.assertLogs(
+            "odoo.addons.cloud_storage_s3.models.ir_attachment", "WARNING"
+        ):
+            outcome = attachment._s3_move_to_cloud()
+        self.assertEqual(outcome, {"error": attachment.ids})
+        self.assertEqual(attachment.type, "binary")
+
+    def test_move_refuses_a_truncated_local_file(self):
+        attachment = self._local()
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET file_size = file_size + 1 WHERE id = %s",
+            [attachment.id],
+        )
+        attachment.invalidate_recordset()
+        outcome = attachment._s3_move_to_cloud()
+        self.assertEqual(outcome, {"size_mismatch": attachment.ids})
+        self.mock_s3_client.put_object.assert_not_called()
+
+    def test_release_drops_the_local_file_and_keeps_metadata(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        size, checksum = attachment.file_size, attachment.checksum
+        fname = attachment.store_fname
+        with patch.object(
+            type(self.env["ir.attachment"]), "_mark_for_gc_multi"
+        ) as mark:
+            outcome = attachment._s3_release_local_files()
+        self.assertEqual(outcome, {"released": attachment.ids})
+        self.assertFalse(attachment.store_fname)
+        self.assertEqual(attachment.file_size, size)
+        self.assertEqual(attachment.checksum, checksum)
+        mark.assert_called_once_with([fname])
+
+    def test_release_refuses_when_the_object_size_differs(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        self.mock_s3_client.head_object.return_value = {"ContentLength": 1}
+        outcome = attachment._s3_release_local_files()
+        self.assertEqual(outcome, {"verify_failed": attachment.ids})
+        self.assertTrue(attachment.store_fname)
+
+    def test_release_refuses_a_local_attachment(self):
+        attachment = self._local()
+        outcome = attachment._s3_release_local_files()
+        self.assertEqual(outcome, {"not_releasable": attachment.ids})
+
+    def test_unlink_keeps_a_blob_a_copy_still_uses(self):
+        attachment = self._local()
+        attachment._s3_move_to_cloud()
+        copy = attachment.copy()
+        self.assertEqual(copy.url, attachment.url)
+        attachment.unlink()
+        self.mock_s3_client.delete_objects.assert_not_called()
+        copy.unlink()
+        self.mock_s3_client.delete_objects.assert_called_once()
 
 
 class TestCloudStorageS3Hybrid(TestCloudStorageS3Common):
