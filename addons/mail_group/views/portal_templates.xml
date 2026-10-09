@@ -437,6 +437,34 @@
         </div>
     </template>
 
+    <template
+        id="confirmation_subscription_request"
+        name="Mailing List Confirmation Request">
+        <div id="wrap" class="oe_structure oe_empty">
+            <t t-call-assets="web.assets_frontend" t-js="false" />
+            <form
+                id="o_mail_group_confirm"
+                method="post"
+                t-att-action="request.httprequest.full_path"
+                class="container alert alert-info mt-5">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    t-att-value="request.csrf_token()" />
+                <t t-if="subscribing">Subscribe</t>
+                <t t-if="not subscribing">Unsubscribe</t>
+                <strong t-out="email" />
+                <t t-if="subscribing">to</t>
+                <t t-if="not subscribing">from</t>
+                the list <strong t-out="group.name" />?
+                <button type="submit" class="btn btn-primary ms-2">
+                    <t t-if="subscribing">Subscribe</t>
+                    <t t-if="not subscribing">Unsubscribe</t>
+                </button>
+            </form>
+        </div>
+    </template>
+
     <template id="invalid_token_subscription" name="Invalid Token Submitted">
         <div id="wrap" class="oe_structure oe_empty">
             <t t-call-assets="web.assets_frontend" t-js="false" />

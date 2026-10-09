@@ -329,13 +329,21 @@ class PortalMailGroup(http.Controller):
 
         return group_sudo, is_member, partner_id
 
-    @http.route("/group/subscribe-confirm", type="http", auth="public", website=True)
+    @http.route(
+        "/group/subscribe-confirm",
+        type="http",
+        auth="public",
+        website=True,
+        methods=["GET", "POST"],
+    )
     def group_subscribe_confirm(self, group_id, email, token, **kw):
         group = self._group_subscription_confirm_get_group(
             group_id, email, token, "subscribe"
         )
         if not group:
             return request.render("mail_group.invalid_token_subscription")
+        if request.httprequest.method != "POST":
+            return self._render_subscription_confirm_request(group, email, True)
 
         partner = (
             request.env["mixin.mail.thread"]
@@ -353,13 +361,21 @@ class PortalMailGroup(http.Controller):
             },
         )
 
-    @http.route("/group/unsubscribe-confirm", type="http", auth="public", website=True)
+    @http.route(
+        "/group/unsubscribe-confirm",
+        type="http",
+        auth="public",
+        website=True,
+        methods=["GET", "POST"],
+    )
     def group_unsubscribe_confirm(self, group_id, email, token, **kw):
         group = self._group_subscription_confirm_get_group(
             group_id, email, token, "unsubscribe"
         )
         if not group:
             return request.render("mail_group.invalid_token_subscription")
+        if request.httprequest.method != "POST":
+            return self._render_subscription_confirm_request(group, email, False)
 
         group._leave_group(email, all_members=True)
 
@@ -370,6 +386,14 @@ class PortalMailGroup(http.Controller):
                 "email": email,
                 "subscribing": False,
             },
+        )
+
+    def _render_subscription_confirm_request(self, group, email, subscribing):
+        # the link in the mail: a scanner or a preview opening it must not
+        # join or leave anyone, so the page asks and its form posts the link
+        return request.render(
+            "mail_group.confirmation_subscription_request",
+            {"group": group, "email": email, "subscribing": subscribing},
         )
 
     def _group_subscription_confirm_get_group(self, group_id, email, token, action):
