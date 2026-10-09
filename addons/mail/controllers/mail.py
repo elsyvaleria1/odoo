@@ -320,6 +320,7 @@ class MailController(http.Controller):
         auth="receiver",
         receiver="mixin.mail.thread:_receiver_for_unfollow_link",
         receiver_event="mail_unfollow",
+        methods=["GET", "POST"],
         csrf=False,
         typed=True,
     )
@@ -327,6 +328,14 @@ class MailController(http.Controller):
         self, model: str, res_id: str, pid: str, token: str, **kwargs
     ) -> Response:
         record_sudo = request.admission.subject
+        model_name = request.env["ir.model"].sudo()._get(model).display_name
+        if request.httprequest.method != "POST":
+            # the link in the mail: a scanner or a preview opening it must not
+            # unfollow anyone, so the page asks and its form posts the link
+            return request.render(
+                "mail.message_document_unfollow_confirm",
+                {"name": record_sudo.display_name, "model_name": model_name},
+            )
         record = record_sudo.with_user(request.env.user)
         res_id, pid = record.id, request.admission.extra["pid"]
         _debug.lifecycle("unfollow_link", model=model, record=res_id, partner=pid)
@@ -340,7 +349,7 @@ class MailController(http.Controller):
             "mail.message_document_unfollowed",
             {
                 "name": record_sudo.display_name,
-                "model_name": request.env["ir.model"].sudo()._get(model).display_name,
+                "model_name": model_name,
                 "access_url": record._notify_get_action_link(
                     "view", model=model, res_id=res_id
                 )

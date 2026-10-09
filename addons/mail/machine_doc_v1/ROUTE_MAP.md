@@ -105,7 +105,7 @@ Notification-email redirect targets + the mass-mailing font-to-image renderer.
 | Route | Type | Auth | Handler | Purpose |
 |-------|------|------|---------|---------|
 | `/mail/view` | http | public | `mail_action_view` | Notification-email redirect → record / messaging / login |
-| `/mail/unfollow` | http | public (csrf=False) | `mail_action_unfollow` | Unsubscribe a partner (MUA link, token-checked) |
+| `/mail/unfollow` | http GET, POST | receiver (csrf=False) | `mail_action_unfollow` | Unsubscribe a partner (MUA link, token-checked): a GET asks, the POST its page sends unsubscribes |
 | `/mail/message/<int:message_id>` | http | public +guest | `mail_thread_message_redirect` | Redirect to a message's record, highlighting it |
 | `/web_editor/font_to_img/<icon>` … + `/mail/font_to_img/<icon>` … (20 URL variants: 10 per prefix) | http | none (**readonly**, implicitly — see legend) | `export_icon_to_png` | Render a font glyph to PNG (mass-mailing). Sets `Access-Control-Allow-Origin: *` manually in the body — not via the `cors=` kwarg |
 

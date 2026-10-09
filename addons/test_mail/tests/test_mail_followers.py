@@ -2306,14 +2306,23 @@ class UnfollowLinkTest(MailCommon, HttpCase):
     def _test_unfollow_url(self, record, unfollow_url, partner):
         """Test that the unfollow url works.
 
-        Test that: that browsing the unfollow URL unsubscribe the user from the record
+        Opening the link asks; only the confirmation it posts unfollows, so a
+        mail scanner or a preview opening the link unfollows nobody.
         """
+        with self.subTest("Opening the link asks first"):
+            self.assertIn(partner, record.message_partner_ids)
+            response = self.url_open(unfollow_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('method="post"', response.text)
+            self.assertNotIn("You are no longer following the document", response.text)
+            record.invalidate_recordset(["message_partner_ids"])
+            self.assertIn(partner, record.message_partner_ids)
         with self.subTest("Legitimate unfollow"):
             # We test that the URL still work a second time if the user has been re-added
             for _ in range(2):
                 try:
                     self.assertIn(partner, record.message_partner_ids)
-                    response = self.url_open(unfollow_url)
+                    response = self.url_open(unfollow_url, method="POST")
                     self.assertEqual(response.status_code, 200)
                     self.assertNotIn(partner, record.message_partner_ids)
                     self.assertEqual(urlparse(response.url).path, "/mail/unfollow")
@@ -2442,7 +2451,7 @@ class UnfollowLinkTest(MailCommon, HttpCase):
             with self.subTest(until=until):
                 ICP.set_param(LEGACY_ACTION_LINKS_UNTIL, until)
                 self.test_record._message_subscribe(partner_ids=partner.ids)
-                response = self.url_open(legacy_url)
+                response = self.url_open(legacy_url, method="POST")
                 self.assertEqual(response.status_code == 200, opens)
                 self.assertEqual(
                     partner not in self.test_record.message_partner_ids, opens

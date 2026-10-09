@@ -14,6 +14,24 @@
         </t>
     </template>
 
+    <template id="mail.message_document_unfollow_confirm">
+        <t t-call="mail.public_layout">
+            <t t-set="additional_title">Unfollow "<t t-out="name" />"</t>
+            <div class="h-100 d-flex align-items-center justify-content-center">
+                <div>
+                    <h1 t-out="model_name" />
+                    <form
+                        method="post"
+                        t-att-action="request.httprequest.full_path"
+                        class="text-center p-5">
+                        <p>Stop following <strong t-out="name" />?</p>
+                        <button type="submit" class="btn btn-primary">Unfollow</button>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
     <template id="mail.message_document_unfollowed">
         <t t-call="mail.public_layout">
             <t t-set="additional_title">"<t t-out="name" />" no longer followed</t>
