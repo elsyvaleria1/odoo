@@ -6,7 +6,8 @@ DELETE FROM ir_config_parameter
 WHERE key IN (
     'cloud_storage_s3_enabled',
     'cloud_storage_s3_bucket_name',
-    'cloud_storage_s3_region'
+    'cloud_storage_s3_region',
+    'cloud_storage_s3_endpoint_url'
 );
 UPDATE credential_credential
 SET active = false

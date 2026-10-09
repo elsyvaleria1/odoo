@@ -1,4 +1,5 @@
-from urllib.parse import quote
+import re
+from urllib.parse import quote, unquote, urlsplit
 
 import boto3
 from botocore.exceptions import ClientError
@@ -8,8 +9,13 @@ from odoo.libs.json import dumps as json_dumps
 
 PARAM_BUCKET = "cloud_storage_s3_bucket_name"
 PARAM_REGION = "cloud_storage_s3_region"
+PARAM_ENDPOINT = "cloud_storage_s3_endpoint_url"
 CREDENTIAL_CATEGORY_XMLID = "cloud_storage_s3.credential_category_cloud_storage_s3"
 CREDENTIAL_NAME = "Cloud Storage S3"
+
+AWS_URL_PATTERN = re.compile(
+    r"^https://(?P<bucket_name>[\w\-.]+)\.s3\.(?P<region>[\w\-.]+)\.amazonaws\.com/(?P<blob_name>[^?]+)$"
+)
 
 _ClientCache = {}
 
@@ -55,6 +61,19 @@ def store_keys(env, access_key_id, secret_access_key) -> None:
     clear_cache(env)
 
 
+def normalize_endpoint(endpoint) -> str:
+    endpoint = (endpoint or "").strip().rstrip("/")
+    if endpoint and "://" not in endpoint:
+        endpoint = f"https://{endpoint}"
+    return endpoint
+
+
+def get_endpoint(env) -> str:
+    return normalize_endpoint(
+        env["ir.config_parameter"].sudo().get_param(PARAM_ENDPOINT)
+    )
+
+
 def get_config(env):
     icp = env["ir.config_parameter"].sudo()
     credential = get_credential(env)
@@ -65,7 +84,10 @@ def get_config(env):
         if credential and credential.storage_method == "json"
         else False,
     }
-    return config if all(config.values()) else {}
+    if not all(config.values()):
+        return {}
+    config["endpoint_url"] = get_endpoint(env)
+    return config
 
 
 def get_client(env):
@@ -77,7 +99,7 @@ def get_client(env):
                 "IAM keys in Settings → Cloud Storage."
             )
         )
-    signature = (config["region"], config["credential"])
+    signature = (config["region"], config["endpoint_url"], config["credential"])
     db_name = env.registry.db_name
     cached_signature, cached_client = _ClientCache.get(db_name, (None, None))
     if cached_signature == signature and cached_client:
@@ -90,6 +112,7 @@ def get_client(env):
         aws_access_key_id=keys["access_key_id"],
         aws_secret_access_key=keys["secret_access_key"],
         region_name=config["region"],
+        endpoint_url=config["endpoint_url"] or None,
     )
     _ClientCache[db_name] = (signature, client)
     return client
@@ -116,5 +139,42 @@ def object_exists(client, bucket, key) -> bool:
     return True
 
 
-def object_url(bucket, region, key) -> str:
+def object_url(bucket, region, key, endpoint_url="") -> str:
+    if endpoint_url:
+        host = urlsplit(normalize_endpoint(endpoint_url)).netloc
+        return f"https://{bucket}.{host}/{quote(key)}"
     return f"https://{bucket}.s3.{region}.amazonaws.com/{quote(key)}"
+
+
+def parse_object_url(url, region, endpoint_url=""):
+    """Split a virtual-hosted object URL into bucket, region and key.
+
+    :param str url: the attachment URL
+    :param str region: region reported for URLs of the configured endpoint
+    :param str endpoint_url: the configured S3-compatible endpoint, if any
+    :return: ``bucket_name``, ``region`` and ``blob_name``, or ``None``
+    :rtype: dict | None
+    """
+    # Amazon URLs stay recognized so attachments stored before an endpoint
+    # was configured keep resolving.
+    match = AWS_URL_PATTERN.fullmatch(url or "")
+    if match:
+        return {
+            "bucket_name": match["bucket_name"],
+            "region": match["region"],
+            "blob_name": unquote(match["blob_name"]),
+        }
+    if not endpoint_url:
+        return None
+    host = urlsplit(normalize_endpoint(endpoint_url)).netloc
+    match = re.fullmatch(
+        rf"https://(?P<bucket_name>[\w\-.]+)\.{re.escape(host)}/(?P<blob_name>[^?]+)",
+        url or "",
+    )
+    if not match:
+        return None
+    return {
+        "bucket_name": match["bucket_name"],
+        "region": region,
+        "blob_name": unquote(match["blob_name"]),
+    }

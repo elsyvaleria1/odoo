@@ -1,4 +1,5 @@
 import contextlib
+from urllib.parse import urlsplit
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -17,6 +18,13 @@ class ResConfigSettings(models.TransientModel):
     cloud_storage_s3_region = fields.Char(
         string="AWS Region",
         config_parameter=s3.PARAM_REGION,
+    )
+    cloud_storage_s3_endpoint_url = fields.Char(
+        string="S3 Endpoint URL",
+        config_parameter=s3.PARAM_ENDPOINT,
+        help="Leave empty for Amazon S3. For an S3-compatible provider, enter "
+        "its endpoint, e.g. https://s3.bhs.io.cloud.ovh.net for OVHcloud "
+        "Object Storage in Beauharnois.",
     )
     cloud_storage_s3_access_key_id = fields.Char(
         string="AWS Access Key ID",
@@ -156,11 +164,16 @@ class ResConfigSettings(models.TransientModel):
     def _check_cloud_storage_uninstallable(self):
         if not self._is_s3_provider():
             return super()._check_cloud_storage_uninstallable()
+        url_domain = [("url", "=like", "https://%.s3.%.amazonaws.com/%")]
+        if endpoint := s3.get_endpoint(self.env):
+            host = urlsplit(endpoint).netloc
+            url_domain = [
+                "|",
+                *url_domain,
+                ("url", "=like", f"https://%.{host}/%"),
+            ]
         s3_in_use = self.env["ir.attachment"].search_count(
-            [
-                ("type", "=", "cloud_storage"),
-                ("url", "=like", "https://%.s3.%.amazonaws.com/%"),
-            ],
+            [("type", "=", "cloud_storage"), *url_domain],
             limit=1,
         )
         if s3_in_use:

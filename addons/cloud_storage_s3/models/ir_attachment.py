@@ -1,10 +1,8 @@
 import logging
-import re
 import uuid
 from collections import defaultdict
 from itertools import batched
 from typing import Self
-from urllib.parse import unquote
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -12,10 +10,6 @@ from odoo.exceptions import ValidationError
 from ..tools import s3
 
 _logger = logging.getLogger(__name__)
-
-S3_URL_PATTERN = re.compile(
-    r"^https://(?P<bucket_name>[\w\-.]+)\.s3\.(?P<region>[\w\-.]+)\.amazonaws\.com/(?P<blob_name>[^?]+)$"
-)
 
 
 class IrAttachment(models.Model):
@@ -166,22 +160,26 @@ class IrAttachment(models.Model):
         )
         pending._s3_mirror_to_cloud()
 
+    def _parse_s3_url(self):
+        return s3.parse_object_url(
+            self.url,
+            self.env["ir.config_parameter"].sudo().get_param(s3.PARAM_REGION),
+            s3.get_endpoint(self.env),
+        )
+
     def _get_s3_info(self) -> dict:
-        match = S3_URL_PATTERN.fullmatch(self.url or "")
-        if not match:
-            raise ValidationError(
-                self.env._("%s is not a valid Amazon S3 URL.", self.url)
-            )
-        return {
-            "bucket_name": match["bucket_name"],
-            "region": match["region"],
-            "blob_name": unquote(match["blob_name"]),
-        }
+        info = self._parse_s3_url()
+        if not info:
+            raise ValidationError(self.env._("%s is not a valid S3 URL.", self.url))
+        return info
 
     def _generate_s3_url(self, blob_name):
         icp = self.env["ir.config_parameter"].sudo()
         return s3.object_url(
-            icp.get_param(s3.PARAM_BUCKET), icp.get_param(s3.PARAM_REGION), blob_name
+            icp.get_param(s3.PARAM_BUCKET),
+            icp.get_param(s3.PARAM_REGION),
+            blob_name,
+            s3.get_endpoint(self.env),
         )
 
     def _generate_s3_presigned_url(
@@ -252,14 +250,9 @@ class IrAttachment(models.Model):
         hybrid_bucket = self._s3_bucket_name()
         hybrid_candidates = []
         for attach in self:
-            if attach.type == "cloud_storage" and S3_URL_PATTERN.fullmatch(
-                attach.url or ""
-            ):
-                try:
-                    info = attach._get_s3_info()
-                    blobs_by_bucket[info["bucket_name"]].append(info["blob_name"])
-                except ValidationError:
-                    pass
+            info = attach.type == "cloud_storage" and attach._parse_s3_url()
+            if info:
+                blobs_by_bucket[info["bucket_name"]].append(info["blob_name"])
             elif attach.s3_blob_name and hybrid_bucket:
                 hybrid_candidates.append(attach.s3_blob_name)
         res = super().unlink()

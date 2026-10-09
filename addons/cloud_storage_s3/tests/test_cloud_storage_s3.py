@@ -270,6 +270,104 @@ class TestCloudStorageS3(TestCloudStorageS3Common):
         self.assertFalse(s3.get_credential(self.env))
 
 
+class TestCloudStorageS3Endpoint(TestCloudStorageS3Common):
+    def setUp(self):
+        super().setUp()
+        self.region = "bhs"
+        self.host = "s3.bhs.io.cloud.ovh.net"
+        icp = self.env["ir.config_parameter"]
+        icp.set_param(s3.PARAM_REGION, self.region)
+        icp.set_param(s3.PARAM_ENDPOINT, f"{self.host}/")
+        s3.clear_cache()
+
+    def _cloud_attachment(self, url):
+        return self.env["ir.attachment"].create(
+            [
+                {
+                    "name": "test.txt",
+                    "mimetype": "text/plain",
+                    "type": "cloud_storage",
+                    "url": url,
+                }
+            ]
+        )
+
+    def test_client_points_at_the_endpoint(self):
+        with patch(CLIENT_FACTORY, return_value=self.mock_s3_client) as factory:
+            s3.get_client(self.env)
+        self.assertEqual(
+            factory.call_args.kwargs["endpoint_url"], f"https://{self.host}"
+        )
+        self.assertEqual(factory.call_args.kwargs["region_name"], self.region)
+
+    def test_changing_the_endpoint_rebuilds_the_client(self):
+        with patch(CLIENT_FACTORY, side_effect=lambda *a, **kw: MagicMock()):
+            client1 = s3.get_client(self.env)
+            self.env["ir.config_parameter"].set_param(s3.PARAM_ENDPOINT, False)
+            client2 = s3.get_client(self.env)
+        self.assertIsNot(client1, client2)
+
+    def test_amazon_client_has_no_endpoint(self):
+        self.env["ir.config_parameter"].set_param(s3.PARAM_ENDPOINT, False)
+        with patch(CLIENT_FACTORY, return_value=self.mock_s3_client) as factory:
+            s3.get_client(self.env)
+        self.assertIsNone(factory.call_args.kwargs["endpoint_url"])
+
+    def test_generated_url_uses_the_endpoint_host(self):
+        attachment = self.env["ir.attachment"].create(
+            [{"name": "test.txt", "mimetype": "text/plain", "datas": b""}]
+        )
+        attachment._post_add_create(cloud_storage=True)
+        self.assertTrue(
+            attachment.url.startswith(f"https://{self.bucket_name}.{self.host}/")
+        )
+        info = attachment._get_s3_info()
+        self.assertEqual(info["bucket_name"], self.bucket_name)
+        self.assertEqual(info["region"], self.region)
+
+    def test_endpoint_url_resolves_bucket_and_key(self):
+        attachment = self._cloud_attachment(
+            f"https://{self.bucket_name}.{self.host}/res_partner/1/42_a%20b.txt"
+        )
+        info = attachment._get_s3_info()
+        self.assertEqual(info["bucket_name"], self.bucket_name)
+        self.assertEqual(info["region"], self.region)
+        self.assertEqual(info["blob_name"], "res_partner/1/42_a b.txt")
+
+    def test_amazon_url_still_resolves_with_an_endpoint(self):
+        attachment = self._cloud_attachment(
+            "https://old-bucket.s3.us-east-2.amazonaws.com/res_partner/1/x.txt"
+        )
+        info = attachment._get_s3_info()
+        self.assertEqual(info["bucket_name"], "old-bucket")
+        self.assertEqual(info["region"], "us-east-2")
+
+    def test_url_of_another_host_is_refused(self):
+        attachment = self._cloud_attachment(
+            f"https://{self.bucket_name}.s3.gra.io.cloud.ovh.net/x.txt"
+        )
+        with self.assertRaises(ValidationError):
+            attachment._get_s3_info()
+
+    def test_unlink_deletes_endpoint_blobs(self):
+        self._cloud_attachment(
+            f"https://{self.bucket_name}.{self.host}/t/1.txt"
+        ).unlink()
+        call_args = self.mock_s3_client.delete_objects.call_args
+        self.assertEqual(call_args.kwargs["Bucket"], self.bucket_name)
+        self.assertEqual(call_args.kwargs["Delete"]["Objects"], [{"Key": "t/1.txt"}])
+
+    def test_uninstall_blocked_by_endpoint_attachment(self):
+        self._cloud_attachment(f"https://{self.bucket_name}.{self.host}/t/1.txt")
+        self.env.flush_all()
+        with self.assertRaises(UserError):
+            uninstall_hook(self.env)
+
+    def test_uninstall_drops_the_endpoint(self):
+        uninstall_hook(self.env)
+        self.assertFalse(self.env["ir.config_parameter"].get_param(s3.PARAM_ENDPOINT))
+
+
 class TestCloudStorageS3Hybrid(TestCloudStorageS3Common):
     def setUp(self):
         super().setUp()
