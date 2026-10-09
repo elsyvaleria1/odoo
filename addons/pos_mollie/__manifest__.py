@@ -19,5 +19,8 @@
         "point_of_sale._assets_pos": [
             "pos_mollie/static/src/**/*",
         ],
+        "web.assets_unit_tests": [
+            "pos_mollie/static/tests/unit/**/*",
+        ],
     },
 }

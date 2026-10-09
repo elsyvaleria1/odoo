@@ -1,7 +1,9 @@
 import logging
+import re
+from urllib.parse import parse_qs, urlsplit
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.http import request
 from odoo.tools import hash_sign, register_signed_scope, resolve_hash_signed
 
@@ -140,3 +142,42 @@ class PosPaymentMethod(models.Model):
         return self.mollie_payment_provider_id._send_api_request(
             "GET", f"/payments/{payment_id}"
         )
+
+    _MOLLIE_PAYMENT_ID = re.compile(r"tr_[A-Za-z0-9]+")
+
+    def mollie_get_payment_status(self, payment_id: str) -> dict:
+        self.check_singleton()
+        if not isinstance(payment_id, str) or not self._MOLLIE_PAYMENT_ID.fullmatch(
+            payment_id
+        ):
+            raise AccessError(self.env._("Invalid Mollie payment reference."))
+        payment_info = self._mollie_get_payment(payment_id)
+        if not self._is_own_mollie_payment(payment_info):
+            raise AccessError(
+                self.env._("This Mollie payment was not requested by this method.")
+            )
+        return self._mollie_payment_status(payment_id, payment_info)
+
+    def _is_own_mollie_payment(self, payment_info) -> bool:
+        webhook_url = (
+            payment_info.get("webhookUrl") if isinstance(payment_info, dict) else None
+        )
+        if not isinstance(webhook_url, str):
+            return False
+        payloads = parse_qs(urlsplit(webhook_url).query).get("payload") or [""]
+        decoded = resolve_hash_signed(self.env(su=True), WEBHOOK_SCOPE, payloads[0])
+        return isinstance(decoded, dict) and decoded.get("payment_method_id") == self.id
+
+    @api.model
+    def _mollie_payment_status(self, payment_id: str, payment_info: dict) -> dict:
+        status = {"payment_id": payment_id, "status": payment_info["status"]}
+        if status["status"] == "paid":
+            payment_details = payment_info.get("details") or {}
+            status |= {
+                "card_type": payment_details.get("cardFunding"),
+                "card_no": payment_details.get("cardNumber"),
+                "card_brand": payment_details.get("cardLabel"),
+            }
+        elif status["status"] in ["expired", "failed", "canceled"]:
+            status |= {"status_reason": payment_info.get("statusReason")}
+        return status

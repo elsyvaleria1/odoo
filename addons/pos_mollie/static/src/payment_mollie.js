@@ -5,6 +5,8 @@ import { browser } from "@web/core/browser/browser";
 import { _t } from "@web/core/translation";
 import { AlertDialog } from "@web/ui/dialog";
 
+const POLLING_INTERVAL_MS = 5000;
+
 export class PaymentMollie extends PaymentInterface {
     setup() {
         super.setup(...arguments);
@@ -68,11 +70,7 @@ export class PaymentMollie extends PaymentInterface {
 
             paymentLine.transaction_id = data.id;
             await this.pos.data.syncLocalDataInIndexedDB();
-
-            const { promise, resolve } = Promise.withResolvers();
-            this.paymentLineResolvers[paymentLine.uuid] = resolve;
-
-            return promise;
+            return this._waitForPaymentConfirmation(paymentLine);
         } catch (error) {
             this._showMollieError(error);
             return false;
@@ -121,6 +119,50 @@ export class PaymentMollie extends PaymentInterface {
         );
 
         return matchedPaymentLine?.transaction_id ?? null;
+    }
+
+    _waitForPaymentConfirmation(paymentLine) {
+        const { promise, resolve } = Promise.withResolvers();
+        const transactionId = paymentLine.transaction_id;
+        this.paymentLineResolvers[paymentLine.uuid] = resolve;
+        let connectionLost = false;
+        const isPaymentStillValid = () =>
+            this.paymentLineResolvers[paymentLine.uuid] &&
+            transactionId === paymentLine.transaction_id;
+
+        const intervalId = setInterval(async () => {
+            if (!isPaymentStillValid()) {
+                clearInterval(intervalId);
+                return;
+            }
+            try {
+                const result = await this.pos.data.silentCall(
+                    "pos.payment.method",
+                    "mollie_get_payment_status",
+                    [this.payment_method_id.id, transactionId],
+                );
+                connectionLost = false;
+                if (
+                    !["open", "pending"].includes(result.status) &&
+                    isPaymentStillValid()
+                ) {
+                    clearInterval(intervalId);
+                    this.handleMollieStatusResponse(paymentLine, result);
+                }
+            } catch {
+                if (!connectionLost) {
+                    connectionLost = true;
+                    this.pos.notification.add(
+                        _t(
+                            "No connection to the server. Waiting for it to confirm the payment...",
+                        ),
+                        { type: "warning" },
+                    );
+                }
+            }
+        }, POLLING_INTERVAL_MS);
+
+        return promise;
     }
 
     handleMollieStatusResponse(paymentLine, notification) {

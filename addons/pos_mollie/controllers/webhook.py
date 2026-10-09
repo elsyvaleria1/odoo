@@ -31,23 +31,10 @@ class PosMollie(http.Controller):
             return "OK"
 
         payment_info = payment_method_sudo._mollie_get_payment(id)
-        payment_details = payment_info["details"]
-
         message = {
             "session_id": int(pos_session_id),
-            "payment_id": id,
-            "status": payment_info["status"],
+            **payment_method_sudo._mollie_payment_status(id, payment_info),
         }
-        if message["status"] == "paid":
-            message |= {
-                "card_type": payment_details.get("cardFunding"),
-                "card_no": payment_details.get("cardNumber"),
-                "card_brand": payment_details.get("cardLabel"),
-            }
-        elif message["status"] in ["expired", "failed", "canceled"]:
-            message |= {
-                "status_reason": payment_info.get("statusReason"),
-            }
         pos_session_sudo.config_id._notify("MOLLIE_PAYMENT_STATUS", message)
 
         return "OK"
