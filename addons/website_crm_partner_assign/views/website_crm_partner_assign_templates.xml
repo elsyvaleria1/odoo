@@ -4,7 +4,10 @@
     <template id="layout" name="Partners Layout">
         <t t-call="website.layout">
             <t t-set="additional_title">Resellers</t>
-            <div id="wrap">
+            <div
+                id="wrap"
+                data-fragment="website_crm_partner_assign.layout"
+                t-att-data-partial-navigation="partial_navigation_scopes">
                 <div
                     class="oe_structure oe_empty"
                     id="oe_structure_website_crm_partner_assign_layout_1"
@@ -22,6 +25,9 @@
 
     <template id="index" name="Find Resellers">
         <t t-call="website_crm_partner_assign.layout">
+            <t
+                t-set="partial_navigation_scopes"
+                t-valuef=".o_wcrm_filters_top, #o_wcrm_offcanvas, #wrap .pagination" />
             <section
                 class="o_wcrm_filters_top d-flex d-print-none align-items-center justify-content-lg-end flex-wrap gap-2 mt-4 mb-3">
                 <h1 class="me-auto mb-0 h4 h2-fs">

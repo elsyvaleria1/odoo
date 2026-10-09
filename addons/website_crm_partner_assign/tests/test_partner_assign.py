@@ -490,6 +490,30 @@ class TestPartnerLeadPortal(TestCrmCommon, HttpCase):
 
 
 @tagged("post_install", "-at_install")
+class TestPartnersListingUi(HttpCase):
+    def test_partners_filter_in_place(self):
+        Grade = self.env["res.partner.grade"]
+        gold, silver = Grade.create(
+            [
+                {"name": "PN Gold", "website_published": True},
+                {"name": "PN Silver", "website_published": True},
+            ]
+        )
+        self.env["res.partner"].create(
+            [
+                {
+                    "name": f"{grade.name} Reseller",
+                    "is_company": True,
+                    "website_published": True,
+                    "grade_id": grade.id,
+                }
+                for grade in (gold, silver)
+            ]
+        )
+        self.start_tour("/partners", "partners_partial_navigation")
+
+
+@tagged("post_install", "-at_install")
 class TestPublish(HttpCase):
     @classmethod
     def setUpClass(cls):

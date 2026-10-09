@@ -3,7 +3,10 @@
 
     <template id="index" name="Our References">
         <t t-call="website.layout">
-            <div id="wrap">
+            <div
+                id="wrap"
+                data-fragment="website_customer.index"
+                data-partial-navigation=".o_wcrm_filters_top, #o_wc_offcanvas, .o_wc_tags, #wrap .pagination">
                 <div class="container mb-3">
                     <section
                         class="o_wcrm_filters_top d-flex d-print-none align-items-center justify-content-lg-end flex-wrap gap-2 mt-4 mb-3">
@@ -356,7 +359,7 @@
         priority="40">
         <xpath expr="//section[hasclass('o_wcrm_filters_top')]" position="after">
             <div
-                class="d-flex flex-wrap align-items-center gap-2 my-4"
+                class="o_wc_tags d-flex flex-wrap align-items-center gap-2 my-4"
                 t-if="len(tags)">
                 <a
                     class="badge text-bg-info"
