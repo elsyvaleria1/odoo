@@ -273,9 +273,11 @@ class TestWebsocketHub(BaseCase):
         cursor.__enter__.return_value = MagicMock()
         checked = []
 
+        expired_session = expired[0]._session
+
         def is_session_valid(session, _env, fresh_primary_cr=None):
             checked.append((session.sid, fresh_primary_cr))
-            return session is not expired[0]._session
+            return session is not expired_session
 
         with (
             patch(
@@ -316,6 +318,20 @@ class TestWebsocketHub(BaseCase):
         self.assertEqual(poll.call_count, 1, "one question for the round")
         self.assertGreater(due[0]._session_validated_until, 0.0)
         self.assertEqual(expired[0]._dispatch_state.ignore_ids, [])
+
+    def test_a_connection_keeps_a_view_of_its_session_not_the_session(self):
+        ws, _peer, _gauge = self._connect()
+        self.assertIsInstance(ws._session, websocket_module.SessionView)
+        self.assertFalse(hasattr(ws._session, "__dict__"))
+        live = MagicMock(sid="sid1", uid=7, db="db", context={"lang": "en_US"})
+        with patch(
+            "odoo.addons.bus.websocket._follow_session_chain", return_value=live
+        ):
+            request = websocket_module.WebsocketRequest("db", MagicMock(), ws)
+            self.assertIs(request._acquire_session(), live, "a message gets it whole")
+        self.assertIsInstance(ws._session, websocket_module.SessionView)
+        self.assertEqual((ws._session.sid, ws._session.uid), ("sid1", 7))
+        self.assertEqual(ws._session.context, {"lang": "en_US"})
 
     def test_dispatch_requests_coalesce_behind_a_running_job(self):
         self.release.clear()

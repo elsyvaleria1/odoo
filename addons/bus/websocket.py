@@ -41,7 +41,7 @@ from odoo.service import (
 from odoo.service.security import is_session_valid
 from odoo.service.server import UPGRADE_ADOPT_KEY, CommonServer
 from odoo.service.transaction import retrying
-from odoo.tools import config
+from odoo.tools import config, frozendict
 
 from .models.bus import NOTIFICATION_HOLD_BACK_SECONDS, dispatch
 from .tools import orjson
@@ -351,7 +351,7 @@ class Websocket:
         gauge=None,
     ) -> None:
         self._clock = clock if clock is not None else _ServerClock.monotonic
-        self._session = session
+        self._session = SessionView.of(session)
         self._cookies = cookies
         self._db = session.db
         self._request_db = request_db if request_db is not None else session.db
@@ -1041,8 +1041,8 @@ class Websocket:
         """Follow the session to its live successor and ask whether it is still
         valid, on the caller's cursor; a valid one is trusted again for up to
         SESSION_VALIDITY_TTL."""
-        self._session = _follow_session_chain(self._session)
-        session = self._session
+        session = _follow_session_chain(self._session)
+        self._session = SessionView.of(session)
         if session.uid is not None and not is_session_valid(
             session, self.new_env(cr, session), fresh_primary_cr=cr
         ):
@@ -1189,6 +1189,29 @@ class TimeoutManager:
         return min(deadlines, default=float("inf"))
 
 
+class SessionView:
+    """What a connection keeps of its session between two loads of it: the
+    session itself -- its data and the serialized baseline it diffs against --
+    is loaded by sid where it is needed, when a message is served and when the
+    session is checked again."""
+
+    __slots__ = ("context", "db", "sid", "uid")
+
+    def __init__(self, sid, uid, db, context) -> None:
+        self.sid = sid
+        self.uid = uid
+        self.db = db
+        self.context = context
+
+    @classmethod
+    def of(cls, session) -> SessionView:
+        if isinstance(session, SessionView):
+            return session
+        return cls(
+            session.sid, session.uid, session.db, frozendict(session.context or {})
+        )
+
+
 def _follow_session_chain(initial_session: Session) -> Session:
     return root.session_store.get_live(initial_session.sid)
 
@@ -1257,7 +1280,7 @@ class WebsocketRequest:
 
     def _acquire_session(self) -> Session:
         session = _follow_session_chain(self.ws._session)
-        self.ws._session = session
+        self.ws._session = SessionView.of(session)
         return session
 
     def update_env(self, user=None, context=None, su=None) -> None:
