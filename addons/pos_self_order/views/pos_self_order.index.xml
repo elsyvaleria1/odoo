@@ -15,6 +15,7 @@
                     var odoo = {
                         csrf_token: "<t t-out="request.csrf_token(None)" />",
                         access_token: '<t t-out="access_token" />',
+                        bus_channel: '<t t-out="bus_channel" />',
                         debug: "<t t-out="debug" />",
                         use_lna: <t t-out="'true' if use_lna else 'false'" />,
                         __session_info__: <t t-out="json.dumps(session_info)" />,

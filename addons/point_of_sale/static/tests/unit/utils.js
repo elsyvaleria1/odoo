@@ -22,6 +22,7 @@ export const setupPosEnv = async () => {
     odoo.pos_config_id = 1;
     odoo.from_backend = 0;
     odoo.access_token = uuidv4();
+    odoo.bus_channel = uuidv4();
     odoo.info = {
         db: `pos-${uuidv4()}`,
         isEnterprise: true,

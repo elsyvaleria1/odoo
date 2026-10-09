@@ -27,6 +27,7 @@ class PosSelfKiosk(http.Controller):
             {
                 "use_lna": use_lna,
                 "access_token": config_access_token,
+                "bus_channel": pos_config._self_order_bus_channel(),
                 "session_info": {
                     **request.env["ir.http"].get_frontend_session_info(),
                     "currencies": request.env["res.currency"].get_all_currencies(),

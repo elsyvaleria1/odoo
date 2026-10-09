@@ -1,15 +1,22 @@
 import logging
 
-from odoo import api, fields, models, tools
+from odoo import api, fields, models
 from odoo.exceptions import UserError
+
+from odoo.addons.bus.tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+    token_revision,
+)
 
 _logger = logging.getLogger(__name__)
 
-ORDER_CHANNEL_SCOPE = tools.register_signed_scope(
-    "pos_self_order.order_channel",
-    purpose="name the bus channel of one self-order, which only the device "
-    "holding that order's access token is given",
-    lifetime="undated: the channel lives as long as the order's token",
+ORDER_CHANNEL = register_channel_scope(
+    "pos.self_order.order",
+    purpose="one self-order's payment results and status, to the device holding "
+    "that order's access token",
+    lifetime="until the order's access token changes",
 )
 
 
@@ -101,15 +108,23 @@ class PosOrder(models.Model):
     @api.depends("access_token")
     def _compute_self_order_channel(self) -> None:
         for order in self:
-            order.self_order_channel = order.access_token and tools.hmac(
-                self.env(su=True), ORDER_CHANNEL_SCOPE, order.access_token
+            order.self_order_channel = (
+                order.access_token
+                and order.id
+                and channel_capability(
+                    self.env, ORDER_CHANNEL, order._self_order_bus_key()
+                )
             )
+
+    def _self_order_bus_key(self) -> str:
+        return f"{self.id}.{token_revision(self.access_token)}"
 
     def _notify_self_order_device(self, name, message) -> None:
         self.check_singleton()
         channel = self.self_order_channel
         if channel:
-            self.env["bus.bus"]._sendone(channel, f"{channel}-{name}", message)
+            target = channel_target(self.env, ORDER_CHANNEL, self._self_order_bus_key())
+            self.env["bus.bus"]._sendone(target, f"{channel}-{name}", message)
 
     def _set_kiosk_terminal_request(self, reference, request_id) -> None:
         self.check_singleton()

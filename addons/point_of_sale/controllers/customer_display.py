@@ -1,7 +1,6 @@
 from odoo import http
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import consteq
 
 _debug = DebugLog(__name__)
 
@@ -21,9 +20,7 @@ class PosCustomerDisplay(http.Controller):
         pos_config_sudo = request.env["pos.config"].sudo().browse(config_id).exists()
         if not pos_config_sudo:
             raise request.prepare_not_found_error()
-        token_ok = bool(access_token) and consteq(
-            access_token.encode(), (pos_config_sudo.access_token or "").encode()
-        )
+        token_ok = pos_config_sudo._is_customer_display_token(access_token)
         _debug.lifecycle(
             "customer_display_requested",
             config=config_id,

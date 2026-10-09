@@ -58,6 +58,7 @@ export const setupSelfPosEnv = async (
 ) => {
     // Do not change these variables, they are in accordance with the setup data
     odoo.access_token = uuidv4();
+    odoo.bus_channel = uuidv4();
     odoo.info = {
         isEnterprise: true,
     };

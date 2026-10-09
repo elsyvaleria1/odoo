@@ -174,7 +174,7 @@ export class Navbar extends Component {
         log.pipeline("openCustomerDisplay", () => ({ config: this.pos.config.id }));
         const customer_display_url = `/pos_customer_display/${
             this.pos.config.id
-        }/${getDeviceUuid()}?access_token=${encodeURIComponent(this.pos.config.access_token)}`;
+        }/${getDeviceUuid()}?access_token=${encodeURIComponent(this.pos.config.customer_display_token)}`;
 
         this.dialog.add(QrCodeCustomerDisplay, {
             customerDisplayURL: `${this.pos.config._base_url}${customer_display_url}`,

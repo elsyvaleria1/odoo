@@ -7,8 +7,10 @@ from lxml import html
 import odoo
 from odoo.libs.json import loads as json_loads
 
+from odoo.addons.bus.tools.channel_capability import channel_target, resolve_capability
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.point_of_sale.controllers.main import _POS_MENU_URL
+from odoo.addons.point_of_sale.models.mixin_pos_bus import POS_CHANNEL
 from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCommon
 
 
@@ -416,16 +418,45 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
                 )
                 self.assertEqual(res.status_code, 404)
 
-    def test_customer_display_requires_token_and_session(self):
-        url = f"/pos_customer_display/{self.main_pos_config.id}/test-device"
-        res = self.url_open(f"{url}?access_token={self.main_pos_config.access_token}")
+    def test_customer_display_requires_its_own_token_and_a_session(self):
+        config = self.main_pos_config
+        url = f"/pos_customer_display/{config.id}/test-device"
+        res = self.url_open(f"{url}?access_token={config.customer_display_token}")
         self.assertEqual(res.status_code, 404)
-        self.main_pos_config.open_ui()
-        for suffix in ("", "?access_token=invalid", "?access_token=%C3%A9"):
+        config.open_ui()
+        for suffix in (
+            "",
+            "?access_token=invalid",
+            "?access_token=%C3%A9",
+            f"?access_token={config.access_token}",
+        ):
             with self.subTest(suffix=suffix):
                 self.assertEqual(self.url_open(url + suffix).status_code, 404)
-        res = self.url_open(f"{url}?access_token={self.main_pos_config.access_token}")
+        res = self.url_open(f"{url}?access_token={config.customer_display_token}")
         self.assertEqual(res.status_code, 200)
+        self.assertNotIn(
+            config.access_token, res.text, "the till's token stays at the till"
+        )
+        channel = re.search(r'"bus_channel": "([^"]+)"', res.text)
+        self.assertTrue(channel, "the display is handed its own channel")
+        self.assertEqual(
+            resolve_capability(self.env, channel.group(1)),
+            channel_target(
+                self.env, POS_CHANNEL, config._pos_bus_key("customer_display")
+            ),
+        )
+
+    def test_the_till_is_handed_its_bus_capability(self):
+        config = self.main_pos_config
+        config.with_user(self.pos_user).open_ui()
+        self.authenticate("pos_admin", "pos_admin")
+        page = self.url_open(f"/pos/ui/{config.id}").text
+        channel = re.search(r'"bus_channel": "([^"]+)"', page)
+        self.assertTrue(channel, "the till page names its bus channel")
+        self.assertEqual(
+            resolve_capability(self.env, channel.group(1)),
+            channel_target(self.env, POS_CHANNEL, config._pos_bus_key("till")),
+        )
 
     def test_pos_ui_resumes_another_cashiers_session(self):
         self.main_pos_config.with_user(self.pos_user).open_ui()

@@ -3,7 +3,21 @@ import uuid
 from odoo import fields, models
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.bus.tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+    token_revision,
+)
+
 _debug = DebugLog(__name__)
+
+POS_CHANNEL = register_channel_scope(
+    "pos.bus",
+    purpose="one point-of-sale record's notifications to one audience of its "
+    "devices: the till, its customer display, its order-tracking screen",
+    lifetime="until the record's access token is rotated",
+)
 
 
 def _new_access_token() -> str:
@@ -39,9 +53,21 @@ class MixinPosBus(models.AbstractModel):
             _debug.lifecycle("access_token_rotated", record=record)
             record.access_token = _new_access_token()
 
-    def _notify(self, *notifications, private=True) -> None:
-        self.check_singleton()
+    def _pos_bus_key(self, audience) -> str:
         token = self._pos_bus_get_or_create_token()
+        return f"{self._name}.{self.id}.{audience}.{token_revision(token)}"
+
+    def _pos_bus_channel(self, audience="till") -> str:
+        """The name the devices of ``audience`` subscribe with; it also
+        prefixes the notification types they listen to."""
+        self.check_singleton()
+        return channel_capability(self.env, POS_CHANNEL, self._pos_bus_key(audience))
+
+    def _notify(self, *notifications, audience="till") -> None:
+        self.check_singleton()
+        key = self._pos_bus_key(audience)
+        channel = channel_capability(self.env, POS_CHANNEL, key)
+        target = channel_target(self.env, POS_CHANNEL, key)
         if isinstance(notifications[0], str):
             if len(notifications) != 2:
                 raise ValueError(
@@ -54,11 +80,11 @@ class MixinPosBus(models.AbstractModel):
                     "bus_notify",
                     name=name,
                     records=self,
-                    private=private,
+                    audience=audience,
                     payload=_describe_payload(message),
                 )
             self.env["bus.bus"]._sendone(
-                token,
-                f"{token}-{name}" if private else name,
+                target,
+                f"{channel}-{name}",
                 message,
             )

@@ -156,6 +156,7 @@ class PosController(PortalAccount):
             "pos_session_id": pos_session.id,
             "pos_config_id": pos_session.config_id.id,
             "access_token": pos_session.config_id.access_token,
+            "bus_channel": pos_session.config_id._pos_bus_channel(),
             "last_data_change": pos_session.config_id._get_pos_data_change_date().strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),

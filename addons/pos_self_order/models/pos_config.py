@@ -13,8 +13,22 @@ from odoo import Command, api, fields, models, service
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import SQL
 
+from odoo.addons.bus.tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+    token_revision,
+)
 from odoo.addons.pos_restaurant.models.pos_config import (
     LOAD_DEMO_DATA as RESTAURANT_LOAD_DEMO_DATA,
+)
+
+SELF_ORDER_CHANNEL = register_channel_scope(
+    "pos.self_order",
+    purpose="what every self-order device of one point of sale is told: catalogue "
+    "changes, opening status, order states -- anyone holding its QR code listens, "
+    "so nothing private",
+    lifetime="until the point of sale's self-ordering token is rotated",
 )
 
 
@@ -150,13 +164,26 @@ class PosConfig(models.Model):
             config.self_ordering_access_token = str(uuid.uuid4())
         self.floor_ids.table_ids._update_identifier()
 
+    def _self_order_bus_key(self) -> str:
+        return f"{self.id}.{token_revision(self.self_ordering_access_token)}"
+
+    def _self_order_bus_channel(self) -> str:
+        self.check_singleton()
+        return channel_capability(
+            self.env, SELF_ORDER_CHANNEL, self._self_order_bus_key()
+        )
+
     def _notify_self_order(self, name, message) -> None:
         """Send a notification every self-order device of this point of sale
         receives: anyone holding a QR code can listen, so nothing private."""
         self.check_singleton()
-        token = self.self_ordering_access_token
-        if token:
-            self.env["bus.bus"]._sendone(token, f"{token}-{name}", message)
+        if not self.self_ordering_access_token:
+            return
+        channel = self._self_order_bus_channel()
+        target = channel_target(
+            self.env, SELF_ORDER_CHANNEL, self._self_order_bus_key()
+        )
+        self.env["bus.bus"]._sendone(target, f"{channel}-{name}", message)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -456,12 +483,22 @@ class PosConfig(models.Model):
         return [("id", "=", config.id)]
 
     @api.model
+    def _load_pos_self_data_fields(self, config):
+        # a self-order device is public: it opens no customer display
+        return [
+            fname
+            for fname in super()._load_pos_self_data_fields(config)
+            if fname != "customer_display_token"
+        ]
+
+    @api.model
     def _load_pos_self_data_read(self, records, config):
         read_records = super()._load_pos_data_read(records, config)
         if not read_records:
             return read_records
         record = read_records[0]
         record["access_token"] = config.self_ordering_access_token
+        record.pop("customer_display_token", None)
         record["_self_ordering_image_home_ids"] = (
             config.self_ordering_image_home_ids.ids
         )

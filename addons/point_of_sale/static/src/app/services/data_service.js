@@ -184,7 +184,7 @@ export class PosData extends SignalStore {
     }
 
     initializeWebsocket() {
-        this.onNotified = getOnNotified(this.bus, odoo.access_token);
+        this.onNotified = getOnNotified(this.bus, odoo.bus_channel);
     }
 
     reconnectWebSocket() {

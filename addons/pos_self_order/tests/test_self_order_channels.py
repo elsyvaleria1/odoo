@@ -4,6 +4,10 @@ from odoo import Command
 from odoo.tests import tagged
 from odoo.tests.http import JsonRpcException
 
+from odoo.addons.bus.tools.channel_capability import channel_target, resolve_capability
+from odoo.addons.point_of_sale.models.mixin_pos_bus import POS_CHANNEL
+from odoo.addons.pos_self_order.models.pos_config import SELF_ORDER_CHANNEL
+from odoo.addons.pos_self_order.models.pos_order import ORDER_CHANNEL
 from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCommonTest
 
 
@@ -72,6 +76,7 @@ class TestSelfOrderChannels(SelfOrderCommonTest):
         self.assertIn(self_token, route)
         self.assertNotIn(till_token, route)
         self.assertEqual(loaded["access_token"], self_token)
+        self.assertNotIn("customer_display_token", loaded)
 
     def test_the_tills_token_opens_no_self_order(self):
         with self.assertRaises(JsonRpcException):
@@ -89,10 +94,10 @@ class TestSelfOrderChannels(SelfOrderCommonTest):
 
         order._send_payment_result("fail")
 
-        self.assertEqual(
-            {target for target, _, _ in self.sent}, {order.self_order_channel}
-        )
-        self.assertNotIn(order.self_order_channel, (order.access_token, False))
+        target = channel_target(self.env, ORDER_CHANNEL, order._self_order_bus_key())
+        self.assertEqual({target for target, _, _ in self.sent}, {target})
+        self.assertEqual(resolve_capability(self.env, order.self_order_channel), target)
+        self.assertNotIn(order.access_token, order.self_order_channel)
         self.assertNotIn(
             self.pos_config.self_ordering_access_token, order.self_order_channel
         )
@@ -105,11 +110,15 @@ class TestSelfOrderChannels(SelfOrderCommonTest):
         public = [
             message
             for target, _, message in self.sent
-            if target == self.pos_config.self_ordering_access_token
+            if target
+            == channel_target(
+                self.env, SELF_ORDER_CHANNEL, self.pos_config._self_order_bus_key()
+            )
         ]
         self.assertTrue(public)
         for message in public:
             self.assertNotIn(order.access_token, message)
-        self.assertNotIn(
-            self.pos_config.access_token, [target for target, _, _ in self.sent]
+        till = channel_target(
+            self.env, POS_CHANNEL, self.pos_config._pos_bus_key("till")
         )
+        self.assertNotIn(till, [target for target, _, _ in self.sent])

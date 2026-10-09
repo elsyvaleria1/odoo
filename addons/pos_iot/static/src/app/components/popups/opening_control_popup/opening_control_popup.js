@@ -9,7 +9,7 @@ patch(OpeningControlPopup.prototype, {
         if (this.pos.config.iface_display_id && iotId && identifier) {
             this.pos.iotHttp.action(iotId, identifier, {
                 action: "open",
-                access_token: this.pos.config.access_token,
+                access_token: this.pos.config.customer_display_token,
                 pos_id: this.pos.config.id,
             });
         }

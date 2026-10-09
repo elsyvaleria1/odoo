@@ -17,9 +17,10 @@ class PosPreparationDisplayController(http.Controller):
             )
 
         session_info = request.env["ir.http"].session_info()
-        session_info["preparation_display"] = preparation_display.read(
-            ["id", "name", "access_token"]
-        )[0]
+        session_info["preparation_display"] = {
+            **preparation_display.read(["id", "name", "access_token"])[0],
+            "bus_channel": preparation_display._pos_bus_channel(),
+        }
 
         context = {
             "session_info": session_info,

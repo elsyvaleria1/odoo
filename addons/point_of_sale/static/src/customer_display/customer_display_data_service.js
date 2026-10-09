@@ -70,7 +70,7 @@ export const CustomerDisplayDataService = {
                 }));
                 Object.assign(data, event.data);
             };
-            getOnNotified(bus_service, session.access_token)(
+            getOnNotified(bus_service, session.bus_channel)(
                 `UPDATE_CUSTOMER_DISPLAY-${session.device_uuid}`,
                 (payload) => {
                     log.pipeline("[bus] update", () => ({

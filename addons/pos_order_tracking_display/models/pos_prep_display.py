@@ -1,6 +1,14 @@
-from odoo import models
+from odoo import models, tools
 
+from odoo.addons.bus.tools.channel_capability import token_revision
 from odoo.addons.pos_enterprise.utils.date_utils import compute_seconds_since
+
+TRACKING_ACCESS = tools.register_signed_scope(
+    "pos_order_tracking_display.access",
+    purpose="open one preparation display's public order-tracking screen: order "
+    "numbers and their state, never the kitchen display's channel or routes",
+    lifetime="undated: until the preparation display's access token is rotated",
+)
 
 
 class PosPrepDisplay(models.Model):
@@ -58,7 +66,25 @@ class PosPrepDisplay(models.Model):
     def _send_orders_to_customer_display(self) -> None:
         self.check_singleton()
         orders = self._get_pos_orders()
-        self._notify("NEW_ORDERS", orders)
+        self._notify("NEW_ORDERS", orders, audience="order_tracking")
+
+    def _tracking_message(self) -> tuple:
+        return (self.id, token_revision(self._pos_bus_get_or_create_token()))
+
+    def _tracking_token(self) -> str:
+        self.check_singleton()
+        return f"{self.id}-{tools.hmac(self.env, TRACKING_ACCESS, self._tracking_message())}"
+
+    def _from_tracking_token(self, token):
+        display_id, _sep, signature = str(token or "").partition("-")
+        display = (
+            self.browse(int(display_id)).exists() if display_id.isdigit() else None
+        )
+        if display and tools.is_hmac_valid(
+            self.env, TRACKING_ACCESS, display._tracking_message(), signature
+        ):
+            return display
+        return self.browse()
 
     def _send_load_orders_message(
         self, sound=False, notification=None, orderId=None
@@ -69,6 +95,6 @@ class PosPrepDisplay(models.Model):
     def open_customer_display(self) -> dict:
         return {
             "type": "ir.actions.act_url",
-            "url": f"/pos-order-tracking?access_token={self.access_token}",
+            "url": f"/pos-order-tracking?access_token={self._tracking_token()}",
             "target": "new",
         }

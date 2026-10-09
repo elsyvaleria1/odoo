@@ -45,10 +45,7 @@ export class PrepDisplay extends WithLazyGetterTrap {
         this.orderDays = {};
         this.computeOrderCounts();
 
-        this.onNotified = getOnNotified(
-            this.bus,
-            odoo.preparation_display.access_token,
-        );
+        this.onNotified = getOnNotified(this.bus, odoo.preparation_display.bus_channel);
         this.onNotified("LOAD_ORDERS", async (data) => {
             await this.getPreparationDisplayOrder(data.orderId);
 

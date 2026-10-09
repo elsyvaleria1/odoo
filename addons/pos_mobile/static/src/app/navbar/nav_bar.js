@@ -119,7 +119,7 @@ patch(Navbar.prototype, {
                 url:
                     `${this.pos.config._base_url}/pos_customer_display/` +
                     `${this.pos.config.id}/${getDeviceUuid()}` +
-                    `?access_token=${encodeURIComponent(this.pos.config.access_token)}`,
+                    `?access_token=${encodeURIComponent(this.pos.config.customer_display_token)}`,
                 displayId: displayId,
             })
             .catch((error) => {

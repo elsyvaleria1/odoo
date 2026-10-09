@@ -10,6 +10,7 @@ from odoo.service.common import exp_version
 from odoo.tools import SQL
 from odoo.tools.authority_keys import declare_authority_keys
 
+from odoo.addons.bus.tools.channel_capability import token_revision
 from odoo.addons.point_of_sale.models.pos_printer import format_epson_certified_domain
 
 _debug = DebugLog(__name__)
@@ -19,6 +20,14 @@ declare_authority_keys("point_of_sale", "bypass_payment_method_ids_forbidden_cha
 DEFAULT_LIMIT_LOAD_PRODUCT = 5000
 DEFAULT_LIMIT_LOAD_PARTNER = 100
 RANKED_PARTNER_PAGES_PER_CALL = 10
+
+
+CUSTOMER_DISPLAY_ACCESS = tools.register_signed_scope(
+    "point_of_sale.customer_display",
+    purpose="open one point of sale's customer display: the order it shows, "
+    "never the till's own channel or routes",
+    lifetime="undated: until the point of sale's access token is rotated",
+)
 
 
 class PosConfig(models.Model):
@@ -216,6 +225,9 @@ class PosConfig(models.Model):
         max_height=1920,
     )
     customer_display_bg_img_name = fields.Char(string="Background Image Name")
+    # what the till hands a customer display: it opens the display and its
+    # channel, not the till's
+    customer_display_token = fields.Char(compute="_compute_customer_display_token")
     restrict_price_control = fields.Boolean(
         string="Restrict Price Modifications to Managers",
         help="Only users with Manager access rights for PoS app can modify the product prices on orders.",
@@ -592,7 +604,12 @@ class PosConfig(models.Model):
 
     @api.model
     def _get_pos_client_computed_fields(self):
-        return {"cash_control", "current_session_id", "display_name"}
+        return {
+            "cash_control",
+            "current_session_id",
+            "customer_display_token",
+            "display_name",
+        }
 
     @api.model
     def _get_pos_client_excluded_fields(self) -> set:
@@ -1754,7 +1771,24 @@ class PosConfig(models.Model):
 
     def update_customer_display(self, order, device_uuid) -> None:
         self.check_singleton()
-        self._notify(f"UPDATE_CUSTOMER_DISPLAY-{device_uuid}", order)
+        self._notify(
+            f"UPDATE_CUSTOMER_DISPLAY-{device_uuid}", order, audience="customer_display"
+        )
+
+    def _customer_display_message(self) -> tuple:
+        return (self.id, token_revision(self._pos_bus_get_or_create_token()))
+
+    def _compute_customer_display_token(self) -> None:
+        for config in self:
+            config.customer_display_token = config.id and tools.hmac(
+                self.env, CUSTOMER_DISPLAY_ACCESS, config._customer_display_message()
+            )
+
+    def _is_customer_display_token(self, token) -> bool:
+        self.check_singleton()
+        return tools.is_hmac_valid(
+            self.env, CUSTOMER_DISPLAY_ACCESS, self._customer_display_message(), token
+        )
 
     def _get_display_device_ip(self):
         self.check_singleton()
@@ -1764,7 +1798,7 @@ class PosConfig(models.Model):
         self.check_singleton()
         return {
             "config_id": self.id,
-            "access_token": self.access_token,
+            "bus_channel": self._pos_bus_channel("customer_display"),
             "has_bg_img": bool(self.customer_display_bg_img),
             "company_id": self.company_id.id,
             "proxy_ip": self._get_display_device_ip(),

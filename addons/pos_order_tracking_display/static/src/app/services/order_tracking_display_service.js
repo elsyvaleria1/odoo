@@ -13,7 +13,7 @@ const orderTrackingDisplayService = {
         const orders = proxy(session.initial_data);
         const onNotified = getOnNotified(
             bus_service,
-            session.preparation_display.access_token,
+            session.preparation_display.bus_channel,
         );
         onNotified("NEW_ORDERS", (newOrders) => {
             Object.assign(orders, newOrders);

@@ -2406,7 +2406,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(
             f"/pos_customer_display/{self.main_pos_config.id}/display-test-device"
-            f"?access_token={self.main_pos_config.access_token}",
+            f"?access_token={self.main_pos_config.customer_display_token}",
             "CustomerDisplayTour",
             login="pos_user",
         )
@@ -2415,7 +2415,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(
             f"/pos_customer_display/{self.main_pos_config.id}/display-test-device"
-            f"?access_token={self.main_pos_config.access_token}",
+            f"?access_token={self.main_pos_config.customer_display_token}",
             "CustomerDisplayTourScroll",
             login="pos_user",
         )
@@ -2424,7 +2424,7 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(
             f"/pos_customer_display/{self.main_pos_config.id}/display-test-device"
-            f"?access_token={self.main_pos_config.access_token}",
+            f"?access_token={self.main_pos_config.customer_display_token}",
             "CustomerDisplayTourWithQr",
             login="pos_user",
         )

@@ -39,6 +39,7 @@ export const setupPosPrepDisplayEnv = async () => {
             id: 1,
             name: "Test Kitchen Display",
             access_token: uuidv4(),
+            bus_channel: uuidv4(),
         },
     });
     patchWithCleanup(session, {

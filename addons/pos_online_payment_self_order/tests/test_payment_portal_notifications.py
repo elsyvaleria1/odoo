@@ -3,6 +3,9 @@ from unittest.mock import patch
 from odoo import Command
 from odoo.tests import tagged
 
+from odoo.addons.bus.tools.channel_capability import channel_target
+from odoo.addons.point_of_sale.models.mixin_pos_bus import POS_CHANNEL
+from odoo.addons.pos_self_order.models.pos_order import ORDER_CHANNEL
 from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCommonTest
 
 
@@ -75,10 +78,14 @@ class TestPaymentPortalNotifications(SelfOrderCommonTest):
         )
 
         sent = dict(self._online_payment_messages())
-        self.assertEqual(
-            set(sent), {self.pos_config.access_token, self.order.self_order_channel}
+        till_target = channel_target(
+            self.env, POS_CHANNEL, self.pos_config._pos_bus_key("till")
         )
-        till = sent[self.pos_config.access_token]
+        order_target = channel_target(
+            self.env, ORDER_CHANNEL, self.order._self_order_bus_key()
+        )
+        self.assertEqual(set(sent), {till_target, order_target})
+        till = sent[till_target]
         self.assertNotIn(self.order.access_token, till)
         self.assertNotIn("customer@example.com", till)
-        self.assertIn(self.order.access_token, sent[self.order.self_order_channel])
+        self.assertIn(self.order.access_token, sent[order_target])
