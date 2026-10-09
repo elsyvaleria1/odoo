@@ -363,6 +363,10 @@ FRAGMENTS_HEADER = "X-Odoo-Fragments"
 PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation"
 
 
+def wants_fragments() -> bool:
+    return request.httprequest.headers.get(FRAGMENTS_HEADER) == "1"
+
+
 def fragments_or_redirect(
     env: Any,
     location: str,
@@ -371,7 +375,7 @@ def fragments_or_redirect(
     data: Mapping[str, Any] | None = None,
     redirect: str | None = None,
 ) -> Any:
-    if request.httprequest.headers.get(FRAGMENTS_HEADER):
+    if wants_fragments():
         return request.prepare_json_response(
             render_fragments(
                 env, *fragments, events=events, redirect=redirect, data=data

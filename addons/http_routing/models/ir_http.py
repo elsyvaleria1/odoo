@@ -21,8 +21,8 @@ from odoo.addons.base.models import ir_http
 from odoo.addons.base.models.ir_http import RequestUID
 from odoo.addons.base.models.res_lang import LangData
 from odoo.addons.web.controllers.utils import (
-    FRAGMENTS_HEADER,
     PARTIAL_NAVIGATION_HEADER,
+    wants_fragments,
 )
 
 _logger = logging.getLogger(__name__)
@@ -732,9 +732,7 @@ class IrHttp(models.AbstractModel):
     def _handle_error(cls, exception):
         # a refusal of a form posted in place (@web/public/fragment_form) is
         # told to the page, which stays as it is
-        if isinstance(exception, UserError) and request.httprequest.headers.get(
-            FRAGMENTS_HEADER
-        ):
+        if isinstance(exception, UserError) and wants_fragments():
             request.env.cr.rollback()
             return request.prepare_json_response(
                 {"error": {"message": exception.args[0]}},
