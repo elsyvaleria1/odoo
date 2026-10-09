@@ -1,5 +1,11 @@
 from odoo.http import Controller, request, route
 
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    render_fragments,
+)
+
 
 class WebsiteSaleVariantController(Controller):
     @route(
@@ -18,7 +24,7 @@ class WebsiteSaleVariantController(Controller):
         add_qty,
         uom_id=None,
         **kwargs,
-    ):
+    ) -> FragmentResponse:
         product_template_id = product_template_id and int(product_template_id)
         product_id = product_id and int(product_id)
         add_qty = (add_qty and float(add_qty)) or 1.0
@@ -51,21 +57,27 @@ class WebsiteSaleVariantController(Controller):
         product = request.env["product.product"].browse(combination_info["product_id"])
         if product and product.id == product_id:
             combination_info["no_product_change"] = True
-            return combination_info
+            return render_fragments(request.env, data=combination_info)
 
+        fragments = []
         if (
             request.website.product_page_image_width != "none"
             and not request.env.context.get("website_sale_no_images", False)
         ):
             product_or_template = product or product_template
             combination_info["display_image"] = bool(product_or_template.image_128)
-            combination_info["carousel"] = request.env["ir.ui.view"]._render_template(
-                "website_sale.shop_product_images",
-                values={
-                    "product": product_template,
-                    "product_variant": product,
-                    "website": request.website,
-                },
+            # outer: the carousel carries a live Bootstrap instance a morph
+            # would leave pointing at replaced indicators
+            fragments.append(
+                Fragment(
+                    "website_sale.shop_product_images",
+                    {
+                        "product": product_template,
+                        "product_variant": product,
+                        "website": request.website,
+                    },
+                    swap="outer",
+                )
             )
 
         if request.website.is_view_active("website_sale.product_tags"):
@@ -74,15 +86,16 @@ class WebsiteSaleVariantController(Controller):
                 if product
                 else product_template.product_tag_ids
             )
-            combination_info["product_tags"] = request.env[
-                "ir.ui.view"
-            ]._render_template(
-                "website_sale.product_tags",
-                values={
-                    "all_product_tags": all_tags.filtered("visible_to_customers"),
-                },
+            fragments.append(
+                Fragment(
+                    "website_sale.product_tags",
+                    {
+                        "all_product_tags": all_tags,
+                        "_tags_fragment_key": "website_sale.product_tags",
+                    },
+                )
             )
-        return combination_info
+        return render_fragments(request.env, *fragments, data=combination_info)
 
     @route(
         "/sale/create_product_variant", type="jsonrpc", auth="public", methods=["POST"]

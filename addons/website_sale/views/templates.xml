@@ -2432,6 +2432,7 @@
                 <t
                     t-set="all_product_tags"
                     t-value="product_variant.all_product_tag_ids" />
+                <t t-set="_tags_fragment_key" t-valuef="website_sale.product_tags" />
             </t>
             <p
                 t-if="(not is_add_to_cart_possible) and (not product.active)"
@@ -2598,7 +2599,8 @@
             t-set="visible_tags"
             t-value="all_product_tags.filtered('visible_to_customers')" />
         <div
-            t-attf-class="o_product_tags o_field_tags {{ 'd-flex flex-wrap align-items-center gap-2 mb-2 mt-1' if visible_tags else '' }}">
+            t-attf-class="o_product_tags o_field_tags {{ 'd-flex flex-wrap align-items-center gap-2 mb-2 mt-1' if visible_tags else '' }}"
+            t-att-data-fragment="_tags_fragment_key">
             <t t-foreach="visible_tags" t-as="tag">
                 <span
                     t-if="tag.image"
@@ -4303,15 +4305,18 @@
     </template>
 
     <template id="website_sale.shop_product_images" name="Shop Product Images">
-        <t
-            t-set="product_images"
-            t-value="product_variant._get_images() if product_variant else product._get_images()" />
-        <t
-            t-set="ribbon"
-            t-value="product.sudo()._get_ribbon(price_vals=combination_info, variant=product_variant)" />
-        <t t-set="bg_color" t-value="ribbon.bg_color" />
-        <t t-set="text_color" t-value="ribbon.text_color" />
-        <t t-call="website_sale.shop_product_#{website.product_page_image_layout}" />
+        <div class="d-contents" data-fragment="website_sale.shop_product_images">
+            <t
+                t-set="product_images"
+                t-value="product_variant._get_images() if product_variant else product._get_images()" />
+            <t
+                t-set="ribbon"
+                t-value="product.sudo()._get_ribbon(price_vals=combination_info, variant=product_variant)" />
+            <t t-set="bg_color" t-value="ribbon.bg_color" />
+            <t t-set="text_color" t-value="ribbon.text_color" />
+            <t
+                t-call="website_sale.shop_product_#{website.product_page_image_layout}" />
+        </div>
     </template>
 
     <template id="website_sale.shop_product_image">

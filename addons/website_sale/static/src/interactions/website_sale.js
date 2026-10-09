@@ -1,5 +1,4 @@
 /** @odoo-module native */
-import { markup } from "@odoo/owl";
 import { hasTouch, isBrowserFirefox } from "@web/core/browser/feature_detection";
 import { registry } from "@web/core/registry";
 import { uniqueId } from "@web/core/utils/functions";
@@ -244,27 +243,24 @@ export class WebsiteSale extends Interaction {
         this.zoomCleanup = undefined;
     }
 
-    _updateProductImage(productContainer, newImages) {
-        let images = productContainer.querySelector(
+    /** @param {HTMLElement} productContainer */
+    _onProductImagesSwapped(productContainer) {
+        const images = productContainer.querySelector(
             this._getProductImageContainerSelector(),
         );
-        if (images && !this._isEditorEnabled() && newImages) {
-            images.insertAdjacentHTML("beforebegin", markup(newImages));
-            images.remove();
-
-            images = productContainer.querySelector(
-                this._getProductImageContainerSelector(),
-            );
-            const shareImageSrc = images.querySelector("img").src;
+        if (!images) {
+            return;
+        }
+        const shareImageSrc = images.querySelector("img")?.src;
+        if (shareImageSrc) {
             document
                 .querySelector('meta[property="og:image"]')
-                .setAttribute("content", shareImageSrc);
-
-            if (images.id === "o-carousel-product") {
-                Carousel.getOrCreateInstance(images).to(0);
-            }
-            this._startZoom();
+                ?.setAttribute("content", shareImageSrc);
         }
+        if (images.id === "o-carousel-product") {
+            Carousel.getOrCreateInstance(images).to(0);
+        }
+        this._startZoom();
     }
 
     /**

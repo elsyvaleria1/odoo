@@ -5,6 +5,7 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 from odoo.addons.product.tests.test_product_attribute_value_config import (
     TestProductAttributeValueCommon,
 )
+from odoo.addons.website_sale.controllers.variant import WebsiteSaleVariantController
 from odoo.addons.website_sale.tests.common import MockRequest
 
 
@@ -80,6 +81,36 @@ class TestWebsiteSaleProductAttributeValueConfig(
                 combination_info["list_price"], 2222 * currency_ratio * tax_ratio
             )
             self.assertEqual(combination_info["has_discounted_price"], True)
+
+    def test_a_variant_change_answers_images_and_tags_as_fragments(self):
+        website = self.env["website"].get_current_website()
+        shown, chosen = self.computer.product_variant_ids[:2]
+        controller = WebsiteSaleVariantController()
+        with MockRequest(self.computer.env, website=website):
+            changed = controller.get_combination_info_website(
+                product_template_id=self.computer.id,
+                product_id=shown.id,
+                combination=chosen.product_template_attribute_value_ids.ids,
+                add_qty=1,
+            )
+            unchanged = controller.get_combination_info_website(
+                product_template_id=self.computer.id,
+                product_id=chosen.id,
+                combination=chosen.product_template_attribute_value_ids.ids,
+                add_qty=1,
+            )
+
+        self.assertEqual(
+            [(f["key"], f["swap"]) for f in changed["fragments"]],
+            [
+                ("website_sale.shop_product_images", "outer"),
+                ("website_sale.product_tags", "morph"),
+            ],
+        )
+        self.assertEqual(changed["data"]["product_id"], chosen.id)
+        self.assertFalse({"carousel", "product_tags"} & set(changed["data"]))
+        self.assertEqual(unchanged["fragments"], [])
+        self.assertTrue(unchanged["data"]["no_product_change"])
 
     def test_get_combination_info_with_fpos(self):
         product = self.env["product.template"].create(

@@ -1,5 +1,4 @@
 /** @odoo-module native */
-import { markup } from "@odoo/owl";
 import { localization } from "@web/core/l10n/localization";
 import { rpc } from "@web/core/network";
 import { _t } from "@web/core/translation";
@@ -25,7 +24,7 @@ const VariantMixin = {
         }
         const combination = wSaleUtils.getSelectedAttributeValues(parent);
 
-        const combinationInfo = await this.waitFor(
+        const response = await this.waitFor(
             rpc("/website_sale/get_combination_info", {
                 product_template_id: parseInt(
                     parent.querySelector(".product_template_id")?.value,
@@ -38,7 +37,16 @@ const VariantMixin = {
                 ...this._getOptionalCombinationInfoParam(parent),
             }),
         );
-        this._onChangeCombination(ev, parent, combinationInfo);
+        if (!this._isEditorEnabled()) {
+            this.swapFragments(response);
+            const imagesSwapped = response.fragments.some(
+                (fragment) => fragment.key === "website_sale.shop_product_images",
+            );
+            if (imagesSwapped) {
+                this._onProductImagesSwapped(parent.closest(".oe_website_sale"));
+            }
+        }
+        this._onChangeCombination(ev, parent, response.data);
         this._checkExclusions(parent, combination);
     },
 
@@ -347,19 +355,6 @@ const VariantMixin = {
         }
 
         this._toggleDisable(parent, isCombinationPossible);
-
-        if (!combination.no_product_change) {
-            this._updateProductImage(
-                parent.closest("tr.js_product, .oe_website_sale"),
-                combination.carousel,
-            );
-            const productTags = parent.querySelector(".o_product_tags");
-            productTags?.insertAdjacentHTML(
-                "beforebegin",
-                markup(combination.product_tags),
-            );
-            productTags?.remove();
-        }
 
         const productIdInput = parent.querySelector(".product_id");
         productIdInput.value = combination.product_id || 0;
