@@ -177,9 +177,9 @@ every one as a literal, so re-run it rather than trusting this table.
 | Category | Count |
 |----------|------:|
 | Python models (`models/`, incl. `discuss/`) | 90 (76 + 14 in `discuss/`) |
-| Python controllers | 22 files · **63** routes across **83** URL strings |
+| Python controllers | 21 files · **61** routes across **83** URL strings |
 | Python wizards | 9 |
-| Python tests | 90 `test_*.py` |
+| Python tests | 89 `test_*.py` |
 | JavaScript (`static/src/`) | 412 |
 | JS model classes (registered with `.register()`) | 41 (+ the base `Record` itself → 42 calls) |
 | JS OWL services | 23 |

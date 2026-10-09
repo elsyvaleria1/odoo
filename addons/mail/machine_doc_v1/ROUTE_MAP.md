@@ -25,7 +25,7 @@ runtime** despite never declaring it — verified against the live routing map, 
 report `readonly=True`. Every other mail route's runtime `readonly` matches its source
 declaration exactly.
 
-**Total: 63 `@http.route` handlers** — 29 in `controllers/`, 34 in `controllers/discuss/` —
+**Total: 61 `@http.route` handlers** — 27 in `controllers/`, 34 in `controllers/discuss/` —
 across **83 URL strings** (20 of them `export_icon_to_png`'s font_to_img variants).
 
 ## The two central data endpoints
@@ -115,7 +115,6 @@ Extends `bus`'s websocket controller.
 | Route | Type | Auth | Handler | Purpose |
 |-------|------|------|---------|---------|
 | `/websocket/peek_notifications` (inherited from `bus`; mail re-`@route()`s it with no URL) | jsonrpc | public +guest | `peek_notifications` | Override of bus poll to inject guest context |
-| `/websocket/update_bus_presence` | jsonrpc | public (cors=`"*"`) | `update_bus_presence` | Update current bus presence |
 
 ### controllers/mail_inbound.py — `MailInboundController`
 The MTA's door: `odoo-mailgate.py` posts each accepted message here, with its envelope, for
@@ -259,7 +258,7 @@ injects guest data into `user_context` when there is no `request.session.uid` bu
 |-------|----------|-------|
 | `controllers/` | 29 | thread (9), attachment (5), mail (4), webclient (2), websocket (2), link_preview (2), message_reaction (1), google_translate (1), im_status (1), guest (1), mail_inbound (1) — webmanifest = messaging_menu = 0 |
 | `controllers/discuss/` | 34 | channel (12), rtc (8), gif (5), public_page (4), settings (3), search (1), voice (1) — messaging_menu = 0 |
-| **Total** | **63** | **22** controller files (excluding the two `__init__.py`). Three files contribute 0 routes — `webmanifest.py` and the two `messaging_menu.py`; separately, the *class* `DiscussChannelWebclientController` in `channel.py` also declares none |
+| **Total** | **63** | **21** controller files (excluding the two `__init__.py`). Three files contribute 0 routes — `webmanifest.py` and the two `messaging_menu.py`; separately, the *class* `DiscussChannelWebclientController` in `channel.py` also declares none |
 
 > **`thread.py` was 10 until `3d39ae624a0`**, which removed
 > `/mail/thread/recipients/fields` (`mail_thread_recipients_fields`) — the route existed to

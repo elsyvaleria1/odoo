@@ -1,7 +1,7 @@
 # Mail Module Test Tags
 
 Reference for running targeted subsets of the `mail` module's tests — Python
-(`tests/`, 90 `test_*.py` files) and JavaScript HOOT (`static/tests/`, 164 `*.test.js`).
+(`tests/`, 89 `test_*.py` files) and JavaScript HOOT (`static/tests/`, 164 `*.test.js`).
 
 > **See also**: `CONVENTIONS.md` (the mock-gateway / bus test helpers), `ROUTE_MAP.md`
 > (the controller-contract tests), `STATE_MANAGEMENT.md` (what the JS store tests exercise).
@@ -50,7 +50,7 @@ Class counts measured 2026-08-17 at `dd172d10485`; `factcheck.sh` pins them.
 | `neutralize` | 1 | `test_mail_neutralize.py` | What `data/neutralize.sql` switches off in a copy: link-preview fetching and the ICE servers |
 | `messaging_menu` | — | `discuss/test_messaging_menu.py` | The messaging-menu `/mail/data` names: tab counters, per-tab load-more, most popular channels. Tag added after `dd172d10485`, so it has no count in this table |
 
-**52 of the 90 test files carry no topic tag at all** and are reachable only by the module
+**51 of the 89 test files carry no topic tag at all** and are reachable only by the module
 filter — among them `test_fetchmail.py`, `test_mail_mail.py`, `test_mail_blacklist.py`,
 `test_mail_message_access_parity.py`, `test_mail_message_search.py`, `test_uninstall.py`,
 and **19 of the 32 files** in `discuss/`. That is **more than
