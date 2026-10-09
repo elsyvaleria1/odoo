@@ -666,6 +666,31 @@ class TestCreateRecurrentEvents(TestRecurrentEvents):
         )
 
 
+class TestRecurrenceVideoCall(TestRecurrentEvents):
+    def test_a_series_wants_the_video_call_its_base_event_wants(self):
+        event = self.env["calendar.event"].create(
+            {
+                "name": "Recurrent Event",
+                "start": datetime(2019, 10, 21, 8, 0),
+                "stop": datetime(2019, 10, 21, 9, 0),
+            }
+        )
+        event._apply_recurrence_values(
+            {
+                "repeat_unit": "week",
+                "mon": True,
+                "repeat_interval": 1,
+                "repeat_number": 2,
+                "event_tz": "UTC",
+            }
+        )
+        recurrence = event.recurrence_id
+        self.assertTrue(recurrence._is_video_call_required())
+        event_class = type(self.env["calendar.event"])
+        self.patch(event_class, "_is_video_call_required", lambda event: False)
+        self.assertFalse(recurrence._is_video_call_required())
+
+
 class TestUpdateRecurrentEvents(TestRecurrentEvents):
     @classmethod
     def setUpClass(cls):

@@ -1,59 +1,13 @@
-from collections import abc
-from collections.abc import Iterator
-
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.json import dumps as json_dumps
 from odoo.tools import email_normalize
 
-from odoo.addons.calendar.tools.event_mapping import prepare_event_mapping
+from odoo.addons.calendar_sync.provider_events import ProviderEvents
 
 _debug = DebugLog(__name__)
 
 
-class MicrosoftEvent(abc.Set):
-    """
-    This helper class holds the values of a Microsoft event.
-    Inspired by Odoo recordset, one instance can be a single Microsoft event or a
-    (immutable) set of Microsoft events.
-    All usual set operations are supported (union, intersection, etc).
-
-    :param iterable: iterable of MicrosoftCalendar instances or iterable of dictionnaries
-    """
-
-    def __init__(self, iterable=()) -> None:
-        self._events = prepare_event_mapping(self.__class__, iterable)
-
-    def __iter__(self) -> Iterator[MicrosoftEvent]:
-        return iter(MicrosoftEvent([vals]) for vals in self._events.values())
-
-    def __contains__(self, microsoft_event) -> bool:
-        return microsoft_event.id in self._events
-
-    def __len__(self) -> int:
-        return len(self._events)
-
-    def __bool__(self) -> bool:
-        return bool(self._events)
-
-    def __getattr__(self, name):
-        # check_singleton
-        try:
-            (event_id,) = self._events
-        except ValueError:
-            raise ValueError(f"Expected singleton: {self}") from None
-        value = self._events[event_id].get(name)
-        json_dumps(value)
-        return value
-
-    def __repr__(self) -> str:
-        return "%s%s" % (self.__class__.__name__, self.ids)
-
-    @property
-    def ids(self):
-        """
-        Use 'id' to return an event identifier which is specific to a calendar
-        """
-        return tuple(e.id for e in self)
+class MicrosoftEvent(ProviderEvents):
+    """Outlook events, as Graph lists them."""
 
     @property
     def uids(self):
@@ -87,9 +41,6 @@ class MicrosoftEvent(abc.Set):
             user = env["res.users"].search([("email", "=", organizer_email)], limit=1)
             return user.id if user else False
         return False
-
-    def filter(self, func) -> MicrosoftEvent:
-        return MicrosoftEvent(e for e in self if func(e))
 
     def _filtered_series(self, series_master_id) -> MicrosoftEvent:
         return self.filter(lambda e: e.seriesMasterId == series_master_id)

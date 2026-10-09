@@ -6,6 +6,11 @@ import requests
 from odoo import fields
 
 from odoo.addons.calendar_google.utils.google_event import GoogleEvent
+from odoo.addons.calendar_sync.service import (
+    CalendarService,
+    InvalidSyncToken,
+    requires_connection,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -13,34 +18,12 @@ TIMEOUT = 20
 CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar"
 
 
-def requires_connection(func):
-    def wrapped(self, *args, **kwargs):
-        if not kwargs.get("connection"):
-            raise AttributeError("An authorized Google connection is required")
-        return func(self, *args, **kwargs)
-
-    return wrapped
-
-
-class InvalidSyncToken(Exception):
-    pass
-
-
-class GoogleCalendarService:
-    def __init__(self, env) -> None:
-        self.env = env
-
+class GoogleCalendarService(CalendarService):
     def _request(self, connection, method, path, *, params=None, json=None, timeout):
         """Google's answer, raising requests.HTTPError for a refusal; 204 and 404
         answer nothing."""
-        response = connection._get_api_client().request(
-            method,
-            path,
-            raw=True,
-            raise_for_status=False,
-            params=params,
-            json=json,
-            timeout=timeout,
+        response = self._response(
+            connection, method, path, params=params, json=json, timeout=timeout
         )
         if response.status_code in (204, 404):
             return False

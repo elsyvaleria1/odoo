@@ -6,25 +6,17 @@ import requests
 from odoo import fields
 
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
+from odoo.addons.calendar_sync.service import (
+    CalendarService,
+    InvalidSyncToken,
+    requires_connection,
+)
 
 _logger = logging.getLogger(__name__)
 
 TIMEOUT = 20
 RESOURCE_NOT_FOUND_STATUSES = (204, 404)
 CALENDAR_SCOPE = "offline_access openid Calendars.ReadWrite"
-
-
-def requires_connection(func):
-    def wrapped(self, *args, **kwargs):
-        if not kwargs.get("connection"):
-            raise AttributeError("An authorized Microsoft connection is required")
-        return func(self, *args, **kwargs)
-
-    return wrapped
-
-
-class InvalidSyncToken(Exception):
-    pass
 
 
 # In Outlook, an event can be:
@@ -44,20 +36,16 @@ class InvalidSyncToken(Exception):
 #  using the corresponding serie master ID.
 
 
-class MicrosoftCalendarService:
-    def __init__(self, env) -> None:
-        self.env = env
-
+class MicrosoftCalendarService(CalendarService):
     def _request(
         self, connection, method, path, *, params=None, json=None, headers=None, timeout
     ) -> tuple:
         """(status, body) of Graph's answer, raising requests.HTTPError for a
         refusal; 204 and 404 answer an empty body."""
-        response = connection._get_api_client().request(
+        response = self._response(
+            connection,
             method,
             path,
-            raw=True,
-            raise_for_status=False,
             params=params,
             json=json,
             headers=headers,

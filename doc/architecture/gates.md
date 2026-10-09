@@ -238,10 +238,18 @@ The suites run this way: `base` (less the excluded `TestReportsRendering` and
 `integration_machine_learning`, `project_hr`, `exchange`, `date_range`, `team`, `account`'s chart-of-accounts
 classes (`TestAccountCoa`, `TestAccountRoot`, `TestAccountCodeMapping`,
 `TestAccountNameDuplication`, `TestAccountCopyAndName`, `TestSplitCodeName`),
-`test_performance_compare`, `mail`, `test_mail`, `mail_group`, `mail_speech` and
-`bus`. `rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `bus`, `test_orm`, `crm`,
+`test_performance_compare`, `mail`, `test_mail`, `mail_group`, `mail_speech` and `bus`;
+and the outbound-integration families, one database each: `integration`;
+`calendar` with `calendar_sync`, `calendar_google` and `calendar_microsoft`;
+`appointment_calendar_google` with `test_appointment_full`;
+`integration_google` with `integration_microsoft`; `mail_google` with
+`mail_microsoft` (they run `mail_oauth2`'s tests); `captcha` with
+`captcha_recaptcha` and `captcha_turnstile`; `address_autocomplete` with
+`address_autocomplete_google` and `website_sale_autocomplete`.
+`rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `bus`, `test_orm`, `crm`,
 `data_recycle`, `test_access_rights`, `stock`, `mrp`, `test_trade`,
-`hr_holidays` and `approval` run **with** the HTTP server on a free port: each
+`hr_holidays`, `approval`, `integration`, the calendar, appointment,
+`integration_google`, mail and address families run **with** the HTTP server on a free port: each
 carries `HttpCase` classes, and under `--no-http` such a class is an error, not
 a skip (`ODOO_REQUIRE_INFRA`; on 2026-10-01 the last nine read 1-9 errors each
 that way, and green with the server). The rest run `--no-http`.

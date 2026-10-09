@@ -91,13 +91,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         """The values this record takes from Google's answer to its insert."""
         return {}
 
-    def _is_video_call_required(self) -> bool:
-        """Implement this method to return True if the event needs a video call
-        :return: bool
-        """
-        self.check_singleton()
-        return True
-
     def _write_from_google(self, gevent, vals) -> None:
         self.write(vals)
 

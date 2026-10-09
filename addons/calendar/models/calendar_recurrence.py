@@ -408,3 +408,9 @@ class CalendarRecurrence(models.Model):
             )
             for event in cast("CalendarEvent", self.calendar_event_ids)
         )
+
+    def _is_video_call_required(self) -> bool:
+        """Whether the series wants a video call: what its base event wants.
+        Asked of an event or a series alike, as `_is_event_over` is."""
+        self.check_singleton()
+        return not self.base_event_id or self.base_event_id._is_video_call_required()

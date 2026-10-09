@@ -6,7 +6,6 @@ from odoo import Command, api, models
 from odoo.addons.base.models.mixin_recurrence_rrule import MAX_RECURRENT_OCCURRENCES
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
     TIMEOUT,
-    InvalidSyncToken,
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
@@ -17,6 +16,7 @@ from odoo.addons.calendar_sync.remote import (
     RemoteEvent,
     RemoteKind,
 )
+from odoo.addons.calendar_sync.service import InvalidSyncToken
 
 # Outlook's answer endpoints, by the attendee's state in Odoo
 ANSWERS = {

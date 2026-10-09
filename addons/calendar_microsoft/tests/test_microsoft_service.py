@@ -8,11 +8,11 @@ from odoo.tests import TransactionCase
 
 from odoo.addons.calendar_microsoft.tests.common import authorize_microsoft_calendar
 from odoo.addons.calendar_microsoft.utils.calendar_microsoft import (
-    InvalidSyncToken,
     MicrosoftCalendarService,
 )
 from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
 from odoo.addons.calendar_sync.models.res_users import ResUsers as CalendarSyncUsers
+from odoo.addons.calendar_sync.service import InvalidSyncToken
 
 DEFAULT_TIMEOUT = 20
 

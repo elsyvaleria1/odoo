@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.64
+:Version: 7.66
 :Date: 2026-10-08
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -811,6 +811,14 @@ and about its dependencies, and nothing checks either claim.
   (``speech_ai``, ``extract_ai``, ``voice_ai``). The suffix is what a reader
   groups by; a bridge named the other way round (``voice_mail``) hides from
   its family.
+* **A vendor's adapter is ``{domain}_{vendor}``**, domain first: the domain
+  module holds what every provider shares and the setting that chooses one,
+  the adapter one vendor's protocol (``captcha_recaptcha``,
+  ``captcha_turnstile``, ``address_autocomplete_google``, ``calendar_google``
+  for ``calendar_sync``, ``mail_google`` for ``mail_oauth2``,
+  ``integration_google``). A vendor-first name (``google_recaptcha``) groups
+  a vendor's unrelated adapters together, hides each from its domain, and
+  reads as a dependency on a vendor module that does not exist.
 
 **A rename is a base pre-migration** ``[review]``: a new ``base/migrations/<v>/``
 directory whose ``pre-migrate`` renames longest name first, with base's version
@@ -6170,8 +6178,6 @@ Appendix D — Document history
 One row per change, one clause. Versions 6.10–6.16 each name two changes (an
 ``addons/`` block between 6.26 and 6.25, a core block below 6.17); disambiguate
 them by the scope in each row's first clause, not by date or position.
-``tests/framework/test_guidelines_header.py`` pins exactly these seven
-collisions, so an eighth fails and so does a renumbering.
 
 .. list-table::
    :header-rows: 1
@@ -6180,6 +6186,13 @@ collisions, so an eighth fails and so does a renumbering.
    * - Version
      - Date
      - Summary
+   * - 7.66
+     - 2026-10-08
+     - Appendix D no longer claims a test pins its version collisions: none
+       exists in this repository.
+   * - 7.65
+     - 2026-10-08
+     - §1.5: a vendor's adapter is ``{domain}_{vendor}``, domain first.
    * - 7.64
      - 2026-10-08
      - §2.9.14: a job holds its caller's authority, superuser mode and named

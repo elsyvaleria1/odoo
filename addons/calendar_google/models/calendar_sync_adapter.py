@@ -6,7 +6,6 @@ from odoo import api, models
 from odoo.addons.calendar_google.utils.calendar_google import (
     TIMEOUT,
     GoogleCalendarService,
-    InvalidSyncToken,
 )
 from odoo.addons.calendar_sync.remote import (
     CalendarSyncError,
@@ -15,6 +14,7 @@ from odoo.addons.calendar_sync.remote import (
     RemoteEvent,
     RemoteKind,
 )
+from odoo.addons.calendar_sync.service import InvalidSyncToken
 
 
 class CalendarSyncAdapterGoogle(models.AbstractModel):

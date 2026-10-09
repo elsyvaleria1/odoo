@@ -1,58 +1,13 @@
 import re
-from collections import abc
-from collections.abc import Iterator
 
-from odoo.libs.json import dumps as json_dumps
 from odoo.tools import email_normalize
 
-from odoo.addons.calendar.tools.event_mapping import prepare_event_mapping
+from odoo.addons.calendar_sync.provider_events import ProviderEvents
 
 
-class GoogleEvent(abc.Set):
-    """This helper class holds the values of a Google event.
-    Inspired by Odoo recordset, one instance can be a single Google event or a
-    (immutable) set of Google events.
-    All usual set operations are supported (union, intersection, etc).
-
-    A list of all attributes can be found in the API documentation.
-    https://developers.google.com/calendar/v3/reference/events#resource
-
-    :param iterable: iterable of GoogleCalendar instances or iterable of dictionnaries
-
-    """
-
-    def __init__(self, iterable=()) -> None:
-        self._events = prepare_event_mapping(self.__class__, iterable)
-
-    def __iter__(self) -> Iterator[GoogleEvent]:
-        return iter(GoogleEvent([vals]) for vals in self._events.values())
-
-    def __contains__(self, google_event) -> bool:
-        return google_event.id in self._events
-
-    def __len__(self) -> int:
-        return len(self._events)
-
-    def __bool__(self) -> bool:
-        return bool(self._events)
-
-    def __getattr__(self, name):
-        # check_singleton
-        try:
-            (_event,) = self._events.keys()
-        except ValueError as e:
-            raise ValueError("Expected singleton: %s" % self) from e
-        event_id = next(iter(self._events.keys()))
-        value = self._events[event_id].get(name)
-        json_dumps(value)
-        return value
-
-    def __repr__(self) -> str:
-        return "%s%s" % (self.__class__.__name__, self.ids)
-
-    @property
-    def ids(self):
-        return tuple(e.id for e in self)
+class GoogleEvent(ProviderEvents):
+    """Google Calendar events, as the API lists them:
+    https://developers.google.com/calendar/v3/reference/events#resource"""
 
     @property
     def rrule(self):
@@ -109,9 +64,6 @@ class GoogleEvent(abc.Set):
             )
         else:
             return env["res.users"]
-
-    def filter(self, func) -> GoogleEvent:
-        return GoogleEvent(e for e in self if func(e))
 
     def is_recurrence(self) -> bool:
         return bool(self.recurrence)

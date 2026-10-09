@@ -73,7 +73,3 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
     def _get_fields_microsoft_synced(self):
         """The fields of this model Outlook holds a copy of."""
         raise NotImplementedError
-
-    def _is_video_call_required(self) -> bool:
-        self.check_singleton()
-        return True
