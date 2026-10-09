@@ -1,6 +1,6 @@
 import logging
 
-from odoo import api
+from odoo import SUPERUSER_ID, api
 from odoo.exceptions import MissingError, ValidationError
 from odoo.http import Controller, request, route
 
@@ -47,7 +47,14 @@ class StripeIssuingController(Controller):
             "Content-Type": "application/json",
         }
         company_sudo = admission.subject
-        env = request.env(su=True, context={"allowed_company_ids": company_sudo.ids})
+        # stopgap until the receiver has its own service user: the request's
+        # user is the archived public user, whom nothing may be made or
+        # authored by; the company pin keeps the event to its own company
+        env = request.env(
+            user=SUPERUSER_ID,
+            su=True,
+            context={"allowed_company_ids": company_sudo.ids},
+        )
 
         event_mode = "live" if event["livemode"] else "test"
         if company_sudo._get_stripe_mode() != event_mode:
