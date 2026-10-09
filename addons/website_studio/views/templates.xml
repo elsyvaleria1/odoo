@@ -100,7 +100,10 @@
         </template>
         <template id="default_listing">
             <t t-call="website.layout">
-                <div class="container o_website_listing_layout">
+                <div
+                    class="container o_website_listing_layout"
+                    data-fragment="website_studio.default_listing"
+                    data-partial-navigation=".o_website_listing_layout .o_searchbar_form, .o_website_listing_layout .o_portal_pager">
                     <div class="oe_structure oe_new" />
                     <section class="s_searchbar o_colored_level o_cc pt48 pb48">
                         <div class="row">

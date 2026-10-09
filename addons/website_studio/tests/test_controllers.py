@@ -61,3 +61,24 @@ class TestWebsiteStudioControllers(HttpCase):
             "/website_studio/get_website_pages", {"res_model": "res.company"}
         )
         self.assertEqual(other["pages"], [], "pages of other models stay out")
+
+    def test_listing_search_in_place(self):
+        self.env["res.partner"].create([{"name": "PN Ada"}, {"name": "PN Grace"}])
+        page = (
+            self.env["website.controller.page"]
+            .with_context({"website_studio.create_page": True})
+            .create(
+                {
+                    "name": "PN Partners",
+                    "name_slugified": "pn-partners",
+                    "model_id": self.env["ir.model"]._get_id("res.partner"),
+                    "record_domain": "[('name', 'ilike', 'PN ')]",
+                    "is_published": True,
+                }
+            )
+        )
+        self.start_tour(
+            f"/model/{page.name_slugified}",
+            "website_studio_listing_partial_navigation",
+            login="admin",
+        )
