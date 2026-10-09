@@ -4363,20 +4363,6 @@ msgid "Please"
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
 #. odoo-python
 #: code:addons/website_slides/models/slide_slide.py:0
 msgid "Please enter a valid Vimeo video link"
@@ -5871,7 +5857,6 @@ msgstr ""
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/interactions/course_join.js:0
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 msgid "Unknown error"
 msgstr ""
 
@@ -6111,8 +6096,8 @@ msgid "Votes"
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr ""
 
@@ -6409,14 +6394,8 @@ msgid "You do not have permission to access this course."
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr ""
 
@@ -6465,8 +6444,8 @@ msgid "You must be logged to submit the quiz."
 msgstr ""
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr ""
 

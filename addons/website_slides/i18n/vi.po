@@ -4807,20 +4807,6 @@ msgid "Please"
 msgstr "Vui lòng"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid ""
 "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
@@ -6336,7 +6322,6 @@ msgstr "Trang web không xác định"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 msgid "Unknown error"
 msgstr "Lỗi không xác định"
@@ -6585,8 +6570,8 @@ msgid "Votes"
 msgstr "Bình chọn"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "Bình chọn và bình luận đã bị tắt cho khóa học này"
 
@@ -6910,14 +6895,8 @@ msgid "You do not have permission to access this course."
 msgstr "Bạn không có quyền truy cập khóa học này."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr "Bạn không có quyền truy cập vào bài học này"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr "Bạn không có đủ điểm để bình chọn"
 
@@ -6966,8 +6945,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "Bạn phải đăng nhập để gửi quiz."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr "Bạn phải là thành viên của khóa học này để bình chọn"
 

@@ -5461,26 +5461,6 @@ msgid "Please"
 msgstr "Iltimos"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-#, fuzzy
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-"Ushbu darsga ovoz berish uchun iltimos %(a_login_open)stizimga kiring%"
-"(a_login_close)s yoki %(a_signup_open)shisob yarating%(a_signup_close)s"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-#, fuzzy
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-"Ushbu darsga ovoz berish uchun iltimos %(a_login_open)stizimga kiring%"
-"(a_login_close)s"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid ""
@@ -7249,7 +7229,6 @@ msgstr "Noma'lum veb-sayt"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 #, fuzzy
 msgid "Unknown error"
@@ -7542,8 +7521,8 @@ msgid "Votes"
 msgstr "Ovozlar"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 #, fuzzy
 msgid "Votes and comments are disabled for this course"
 msgstr "Ushbu kurs uchun ovoz berish va fikr bildirish imkoniyati o‘chirilgan"
@@ -7913,15 +7892,8 @@ msgid "You do not have permission to access this course."
 msgstr "Bu kursga kirishga ruxsatingiz yo‘q."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-#, fuzzy
-msgid "You don't have access to this lesson"
-msgstr "Bu darsga kirishga ruxsatingiz yo‘q"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 #, fuzzy
 msgid "You don't have enough karma to vote"
 msgstr "Ovoz berish uchun yetarli karmangiz yo‘q"
@@ -7979,8 +7951,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "Testni topshirish uchun tizimga kirgan bo‘lishingiz kerak."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 #, fuzzy
 msgid "You must be member of this course to vote"
 msgstr "Ovoz berish uchun bu kursga a'zo bo‘lishingiz kerak"

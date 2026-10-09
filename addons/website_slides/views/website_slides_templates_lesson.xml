@@ -508,38 +508,7 @@
                         <div t-if="slide.channel_id.allow_comment" class="d-flex">
                             <span class="text-muted fw-bold me-3">Rating</span>
                             <div class="text-muted border-start ps-3">
-                                <div class="o_wslides_js_slide_like me-2">
-                                    <span
-                                        t-attf-class="o_wslides_js_slide_like_up #{'disabled' if not slide.channel_id.can_vote else ''}"
-                                        tabindex="0"
-                                        data-bs-toggle="popover"
-                                        t-att-data-slide-id="slide.id"
-                                        t-att-data-user-vote="slide.user_vote">
-                                        <i
-                                            t-attf-class="#{'fa-solid' if slide.user_vote == 1 else 'fa-regular'} fa-thumbs-up"
-                                            role="img"
-                                            aria-label="Likes"
-                                            title="Like" />
-                                        <span
-                                            t-field="slide.likes"
-                                            t-options="{'format_decimalized_number': True}" />
-                                    </span>
-                                    <span
-                                        t-attf-class="o_wslides_js_slide_like_down ms-3 #{'disabled' if not slide.channel_id.can_vote else ''}"
-                                        tabindex="0"
-                                        data-bs-toggle="popover"
-                                        t-att-data-slide-id="slide.id"
-                                        t-att-data-user-vote="slide.user_vote">
-                                        <i
-                                            t-attf-class="#{'fa-solid' if slide.user_vote == -1 else 'fa-regular'} fa-thumbs-down"
-                                            role="img"
-                                            aria-label="Dislikes"
-                                            title="Dislike" />
-                                        <span
-                                            t-field="slide.dislikes"
-                                            t-options="{'format_decimalized_number': True}" />
-                                    </span>
-                                </div>
+                                <t t-call="website_slides.slide_like" />
                             </div>
                         </div>
                     </div>
@@ -809,6 +778,52 @@
                     <span>Add Question</span>
                 </a>
             </div>
+        </template>
+        <template id="slide_like" name="Lesson Like and Dislike">
+            <t t-set="can_vote" t-value="slide.channel_id.can_vote" />
+            <form
+                class="o_wslides_js_slide_like d-inline-flex align-items-center gap-2"
+                method="post"
+                action="/slides/slide/like"
+                t-att-data-fragment="'website_slides.slide_like.%s' % slide.id"
+                data-fragment-form="">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input type="hidden" name="slide_id" t-att-value="slide.id" />
+            <input
+                type="hidden"
+                name="redirect"
+                t-att-value="like_redirect or request.httprequest.full_path.rstrip('?')" />
+            <button
+                type="submit"
+                name="upvote"
+                value="1"
+                t-attf-class="o_wslides_js_slide_like_up border-0 bg-transparent p-0 text-center #{'disabled' if not can_vote else ''}"
+                t-att-aria-pressed="'true' if slide.user_vote == 1 else 'false'">
+            <i
+                t-attf-class="#{'fa-solid' if slide.user_vote == 1 else 'fa-regular'} fa-thumbs-up"
+                role="img"
+                aria-label="Likes"
+                title="Like" />
+            <span
+                t-field="slide.likes"
+                t-options="{'format_decimalized_number': True}" />
+            </button>
+            <button
+                type="submit"
+                name="upvote"
+                value="0"
+                t-attf-class="o_wslides_js_slide_like_down border-0 bg-transparent p-0 text-center #{'disabled' if not can_vote else ''}"
+                t-att-aria-pressed="'true' if slide.user_vote == -1 else 'false'">
+            <i
+                t-attf-class="#{'fa-solid' if slide.user_vote == -1 else 'fa-regular'} fa-thumbs-down"
+                role="img"
+                aria-label="Dislikes"
+                title="Dislike" />
+            <span
+                t-field="slide.dislikes"
+                t-options="{'format_decimalized_number': True}" />
+            </button>
+            </form>
         </template>
     </data>
 

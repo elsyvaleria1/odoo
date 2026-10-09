@@ -4792,20 +4792,6 @@ msgid "Please"
 msgstr "제발"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid ""
 "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
@@ -6318,7 +6304,6 @@ msgstr "알 수 없는 웹사이트"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 msgid "Unknown error"
 msgstr "알 수 없는 오류"
@@ -6564,8 +6549,8 @@ msgid "Votes"
 msgstr "투표"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "투표와 의견은 이 강좌에서는 사용할 수 없습니다"
 
@@ -6882,14 +6867,8 @@ msgid "You do not have permission to access this course."
 msgstr "이 강좌에 접근할 수 있는 권한이 없습니다."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr "귀하는 이 강의를 볼 수 있는 권한이 없습니다."
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr "귀하는 투표하기에는 명성이 모자랍니다."
 
@@ -6938,8 +6917,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "문제를 풀려면 로그인해야 합니다."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr "투표하려면 이 강좌의 회원이 되어야 합니다."
 

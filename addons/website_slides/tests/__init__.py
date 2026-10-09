@@ -15,6 +15,7 @@ from . import test_slide_permissions
 from . import test_slide_question
 from . import test_slide_quiz_editing
 from . import test_slide_resource
+from . import test_slide_like
 from . import test_slide_slide
 from . import test_statistics
 from . import test_ui_wslides

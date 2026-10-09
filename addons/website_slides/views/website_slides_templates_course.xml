@@ -1140,38 +1140,7 @@
                 class="fw-bold me-auto"
                 t-field="slide.completion_time"
                 t-options="{&quot;widget&quot;: &quot;float_time&quot;}" />
-            <div class="o_wslides_js_slide_like">
-            <span
-                t-attf-class="d-inline-block text-center o_wslides_js_slide_like_up #{'disabled' if not channel.can_vote else ''}"
-                tabindex="0"
-                data-bs-toggle="popover"
-                t-att-data-slide-id="slide.id"
-                t-att-data-user-vote="slide.user_vote">
-            <i
-                t-attf-class="#{'fa-solid' if slide.user_vote == 1 else 'fa-regular'} fa-thumbs-up"
-                role="img"
-                aria-label="Likes"
-                title="Like" />
-            <span
-                t-field="slide.likes"
-                t-options="{'format_decimalized_number': True}" />
-            </span>
-            <span
-                t-attf-class="d-inline-block text-center ms-1 o_wslides_js_slide_like_down #{'disabled' if not channel.can_vote else ''}"
-                tabindex="0"
-                data-bs-toggle="popover"
-                t-att-data-slide-id="slide.id"
-                t-att-data-user-vote="slide.user_vote">
-            <i
-                t-attf-class="#{'fa-solid' if slide.user_vote == -1 else 'fa-regular'} fa-thumbs-down"
-                role="img"
-                aria-label="Dislikes"
-                title="Dislike" />
-            <span
-                t-field="slide.dislikes"
-                t-options="{'format_decimalized_number': True}" />
-            </span>
-            </div>
+            <t t-call="website_slides.slide_like" />
             </div>
             </div>
             </div>

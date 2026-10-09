@@ -4862,24 +4862,6 @@ msgid "Please"
 msgstr "Ole hyvä"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-"Ole hyvä ja %(a_login_open)skirjaudu sisään%(a_login_close)s tai %"
-"(a_signup_open)sluo tili%(a_signup_close)s äänestääksesi tätä oppituntia"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-"Ole hyvä ja %(a_login_open)skirjaudu sisään%(a_login_close)s äänestäaksesi "
-"tätä oppituntia"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid ""
 "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
@@ -6399,7 +6381,6 @@ msgstr "Tuntematon verkkosivusto"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 msgid "Unknown error"
 msgstr "Tuntematon virhe"
@@ -6646,8 +6627,8 @@ msgid "Votes"
 msgstr "Ääniä"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "Äänestys ja kommentointi on poistettu käytöstä tällä kurssilla"
 
@@ -6966,14 +6947,8 @@ msgid "You do not have permission to access this course."
 msgstr "Sinulla ei ole pääsyoikeutta tälle kurssille."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr "Sinulla ei ole pääsyoikeutta tähän oppituntiin"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr "Sinulla ei ole tarpeeksi pisteitä äänestääksesi"
 
@@ -7022,8 +6997,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "Sinun on oltava kirjautuneena sisään lähettääksesi kyselyn."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr "Sinun on oltava tämän kurssin jäsen, jotta voit äänestää"
 

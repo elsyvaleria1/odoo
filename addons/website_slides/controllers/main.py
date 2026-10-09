@@ -20,6 +20,7 @@ from odoo.tools.translate import LazyTranslate
 from odoo.tools.urls import keep_query
 
 from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
+from odoo.addons.web.controllers.utils import Fragment, fragments_or_redirect
 from odoo.addons.website.controllers.main import QueryURL
 from odoo.addons.website.models.ir_http import sitemap_qs2dom
 from odoo.addons.website_profile.controllers.main import WebsiteProfile
@@ -1460,35 +1461,42 @@ class WebsiteSlides(WebsiteProfile):
             "next_category_id": False,
         }
 
-    @http.route("/slides/slide/like", type="jsonrpc", auth="public", website=True)
-    def slide_like(self, slide_id, upvote):
+    @http.route(
+        "/slides/slide/like",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
+    )
+    def slide_like(self, slide_id, upvote, redirect=None, **kwargs):
+        back = redirect or "/slides"
         if request.website.is_public_user():
-            return {
-                "error": "public_user",
-                "error_signup_allowed": request.env["res.users"]
-                .sudo()
-                ._get_signup_invitation_scope()
-                == "b2c",
-            }
-        fetch_res = self._get_slide(slide_id)
-        if fetch_res.get("error"):
-            return fetch_res
-        slide = fetch_res["slide"]
-        if not slide.channel_id.is_member:
-            return {"error": "channel_membership_required"}
-        if not slide.channel_id.allow_comment:
-            return {"error": "channel_comment_disabled"}
-        if not slide.channel_id.can_vote:
-            return {"error": "channel_karma_required"}
-        if upvote:
+            return request.redirect("/web/login?" + urlencode({"redirect": back}))
+        slide = self._get_slide(slide_id).get("slide")
+        if not slide:
+            raise werkzeug.exceptions.NotFound
+        channel = slide.channel_id
+        if not channel.is_member:
+            raise UserError(request.env._("You must be member of this course to vote"))
+        if not channel.allow_comment:
+            raise UserError(
+                request.env._("Votes and comments are disabled for this course")
+            )
+        if not channel.can_vote:
+            raise UserError(request.env._("You don't have enough karma to vote"))
+        if upvote == "1":
             slide.action_like()
         else:
             slide.action_dislike()
-        return {
-            "user_vote": slide.user_vote,
-            "likes": tools.misc.format_decimalized_number(slide.likes),
-            "dislikes": tools.misc.format_decimalized_number(slide.dislikes),
-        }
+        return fragments_or_redirect(
+            request.env,
+            back,
+            Fragment(
+                "website_slides.slide_like",
+                {"slide": slide, "like_redirect": back},
+                key=f"website_slides.slide_like.{slide.id}",
+            ),
+        )
 
     @http.route("/slides/slide/archive", type="jsonrpc", auth="user", website=True)
     def slide_archive(self, slide_id):

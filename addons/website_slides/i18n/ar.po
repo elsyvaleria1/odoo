@@ -4811,20 +4811,6 @@ msgid "Please"
 msgstr "رجاءً"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid ""
 "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
@@ -6333,7 +6319,6 @@ msgstr "موقع إلكتروني غير معروف"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
@@ -6580,8 +6565,8 @@ msgid "Votes"
 msgstr "التصويتات"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "تم تعطيل التصويت والتعليقات لهذه الدورة"
 
@@ -6898,14 +6883,8 @@ msgid "You do not have permission to access this course."
 msgstr "لا تملك صلاحية الوصول إلى هذه الدورة."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr "لا تملك صلاحية الوصول إلى هذا الدرس"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr "لا تملك نقاط كارما كافية للتصويت"
 
@@ -6954,8 +6933,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "عليك تسجيل الدخول أولاً حتى تتمكن من تسليم الاختبار القصير."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr "يجب أن تكون عضوا في هذه الدورة حتى تتمكن من التصويت"
 

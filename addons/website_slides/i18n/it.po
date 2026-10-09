@@ -4858,24 +4858,6 @@ msgid "Please"
 msgstr "&nbsp;"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid ""
-"Please %(a_login_open)slogin%(a_login_close)s or %(a_signup_open)screate an "
-"account%(a_signup_close)s to vote for this lesson"
-msgstr ""
-"Per favore %(a_login_open)saccedi%(a_login_close)s o %(a_signup_open)screa "
-"un conto%(a_signup_close)s per votare per questa lezione"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "Please %(a_login_open)slogin%(a_login_close)s to vote for this lesson"
-msgstr ""
-"Per favore %(a_login_open)saccedi%(a_login_close)s per votare per questa "
-"lezione"
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid ""
 "Please <a t-attf-href=\"/odoo?redirect=#{request.httprequest.url}\" "
@@ -6398,7 +6380,6 @@ msgstr "Sito web sconosciuto"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
 #: code:addons/website_slides/static/src/js/slides_course_join.js:0
 msgid "Unknown error"
 msgstr "Errore sconosciuto"
@@ -6648,8 +6629,8 @@ msgid "Votes"
 msgstr "Voti"
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "Votes and comments are disabled for this course"
 msgstr "Per questo corso i voti e i commenti sono disabilitati"
 
@@ -6971,14 +6952,8 @@ msgid "You do not have permission to access this course."
 msgstr "Non hai i permessi per accedere al corso."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
-msgid "You don't have access to this lesson"
-msgstr "Accesso alla lezione non consentito"
-
-#. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You don't have enough karma to vote"
 msgstr "Karma non sufficiente per votare"
 
@@ -7027,8 +7002,8 @@ msgid "You must be logged to submit the quiz."
 msgstr "Per inviare il quiz è obbligatorio effettuare l'accesso."
 
 #. module: website_slides
-#. odoo-javascript
-#: code:addons/website_slides/static/src/interactions/slide_like.js:0
+#. odoo-python
+#: code:addons/website_slides/controllers/main.py:0
 msgid "You must be member of this course to vote"
 msgstr "Per votare è obbligatorio essere iscritti al corso"
 
