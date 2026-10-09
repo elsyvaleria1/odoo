@@ -289,7 +289,8 @@ class _BodyValidator(ast.NodeVisitor):
             )
 
     def visit_Name(self, node) -> None:
-        if node.id.startswith("_"):
+        throwaway = node.id == "_" and isinstance(node.ctx, ast.Store)
+        if node.id.startswith("_") and not throwaway:
             raise RuleSyntaxError(f"names cannot start with _: {node.id}", node.lineno)
         if isinstance(node.ctx, ast.Store) and node.id in self.reserved:
             raise RuleSyntaxError(f"{node.id} cannot be reassigned", node.lineno)

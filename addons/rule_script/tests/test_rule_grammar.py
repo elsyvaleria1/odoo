@@ -30,6 +30,8 @@ class TestRuleGrammar(BaseCase):
 
     def test_a_rule_reads_inputs_constants_and_helpers(self):
         source = "RATES = ((1000.0, 0.1), (None, 0.2))\n" + rule(
+            "for _ in range(1):\n"
+            "    pass\n"
             "for limit, rate in RATES:\n"
             "    if limit is None or inputs.n <= limit:\n"
             "        return {'tax': rules.round_half_up(inputs.n * rate, 2),"
@@ -45,6 +47,7 @@ class TestRuleGrammar(BaseCase):
         refused = {
             "dunder attribute": rule("return (1).__class__"),
             "private attribute": rule("return rules._resolve"),
+            "throwaway read": rule("for _ in range(1):\n    pass\nreturn _"),
             "while": rule("while True:\n    pass"),
             "lambda": rule("return sorted([1], key=lambda x: x)"),
             "unknown call": rule("return getattr(rules, 'call')"),
