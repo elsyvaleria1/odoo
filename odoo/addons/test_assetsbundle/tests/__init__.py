@@ -15,3 +15,4 @@ from . import test_ir_asset
 from . import test_js_pipeline
 from . import test_toolchain
 from . import test_xml_pipeline
+from . import test_esbuild_addon_aliases

@@ -17,6 +17,7 @@ import odoo
 from odoo.libs.asset_log import get_asset_logger, log_event
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import scriptsafe as json
+from odoo.modules.module import MANIFEST_NAMES
 from odoo.tools import config
 from odoo.tools.assets import esbuild_process, esbuild_stubs
 from odoo.tools.assets.constants import OWL_COMPILER_SPECIFIER, OWL_FULL_BUILD_URL
@@ -542,6 +543,11 @@ class EsbuildCompiler:
             for entry in addon_dir.iterdir():
                 name = entry.name
                 if name in seen_addons or not entry.is_dir():
+                    continue
+                # A directory left behind by a module that moved elsewhere
+                # holds only bytecode; claiming its name would shadow the real
+                # module further down the path, as the module loader does not.
+                if not any((entry / manifest).is_file() for manifest in MANIFEST_NAMES):
                     continue
                 seen_addons.add(name)
                 static_src = entry / "static" / "src"
