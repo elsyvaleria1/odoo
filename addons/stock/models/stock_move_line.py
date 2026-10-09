@@ -756,6 +756,7 @@ class StockMoveLine(models.Model):
                 _debug.lifecycle("package_history_rows", rows=len(package_history_vals))
                 self.env["stock.package.history"].create(package_history_vals)
 
+        mls_todo._resolve_serial_sources()
         _debug.pipeline("action_done_update_quants", move_lines=mls_todo)
         mls_todo._update_quants_done()
 

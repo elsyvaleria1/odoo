@@ -2,6 +2,8 @@ import gc
 from datetime import timedelta
 from unittest.mock import patch
 
+from freezegun import freeze_time
+
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import Form, TransactionCase, new_test_user, tagged
@@ -678,6 +680,11 @@ class TestOrderGuards(TestMrpCommon):
             )
 
 
+# The flush writes a model's rows in one statement per set of changed columns.
+# Marking done stamps `date` with the current second: a second that turns
+# mid-measurement leaves some rows' date unchanged and splits that statement.
+# Frozen time measures the code, not the clock.
+@freeze_time("2026-10-08 10:00:00")
 @tagged("post_install", "-at_install")
 class TestProductionStatementGuards(TransactionCase):
     @classmethod
@@ -797,11 +804,15 @@ class TestProductionStatementGuards(TransactionCase):
         marked(1, 0)
         without = marked(6, 0) - marked(2, 0)
         with_operations = marked(6, 1) - marked(2, 1)
-        self.assertLessEqual(with_operations - without, 1)
+        self.assertEqual(with_operations, without)
 
-    def test_marking_done_writes_one_link_per_order(self):
+    def test_marking_done_costs_no_statement_per_order(self):
         def marked(count):
-            productions = self._reserved(count)
+            productions = self.env["mrp.production"].concat(
+                *(self._orders(1) for _index in range(count))
+            )
+            productions.action_confirm()
+            productions.action_assign()
             return self.statements(
                 productions,
                 lambda productions: productions.with_context(
@@ -810,11 +821,10 @@ class TestProductionStatementGuards(TransactionCase):
             )
 
         marked(1)
-        # The consume-line insert: one x2many value per order, and a write
-        # carries one value for all its records. The one extra statement
-        # absorbs a cache miss that depends on what the process ran before;
-        # reading each order's lines again cost sixteen.
-        self.assertLessEqual(marked(6) - marked(2), 4 * 1 + 1)
+        # Each order makes its own product, so each needs its own quants and
+        # consume links: both are written in one batch for every order. One
+        # order at a time cost three statements more each.
+        self.assertEqual(marked(6), marked(2))
 
     def test_backorder_split_grows_by_its_line_writes_only(self):
         def split(count):
@@ -830,9 +840,7 @@ class TestProductionStatementGuards(TransactionCase):
             )
 
         split(1)
-        # Three statements per order remain: the consume-line insert (an
-        # x2many written per record) and the reservation line moved onto the
+        # Two statements per order remain: the reservation line moved onto the
         # backorder, whose write flushes and re-sums the move quantity. The
-        # slack of one per order absorbs an ormcache miss that depends on what
-        # ran before; the per-order split this guards against cost thirteen.
-        self.assertLessEqual(split(6) - split(2), 4 * 4)
+        # per-order split this guards against cost thirteen.
+        self.assertEqual(split(6) - split(2), 4 * 2)

@@ -3,7 +3,7 @@ from typing import Self
 
 from markupsafe import Markup
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
@@ -517,13 +517,136 @@ class StockMoveLineQuant(models.Model):
             not self.product_id.is_storable or location.is_reservation_bypass_required()
         )
 
+    def _resolve_serial_sources(self) -> None:
+        # A serial is in one place. A line taking it from where it is not (a
+        # parent of its shelf, no owner for an owned one) would leave -1 there
+        # and +1 where it is, for a later line to consume again; when exactly
+        # one quant under the line's location holds it, the line takes it
+        # from that quant, as reservation would have.
+        lines = self.filtered(
+            lambda ml: (
+                ml.trace_id
+                and ml.product_id.tracking == "serial"
+                and ml.location_id.usage in ("internal", "transit")
+                and not ml._is_reservation_bypass_required(ml.location_id)
+            )
+        )
+        if not lines:
+            return
+        quants = (
+            self.env["stock.quant"]
+            ._with_quant_upkeep()
+            .search(
+                [
+                    ("product_id", "in", lines.product_id.ids),
+                    ("trace_id", "in", lines.trace_id.ids),
+                    ("location_id", "child_of", lines.location_id.ids),
+                    ("quantity", ">", 0),
+                ]
+            )
+        )
+        quants_by_trace = quants.grouped("trace_id")
+        notes = defaultdict(list)
+        line_ids_by_source = defaultdict(list)
+        for line in lines:
+            under = quants_by_trace.get(line.trace_id, quants.browse()).filtered(
+                lambda quant, line=line: quant.location_id.parent_path.startswith(
+                    line.location_id.parent_path
+                )
+            )
+            if not under or any(
+                quant.location_id == line.location_id
+                and quant.package_id == line.package_id
+                and quant.owner_id == line.owner_id
+                for quant in under
+            ):
+                continue
+            if len(under) > 1:
+                _debug.logic("serial_source_ambiguous", line=line.id, quants=under)
+                continue
+            _debug.logic(
+                "serial_source_resolved",
+                line=line.id,
+                trace=line.trace_id.id,
+                stated=line.location_id.id,
+                found=under.location_id.id,
+            )
+            if document := line.move_id._get_handling_document():
+                notes[document].append(
+                    self.env._(
+                        "%(trace)s was taken from %(found)s, where it is, not from"
+                        " %(stated)s.",
+                        trace=line.trace_id.display_name,
+                        found=under.location_id.display_name,
+                        stated=line.location_id.display_name,
+                    )
+                )
+            line_ids_by_source[
+                under.location_id, under.package_id, under.owner_id
+            ].append(line.id)
+        for (location, package, owner), line_ids in line_ids_by_source.items():
+            self.browse(line_ids).write(
+                {
+                    "location_id": location.id,
+                    "package_id": package.id,
+                    "owner_id": owner.id,
+                }
+            )
+        self._post_consumed_pick_notes(notes)
+
+    def _create_missing_quants(self, quants_cache) -> None:
+        # The quants a batch moves stock into or out of, created in one batch:
+        # created one by one inside the loop, each was a statement of its own.
+        # They start empty, so the loop finds and updates them as it does any.
+        if quants_cache is None:
+            return
+        keys = OrderedSet()
+        for ml in self:
+            product = ml.product_id
+            if not product.is_storable or ml.product_uom_id._is_zero_stored(
+                ml.quantity_product_uom, product.uom_id
+            ):
+                continue
+            keys.add((product, ml.location_id, ml.trace_id, ml.package_id, ml.owner_id))
+            keys.add(
+                (
+                    product,
+                    ml.location_dest_id,
+                    ml.trace_id,
+                    ml.result_package_id,
+                    ml.owner_id,
+                )
+            )
+        now = fields.Datetime.now()
+        vals_list = [
+            {
+                "product_id": product.id,
+                "location_id": location.id,
+                "trace_id": lot.id,
+                "package_id": package.id,
+                "owner_id": owner.id,
+                "quantity": 0.0,
+                "in_date": now,
+            }
+            for product, location, lot, package, owner in keys
+            if quants_cache.is_covering(product, location, lot)
+            and not quants_cache[product.id, location.id, lot.id, package.id, owner.id]
+        ]
+        _debug.perf.count("quants_precreated", count=len(vals_list), lines=len(self))
+        if vals_list:
+            self.env["stock.quant"]._with_quant_upkeep().create(vals_list)
+
     @_debug.perf.timed
     def _update_quants_done(self) -> None:
         # Lines done together never free one another: a line freed mid-loop
         # would be unlinked before its turn.
         ml_ids_to_ignore = OrderedSet(self.ids)
         notes = defaultdict(list)
-        for ml in self.with_context(quants_cache=self._get_quants_cache()):
+        quants_cache = self._get_quants_cache()
+        self.with_context(quants_cache=quants_cache)._create_missing_quants(
+            quants_cache
+        )
+        for ml in self.with_context(quants_cache=quants_cache):
             ml.with_context(bypass_entire_pack=True)._update_quants_and_reservations(
                 release_reserved=True, ml_ids_to_ignore=ml_ids_to_ignore, notes=notes
             )

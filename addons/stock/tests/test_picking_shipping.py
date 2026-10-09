@@ -38,6 +38,40 @@ class TestAggregatesDoNotReadTheLines(PickingCase):
             msg="shipping_volume sums the done quantity, not the demand",
         )
 
+    def test_a_unit_it_cannot_convert_degrades_instead_of_raising(self):
+        picking = self._picking(quantity=4.0)
+        product = picking.move_ids.product_id
+        product.write({"volume": 2.5, "weight": 1.5})
+        picking.action_confirm()
+        picking.move_ids.quantity = 4.0
+        self.env.flush_all()
+        # legacy data: a move kept in a unit its product no longer converts to
+        self.env.cr.execute(
+            "UPDATE stock_move SET product_uom_id = %s WHERE id = ANY(%s)",
+            [self.env.ref("uom.product_uom_hour").id, picking.move_ids.ids],
+        )
+        self.env.cr.execute(
+            "UPDATE stock_move_line SET product_uom_id = %s WHERE id = ANY(%s)",
+            [self.env.ref("uom.product_uom_hour").id, picking.move_line_ids.ids],
+        )
+        self.env.invalidate_all()
+
+        picking._compute_shipping_volume()
+        picking._compute_weight_bulk()
+
+        self.assertEqual((picking.shipping_volume, picking.weight_bulk), (10.0, 6.0))
+
+        self.env.cr.execute(
+            "UPDATE stock_move_line SET result_package_id = %s WHERE id = ANY(%s)",
+            [
+                self.env["stock.package"].create({"name": "Legacy box"}).id,
+                picking.move_line_ids.ids,
+            ],
+        )
+        self.env.invalidate_all()
+        picking._compute_shipping_weight()
+        self.assertEqual(picking.shipping_weight, 6.0)
+
 
 @tagged("post_install", "-at_install")
 class TestShippingPolicyFollowsARealTypeChange(WarehousePickingCase):

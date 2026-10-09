@@ -78,3 +78,6 @@ def read_internal_payload(context, key, default=None):
     ):
         return stored[1]
     return default
+
+# cursor cache key: the ids of the quants this transaction holds a row lock on
+LOCKED_QUANTS_CACHE_KEY = "stock.quant.locked"

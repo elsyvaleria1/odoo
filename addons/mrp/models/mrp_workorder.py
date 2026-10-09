@@ -127,9 +127,10 @@ class MrpWorkorder(models.Model):
         string="Original Production Quantity",
         readonly=True,
     )
+    # unrounded: a kit operation learns its cycle from it, and 40 tables of a
+    # kit sold by the dozen are 3.333... dozens, not 3.33
     operation_demand_qty = fields.Float(
         string="Operation Quantity Done",
-        digits="Product Unit",
         copy=False,
         readonly=True,
         help="What the operation worked on when the work order finished, in its"

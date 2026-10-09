@@ -474,7 +474,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
             self._confirmed_production(self.bom).workorder_ids.duration_expected, 120
         )
 
-    def _leg_kit_order(self):
+    def _leg_kit_order(self, kit_uom=None):
         workcenter = self.env["mrp.workcenter"].create(
             {"name": "Leg line", "time_start": 0, "time_stop": 0}
         )
@@ -488,6 +488,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
         kit = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": leg_set.product_tmpl_id.id,
+                "product_uom_id": (kit_uom or leg_set.uom_id).id,
                 "type": "phantom",
                 "bom_line_ids": [Command.create({"product_id": leg.id})],
                 "operation_ids": [
@@ -512,7 +513,6 @@ class TestWorkorderLifecycle(TestMrpCommon):
             }
         )
         production = self._confirmed_production(bom, qty=10)
-        self.assertEqual(production.workorder_ids.duration_expected, 40)
         return kit, bom, production
 
     def _work_forty_minutes_and_finish(self, production):
@@ -529,6 +529,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
 
     def test_a_kit_operation_learns_its_cycle_in_kit_units(self):
         kit, bom, production = self._leg_kit_order()
+        self.assertEqual(production.workorder_ids.duration_expected, 40)
         self._work_forty_minutes_and_finish(production)
 
         kit.operation_ids.invalidate_recordset()
@@ -541,6 +542,14 @@ class TestWorkorderLifecycle(TestMrpCommon):
         bom.bom_line_ids.product_qty = 2
         kit.operation_ids._compute_operation_times()
         self.assertEqual(kit.operation_ids.time_cycle, 1)
+
+    def test_a_kit_counted_in_dozens_is_frozen_unrounded(self):
+        _kit, _bom, production = self._leg_kit_order(
+            kit_uom=self.env.ref("uom.product_uom_dozen")
+        )
+        workorder = self._work_forty_minutes_and_finish(production)
+
+        self.assertAlmostEqual(workorder.operation_demand_qty, 40 / 12, places=9)
 
     def test_the_back_fill_does_not_freeze_a_kit_it_cannot_place(self):
         kit, _bom, production = self._leg_kit_order()

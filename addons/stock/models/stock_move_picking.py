@@ -298,7 +298,7 @@ class StockMovePicking(models.Model):
 
     def _get_handling_document(self):
         self.check_singleton()
-        return self.picking_id
+        return self.picking_id or self.scrap_id
 
     def _get_report_description_picking(self):
         self.check_singleton()

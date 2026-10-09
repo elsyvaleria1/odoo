@@ -6,6 +6,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
+from ..const import LOCKED_QUANTS_CACHE_KEY
 from ..tools.reservation import RemovalStrategy
 
 _logger = logging.getLogger(__name__)
@@ -372,6 +373,15 @@ class StockQuant(models.Model):
                         recommended_location = None
         return message, recommended_location
 
+    @api.model
+    def _with_quant_upkeep(self):
+        # whoever validates a move keeps its quants, a stock user or not: the
+        # privilege adds create and read on quants, the company guard binds
+        return self.with_privilege(
+            "stock.privilege_maintain_quants",
+            reason="the quants a validated move brings stock into or out of",
+        )
+
     @_debug.perf.timed
     @api.model_create_multi
     def create(self, vals_list):
@@ -430,6 +440,11 @@ class StockQuant(models.Model):
         if plain_vals:
             plain_records = super().create([vals for _index, vals in plain_vals])
             _debug.lifecycle("created", quants=plain_records)
+            # a row this transaction inserted is invisible to every other one
+            # until commit: it is held already, and needs no lock query
+            self.env.cr.cache.setdefault(LOCKED_QUANTS_CACHE_KEY, set()).update(
+                plain_records.ids
+            )
             for (index, _vals), quant in zip(plain_vals, plain_records, strict=True):
                 _add_to_cache(quant)
                 results[index] = quant

@@ -14,6 +14,7 @@ from odoo.tools import SQL
 
 from ..const import (
     CONTEXT_BLOCK_EXCLUDED_TYPES,
+    LOCKED_QUANTS_CACHE_KEY,
     get_internal_payload,
     read_internal_payload,
 )
@@ -27,7 +28,6 @@ from .stock_quant import CORE_REMOVAL_STRATEGIES
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
-LOCKED_QUANTS_CACHE_KEY = "stock.quant.locked"
 
 
 class StockQuantReservation(models.Model):

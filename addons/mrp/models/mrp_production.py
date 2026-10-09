@@ -3572,21 +3572,11 @@ class MrpProduction(models.Model):
             moves_to_finish = moves_to_finish._action_done(
                 cancel_backorder=cancel_backorder
             )
-        finished_lines = moves_to_finish.move_line_ids
-        finished_lines_by_order = defaultdict(
-            lambda: self.env["stock.move.line"],
-            [
-                (
-                    key,
-                    self.env["stock.move.line"]
-                    .concat(*values)
-                    .with_prefetch(finished_lines._prefetch_ids),
-                )
-                for key, values in tools_groupby(
-                    finished_lines, key=lambda line: line.move_id.production_id.id
-                )
-            ],
+        finished_lines_by_order = moves_to_finish.move_line_ids.grouped(
+            lambda line: line.move_id.production_id
         )
+        linked_line_ids = []
+        consumed = []
         for order in self:
             # Only the lines this pass produced, and only when this pass
             # consumed something. An order can be posted more than once -- post
@@ -3596,11 +3586,14 @@ class MrpProduction(models.Model):
             # raw moves were already done, `consume_move_lines` is empty and a
             # replace would erase the first batch's traceability outright.
             consume_move_lines = moves_to_do_by_order[order.id].move_line_ids
-            if not consume_move_lines:
+            produced_lines = finished_lines_by_order.get(order)
+            if not consume_move_lines or not produced_lines:
                 continue
-            finished_lines_by_order[order.id].consume_line_ids = [
-                Command.set(consume_move_lines.ids)
-            ]
+            linked_line_ids += produced_lines.ids
+            consumed += [[Command.set(consume_move_lines.ids)]] * len(produced_lines)
+        self.env["stock.move.line"].browse(linked_line_ids)._write_x2many_multi(
+            "consume_line_ids", consumed
+        )
         return True
 
     def _get_name_backorder(self, name, sequence):

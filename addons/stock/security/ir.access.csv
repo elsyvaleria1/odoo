@@ -15,6 +15,7 @@ access_product_group_res_partner_stock_manager,res_partner group_stock_manager,b
 access_stock_warehouse_orderpoint_system,stock.warehouse.orderpoint system,model_stock_warehouse_orderpoint,group_stock_manager,permission,cud,,,
 access_stock_quant_user,stock.quant user,model_stock_quant,group_stock_user,permission,cu,,,
 access_stock_quant_all,stock.quant all users,model_stock_quant,base.group_user,permission,r,,,
+privilege_maintain_quants_stock_quant,Privilege: create the quants a validated move brings stock into or out of,model_stock_quant,privilege_maintain_quants,permission,cr,,,
 access_stock_package_all,stock.package all users,model_stock_package,base.group_user,permission,r,,,
 access_stock_package_stock_user,stock.package stock user,model_stock_package,group_stock_user,permission,cud,,,
 access_stock_rule_stock_manager,stock_rule stock manager,model_stock_rule,group_stock_manager,permission,cud,,,

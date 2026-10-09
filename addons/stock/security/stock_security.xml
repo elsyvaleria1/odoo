@@ -6,6 +6,11 @@
             <field name="name">Inventory</field>
             <field name="category_id" ref="base.module_category_supply_chain" />
         </record>
+        <record id="privilege_maintain_quants" model="res.groups">
+            <field
+                name="name">Privilege: create the quants a validated move brings stock into or out of</field>
+            <field name="is_privilege" eval="True" />
+        </record>
         <record id="group_stock_readonly" model="res.groups">
             <field name="name">Read-only</field>
             <field name="sequence">5</field>

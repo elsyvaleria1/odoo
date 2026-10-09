@@ -366,6 +366,9 @@ class TestStockQuant(TestStockCommon):
         quant = self.gather_relevant(self.productA, self.stock_location, strict=True)
         self.assertEqual(len(quant), 1)
         self.assertEqual(quant.quantity, 10.0)
+        # another transaction can only change a row this one neither inserted
+        # nor locked: the quant stands for one an earlier transaction made
+        self.env.cr.cache.pop(LOCKED_QUANTS_CACHE_KEY, None)
         self.env.cr.execute(
             "UPDATE stock_quant SET quantity = quantity + 5 WHERE id = %s",
             (quant.id,),

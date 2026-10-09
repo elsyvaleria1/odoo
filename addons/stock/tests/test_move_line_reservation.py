@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.exceptions import UserError, ValidationError
-from odoo.tests import tagged
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tests import new_test_user, tagged
 from odoo.tools import OrderedSet
 
 from odoo.addons.stock.models.stock_move_line import (
@@ -635,6 +635,113 @@ class TestPickedSerialFreedWhenConsumed(TestMoveLineCommon):
 
         line = delivery.move_ids.move_line_ids
         self.assertEqual((line.quantity, line.picked), (5.0, True))
+
+
+class TestSerialTakenWhereItIs(TestMoveLineCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.shelf = cls.env["stock.location"].create(
+            {"name": "Shelf 9", "location_id": cls.stock_location.id}
+        )
+        cls.owner = cls.env["res.partner"].create({"name": "Consignor"})
+
+    def _serial(self, name, location, owner=None):
+        product = self._product(name, tracking="serial")
+        serial = self.env["product.trace"].create(
+            {"name": f"{name}-1", "product_id": product.id}
+        )
+        self.Quant._update_available_quantity(
+            product, location, 1, trace_id=serial, owner_id=owner
+        )
+        return product, serial
+
+    def _scrap(self, product, serial):
+        scrap = self.env["stock.scrap"].create(
+            {
+                "product_id": product.id,
+                "trace_id": serial.id,
+                "scrap_qty": 1,
+                "location_id": self.stock_location.id,
+            }
+        )
+        scrap._action_done()
+        return scrap
+
+    def _quants(self, product):
+        self.env.invalidate_all()
+        return sorted(
+            (quant.location_id.name, quant.owner_id.name or "", quant.quantity)
+            for quant in self.Quant.search([("product_id", "=", product.id)])
+            if quant.location_id.usage == "internal"
+        )
+
+    def test_a_scrap_from_the_parent_takes_the_serial_from_its_shelf(self):
+        product, serial = self._serial("sn-shelf", self.shelf)
+        delivery = self._delivery(product, 1, assign=True)
+        self.assertEqual(delivery.move_ids.move_line_ids.location_id, self.shelf)
+        delivery.move_ids.picked = True
+
+        scrap = self._scrap(product, serial)
+
+        self.assertEqual(scrap.move_ids.move_line_ids.location_id, self.shelf)
+        self.assertFalse(delivery.move_ids.move_line_ids)
+        self.assertFalse(
+            [quant for quant in self._quants(product) if quant[2]],
+            "no -1 at the parent and +1 on the shelf",
+        )
+        self.assertIn(self.shelf.name, scrap.message_ids[:1].body)
+
+    def test_a_scrap_without_owner_takes_the_owned_serial(self):
+        product, serial = self._serial("sn-owner", self.stock_location, self.owner)
+        delivery = self._delivery(product, 1, assign=True)
+        self.assertEqual(delivery.move_ids.move_line_ids.owner_id, self.owner)
+        delivery.move_ids.picked = True
+
+        scrap = self._scrap(product, serial)
+
+        self.assertEqual(scrap.move_ids.move_line_ids.owner_id, self.owner)
+        self.assertFalse(delivery.move_ids.move_line_ids)
+        self.assertFalse([quant for quant in self._quants(product) if quant[2]])
+
+    def test_a_serial_in_two_places_is_left_as_stated(self):
+        product, serial = self._serial("sn-twice", self.shelf)
+        self.Quant._update_available_quantity(
+            product, self.shelf, 1, trace_id=serial, owner_id=self.owner
+        )
+
+        scrap = self._scrap(product, serial)
+
+        self.assertEqual(scrap.move_ids.move_line_ids.location_id, self.stock_location)
+
+    def test_a_serial_nowhere_is_taken_where_stated(self):
+        product = self._product("sn-nowhere", tracking="serial")
+        serial = self.env["product.trace"].create(
+            {"name": "sn-nowhere-1", "product_id": product.id}
+        )
+
+        scrap = self._scrap(product, serial)
+
+        self.assertEqual(scrap.move_ids.move_line_ids.location_id, self.stock_location)
+        self.assertEqual(self._quants(product), [("Stock", "", -1.0)])
+
+
+class TestQuantUpkeepPrivilege(TestMoveLineCommon):
+    def test_a_validation_keeps_quants_for_a_user_without_stock_rights(self):
+        clerk = new_test_user(self.env, "quant-upkeep-clerk", groups="base.group_user")
+        product = self._product("upkeep")
+        vals = {
+            "product_id": product.id,
+            "location_id": self.stock_location.id,
+            "quantity": 0.0,
+        }
+        Quant = self.env["stock.quant"].with_user(clerk)
+
+        with self.assertRaises(AccessError):
+            Quant.create(vals)
+        quant = Quant._with_quant_upkeep().create(vals)
+
+        self.assertEqual(quant.location_id, self.stock_location)
 
 
 @tagged("post_install", "-at_install")
