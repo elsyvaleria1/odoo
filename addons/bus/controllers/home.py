@@ -23,11 +23,13 @@ def _admin_password_warn(uid):
     )
     if has_demo:
         return
-    admin.with_context(request.env(user=uid)["res.users"].context_get())._bus_send(
+    user_env = request.env(user=uid)
+    user_env = user_env(context=user_env["res.users"].context_get())
+    admin.with_context(user_env.context)._bus_send(
         "simple_notification",
         {
             "type": "danger",
-            "message": request.env._(
+            "message": user_env._(
                 "Your password is the default (admin)! If this system is exposed to untrusted users it is important to change it immediately for security reasons. I will keep nagging you about it!"
             ),
             "sticky": True,
