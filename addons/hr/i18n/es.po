@@ -1465,6 +1465,16 @@ msgstr "No se pueden archivar todas las versiones activas de un empleado."
 
 #. module: hr
 #. odoo-python
+#: code:addons/hr/models/hr_employee.py:0
+msgid ""
+"Cannot delete %(employees)s: a change request is being reviewed. Refuse or "
+"cancel its approval first."
+msgstr ""
+"No se puede eliminar a %(employees)s: hay una solicitud de cambio en "
+"revisión. Rechace o cancele primero su aprobación."
+
+#. module: hr
+#. odoo-python
 #: code:addons/hr/models/hr_version.py:0
 msgid ""
 "Cannot modify multiple versions contract dates with different contracts at "

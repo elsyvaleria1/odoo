@@ -473,6 +473,24 @@ class TestApprovalBinding(common.TransactionCase):
             "and the replay must not raise another request",
         )
 
+    def test_the_requester_asks_again_for_a_record_changed_since_the_request(self):
+        binding = self._request_binding(subject_domain="[('city', '!=', 'Nowhere')]")
+        requester = self._user("binding_req_g", "base.group_partner_manager")
+        partner = self._partner(city="Before")
+        partner.with_user(requester).action_archive()
+        first = self._requests_for(binding, partner)
+        partner.city = "After"
+        self._approve(first)
+        self.assertTrue(first.binding_replay_error, "what it says: ask again")
+
+        partner.with_user(requester).action_archive()
+        again = self._requests_for(binding, partner) - first
+        self.assertEqual(again.state, "pending", "the next click asks again")
+        self.assertEqual(again.binding_snapshot, {"city": ["After"]})
+        self.assertTrue(partner.active)
+        self._approve(again)
+        self.assertFalse(partner.active, "the new approval runs it")
+
     def _approved_request_for(self, partner, binding=None):
         request = self.env["approval.request"].create(
             {

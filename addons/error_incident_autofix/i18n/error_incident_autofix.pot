@@ -231,6 +231,12 @@ msgid "Can Request Approval"
 msgstr ""
 
 #. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "Cancelled: %s."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_approval_category__approval_type
 msgid ""
 "Category of approval for filtering and grouping purposes (e.g., 'purchase', "
@@ -993,6 +999,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/error_incident_autofix/models/error_incident.py:0
 msgid "the fix it asked about did not hold"
+msgstr ""
+
+#. module: error_incident_autofix
+#. odoo-python
+#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
+msgid "the fix moved on"
 msgstr ""
 
 #. module: error_incident_autofix

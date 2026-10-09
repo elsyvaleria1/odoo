@@ -958,6 +958,14 @@ msgstr ""
 
 #. module: hr
 #. odoo-python
+#: code:addons/hr/models/hr_employee.py:0
+msgid ""
+"Cannot delete %(employees)s: a change request is being reviewed. Refuse or "
+"cancel its approval first."
+msgstr ""
+
+#. module: hr
+#. odoo-python
 #: code:addons/hr/models/hr_version.py:0
 msgid ""
 "Cannot modify multiple versions contract dates with different contracts at "

@@ -47,6 +47,18 @@ msgstr ""
 
 #. module: approval_stock
 #. odoo-python
+#: code:addons/approval_stock/models/stock_picking.py:0
+msgid ""
+"%(product)s moves more than the %(allowed)s approved on %(name)s. Move no "
+"more than was approved, or validate from the transfer, which asks for "
+"approval again."
+msgstr ""
+"%(product)s mueve más de los %(allowed)s aprobados en %(name)s. No mueva "
+"más de lo aprobado, o valide desde el traslado, que solicita la aprobación "
+"de nuevo."
+
+#. module: approval_stock
+#. odoo-python
 #: code:addons/approval_stock/models/stock_inventory_adjustment.py:0
 msgid "%(products)s already wait in %(adjustments)s."
 msgstr ""

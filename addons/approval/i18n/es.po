@@ -214,6 +214,16 @@ msgstr ""
 
 #. module: approval
 #. odoo-python
+#: code:addons/approval/models/mixin_approval_gate.py:0
+msgid ""
+"%(name)s changed after its approval was granted, so the approval no longer "
+"covers %(operation)s."
+msgstr ""
+"%(name)s cambió después de otorgada su aprobación, así que la aprobación ya "
+"no cubre %(operation)s."
+
+#. module: approval
+#. odoo-python
 #: code:addons/approval/models/mixin_approval_domain.py:0
 msgid ""
 "%(name)s has a source domain that is not a valid Python literal: %(domain)s"
@@ -340,6 +350,16 @@ msgid ""
 "%(request)s follows its document: approve or refuse it here, and move it "
 "otherwise from %(document)s itself."
 msgstr ""
+
+#. module: approval
+#. odoo-python
+#: code:addons/approval/models/mixin_approval_gate.py:0
+msgid ""
+"%(request)s was submitted again for %(operation)s, for what %(name)s holds "
+"now."
+msgstr ""
+"%(request)s se envió de nuevo para %(operation)s, con lo que %(name)s "
+"tiene ahora."
 
 #. module: approval
 #. odoo-python
@@ -5280,6 +5300,18 @@ msgid ""
 "        source document, so a request with no source document, or one of\n"
 "        another model, never matches them."
 msgstr ""
+
+#. module: approval
+#. odoo-python
+#: code:addons/approval/models/mixin_approval_gate.py:0
+msgid ""
+"What was approved is no longer what is there: %(name)s changed after its "
+"approval was granted. Undo the change, or run the operation from the "
+"document, which asks for approval again."
+msgstr ""
+"Lo aprobado ya no es lo que hay: %(name)s cambió después de otorgada su "
+"aprobación. Deshaga el cambio, o ejecute la operación desde el documento, "
+"que solicita la aprobación de nuevo."
 
 #. module: approval
 #. odoo-python
