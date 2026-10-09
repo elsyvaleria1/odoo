@@ -6,7 +6,6 @@ class Website(models.Model):
     _CREDENTIAL_FIELDS = {"address_autocomplete_key": "address_autocomplete_key"}
 
     address_autocomplete_key = fields.Char(
-        string="Address Autocomplete Key",
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,

@@ -8,7 +8,6 @@ class ResConfigSettings(models.TransientModel):
 
     address_autocomplete_provider = fields.Selection(
         selection="_selection_address_autocomplete_provider",
-        string="Address Autocomplete Provider",
         config_parameter="address_autocomplete.provider",
         help="Which installed provider suggests and completes addresses. Left "
         "empty, the first installed one does; None suggests nothing.",

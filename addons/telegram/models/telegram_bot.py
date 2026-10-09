@@ -41,7 +41,6 @@ class TelegramBot(models.Model):
     )
     moved_to_id = fields.Many2one(
         comodel_name="telegram.bot",
-        string="Moved To",
         index="btree_not_null",
         ondelete="set null",
         help="A bot its people moved away from: it answers every private "

@@ -8,7 +8,6 @@ class ResConfigSettings(models.TransientModel):
 
     captcha_provider = fields.Selection(
         selection="_selection_captcha_provider",
-        string="Captcha Provider",
         config_parameter="captcha.provider",
         help="Which installed provider checks that a person sent a public form. "
         "Left empty, the first one with a site key and a secret checks them; "
