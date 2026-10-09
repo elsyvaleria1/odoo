@@ -57,9 +57,13 @@ class PosVivaComController(http.Controller):
             merchant_trns
         )
         if not sessions:
-            admission.refuse(
-                400,
-                "MerchantTrns is not <Viva.com session>/<POS session id>",
-                "bad_request",
+            # A sale keyed on the terminal itself: Viva.com retries any answer
+            # but a 2xx for a day, so it is acknowledged, not refused.
+            _logger.warning(
+                "Viva.com notified terminal %s of a sale with merchant reference %r,"
+                " which names no POS session.",
+                terminal_method_sudo.viva_com_terminal_id,
+                merchant_trns,
             )
+            return
         terminal_method_sudo._notify_session_status(*sessions, data_webhook)

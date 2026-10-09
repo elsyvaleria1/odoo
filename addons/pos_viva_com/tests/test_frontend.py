@@ -152,12 +152,20 @@ class TestVivaComHttpCommon(TestPointOfSaleHttpCommon):
         "odoo.http",
         "odoo.addons.integration",
     )
-    def test_a_merchant_reference_that_names_no_pos_session_is_refused(self):
-        with self._patch_viva_com_session_status() as call_mock:
+    def test_a_merchant_reference_that_names_no_pos_session_is_acknowledged_unprocessed(
+        self,
+    ):
+        # A sale keyed on the terminal itself carries the cashier's text, and
+        # Viva.com retries any answer but a 2xx for a day.
+        with (
+            self._patch_viva_com_session_status() as call_mock,
+            self._patch_pos_notify() as notify_mock,
+        ):
             for merchant_trns in ("no-separator", "a/b/1", "viva-session/x", ["a/1"]):
                 with self.subTest(merchant_trns=merchant_trns):
                     response = self._post_viva_com_notification(
                         {"TerminalId": "01234543210", "MerchantTrns": merchant_trns}
                     )
-                    self.assertEqual(response.status_code, 400)
+                    self.assertEqual(response.status_code, 200)
         self.assertFalse(call_mock.called)
+        self.assertFalse(notify_mock.called)
