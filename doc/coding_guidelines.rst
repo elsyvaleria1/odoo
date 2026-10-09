@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.69
+:Version: 7.70
 :Date: 2026-10-09
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -5165,6 +5165,22 @@ field.
   way, and a comment on the decorator names that way** ``[review]``. Valid ways
   are a bearer token, ``auth="receiver"``, or a verified signature. ``jsonrpc`` is
   CSRF-exempt by design.
+* **A receiver runs as its gate's service principal, without su, holding the
+  named privileges its gate declares** ``[test_lint privilege_declared]``. A
+  module that extends a gate names what its routes need in a literal
+  ``_receiver_privileges`` tuple on its gate class; the gate holds the union
+  over its class hierarchy, and integration applies it
+  (``mixin.inbound.gate._inbound_principal_env``). The call is pinned to the
+  gate's company, and refused ``403 principal_unfit`` when the principal is
+  archived, is not a service user or is not in that company; a gate bound to a
+  company puts its principal there (``_place_principal_in_companies``). The
+  handler writes through ``request.env``, never ``sudo()``: the jobs it queues
+  keep that authority (§2.9.14). A field a privilege cannot reach -- one with
+  ``groups=`` or of a guarded field class -- is read through a narrow,
+  commented elevation that returns only what the call needs. A gate still
+  marked ``_inbound_elevated`` (those of phase 2 of the receiver plan) lends
+  its subject su while its principal holds the same privileges. Why: su in a
+  receiver reached every model the request touched, and every job it queued.
 * **A route that opens a record to someone outside by a token declares
   ``auth="link"``** ``[test_lint link-door-declared]``. ``link="<model>:<path
   argument>"`` names the record, ``link_role`` the least role the route needs,
@@ -6192,6 +6208,10 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.70
+     - 2026-10-09
+     - §10.6: a receiver runs as its gate's service principal, without su,
+       holding the named privileges its gate declares.
    * - 7.69
      - 2026-10-09
      - §2.9.14: a deduplicated job works in every company its callers named.

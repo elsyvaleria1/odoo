@@ -8,12 +8,12 @@ from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests import tagged
 from odoo.tests.common import new_test_user
 
-from .common import DeviceHttpCase, DeviceTransactionCase, NarrowedReceiver
+from .common import DeviceHttpCase, DeviceTransactionCase
 from odoo.addons.integration.tools.admission import Admission
 
 
 @tagged("post_install", "-at_install")
-class TestReceiverAuthority(NarrowedReceiver, DeviceHttpCase):
+class TestReceiverAuthority(DeviceHttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

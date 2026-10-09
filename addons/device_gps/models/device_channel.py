@@ -6,7 +6,6 @@ from odoo.addons.integration.tools.admission import Resolution
 class DeviceChannel(models.Model):
     _inherit = "device.channel"
     _receiver_privileges = ("device_gps.privilege_receive_fix",)
-    _inbound_elevated = False
 
     @api.model
     def _receiver_for_gps(self, enrollment_key, channel_key, **kwargs):

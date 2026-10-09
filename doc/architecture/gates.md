@@ -246,10 +246,18 @@ and the outbound-integration families, one database each: `integration`;
 `mail_microsoft` (they run `mail_oauth2`'s tests); `captcha` with
 `captcha_recaptcha` and `captcha_turnstile`; `address_autocomplete` with
 `address_autocomplete_google` and `website_sale_autocomplete`.
+The receivers that run as a service principal under named privileges, one
+database each: `device`, `device_transport`, `device_gps`, `device_mobile`,
+`device_voip`, `device_access_control`, `device_dav_sync`, `device_phone_call`,
+`conversation_phone_call`, `device_phone_call` with `device_voip` and
+`conversation_phone_call` (the only database where a phone's recordings reach
+a conversation), `conversation`, `conversation_meeting`, `test_speech`,
+`agent_runner`, `agent_runner_github`, `error_incident_autofix`,
+`error_incident_github` and `telegram`.
 `rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `bus`, `test_orm`, `crm`,
 `data_recycle`, `test_access_rights`, `stock`, `mrp`, `test_trade`,
 `hr_holidays`, `approval`, `integration`, the calendar, appointment,
-`integration_google`, mail and address families run **with** the HTTP server on a free port: each
+`integration_google`, mail and address families and the receivers run **with** the HTTP server on a free port: each
 carries `HttpCase` classes, and under `--no-http` such a class is an error, not
 a skip (`ODOO_REQUIRE_INFRA`; on 2026-10-01 the last nine read 1-9 errors each
 that way, and green with the server). The rest run `--no-http`.

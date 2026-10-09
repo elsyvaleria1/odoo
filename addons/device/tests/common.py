@@ -49,16 +49,3 @@ class DeviceTransactionCase(DeviceFixtureMixin, TransactionCase):
 
 class DeviceHttpCase(DeviceFixtureMixin, HttpCase):
     pass
-
-
-class NarrowedReceiver:
-    # device.device keeps su for every module's routes until the last of them
-    # holds its own privileges; a module's tests run its routes without it,
-    # its existing classes included, by subclassing them with this
-    allow_inherited_tests_method = True
-
-    def setUp(self):
-        super().setUp()
-        self.startPatcher(
-            patch.object(type(self.env["device.device"]), "_inbound_elevated", False)
-        )

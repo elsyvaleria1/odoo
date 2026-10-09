@@ -9,7 +9,7 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.conversation.tests.common import ANALYSIS, ROUTER, StubTranscription
-from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
+from odoo.addons.device.tests.common import DeviceHttpCase
 from odoo.addons.integration_machine_learning.tools import MlResult
 
 COACH_ROUTER = (
@@ -304,7 +304,7 @@ class TestLiveCaptureAccess(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
-class TestMeetingWithoutSu(NarrowedReceiver, TestMeeting):
+class TestMeetingWithoutSu(TestMeeting):
     def _job(self, key):
         return self.env["ir.job"].search([("identity_key", "=", key)])
 

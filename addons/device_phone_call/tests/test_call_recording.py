@@ -13,7 +13,7 @@ from odoo.libs.documents import (
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
+from odoo.addons.device.tests.common import DeviceHttpCase
 from odoo.addons.device_phone_call.models.phone_call import CALL_LOG_GRACE
 
 _AUDIO = base64.b64encode(b"FAKE-M4A-AUDIO-BYTES").decode()
@@ -243,7 +243,7 @@ class TestDeviceCallRecording(DeviceHttpCase):
 
 
 @tagged("post_install", "-at_install")
-class TestDeviceCallRecordingWithoutSu(NarrowedReceiver, TestDeviceCallRecording):
+class TestDeviceCallRecordingWithoutSu(TestDeviceCallRecording):
     def test_the_receiver_files_a_recording_and_its_transcript_job_under_its_privilege(
         self,
     ):

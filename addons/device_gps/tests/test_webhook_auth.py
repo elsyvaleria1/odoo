@@ -2,11 +2,7 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import (
-    DeviceHttpCase,
-    DeviceTransactionCase,
-    NarrowedReceiver,
-)
+from odoo.addons.device.tests.common import DeviceHttpCase, DeviceTransactionCase
 from odoo.addons.device_gps.models.device_device import (
     TRACKER_AUTH_MODE_PARAM,
     TRACKER_MAX_ANONYMOUS_BODY,
@@ -246,8 +242,3 @@ class TestWebhookRefusesWhatItCannotName(DeviceHttpCase):
         response = self._post(chunks())
 
         self.assertEqual(response.content, TRACKER_NACK)
-
-
-@tagged("post_install", "-at_install")
-class TestTrackerWebhookWithoutSu(NarrowedReceiver, TestTrackerWebhook):
-    pass

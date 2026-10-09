@@ -106,9 +106,6 @@ class TestGpsReceiverAuthority(DeviceHttpCase):
         self.assertEqual(self._logs().create_uid, principal)
 
     def test_a_tracker_fix_is_filed_by_the_device_receiver_without_su(self):
-        self.startPatcher(
-            patch.object(type(self.env["device.device"]), "_inbound_elevated", False)
-        )
         token = self.device.credential_id.sudo().credential_value
         self.env.flush_all()
 

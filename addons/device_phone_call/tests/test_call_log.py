@@ -2,7 +2,7 @@ from odoo import Command
 from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
+from odoo.addons.device.tests.common import DeviceHttpCase
 
 
 @tagged("post_install", "-at_install")
@@ -190,7 +190,7 @@ class TestDeviceCallLog(DeviceHttpCase):
 
 
 @tagged("post_install", "-at_install")
-class TestDeviceCallLogWithoutSu(NarrowedReceiver, TestDeviceCallLog):
+class TestDeviceCallLogWithoutSu(TestDeviceCallLog):
     def test_the_receiver_files_the_calls_it_is_told_of(self):
         receiver = self.env.ref("device.user_device_receiver")
         resp = self._push(

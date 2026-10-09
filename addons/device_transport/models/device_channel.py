@@ -15,6 +15,7 @@ class DeviceChannel(models.Model):
     _inherit = ["mixin.integration.receiver"]
     _description = "Device Communication Channel"
     _access_anchors = frozendict({"company": models.Anchor("company_id", shared=False)})
+    _inbound_elevated = False
 
     enrollment_id = fields.Many2one(
         comodel_name="device.enrollment",

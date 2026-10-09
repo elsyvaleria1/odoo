@@ -42,6 +42,7 @@ class DeviceDevice(models.Model):
         }
     )
     _receiver_privileges = ("device.privilege_receive_device_data",)
+    _inbound_elevated = False
 
     company_id = fields.Many2one(
         comodel_name="res.company",

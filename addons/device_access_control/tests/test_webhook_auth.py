@@ -1,6 +1,6 @@
 from odoo.tests.common import tagged
 
-from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
+from odoo.addons.device.tests.common import DeviceHttpCase
 
 AUTH_MODE_PARAM = "device_access_control.auth_mode"
 
@@ -200,7 +200,7 @@ class TestAccessDeviceWebhookAuth(DeviceHttpCase):
 
 
 @tagged("post_install", "-at_install")
-class TestAccessDeviceWebhookWithoutSu(NarrowedReceiver, TestAccessDeviceWebhookAuth):
+class TestAccessDeviceWebhookWithoutSu(TestAccessDeviceWebhookAuth):
     def _post_badge(self, badge):
         payload = self._event_payload("Badge holder")
         payload["AccessControllerEvent"]["employeeNoString"] = badge

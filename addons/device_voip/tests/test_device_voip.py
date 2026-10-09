@@ -6,7 +6,7 @@ from odoo.libs.json import dumps_bytes as json_dumps_bytes
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
-from odoo.addons.device.tests.common import DeviceHttpCase, NarrowedReceiver
+from odoo.addons.device.tests.common import DeviceHttpCase
 
 
 @tagged("post_install", "-at_install")
@@ -234,8 +234,10 @@ class TestDeviceVoip(DeviceHttpCase):
 
 
 @tagged("post_install", "-at_install")
-class TestDeviceVoipWithoutSu(NarrowedReceiver, TestDeviceVoip):
+class TestDeviceVoipThroughTheRoute(TestDeviceVoip):
     # every report the phone system makes reaches its receiver's route
+    allow_inherited_tests_method = True
+
     def _report(self, **call):
         response = self.url_open(
             f"/remote/device/{self.pbx.identifier}/calllog",

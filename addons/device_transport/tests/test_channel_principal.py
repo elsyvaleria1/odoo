@@ -53,14 +53,6 @@ class TestChannelPrincipalPlacement(EnrollmentFixture, DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestChannelPrincipalHttp(EnrollmentFixture, DeviceHttpCase):
-    # device.channel keeps su until device_gps's channel route holds its own
-    # privilege; the status route runs without it here
-    def setUp(self):
-        super().setUp()
-        self.startPatcher(
-            patch.object(type(self.env["device.channel"]), "_inbound_elevated", False)
-        )
-
     def _get(self, enrollment, key, token):
         return self.url_open(
             f"/device/v1/enrollments/{enrollment.key}/channels/{key}/status",
