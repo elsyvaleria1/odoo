@@ -1962,6 +1962,26 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_captcha_turnstile
+msgid ""
+"A captcha provider: the forms of the captcha module get a Turnstile token "
+"from a widget shown only when Cloudflare asks the visitor to interact, which"
+" the server verifies through the Turnstile service, refusing tokens obtained"
+" for another action. The site key is a setting; the secret key is kept in "
+"the vault."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_captcha_recaptcha
+msgid ""
+"A captcha provider: the forms of the captcha module get an invisible "
+"reCAPTCHA v3 token, which the server verifies through the reCAPTCHA service,"
+" refusing scores below the configured minimum and tokens obtained for "
+"another action. The site key and minimum score are settings; the secret key "
+"is kept in the vault."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_account_collection_sale_fleet_trace
 msgid ""
 "A cash sale handed over on the route takes its goods from the stock the "
@@ -2427,6 +2447,29 @@ msgid ""
 "it completes it reports the branch it pushed, and the pull request of that "
 "branch is linked to it -- whichever GitHub or the runner reports first. The "
 "modules that hand out work react to the link."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_automation_cash_receipt
+msgid ""
+"A salesperson sends the photo of the paper cash receipt on Telegram; its "
+"data is read and a workflow takes it to the treasury"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_automation_cash_receipt
+msgid ""
+"A salesperson who collects cash hands the customer a numbered paper receipt "
+"and sends its photo to the bot, with /efectivo or none. The receipt is read:"
+" number, date, customer, amount, concept and invoices; the salesperson "
+"confirms or corrects what was read, a receipt number already reported is "
+"refused, and the company's cash receipt workflow starts for that customer, "
+"amount and reference. The workflow is drawn in Automation from its steps, "
+"and this module adds three of them: apply the payment of an earlier step to "
+"the customer's open invoices, the ones the receipt names or the oldest "
+"first; tell someone on Telegram, with a message written by the workflow; and"
+" cancel the steps of the run still pending, such as a reminder that is no "
+"longer due."
 msgstr ""
 
 #. module: base
@@ -4059,11 +4102,6 @@ msgid "Add a one-hour SMS reminder default for new appointment types"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_account_move_print
-msgid "Add a printable report for accounting journal entries"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_hr_employee_second_lastname
 msgid "Add a second last name to employee name composition"
 msgstr ""
@@ -4395,6 +4433,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_company_form
 #: model_terms:ir.ui.view,arch_db:base.view_partner_address_form
 msgid "Address"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_address_autocomplete
+msgid "Address Autocomplete"
 msgstr ""
 
 #. module: base
@@ -5156,15 +5199,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_error_solve
-msgid ""
-"Adds a Solve action that locates the current user incident and displays "
-"diagnosis and progress from the external triage service. Requires that "
-"service and its incident records; the addon itself does not implement code "
-"fixes."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_pos_stripe
 msgid ""
 "Adds a Stripe terminal payment method and the POS request and response "
@@ -5392,16 +5426,6 @@ msgstr ""
 msgid ""
 "Adds a map view to the sales-order action using the geographic data of the "
 "related customer."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_device_mobile_speech
-msgid ""
-"Adds a media timeline to mobile call logs. When a recording has a matching "
-"call and audio attachment, moves the attachment to that call and creates a "
-"timeline segment. Schedules transcription only when the attachment is "
-"eligible; unmatched recordings remain available for later matching. Requires"
-" the mobile device and speech dependencies."
 msgstr ""
 
 #. module: base
@@ -5718,18 +5742,10 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,description:base.module_website_sale_autocomplete
 msgid ""
-"Adds address lookup to the website sale checkout using a configured Google "
-"Places API key. Suggestions depend on the provider response and require its "
-"service access."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_google_address_autocomplete
-msgid ""
-"Adds address widgets and server routes for Google place suggestions and "
-"structured address details. The base integration requires an internal user "
-"and a configured Google Places API key in the credential store; requests "
-"depend on provider access and availability."
+"Adds address lookup to the website sale checkout through the address "
+"provider chosen in the settings, called with each website's own key so "
+"visitors never spend the one internal users' lookups are made with. Without "
+"a provider or a website key, the checkout suggests nothing."
 msgstr ""
 
 #. module: base
@@ -6318,16 +6334,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_marin_rma
-msgid ""
-"Adds claim records and reason catalogs plus a wizard to create claims from "
-"sales order lines. Links relevant manufacturing records, tracks claimed, "
-"returned and refunded quantities and integrates confirmation with approval "
-"requests. Requires configured categories and users; a claim record does not "
-"itself establish that a physical return or refund has been completed."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_cloud_storage
 msgid ""
 "Adds cloud attachment types, upload and download hooks and a minimum-file-"
@@ -6373,16 +6379,6 @@ msgid ""
 " employee records. Folder creation and filing depend on HR document "
 "settings; an employee does not receive access to the HR-only employee folder"
 " by default."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_sms_twilio
-msgid ""
-"Adds company provider selection, account and sender-number setup, test "
-"sending and delivery-status handling to SMS. Requires Twilio credentials and"
-" an eligible sender configuration. The default provider remains Odoo until "
-"Twilio is selected; message acceptance and delivery depend on provider "
-"service and account eligibility."
 msgstr ""
 
 #. module: base
@@ -6588,16 +6584,6 @@ msgid ""
 "creation and backend domain-editor integration, plus a mixin for model "
 "search fields. Consumers configure the relevant date field and period types;"
 " periods are not limited to calendar months or years."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_base_user_role_home_tiles
-msgid ""
-"Adds default tile layouts and dashboard priorities to user roles. Merges "
-"layouts from enabled roles in priority order and removes duplicates with the"
-" same tile type and settings. Supplies this layer to the home dashboard’s "
-"inherited layout mechanism, allowing personal layouts to remain user-"
-"specific."
 msgstr ""
 
 #. module: base
@@ -7357,7 +7343,7 @@ msgid ""
 "Adds newsletter subscription interfaces and routes that create mailing "
 "contacts or restore opted-out list subscriptions. Requires a configured "
 "mailing list and website form or snippet; the subscription route applies the"
-" configured reCAPTCHA check. Message delivery is supplied by the mailing "
+" configured captcha check. Message delivery is supplied by the mailing "
 "dependencies."
 msgstr ""
 
@@ -8413,6 +8399,16 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_address_autocomplete
+msgid ""
+"Adds the address autocomplete field widget, set on the street of partner and"
+" company forms, and the server routes answering its suggestions and the "
+"chosen address's details. Lookups go to the installed provider chosen in the"
+" settings, with the key that provider keeps for internal users; without a "
+"provider the widget suggests nothing."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_partner_l10n_mx
 msgid ""
 "Adds the catalogue of Mexican municipalities (INEGI keys per state) and of "
@@ -8542,26 +8538,6 @@ msgid ""
 "summary, topics, commitments, questions and moments. Requires a configured "
 "analysis model; a recording a business layer files on another record is "
 "analysed there instead."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_voip_speech_analysis
-msgid ""
-"Adds the speech-analysis mixin to VoIP calls and marks a call ready when its"
-" end date is set. Transcript analysis, summaries and extracted discussion "
-"items are provided by the speech-analysis dependency and require its "
-"configured processing and an available transcript."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_device_mobile_speech_analysis
-msgid ""
-"Adds the speech-analysis mixin to mobile call logs: once the recordings "
-"filed on a call are transcribed, the call gets a summary, topics, "
-"commitments, questions and moments. A call log records a call that has "
-"ended, so it is analysed as soon as its transcript is complete. Requires a "
-"configured analysis model; a recording that conversation_mobile files on a "
-"conversation is analysed there instead."
 msgstr ""
 
 #. module: base
@@ -10432,6 +10408,16 @@ msgid "An activation of %(group)s lasts at most %(hours)s hours."
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_address_autocomplete_google
+msgid ""
+"An address autocomplete provider: suggestions and the chosen address's "
+"details come from Google Places through its integration service, mapped onto"
+" street, number, city, zip, state and country, with Google's attribution "
+"under the suggestions. The API key internal users' lookups are made with is "
+"kept in the vault."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields,help:base.field_access_link__expiry_waived
 msgid "An administrator chose that this link anyone can use never expires."
 msgstr ""
@@ -10584,11 +10570,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_device_mobile_speech_analysis
-msgid "Analyse the transcript of a recorded mobile call, as a VoIP call is"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_analytic
 msgid "Analytic Accounting"
 msgstr ""
@@ -10669,6 +10650,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/res_partner.py:0
 msgid "Another partner already has this barcode"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_insight_telegram
+msgid "Answer questions about Odoo data from Telegram, read-only"
 msgstr ""
 
 #. module: base
@@ -11252,11 +11238,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_appointment_calendar_google
 msgid "Appointments with Google Calendar"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_appointment_calendar_microsoft
-msgid "Appointments with Outlook Calendar"
 msgstr ""
 
 #. module: base
@@ -12281,11 +12262,6 @@ msgid "Assign tags to your contacts to organize, filter and track them."
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_base_user_role
-msgid "Assign user access groups through roles with validity dates"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_spreadsheet_sale_management
 msgid ""
 "Associate a spreadsheet template with a quotation template and create the "
@@ -12416,11 +12392,6 @@ msgid ""
 "Attach PDF documents to products and quotations and select how they are "
 "included in quotation output. Populate mapped PDF form fields from the sales"
 " order."
-msgstr ""
-
-#. module: base
-#: model_terms:ir.actions.act_window,help:base.action_attachment
-msgid "Attach a new document"
 msgstr ""
 
 #. module: base
@@ -12793,16 +12764,6 @@ msgid "Authorization Log"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_google_account
-msgid "Authorize Google service access and refresh OAuth tokens"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_microsoft_account
-msgid "Authorize Microsoft service access and refresh OAuth tokens"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_mail_google
 msgid "Authorize incoming and outgoing mail servers with Gmail OAuth"
 msgstr ""
@@ -13090,11 +13051,6 @@ msgid "Background Jobs"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_users__barcode
-msgid "Badge ID"
-msgstr ""
-
-#. module: base
 #: model:res.country,name:base.bs
 msgid "Bahamas"
 msgstr ""
@@ -13244,6 +13200,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_bank__barcode
 #: model:ir.model.fields,field_description:base.field_res_company__barcode
 #: model:ir.model.fields,field_description:base.field_res_partner__barcode
+#: model:ir.model.fields,field_description:base.field_res_users__barcode
 msgid "Barcode"
 msgstr ""
 
@@ -13324,11 +13281,6 @@ msgstr ""
 #. module: base
 #: model:ir.actions.server,name:base.autovacuum_job_ir_actions_server
 msgid "Base: Auto-vacuum internal data"
-msgstr ""
-
-#. module: base
-#: model:ir.actions.server,name:base.ir_cron_sod_upgrade_exceptions_ir_actions_server
-msgid "Base: Grant the exceptions an upgrade left pending"
 msgstr ""
 
 #. module: base
@@ -15090,8 +15042,10 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:odoo/orm/runtime/_backend_memory.py:0
 #: code:odoo/orm/runtime/_backend_memory_write.py:0
 #: code:odoo/orm/runtime/_backend_pg_write.py:0
+#: code:odoo/orm/runtime/backend.py:0
 msgid "Cannot grab a lock on records"
 msgstr ""
 
@@ -15184,6 +15138,11 @@ msgstr ""
 #. module: base
 #: model:res.country,name:base.cv
 msgid "Cape Verde"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_captcha
+msgid "Captcha"
 msgstr ""
 
 #. module: base
@@ -15332,6 +15291,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_model_fields__on_delete__cascade
 msgid "Cascade"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_automation_cash_receipt
+msgid "Cash Receipts Received by the Treasury"
 msgstr ""
 
 #. module: base
@@ -15763,9 +15727,13 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_google_recaptcha
-msgid ""
-"Check public form submissions using configured reCAPTCHA v3 credentials"
+#: model:ir.module.module,summary:base.module_captcha_turnstile
+msgid "Check public forms with Cloudflare Turnstile"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_captcha_recaptcha
+msgid "Check public forms with Google reCAPTCHA v3"
 msgstr ""
 
 #. module: base
@@ -15783,6 +15751,16 @@ msgstr ""
 msgid ""
 "Checks component lot expiry before marking production done and presents the "
 "expired-lot confirmation wizard when required."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_captcha
+msgid ""
+"Checks the captcha of every route and form that asks for one (login, signup,"
+" password reset, website forms, subscriptions) through one provider chosen "
+"in the settings, so the forms do not know which. A provider module "
+"(reCAPTCHA, Turnstile) supplies the browser script and the server "
+"verification; without one, nothing is checked."
 msgstr ""
 
 #. module: base
@@ -16082,7 +16060,7 @@ msgid "Cloud Attachment Storage"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_website_cf_turnstile
+#: model:ir.module.module,shortdesc:base.module_captcha_turnstile
 msgid "Cloudflare Turnstile"
 msgstr ""
 
@@ -16977,11 +16955,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_uk_intrastat
 msgid "Configure Intrastat declarations for United Kingdom"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_appointment_calendar_microsoft
-msgid "Configure Microsoft calendar connections for appointment scheduling"
 msgstr ""
 
 #. module: base
@@ -18484,6 +18457,11 @@ msgid "Construction"
 msgstr ""
 
 #. module: base
+#: model:res.partner.tag,name:base.res_partner_category_8
+msgid "Consulting Services"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,description:base.module_device_machines
 msgid ""
 "Consumes the supported PLC counter payload through device MQTT streams, "
@@ -18695,11 +18673,6 @@ msgid "Conversations - Phone Calls"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_conversation_mobile
-msgid "Conversations - Mobile Calls"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_conversation_purchase
 msgid "Conversations - Purchasing"
 msgstr ""
@@ -18707,11 +18680,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_conversation_sale
 msgid "Conversations - Sales"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_conversation_voip
-msgid "Conversations - VoIP Calls"
 msgstr ""
 
 #. module: base
@@ -19236,18 +19204,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_stock_delivery
 msgid "Create carrier shipments and retrieve labels for stock transfers"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_conversation_mobile
-msgid ""
-"Create conversations from mobile recordings and enrich them with matched "
-"calls"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_conversation_voip
-msgid "Create conversations from recorded VoIP calls, as mobile calls do"
 msgstr ""
 
 #. module: base
@@ -20138,11 +20094,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_partner_scoring
 msgid "Customer Attribute Scoring"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_marin_rma
-msgid "Customer Claims and Return Requests"
 msgstr ""
 
 #. module: base
@@ -21439,16 +21390,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_base_user_role
-msgid ""
-"Defines roles backed by access groups, user role lines and date-based "
-"activation. Adds user and group views, role-creation wizards and a scheduled"
-" action to refresh group assignments. Requires deliberate role and "
-"permission configuration; this module manages group membership and uses the "
-"framework’s existing access enforcement."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_team
 msgid ""
 "Defines shared team and membership records with company links, favorites and"
@@ -21814,6 +21755,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_mass_mailing
 msgid "Design, send and track email campaigns"
+msgstr ""
+
+#. module: base
+#: model:res.partner.tag,name:base.res_partner_category_14
+msgid "Desk Manufacturers"
 msgstr ""
 
 #. module: base
@@ -23032,6 +22978,11 @@ msgid "Element: %(element)s"
 msgstr ""
 
 #. module: base
+#: model:ir.model.fields,field_description:base.field_ir_job__elevated
+msgid "Elevated"
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_access_log__event__elevation_activated
 msgid "Elevation activated"
 msgstr ""
@@ -23277,11 +23228,6 @@ msgid "Employee Survey Certification Records"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_users__tag_ids
-msgid "Employee Tags"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_hr_gantt
 msgid "Employee Timeline Resources"
 msgstr ""
@@ -23304,6 +23250,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.category,name:base.module_category_human_resources_employees
 #: model:ir.module.module,shortdesc:base.module_hr
+#: model:res.partner.tag,name:base.res_partner_category_3
 msgid "Employees"
 msgstr ""
 
@@ -23397,11 +23344,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_sale_sms
 msgid "Enable sales users to access the SMS composer"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_voip_speech_analysis
-msgid "Enable speech analysis of recorded calls after they end"
 msgstr ""
 
 #. module: base
@@ -23593,11 +23535,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_error_incident_github
 msgid "Error Incidents on GitHub"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_web_error_solve
-msgid "Error Triage Status"
 msgstr ""
 
 #. module: base
@@ -25096,20 +25033,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_appointment_calendar_google
-msgid ""
-"Expose Google connection setup on appointment types. Synchronize the booked "
-"event's videoconference information through the Google Calendar integration."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_website_cf_turnstile
-msgid ""
-"Expose Turnstile configuration to frontend forms and check submitted tokens."
-" Requires configured site and secret keys."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_accountant
 msgid ""
 "Expose accounting workspace features and extend invoice review behavior"
@@ -25130,13 +25053,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_esg_csrd_hr_fleet
 msgid "Expose commuting settings with sustainability reporting enabled"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_appointment_calendar_microsoft
-msgid ""
-"Expose connected and available Microsoft calendars on appointment types. "
-"Uses the Microsoft Calendar dependency for synchronization."
 msgstr ""
 
 #. module: base
@@ -25265,14 +25181,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_document_project_sign
 msgid "Expose the signature-template action on the project Documents folder"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_google_recaptcha
-msgid ""
-"Expose the site key to supported frontend forms and verify submitted tokens "
-"with reCAPTCHA. Enable the integration and configure its credentials in "
-"settings."
 msgstr ""
 
 #. module: base
@@ -26344,15 +26252,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_voip_speech
-msgid ""
-"Extends the VoIP recording upload route to attach the recording as a call "
-"media segment with timing offsets. Queues transcription when the attachment "
-"reports that it can be transcribed; recording upload and speech-engine "
-"availability depend on the VoIP and speech configuration."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_stock_barcode_voice
 msgid ""
 "Extends the barcode interface with quantity commands, readback and undo, "
@@ -27279,12 +27178,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_device_mobile_speech
-msgid ""
-"File matched call recordings on media timelines and schedule transcription"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_document_account_peppol
 msgid "File received Peppol attachments in the configured Documents folder"
 msgstr ""
@@ -27314,17 +27207,6 @@ msgid ""
 "names the call's contact, responsible user, number and the name the line "
 "knew the contact by, and follows the call when a late call-log entry "
 "completes it."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_conversation_voip
-msgid ""
-"Files a VoIP call's recording on a conversation instead of on the call, so a"
-" phone-system call is analysed, and its business actions proposed, the way a"
-" company-phone call is. The conversation names the call's contact, "
-"responsible user and number; the recording itself stays on the call, where "
-"the phone app plays it. Without this addon a VoIP call is analysed on its "
-"own record."
 msgstr ""
 
 #. module: base
@@ -27778,6 +27660,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_bank__email_formatted
+#: model:ir.model.fields,help:base.field_res_company__email_formatted
 #: model:ir.model.fields,help:base.field_res_partner__email_formatted
 #: model:ir.model.fields,help:base.field_res_users__email_formatted
 msgid "Format email address \"Name <email@domain>\""
@@ -28621,12 +28504,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_account
-msgid "Google Account Connection"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_google_address_autocomplete
+#: model:ir.module.module,shortdesc:base.module_address_autocomplete_google
 msgid "Google Address Autocomplete"
 msgstr ""
 
@@ -28646,8 +28524,10 @@ msgid "Google Integration"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_google_recaptcha
-msgid "Google reCAPTCHA"
+#: model:ir.module.module,summary:base.module_appointment_calendar_google
+msgid ""
+"Google Meet links for appointments booked with Google Calendar "
+"synchronization"
 msgstr ""
 
 #. module: base
@@ -29884,12 +29764,6 @@ msgid "ID"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_ir_actions_server__xml_id
-#: model:ir.model.fields,help:base.field_ir_cron__xml_id
-msgid "ID of the action if defined in a XML file"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_ir_model_data__res_id
 msgid "ID of the target record in the database"
 msgstr ""
@@ -29897,11 +29771,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_ui_view__xml_id
 msgid "ID of the view defined in xml file"
-msgstr ""
-
-#. module: base
-#: model:ir.model.fields,help:base.field_res_users__barcode
-msgid "ID used for employee identification."
 msgstr ""
 
 #. module: base
@@ -30937,11 +30806,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_country__address_view_id
 msgid "Input View"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_web_error_solve
-msgid "Inspect automatic error-triage progress from the error dialog"
 msgstr ""
 
 #. module: base
@@ -32121,11 +31985,6 @@ msgid "Jordan - Tax Return Setup"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_account_move_print
-msgid "Journal Entry Printing"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_account_update_tax_tags
 msgid "Journal Item Tax Grid Updates"
 msgstr ""
@@ -32652,7 +32511,6 @@ msgid "Lari"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields.selection,name:base.selection__calendar_recurrence__byday__-1
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_rrule__byday__-1
 msgid "Last"
 msgstr ""
@@ -33121,6 +32979,19 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_insight_telegram
+msgid ""
+"Lets members of a group ask a Telegram bot questions about Odoo data in "
+"their own words, as text or voice notes. A chat model only routes each "
+"question to a catalogued report and extracts its parameters; the report "
+"reads the database on a read-only transaction that sees every company, so "
+"every figure comes from Odoo. Questions no report answers are declined and "
+"logged. Requires a bot with questions enabled, a company policy allowing the"
+" telegram.insight purpose on a chat model and, for voice notes, a "
+"transcription policy."
+msgstr ""
+
+#. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
 msgid "Letter 2 8.5 x 11 inches, 215.9 x 279.4 mm"
 msgstr ""
@@ -33423,13 +33294,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_helpdesk_sale_timesheet
 msgid "Link ticket timesheets to billable sales order items"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_voip_speech
-msgid ""
-"Link uploaded call recordings to media timelines and queue eligible "
-"transcription"
 msgstr ""
 
 #. module: base
@@ -35582,11 +35446,6 @@ msgid "Microsoft Integration"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_microsoft_account
-msgid "Microsoft Account Connection"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__access_link__cause__migration
 #: model:ir.model.fields.selection,name:base.selection__res_users_grant__cause__migration
 msgid "Migration"
@@ -35694,16 +35553,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:base.selection__phone_number__type__mobile
 #: model_terms:ir.ui.view,arch_db:base.auth_user_client_view_kanban
 msgid "Mobile"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_device_mobile_speech_analysis
-msgid "Mobile Call Transcript Analysis"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_device_mobile_speech
-msgid "Mobile Device Call Transcription"
 msgstr ""
 
 #. module: base
@@ -36393,14 +36242,6 @@ msgid "Nano Theme"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,field_description:base.field_res_bank__nationality_id
-#: model:ir.model.fields,field_description:base.field_res_company__nationality_id
-#: model:ir.model.fields,field_description:base.field_res_partner__nationality_id
-#: model:ir.model.fields,field_description:base.field_res_users__nationality_id
-msgid "Nationality"
-msgstr ""
-
-#. module: base
 #: model:res.country,name:base.nr
 msgid "Nauru"
 msgstr ""
@@ -37079,6 +36920,14 @@ msgid ""
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_appointment_calendar_google
+msgid ""
+"Offer Google Meet as an appointment type's videoconference: a booked event "
+"synchronized with its organizer's Google Calendar gets its Meet link, and "
+"staff who do not synchronize are named on the type."
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_sign_emsigner
 msgid ""
 "Offer emSigner identification during document signing when IAP credits are "
@@ -37123,6 +36972,11 @@ msgid ""
 "rasterises the PDF into a full-resolution texture, rebuilt whenever the "
 "file's PDF or kind changes. Labels carry the product and presentation of "
 "their file. Automated cropping depends on the artwork layout."
+msgstr ""
+
+#. module: base
+#: model:res.partner.tag,name:base.res_partner_category_12
+msgid "Office Supplies"
 msgstr ""
 
 #. module: base
@@ -40046,6 +39900,7 @@ msgstr ""
 #. module: base
 #: model:ir.actions.act_window,name:base.action_res_groups_privilege
 #: model:ir.model,name:base.model_res_groups_privilege
+#: model:ir.model.fields,field_description:base.field_ir_job__privileges
 #: model:ir.model.fields,field_description:base.field_ir_module_category__privilege_ids
 #: model:ir.ui.menu,name:base.menu_action_res_groups_privilege
 msgid "Privileges"
@@ -40605,9 +40460,21 @@ msgid "Proposed"
 msgstr ""
 
 #. module: base
+#: model:res.partner.tag,name:base.res_partner_category_2
+msgid "Prospects"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,summary:base.module_timesheet_grid_holidays
 msgid ""
 "Protect leave-linked timesheets from grid edits, merges and timer entry"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_captcha
+msgid ""
+"Prove a human sent a public form, through whichever captcha provider is "
+"installed"
 msgstr ""
 
 #. module: base
@@ -40641,14 +40508,6 @@ msgstr ""
 msgid ""
 "Provide GitHub REST calls, App installation tokens, and pull request and "
 "check state kept current by webhook"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_google_account
-msgid ""
-"Provide Google authorization callbacks, access tokens and authenticated "
-"requests. Google service modules use the connection with configured client "
-"credentials."
 msgstr ""
 
 #. module: base
@@ -40748,13 +40607,6 @@ msgstr ""
 msgid ""
 "Provide an addon without a Python initializer for data-module installation "
 "tests"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_microsoft_account
-msgid ""
-"Provide authorization and token storage for Microsoft service integrations. "
-"Dependent modules use the configured client and requested service scopes."
 msgstr ""
 
 #. module: base
@@ -44782,15 +44634,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_account_move_print
-msgid ""
-"Registers a journal-entry report action and its QWeb layout for accounting "
-"moves. Prints entry identification and accounting line details using the "
-"accounting and report framework supplied by the dependencies. Users access "
-"the report from the accounting document print actions."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_conversation_purchase
 msgid ""
 "Registers a purchase tool with a leader approval category. Resolves the "
@@ -46180,16 +46023,6 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_speech_ai
 msgid ""
 "Route transcription and synthesis through configured model-gateway services"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_conversation_mobile
-msgid ""
-"Routes mobile recording timelines into conversation records, linking the "
-"phone, responsible user and matched call when available. Delays "
-"transcription for recordings awaiting call logs and updates conversation "
-"participants when a match arrives. Adds a phone-user setting to devices and "
-"uses the existing mobile upload and speech infrastructure."
 msgstr ""
 
 #. module: base
@@ -48067,12 +47900,6 @@ msgid "Send SMS steps in marketing automation workflows"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sms_twilio
-msgid ""
-"Send SMS through configured Twilio accounts and process delivery updates"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__state__webhook
 msgid "Send Webhook Notification"
 msgstr ""
@@ -48254,16 +48081,6 @@ msgid "Sendcloud Website Pickup Locations"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_res_partner_bank_account__allow_out_payment
-msgid ""
-"Sending fake invoices with a fraudulent account number is a common phishing "
-"practice. To protect yourself, always verify new bank account numbers, "
-"preferably by calling the vendor, as phishing usually happens when their "
-"emails are compromised. Once verified, you can activate the ability to send "
-"money."
-msgstr ""
-
-#. module: base
 #: model:res.currency,currency_subunit_label:base.WST
 msgid "Sene"
 msgstr ""
@@ -48429,7 +48246,6 @@ msgid "Server"
 msgstr ""
 
 #. module: base
-#: model:ir.model,name:base.model_ir_actions_server
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__usage__ir_actions_server
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_search
@@ -48448,6 +48264,7 @@ msgstr ""
 
 #. module: base
 #: model:ir.actions.act_window,name:base.action_server_action
+#: model:ir.model,name:base.model_ir_actions_server
 #: model:ir.ui.menu,name:base.menu_server_action
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_search
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_tree
@@ -48474,6 +48291,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.category,name:base.module_category_services
 #: model:ir.module.category,name:base.module_category_theme_services
+#: model:res.partner.tag,name:base.res_partner_category_11
 msgid "Services"
 msgstr ""
 
@@ -50427,13 +50245,19 @@ msgid "Suffix value of the record for the sequence"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_google_address_autocomplete
-msgid "Suggest and complete addresses using configured Google Places access"
+#: model:ir.module.module,summary:base.module_address_autocomplete
+msgid ""
+"Suggest and complete addresses through the provider chosen in the settings"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_address_autocomplete_google
+msgid "Suggest and complete addresses with Google Places"
 msgstr ""
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_sale_autocomplete
-msgid "Suggest checkout addresses through Google Places"
+msgid "Suggest checkout addresses through the address autocomplete provider"
 msgstr ""
 
 #. module: base
@@ -50743,11 +50567,6 @@ msgstr ""
 msgid ""
 "Supply city reference data for China and update country address "
 "configuration. The records are loaded from the module's data files."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_base_user_role_home_tiles
-msgid "Supply default home dashboard tiles from enabled user roles"
 msgstr ""
 
 #. module: base
@@ -51283,6 +51102,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_res_bank__tag_ids
 #: model:ir.model.fields,field_description:base.field_res_company__tag_ids
 #: model:ir.model.fields,field_description:base.field_res_partner__tag_ids
+#: model:ir.model.fields,field_description:base.field_res_users__tag_ids
 #: model:ir.ui.menu,name:base.tag_tag_menu
 #: model_terms:ir.ui.view,arch_db:base.tag_tag_view_list
 #: model_terms:ir.ui.view,arch_db:base.view_res_partner_filter
@@ -51521,6 +51341,11 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_approval_account_telegram
 msgid "Telegram Payment Approval Intake"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_insight_telegram
+msgid "Telegram Questions About Odoo"
 msgstr ""
 
 #. module: base
@@ -52400,17 +52225,6 @@ msgid "The country group code must be unique!"
 msgstr ""
 
 #. module: base
-#: model:ir.model.fields,help:base.field_res_bank__nationality_id
-#: model:ir.model.fields,help:base.field_res_company__nationality_id
-#: model:ir.model.fields,help:base.field_res_partner__nationality_id
-#: model:ir.model.fields,help:base.field_res_users__nationality_id
-msgid ""
-"The country this person is a national of. Distinct from the address country,"
-" which says where they are: a person may be resident in one country and a "
-"national of another."
-msgstr ""
-
-#. module: base
 #: model:ir.model.constraint,message:base.constraint_res_currency_unique_name
 msgid "The currency code must be unique!"
 msgstr ""
@@ -52700,6 +52514,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/base/models/mixin_recurrence_interval.py:0
 msgid "The interval should be greater than 0"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_ir_job__elevated
+msgid "The job runs in superuser mode, as its caller did when it queued it."
 msgstr ""
 
 #. module: base
@@ -53075,6 +52894,13 @@ msgstr ""
 msgid ""
 "The priority of the job, as an integer: 0 means higher priority, 10 means "
 "lower priority."
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_ir_job__privileges
+msgid ""
+"The privileges (res.groups ids) its caller held when it queued it, which the"
+" job holds too."
 msgstr ""
 
 #. module: base
@@ -53464,6 +53290,11 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_act_url__target__self
 msgid "This Window"
+msgstr ""
+
+#. module: base
+#: model:ir.model.fields,help:base.field_res_partner_bank_account__allow_out_payment
+msgid "This account can be used for outgoing payments"
 msgstr ""
 
 #. module: base
@@ -54043,13 +53874,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_marin_rma
-msgid ""
-"Track customer claims with product lots, reasons and approval-linked "
-"progress"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,summary:base.module_exchange
 msgid "Track document transmission intents and counterparty responses"
 msgstr ""
@@ -54495,11 +54319,6 @@ msgid "Twilio Integration"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sms_twilio
-msgid "Twilio SMS Delivery"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_mixin_recurrence_anchored__repeat_twice
 msgid "Two anchors in each month or year instead of one"
 msgstr ""
@@ -54852,6 +54671,7 @@ msgstr ""
 #. module: base
 #. odoo-python
 #: code:odoo/orm/runtime/_backend_pg_write.py:0
+#: code:odoo/orm/runtime/backend.py:0
 msgid ""
 "Unable to delete %(record)s because it is used as the default value of "
 "%(field)s"
@@ -55473,14 +55293,10 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_appointment_calendar_google
-msgid "Use Google Calendar connections and video links for appointments"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,help:base.field_res_bank__barcode
 #: model:ir.model.fields,help:base.field_res_company__barcode
 #: model:ir.model.fields,help:base.field_res_partner__barcode
+#: model:ir.model.fields,help:base.field_res_users__barcode
 msgid "Use a barcode to identify this contact."
 msgstr ""
 
@@ -55691,16 +55507,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,field_description:base.field_wizard_res_users_update_password_line__user_login
 msgid "User Login"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_base_user_role_home_tiles
-msgid "User Role Dashboard Tiles"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_base_user_role
-msgid "User Roles"
 msgstr ""
 
 #. module: base
@@ -56055,6 +55861,11 @@ msgid "Vehicles"
 msgstr ""
 
 #. module: base
+#: model:res.partner.tag,name:base.res_partner_category_0
+msgid "Vendor"
+msgstr ""
+
+#. module: base
 #: model:ir.module.module,shortdesc:base.module_extract_account
 msgid "Vendor Bill Document Extraction"
 msgstr ""
@@ -56099,11 +55910,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_access_matrix__verb_reach
 #: model:ir.model.fields,field_description:base.field_ir_access_sod_function__verb_ids
 msgid "Verbs"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_website_cf_turnstile
-msgid "Verify supported website form submissions with Cloudflare Turnstile"
 msgstr ""
 
 #. module: base
@@ -56279,16 +56085,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_voip_crm
 msgid "VoIP CRM Navigation"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_voip_speech
-msgid "VoIP Recording Transcription"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_voip_speech_analysis
-msgid "VoIP Transcript Analysis"
 msgstr ""
 
 #. module: base
@@ -57665,8 +57461,10 @@ msgstr ""
 
 #. module: base
 #. odoo-python
+#: code:odoo/orm/runtime/_backend_memory.py:0
 #: code:odoo/orm/runtime/_backend_memory_write.py:0
 #: code:odoo/orm/runtime/_backend_pg_write.py:0
+#: code:odoo/orm/runtime/backend.py:0
 msgid ""
 "You cannot delete %(to_delete_record)s, as it is used by "
 "%(on_restrict_record)s"
@@ -58510,6 +58308,11 @@ msgstr ""
 #. module: base
 #: model:res.currency,currency_unit_label:base.UYW
 msgid "peso"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_captcha_recaptcha
+msgid "reCAPTCHA"
 msgstr ""
 
 #. module: base

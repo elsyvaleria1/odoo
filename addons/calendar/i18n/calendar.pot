@@ -3313,6 +3313,7 @@ msgid "Going?"
 msgstr ""
 
 #. module: calendar
+#: code:addons/calendar/static/src/views/attendee_calendar/attendee_calendar_controller.xml:0
 #: model:ir.model.fields.selection,name:calendar.selection__wizard_ir_config_parameter_update_calendar_provider__external_calendar_provider__google
 msgid "Google"
 msgstr ""
@@ -4442,6 +4443,7 @@ msgid "Our first availability is"
 msgstr ""
 
 #. module: calendar
+#: code:addons/calendar/static/src/views/attendee_calendar/attendee_calendar_controller.xml:0
 #: model:ir.model.fields.selection,name:calendar.selection__wizard_ir_config_parameter_update_calendar_provider__external_calendar_provider__microsoft
 #: model_terms:ir.ui.view,arch_db:calendar.appointment_validated
 msgid "Outlook"

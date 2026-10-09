@@ -514,6 +514,11 @@ msgid "Evidence before it was replaced or cleared."
 msgstr ""
 
 #. module: stock_fleet
+#: model:product.template,name:stock_fleet.model_volvo_fm_product_template
+msgid "FM"
+msgstr ""
+
+#. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_graph
 msgid "Graph View"
 msgstr ""
@@ -1133,6 +1138,16 @@ msgid "Transfers"
 msgstr ""
 
 #. module: stock_fleet
+#: model:product.template,name:stock_fleet.model_ford_transit_product_template
+msgid "Transit"
+msgstr ""
+
+#. module: stock_fleet
+#: model:fleet.vehicle.tag,name:stock_fleet.vehicle_tag_transport
+msgid "Transport"
+msgstr ""
+
+#. module: stock_fleet
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_type_kanban_inherit_stock_fleet
 msgid "Transport Management"
 msgstr ""
@@ -1140,6 +1155,7 @@ msgstr ""
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_resource_log__picking_batch_id
 #: model:ir.model.fields,field_description:stock_fleet.field_wizard_stock_picking_unbatch_correction__batch_id
+#: model:ir.model.fields.selection,name:stock_fleet.selection__resource_asset_log__source__delivery
 #: model:ir.model.fields.selection,name:stock_fleet.selection__resource_log__source__delivery
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_trip
 msgid "Trip"

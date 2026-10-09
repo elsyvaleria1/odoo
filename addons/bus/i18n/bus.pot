@@ -136,12 +136,14 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/bus/static/src/outdated_page_watcher_service.js:0
 #: code:addons/bus/static/src/services/assets_watchdog_service.js:0
+#: code:addons/bus/static/src/services/bus_service.js:0
 msgid "Refresh"
 msgstr ""
 
 #. module: bus
 #. odoo-javascript
 #: code:addons/bus/static/src/outdated_page_watcher_service.js:0
+#: code:addons/bus/static/src/services/bus_service.js:0
 msgid ""
 "Save your work and refresh to get the latest updates and avoid potential "
 "issues."
@@ -156,6 +158,7 @@ msgstr ""
 #. module: bus
 #. odoo-javascript
 #: code:addons/bus/static/src/outdated_page_watcher_service.js:0
+#: code:addons/bus/static/src/services/bus_service.js:0
 msgid "The page is out of date"
 msgstr ""
 

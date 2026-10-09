@@ -2676,6 +2676,11 @@ msgid ""
 msgstr ""
 
 #. module: integration
+#: model:res.groups,name:integration.privilege_shared_egress
+msgid "Privilege: any caller sends through a service's shared connection"
+msgstr ""
+
+#. module: integration
 #: model:ir.model.fields.selection,name:integration.selection__integration_exchange__state__processing
 msgid "Processing"
 msgstr ""
@@ -3158,7 +3163,7 @@ msgstr ""
 
 #. module: integration
 #: model:ir.model,name:integration.model_ir_actions_server
-msgid "Server Action"
+msgid "Server Actions"
 msgstr ""
 
 #. module: integration
@@ -3240,6 +3245,7 @@ msgstr ""
 
 #. module: integration
 #. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
 #: code:addons/integration/models/credential_credential.py:0
 #: code:addons/integration/models/integration_connection.py:0
 msgid "Service '%s' is not configured for OAuth 2.0 authentication"
@@ -4121,6 +4127,7 @@ msgstr ""
 
 #. module: integration
 #. odoo-python
+#: code:addons/integration/controllers/oauth.py:0
 #: code:addons/integration/models/integration_connection.py:0
 msgid "You are not allowed to authorize API credentials."
 msgstr ""

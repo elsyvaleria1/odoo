@@ -178,6 +178,11 @@ msgid "(as of opening)"
 msgstr ""
 
 #. module: point_of_sale
+#: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
+msgid "(share of"
+msgstr ""
+
+#. module: point_of_sale
 #. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/components/popups/optional_products_popup/optional_products_popup.xml:0
 msgid "+ Add"
@@ -350,6 +355,11 @@ msgid "<strong>Amount of discounts</strong>:"
 msgstr ""
 
 #. module: point_of_sale
+#: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
+msgid "<strong>Amount of refund discounts</strong>:"
+msgstr ""
+
+#. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.ticket_validation_screen
 msgid "<strong>Amounting to:</strong>"
 msgstr ""
@@ -367,6 +377,11 @@ msgstr ""
 #. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
 msgid "<strong>Number of discounts</strong>:"
+msgstr ""
+
+#. module: point_of_sale
+#: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
+msgid "<strong>Number of refund discounts</strong>:"
 msgstr ""
 
 #. module: point_of_sale
@@ -988,6 +1003,11 @@ msgid "An internal identification of the printer"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.constraint,message:point_of_sale.constraint_pos_processed_operation_operation_uuid_unique
+msgid "An operation with this uuid was already processed"
+msgstr ""
+
+#. module: point_of_sale
 #: model:ir.model.constraint,message:point_of_sale.constraint_pos_order_line_unique_uuid
 msgid "An order line with this uuid already exists"
 msgstr ""
@@ -1119,11 +1139,6 @@ msgstr ""
 #. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_config__auto_validate_terminal_payment
 msgid "Auto Validate Terminal Payment"
-msgstr ""
-
-#. module: point_of_sale
-#: model:ir.model.fields,help:point_of_sale.field_pos_session__rescue
-msgid "Auto-generated session for orphan orders, ignored in constraints"
 msgstr ""
 
 #. module: point_of_sale
@@ -1591,6 +1606,7 @@ msgstr ""
 #: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment_method__is_cash_count
 #: model:ir.model.fields.selection,name:point_of_sale.selection__pos_payment_method__type__cash
+#: model:pos.payment.method,name:point_of_sale.cash_payment_method_furniture
 #: model_terms:ir.ui.view,arch_db:point_of_sale.pos_session_sales_details
 msgid "Cash"
 msgstr ""
@@ -3173,6 +3189,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment_method__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__display_name
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_product_attribute__display_name
 #: model:ir.model.fields,field_description:point_of_sale.field_product_attribute_custom_value__display_name
@@ -4028,6 +4045,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment_method__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_preset__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_printer__id
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__id
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__id
 #: model:ir.model.fields,field_description:point_of_sale.field_product_attribute__id
 #: model:ir.model.fields,field_description:point_of_sale.field_product_attribute_custom_value__id
@@ -5017,6 +5035,7 @@ msgstr ""
 
 #. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_payment_method__name
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__method
 msgid "Method"
 msgstr ""
 
@@ -5461,11 +5480,6 @@ msgid "Number of Refund Orders"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_pos_config__number_of_rescue_session
-msgid "Number of Rescue Session"
-msgstr ""
-
-#. module: point_of_sale
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_order__message_has_error_counter
 #: model:ir.model.fields,field_description:point_of_sale.field_pos_session__message_has_error_counter
 msgid "Number of errors"
@@ -5754,6 +5768,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:point_of_sale.field_res_config_settings__pos_picking_type_id
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "Operation Type"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__operation_uuid
+msgid "Operation Uuid"
 msgstr ""
 
 #. module: point_of_sale
@@ -6965,6 +6984,13 @@ msgid "Price Type"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,help:point_of_sale.field_report_pos_order__price_average
+msgid ""
+"Price before discount, per product unit of measure, in company currency, "
+"weighted by sold and refunded quantities alike."
+msgstr ""
+
+#. module: point_of_sale
 #. odoo-python
 #: code:addons/point_of_sale/models/pos_order.py:0
 msgid "Price discount from %(original_price)s to %(discounted_price)s"
@@ -7169,6 +7195,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/components/popups/closing_popup/closing_popup.js:0
 msgid "Proceed Anyway"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__processed_at
+msgid "Processed At"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model,name:point_of_sale.model_pos_processed_operation
+msgid "Processed POS Operation"
 msgstr ""
 
 #. module: point_of_sale
@@ -7435,10 +7471,14 @@ msgid "Quantity"
 msgstr ""
 
 #. module: point_of_sale
-#: model:ir.model.fields,help:point_of_sale.field_report_pos_order__price_average
+#: model:ir.model.fields,help:point_of_sale.field_pos_order_line__combo_qty_per_parent
 msgid ""
-"Quantity-weighted price before discount, per product unit of measure, in "
-"company currency."
+"Quantity of this combo item in one combo; kept while the combo is at zero."
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_order_line__combo_qty_per_parent
+msgid "Quantity per Combo"
 msgstr ""
 
 #. module: point_of_sale
@@ -7550,11 +7590,6 @@ msgstr ""
 #. module: point_of_sale
 #: model:ir.model.fields,help:point_of_sale.field_pos_payment_method__use_payment_terminal
 msgid "Record payments with a terminal on this journal."
-msgstr ""
-
-#. module: point_of_sale
-#: model:ir.model.fields,field_description:point_of_sale.field_pos_session__rescue
-msgid "Recovery Session"
 msgstr ""
 
 #. module: point_of_sale
@@ -7745,6 +7780,11 @@ msgid "Request sent"
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__res_model
+msgid "Res Model"
+msgstr ""
+
+#. module: point_of_sale
 #. odoo-python
 #: code:addons/point_of_sale/models/pos_config.py:0
 msgid "Rescue Sessions"
@@ -7787,6 +7827,11 @@ msgstr ""
 #. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.res_config_settings_view_form
 msgid "Restrict price modification to managers"
+msgstr ""
+
+#. module: point_of_sale
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__result
+msgid "Result"
 msgstr ""
 
 #. module: point_of_sale
@@ -9109,6 +9154,14 @@ msgid ""
 msgstr ""
 
 #. module: point_of_sale
+#: model:ir.access.class,description:point_of_sale.access_class_receipt_text
+msgid ""
+"The custom header and footer a point of sale prints on every receipt. "
+"Everyone who reads the point of sale reads them; only access administrators "
+"change them."
+msgstr ""
+
+#. module: point_of_sale
 #. odoo-python
 #: code:addons/point_of_sale/wizards/wizard_pos_order_invoice_missing_customer.py:0
 msgid ""
@@ -9459,16 +9512,16 @@ msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/models/pos_config.py:0
-msgid ""
-"The selected pricelists must belong to no company or the company of the "
-"point of sale."
+#: code:addons/point_of_sale/models/pos_session.py:0
+msgid "The session has already been closed by another user."
 msgstr ""
 
 #. module: point_of_sale
 #. odoo-python
-#: code:addons/point_of_sale/models/pos_session.py:0
-msgid "The session has already been closed by another user."
+#: code:addons/point_of_sale/models/pos_config.py:0
+msgid ""
+"The selected pricelists must belong to no company or the company of the "
+"point of sale."
 msgstr ""
 
 #. module: point_of_sale
@@ -9751,6 +9804,12 @@ msgstr ""
 #: code:addons/point_of_sale/models/account_journal.py:0
 msgid ""
 "This journal is associated with a payment method. You cannot modify its type"
+msgstr ""
+
+#. module: point_of_sale
+#. odoo-python
+#: code:addons/point_of_sale/models/pos_processed_operation.py:0
+msgid "This operation was already processed as another one."
 msgstr ""
 
 #. module: point_of_sale
@@ -10361,6 +10420,7 @@ msgstr ""
 
 #. module: point_of_sale
 #: model:ir.model,name:point_of_sale.model_res_users
+#: model:ir.model.fields,field_description:point_of_sale.field_pos_processed_operation__user_id
 #: model:ir.model.fields,field_description:point_of_sale.field_report_pos_order__user_id
 #: model:res.groups,name:point_of_sale.group_pos_user
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_pos_order_filter

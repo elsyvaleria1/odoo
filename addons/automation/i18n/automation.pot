@@ -262,11 +262,6 @@ msgid ""
 msgstr ""
 
 #. module: automation
-#: model:ir.model.constraint,message:automation.constraint_automation_canvas_viewport_viewport_uniq
-msgid "A reader keeps one canvas viewport per automation."
-msgstr ""
-
-#. module: automation
 #. odoo-python
 #: code:addons/automation/models/automation_rule.py:0
 msgid ""
@@ -412,6 +407,18 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__amount
 msgid "Amount"
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/mail_activity.py:0
+msgid "An approval activity stays with the approver it was requested from."
+msgstr ""
+
+#. module: automation
+#. odoo-python
+#: code:addons/automation/models/automation_runtime_line.py:0
+msgid "An approval activity was removed before its approver acted on it."
 msgstr ""
 
 #. module: automation
@@ -1118,10 +1125,8 @@ msgstr ""
 #. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime__company_ids
 msgid ""
-"Every company this run creates documents in; the run is listed in each of "
-"them. With two, the one that owns the bank statement line is the vehicle "
-"that received the money and the other holds the transaction with the "
-"partner."
+"Every company this run works in. A run that creates documents in two "
+"companies belongs to both, and is listed in each of them."
 msgstr ""
 
 #. module: automation
@@ -1274,11 +1279,6 @@ msgstr ""
 #: model:ir.model.fields,help:automation.field_ir_actions_server__pos_x
 #: model:ir.model.fields,help:automation.field_ir_cron__pos_x
 msgid "Horizontal position of this node on the workflow canvas"
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_automation_canvas_viewport__pos_x
-msgid "Horizontal translation of the canvas, in screen pixels"
 msgstr ""
 
 #. module: automation
@@ -1517,6 +1517,11 @@ msgid ""
 "Lower bound of the window the scheduler examines; it advances to the current time after every run.\n"
 "\n"
 "Leave empty and the first run reaches back over the entire history — every record that already satisfies the condition is processed at once, which on an existing database can mean thousands of records. Set it to scope that first run."
+msgstr ""
+
+#. module: automation
+#: model:ir.model.fields,help:automation.field_automation_runtime__partner_id
+msgid "Main partner for this operation (optional)"
 msgstr ""
 
 #. module: automation
@@ -1781,6 +1786,12 @@ msgid "Only a failed workflow can be retried."
 msgstr ""
 
 #. module: automation
+#. odoo-python
+#: code:addons/automation/models/mail_activity.py:0
+msgid "Only its approver can mark an approval activity done."
+msgstr ""
+
+#. module: automation
 #: model:ir.model.fields,field_description:automation.field_automation_runtime__name
 msgid "Operation"
 msgstr ""
@@ -1912,11 +1923,6 @@ msgid "Ratings"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__user_id
-msgid "Reader"
-msgstr ""
-
-#. module: automation
 #. odoo-javascript
 #: code:addons/automation/static/src/workflow_graph.js:0
 #: model:ir.model.fields.selection,name:automation.selection__automation_runtime_line__state__ready
@@ -2035,11 +2041,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/automation/static/src/workflow_canvas.xml:0
 msgid "Save this automation to draw its workflow."
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,field_description:automation.field_automation_canvas_viewport__scale
-msgid "Scale"
 msgstr ""
 
 #. module: automation
@@ -2571,18 +2572,11 @@ msgid ""
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,help:automation.field_automation_runtime__partner_id
-msgid ""
-"The partner the operation is about: the customer whose debt a collection "
-"reduces, whoever a document is made out to."
-msgstr ""
-
-#. module: automation
 #: model:ir.model.fields,help:automation.field_automation_runtime__third_party_id
 msgid ""
-"The party a fiscal document is made out to when it is not the partner, such "
-"as the generic public for a customer who takes no invoice. Leave it empty "
-"when the partner is invoiced himself."
+"The party a step issues a document to in place of the partner, when it "
+"cannot be issued to the partner himself. The partner stays the one the "
+"operation is about."
 msgstr ""
 
 #. module: automation
@@ -2809,11 +2803,6 @@ msgid "Vertical position of this node on the workflow canvas"
 msgstr ""
 
 #. module: automation
-#: model:ir.model.fields,help:automation.field_automation_canvas_viewport__pos_y
-msgid "Vertical translation of the canvas, in screen pixels"
-msgstr ""
-
-#. module: automation
 #: model_terms:ir.ui.view,arch_db:automation.view_automation_runtime_form
 msgid "View Document"
 msgstr ""
@@ -3016,11 +3005,6 @@ msgid "Workflow Cancelled"
 msgstr ""
 
 #. module: automation
-#: model:ir.model,name:automation.model_automation_canvas_viewport
-msgid "Workflow Canvas Viewport"
-msgstr ""
-
-#. module: automation
 #. odoo-python
 #: code:addons/automation/models/automation_runtime.py:0
 msgid "Workflow Complete"
@@ -3148,11 +3132,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/automation/static/src/automation_error_dialog.xml:0
 msgid "You can ask an administrator to disable or fix this automation."
-msgstr ""
-
-#. module: automation
-#: model:ir.model.fields,help:automation.field_automation_canvas_viewport__scale
-msgid "Zoom factor of the canvas, 1.0 being unzoomed"
 msgstr ""
 
 #. module: automation

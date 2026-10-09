@@ -2135,13 +2135,9 @@ msgid "Lock Confirmed Purchase Orders"
 msgstr ""
 
 #. module: purchase
+#: model:ir.model.fields,field_description:purchase.field_res_config_settings__group_auto_done_setting
 #: model:res.groups,name:purchase.group_auto_done_setting
 msgid "Lock Confirmed Purchases"
-msgstr ""
-
-#. module: purchase
-#: model:ir.model.fields,field_description:purchase.field_res_config_settings__group_auto_done_setting
-msgid "Lock Confirmed Sales"
 msgstr ""
 
 #. module: purchase

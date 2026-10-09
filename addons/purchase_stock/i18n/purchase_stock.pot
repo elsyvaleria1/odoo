@@ -66,13 +66,6 @@ msgid "<span class=\"o_stat_value\">%</span>"
 msgstr ""
 
 #. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_kanban_catalog_purchase_only
-msgid ""
-"<span class=\"text-info fw-bold fs-5 me-1\" "
-"groups=\"!uom.group_uom\">Units</span>"
-msgstr ""
-
-#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_kanban_catalog_purchase_only
 msgid "<span class=\"text-info fw-bold fs-5 me-1\">Suggest</span>"
 msgstr ""
@@ -80,11 +73,6 @@ msgstr ""
 #. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_kanban_catalog_purchase_only
 msgid "<span class=\"text-muted small me-1\">Monthly Demand:</span>"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_kanban_catalog_purchase_only
-msgid "<span class=\"text-muted small ms-1\" groups=\"!uom.group_uom\">Units</span>"
 msgstr ""
 
 #. module: purchase_stock
@@ -135,14 +123,6 @@ msgid "A storable product is a product for which you manage stock."
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model.fields,help:purchase_stock.field_purchase_order_line__qty_received_method
-msgid ""
-"According to product configuration, the received quantity can be automatically computed by mechanism:\n"
-"  - Manual: the quantity is set manually on the line\n"
-"  - Stock Moves: the quantity comes from confirmed pickings\n"
-msgstr ""
-
-#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_rule__action
 msgid "Action"
 msgstr ""
@@ -178,6 +158,7 @@ msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__date_effective
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__effective_date
 msgid "Arrival"
 msgstr ""
 
@@ -218,12 +199,8 @@ msgid "Buy to Resupply"
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_res_company
-msgid "Companies"
-msgstr ""
-
-#. module: purchase_stock
 #: model:ir.model.fields,help:purchase_stock.field_purchase_order__date_effective
+#: model:ir.model.fields,help:purchase_stock.field_purchase_order__effective_date
 msgid "Completion date of the first receipt order."
 msgstr ""
 
@@ -270,6 +247,7 @@ msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,help:purchase_stock.field_purchase_config__days_to_purchase
+#: model:ir.model.fields,help:purchase_stock.field_res_company__days_to_purchase
 #: model:ir.model.fields,help:purchase_stock.field_res_config_settings__days_to_purchase
 msgid "Days needed to confirm a PO, define when a PO should be validated"
 msgstr ""
@@ -278,6 +256,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/purchase_stock/models/stock_rule.py:0
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_config__days_to_purchase
+#: model:ir.model.fields,field_description:purchase_stock.field_res_company__days_to_purchase
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__days_to_purchase
 msgid "Days to Purchase"
 msgstr ""
@@ -330,6 +309,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_report_stock_report_stock_rule__display_name
+#: model:ir.model.fields,field_description:purchase_stock.field_res_company__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_res_partner__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_forecasted_product_product__display_name
@@ -367,6 +347,7 @@ msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__date_effective
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__effective_date
 #: model:ir.model.fields,field_description:purchase_stock.field_vendor_delay_report__date
 msgid "Effective Date"
 msgstr ""
@@ -430,11 +411,6 @@ msgid "Friday"
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order__receipt_status__full
-msgid "Fully Received"
-msgstr ""
-
-#. module: purchase_stock
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
 msgid "Generate the draft vendor bill."
@@ -484,6 +460,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__id
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__id
 #: model:ir.model.fields,field_description:purchase_stock.field_report_stock_report_stock_rule__id
+#: model:ir.model.fields,field_description:purchase_stock.field_res_company__id
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__id
 #: model:ir.model.fields,field_description:purchase_stock.field_res_partner__id
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_forecasted_product_product__id
@@ -595,11 +572,6 @@ msgid "Lot/Serial Number"
 msgstr ""
 
 #. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_stock_lot
-msgid "Lot/Serial"
-msgstr ""
-
-#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.exception_on_po
 msgid "Manual actions may be needed."
 msgstr ""
@@ -645,11 +617,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/purchase_stock/models/stock_rule.py:0
 msgid "No supplier has been found to replenish"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order__receipt_status__pending
-msgid "Not Received"
 msgstr ""
 
 #. module: purchase_stock
@@ -727,11 +694,6 @@ msgstr ""
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_product_product__purchase_order_line_ids
 msgid "PO Lines"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order__receipt_status__partial
-msgid "Partially Received"
 msgstr ""
 
 #. module: purchase_stock
@@ -852,11 +814,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
 msgid "Receive the ordered products."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__qty_received_method
-msgid "Received Qty Method"
 msgstr ""
 
 #. module: purchase_stock
@@ -1011,6 +968,7 @@ msgid "Suggest Percent"
 msgstr ""
 
 #. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_search_catalog
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_search_catalog
 msgid "Suggested"
 msgstr ""
@@ -1140,6 +1098,7 @@ msgid "Time Perdiod Selection"
 msgstr ""
 
 #. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_search_catalog
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_search_catalog
 msgid "To Order"
 msgstr ""
@@ -1522,11 +1481,6 @@ msgstr ""
 #. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_kanban_catalog_purchase_only
 msgid "Units"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_res_users
-msgid "User"
 msgstr ""
 
 #. module: purchase_stock

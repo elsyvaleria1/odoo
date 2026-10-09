@@ -255,6 +255,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__done
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__done
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__done
 msgid "Fully invoiced"
 msgstr ""
 
@@ -321,6 +323,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__draft
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__draft
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__draft
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__draft
 msgid "Invoice in draft"
 msgstr ""
 
@@ -430,6 +434,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__no
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__no
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__no
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__no
 msgid "Nothing to invoice"
 msgstr ""
 
@@ -487,10 +493,6 @@ msgstr ""
 #. module: trade_account
 #: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_invoice__invoice_state__over_done
 #: model:ir.model.fields.selection,name:trade_account.selection__mixin_order_line_invoice__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__over_done
-#: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__over_done
 msgid "Over-invoiced"
 msgstr ""
 
@@ -501,6 +503,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__partial
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__partial
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__partial
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__partial
 msgid "Partially invoiced"
 msgstr ""
 
@@ -672,6 +676,8 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade_account.selection__purchase_order_line__invoice_state__to_do
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order__invoice_state__to_do
 #: model:ir.model.fields.selection,name:trade_account.selection__sale_order_line__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order__invoice_state__to_do
+#: model:ir.model.fields.selection,name:trade_account.selection__test_trade_order_line__invoice_state__to_do
 msgid "To invoice"
 msgstr ""
 

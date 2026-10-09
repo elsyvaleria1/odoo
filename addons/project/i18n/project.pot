@@ -1614,6 +1614,9 @@ msgstr ""
 #: code:addons/project/models/project_task.py:0
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__canceled
 #: model:project.phase,name:project.project_phase_3
+#: model:project.triage,name:project.project_personal_stage_admin_6
+#: model:project.triage,name:project.project_personal_stage_demo_6
+#: model:project.workflow.step,name:project.project_stage_3
 msgid "Cancelled"
 msgstr ""
 
@@ -2590,6 +2593,7 @@ msgstr ""
 #. module: project
 #. odoo-javascript
 #: code:addons/project/static/src/views/project_task_kanban/project_task_kanban_examples.js:0
+#: model:project.tags,name:project.project_tags_08
 msgid "Design"
 msgstr ""
 
@@ -2698,6 +2702,9 @@ msgstr ""
 #: model:ir.model.fields.selection,name:project.selection__project_retrospective_action__state__done
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__done
 #: model:project.phase,name:project.project_phase_2
+#: model:project.triage,name:project.project_personal_stage_admin_5
+#: model:project.triage,name:project.project_personal_stage_demo_5
+#: model:project.workflow.step,name:project.project_stage_2
 #: model_terms:ir.ui.view,arch_db:project.project_retrospective_search
 msgid "Done"
 msgstr ""
@@ -2921,6 +2928,7 @@ msgstr ""
 
 #. module: project
 #: model:ir.model.fields.selection,name:project.selection__project_risk__category__external
+#: model:project.tags,name:project.project_tags_05
 msgid "External"
 msgstr ""
 
@@ -3492,6 +3500,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:project.selection__project_retrospective_action__state__in_progress
 #: model:ir.model.fields.selection,name:project.selection__project_task__state__in_progress
 #: model:project.phase,name:project.project_phase_1
+#: model:project.workflow.step,name:project.project_stage_1
 msgid "In Progress"
 msgstr ""
 
@@ -3504,6 +3513,8 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
+#: model:project.triage,name:project.project_personal_stage_admin_0
+#: model:project.triage,name:project.project_personal_stage_demo_0
 msgid "Inbox"
 msgstr ""
 
@@ -3748,6 +3759,8 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
+#: model:project.triage,name:project.project_personal_stage_admin_4
+#: model:project.triage,name:project.project_personal_stage_demo_4
 msgid "Later"
 msgstr ""
 
@@ -4253,6 +4266,7 @@ msgstr ""
 #: code:addons/project/models/project_project.py:0
 #: code:addons/project/static/src/views/components/template_dropdown.xml:0
 #: code:addons/project/static/src/views/project_task_kanban/project_task_kanban_examples.js:0
+#: model:project.workflow.step,name:project.project_stage_0
 msgid "New"
 msgstr ""
 
@@ -5165,6 +5179,7 @@ msgstr ""
 #: code:addons/project/controllers/portal.py:0
 #: model:ir.model.fields,field_description:project.field_project_task__priority
 #: model:ir.model.fields,field_description:project.field_report_project_task_user__priority
+#: model:project.tags,name:project.project_tags_16
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_base
 msgid "Priority"
 msgstr ""
@@ -7027,6 +7042,12 @@ msgstr ""
 #: model:ir.embedded.actions,name:project.project_embedded_action_all_tasks_dashboard
 #: model:ir.model.fields,field_description:project.field_project_project__task_ids
 #: model:ir.ui.menu,name:project.menu_project_management
+#: model:project.project,label_tasks:project.project_home_construction
+#: model:project.project,label_tasks:project.project_project_1
+#: model:project.project,label_tasks:project.project_project_2
+#: model:project.project,label_tasks:project.project_project_3
+#: model:project.project,label_tasks:project.project_project_4
+#: model:project.project,label_tasks:project.project_template_1
 #: model_terms:ir.ui.view,arch_db:project.portal_layout
 #: model_terms:ir.ui.view,arch_db:project.portal_my_home
 #: model_terms:ir.ui.view,arch_db:project.portal_my_project
@@ -7446,12 +7467,16 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
+#: model:project.triage,name:project.project_personal_stage_admin_3
+#: model:project.triage,name:project.project_personal_stage_demo_3
 msgid "This Month"
 msgstr ""
 
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
+#: model:project.triage,name:project.project_personal_stage_admin_2
+#: model:project.triage,name:project.project_personal_stage_demo_2
 #: model_terms:ir.ui.view,arch_db:project.project_sharing_project_task_view_search
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_project_base
 msgid "This Week"
@@ -7705,6 +7730,8 @@ msgstr ""
 #. module: project
 #. odoo-python
 #: code:addons/project/models/project_task.py:0
+#: model:project.triage,name:project.project_personal_stage_admin_1
+#: model:project.triage,name:project.project_personal_stage_demo_1
 #: model_terms:ir.ui.view,arch_db:project.project_sharing_project_task_view_search
 #: model_terms:ir.ui.view,arch_db:project.view_task_search_form_project_base
 msgid "Today"
@@ -8042,14 +8069,13 @@ msgstr ""
 msgid ""
 "Use these keywords in the title to set new tasks:\n"
 "\n"
-"        30h Plan 30 hours for the task\n"
-"        #tags Set tags on the task\n"
-"        @user Assign the task to a user\n"
-"        ! Set the task a medium priority\n"
-"        !! Set the task a high priority\n"
-"        !!! Set the task a urgent priority\n"
+"            #tags Set tags on the task\n"
+"            @user Assign the task to a user\n"
+"            ! Set the task a medium priority\n"
+"            !! Set the task a high priority\n"
+"            !!! Set the task a urgent priority\n"
 "\n"
-"        Make sure to use the right format and order e.g. Improve the configuration screen 5h #feature #v16 @Mitchell !"
+"            Make sure to use the right format and order e.g. Improve the configuration screen #feature #v16 @Mitchell !"
 msgstr ""
 
 #. module: project

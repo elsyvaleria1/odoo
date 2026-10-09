@@ -24,6 +24,7 @@ msgid ""
 msgstr ""
 
 #. module: sale_subscription
+#: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__nbr
 #: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__nbr_lines
 msgid "# of Lines"
 msgstr ""
@@ -158,15 +159,15 @@ msgid "1 Year"
 msgstr ""
 
 #. module: sale_subscription
+#: model:sale.subscription.plan,name:sale_subscription.subscription_plan_6_month
+msgid "6 Months"
+msgstr ""
+
+#. module: sale_subscription
 #: model_terms:web_tour.tour,rainbow_man_message:sale_subscription.sale_subscription_tour
 msgid ""
 "<b>Congratulations</b>, your first subscription quotation is ready to be "
 "sent!"
-msgstr ""
-
-#. module: sale_subscription
-#: model:sale.subscription.plan,name:sale_subscription.subscription_plan_6_month
-msgid "6 Months"
 msgstr ""
 
 #. module: sale_subscription
@@ -1491,6 +1492,7 @@ msgstr ""
 
 #. module: sale_subscription
 #: model:ir.model.fields,help:sale_subscription.field_sale_order_log_report__date_effective
+#: model:ir.model.fields,help:sale_subscription.field_sale_order_log_report__effective_date
 msgid "Date the MRR change was first billed."
 msgstr ""
 
@@ -1551,6 +1553,7 @@ msgstr ""
 #. module: sale_subscription
 #: model:ir.model.fields,field_description:sale_subscription.field_account_move__display_name
 #: model:ir.model.fields,field_description:sale_subscription.field_account_move_line__display_name
+#: model:ir.model.fields,field_description:sale_subscription.field_account_move_send__display_name
 #: model:ir.model.fields,field_description:sale_subscription.field_ir_http__display_name
 #: model:ir.model.fields,field_description:sale_subscription.field_mixin_account_move_send__display_name
 #: model:ir.model.fields,field_description:sale_subscription.field_payment_provider__display_name
@@ -1846,6 +1849,7 @@ msgstr ""
 #. module: sale_subscription
 #: model:ir.model.fields,field_description:sale_subscription.field_account_move__id
 #: model:ir.model.fields,field_description:sale_subscription.field_account_move_line__id
+#: model:ir.model.fields,field_description:sale_subscription.field_account_move_send__id
 #: model:ir.model.fields,field_description:sale_subscription.field_ir_http__id
 #: model:ir.model.fields,field_description:sale_subscription.field_mixin_account_move_send__id
 #: model:ir.model.fields,field_description:sale_subscription.field_payment_provider__id
@@ -2529,6 +2533,7 @@ msgid "Order"
 msgstr ""
 
 #. module: sale_subscription
+#: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__date
 #: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__date_order
 msgid "Order Date"
 msgstr ""
@@ -2824,6 +2829,7 @@ msgid "Product"
 msgstr ""
 
 #. module: sale_subscription
+#: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__categ_id
 #: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__product_category_id
 msgid "Product Category"
 msgstr ""
@@ -2863,6 +2869,7 @@ msgid "Prorated Price"
 msgstr ""
 
 #. module: sale_subscription
+#: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__qty_delivered
 #: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__qty_transferred
 msgid "Qty Delivered"
 msgstr ""
@@ -3266,6 +3273,7 @@ msgstr ""
 
 #. module: sale_subscription
 #: model:ir.model.fields.selection,name:sale_subscription.selection__sale_order_log_report__state__done
+#: model:ir.model.fields.selection,name:sale_subscription.selection__sale_order_log_report__state__sale
 msgid "Sales Order"
 msgstr ""
 
@@ -4022,6 +4030,7 @@ msgid "Unhappy face"
 msgstr ""
 
 #. module: sale_subscription
+#: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_plan__repeat_unit
 #: model:ir.model.fields,field_description:sale_subscription.field_sale_subscription_report__product_uom_id
 msgid "Unit"
 msgstr ""

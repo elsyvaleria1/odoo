@@ -132,6 +132,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__analytic
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__analytic
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__analytic
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__analytic
 msgid "Analytic From Expenses"
 msgstr ""
 
@@ -187,6 +188,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__cancel
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__cancel
 msgid "Cancelled"
 msgstr ""
 
@@ -263,6 +265,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__done
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__done
 msgid "Confirmed"
 msgstr ""
 
@@ -325,6 +328,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__current_year
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__current_year
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__current_year
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__current_year
 msgid "Current Year"
@@ -476,6 +480,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__state__draft
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__state__draft
 msgid "Draft"
 msgstr ""
 
@@ -535,6 +540,7 @@ msgstr ""
 #: model:ir.model.constraint,message:trade.constraint_mixin_order_line_fields_non_accountable_null_fields
 #: model:ir.model.constraint,message:trade.constraint_purchase_order_line_non_accountable_null_fields
 #: model:ir.model.constraint,message:trade.constraint_sale_order_line_non_accountable_null_fields
+#: model:ir.model.constraint,message:trade.constraint_test_trade_order_line_non_accountable_null_fields
 msgid "Forbidden values on non-accountable order line"
 msgstr ""
 
@@ -690,6 +696,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__last_12m
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__last_12m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__last_12m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__last_12m
 msgid "Last 12 Months"
@@ -697,6 +704,7 @@ msgstr ""
 
 #. module: trade
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_price_history__period__last_3m
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line_price_history__period__last_3m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_line_view_price_history__period__last_3m
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_line_view_price_history__period__last_3m
 msgid "Last 3 Months"
@@ -738,6 +746,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__manual
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__manual
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__manual
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__manual
 msgid "Manual"
 msgstr ""
 
@@ -782,6 +791,7 @@ msgstr ""
 #: model:ir.model.constraint,message:trade.constraint_mixin_order_line_fields_accountable_required_fields
 #: model:ir.model.constraint,message:trade.constraint_purchase_order_line_accountable_required_fields
 #: model:ir.model.constraint,message:trade.constraint_sale_order_line_accountable_required_fields
+#: model:ir.model.constraint,message:trade.constraint_test_trade_order_line_accountable_required_fields
 msgid "Missing required fields on accountable order line."
 msgstr ""
 
@@ -856,6 +866,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__priority__0
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__priority__0
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__priority__0
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__priority__0
 msgid "Normal"
 msgstr ""
 
@@ -871,6 +882,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_note
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_note
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_note
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_note
 msgid "Note"
 msgstr ""
 
@@ -1334,6 +1346,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_section
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_section
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_section
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_section
 msgid "Section"
 msgstr ""
 
@@ -1393,6 +1406,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_line_fields__qty_transferred_method__stock_move
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_line__qty_transferred_method__stock_move
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__qty_transferred_method__stock_move
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__qty_transferred_method__stock_move
 msgid "Stock Moves"
 msgstr ""
 
@@ -1403,6 +1417,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order_template_line__display_type__line_subsection
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_line__display_type__line_subsection
 #: model:ir.model.fields.selection,name:trade.selection__sale_order_template_line__display_type__line_subsection
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order_line__display_type__line_subsection
 msgid "Subsection"
 msgstr ""
 
@@ -1608,6 +1623,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__priority__1
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__priority__1
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__priority__1
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__priority__1
 msgid "Urgent"
 msgstr ""
 
@@ -1745,6 +1761,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_loss__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__lost
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__lost
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_mark_lost__outcome__lost
 msgid "Lost"
@@ -1765,6 +1782,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__open
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__open
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__open
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__open
 msgid "Open"
 msgstr ""
 
@@ -1792,6 +1810,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order_loss__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__rejected
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__wizard_purchase_order_mark_lost__outcome__rejected
 #: model:ir.model.fields.selection,name:trade.selection__wizard_sale_order_mark_lost__outcome__rejected
 msgid "Rejected"
@@ -1801,6 +1820,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__withdrawn
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__withdrawn
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__withdrawn
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__withdrawn
 msgid "Withdrawn"
 msgstr ""
 
@@ -1808,6 +1828,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:trade.selection__mixin_order__outcome__won
 #: model:ir.model.fields.selection,name:trade.selection__purchase_order__outcome__won
 #: model:ir.model.fields.selection,name:trade.selection__sale_order__outcome__won
+#: model:ir.model.fields.selection,name:trade.selection__test_trade_order__outcome__won
 msgid "Won"
 msgstr ""
 

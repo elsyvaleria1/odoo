@@ -1230,6 +1230,7 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Amber"
 msgstr ""
 
@@ -1686,6 +1687,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Blue"
 msgstr ""
 
@@ -2246,7 +2248,7 @@ msgid "Cloud storage error"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_res_config_settings__module_website_cf_turnstile
+#: model:ir.model.fields,field_description:web.field_res_config_settings__module_captcha_turnstile
 msgid "Cloudflare Turnstile"
 msgstr ""
 
@@ -4399,7 +4401,7 @@ msgid "Go to URL"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_res_config_settings__module_google_address_autocomplete
+#: model:ir.model.fields,field_description:web.field_res_config_settings__module_address_autocomplete_google
 msgid "Google Address Autocomplete"
 msgstr ""
 
@@ -4419,6 +4421,7 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Graphite"
 msgstr ""
 
@@ -4427,6 +4430,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Green"
 msgstr ""
 
@@ -7187,6 +7191,7 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 #: code:addons/web/static/src/webclient/home_menu/home_menu_grid.js:0
 msgid "Open app"
 msgstr ""
@@ -7790,6 +7795,16 @@ msgstr ""
 
 #. module: web
 #: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
+msgid "Protect your forms from spam and abuse with Cloudflare Turnstile."
+msgstr ""
+
+#. module: web
+#: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
+msgid "Protect your forms from spam and abuse with Google reCAPTCHA."
+msgstr ""
+
+#. module: web
+#: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
 msgid "Protect your forms from spam and abuse."
 msgstr ""
 
@@ -8335,6 +8350,7 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Rose"
 msgstr ""
 
@@ -9497,6 +9513,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Teal"
 msgstr ""
 
@@ -10876,6 +10893,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
+#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Violet"
 msgstr ""
 
@@ -24575,7 +24593,7 @@ msgid "razor"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_res_config_settings__module_google_recaptcha
+#: model:ir.model.fields,field_description:web.field_res_config_settings__module_captcha_recaptcha
 msgid "reCAPTCHA"
 msgstr ""
 

@@ -1034,12 +1034,10 @@ msgstr ""
 #: model:ir.model.fields,help:sale.field_document_document__attached_on_sale
 msgid ""
 "Allows you to share the document with your customers within a sale.\n"
-"Leave it empty if you don't want to share this document with sales customer.\n"
 "On quote: the document will be sent to and accessible by customers at any time.\n"
 "e.g. this option can be useful to share Product description files.\n"
 "On order confirmation: the document will be sent to and accessible by customers.\n"
-"e.g. this option can be useful to share User Manual or digital content bought on ecommerce. \n"
-"Inside quote: The document will be included in the pdf of the quotation and sale order between the header pages and the quote table. "
+"e.g. this option can be useful to share User Manual or digital content bought on ecommerce. "
 msgstr ""
 
 #. module: sale
@@ -1436,6 +1434,11 @@ msgstr ""
 #. module: sale
 #: model:ir.ui.menu,name:sale.menu_product_categories
 msgid "Categories"
+msgstr ""
+
+#. module: sale
+#: model:product.template,name:sale.product_product_1_product_template
+msgid "Chair floor protection"
 msgstr ""
 
 #. module: sale
@@ -2107,9 +2110,12 @@ msgstr ""
 #: model:ir.model.fields,help:sale.field_sale_order__date_planned
 msgid ""
 "Delivery date you can promise to the customer, computed from the minimum "
-"lead time of the order lines in case of Service products. In case of "
-"shipping, the shipping policy of the order will be taken into account to "
-"either use the minimum or maximum lead time of the order lines."
+"lead time of the order lines."
+msgstr ""
+
+#. module: sale
+#: model:product.template,name:sale.advance_product_0_product_template
+msgid "Deposit"
 msgstr ""
 
 #. module: sale
@@ -3530,6 +3536,11 @@ msgid "Offer a lot to several buyers, compare their bids and award the best"
 msgstr ""
 
 #. module: sale
+#: model:product.template,description_sale:sale.product_product_1_product_template
+msgid "Office chairs can harm your floor: protect it"
+msgstr ""
+
+#. module: sale
 #: model:ir.model.fields.selection,name:sale.selection__document_document__attached_on_sale__sale_order
 msgid "On confirmed order"
 msgstr ""
@@ -3785,14 +3796,7 @@ msgstr ""
 #. module: sale
 #: model:ir.model.fields.selection,name:sale.selection__sale_report__invoice_state__over_done
 #: model:ir.model.fields.selection,name:sale.selection__sale_report__line_invoice_state__over_done
-#: model:ir.model.fields.selection,name:sale.selection__sale_subscription_report__invoice_state__over_done
-#: model:ir.model.fields.selection,name:sale.selection__sale_subscription_report__line_invoice_state__over_done
 msgid "Over-invoiced"
-msgstr ""
-
-#. module: sale
-#: model:ir.actions.report,name:sale.action_report_saleorder
-msgid "PDF Quote"
 msgstr ""
 
 #. module: sale
@@ -4386,6 +4390,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale.portal_my_quotations
 #: model_terms:ir.ui.view,arch_db:sale.report_saleorder_document
 msgid "Quotation #"
+msgstr ""
+
+#. module: sale
+#: model:ir.actions.report,name:sale.action_report_saleorder
+msgid "Quotation / Order"
 msgstr ""
 
 #. module: sale
@@ -5030,14 +5039,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sale.view_sale_order_search_quotation
 #: model_terms:ir.ui.view,arch_db:sale.view_sale_report_search
 msgid "Sales Orders"
-msgstr ""
-
-#. module: sale
-#: model:ir.model.fields,help:sale.field_account_analytic_line__so_line
-msgid ""
-"Sales order item to which the time spent will be added in order to be "
-"invoiced to your customer. Remove the sales order item for the timesheet "
-"entry to be non-billable."
 msgstr ""
 
 #. module: sale

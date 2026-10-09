@@ -457,6 +457,11 @@ msgid "The chunk holds no audio."
 msgstr ""
 
 #. module: speech
+#: model:ir.model.fields,help:speech.field_media_segment__transcript_speakers
+msgid "The name each voice of the transcript is shown under, by its label."
+msgstr ""
+
+#. module: speech
 #: model:ir.model.fields,help:speech.field_speech_vocabulary_form__word
 msgid ""
 "The word as the screens spell it; a word not in the vocabulary yet is added "
@@ -527,6 +532,11 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__transcript_language
 msgid "Transcript Language"
+msgstr ""
+
+#. module: speech
+#: model:ir.model.fields,field_description:speech.field_media_segment__transcript_speakers
+msgid "Transcript Speakers"
 msgstr ""
 
 #. module: speech

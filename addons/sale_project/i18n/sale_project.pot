@@ -631,6 +631,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:sale_project.field_project_task__sale_order_id
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user__sale_order_id
 #: model:ir.model.fields,field_description:sale_project.field_report_project_task_user_fsm__sale_order_id
+#: model:project.project,name:sale_project.so_template_project
 msgid "Sales Order"
 msgstr ""
 
@@ -852,14 +853,13 @@ msgstr ""
 msgid ""
 "Use these keywords in the title to set new tasks:\n"
 "\n"
-"        30h Plan 30 hours for the task\n"
-"        #tags Set tags on the task\n"
-"        @user Assign the task to a user\n"
-"        ! Set the task a medium priority\n"
-"        !! Set the task a high priority\n"
-"        !!! Set the task a urgent priority\n"
+"            #tags Set tags on the task\n"
+"            @user Assign the task to a user\n"
+"            ! Set the task a medium priority\n"
+"            !! Set the task a high priority\n"
+"            !!! Set the task a urgent priority\n"
 "\n"
-"        Make sure to use the right format and order e.g. Improve the configuration screen 5h #feature #v16 @Mitchell !"
+"            Make sure to use the right format and order e.g. Improve the configuration screen #feature #v16 @Mitchell !"
 msgstr ""
 
 #. module: sale_project
