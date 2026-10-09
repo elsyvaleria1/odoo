@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_proof"
+        name="Proofs of Identity"
+        parent="base.menu_custom"
+        sequence="110"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_proof_evidence"
+        name="Evidence"
+        parent="menu_proof"
+        action="action_proof_evidence"
+        sequence="10" />
+
+    <menuitem
+        id="menu_proof_method"
+        name="Methods"
+        parent="menu_proof"
+        action="action_proof_method"
+        sequence="20" />
+
+</odoo>

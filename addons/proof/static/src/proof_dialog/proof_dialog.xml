@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="proof.ProofDialog">
+        <Dialog size="'md'" title="this.title">
+            <table t-if="this.props.params.summary.length" class="table table-sm o_proof_summary">
+                <tbody>
+                    <tr t-foreach="this.props.params.summary" t-as="line" t-key="line_index">
+                        <th t-out="line[0]"/>
+                        <td t-out="line[1]"/>
+                    </tr>
+                </tbody>
+            </table>
+            <div t-if="this.methods.length > 1" class="btn-group mb-3 o_proof_methods" role="group">
+                <button t-foreach="this.methods" t-as="method" t-key="method.code" type="button"
+                    class="btn btn-outline-secondary" t-att-class="{'active': method.code === this.state.code}"
+                    t-att-disabled="this.state.busy" t-on-click="() => this.selectMethod(method.code)"
+                    t-out="method.name"/>
+            </div>
+            <t t-if="this.method" t-component="this.methodComponent" t-key="this.state.code"
+                options="this.method.options" busy="this.state.busy" prove.bind="this.prove"/>
+            <div t-else="" class="alert alert-warning o_proof_no_method" role="alert">
+                None of the ways offered to prove it is you works in this browser.
+            </div>
+            <div t-if="this.state.error" class="alert alert-danger mt-3 mb-0 o_proof_error" role="alert" t-out="this.state.error"/>
+            <t t-set-slot="footer">
+                <button type="button" class="btn btn-secondary" t-att-disabled="this.state.busy" t-on-click="this.props.close">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

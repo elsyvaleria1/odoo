@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_proof_evidence_search" model="ir.ui.view">
+        <field name="name">proof.evidence.search</field>
+        <field name="model">proof.evidence</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id" />
+                <field name="purpose" />
+                <field name="res_model" />
+                <field name="method_id" />
+                <group>
+                    <filter
+                        name="group_by_user"
+                        string="Proven By"
+                        context="{'group_by': 'user_id'}" />
+                    <filter
+                        name="group_by_purpose"
+                        string="Purpose"
+                        context="{'group_by': 'purpose'}" />
+                    <filter
+                        name="group_by_method"
+                        string="Method"
+                        context="{'group_by': 'method_id'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_proof_evidence_list" model="ir.ui.view">
+        <field name="name">proof.evidence.list</field>
+        <field name="model">proof.evidence</field>
+        <field name="arch" type="xml">
+            <list string="Proof Evidence" create="false" edit="false" delete="false">
+                <header>
+                    <button
+                        name="action_check_chain"
+                        type="object"
+                        string="Check Chain"
+                        display="always"
+                        groups="base.group_system" />
+                </header>
+                <field name="sequence" />
+                <field name="date" />
+                <field name="user_id" />
+                <field name="purpose" />
+                <field name="res_model" optional="show" />
+                <field name="res_id" optional="show" />
+                <field name="method_id" />
+                <field name="strength" optional="hide" />
+                <field name="ip" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_proof_evidence_form" model="ir.ui.view">
+        <field name="name">proof.evidence.form</field>
+        <field name="model">proof.evidence</field>
+        <field name="arch" type="xml">
+            <form string="Proof Evidence" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group string="Act">
+                            <field name="user_id" />
+                            <field name="purpose" />
+                            <field name="res_model" />
+                            <field name="res_id" />
+                            <field name="date" />
+                        </group>
+                        <group string="Proof">
+                            <field name="method_id" />
+                            <field name="strength" />
+                            <field name="ip" />
+                            <field name="user_agent" />
+                        </group>
+                    </group>
+                    <group string="Vouched For">
+                        <field name="summary" />
+                        <field name="facts" />
+                        <field name="digest" />
+                    </group>
+                    <group string="Chain">
+                        <field name="sequence" />
+                        <field name="hash" />
+                        <field name="prev_hash" />
+                        <field name="nonce" />
+                        <field name="payload" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_proof_evidence" model="ir.actions.act_window">
+        <field name="name">Proof Evidence</field>
+        <field name="res_model">proof.evidence</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_record_proof" model="res.groups">
+        <field
+            name="name">Privilege: a user proves who they are for an act they vouch for</field>
+        <field
+            name="comment">A user asked to vouch for a record (an approval, a handover) receives a one-time challenge and, once their proof is accepted, the evidence row that records it. Nobody holds this privilege as a member: the proof module takes it for the one challenge and the one evidence row, and the user reads back only their own evidence.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_proof_method_list" model="ir.ui.view">
+        <field name="name">proof.method.list</field>
+        <field name="model">proof.method</field>
+        <field name="arch" type="xml">
+            <list
+                string="Proof Methods"
+                editable="bottom"
+                create="false"
+                delete="false">
+                <field name="sequence" widget="handle" />
+                <field name="name" />
+                <field name="code" />
+                <field name="strength" />
+                <field name="active" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_proof_method" model="ir.actions.act_window">
+        <field name="name">Proof Methods</field>
+        <field name="res_model">proof.method</field>
+        <field name="view_mode">list</field>
+        <field name="context">{"active_test": False}</field>
+    </record>
+
+</odoo>

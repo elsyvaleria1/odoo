@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="proof_method_password" model="proof.method">
+        <field name="name">Password</field>
+        <field name="code">password</field>
+        <field name="strength">shared_secret</field>
+        <field name="sequence">90</field>
+    </record>
+
+</odoo>
