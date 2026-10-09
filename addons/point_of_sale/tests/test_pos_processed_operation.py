@@ -16,6 +16,8 @@ from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCom
 
 _logger = logging.getLogger(__name__)
 
+DATASET_LOGGER = "odoo.addons.point_of_sale.controllers.dataset"
+
 
 @tagged("post_install", "-at_install")
 class TestPosProcessedOperation(CommonPosTest):
@@ -299,8 +301,9 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
         args = [[self.pos_session.id], "in", 10, "float", False, {}]
         lines_before = len(self._cash_lines())
 
-        first = self._call("try_cash_in_out", args, operation)
-        second = self._call("try_cash_in_out", args, operation)
+        with self.assertNoLogs(DATASET_LOGGER, "WARNING"):
+            first = self._call("try_cash_in_out", args, operation)
+            second = self._call("try_cash_in_out", args, operation)
 
         self.assertEqual(len(self._cash_lines()), lines_before + 1)
         self.assertEqual(first, second)
@@ -336,7 +339,8 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
                     "args": [[self.pos_session.id], ["name"]],
                     "kwargs": {"context": {"pos_operation_uuid": operation}},
                 }
-                self.call_jsonrpc("/web/dataset/call_kw/pos.session/read", read)
+                with self.assertNoLogs(DATASET_LOGGER, "WARNING"):
+                    self.call_jsonrpc("/web/dataset/call_kw/pos.session/read", read)
                 self.pos_session.sudo().name = f"Renamed, replica={replica}"
                 self.env.flush_all()
 
@@ -358,7 +362,10 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
     def test_a_call_outside_the_queued_operations_is_a_plain_call(self):
         settings = self.env["res.users.settings"]._get_or_create_for_user(self.pos_user)
         for operation in (str(uuid4()), "not-a-uuid"):
-            with self.subTest(operation=operation):
+            with (
+                self.subTest(operation=operation),
+                self.assertLogs(DATASET_LOGGER, "WARNING") as logged,
+            ):
                 self.call_jsonrpc(
                     "/web/dataset/call_kw/res.users.settings/set_res_users_settings",
                     {
@@ -368,6 +375,12 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
                         "kwargs": {"context": {"pos_operation_uuid": operation}},
                     },
                 )
+
+                self.assertEqual(len(logged.output), 1)
+                self.assertIn(
+                    "res.users.settings.set_res_users_settings", logged.output[0]
+                )
+                self.assertNotIn("use_push_to_talk", logged.output[0])
 
                 self.assertFalse(
                     self.env["pos.processed.operation"].search_count(
