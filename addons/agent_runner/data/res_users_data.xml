@@ -4,7 +4,7 @@
     <record id="user_agent_runner" model="res.users">
         <field name="name">Agent Runner</field>
         <field name="login">__agent_runner__</field>
-        <field name="active" eval="False" />
+        <field name="active" eval="True" />
         <field name="principal_type">service</field>
     </record>
 

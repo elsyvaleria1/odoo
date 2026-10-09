@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_run_agent" model="res.groups">
+        <field
+            name="name">Privilege: a runner claims its company's runs, keeps its lease and reports how they end</field>
+        <field
+            name="comment">Held by an agent runner's service user while it serves a runner's call: it reads the runner and its company's runs, leases one, appends its events and finishes it. Creating, cancelling and retrying runs stays with the administrators.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

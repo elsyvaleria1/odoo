@@ -55,7 +55,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         )
 
     def _finish(self, runner, result, kind):
-        run, token = self.env["agent.run"]._claim(runner)
+        run, token = self._claim_as_runner(runner)
         self.assertEqual(run.kind, kind)
         run._complete(
             token, result, {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}
@@ -163,10 +163,10 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         Incident = self.env["error.incident"]
         Incident._cron_autofix_check_production()
         Incident._cron_autofix_check_production()
-        run, token = self.env["agent.run"]._claim(self.deployer)
+        run, token = self._claim_as_runner(self.deployer)
         self.assertEqual(run.kind, "error_incident.revision")
         self.assertEqual(run.payload, {"checkouts": {"odoo": [MERGED]}})
-        self.assertFalse(self.env["agent.run"]._claim(self.deployer), "asked once")
+        self.assertFalse(self._claim_as_runner(self.deployer), "asked once")
         run._complete(
             token,
             {"revisions": {"odoo": "d" * 40}, "contained": []},
@@ -206,7 +206,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         incident.with_user(self.admin).action_autofix_hotfix()
         incident.approval_request_id.with_user(self.approver).action_approve()
         self.assertEqual((incident.fix_state, incident.fix_commit), ("hotfixing", HEAD))
-        run, token = self.env["agent.run"]._claim(self.deployer)
+        run, token = self._claim_as_runner(self.deployer)
         self.assertEqual(run.kind, "error_incident.hotfix")
         self.assertEqual(
             run.payload,
@@ -221,9 +221,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         self.assertEqual(
             run._github_permissions(), {"contents": "read", "metadata": "read"}
         )
-        self.assertFalse(
-            self.env["agent.run"]._claim(self.sandbox), "a sandbox never deploys"
-        )
+        self.assertFalse(self._claim_as_runner(self.sandbox), "a sandbox never deploys")
         run._complete(
             token,
             {"revision": "e" * 40, "contained": [HEAD]},
@@ -237,7 +235,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         incident, _pull = self._pushed(checks="success")
         incident.with_user(self.admin).action_autofix_hotfix()
         incident.approval_request_id.with_user(self.approver).action_approve()
-        run, token = self.env["agent.run"]._claim(self.deployer)
+        run, token = self._claim_as_runner(self.deployer)
         run._fail(
             token, "reverted: the server did not come back healthy", retryable=False
         )
@@ -267,14 +265,14 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         incident, _pull = self._pushed(checks="success")
         incident.with_user(self.admin).action_autofix_hotfix()
         incident.approval_request_id.with_user(self.approver).action_approve()
-        run, token = self.env["agent.run"]._claim(self.deployer)
+        run, token = self._claim_as_runner(self.deployer)
         run._fail(token, "reverted: unhealthy", retryable=False)
         self.assertEqual(incident.fix_state, "test_passed")
         self.assertFalse(incident.approval_request_id, "the approval is spent")
         incident.with_user(self.admin).action_autofix_hotfix()
         self.assertEqual(incident.fix_state, "test_passed", "a new decision")
         self.assertTrue(incident.approval_request_id)
-        self.assertFalse(self.env["agent.run"]._claim(self.deployer))
+        self.assertFalse(self._claim_as_runner(self.deployer))
 
     def test_an_earlier_fixs_pull_request_speaks_for_that_fix_only(self):
         incident, old = self._pushed(checks="failure")
@@ -387,7 +385,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         incident.approval_request_id.with_user(self.approver).action_approve()
         self._pull_merged()
         self.assertEqual(incident.fix_state, "hotfixing", "the hotfix answers first")
-        run, token = self.env["agent.run"]._claim(self.deployer)
+        run, token = self._claim_as_runner(self.deployer)
         run._fail(token, "the fix does not apply", retryable=False)
         self.assertEqual((incident.fix_state, incident.fix_commit), ("merged", MERGED))
         self.assertTrue(incident.date_fix_merged)

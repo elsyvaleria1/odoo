@@ -31,6 +31,20 @@ class TestAutofixAccessMatrix(AccessMatrixCase):
             admin_a="rwcd merge hotfix",
         ),
         Cell(
+            "error.occurrence",
+            "occurrence",
+            note="a fix run is told of it through "
+            "error_incident_autofix.privilege_report_agent_run, which no user holds",
+            admin_a="rwcd",
+        ),
+        Cell(
+            "agent.run",
+            "run",
+            note="a diagnosis hands a defect to a fix run through "
+            "error_incident_autofix.privilege_report_agent_run, which no user holds",
+            admin_a="rwcd",
+        ),
+        Cell(
             "integration.github.pull",
             "pull",
             note="an approver reads the pull request of an incident put to a "
@@ -50,6 +64,16 @@ class TestAutofixAccessMatrix(AccessMatrixCase):
         )
         return {
             "incident": incident,
+            "occurrence": incident.occurrence_ids[:1],
+            "run": cls.env["agent.run"].create(
+                {
+                    "name": "matrix",
+                    "kind": "error_incident.diagnose",
+                    "capability_id": cls.env.ref("agent_runner.capability_sandbox").id,
+                    "res_model": "error.incident",
+                    "res_id": incident.id,
+                }
+            ),
             "pull": cls.env["integration.github.pull"].create(
                 {"name": "matrix", "repository": "o/r", "number": 1}
             ),

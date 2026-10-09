@@ -245,9 +245,11 @@ class AgentRun(models.Model):
     @api.model
     def _companies_over_budget(self) -> list[int]:
         companies = self.search([("run_state", "=", "queued")]).company_id
+        # the budget is a system field, which a runner's principal does not
+        # read; which of its companies are over it is all a claim learns
         return [
             company.id
-            for company in companies
+            for company in companies.sudo()
             if company.ml_monthly_budget
             and company._ml_spend_this_month() >= company.ml_monthly_budget
         ]
@@ -420,7 +422,12 @@ class AgentRun(models.Model):
         `CredentialsRefused` when the run may not have them."""
         if not self.ml_purpose:
             return {}
-        provider = self.env.ref("integration_machine_learning.ai_provider_anthropic")
+        provider = self.env.ref(
+            "integration_machine_learning.ai_provider_anthropic"
+        ).with_privilege(
+            "integration_machine_learning.privilege_route_ml",
+            reason="a run is handed the key of the provider its purpose may reach",
+        )
         try:
             self.env["integration.ml.policy"]._check_allowed(
                 self.company_id, self.ml_purpose, provider

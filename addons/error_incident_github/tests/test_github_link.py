@@ -38,9 +38,9 @@ class TestPullLinking(RunnerFixtures, WebhookDelivery, HttpCase):
         )
 
     def _complete(self, run, branch=BRANCH):
-        claimed, token = self.env["agent.run"]._claim(self.runner)
+        claimed, token = self._claim_as_runner(self.runner)
         self.assertEqual(claimed, run)
-        run._complete(token, {"branch": branch}, _usage())
+        claimed._complete(token, {"branch": branch}, _usage())
 
     def _pull_request(self, action, branch=BRANCH, **pull):
         payload = fixture(f"pull_request__{action}")

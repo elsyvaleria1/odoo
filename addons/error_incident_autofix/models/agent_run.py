@@ -26,3 +26,12 @@ class AgentRun(models.Model):
         if self.kind == "error_incident.diagnose":
             return dict(DIAGNOSE_PERMISSIONS)
         return super()._github_permissions()
+
+    def _notify_owner(self) -> None:
+        run = self
+        if self.res_model == "error.incident":
+            run = self.with_privilege(
+                "error_incident_autofix.privilege_report_agent_run",
+                reason="an agent run's end moves the incident it works for",
+            )
+        super(AgentRun, run)._notify_owner()

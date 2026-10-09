@@ -16,8 +16,15 @@ stored encrypted, so the server needs `ODOO_API_ENCRYPTION_KEY`. The runner read
 
 Each runner is an inbound gate (`mixin.inbound.gate`): its calls are authenticated,
 rate-limited and logged on `integration.exchange` like any other inbound integration, and run
-as its service user (`agent_runner.user_agent_runner` unless the runner names one). Polling --
-a claim, a heartbeat -- leaves no row.
+as its service user (`agent_runner.user_agent_runner` unless the runner names one), without
+superuser rights, in the runner's company, holding `agent_runner.privilege_run_agent` and the
+privileges the modules extending the runner add. A runner places its service user in its
+company; an archived service user, or one outside that company, is refused (`403
+principal_unfit`). Polling -- a claim, a heartbeat -- leaves no row.
+
+A run tells the record it works for how it ended under the privilege that record's module
+takes for it (`error_incident_autofix.privilege_report_agent_run`, for one), whoever ends it;
+the note is authored by whoever that is -- for a runner's call, the runner's service user.
 
 ## Runs
 

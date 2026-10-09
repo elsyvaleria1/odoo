@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_follow_pulls" model="res.groups">
+        <field
+            name="name">Privilege: an incident hears how the runs working for it end and the pull requests they open</field>
+        <field
+            name="comment">Taken whenever a run working for an incident ends or its pull request is linked, by whoever ends it (the runner's service user, the lease reaper, an administrator): the incident's chatter hears how a run working for it ended, and the pull request of the branch the run pushed learns its incident and is followed there. Every write is logged.</field>
+        <field name="audit_privilege" eval="True" />
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

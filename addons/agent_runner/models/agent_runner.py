@@ -18,6 +18,8 @@ class AgentRunner(models.Model):
     _description = "Agent Runner"
     _inherit = ["mixin.inbound.gate", "mixin.mail.thread"]
     _order = "name, id"
+    _receiver_privileges = ("agent_runner.privilege_run_agent",)
+    _inbound_elevated = False
 
     name = fields.Char(
         required=True,
@@ -63,6 +65,27 @@ class AgentRunner(models.Model):
         "CHECK(concurrency > 0)",
         "A runner holds at least one run at a time.",
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        runners = super().create(vals_list)
+        runners._place_service_user()
+        return runners
+
+    def write(self, vals):
+        result = super().write(vals)
+        if vals.keys() & {"company_id", "service_user_id", "active"}:
+            self._place_service_user()
+        return result
+
+    def _place_service_user(self) -> None:
+        Gate = self.env["mixin.inbound.gate"]
+        for principal, runners in (
+            self.filtered("active")
+            .grouped(lambda runner: runner._inbound_service_user())
+            .items()
+        ):
+            Gate._place_principal_in_companies(principal, runners.company_id)
 
     @api.depends("date_last_seen")
     def _compute_is_online(self) -> None:

@@ -41,6 +41,21 @@ class RunnerFixtures:
             }
         )
 
+    @classmethod
+    def _as_runner(cls, runner):
+        """``runner`` as a call it admits sees it: its service user, without su,
+        in its company, holding the gate's receiver privileges."""
+        env = runner._inbound_principal_env(cls.env, runner._inbound_service_user())
+        return runner.with_env(env)
+
+    def _claim_as_runner(self, runner):
+        runner = self._as_runner(runner)
+        return runner.env["agent.run"]._claim(runner)
+
+    def _lease_as_runner(self, runner):
+        runner = self._as_runner(runner)
+        return runner.env["agent.run"]._lease(runner)
+
     def _expire(self, run):
         run.date_lease_until = fields.Datetime.now() - timedelta(seconds=1)
 

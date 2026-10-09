@@ -1,0 +1,4 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_link_runs_app,credential.credential: a run's lease finds the GitHub App its token is minted from,credential.model_credential_credential,privilege_link_runs,permission,r,,,"[('category_id.code', '=', 'github_app')]"
+privilege_link_runs_pull,integration.github.pull: a run's completion links the pull request of the branch it pushed,integration_github.model_integration_github_pull,privilege_link_runs,permission,ru,,,
+privilege_link_runs_app_category,credential.category: a run's lease finds the GitHub App by its category,credential.model_credential_category,privilege_link_runs,permission,r,,,"[('code', '=', 'github_app')]"

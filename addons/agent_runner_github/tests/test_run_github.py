@@ -38,10 +38,11 @@ class TestRunCredentials(RunnerFixtures, TransactionCase):
         with patch.object(
             github_run, "mint_installation_token", return_value=minted
         ) as mint:
-            run, token = self.env["agent.run"]._claim(self.runner)
+            run, token = self._claim_as_runner(self.runner)
             answer = run._lease_answer(token)
-        mint.assert_called_once_with(
-            self.env, app, ["agromarin"], github_run.RUN_PERMISSIONS
+        mint.assert_called_once()
+        self.assertEqual(
+            mint.call_args.args[1:], (app, ["agromarin"], github_run.RUN_PERMISSIONS)
         )
         self.assertEqual(
             answer["credentials"]["github"],
@@ -56,7 +57,7 @@ class TestRunCredentials(RunnerFixtures, TransactionCase):
         self._app()
         self._run()
         with patch.object(github_run, "mint_installation_token") as mint:
-            run, token = self.env["agent.run"]._claim(self.runner)
+            run, token = self._claim_as_runner(self.runner)
             self.assertNotIn("github", run._lease_answer(token)["credentials"])
         mint.assert_not_called()
 
@@ -67,15 +68,18 @@ class TestRunCredentials(RunnerFixtures, TransactionCase):
             "ghs_run", "2026-10-07T00:00:00Z", ("Agro-Marin/agromarin",)
         )
         with patch.object(github_run, "mint_installation_token", return_value=minted):
-            self.assertIsNone(self.env["agent.run"]._lease(self.runner))
+            self.assertIsNone(self._lease_as_runner(self.runner))
         self.assertEqual(run.run_state, "failed")
         self.assertIn("not installed on other-owner/agromarin", run.error)
 
     def test_without_an_app_the_run_is_told_it_has_no_token(self):
         self._run(github_repository=REPOSITORY)
-        run, token = self.env["agent.run"]._claim(self.runner)
+        run, token = self._claim_as_runner(self.runner)
         self.assertNotIn("github", run._lease_answer(token)["credentials"])
-        self.assertIn("No GitHub App", " ".join(run.event_ids.mapped("message")))
+        self.assertIn(
+            "No GitHub App",
+            " ".join(run.with_env(self.env).event_ids.mapped("message")),
+        )
 
 
 @tagged("post_install", "-at_install")
@@ -87,7 +91,7 @@ class TestRunPullLink(RunnerFixtures, TransactionCase):
 
     def _complete(self, branch=BRANCH, repository=REPOSITORY):
         run = self._run(github_repository=repository)
-        claimed, token = self.env["agent.run"]._claim(self.runner)
+        claimed, token = self._claim_as_runner(self.runner)
         claimed._complete(
             token,
             {"branch": branch},

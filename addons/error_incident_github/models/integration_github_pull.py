@@ -27,12 +27,16 @@ class IntegrationGithubPull(models.Model):
 
     def _run_attached(self, run: models.BaseModel) -> None:
         super()._run_attached(run)
+        pull = self.with_privilege(
+            "error_incident_github.privilege_follow_pulls",
+            reason="the pull request of an incident's run is followed on the incident",
+        )
         if run.res_model == "error.incident":
-            self.incident_id = self.env["error.incident"].browse(run.res_id).exists()
+            pull.incident_id = pull.env["error.incident"].browse(run.res_id).exists()
             _debug.logic(
-                "pull.incident_linked", pull=self.id, incident=self.incident_id.id
+                "pull.incident_linked", pull=pull.id, incident=pull.incident_id.id
             )
-        self._tell_incident()
+        pull._tell_incident()
 
     def _tell_incident(self) -> None:
         self.check_singleton()

@@ -50,7 +50,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         return runs.filtered(lambda run: run.kind == kind) if kind else runs
 
     def _finish(self, incident, result, kind):
-        run, token = self.env["agent.run"]._claim(self.runner)
+        run, token = self._claim_as_runner(self.runner)
         self.assertEqual((run.kind, run.res_id), (kind, incident.id))
         run._complete(
             token, result, {"input_tokens": 1, "output_tokens": 1, "cost": 0.1}
@@ -113,6 +113,37 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         self.assertIn("guarded", incident.fix_analysis)
         self.assertAlmostEqual(incident.fix_cost, 0.2)
 
+    def test_a_run_s_end_is_recorded_by_the_runner_s_principal(self):
+        principal = self.env.ref("agent_runner.user_agent_runner")
+        incident = self._occur(2)
+        diagnosis = self._finish(
+            incident,
+            {"verdict": "defect", "root_cause": "x is None", "slug": "none-guard"},
+            "error_incident.diagnose",
+        )
+
+        [fix] = self._runs(incident, "error_incident.fix")
+        self.assertEqual(fix.create_uid, principal)
+        self.assertEqual(
+            (incident.fix_state, incident.write_uid), ("fixing", principal)
+        )
+        note = incident.message_ids.filtered(
+            lambda message: diagnosis.name in (message.body or "")
+        )
+        self.assertEqual(note.author_id, principal.partner_id)
+        audited = self.env["ir.access.log"].search(
+            [
+                ("event", "=", "privilege_used"),
+                ("subject_user_id", "=", principal.id),
+                ("model_name", "=", "error.incident"),
+                ("operation", "=", "write"),
+            ]
+        )
+        self.assertIn(
+            self.env.ref("error_incident_autofix.privilege_report_agent_run"),
+            audited.group_id,
+        )
+
     def test_live_mode_pushes(self):
         self.policy.mode = "live"
         incident = self._occur(2)
@@ -147,7 +178,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
 
     def test_a_failed_run_says_so(self):
         incident = self._occur(2)
-        run, token = self.env["agent.run"]._claim(self.runner)
+        run, token = self._claim_as_runner(self.runner)
         run._fail(token, "agent crashed", retryable=False)
         self.assertEqual(incident.fix_state, "failed")
 
@@ -162,7 +193,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         )
         incident = self._occur(2)
         self.assertEqual(self._runs(incident).ml_purpose, "error_incident.autofix")
-        self.assertIsNone(self.env["agent.run"]._lease(self.runner))
+        self.assertIsNone(self._lease_as_runner(self.runner))
         self.assertEqual(incident.fix_state, "failed")
 
     def test_the_daily_cap_holds(self):
@@ -266,7 +297,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
 
     def test_an_overtaken_run_changes_nothing(self):
         incident = self._occur(2)
-        stale, token = self.env["agent.run"]._claim(self.runner)
+        stale, token = self._claim_as_runner(self.runner)
         incident.write({"fix_state": "none"})
         incident.action_autofix_dispatch()
         stale._complete(

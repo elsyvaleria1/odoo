@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_link_runs" model="res.groups">
+        <field
+            name="name">Privilege: a runner's call hands a run its repository token and links the pull request of the branch it pushed</field>
+        <field
+            name="comment">Held by an agent runner's service user while it serves a runner's call: the lease finds the company's GitHub App to mint the run's token, and the completion links the pull request of the branch the run pushed. The App's secrets stay behind the credential's own use.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

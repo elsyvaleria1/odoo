@@ -359,7 +359,10 @@ class AgentRun(models.Model):
     def _complete(self, token: object, result: object, usage: dict[str, Any]) -> bool:
         first = super()._complete(token, result, usage)
         if first and self.kind == REVISION and isinstance(result, dict):
-            self.env["error.incident"]._autofix_contained(
+            self.env["error.incident"].with_privilege(
+                "error_incident_autofix.privilege_report_agent_run",
+                reason="a production revision resolves the incidents it ships",
+            )._autofix_contained(
                 [
                     commit
                     for commit in result.get("contained") or []

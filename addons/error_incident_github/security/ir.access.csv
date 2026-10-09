@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_follow_pulls_pull,integration.github.pull: the pull request of an incident's run learns its incident and what it last told it,integration_github.model_integration_github_pull,privilege_follow_pulls,permission,ru,,,
+privilege_follow_pulls_incident,error.incident: the incident hears how its runs end and of their pull requests,error_incident.model_error_incident,privilege_follow_pulls,permission,ru,,,
