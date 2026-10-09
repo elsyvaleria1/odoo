@@ -19,6 +19,7 @@ if typing.TYPE_CHECKING:
 
     from ..._typing import BaseModel, IdType
     from ...fields import Field
+    from ...fields.relational._base import _RelationalMulti
 
     type InverseHook = str | Callable[[BaseModel], None]
 
@@ -372,6 +373,59 @@ class WriteMixin(_ModelStubs):
             len(self),
             len(updates),
         )
+
+    def _write_x2many_multi(self, fname: str, values: list[typing.Any]) -> None:
+        # `write` gives every record one value; a stored x2many whose records
+        # each take their own value (consumed lines linked to each order's
+        # produced lines) would cost one relation statement per record. The
+        # relation field applies every (record, value) pair in one pass. Like
+        # `_write_multi`, it does not run `write` overrides.
+        if len(self) != len(values):
+            raise ValueError(
+                f"_write_x2many_multi: len(records)={len(self)} != "
+                f"len(values)={len(values)}"
+            )
+        if not self:
+            return
+        field = self._fields[fname]
+        if (
+            not field.is_x2many
+            or not field.store
+            or field.compute
+            or field.inverse
+            or fname in self.env.registry.verb_transitions.get(self._name, {})
+        ):
+            raise ValueError(
+                f"_write_x2many_multi: {field} is not a plain stored x2many field"
+            )
+        names = {fname: None}
+        TransactionMemo.discard_for_model(self.env, self._name, names)
+        self._write_check_field_access(names)
+        anchors_before = self._anchors_before_write(names)
+        log_vals: ValuesType = (
+            {"write_uid": self.env.uid, "write_date": self.env.cr.now()}
+            if self._log_access
+            else {}
+        )
+        written = [fname, *log_vals]
+        _debug.pipeline(
+            "write.x2many_multi", model=self._name, field=fname, records=len(self)
+        )
+        if self.pool.is_modifying_relations(field):
+            self._modified_before([fname])
+        records = typing.cast("BaseModel", self)
+        for name, value in log_vals.items():
+            self._fields[name].mark_dirty(records, value)
+        typing.cast("_RelationalMulti", field).write_batch(
+            list(zip(records, values, strict=True))
+        )
+        self._access_inputs_written(written)
+        self.modified(written)
+        self._check_fields([fname])
+        if self._check_company_auto:
+            self._check_company([fname])
+        if anchors_before:
+            self._check_anchor_moves(anchors_before)
 
     def _sync_log_access_cache(
         self, log_vals: ValuesType, log_only_ids: dict[str, list[IdType]]
