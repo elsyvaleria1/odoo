@@ -5,9 +5,20 @@ import { Interaction } from "@web/public/interaction";
 
 export class UnsplashBeacon extends Interaction {
     static selector = "#wrapwrap";
+    dynamicContent = {
+        _root: {
+            "t-on-o-fragment-swapped.noUpdate": ({ target }) =>
+                this.reportViews(target),
+        },
+    };
 
     async willStart() {
-        const unsplashImageEls = this.el.querySelectorAll("img[src*='/unsplash/']");
+        await this.reportViews(this.el);
+    }
+
+    /** @param {HTMLElement} el */
+    async reportViews(el) {
+        const unsplashImageEls = el.querySelectorAll("img[src*='/unsplash/']");
         const unsplashImageIds = [];
         for (const unsplashImageEl of unsplashImageEls) {
             unsplashImageIds.push(

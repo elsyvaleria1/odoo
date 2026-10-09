@@ -18,6 +18,8 @@ export class TextHighlight extends Interaction {
         _root: {
             "t-on-text_highlight_added": ({ target }) =>
                 this.onTextHighlightAdded(target),
+            "t-on-o-fragment-swapped.noUpdate": ({ target }) =>
+                this.handleHighlightsIn(target),
         },
     };
 
@@ -35,7 +37,17 @@ export class TextHighlight extends Interaction {
         log.pipeline("TextHighlight start: observe highlights", () => ({
             highlights: this.el.querySelectorAll(".o_text_highlight").length,
         }));
-        for (const textEl of this.el.querySelectorAll(".o_text_highlight")) {
+        this.handleHighlightsIn(this.el);
+    }
+
+    /**
+     * The swap of a fragment brings new highlights and strips the drawings
+     * of those it kept.
+     *
+     * @param {HTMLElement} el
+     */
+    handleHighlightsIn(el) {
+        for (const textEl of el.querySelectorAll(".o_text_highlight")) {
             this.handleEl(textEl);
         }
     }

@@ -16,10 +16,15 @@ export class WebsiteEventPWA extends Interaction {
         },
         ".o_btn_close": { "t-on-click": this.hideInstallBanner },
         ".o_btn_install": { "t-on-click": this.onPromptInstall },
+        _root: {
+            "t-on-o-fragment-swapped.noUpdate": ({ target }) =>
+                this.prefetchPages(target),
+        },
     };
 
     async willStart() {
-        await this.registerServiceWorker().then(this.prefetch());
+        await this.registerServiceWorker();
+        this.prefetch();
     }
 
     /**
@@ -66,9 +71,22 @@ export class WebsiteEventPWA extends Interaction {
             .catch(function (error) {
                 console.error("Service worker ready failed, error:", error);
             });
+        this.prefetchPages(document);
+    }
+
+    /**
+     * Asks the service worker to keep the current page and the event pages
+     * `root` links to for offline use.
+     *
+     * @param {ParentNode} root
+     */
+    prefetchPages(root) {
+        if (!("serviceWorker" in navigator)) {
+            return;
+        }
         const currentPageUrl = window.location.href;
         const childrenPagesUrls = Array.from(
-            document.querySelectorAll("a[href^='" + this.getScope() + "/']"),
+            root.querySelectorAll("a[href^='" + this.getScope() + "/']"),
         ).map(function (el) {
             return el.href;
         });

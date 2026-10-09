@@ -20,8 +20,10 @@ import { morph, toFragment } from "@web/core/utils/dom/morph";
 /**
  * Swaps each fragment into every element of the page carrying its
  * `data-fragment` key, restarting the interactions inside it and refreshing
- * those around it; then dispatches the events on `document` and follows the
- * redirect. A key with no element on this page is skipped: the page does not
+ * those around it, then dispatching a bubbling `o-fragment-swapped` on it
+ * (htmx's `htmx:afterSwap`) for the interactions around it whose own work
+ * covers the elements it holds; then dispatches the events on `document` and
+ * follows the redirect. A key with no element on this page is skipped: the page does not
  * show that region.
  *
  * @param {FragmentResponse} response
@@ -41,6 +43,9 @@ export function applyFragments(response, { interactions, root = document }) {
             const swapped = swapInto(target, markup(html), swap);
             interactions.startInteractions(swapped);
             interactions.updateEnclosing(swapped);
+            swapped.dispatchEvent(
+                new CustomEvent("o-fragment-swapped", { bubbles: true }),
+            );
         }
     }
     for (const { name, detail } of response.events) {

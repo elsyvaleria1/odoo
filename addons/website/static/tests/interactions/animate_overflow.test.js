@@ -1,5 +1,9 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { manuallyDispatchProgrammaticEvent, queryOne } from "@odoo/hoot-dom";
+import {
+    animationFrame,
+    manuallyDispatchProgrammaticEvent,
+    queryOne,
+} from "@odoo/hoot-dom";
 import {
     setupInteractionWhiteList,
     startInteractions,
@@ -34,5 +38,19 @@ test("animate_overflow always adds class if there are transforms", async () => {
         </div>
     `);
     expect(core.interactions).toHaveLength(1);
+    expect(document.documentElement).toHaveClass("o_wanim_overflow_xy_hidden");
+});
+
+test("animate_overflow rescans the transforms after a fragment swap", async () => {
+    await startInteractions(`
+        <div id="wrapwrap">
+            <div class="o_region"/>
+        </div>
+    `);
+    expect(document.documentElement).not.toHaveClass("o_wanim_overflow_xy_hidden");
+    const region = queryOne(".o_region");
+    region.innerHTML = `<div class="o_animate" style="transform: translateY(10px)"></div>`;
+    region.dispatchEvent(new CustomEvent("o-fragment-swapped", { bubbles: true }));
+    await animationFrame();
     expect(document.documentElement).toHaveClass("o_wanim_overflow_xy_hidden");
 });

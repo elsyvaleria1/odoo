@@ -81,3 +81,15 @@ test("[rtl] SVG positionned inside highlighted text", async () => {
     expect(relativePosition(items[1], items[0])).toBe("afterRight,afterBottom");
     expect(relativePosition(items[3], items[2])).toBe("beforeLeft,afterBottom");
 });
+
+test("a highlight brought by a fragment swap is drawn", async () => {
+    await startInteractions(`<div class="o_region"></div>`);
+    const region = queryFirst(".o_region");
+    region.innerHTML = `<span class="o_text_highlight o_text_highlight_underline">Swapped in</span>`;
+    region.dispatchEvent(new CustomEvent("o-fragment-swapped", { bubbles: true }));
+
+    await animationFrame();
+    await animationFrame();
+
+    expect(".o_region .o_text_highlight .o_text_highlight_svg").toHaveCount(1);
+});

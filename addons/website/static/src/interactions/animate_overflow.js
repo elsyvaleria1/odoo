@@ -25,11 +25,16 @@ export class AnimateOverflow extends Interaction {
                     this.updateContent();
                 }
             },
+            "t-on-o-fragment-swapped": () => this.scanAnimatedTransforms(),
         },
     };
 
     setup() {
         this.scrollingElement = getScrollingElement(this.el.ownerDocument);
+        this.scanAnimatedTransforms();
+    }
+
+    scanAnimatedTransforms() {
         const endScan = log.perf("AnimateOverflow setup: scan animated transforms");
         const animatedElements = this.el.querySelectorAll(".o_animate");
         this.forceOverflowXYHidden = [...animatedElements].some(

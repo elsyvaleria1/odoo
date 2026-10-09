@@ -95,6 +95,40 @@ test("an interaction around the target listens to the nodes the swap added", asy
     expect(clicked).toEqual(["b", "a"]);
 });
 
+test("an interaction around the target hears o-fragment-swapped from it, after the restart", async () => {
+    const steps = [];
+    class Line extends Interaction {
+        static selector = ".line";
+        setup() {
+            steps.push(`start ${this.el.dataset.name}`);
+        }
+    }
+    class Cart extends Interaction {
+        static selector = ".cart";
+        dynamicContent = {
+            _root: {
+                "t-on-o-fragment-swapped": (ev) =>
+                    steps.push(`swapped ${ev.target.dataset.fragment}`),
+            },
+        };
+    }
+    const { core } = await startInteraction(
+        [Line, Cart],
+        `<div class="cart">${cart(["a"])}</div>`,
+    );
+    steps.length = 0;
+
+    applyFragments(
+        response({ fragments: [fragment("cart.lines", cart(["a", "b"]))] }),
+        {
+            interactions: core,
+        },
+    );
+    await animationFrame();
+
+    expect(steps).toEqual(["start a", "start b", "swapped cart.lines"]);
+});
+
 test("swaps every element carrying the key", async () => {
     const { core } = await startInteraction(
         [],
