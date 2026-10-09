@@ -1281,6 +1281,14 @@ class TestSuperBotFlow(TelegramBotTestCase):
             {"interpretation": {"query": "sales"}, "answer": "¿Algo más?", "at": now}
         ]
         self.assertFalse(_answers_the_agent(report))
+        applied = [
+            {"interpretation": {"decision": "authorize"}, "answer": "Listo:", "at": now}
+        ]
+        self.assertTrue(_answers_the_agent(applied), "a correction follows a change")
+        cancelled = [
+            {"interpretation": {"decision": "cancel"}, "answer": "Cancelado", "at": now}
+        ]
+        self.assertFalse(_answers_the_agent(cancelled))
         self.test_chat._set_context(
             "telegram_insight_files",
             {"files": [["big", "photo.jpg", "image/jpeg"]], "at": now},

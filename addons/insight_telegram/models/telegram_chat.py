@@ -472,15 +472,20 @@ FOLLOW_UP_WINDOW = timedelta(minutes=30)
 
 
 def _answers_the_agent(history) -> bool:
-    """Whether the last exchange is the agent asking the person something, so
-    the next message is their reply and belongs to the agent."""
+    """Whether the next message belongs to the agent: the last exchange is
+    the agent asking something, or a change just applied, to be corrected."""
     if not history:
         return False
     last = history[-1]
-    if (last.get("interpretation") or {}).get("query") != "none":
-        return False
     cutoff = fields.Datetime.to_string(fields.Datetime.now() - FOLLOW_UP_WINDOW)
     if last.get("at", "") < cutoff:
+        return False
+    interpretation = last.get("interpretation") or {}
+    # right after a change is applied, the next message is most likely a
+    # correction of it ("the quantity was 2,000")
+    if interpretation.get("decision") == "authorize":
+        return True
+    if interpretation.get("query") != "none":
         return False
     return "?" in (last.get("answer") or "")[-400:]
 

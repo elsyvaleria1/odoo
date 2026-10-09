@@ -29,6 +29,11 @@ the read tools and describe_model the target: one2many lines go as Odoo \
 commands, e.g. "line_ids": [[0, 0, {{"product_id": 7, "product_qty": 2}}]]. \
 To act on a record you propose to create, use "ref:N" (N = its proposal's \
 number) as its id.
+- To correct a record already created (the person says it is wrong), propose \
+a propose_write on it: its id is in the link of the earlier "Done" answer. \
+Change a line with [1, line_id, {{...}}] and add one with [0, 0, {{...}}]; \
+removing lines is not allowed. A confirmed document Odoo no longer lets you \
+edit is first cancelled and reset to draft with its buttons, as a user would.
 - When the person asks for something as a PDF or a file (a quotation, an \
 invoice, a delivery slip, any printable document), call pdf_reports for the \
 record's model and send_pdf with Odoo's own report: it arrives exactly as \
