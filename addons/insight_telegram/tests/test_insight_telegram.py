@@ -1254,6 +1254,22 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertEqual(partner.create_uid, self.env.user)
         self.assertFalse(self.test_chat._insight_pending())
 
+    def test_every_operating_company_can_be_picked(self):
+        other = self.env["res.company"].create({"name": "Ask Probe Other Co"})
+        self.env["account.journal"].create(
+            {
+                "name": "Ask Probe Misc",
+                "code": "APM",
+                "type": "general",
+                "company_id": other.id,
+            }
+        )
+        shell = self.env["res.company"].create({"name": "Ask Probe Shell Co"})
+        self.assertNotIn(other, self.test_user.company_ids)
+        companies = self.test_chat.with_user(self.test_user)._insight_companies()
+        self.assertIn(other, companies, "not only the person's own companies")
+        self.assertNotIn(shell, companies, "a company with no journal is left out")
+
     def test_the_company_is_picked_with_a_button(self):
         if "sale.order" not in self.env:
             self.skipTest("sale is not installed")

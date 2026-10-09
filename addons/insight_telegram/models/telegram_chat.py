@@ -305,8 +305,13 @@ class TelegramChat(models.Model):
         )
 
     def _insight_companies(self):
-        """The companies the person may pick for their changes: their own."""
-        return self.env.user.company_ids.sudo().sorted("display_name")
+        """The companies a change may be made in: every one that operates,
+        whatever the person's own companies are, as the bot writes in
+        superuser mode. One operates when it has accounting journals; a shell
+        company without any (the database's default one) is left out."""
+        companies = self.env["res.company"].sudo().search([])
+        operating = self.env["account.journal"].sudo().search([]).company_id
+        return (companies & operating or companies).sorted("display_name")
 
     def _insight_company_buttons(self, tr_env):
         """One button per company of the person, and one to cancel."""
