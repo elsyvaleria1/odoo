@@ -11,7 +11,7 @@ patch(PaymentPage.prototype, {
             const order = this.selfOrder.currentOrder;
             const response = await this.selfOrder.qfpay.makeQFPayRequest("trade", {
                 func_type: 1001,
-                amt: order.amount_total,
+                amt: this.selfOrder.currency.round(order.amount_total),
                 channel: paymentMethod.qfpay_payment_type,
                 out_trade_no: `${order.uuid}--${order.session_id.id}--${paymentMethod.id}`,
                 wait_card_timeout: 30,

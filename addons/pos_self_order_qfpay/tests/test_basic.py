@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from odoo.exceptions import UserError
 from odoo.tests import Command
 from odoo.tests.common import tagged
 
@@ -71,11 +72,10 @@ class TestSelfOrderKioskQFPay(TestPointOfSaleHttpCommon, AccountTestInvoicingCom
         ):
             self.start_tour(self_route, "kiosk_qfpay_order")
 
-    def test_a_replayed_notification_pays_the_order_once(self):
+    def _kiosk_order(self):
         self.pos_config.with_user(self.pos_user).open_ui()
         session = self.pos_config.current_session_id
         session.set_opening_control(0, "")
-        qfpay = self.pos_config.payment_method_ids
         order = self.env["pos.order"].create(
             {
                 "session_id": session.id,
@@ -98,6 +98,11 @@ class TestSelfOrderKioskQFPay(TestPointOfSaleHttpCommon, AccountTestInvoicingCom
             }
         )
         order._recompute_amounts()
+        return order
+
+    def test_a_replayed_notification_pays_the_order_once(self):
+        qfpay = self.pos_config.payment_method_ids
+        order = self._kiosk_order()
         notification = {
             "notify_type": "payment",
             "status": "1",
@@ -110,3 +115,32 @@ class TestSelfOrderKioskQFPay(TestPointOfSaleHttpCommon, AccountTestInvoicingCom
 
         self.assertEqual(order.state, "paid")
         self.assertEqual(order.payment_ids.mapped("transaction_id"), ["SYSSN-1"])
+
+    def test_a_notification_in_another_currency_pays_nothing(self):
+        qfpay = self.pos_config.payment_method_ids
+        order = self._kiosk_order()
+        notification = {
+            "notify_type": "payment",
+            "status": "1",
+            "chnlsn": "CHANNEL-1",
+            "syssn": "SYSSN-1",
+            "txcurrcd": "USD",
+        }
+
+        qfpay._qfpay_handle_webhook(self.pos_config, notification, order.uuid)
+
+        self.assertEqual(order.state, "draft")
+        self.assertFalse(order.payment_ids)
+
+    def test_a_kiosk_trade_is_signed_only_for_the_orders_amount(self):
+        qfpay = self.pos_config.payment_method_ids.with_user(self.pos_user)
+        order = self._kiosk_order()
+        trade = {
+            "func_type": 1001,
+            "channel": "card_payment",
+            "out_trade_no": f"{order.uuid}--{order.session_id.id}--{qfpay.id}",
+        }
+
+        with self.assertRaises(UserError):
+            qfpay.qfpay_sign_request({**trade, "amt": 0.1})
+        self.assertTrue(qfpay.qfpay_sign_request({**trade, "amt": 10.0}))
