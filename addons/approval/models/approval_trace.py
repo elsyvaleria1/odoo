@@ -1,11 +1,10 @@
 """Campaign instrumentation for the approval engine.
 
-TEMPORARY SCAFFOLDING. This module, every ``trace.*`` call site in the addon and
-the ``CALL_TRACES`` table below exist for one campaign -- code quality,
-maintainability, performance and lifecycle work on ``approval`` -- and they are
-removed when it ends. ``machine_doc_v1/conventions.md`` ("Campaign
-instrumentation") is the reference: the target table, the level discipline, the
-switches and the removal recipe.
+The engine's debug instrumentation. This module, every ``trace.*`` call site in
+the addon and the ``CALL_TRACES`` table below began as scaffolding for one
+campaign and are kept as the engine's debug loggers.
+``machine_doc_v1/conventions.md`` ("Campaign instrumentation") is the reference:
+the target table, the level discipline, the switches and the removal recipe.
 
 Three switches. Two decide what is PRINTED:
 

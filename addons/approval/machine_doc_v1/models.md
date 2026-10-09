@@ -148,7 +148,7 @@ so category names are unique per company, archived rows included.
 | `kanban_dashboard` | Text | No | No | compute (JSON) |
 | `show_on_dashboard` | Boolean | Yes | No | default=True |
 | `approval_deadline_hours` | Integer | Yes | No | default=48, tracking |
-| `escalate_overdue` | Boolean | Yes | No | default=False, tracking (legacy flag; the dedicated overdue cron was removed, escalation runs via `cron_smart_escalation`) |
+| `escalate_overdue` | Boolean | Yes | No | default=True, tracking. Whether `cron_smart_escalation` escalates an overdue request (to the escalation contact, the approver's HR manager, or the company's first approval manager); off, it only reminds. Before 19.0.2.15.0 it chose only the contact, so migration `2.15.0` turned it on where it was off |
 | `escalation_user_id` | Many2one(`res.users`) | Yes | No | tracking |
 | `auto_expire_hours` | Integer | Yes | No | default=0, tracking |
 | `sla_target_hours` | Integer | Yes | No | default=0, tracking |
@@ -768,7 +768,7 @@ Adopted by `mixin.approval.lifecycle`. Covered by `test_approval/tests/test_gate
 | File | `models/mixin_approval_lifecycle.py` |
 | Inherits | `mixin.approval.gate`, `mixin.lifecycle` |
 
-For a document with a declared lifecycle whose confirmation is held on its approval. Each adopter declares the verb `confirm` (door `action_confirm`, transition `state` into the state `_prepare_confirmation_values` writes, which `_get_confirmed_state()` returns) and its module ships the obligation, so the split, the coverage check and the re-entry are the gate's. Entering the confirmed state is the verb, whatever the door: a write that makes the move and a create that starts there -- which covers `load()` -- reach the obligation through the kernel's transition funnel, and a record that needs approval is refused (Observe: recorded) however it is confirmed without its grant. The adopter supplies `_get_domain_approval_category`; with no category matching, confirming is the plain lifecycle.
+For a document with a declared lifecycle whose confirmation is held on its approval. Each adopter declares the verb `confirm` (door `action_confirm`, transition `state` into the state `_prepare_confirmation_values` writes) and its module ships the obligation, so the split, the coverage check and the re-entry are the gate's. Entering the confirmed state is the verb, whatever the door: a write that makes the move and a create that starts there -- which covers `load()` -- reach the obligation through the kernel's transition funnel, and a record that needs approval is refused (Observe: recorded) however it is confirmed without its grant. The adopter supplies `_get_domain_approval_category`; with no category matching, confirming is the plain lifecycle.
 
 | Method | What it does |
 |--------|--------------|

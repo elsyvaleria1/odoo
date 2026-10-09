@@ -472,11 +472,13 @@ When adding a new method, place it in the file matching its responsibility.
 
 ---
 
-## Campaign Instrumentation (TEMPORARY)
+## Campaign Instrumentation
 
-`models/approval_trace.py` and every `trace.*` call site in this module are
-**scaffolding for one campaign** -- code quality, maintainability, performance
-and lifecycle work on `approval` -- and are removed when it ends. Nothing in the
+`models/approval_trace.py` and every `trace.*` call site in this module are the
+engine's **debug instrumentation**. They began as scaffolding for one campaign
+(code quality, maintainability, performance and lifecycle work on `approval`);
+since 2026-10-09 they stay: debug loggers are how this engine is debugged and
+tested, so "campaign" below names the instrumentation, not a deadline. Nothing in the
 engine's behaviour depends on them: rendering never reads a field, the wrappers
 return what they wrapped, and no target emits above INFO. A real warning belongs
 on the module logger of the file that found it, not on a campaign target that a
@@ -604,8 +606,9 @@ exist: five for five read `1 failed`):
    The first moved to `compute`; the second was deleted, because `_parse_domain` already
    reports it on `degraded`. Either one would have put a line on the one target whose
    whole value is that a green flow leaves it empty.
-6. **No campaign line is the only statement of a body.** The campaign is DELETED at the
-   end, so such a body becomes a syntax error the moment it is -- see the placement rules
+6. **No campaign line is the only statement of a body.** The instrumentation must stay
+   removable (and a target silenced must never change what a body does), so such a body
+   would become a syntax error the moment its line goes -- see the placement rules
    below. The check names the two hooks that are empty by omission rather than by design
    and may therefore be all line.
 
@@ -633,10 +636,9 @@ Every target fires on one suite run except `perf`, which by design speaks only o
 measurement switch.
 
 **`migrations/` is deliberately outside the campaign.** Those files already log what they
-did, on their own module logger, at INFO and WARNING -- and that logging is PERMANENT: a
-migration runs once, on somebody's upgrade, and the campaign's lines are deleted before
-most of them will ever run again. A campaign target there would be either deleted before
-it reported anything or kept by accident. When a migration statement is silently a no-op
+did, on their own module logger, at INFO and WARNING: a migration runs once, on somebody's
+upgrade, where its own logger is what the operator reads; a campaign target there is quiet
+by default and would report nothing on the one run that matters. When a migration statement is silently a no-op
 (`1.0.26` reports its `UPDATE` rowcount and says nothing about the three `DELETE`s that
 follow), the fix is a permanent `_logger` line in that file, not a `trace.` call.
 
@@ -862,7 +864,7 @@ returns both numbers**, which is the point of writing them down here.
 `c901` (approval: 1), the AST lint rules (`py_lint.py`, 0 in approval) and
 `ruff`/`ruff format` are unchanged.
 
-### Removing the campaign
+### Removing the campaign (should it ever be)
 
 ```bash
 grep -rn 'approval_trace\|trace\.[A-Z]' odoo/addons/approval --include='*.py'

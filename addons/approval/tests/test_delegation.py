@@ -509,7 +509,7 @@ class TestDelegationTimezoneFrame(ApprovalCommon):
     def _delegated_request(self, start_offset, end_offset):
         request = self._prepare_request(self.category)
         row = request.approver_ids
-        today = row._delegation_today()
+        today = row._delegation_today_by_tz()[row.user_id.tz or "UTC"]
         row.sudo().write(
             {
                 "delegate_id": self.west.id,
@@ -705,7 +705,7 @@ class TestDelegationFrameInternals(ApprovalCommon):
     def _delegated_row(self):
         request = self._prepare_request(self.category)
         row = request.approver_ids
-        today = row._delegation_today()
+        today = row._delegation_today_by_tz()[row.user_id.tz or "UTC"]
         row.sudo().write(
             {
                 "delegate_id": self.backup.id,

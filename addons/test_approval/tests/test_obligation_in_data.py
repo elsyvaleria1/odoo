@@ -63,6 +63,6 @@ class TestObligationInData(TransactionCase):
                 self.assertIsNotNone(verb, "an approval lifecycle declares confirm")
                 self.assertEqual(
                     verb.transition[2],
-                    self.env[model_name]._get_confirmed_state(),
+                    self.env[model_name]._prepare_confirmation_values()["state"],
                     "confirm moves the document into the state it is confirmed in",
                 )

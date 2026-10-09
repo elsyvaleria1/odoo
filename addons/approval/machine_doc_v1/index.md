@@ -14,7 +14,7 @@ dashboards.
 | Key | Value |
 |-----|-------|
 | Technical name | `approval` |
-| Version | 19.0.2.14.2 (matches `__manifest__.py`) |
+| Version | 19.0.2.15.0 (matches `__manifest__.py`) |
 | Category | Human Resources/Approvals |
 | Dependencies | `mail`, and nothing else. `approval_automation` (which needs `automation`) and `approval_analytics` (which needs `mixin_report_sql`) were split out at 19.0.2.0.0 so that adopting `mixin.approval` costs one manifest row rather than nineteen prerequisites; both auto-install |
 | Conflicts | `approvals` (upstream module — the two cannot coexist, and NOTHING enforces it: this fork's loader reads no `excludes` manifest key, so the one that used to sit here was inert) |
@@ -27,7 +27,7 @@ dashboards.
 | Cron jobs | 4 (escalation, auto-expire, consent, delegated activity hand-over) |
 | Test files | 47 (+ `common.py` shared fixtures); the reporting and reset suites went to the two split modules |
 | JS files | 25 (14 `static/src` + 11 `static/tests`, the tours and the mock-server models included) |
-| Migrations | 1 script directories: `2.14.2` turns the delegation hand-over cron hourly (its data is `noupdate`) |
+| Migrations | 2 script directories: `2.14.2` turns the delegation hand-over cron hourly (its data is `noupdate`); `2.15.0` turns `escalate_overdue` on where it was off, since it now decides whether a request escalates |
 
 ## File Inventory
 
@@ -68,7 +68,7 @@ dashboards.
 | `ir_actions_server.py` | `ir.actions.server` (extended) | `run()` consults the bindings on the action before running, on the server. web_studio gated a server action only in the browser, so any RPC caller ran it unchecked |
 | `ir_actions_report.py` | `ir.actions.report` (extended) | The PDF, HTML and text render entry points consult the bindings on the report. Checked at the entry, because a PDF stored as an attachment is returned without rendering again |
 | `approval_utils.py` | — (no model) | Module-level helpers shared across the split files: `is_approval_manager(env)` and `boolean_search_domain()` (the `search=` builder behind `is_overdue`, `is_delegated`, `is_pending_my_review`) |
-| `approval_trace.py` | — (no model) | **TEMPORARY campaign instrumentation.** The `odoo.approval.<target>` log targets, the span/ledger helpers and `CALL_TRACES`, the table of entry points wrapped at registry load by `models.py`'s `_register_hook`. Quiet unless a target is named on the command line; removed when the campaign ends. Reference: conventions.md, "Campaign Instrumentation" |
+| `approval_trace.py` | — (no model) | **Debug instrumentation (the campaign's, kept).** The `odoo.approval.<target>` log targets, the span/ledger helpers and `CALL_TRACES`, the table of entry points wrapped at registry load by `models.py`'s `_register_hook`. Quiet unless a target is named on the command line. Reference: conventions.md, "Campaign Instrumentation" |
 | `home_tile.py` | `home.tile` (extended) | The home dashboard's `approvals` tile: the requests awaiting the user's decision (`is_pending_my_review`), their count and how many are overdue, the next five by deadline |
 | `ir_attachment.py` | extends `ir.attachment` | Blocks deletion of attachments on finalized requests |
 | `mail_activity.py` | extends `mail.activity` | Stores `approver_id`, the approver row an approval activity asks, and derives `approval_request_id` from it; an approval activity marked done by its row's effective approver approves, on the request or on the document |
@@ -146,7 +146,7 @@ dashboards.
 | `test_step_decisions.py` | Decisions given for steps: a named step counts toward that step only, an unnamed decision takes every step of the row, a step decided once per user, a step outside the row refused, exclusivity in both directions, withdrawing one step keeps the other and re-asks, withdrawing the only step withdraws the decision, a step never decided cannot be withdrawn, a refusal naming a step, a reset clearing decided steps, the note naming where the decision counts, an approver whose step is met no longer asked |
 | `test_step_source_approvers.py` | Steps whose approvers come from a field path on the source document (`subject_user_path`): each document names its own approver, only that user decides, members and the named user share the pool, confirm refuses a document naming nobody, the path must exist and end in `res.users` |
 | `test_step_company.py` | A step's approvers are the users of the request's company: a group step holds only them, in the rows and the category snapshot; a document user or a listed member outside it is no approver, and a request left without one cannot be confirmed; a later-step member is one of the company |
-| `test_campaign_instrumentation.py` | The campaign instrumentation's own invariants (TEMPORARY, goes with the campaign): a green flow logs no refusal, a refused call names its kind and its request, every `raise` of a user-facing error reports a refusal, no two sites share a kind, and every `CALL_TRACES` entry names a live method on a concrete model |
+| `test_campaign_instrumentation.py` | The campaign instrumentation's own invariants a green flow logs no refusal, a refused call names its kind and its request, every `raise` of a user-facing error reports a refusal, no two sites share a kind, and every `CALL_TRACES` entry names a live method on a concrete model |
 | `test_ui.py` | Tour-based UI tests; `approval_button_tour`: a gated partner button draws its approvals, is approved from the popover, and the request is approved on the server |
 
 Former `test_audit_regressions.py` and `test_audit_round3_regressions.py`
@@ -175,7 +175,7 @@ into `test_approvals.py`).
 
 | File | Purpose |
 |------|---------|
-| `common/approval_trace.js` | **TEMPORARY campaign instrumentation, client half.** The `approval.<target>` console targets, off unless `?approval_trace=` or `localStorage["approval.trace"]` names one. Twin of `models/approval_trace.py`; removed with the campaign |
+| `common/approval_trace.js` | **Debug instrumentation, client half.** The `approval.<target>` console targets, off unless `?approval_trace=` or `localStorage["approval.trace"]` names one. Twin of `models/approval_trace.py` |
 | `common/activity_model_patch.js` | Activity model patch for approval data |
 | `common/approver_model.js` | Approver OWL model |
 | `web/activity_patch.js` | Activity component patch for approve/refuse buttons |
@@ -234,7 +234,7 @@ approval/
 |   +-- ir_actions_server.py          # Server actions consult bindings in run()
 |   +-- ir_actions_report.py          # Report render entry points consult bindings
 |   +-- approval_utils.py             # Module-level helpers (no model)
-|   +-- approval_trace.py             # Campaign instrumentation (no model, TEMPORARY)
+|   +-- approval_trace.py             # Debug instrumentation (no model)
 |   +-- home_tile.py                  # The home dashboard's approvals tile
 |   +-- ir_attachment.py              # Attachment protection
 |   +-- mail_activity.py              # Activity extensions
@@ -269,7 +269,7 @@ approval/
 | Transient models | 2 |
 | Test-only models | 3 |
 | Cron jobs | 5 |
-| Migration script directories | 1 |
+| Migration script directories | 2 |
 
 Re-measure rather than trusting these: `find . -name '*.py' -not -path './tests/*'
 -not -path './migrations/*' -not -path '*__pycache__*' -not -path './machine_doc_v1/*'
@@ -387,11 +387,11 @@ assigns the category sequence consecutive; drafts display a translated
 "New" placeholder via `display_name` only. Discarded drafts never burn
 sequence numbers; reset-then-reconfirmed requests keep their number.
 
-### Campaign Instrumentation (temporary)
+### Campaign Instrumentation
 
-`models/approval_trace.py` holds a debug-logging surface added for a code-quality /
-maintainability / performance / lifecycle campaign, and it comes out when that
-campaign ends. Two things make it invisible until asked for: the `odoo.approval`
+`models/approval_trace.py` holds the engine's debug-logging surface, added for a
+code-quality / maintainability / performance / lifecycle campaign and kept since
+2026-10-09 as the way this engine is debugged. Two things make it invisible until asked for: the `odoo.approval`
 logger root is levelled to `WARNING` at import unless the operator named it, and
 the wrapped entry points (`CALL_TRACES`, applied by `models.py`'s `_register_hook`)
 return the wrapped method's own result.

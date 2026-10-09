@@ -17,31 +17,51 @@ _logger = logging.getLogger(__name__)
 class ApprovalRequestLifecycle(models.Model):
     _inherit = "approval.request"
 
-    def _check_bulk_decision_allowed(self) -> None:
-        for request in self:
+    def _split_bulk_decidable(self) -> tuple[models.BaseModel, list[tuple[str, str]]]:
+        """The requests the user may decide now, and why each other one is left.
+
+        A selection made from a list goes stale while it is open: a request decided
+        meanwhile is reported among the failures, not a reason to decide none.
+        Nothing decidable at all is refused."""
+        readable = self._filtered_access("read")
+        decidable_ids = []
+        skipped = [
+            (self.env._("A request you cannot read"), self.env._("not yours to decide"))
+            for _request in self - readable
+        ]
+        for request in readable:
             if request.state != "pending":
                 trace.REFUSAL.event(
-                    "bulk_request_not_pending",
-                    request=request.id,
-                    state=request.state,
+                    "bulk_request_not_pending", request=request.id, state=request.state
                 )
-                raise UserError(
-                    self.env._(
-                        "Request '%(request)s' is not in pending state (current: %(state)s).",
-                        request=request.name,
-                        state=request.state,
-                    ),
+                skipped.append(
+                    (
+                        request.name,
+                        self.env._(
+                            "no longer pending (%(state)s)",
+                            state=request._fields["state"].convert_to_export(
+                                request.state, request
+                            ),
+                        ),
+                    )
                 )
-            if not request._get_current_pending_approver():
+            elif not request._get_current_pending_approver():
                 trace.REFUSAL.event(
                     "bulk_no_pending_row", request=request.id, uid=self.env.uid
                 )
-                raise UserError(
-                    self.env._(
-                        "You don't have pending approval rights for request: %s",
-                        request.name,
-                    ),
+                skipped.append(
+                    (request.name, self.env._("nothing of yours left to decide"))
                 )
+            else:
+                decidable_ids.append(request.id)
+        if self and not decidable_ids:
+            raise UserError(
+                self.env._(
+                    "None of these requests is yours to decide now:\n%(reasons)s",
+                    reasons="\n".join(f"• {name}: {why}" for name, why in skipped),
+                )
+            )
+        return self.browse(decidable_ids), skipped
 
     def _action_bulk_decision(
         self,
@@ -50,11 +70,9 @@ class ApprovalRequestLifecycle(models.Model):
         past_tense: str,
         before: Any = None,
     ) -> dict[str, Any]:
-        self._check_bulk_decision_allowed()
-
+        decidable, failed_requests = self._split_bulk_decidable()
         success_count = 0
-        failed_requests = []
-        for request in self:
+        for request in decidable:
             try:
                 with self.env.cr.savepoint():
                     if before is not None:
@@ -892,7 +910,7 @@ class ApprovalRequestLifecycle(models.Model):
         )
 
     def action_refuse_bulk(self) -> dict[str, Any]:
-        self._check_bulk_decision_allowed()
+        self._split_bulk_decidable()
         return {
             "name": self.env._("Refuse Requests"),
             "type": "ir.actions.act_window",

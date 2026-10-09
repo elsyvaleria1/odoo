@@ -1,4 +1,4 @@
-"""The campaign instrumentation's own invariants -- TEMPORARY, goes with the campaign.
+"""The campaign instrumentation's own invariants.
 
 `machine_doc_v1/conventions.md`, "Campaign Instrumentation", states three things a
 reader is asked to rely on. Each is a test here, because a census nobody checks

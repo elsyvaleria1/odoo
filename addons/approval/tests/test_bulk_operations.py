@@ -202,38 +202,35 @@ class TestBulkOperations(common.TransactionCase):
 
         all_requests = request1 | request2 | request3
 
-        with self.assertRaises(
-            UserError,
-            msg="Should raise UserError when user lacks pending rights for some requests",
-        ):
-            all_requests.with_user(self.approver1).action_approve_bulk()
+        result = all_requests.with_user(self.approver1).action_approve_bulk()
 
-    def test_bulk_approve_upfront_validation_rejects_whole_batch(self):
+        self.assertEqual(request1.state, "approved")
+        self.assertEqual(request3.state, "pending")
+        self.assertEqual(result["params"]["type"], "warning")
+        self.assertIn(request2.name, result["params"]["message"])
+        self.assertIn("cannot read", result["params"]["message"])
+
+    def test_a_request_decided_meanwhile_is_reported_not_a_reason_to_decide_none(self):
         normal_requests = self._create_test_requests(2)
 
-        failing_request = self.env["approval.request"].create(
+        decided_meanwhile = self.env["approval.request"].create(
             {
-                "name": "Failing Request",
+                "name": "Decided Meanwhile",
                 "request_owner_id": self.admin_user.id,
                 "category_id": self.category.id,
             }
         )
-        failing_request.action_confirm()
-        failing_request.approver_ids.sudo()._record_decision("refused")
+        decided_meanwhile.action_confirm()
+        decided_meanwhile.approver_ids.sudo()._record_decision("refused")
 
-        all_requests = normal_requests | failing_request
+        all_requests = normal_requests | decided_meanwhile
+        result = all_requests.with_user(self.approver1).action_approve_bulk()
 
-        with self.assertRaises(
-            UserError,
-            msg="Should raise UserError when trying to approve refused request",
-        ):
-            all_requests.with_user(self.approver1).action_approve_bulk()
-
-        self.assertTrue(
-            all(r.state == "pending" for r in normal_requests),
-            "Upfront validation must reject the WHOLE batch atomically — "
-            "the otherwise-valid requests must not be approved either.",
-        )
+        self.assertEqual(set(normal_requests.mapped("state")), {"approved"})
+        self.assertEqual(decided_meanwhile.state, "refused")
+        self.assertEqual(result["params"]["type"], "warning")
+        self.assertIn("Decided Meanwhile", result["params"]["message"])
+        self.assertIn("2 of 3", result["params"]["message"])
 
     def test_bulk_approve_continues_after_mid_flight_failure(self):
         requests = self._create_test_requests(3)

@@ -517,10 +517,6 @@ class ApprovalApprover(models.Model):
         )
         return super().unlink()
 
-    def _delegation_today(self):
-        self.check_singleton()
-        return self._delegation_today_by_tz()[self.user_id.tz or "UTC"]
-
     def _delegation_today_by_tz(self) -> dict:
         return {
             tz or "UTC": fields.Date.context_today(self.with_context(tz=tz or "UTC"))

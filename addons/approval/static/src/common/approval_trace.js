@@ -3,7 +3,7 @@
 import { browser } from "@web/core/browser/browser";
 
 /**
- * Campaign instrumentation for the approval client -- TEMPORARY SCAFFOLDING.
+ * Campaign instrumentation for the approval client: its debug loggers.
  *
  * The twin of `models/approval_trace.py`, for the same campaign and removed with it.
  * `machine_doc_v1/conventions.md`, "Campaign Instrumentation", is the reference; this

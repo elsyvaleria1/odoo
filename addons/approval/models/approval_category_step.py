@@ -211,21 +211,7 @@ class ApprovalCategoryStep(models.Model):
 
     @api.constrains("in_order")
     def _check_in_order_without_consent(self) -> None:
-        for step in self.filtered("in_order"):
-            if step.category_id.consent_approval_hours:
-                trace.REFUSAL.event(
-                    "in_order_step_with_consent",
-                    step=step.id,
-                    category=step.category_id.id,
-                )
-                raise ValidationError(
-                    self.env._(
-                        "Step '%(step)s' lets its members decide in order, and "
-                        "consent-based auto-approval approves every member at once. "
-                        "Disable one or the other.",
-                        step=step.name,
-                    )
-                )
+        self.filtered("in_order").category_id._check_consent_sequential()
 
     @api.constrains("in_order", "group_id")
     def _check_in_order_pool(self) -> None:

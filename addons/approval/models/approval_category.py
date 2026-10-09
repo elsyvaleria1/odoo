@@ -204,7 +204,7 @@ class ApprovalCategory(models.Model):
     )
     escalate_overdue = fields.Boolean(
         string="Auto-Escalate Overdue Requests",
-        default=False,
+        default=True,
         tracking=True,
         help="Escalate a request still pending past its priority's escalation age, "
         "or waiting on an archived approver, to a manager: the escalation contact, "
@@ -277,20 +277,24 @@ class ApprovalCategory(models.Model):
 
     @api.constrains("consent_approval_hours", "step_ids")
     def _check_consent_sequential(self) -> None:
-        for category in self:
-            ordered = any(category.step_ids.mapped("in_order"))
-            if ordered and category.consent_approval_hours:
-                trace.REFUSAL.event(
-                    "consent_with_sequential",
-                    category=category.id,
-                    hours=category.consent_approval_hours,
+        for category in self.filtered("consent_approval_hours"):
+            ordered = category.step_ids.filtered("in_order")[:1]
+            if not ordered:
+                continue
+            trace.REFUSAL.event(
+                "consent_with_sequential",
+                category=category.id,
+                step=ordered.id,
+                hours=category.consent_approval_hours,
+            )
+            raise ValidationError(
+                self.env._(
+                    "Step '%(step)s' lets its members decide in order, and "
+                    "consent-based auto-approval approves every member at once. "
+                    "Disable one or the other.",
+                    step=ordered.name,
                 )
-                raise ValidationError(
-                    self.env._(
-                        "Consent-based auto-approval cannot be used with "
-                        "sequential approval. Disable one or the other.",
-                    ),
-                )
+            )
 
     @api.constrains("consent_approval_hours", "approval_type", "target_model")
     def _check_consent_financial(self) -> None:

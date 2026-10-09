@@ -11,9 +11,6 @@ class MixinApprovalLifecycle(models.AbstractModel):
         if verb == "confirm":
             self._check_confirm_allowed()
 
-    def _get_confirmed_state(self):
-        return self.browse()._prepare_confirmation_values()["state"]
-
     def _is_operation_run_on_approval(self, operation) -> bool:
         self.check_singleton()
         return self.state == "draft"
