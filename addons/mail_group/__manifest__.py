@@ -38,5 +38,9 @@
         "web.assets_backend": [
             "mail_group/static/src/css/mail_group_backend.scss",
         ],
+        "web.assets_unit_tests": [
+            "mail_group/static/src/interactions/**/*",
+            "mail_group/static/tests/**/*",
+        ],
     },
 }
