@@ -13,6 +13,8 @@ from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.translate import LazyTranslate
 
+from odoo.addons.web.controllers.utils import PARTIAL_NAVIGATION_HEADER
+
 _debug = DebugLog(__name__)
 
 _lt = LazyTranslate(__name__)
@@ -56,16 +58,35 @@ class WebsiteProfile(http.Controller):
 
     def _prepare_user_values(self, **kwargs):
         kwargs.pop("edit_translations", None)
+        sent, done = self._validation_email_state()
         return {
             "user": request.env.user,
             "is_public_user": request.website.is_public_user(),
-            "validation_email_sent": request.session.get(
-                "validation_email_sent", False
-            ),
-            "validation_email_done": request.session.get(
-                "validation_email_done", False
-            ),
+            "validation_email_sent": sent,
+            "validation_email_done": done,
         }
+
+    @staticmethod
+    def _validation_email_state():
+        """Whether a validation email was sent and whether it was validated,
+        read once per request. A page showing the validation's success shows
+        it once: the state is cleared then, unless the page is fetched for an
+        in-place navigation or a preload, which may not be shown."""
+        # vars(): an attribute that was never set is absent, on any request
+        state = vars(request).get("_validation_email_state")
+        if state is None:
+            session = request.session
+            state = (
+                session.get("validation_email_sent", False),
+                session.get("validation_email_done", False),
+            )
+            if state[1] and not request.httprequest.headers.get(
+                PARTIAL_NAVIGATION_HEADER
+            ):
+                session["validation_email_sent"] = False
+                session["validation_email_done"] = False
+            request._validation_email_state = state
+        return state
 
     def _prepare_user_profile_parameters(self, **post):
         return post
@@ -395,13 +416,19 @@ class WebsiteProfile(http.Controller):
         return {item["user_id"]: dict(item) for item in results}
 
     @http.route(
-        "/profile/send_validation_email", type="jsonrpc", auth="user", website=True
+        "/profile/send_validation_email",
+        type="http",
+        auth="user",
+        methods=["POST"],
+        website=True,
     )
-    def send_validation_email(self, **kwargs):
+    def send_validation_email(self, redirect_url=None, **kwargs):
         if request.env.uid != request.website.user_id.id:
-            request.env.user._send_profile_validation_email(**kwargs)
+            request.env.user._send_profile_validation_email(
+                redirect_url=redirect_url, **kwargs
+            )
         request.session["validation_email_sent"] = True
-        return True
+        return request.redirect(redirect_url or "/")
 
     @http.route(
         "/profile/validate_email",
@@ -421,11 +448,3 @@ class WebsiteProfile(http.Controller):
             request.session["validation_email_done"] = True
         url = kwargs.get("redirect_url", "/")
         return request.redirect(url)
-
-    @http.route(
-        "/profile/validate_email/close", type="jsonrpc", auth="public", website=True
-    )
-    def close_email_confirmation(self, **kwargs):
-        request.session["validation_email_done"] = False
-        request.session["validation_email_sent"] = False
-        return True

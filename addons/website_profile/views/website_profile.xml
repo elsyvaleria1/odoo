@@ -686,6 +686,16 @@
             <t
                 t-set="my_account_redirect"
                 t-value="'/my/account?redirect='+redirect_url" />
+            <form
+                id="o_wprofile_send_validation_email"
+                class="d-none"
+                method="post"
+                action="/profile/send_validation_email">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    t-att-value="request.csrf_token()" />
+            </form>
 
             <div
                 t-if="not is_public_user and not user.email"
@@ -708,7 +718,7 @@
                     data-bs-dismiss="alert"
                     aria-label="Close" />
                 Your Account has not yet been verified.<br />
-                Click <a class="send_validation_email alert-link" href="#" t-att-data-redirect_url="redirect_url"><u>here</u></a> to receive a verification email<t t-out="additional_validation_email_message" />!
+                Click <button type="submit" form="o_wprofile_send_validation_email" name="redirect_url" t-att-value="redirect_url" class="send_validation_email btn btn-link alert-link p-0 align-baseline"><u>here</u></button> to receive a verification email<t t-out="additional_validation_email_message" />!
             </div>
             <div
                 t-elif="validation_email_sent and not validation_email_done"
@@ -720,7 +730,7 @@
                     aria-label="Close" />
                 Verification Email sent to <t t-out="user.email" />!<br />
                 Did not receive it? <a class="alert-link" t-att-href="my_account_redirect"><u>Correct your email address</u></a> 
-                or <a class="send_validation_email alert-link" href="#" t-att-data-redirect_url="redirect_url"><u>Send Again</u></a>.
+                or <button type="submit" form="o_wprofile_send_validation_email" name="redirect_url" t-att-value="redirect_url" class="send_validation_email btn btn-link alert-link p-0 align-baseline"><u>Send Again</u></button>.
             </div>
             <div
                 t-if="validation_email_done"
@@ -728,7 +738,7 @@
                 role="status">
                 <button
                     type="button"
-                    class="btn-close validated_email_close"
+                    class="btn-close"
                     data-bs-dismiss="alert"
                     aria-label="Close" />
                 <span id="email_validated_message">Congratulations! Your email has just been validated.</span>
