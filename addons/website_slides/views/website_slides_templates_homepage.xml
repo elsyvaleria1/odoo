@@ -131,7 +131,11 @@
             <t t-set="body_classname" t-value="'o_wslides_body'" />
             <t t-set="has_side_column" t-value="not is_public_user" />
             <t t-call="website.layout">
-                <div id="wrap" class="wrap o_wslides_wrap">
+                <div
+                    id="wrap"
+                    class="wrap o_wslides_wrap"
+                    data-fragment="website_slides.courses_home"
+                    data-partial-navigation="#navbarTagGroups, .o_searchbar_form, #o_wslides_index_offcanvas, .o_wslides_home_main .post_link, .o_wslides_home_main .pagination">
                     <div class="oe_structure oe_empty" />
                     <div class="container">
                         <t t-call="website_slides.courses_search_bar" />

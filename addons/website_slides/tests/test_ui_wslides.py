@@ -534,3 +534,25 @@ class TestUiPublisherYoutube(HttpCaseGamification):
             "course_publisher",
             login=user_demo.login,
         )
+
+
+@tests.common.tagged("post_install", "-at_install")
+class TestUiCoursesListing(tests.HttpCase):
+    def test_courses_filter_in_place(self):
+        group = self.env["slide.channel.tag.group"].create(
+            {"name": "PN Level", "is_published": True}
+        )
+        beginner = self.env["slide.channel.tag"].create(
+            {"name": "PN Beginner", "group_id": group.id, "color": 3}
+        )
+        self.env["slide.channel"].create(
+            [
+                {
+                    "name": "PN Seeds",
+                    "is_published": True,
+                    "tag_ids": [Command.set(beginner.ids)],
+                },
+                {"name": "PN Grafting", "is_published": True},
+            ]
+        )
+        self.start_tour("/slides", "courses_partial_navigation")
