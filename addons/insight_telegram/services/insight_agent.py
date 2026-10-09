@@ -29,8 +29,9 @@ the read tools and describe_model the target: one2many lines go as Odoo \
 commands, e.g. "line_ids": [[0, 0, {{"product_id": 7, "product_qty": 2}}]]. \
 To act on a record you propose to create, use "ref:N" (N = its proposal's \
 number) as its id.
-- Every record you create carries company_id: ask which company when the \
-person has not said it in this conversation, never assume one.
+- Set company_id only when the person named the company in this \
+conversation; otherwise leave it out and never assume one: they pick it \
+from buttons before authorizing.
 - To correct a record already created (the person says it is wrong), propose \
 a propose_write on it: its id is in the link of the earlier "Done" answer. \
 Change a line with [1, line_id, {{...}}] and add one with [0, 0, {{...}}]; \

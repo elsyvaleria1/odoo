@@ -1103,3 +1103,21 @@ msgstr "📎 PDF"
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "🔎 AI-consulted answer, please verify it."
 msgstr "🔎 Respuesta consultada con IA, verifícala."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "First choose the company:"
+msgstr "Primero elige la empresa:"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Which company? Choose it below; «cancelar» discards them."
+msgstr "¿En qué empresa? Elígela abajo; «cancelar» los descarta."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "There is nothing waiting for a company."
+msgstr "No hay cambios esperando una empresa."

@@ -9,7 +9,8 @@ AUTHORIZE = "ins_ok"
 CANCEL = "ins_no"
 DETAIL = "ins_det:"
 PDF = "ins_pdf:"
-CALLBACKS = (AUTHORIZE, CANCEL, DETAIL, PDF)
+COMPANY = "ins_co:"
+CALLBACKS = (AUTHORIZE, CANCEL, DETAIL, PDF, COMPANY)
 
 
 class TelegramHandlerInsight(models.AbstractModel):
@@ -45,6 +46,19 @@ class TelegramHandlerInsight(models.AbstractModel):
                 {
                     "insight_action": action,
                     "partner_id": int(data.split(":", 1)[1] or 0),
+                },
+                bot._acting_company().id,
+            )
+            return True
+        if data.startswith(COMPANY):
+            # the company the pending changes are made in
+            chat.delayed(
+                identity_key=f"telegram_insight:{chat.id}:cb:{callback_query.get('id')}"
+            )._insight_answer(
+                bot.id,
+                {
+                    "insight_action": "pick_company",
+                    "company_id": int(data.split(":", 1)[1] or 0),
                 },
                 bot._acting_company().id,
             )

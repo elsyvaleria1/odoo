@@ -877,9 +877,9 @@ class TestWriteOperations(TransactionCase):
         with self.assertRaisesRegex(write_ops.OperationError, "draft"):
             write_ops.check(self.env, remove([2, order.line_ids.id]))
 
-    def test_an_order_names_its_company(self):
+    def test_an_order_waits_for_its_company(self):
         customer, _product = self._sale()
-        with self.assertRaisesRegex(write_ops.OperationError, "company_id"):
+        operations = [
             write_ops.check(
                 self.env,
                 {
@@ -888,6 +888,13 @@ class TestWriteOperations(TransactionCase):
                     "values": {"partner_id": customer.id},
                 },
             )
+        ]
+        self.assertTrue(write_ops.needs_company(self.env, operations))
+        with self.assertRaisesRegex(write_ops.OperationError, "company"):
+            write_ops.apply(self.env(su=True), operations, [], self.env.user)
+        picked = write_ops.set_company(self.env, operations, self.env.company.id)
+        self.assertFalse(write_ops.needs_company(self.env, picked))
+        self.assertEqual(picked[0]["values"]["company_id"], self.env.company.id)
 
     def test_a_proposal_reads_as_the_screen_shows_it(self):
         customer, product = self._sale()
@@ -1194,6 +1201,46 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertTrue(partner)
         self.assertEqual(partner.create_uid, self.env.user)
         self.assertFalse(self.test_chat._insight_pending())
+
+    def test_the_company_is_picked_with_a_button(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Writer"})
+        proposal = [
+            {
+                "op": "create",
+                "model": "sale.order",
+                "values": {"partner_id": customer.id},
+            }
+        ]
+        sent, _mocks = self._job(
+            {"text": "cotización para Ask Probe Writer"},
+            agent=("Propongo la cotización.", proposal),
+        )
+        company = self.env.user.company_id
+        self.assertIn(f"ins_co:{company.id}", sent)
+        self.assertNotIn("ins_ok", sent, "no authorizing before the company")
+        before = self.env["sale.order"].search_count([])
+        sent, _mocks = self._job({"text": "autorizo"})
+        self.assertIn("ins_co:", sent, "the company is asked again")
+        self.assertEqual(self.env["sale.order"].search_count([]), before)
+        sent, _mocks = self._job(
+            {"insight_action": "pick_company", "company_id": company.id}
+        )
+        self.assertIn("ins_ok", sent)
+        pending = self.test_chat._insight_pending()
+        self.assertEqual(pending["operations"][0]["values"]["company_id"], company.id)
+        with (
+            patch(
+                "odoo.addons.insight_telegram.services.documents.print_records",
+                return_value=[],
+            ),
+        ):
+            self._job({"text": "autorizo"})
+        order = self.env["sale.order"].search(
+            [("partner_id", "=", customer.id)], order="id desc", limit=1
+        )
+        self.assertEqual(order.company_id, company)
 
     def test_cancelling_discards_the_proposals(self):
         proposal = [

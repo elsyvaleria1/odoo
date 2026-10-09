@@ -110,20 +110,6 @@ def check(env, operation) -> dict:
         for name, value in values.items():
             if model._fields[name].type in ("one2many", "many2many"):
                 _check_lines(model, normalized.get("ids"), name, value)
-        company = model._fields.get("company_id")
-        if (
-            op == "create"
-            and company
-            and company.type == "many2one"
-            and company.required
-            and not values.get("company_id")
-        ):
-            # with every company allowed, the default one is arbitrary: the
-            # company is always the person's choice, said explicitly
-            raise OperationError(
-                f"{model_name} needs company_id: ask the person which company "
-                "if they have not said it."
-            )
         normalized["values"] = values
     if op == "action":
         method = (operation.get("method") or "").strip()
@@ -179,6 +165,35 @@ def _check_lines(model, ids, name, commands) -> None:
                 f"{name}: lines are removed only while the document is in draft; "
                 "removing them is deleting, which the bot never does otherwise."
             )
+
+
+def _lacks_company(env, operation) -> bool:
+    """Whether `operation` creates a record whose company is required but
+    not given: the person must pick it, never a default."""
+    if operation["op"] != "create":
+        return False
+    company = env[operation["model"]]._fields.get("company_id")
+    return bool(
+        company
+        and company.type == "many2one"
+        and company.required
+        and not operation["values"].get("company_id")
+    )
+
+
+def needs_company(env, operations) -> bool:
+    """Whether any of `operations` waits for the person to pick a company."""
+    return any(_lacks_company(env, operation) for operation in operations)
+
+
+def set_company(env, operations, company_id) -> list:
+    """`operations` with `company_id` given to each one that lacks it."""
+    return [
+        {**operation, "values": {**operation["values"], "company_id": company_id}}
+        if _lacks_company(env, operation)
+        else operation
+        for operation in operations
+    ]
 
 
 def describe(env, operations) -> list:
@@ -362,6 +377,8 @@ def apply(env, operations, files, requester):
     :return: the records touched, one per operation
     :rtype: list
     """
+    if needs_company(env, operations):
+        raise OperationError("Pick the company first.")
     created = []
     touched = []
     with env.cr.savepoint():

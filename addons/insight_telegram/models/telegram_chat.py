@@ -70,6 +70,9 @@ class TelegramChat(models.Model):
             return
 
         action = message.get("insight_action")
+        if action == PICK_COMPANY:
+            self._insight_pick_company(bot, chat, message, reader_user, tr_env)
+            return
         if action:
             self._insight_statement_action(bot, chat, message, reader_user, tr_env)
             return
@@ -98,6 +101,13 @@ class TelegramChat(models.Model):
 
         pending = chat._insight_pending()
         decision = _decision(question) if pending else None
+        if decision == "authorize" and pending.get("needs_company"):
+            bot.send_message(
+                chat.chat_id,
+                tr_env._("First choose the company:"),
+                reply_markup=self._insight_company_buttons(tr_env),
+            )
+            return
         if decision:
             pdfs = []
             if decision == "authorize":
@@ -184,29 +194,28 @@ class TelegramChat(models.Model):
                 tr_env._("🔎 AI-consulted answer, please verify it.") + "\n\n" + answer
             )
         if proposals:
+            with reader.env() as env:
+                needs_company = write_ops.needs_company(env, proposals)
+                summary = write_ops.describe(env, proposals)
             chat._insight_set_pending(
                 {
                     "operations": proposals,
                     "files": [list(item) for item in attached],
                     "at": fields.Datetime.to_string(fields.Datetime.now()),
+                    "needs_company": needs_company,
                 }
             )
-            with reader.env() as env:
-                summary = write_ops.describe(env, proposals)
             answer = "\n".join(
                 [
                     answer,
                     "",
-                    "**" + tr_env._("Changes waiting for your authorization:") + "**",
-                    *summary,
-                    "",
-                    tr_env._(
-                        "Say «autorizo» (text or voice) or press Authorize to apply them; «cancelar» discards them."
-                    ),
+                    *self._insight_proposal_text(summary, tr_env, needs_company),
                 ]
             )
-            markup = kb.confirm_cancel(
-                tr_env._("✅ Authorize"), "ins_ok", tr_env._("❌ Cancel"), "ins_no"
+            markup = (
+                self._insight_company_buttons(tr_env)
+                if needs_company
+                else self._insight_authorize_buttons(tr_env)
             )
             interpretation = {**interpretation, "proposals": proposals}
         self._insight_reply(
@@ -273,6 +282,71 @@ class TelegramChat(models.Model):
                 "answered": bool(answered_by),
                 "answer": answer,
             }
+        )
+
+    @staticmethod
+    def _insight_proposal_text(summary, tr_env, needs_company) -> list:
+        """The lines that present pending changes and what to do with them."""
+        return [
+            "**" + tr_env._("Changes waiting for your authorization:") + "**",
+            *summary,
+            "",
+            tr_env._("Which company? Choose it below; «cancelar» discards them.")
+            if needs_company
+            else tr_env._(
+                "Say «autorizo» (text or voice) or press Authorize to apply them; «cancelar» discards them."
+            ),
+        ]
+
+    @staticmethod
+    def _insight_authorize_buttons(tr_env):
+        return kb.confirm_cancel(
+            tr_env._("✅ Authorize"), "ins_ok", tr_env._("❌ Cancel"), "ins_no"
+        )
+
+    def _insight_companies(self):
+        """The companies the person may pick for their changes: their own."""
+        return self.env.user.company_ids.sudo().sorted("display_name")
+
+    def _insight_company_buttons(self, tr_env):
+        """One button per company of the person, and one to cancel."""
+        rows = [
+            [kb.button(f"🏢 {company.display_name}", f"ins_co:{company.id}")]
+            for company in self._insight_companies()
+        ]
+        rows.append([kb.button(tr_env._("❌ Cancel"), "ins_no")])
+        return kb.keyboard(*rows)
+
+    def _insight_pick_company(self, bot, chat, message, reader_user, tr_env):
+        """A company button: the pending changes get it, and wait for the
+        authorization."""
+        pending = chat._insight_pending()
+        company = self._insight_companies().filtered(
+            lambda found: found.id == int(message.get("company_id") or 0)
+        )
+        if not pending or not pending.get("needs_company") or not company:
+            bot.send_message(
+                chat.chat_id, tr_env._("There is nothing waiting for a company.")
+            )
+            return
+        reader = OdooReader(
+            self.env.registry, reader_user.id, context={"lang": tr_env.lang}
+        )
+        with reader.env() as env:
+            operations = write_ops.set_company(env, pending["operations"], company.id)
+            summary = write_ops.describe(env, operations)
+        chat._insight_set_pending(
+            {**pending, "operations": operations, "needs_company": False}
+        )
+        answer = "\n".join(self._insight_proposal_text(summary, tr_env, False))
+        self._insight_reply(
+            bot,
+            chat,
+            company.display_name,
+            {"action": PICK_COMPANY, "company_id": company.id},
+            answer,
+            PICK_COMPANY,
+            markup=self._insight_authorize_buttons(tr_env),
         )
 
     def _insight_download(self, bot, attached) -> list:
@@ -455,6 +529,7 @@ class TelegramChat(models.Model):
         self._set_context(HISTORY_KEY, history[-HISTORY_SIZE:])
 
 
+PICK_COMPANY = "pick_company"
 STATEMENT_DETAIL = "statement_detail"
 STATEMENT_PDF = "statement_pdf"
 
