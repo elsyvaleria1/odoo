@@ -7,7 +7,11 @@
                 <meta t-if="search_tags" name="robots" content="none" />
             </t>
 
-            <div id="wrap" class="o_wevent_index">
+            <div
+                id="wrap"
+                class="o_wevent_index"
+                data-fragment="website_event.index"
+                data-partial-navigation=".o_wevent_index_topbar_filters, #o_wevent_index_offcanvas, .o_wevent_events_list .pagination">
                 <t
                     t-set="opt_events_list_cards"
                     t-value="is_view_active('website_event.opt_events_list_cards')" />

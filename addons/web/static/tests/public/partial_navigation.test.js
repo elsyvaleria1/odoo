@@ -302,3 +302,25 @@ test("<html> takes the next page's metadata: data attributes and lang", async ()
     expect(html.dataset.mainObject).toBe("product.public.category(5,)");
     expect(html.dataset.staleMarker).toBe(undefined);
 });
+
+test("requestNavigation runs the caller's fallback outside any scope", async () => {
+    await startInteraction(
+        PartialNavigation,
+        `${region("")}<p class="o_outside">out</p>`,
+    );
+    serve(() => page(""));
+
+    requestNavigation(queryOne(".o_outside"), "/somewhere", () =>
+        expect.step("fallback"),
+    );
+    requestNavigation(queryOne(".o_search"), "/my/orders?search=SO6", () =>
+        expect.step("fallback in scope"),
+    );
+    await animationFrame();
+
+    expect.verifySteps([
+        "fallback",
+        "fetch /my/orders?search=SO6",
+        "push portal.list /my/orders",
+    ]);
+});

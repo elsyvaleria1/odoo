@@ -2,6 +2,8 @@
 import { _t } from "@web/core/translation";
 import { clickOnElement } from "@website/js/tours/tour_utils";
 
+export { waitForPartialNavigation } from "@website/js/tours/tour_utils";
+
 export function addToCart({
     productName,
     search = true,
@@ -365,13 +367,6 @@ export function selectPriceList(pricelist) {
             trigger: `div.o_pricelist_dropdown a[data-bs-toggle=dropdown]:contains(${pricelist})`,
         },
     ];
-}
-
-export function waitForPartialNavigation() {
-    return {
-        content: "Wait for the next page to be swapped in place",
-        trigger: "[data-partial-navigation]:not([aria-busy])",
-    };
 }
 
 export function waitForInteractionToLoad() {

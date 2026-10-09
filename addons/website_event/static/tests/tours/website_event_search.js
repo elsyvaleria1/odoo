@@ -1,4 +1,5 @@
 import { registry } from "@web/core/registry";
+import { waitForPartialNavigation } from "@website/js/tours/tour_utils";
 
 registry.category("web_tour.tours").add("test_website_event_search", {
     steps: () => [
@@ -8,17 +9,17 @@ registry.category("web_tour.tours").add("test_website_event_search", {
         },
         {
             trigger: ".post_link:contains(tag 1)",
-            expectUnloadPage: true,
             run: "click",
         },
+        waitForPartialNavigation(),
         {
             trigger: ".badge.bg-primary:contains(1)",
         },
         {
             trigger: ".page-link:contains(2)",
-            expectUnloadPage: true,
             run: "click",
         },
+        waitForPartialNavigation(),
         {
             trigger: ".input-group .search-query.form-control",
             run: "edit Event 0 && click body",

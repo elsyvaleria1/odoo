@@ -709,3 +709,10 @@ export function clickToolbarButton(elementName, selector, button, expand = false
     }
     return steps;
 }
+
+export function waitForPartialNavigation() {
+    return {
+        content: "Wait for the next page to be swapped in place",
+        trigger: "[data-partial-navigation]:not([aria-busy])",
+    };
+}

@@ -11,6 +11,7 @@ const HEAD_SELECTORS = [
     'link[rel="canonical"]',
     'link[rel="alternate"][hreflang]',
     'meta[name="description"]',
+    'meta[name="robots"]',
     'meta[property^="og:"]',
     'meta[name^="twitter:"]',
 ].join(", ");
@@ -38,19 +39,24 @@ function syncPageAttributes(current, next) {
 
 /**
  * Navigates to `url` in place when `el` sits in a partial navigation scope,
- * and as usual otherwise.
+ * and through `fallback` otherwise (a plain navigation by default).
  *
  * @param {Element} el
  * @param {string} url
+ * @param {() => void} [fallback]
  */
-export function requestNavigation(el, url) {
+export function requestNavigation(
+    el,
+    url,
+    fallback = () => browser.location.assign(new URL(url, browser.location.href).href),
+) {
     const request = new CustomEvent("o-navigate", {
         bubbles: true,
         cancelable: true,
         detail: { url },
     });
     if (el.dispatchEvent(request)) {
-        browser.location.assign(new URL(url, browser.location.href).href);
+        fallback();
     }
 }
 
