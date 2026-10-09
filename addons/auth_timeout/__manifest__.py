@@ -26,5 +26,8 @@
         "web.assets_tests": [
             "auth_timeout/static/tests/tours/**/*",
         ],
+        "web.assets_unit_tests": [
+            "auth_timeout/static/tests/**/*.test.js",
+        ],
     },
 }

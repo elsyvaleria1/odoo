@@ -276,17 +276,14 @@ export const checkIdentityService = {
 
         // Inactivity: Set a timer after which the check identity automatically appear.
         if (session.lock_timeout_inactivity) {
-            // Start the bus to be able to send inactivities / presences
-            bus_service.start();
             const updatePresence = () => {
                 bus_service.send("update_presence", {
                     inactivity_period: presence.getInactivityPeriod(),
                 });
             };
-            // Immediately send a presence on bus connect
-            bus_service.addEventListener("connect", () => updatePresence(), {
-                once: true,
-            });
+            // Start the bus to be able to send inactivities / presences, and
+            // send one as soon as it is: the worker holds it until connected.
+            bus_service.start().then(updatePresence);
             const startInactivityTimer = () => {
                 inactivityTimer = setTimeout(
                     async () => {
