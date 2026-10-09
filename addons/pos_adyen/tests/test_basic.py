@@ -54,8 +54,8 @@ class TestAdyenPoS(TestPointOfSaleHttpCommon):
             ),
             patch.object(
                 type(self.env["pos.payment.method"]),
-                "_adyen_confirm_payment",
-                lambda self, data, pending: True,
+                "_adyen_transaction_status",
+                lambda self, data, pending: "confirmed",
             ),
         ):
             self.start_pos_tour("PosAdyenTour")

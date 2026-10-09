@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
-import { waitUntil } from "@odoo/hoot-dom";
+import { animationFrame, waitUntil } from "@odoo/hoot-dom";
+import { advanceTime } from "@odoo/hoot-mock";
 import { definePosModels } from "@point_of_sale/../tests/unit/data/generate_model_definitions";
 import { PosConfig } from "@point_of_sale/../tests/unit/data/pos_config.data";
 import { PosPaymentMethod } from "@point_of_sale/../tests/unit/data/pos_payment_method.data";
@@ -42,7 +43,8 @@ beforeEach(() => {
     onRpc("/web/static/*", () => "");
 });
 
-const approval = (serviceId) => ({
+const approval = (serviceId, confirmation = "confirmed") => ({
+    OdooConfirmation: confirmation,
     SaleToPOIResponse: {
         MessageHeader: { ServiceID: serviceId },
         PaymentResponse: {
@@ -66,9 +68,9 @@ const startAdyenPayment = async () => {
         return true;
     });
     const { data: line } = order.addPaymentline(method);
-    line.pay();
+    const payment = line.pay();
     await waitUntil(() => line.getPaymentStatus() === "waitingCard");
-    return { store, order, method, line, sent };
+    return { store, order, method, line, sent, payment };
 };
 
 const reloadFromIndexedDB = async (store, order) => {
@@ -149,5 +151,38 @@ describe("reload while the terminal holds the payment", () => {
         await waitUntil(() => polled);
 
         expect(line.getPaymentStatus()).toBe("waitingCard");
+    });
+});
+
+describe("an approval Odoo has not confirmed with Adyen", () => {
+    test("is left to the cashier with its reference, never to retry", async () => {
+        const { method, line, sent, payment } = await startAdyenPayment();
+        onRpc("pos.payment.method", "get_latest_adyen_status", () =>
+            approval(sent.serviceId, "unconfirmed"),
+        );
+
+        await method.payment_terminal.handleAdyenStatusResponse();
+
+        expect(await payment).toBe(false);
+        expect(line.getPaymentStatus()).toBe("force_done");
+        expect(line.transaction_id).toBe("PSP9");
+    });
+
+    test("keeps the line waiting until the next poll learns the outcome", async () => {
+        const { method, line, sent, payment } = await startAdyenPayment();
+        let confirmation = "pending";
+        onRpc("pos.payment.method", "get_latest_adyen_status", () =>
+            approval(sent.serviceId, confirmation),
+        );
+
+        await method.payment_terminal.handleAdyenStatusResponse();
+        await animationFrame();
+        expect(line.getPaymentStatus()).toBe("waitingCard");
+
+        confirmation = "confirmed";
+        await advanceTime(5000);
+
+        expect(await payment).toBe(true);
+        expect(line.getPaymentStatus()).toBe("done");
     });
 });

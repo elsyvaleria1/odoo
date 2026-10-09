@@ -10,6 +10,12 @@ patch(PosPayment.prototype, {
         return this.uiState?.adyenServiceId ?? null;
     },
     setTerminalServiceId(id) {
-        this.uiState = { ...this.uiState, adyenServiceId: id };
+        this.uiState = { ...this.uiState, adyenServiceId: id, adyenUnconfirmed: false };
+    },
+    handlePaymentResponse(isPaymentSuccessful) {
+        if (!isPaymentSuccessful && this.uiState?.adyenUnconfirmed) {
+            return false;
+        }
+        return super.handlePaymentResponse(...arguments);
     },
 });

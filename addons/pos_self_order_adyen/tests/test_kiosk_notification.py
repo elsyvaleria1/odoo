@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from urllib.parse import parse_qsl, urlencode
 
+import requests
+
 import odoo.tests
 from odoo import Command
 from odoo.exceptions import UserError
@@ -135,21 +137,48 @@ class TestKioskAdyenNotification(SelfOrderCommonTest):
             headers={"Content-Type": "application/json"},
         )
 
+    def _settle(self, notification, reply_patch):
+        self._post(notification)
+        self.assertEqual(self.order.state, "draft")
+        with (
+            reply_patch,
+            patch.object(
+                type(self.env["pos.order"]), "_send_payment_result", autospec=True
+            ) as sent,
+        ):
+            self.env["pos.payment.method"].sudo()._cron_confirm_adyen_payments()
+        return [call.args[1] for call in sent.call_args_list]
+
     def test_a_notification_pays_the_order_its_request_was_made_for(self):
         notification = self._notification(
             self._kiosk_request(self.order), self_order_id=self.other_order.id
         )
-        with self._adyen_reports(notification, "Success"):
-            self._post(notification)
+        sent = self._settle(notification, self._adyen_reports(notification, "Success"))
+        self.assertEqual(sent, ["Success"])
         self.assertEqual(self.order.state, "paid")
         self.assertEqual(self.other_order.state, "draft")
         self.assertFalse(self.other_order.payment_ids)
 
-    @mute_logger("odoo.addons.pos_adyen.models.pos_payment_method")
-    def test_an_approval_adyen_does_not_confirm_pays_nothing(self):
+    def test_a_failure_adyen_reports_pays_nothing(self):
         notification = self._notification(self._kiosk_request(self.order))
-        with self._adyen_reports(notification, "Failure"):
-            self._post(notification)
+        sent = self._settle(notification, self._adyen_reports(notification, "Failure"))
+        self.assertEqual(sent, ["Failure"])
+        self.assertEqual(self.order.state, "draft")
+        self.assertFalse(self.order.payment_ids)
+
+    @mute_logger(
+        "odoo.addons.pos_adyen.models.pos_payment_method",
+        "odoo.addons.pos_self_order_adyen.models.pos_payment_method",
+    )
+    def test_an_approval_adyen_cannot_confirm_pays_nothing_and_says_so(self):
+        notification = self._notification(self._kiosk_request(self.order))
+        unreachable = patch.object(
+            PosPaymentMethod,
+            "_proxy_adyen_request_direct",
+            side_effect=requests.ConnectionError("timed out"),
+        )
+        sent = self._settle(notification, unreachable)
+        self.assertEqual(sent, ["unconfirmed"])
         self.assertEqual(self.order.state, "draft")
         self.assertFalse(self.order.payment_ids)
 

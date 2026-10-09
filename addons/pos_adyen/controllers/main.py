@@ -6,7 +6,6 @@ from werkzeug.exceptions import Forbidden
 
 from odoo import http
 from odoo.http import request
-from odoo.libs.json import dumps as json_dumps
 
 _logger = logging.getLogger(__name__)
 
@@ -44,12 +43,10 @@ class PosAdyenController(http.Controller):
         pending = adyen_pm_sudo._adyen_consume_pending_request(data)
         if pending is None:
             raise Forbidden
-        response = data["SaleToPOIResponse"]["PaymentResponse"]["Response"]
-        if response.get(
-            "Result"
-        ) == "Success" and not adyen_pm_sudo._adyen_confirm_payment(data, pending):
-            data = adyen_pm_sudo._adyen_unconfirmed(data)
-        return self._process_payment_response(data, adyen_pm_sudo, pending)
+        adyen_pm_sudo._adyen_record_notification(data, pending)
+        return request.prepare_json_response(
+            "[accepted]"
+        )  # https://docs.adyen.com/point-of-sale/design-your-integration/choose-your-architecture/cloud/#guarantee
 
     @staticmethod
     def _get_additional_data_from_unparsed(adyen_additional_response, data_key):
@@ -62,22 +59,3 @@ class PosAdyenController(http.Controller):
     def _get_additional_data_from_parsed(parsed_adyen_additional_response, data_key):
         data_value = parsed_adyen_additional_response.get(data_key)
         return data_value[0] if data_value and len(data_value) == 1 else None
-
-    def _process_payment_response(self, data, adyen_pm_sudo, pending):
-        transaction_id = data["SaleToPOIResponse"]["PaymentResponse"]["SaleData"][
-            "SaleTransactionID"
-        ]["TransactionID"]
-        if not transaction_id:
-            return request.prepare_json_response(None)
-        transaction_id_parts = transaction_id.split("--")
-        if len(transaction_id_parts) != 2:
-            return request.prepare_json_response(None)
-        pos_session_id = int(transaction_id_parts[1])
-        pos_session_sudo = request.env["pos.session"].sudo().browse(pos_session_id)
-        adyen_pm_sudo.adyen_latest_response = json_dumps(data)
-        pos_session_sudo.config_id._notify(
-            "ADYEN_LATEST_RESPONSE", pos_session_sudo.config_id.id
-        )
-        return request.prepare_json_response(
-            "[accepted]"
-        )  # https://docs.adyen.com/point-of-sale/design-your-integration/choose-your-architecture/cloud/#guarantee

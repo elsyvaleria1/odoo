@@ -170,10 +170,60 @@ class PosPaymentMethod(models.Model):
             self.adyen_pending_request = False
         return pending
 
-    def _adyen_confirm_payment(self, data, pending) -> bool:
-        """Whether Adyen itself reports the notified payment as approved for
-        the amount notified: cloud Terminal API event notifications carry no
-        signature of Adyen's, so a Success is only taken from Adyen's API."""
+    def _adyen_record_notification(self, data, pending) -> None:
+        """Keep the notification for the till and, for an approval, leave its
+        confirmation to the cron: Adyen is still waiting for this request to
+        answer, and the terminal may not report the transaction until it has."""
+        result = data["SaleToPOIResponse"]["PaymentResponse"]["Response"].get("Result")
+        state = "pending" if result == "Success" else "final"
+        self.write(
+            {
+                "adyen_latest_response": json_dumps(data),
+                "adyen_confirmed_request": json_dumps(pending),
+                "adyen_confirmation_state": state,
+            }
+        )
+        if state == "pending":
+            self.env.ref("pos_adyen.ir_cron_confirm_adyen_payment")._trigger()
+        else:
+            self._adyen_settle(data, pending, state)
+
+    @api.model
+    def _cron_confirm_adyen_payments(self) -> None:
+        for method in self.search([("adyen_confirmation_state", "=", "pending")]):
+            method._adyen_confirm_pending_payment()
+
+    def _adyen_confirm_pending_payment(self) -> None:
+        self.check_singleton()
+        self.lock_for_update(wait=True)
+        self.invalidate_recordset(
+            [
+                "adyen_confirmation_state",
+                "adyen_latest_response",
+                "adyen_confirmed_request",
+            ]
+        )
+        if self.adyen_confirmation_state != "pending":
+            return
+        data = json_loads(self.adyen_latest_response)
+        pending = json_loads(self.adyen_confirmed_request)
+        state = self._adyen_transaction_status(data, pending)
+        if state == "failed":
+            data = self._adyen_reported_failed(data)
+        self.write(
+            {
+                "adyen_latest_response": json_dumps(data),
+                "adyen_confirmation_state": state,
+            }
+        )
+        self._adyen_settle(data, pending, state)
+
+    def _adyen_transaction_status(self, data, pending) -> str:
+        """What Adyen itself reports of the notified payment: "confirmed" when
+        it approved this transaction for the amount notified, "failed" only when
+        it reports this transaction failed, and "unconfirmed" for anything else
+        (unreachable, in progress, not found, another transaction or amount).
+        Cloud Terminal API event notifications carry no signature of Adyen's."""
         status_request = {
             "SaleToPOIRequest": {
                 "MessageHeader": {
@@ -199,44 +249,58 @@ class PosPaymentMethod(models.Model):
                 status_request, "transaction_status"
             )
             status = reply["SaleToPOIResponse"]["TransactionStatusResponse"]
+            if status["Response"]["Result"] != "Success":
+                return "unconfirmed"
             payment = status["RepeatedMessageResponse"]["RepeatedResponseMessageBody"][
                 "PaymentResponse"
             ]
+            if (
+                payment["SaleData"]["SaleTransactionID"]["TransactionID"]
+                != pending["transaction_id"]
+            ):
+                return "unconfirmed"
+            result = payment["Response"]["Result"]
+            if result == "Failure":
+                return "failed"
             confirmed_amounts = payment["PaymentResult"]["AmountsResp"]
             notified_amounts = data["SaleToPOIResponse"]["PaymentResponse"][
                 "PaymentResult"
             ]["AmountsResp"]
-            return (
-                status["Response"]["Result"] == "Success"
-                and payment["Response"]["Result"] == "Success"
-                and payment["SaleData"]["SaleTransactionID"]["TransactionID"]
-                == pending["transaction_id"]
+            if (
+                result == "Success"
                 and self._adyen_amounts_match(confirmed_amounts, pending)
                 and confirmed_amounts["AuthorizedAmount"]
                 == notified_amounts["AuthorizedAmount"]
-            )
-        except KeyError, TypeError, ValueError, OSError:
+            ):
+                return "confirmed"
+        except KeyError, TypeError, ValueError, AttributeError, OSError:
             _logger.warning(
                 "Adyen could not confirm the payment of request %s on %s",
                 pending["service_id"],
                 self.adyen_terminal_identifier,
                 exc_info=True,
             )
-            return False
+        return "unconfirmed"
 
     @api.model
-    def _adyen_unconfirmed(self, data):
+    def _adyen_reported_failed(self, data):
         response = data["SaleToPOIResponse"]["PaymentResponse"]["Response"]
         response["Result"] = "Failure"
         response["AdditionalResponse"] = urlencode(
-            {
-                "message": self.env._(
-                    "Adyen did not confirm this payment: check the terminal "
-                    "before charging the customer again."
-                )
-            }
+            {"message": self.env._("Adyen reports this payment as failed.")}
         )
         return data
+
+    def _adyen_settle(self, data, pending, state) -> None:
+        transaction_id = data["SaleToPOIResponse"]["PaymentResponse"]["SaleData"][
+            "SaleTransactionID"
+        ]["TransactionID"]
+        session_id = (transaction_id or "").rpartition("--")[2]
+        if not session_id.isdigit():
+            return
+        session = self.env["pos.session"].sudo().browse(int(session_id)).exists()
+        if session:
+            session.config_id._notify("ADYEN_LATEST_RESPONSE", session.config_id.id)
 
     def _integration_connection_service(self):
         if self.use_payment_terminal == "adyen":
@@ -273,6 +337,16 @@ class PosPaymentMethod(models.Model):
         groups="base.group_erp_manager",
     )  # used to buffer the latest asynchronous notification from Adyen.
     adyen_pending_request = fields.Char(
+        copy=False,
+        classification="base.internal",
+        groups="base.group_erp_manager",
+    )
+    adyen_confirmed_request = fields.Char(
+        copy=False,
+        classification="base.internal",
+        groups="base.group_erp_manager",
+    )
+    adyen_confirmation_state = fields.Char(
         copy=False,
         classification="base.internal",
         groups="base.group_erp_manager",
@@ -334,7 +408,13 @@ class PosPaymentMethod(models.Model):
 
     def _is_write_forbidden(self, fields) -> bool:
         return super()._is_write_forbidden(
-            fields - {"adyen_latest_response", "adyen_pending_request"}
+            fields
+            - {
+                "adyen_latest_response",
+                "adyen_pending_request",
+                "adyen_confirmed_request",
+                "adyen_confirmation_state",
+            }
         )
 
     def get_latest_adyen_status(self):
@@ -344,8 +424,16 @@ class PosPaymentMethod(models.Model):
         ):
             raise AccessDenied
 
-        latest_response = self.sudo().adyen_latest_response
-        return json_loads(latest_response) if latest_response else False
+        method_sudo = self.sudo()
+        if method_sudo.adyen_confirmation_state == "pending":
+            method_sudo._adyen_confirm_pending_payment()
+        latest_response = method_sudo.adyen_latest_response
+        if not latest_response:
+            return False
+        return {
+            **json_loads(latest_response),
+            "OdooConfirmation": method_sudo.adyen_confirmation_state or "final",
+        }
 
     def proxy_adyen_request(self, data, operation=False):
         """Necessary because Adyen's endpoints don't have CORS enabled"""
@@ -557,6 +645,8 @@ class PosPaymentMethod(models.Model):
         self.sudo().write(
             {
                 "adyen_latest_response": "",
+                "adyen_confirmed_request": False,
+                "adyen_confirmation_state": False,
                 "adyen_pending_request": json_dumps(
                     {
                         "sale_id": msg_header["SaleID"],

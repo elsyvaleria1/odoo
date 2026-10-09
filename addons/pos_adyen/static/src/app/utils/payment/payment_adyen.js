@@ -7,10 +7,13 @@ import { now } from "@web/core/l10n/dates";
 import { _t } from "@web/core/translation";
 import { AlertDialog } from "@web/ui/dialog";
 
+const POLLING_INTERVAL_MS = 5000;
+
 export class PaymentAdyen extends PaymentInterface {
     setup() {
         super.setup(...arguments);
         this.paymentLineResolvers = {};
+        this.pollingIntervals = {};
     }
 
     sendPaymentRequest(uuid) {
@@ -223,9 +226,31 @@ export class PaymentAdyen extends PaymentInterface {
     }
 
     waitForPaymentConfirmation() {
+        const line = this.pendingAdyenline();
         return new Promise((resolve) => {
-            this.paymentLineResolvers[this.pendingAdyenline().uuid] = resolve;
+            this.paymentLineResolvers[line.uuid] = resolve;
+            this._pollLatestStatus(line);
         });
+    }
+
+    _pollLatestStatus(line) {
+        this._stopPolling(line);
+        const serviceId = line.terminalServiceId;
+        this.pollingIntervals[line.uuid] = setInterval(() => {
+            if (
+                line.getPaymentStatus() === "waitingCard" &&
+                line.terminalServiceId === serviceId
+            ) {
+                this._applyLatestStatus(line);
+            } else {
+                this._stopPolling(line);
+            }
+        }, POLLING_INTERVAL_MS);
+    }
+
+    _stopPolling(line) {
+        clearInterval(this.pollingIntervals[line.uuid]);
+        delete this.pollingIntervals[line.uuid];
     }
 
     /**
@@ -254,6 +279,11 @@ export class PaymentAdyen extends PaymentInterface {
         if (line.getPaymentStatus() !== "waitingCard" || !line.terminalServiceId) {
             return;
         }
+        this._pollLatestStatus(line);
+        await this._applyLatestStatus(line);
+    }
+
+    async _applyLatestStatus(line) {
         const notification = await this._fetchLatestAdyenStatus();
         if (
             notification?.SaleToPOIResponse?.MessageHeader?.ServiceID ===
@@ -266,8 +296,20 @@ export class PaymentAdyen extends PaymentInterface {
 
     _handleAdyenNotification(notification) {
         const line = this.pendingAdyenline();
+        if (!line || notification.OdooConfirmation === "pending") {
+            return;
+        }
         const response = notification.SaleToPOIResponse.PaymentResponse.Response;
         const additional_response = new URLSearchParams(response.AdditionalResponse);
+        if (
+            notification.OdooConfirmation === "unconfirmed" &&
+            response.Result === "Success" &&
+            notification.SaleToPOIResponse.MessageHeader.ServiceID ===
+                line.terminalServiceId
+        ) {
+            this._handleUnconfirmedApproval(line, additional_response);
+            return;
+        }
         const isPaymentSuccessful = this.isPaymentSuccessful(notification, response);
         if (isPaymentSuccessful) {
             this.handleSuccessResponse(line, notification, additional_response);
@@ -276,20 +318,46 @@ export class PaymentAdyen extends PaymentInterface {
                 _t("Message from Adyen: %s", additional_response.get("message")),
             );
         }
-        // when starting to wait for the payment response we create a promise
-        // that will be resolved when the payment response is received.
-        // In case this resolver is lost ( for example on a refresh ) we
-        // we use the handlePaymentResponse method on the payment line
-        const resolver = this.paymentLineResolvers?.[line?.uuid];
+        this._settleLine(line, isPaymentSuccessful);
+    }
+
+    // The terminal may have charged the card: retrying would charge it again,
+    // so only the cashier, looking at the terminal, settles the line.
+    _handleUnconfirmedApproval(line, additional_response) {
+        const reference = additional_response.get("pspReference") || "";
+        line.transaction_id = reference;
+        line.card_type = additional_response.get("cardType");
+        line.uiState = { ...line.uiState, adyenUnconfirmed: true };
+        line.setPaymentStatus("force_done");
+        this._show_error(
+            _t(
+                "Adyen could not confirm this payment. Check the terminal: if it shows the payment as approved, press Force done (reference %s); otherwise remove the line before taking another payment.",
+                reference,
+            ),
+            _t("Check the Adyen terminal"),
+        );
+        this._settleLine(line, false);
+    }
+
+    // when starting to wait for the payment response we create a promise
+    // that will be resolved when the payment response is received.
+    // In case this resolver is lost (for example on a refresh)
+    // we use the handlePaymentResponse method on the payment line
+    _settleLine(line, isPaymentSuccessful) {
+        this._stopPolling(line);
+        const resolver = this.paymentLineResolvers[line.uuid];
+        delete this.paymentLineResolvers[line.uuid];
         if (resolver) {
             resolver(isPaymentSuccessful);
         } else {
-            line?.handlePaymentResponse(isPaymentSuccessful);
+            line.handlePaymentResponse(isPaymentSuccessful);
         }
     }
+
     isPaymentSuccessful(notification, response) {
         return (
             notification &&
+            notification.OdooConfirmation === "confirmed" &&
             notification.SaleToPOIResponse.MessageHeader.ServiceID ===
                 this.pendingAdyenline()?.terminalServiceId &&
             response.Result === "Success"

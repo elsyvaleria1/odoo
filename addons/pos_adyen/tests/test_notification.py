@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from urllib.parse import parse_qs
 
+import requests
+
 from odoo import Command
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
@@ -101,7 +103,7 @@ class TestAdyenNotification(HttpCase):
                     headers={"Content-Type": "application/json"},
                 )
                 self.assertEqual(response.status_code, 200)
-                self.assertIsNone(response.json())
+                self.assertEqual(response.json(), "[accepted]")
 
 
 @tagged("post_install", "-at_install")
@@ -199,10 +201,8 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
 
     def _adyen_reports(self, notification, result, amount):
         response = notification["SaleToPOIResponse"]["PaymentResponse"]
-
-        def proxy(method, request_data, operation):
-            self.assertEqual(operation, "transaction_status")
-            return {
+        return self._adyen_answers(
+            {
                 "SaleToPOIResponse": {
                     "TransactionStatusResponse": {
                         "Response": {"Result": "Success"},
@@ -223,6 +223,17 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
                     }
                 }
             }
+        )
+
+    def _adyen_answers(self, reply):
+        self.status_requests = []
+
+        def proxy(method, request_data, operation):
+            self.assertEqual(operation, "transaction_status")
+            self.status_requests.append(request_data)
+            if isinstance(reply, Exception):
+                raise reply
+            return reply
 
         return patch.object(PosPaymentMethod, "_proxy_adyen_request_direct", proxy)
 
@@ -242,20 +253,82 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
             ]
         )
 
-    def test_an_approval_adyen_confirms_reaches_the_pos(self):
+    def _confirmation(self):
+        return self.adyen.sudo().adyen_confirmation_state
+
+    def _confirm(self, reply_patch):
+        with reply_patch:
+            self.env["pos.payment.method"].sudo()._cron_confirm_adyen_payments()
+
+    def test_the_notification_is_acknowledged_before_adyen_is_asked(self):
         notification = self._notification(self._payment_request())
         with self._adyen_reports(notification, "Success", 25.0):
             response = self._post(notification)
         self.assertEqual(response.json(), "[accepted]")
-        self.assertEqual(self._latest_result(), "Success")
+        self.assertEqual(self.status_requests, [])
+        self.assertEqual(self._confirmation(), "pending")
         self.assertFalse(self.adyen.sudo().adyen_pending_request)
 
-    @mute_logger("odoo.addons.pos_adyen.models.pos_payment_method")
-    def test_a_failure_rewritten_as_an_approval_stays_a_failure(self):
+    def test_an_approval_adyen_confirms_reaches_the_pos(self):
         notification = self._notification(self._payment_request())
-        with self._adyen_reports(notification, "Failure", 25.0):
-            self._post(notification)
+        self._post(notification)
+        self._confirm(self._adyen_reports(notification, "Success", 25.0))
+        self.assertEqual(len(self.status_requests), 1)
+        self.assertEqual(self._confirmation(), "confirmed")
+        latest = self.adyen.with_user(self.pos_user).get_latest_adyen_status()
+        self.assertEqual(latest["OdooConfirmation"], "confirmed")
+        self.assertEqual(
+            latest["SaleToPOIResponse"]["PaymentResponse"]["Response"]["Result"],
+            "Success",
+        )
+
+    def test_the_till_poll_confirms_a_pending_approval(self):
+        notification = self._notification(self._payment_request())
+        self._post(notification)
+        with self._adyen_reports(notification, "Success", 25.0):
+            latest = self.adyen.with_user(self.pos_user).get_latest_adyen_status()
+        self.assertEqual(latest["OdooConfirmation"], "confirmed")
+
+    def test_a_failure_adyen_reports_becomes_a_failure(self):
+        notification = self._notification(self._payment_request())
+        self._post(notification)
+        self._confirm(self._adyen_reports(notification, "Failure", 25.0))
+        self.assertEqual(self._confirmation(), "failed")
         self.assertEqual(self._latest_result(), "Failure")
+
+    @mute_logger("odoo.addons.pos_adyen.models.pos_payment_method")
+    def test_an_unreachable_adyen_leaves_the_approval_unconfirmed(self):
+        notification = self._notification(self._payment_request())
+        self._post(notification)
+        self._confirm(self._adyen_answers(requests.ConnectionError("timed out")))
+        self.assertEqual(self._confirmation(), "unconfirmed")
+        self.assertEqual(self._latest_result(), "Success")
+
+    def test_a_payment_adyen_still_has_in_progress_stays_unconfirmed(self):
+        notification = self._notification(self._payment_request())
+        self._post(notification)
+        self._confirm(
+            self._adyen_answers(
+                {
+                    "SaleToPOIResponse": {
+                        "TransactionStatusResponse": {
+                            "Response": {
+                                "Result": "Failure",
+                                "ErrorCondition": "InProgress",
+                            }
+                        }
+                    }
+                }
+            )
+        )
+        self.assertEqual(self._confirmation(), "unconfirmed")
+        self.assertEqual(self._latest_result(), "Success")
+
+    def test_an_approval_for_another_amount_adyen_reports_stays_unconfirmed(self):
+        notification = self._notification(self._payment_request())
+        self._post(notification)
+        self._confirm(self._adyen_reports(notification, "Success", 2.5))
+        self.assertEqual(self._confirmation(), "unconfirmed")
 
     @mute_logger(
         "odoo.addons.integration.models.integration_receiver",
@@ -263,18 +336,16 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
     )
     def test_an_approval_for_another_amount_is_refused(self):
         notification = self._notification(self._payment_request(25.0), amount=1.0)
-        with self._adyen_reports(notification, "Success", 1.0):
-            response = self._post(notification)
+        response = self._post(notification)
         self.assertNotEqual(response.status_code, 200)
         self.assertFalse(self._latest_result())
 
     @mute_logger("odoo.addons.integration.models.integration_receiver")
     def test_a_notification_is_accepted_once(self):
         notification = self._notification(self._payment_request())
-        with self._adyen_reports(notification, "Success", 25.0):
-            self.assertEqual(self._post(notification).json(), "[accepted]")
-            self.adyen.sudo().adyen_latest_response = ""
-            replay = self._post(notification)
+        self.assertEqual(self._post(notification).json(), "[accepted]")
+        self.adyen.sudo().adyen_latest_response = ""
+        replay = self._post(notification)
         self.assertNotEqual(replay.status_code, 200)
         self.assertFalse(self._latest_result())
 
@@ -282,8 +353,7 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
     def test_a_notification_for_a_superseded_request_is_refused(self):
         superseded = self._notification(self._payment_request())
         self._payment_request(service_id="0987654321")
-        with self._adyen_reports(superseded, "Success", 25.0):
-            response = self._post(superseded)
+        response = self._post(superseded)
         self.assertNotEqual(response.status_code, 200)
         self.assertFalse(self._latest_result())
 
@@ -291,8 +361,7 @@ class TestAdyenPaymentRoundTrip(TestPointOfSaleHttpCommon):
         with self.assertLogs("odoo.addons.pos_adyen", "INFO") as logs:
             request = self._payment_request()
             notification = self._notification(request)
-            with self._adyen_reports(notification, "Success", 25.0):
-                self._post(notification)
+            self._post(notification)
         pos_hmac = parse_qs(
             request["PaymentRequest"]["SaleData"]["SaleToAcquirerData"]
         )["metadata.pos_hmac"][0]
