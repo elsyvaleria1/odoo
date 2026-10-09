@@ -60,7 +60,6 @@ class TestTransportErrorTeardown(BaseCase):
             yield MagicMock()
 
         with (
-            patch.object(Websocket, "_trigger_lifecycle_event", lambda self, ev: None),
             patch("odoo.addons.bus.websocket.acquire_cursor", fake_acquire_cursor),
             patch.object(Websocket, "new_env", return_value=MagicMock()),
             patch("odoo.addons.bus.websocket.dispatch") as dispatch_mock,

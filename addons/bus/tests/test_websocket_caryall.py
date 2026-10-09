@@ -3,12 +3,10 @@ import socket
 import struct
 import time
 import weakref
-from collections import defaultdict
 from threading import Event
 from unittest.mock import patch
 
 from odoo import http
-from odoo.api import Environment
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.service.security import is_session_valid
@@ -43,27 +41,6 @@ class ManualClock:
 
 @common.tagged("post_install", "-at_install")
 class TestWebsocketCaryall(WebsocketCase):
-    def test_lifecycle_hooks(self):
-        events = []
-        with patch.object(Websocket, "_Websocket__event_callbacks", defaultdict(set)):
-
-            @Websocket.onopen
-            def onopen(env, websocket):  # pylint: disable=unused-variable
-                self.assertIsInstance(env, Environment)
-                self.assertIsInstance(websocket, Websocket)
-                events.append("open")
-
-            @Websocket.onclose
-            def onclose(env, websocket):  # pylint: disable=unused-variable
-                self.assertIsInstance(env, Environment)
-                self.assertIsInstance(websocket, Websocket)
-                events.append("close")
-
-            ws = self.websocket_connect()
-            ws.close(CloseCode.CLEAN)
-            self.wait_remaining_websocket_connections()
-            self.assertEqual(events, ["open", "close"])
-
     def test_on_websocket_closed_runs_through_retrying(self):
         seen = []
         original_retrying = websocket_module.retrying
@@ -342,11 +319,10 @@ class TestWebsocketCaryall(WebsocketCase):
             )
             self.assertEqual(notifications[0]["message"]["payload"], "message")
 
-    def test_no_cursor_when_no_callback_for_lifecycle_event(self):
-        with patch.object(Websocket, "_Websocket__event_callbacks", defaultdict(set)):
-            with patch("odoo.addons.bus.websocket.acquire_cursor") as mock:
-                self.websocket_connect()
-                self.assertFalse(mock.called)
+    def test_a_connection_opens_no_cursor(self):
+        with patch("odoo.addons.bus.websocket.acquire_cursor") as mock:
+            self.websocket_connect()
+            self.assertFalse(mock.called)
 
     def _connect_and_capture_server_session(self, cookie, **connect_kwargs):
         captured_sessions = []

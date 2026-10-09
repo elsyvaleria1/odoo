@@ -25,7 +25,6 @@ class TestTerminateTeardownRobustness(BaseCase):
                 "odoo.addons.bus.websocket.acquire_cursor",
                 side_effect=PoolError("pool exhausted during teardown"),
             ),
-            patch.object(Websocket, "_trigger_lifecycle_event", lambda self, ev: None),
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._terminate()
@@ -40,7 +39,6 @@ class TestTerminateTeardownRobustness(BaseCase):
                 "odoo.addons.bus.websocket.acquire_cursor",
                 side_effect=PoolError("pool exhausted"),
             ),
-            patch.object(Websocket, "_trigger_lifecycle_event", lambda self, ev: None),
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._handle_transport_error(OSError("connection reset"))
@@ -64,7 +62,6 @@ class TestTerminateTeardownRobustness(BaseCase):
                 "odoo.addons.bus.websocket.acquire_cursor",
                 side_effect=PoolError("irrelevant"),
             ),
-            patch.object(Websocket, "_trigger_lifecycle_event", lambda self, ev: None),
             patch("odoo.addons.bus.websocket.dispatch"),
         ):
             ws._terminate()
@@ -82,7 +79,6 @@ class TestTerminateTeardownRobustness(BaseCase):
 
         with (
             patch("odoo.addons.bus.websocket.acquire_cursor", fake_acquire_cursor),
-            patch.object(Websocket, "_trigger_lifecycle_event", lambda self, ev: None),
             patch.object(Websocket, "new_env", return_value=env),
             patch("odoo.addons.bus.websocket.dispatch"),
         ):

@@ -10,9 +10,8 @@ import socket
 import sys
 import threading
 import time
-from collections import defaultdict, deque
+from collections import deque
 from contextlib import contextmanager, suppress
-from enum import IntEnum
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -133,11 +132,6 @@ class _ServerClock:
     # threads would mix both clocks for one connection; a reference held on a
     # class is one it does not rewrite.
     monotonic = staticmethod(time.monotonic)
-
-
-class LifecycleEvent(IntEnum):
-    OPEN = 0
-    CLOSE = 1
 
 
 _public_session_lock = threading.Lock()
@@ -304,7 +298,6 @@ class NotificationDispatchState:
 
 
 class Websocket:
-    __event_callbacks = defaultdict(set)
     MESSAGE_MAX_SIZE = 2**20
     MAX_NOTIFICATION_HISTORY_SEC = NOTIFICATION_HOLD_BACK_SECONDS
     RL_BURST = max(1, int(config["websocket_rate_limit_burst"]))
@@ -376,7 +369,6 @@ class Websocket:
         self._lane = deque()
         self._job = None
         self._job_serves_message = False
-        self._opening = bool(self.__event_callbacks[LifecycleEvent.OPEN])
         self._dispatch_pending = False
         self._dispatch_wanted_at = None
         self._last_job_was_dispatch = False
@@ -393,16 +385,6 @@ class Websocket:
 
     def close(self, code, reason=None):
         self._on_loop(self._close_if_open, code, reason)
-
-    @classmethod
-    def onopen(cls, func):
-        cls.__event_callbacks[LifecycleEvent.OPEN].add(func)
-        return func
-
-    @classmethod
-    def onclose(cls, func):
-        cls.__event_callbacks[LifecycleEvent.CLOSE].add(func)
-        return func
 
     def subscribe(self, last) -> None:
         self._session_validated_until = 0.0
@@ -620,10 +602,7 @@ class Websocket:
             self._update_events()
 
     def _start_next_job(self, hub) -> None:
-        if self._opening:
-            self._opening = False
-            job = self._open_job
-        elif (
+        if (
             self._dispatch_pending
             and not (self._lane and self._last_job_was_dispatch)
             and not self._dispatch_held()
@@ -676,9 +655,6 @@ class Websocket:
             self._hub.submit(self._teardown)
             return
         self._pump()
-
-    def _open_job(self) -> None:
-        self._trigger_lifecycle_event(LifecycleEvent.OPEN)
 
     def _message_job(self, message) -> None:
         WebsocketConnectionHandler._serve_message(
@@ -924,7 +900,6 @@ class Websocket:
         if self._hub is not None and self._hub.stopping:
             return
         try:
-            self._trigger_lifecycle_event(LifecycleEvent.CLOSE)
             with acquire_cursor(self._db) as cr:
                 env = self.new_env(cr, self._session)
                 retrying(
@@ -1018,21 +993,6 @@ class Websocket:
                 raise RateLimitExceededError
             self._control_frames_due = due + interval
 
-    def _trigger_lifecycle_event(self, event_type) -> None:
-        if not self.__event_callbacks[event_type]:
-            return
-        with acquire_cursor(self._db) as cr:
-            env = self.new_env(cr, self._session, set_lang=True)
-            for callback in self.__event_callbacks[event_type]:
-                try:
-                    retrying(functools.partial(callback, env, self), env)
-                except Exception:
-                    _logger.warning(
-                        "Error during Websocket %s callback",
-                        LifecycleEvent(event_type).name,
-                        exc_info=True,
-                    )
-
     def _session_check_due(self, now) -> bool:
         return (
             now >= self._session_validated_until
@@ -1115,7 +1075,6 @@ class Websocket:
             and self._job is None
             and not self._waiting_for_dispatch
             and not self._lane
-            and not self._opening
             and not self._dispatch_held()
         )
 
