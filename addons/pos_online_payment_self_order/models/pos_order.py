@@ -111,7 +111,13 @@ class PosOrder(models.Model):
         return res
 
     def _send_notification_online_payment_status(self, status) -> None:
+        self.check_singleton()
+        # the till prints the order it is told of, and loads it itself
         self.config_id._notify(
+            "ONLINE_PAYMENT_STATUS",
+            {"status": status, "data": {"pos.order": [{"id": self.id}]}},
+        )
+        self._notify_self_order_device(
             "ONLINE_PAYMENT_STATUS",
             {
                 "status": status,  # progress, success, fail

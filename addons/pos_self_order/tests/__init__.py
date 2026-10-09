@@ -14,3 +14,4 @@ from . import test_combo_prices
 from . import test_self_order_notifications
 from . import test_bundle_services
 from . import test_kiosk_scenario_access
+from . import test_self_order_channels

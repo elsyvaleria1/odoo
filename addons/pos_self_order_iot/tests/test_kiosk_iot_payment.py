@@ -74,7 +74,7 @@ class TestKioskIoTPayment(IotCommonTest, SelfOrderCommonTest):
             return self.call_jsonrpc(
                 SUCCESS_ROUTE,
                 {
-                    "access_token": self.pos_config.access_token,
+                    "access_token": self.pos_config.self_ordering_access_token,
                     "order_id": order.id,
                     "payment_method_id": method.id,
                     "payment_info": {

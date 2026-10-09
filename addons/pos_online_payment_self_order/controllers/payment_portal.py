@@ -1,4 +1,5 @@
 from odoo import http
+from odoo.exceptions import AccessError, ValidationError
 from odoo.http import request
 
 from odoo.addons.pos_online_payment.controllers.payment_portal import PaymentPortal
@@ -7,7 +8,8 @@ from odoo.addons.pos_online_payment.controllers.payment_portal import PaymentPor
 class PaymentPortalSelfOrder(PaymentPortal):
     @http.route()
     def pos_order_pay(self, pos_order_id, access_token=None, exit_route=None):
-        self._send_notification_payment_status(pos_order_id, "progress")
+        pos_order_sudo = self._check_order_access(pos_order_id, access_token)
+        pos_order_sudo._send_notification_online_payment_status("progress")
         return super().pos_order_pay(
             pos_order_id, access_token=access_token, exit_route=exit_route
         )
@@ -23,15 +25,17 @@ class PaymentPortalSelfOrder(PaymentPortal):
             exit_route=exit_route,
             **kwargs,
         )
-        tx_sudo = request.env["payment.transaction"].sudo().search([("id", "=", tx_id)])
-
-        if tx_sudo.state not in ("authorized", "done"):
-            self._send_notification_payment_status(pos_order_id, "fail")
-
+        tx_id = self._cast_as_int(tx_id)
+        if not tx_id:
+            return result
+        try:
+            pos_order_sudo = self._check_order_access(pos_order_id, access_token)
+        except AccessError, ValidationError:
+            return result
+        tx_sudo = request.env["payment.transaction"].sudo().browse(tx_id).exists()
+        if tx_sudo.pos_order_id == pos_order_sudo and tx_sudo.state not in (
+            "authorized",
+            "done",
+        ):
+            pos_order_sudo._send_notification_online_payment_status("fail")
         return result
-
-    def _send_notification_payment_status(self, pos_order_id, status):
-        pos_order = request.env["pos.order"].sudo().browse(pos_order_id)
-        pos_order._send_notification_online_payment_status(status)
-        if status == "success":
-            pos_order._send_order()

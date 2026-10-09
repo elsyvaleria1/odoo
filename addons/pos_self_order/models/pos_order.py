@@ -1,9 +1,16 @@
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
+
+ORDER_CHANNEL_SCOPE = tools.register_signed_scope(
+    "pos_self_order.order_channel",
+    purpose="name the bus channel of one self-order, which only the device "
+    "holding that order's access token is given",
+    lifetime="undated: the channel lives as long as the order's token",
+)
 
 
 class PosOrderLine(models.Model):
@@ -87,6 +94,22 @@ class PosOrder(models.Model):
         readonly=True,
         help="The terminal provider's id of that request.",
     )
+    # the channel only the device holding the order can name: what concerns
+    # one order (its payment) is never sent where every QR code holder listens
+    self_order_channel = fields.Char(compute="_compute_self_order_channel")
+
+    @api.depends("access_token")
+    def _compute_self_order_channel(self) -> None:
+        for order in self:
+            order.self_order_channel = order.access_token and tools.hmac(
+                self.env(su=True), ORDER_CHANNEL_SCOPE, order.access_token
+            )
+
+    def _notify_self_order_device(self, name, message) -> None:
+        self.check_singleton()
+        channel = self.self_order_channel
+        if channel:
+            self.env["bus.bus"]._sendone(channel, f"{channel}-{name}", message)
 
     def _set_kiosk_terminal_request(self, reference, request_id) -> None:
         self.check_singleton()
@@ -183,7 +206,7 @@ class PosOrder(models.Model):
         # point_of_sale already emits SYNCHRONISATION for each of these three
         # transitions, so this override adds only the message it owns
         for config in order_ids.config_id:
-            config._notify("ORDER_STATE_CHANGED", {})
+            config._notify_self_order("ORDER_STATE_CHANGED", {})
 
     def _send_self_order_receipt(self) -> None:
         if self.email:
@@ -256,7 +279,7 @@ class PosOrder(models.Model):
 
     def _send_payment_result(self, payment_result) -> None:
         self.check_singleton()
-        self.config_id._notify(
+        self._notify_self_order_device(
             "PAYMENT_STATUS",
             {
                 "payment_result": payment_result,
@@ -338,4 +361,5 @@ class PosOrder(models.Model):
             "source",
             "partner_id",
             "customer_count",
+            "self_order_channel",
         ]

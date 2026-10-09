@@ -119,7 +119,7 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
         result = self.call_jsonrpc(
             STATUS_ROUTE,
             {
-                "access_token": self.pos_config.access_token,
+                "access_token": self.pos_config.self_ordering_access_token,
                 "order_id": order.id,
                 "payment_data": {
                     "plutusTransactionReferenceID": plutus,

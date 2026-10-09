@@ -36,7 +36,7 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
         self.pos_config.write(
             {
                 "payment_method_ids": [Command.set([self.stripe.id])],
-                "access_token": "access_token",
+                "self_ordering_access_token": "access_token",
             }
         )
 
@@ -88,7 +88,7 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
 
     def test_stripe_capture_payment(self):
         """This test make sure the stripe_capture_payment method does not crash because of `_get_pos_config_and_table` method"""
-        self.pos_config.access_token = "access_token"
+        self.pos_config.self_ordering_access_token = "access_token"
         self.pos_config.open_ui()
         stripe_capture_payment = "odoo.addons.pos_stripe.models.pos_payment_method.PosPaymentMethod.stripe_capture_payment"
         order = self.env["pos.order"].create(

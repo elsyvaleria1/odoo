@@ -127,7 +127,7 @@ class ProductProduct(models.Model):
             .search([("self_ordering_mode", "!=", "nothing")])
         )
         for config in config_self:
-            if config.current_session_id and config.access_token:
+            if config.current_session_id:
                 records = (
                     self.env["product.template"]
                     .sudo()
@@ -140,7 +140,7 @@ class ProductProduct(models.Model):
                 for model in records:
                     if model in self_models:
                         payload[model] = records[model]
-                config._notify("PRODUCT_CHANGED", payload)
+                config._notify_self_order("PRODUCT_CHANGED", payload)
 
     def _can_return_content(self, field_name=None, access_token=None) -> bool:
         if field_name == "image_512" and self.sudo().self_order_available:

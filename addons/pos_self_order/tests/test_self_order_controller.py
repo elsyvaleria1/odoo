@@ -42,7 +42,7 @@ class TestSelfOrderController(SelfOrderCommonTest):
         data["payment_data"] = []
         order2, _ = self.create_backend_pos_order(data)
         params = {
-            "access_token": order1.config_id.access_token,
+            "access_token": order1.config_id.self_ordering_access_token,
             "order_access_tokens": [
                 {
                     "access_token": order1.access_token,
@@ -160,7 +160,7 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.pos_config.current_session_id.set_opening_control(0, "")
 
         params = {
-            "access_token": self.pos_config.access_token,
+            "access_token": self.pos_config.self_ordering_access_token,
             "table_identifier": self.pos_table_1.identifier,
             "order": {
                 "company_id": self.env.company.id,
@@ -195,7 +195,7 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(len(pos_order.message_follower_ids), 1)
 
         params = {
-            "access_token": pos_order.config_id.access_token,
+            "access_token": pos_order.config_id.self_ordering_access_token,
             "order_access_tokens": [
                 {
                     "access_token": pos_order.access_token,
@@ -230,7 +230,7 @@ class TestSelfOrderController(SelfOrderCommonTest):
         order.invalidate_recordset()
         self.assertFalse(order.access_token)
         params = {
-            "access_token": self.pos_config.access_token,
+            "access_token": self.pos_config.self_ordering_access_token,
             "order_id": order.id,
             "order_access_token": "not-the-token",
         }

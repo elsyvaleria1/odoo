@@ -48,7 +48,7 @@ class TestFrontendMobile(SelfOrderCommonTest):
                     "method": "call",
                     "id": str(uuid4()),
                     "params": {
-                        "access_token": self.pos_config.access_token,
+                        "access_token": self.pos_config.self_ordering_access_token,
                         "order": {
                             "id": None,
                             "config_id": self.pos_config.id,

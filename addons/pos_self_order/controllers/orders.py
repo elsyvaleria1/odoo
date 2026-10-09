@@ -375,7 +375,7 @@ class PosSelfOrderController(http.Controller):
         )
         if deleted_order_tokens := list(access_tokens - set(existing_order_tokens)):
             # Remove orders that no longer exist on the server but are still shown in the self-order UI
-            pos_config._notify(
+            pos_config._notify_self_order(
                 "REMOVE_ORDERS", {"deleted_order_tokens": deleted_order_tokens}
             )
         return self._generate_return_values(orders, pos_config) if orders else {}
@@ -483,7 +483,7 @@ class PosSelfOrderController(http.Controller):
         pos_config_sudo = (
             request.env["pos.config"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
             .sudo()
-            .search([("access_token", "=", access_token)], limit=1)
+            .search([("self_ordering_access_token", "=", access_token)], limit=1)
         )
         if self._is_config_unusable(pos_config_sudo, check_active_session):
             raise Unauthorized("Invalid access token")

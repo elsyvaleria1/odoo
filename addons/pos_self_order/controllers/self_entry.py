@@ -76,7 +76,10 @@ class PosSelfKiosk(http.Controller):
                 request.env["pos.config"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
                 .sudo()
                 .search(
-                    [("id", "=", config_id), ("access_token", "=", access_token)],
+                    [
+                        ("id", "=", config_id),
+                        ("self_ordering_access_token", "=", access_token),
+                    ],
                     limit=1,
                 )
             )
@@ -112,7 +115,7 @@ class PosSelfKiosk(http.Controller):
             and pos_config.self_ordering_mode == "mobile"
         ):
             if config_access_token:
-                config_access_token = pos_config.access_token
+                config_access_token = pos_config.self_ordering_access_token
             table_sudo = table_identifier and (
                 request.env["restaurant.table"]
                 .sudo()
@@ -125,7 +128,7 @@ class PosSelfKiosk(http.Controller):
                 table_sudo = table_sudo.parent_id
         elif pos_config.self_ordering_mode == "kiosk":
             if config_access_token:
-                config_access_token = pos_config.access_token
+                config_access_token = pos_config.self_ordering_access_token
         else:
             config_access_token = ""
 

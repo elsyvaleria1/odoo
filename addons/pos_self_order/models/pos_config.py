@@ -1,5 +1,6 @@
 import base64
 import dataclasses
+import uuid
 import zipfile
 from io import BytesIO
 from itertools import batched
@@ -10,6 +11,7 @@ import qrcode.image.svg
 
 from odoo import Command, api, fields, models, service
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools import SQL
 
 from odoo.addons.pos_restaurant.models.pos_config import (
     LOAD_DEMO_DATA as RESTAURANT_LOAD_DEMO_DATA,
@@ -121,10 +123,40 @@ class PosConfig(models.Model):
         string="Has paper",
         default=True,
     )
+    # printed in the QR codes and the kiosk URL, so public: it opens the self
+    # order and names the channel its devices listen on, never the till's
+    # channel, which is access_token
+    self_ordering_access_token = fields.Char(  # noqa: E8520 — published on purpose: printed in every QR code and kiosk URL
+        string="Self-Order Token",
+        default=lambda self: str(uuid.uuid4()),
+        copy=False,
+    )
+
+    def _init_column(self, column_name, *, new_column=False):
+        if column_name != "self_ordering_access_token":
+            return super()._init_column(column_name, new_column=new_column)
+        # the default is evaluated once for the whole column: every point of
+        # sale would open every other one's self order
+        self.env.cr.execute(
+            SQL(
+                "UPDATE pos_config SET self_ordering_access_token = gen_random_uuid()::text"
+                " WHERE self_ordering_access_token IS NULL"
+            )
+        )
+        return None
 
     def _update_access_token(self) -> None:
-        self._pos_bus_rotate_token()
+        for config in self:
+            config.self_ordering_access_token = str(uuid.uuid4())
         self.floor_ids.table_ids._update_identifier()
+
+    def _notify_self_order(self, name, message) -> None:
+        """Send a notification every self-order device of this point of sale
+        receives: anyone holding a QR code can listen, so nothing private."""
+        self.check_singleton()
+        token = self.self_ordering_access_token
+        if token:
+            self.env["bus.bus"]._sendone(token, f"{token}-{name}", message)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -340,7 +372,9 @@ class PosConfig(models.Model):
             if table:
                 table_route = f"&table_identifier={table.identifier}"
 
-        return f"{base_route}?access_token={self.access_token}{table_route}"
+        return (
+            f"{base_route}?access_token={self.self_ordering_access_token}{table_route}"
+        )
 
     def _get_self_order_url(self, table_id: int | None = None) -> str:
         self.check_singleton()
@@ -427,6 +461,7 @@ class PosConfig(models.Model):
         if not read_records:
             return read_records
         record = read_records[0]
+        record["access_token"] = config.self_ordering_access_token
         record["_self_ordering_image_home_ids"] = (
             config.self_ordering_image_home_ids.ids
         )
@@ -511,7 +546,7 @@ class PosConfig(models.Model):
                 lambda o: o.state == "draft"
             ).unlink()
 
-        self._notify("STATUS", {"status": "closed"})
+        self._notify_self_order("STATUS", {"status": "closed"})
         return self.current_session_id.action_pos_session_closing_control()
 
     def _compute_status(self) -> None:
@@ -529,7 +564,7 @@ class PosConfig(models.Model):
                 {"user_id": self.env.uid, "config_id": self.id}
             )
             session.set_opening_control(0, "")
-            self._notify("STATUS", {"status": "open"})
+            self._notify_self_order("STATUS", {"status": "open"})
 
         return {
             "type": "ir.actions.act_url",

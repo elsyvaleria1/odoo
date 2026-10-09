@@ -1,6 +1,6 @@
 {
     "name": "POS Self-Service Ordering",
-    "version": "1.0",
+    "version": "1.1",
     "category": "Sales/Point of Sale",
     "summary": "Accept customer orders from QR menus and kiosks",
     "description": "Provides a customer ordering interface, product availability, table identifiers and configurable ordering modes. Payment methods require the relevant self-order payment integration and configuration.",

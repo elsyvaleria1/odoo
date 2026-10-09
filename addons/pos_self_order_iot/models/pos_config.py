@@ -45,7 +45,7 @@ class PosConfig(models.Model):
                 "device_identifiers": display_identifiers,
                 "action": "open_kiosk",
                 "pos_id": self.id,
-                "access_token": self.access_token,
+                "access_token": self.self_ordering_access_token,
             }
         )
 

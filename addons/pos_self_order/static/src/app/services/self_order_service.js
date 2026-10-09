@@ -67,6 +67,10 @@ export class SelfOrder extends SignalStore {
         this.ordering = false;
         this.orderTakeAwayState = {};
         this.orderSubscribtion = new Set();
+        // each order's own bus channel, named by the server: payment results
+        // are sent there, not where every holder of a QR code listens
+        this.orderChannels = new Set();
+        this.orderNotifications = {};
         this.kitchenPrinters = [];
         this.productCategories = [];
         this.currentCategory = null;
@@ -79,6 +83,15 @@ export class SelfOrder extends SignalStore {
         } else {
             await this.initMobileData();
         }
+
+        const listenToOrders = () => {
+            for (const order of this.models["pos.order"].getAll()) {
+                this.listenToOrder(order);
+            }
+        };
+        this.models["pos.order"].addEventListener("create", listenToOrders);
+        this.models["pos.order"].addEventListener("update", listenToOrders);
+        listenToOrders();
 
         this.data.connectWebSocket("ORDER_STATE_CHANGED", () =>
             this.getUserDataFromServer(),
@@ -108,7 +121,7 @@ export class SelfOrder extends SignalStore {
                     window.location.reload();
                 }
             });
-            this.data.connectWebSocket("PAYMENT_STATUS", ({ payment_result, data }) => {
+            this.onOrderNotified("PAYMENT_STATUS", ({ payment_result, data }) => {
                 if (payment_result === "unverified" || payment_result === "fail") {
                     this.models.connectNewData(data);
                 }
@@ -230,6 +243,25 @@ export class SelfOrder extends SignalStore {
     computeAvailableCategories() {
         this.availableCategories = this.getAvailableCategories();
         this.currentCategory = this.availableCategories[0];
+    }
+
+    onOrderNotified(name, handler) {
+        this.orderNotifications[name] = handler;
+        for (const channel of this.orderChannels) {
+            this.bus.subscribe(`${channel}-${name}`, handler);
+        }
+    }
+
+    listenToOrder(order) {
+        const channel = order.self_order_channel;
+        if (!channel || this.orderChannels.has(channel)) {
+            return;
+        }
+        this.orderChannels.add(channel);
+        this.bus.addChannel(channel);
+        for (const [name, handler] of Object.entries(this.orderNotifications)) {
+            this.bus.subscribe(`${channel}-${name}`, handler);
+        }
     }
 
     isCategoryAvailable(categId) {
@@ -607,7 +639,7 @@ export class SelfOrder extends SignalStore {
 
         await this.config.cacheReceiptLogo();
 
-        window.addEventListener("click", (event) => {
+        window.addEventListener("click", () => {
             clearTimeout(this.idleTimout);
             this.timeoutPopup?.();
             this.idleTimout = setTimeout(() => {
