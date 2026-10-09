@@ -47,3 +47,4 @@ from . import test_website_sequence
 from . import test_website_sale_product_ribbon
 from . import test_access_matrix
 from . import test_quick_add_visibility
+from . import test_website_sale_cart_forms

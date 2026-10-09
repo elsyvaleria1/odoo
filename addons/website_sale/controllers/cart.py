@@ -15,6 +15,7 @@ from odoo.addons.sale.controllers.portal import CustomerPortal
 from odoo.addons.web.controllers.utils import (
     Fragment,
     FragmentResponse,
+    fragments_or_redirect,
     render_fragments,
 )
 from odoo.addons.website_sale.controllers.main import WebsiteSale
@@ -403,22 +404,55 @@ class Cart(PaymentPortal):
             quantity=quantity,
             product=product_id,
         )
+        fragments, changes = self._cart_changed(order_sudo, values)
+        return render_fragments(request.env, *fragments, **changes)
 
+    @route(
+        route="/shop/cart/line",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
+        sitemap=False,
+    )
+    def cart_line(self, line_id=None, quantity=None, delta=None, delete=None, **kwargs):
+        order_sudo = request.cart
+        line = order_sudo.line_ids.filtered(lambda sol: str(sol.id) == str(line_id))
+        new_quantity = 0 if delete else self._cart_line_quantity(line, quantity, delta)
+        values = {}
+        if line and new_quantity is not None:
+            values = order_sudo._cart_update_line_quantity(line.id, new_quantity)
+            _debug.lifecycle(
+                "update_cart", order=order_sudo.id, line=line.id, quantity=new_quantity
+            )
+        fragments, changes = self._cart_changed(order_sudo, values)
+        return fragments_or_redirect(request.env, "/shop/cart", *fragments, **changes)
+
+    @staticmethod
+    def _cart_line_quantity(line, quantity, delta):
+        # a typed quantity wins over the -/+ button that came with it: Enter
+        # in the field submits the form with its first button, the minus
+        try:
+            typed = int(quantity) if quantity not in (None, "") else None
+            if typed is not None and (typed != int(line.product_uom_qty) or not delta):
+                return max(typed, 0)
+            if delta:
+                return max(int(line.product_uom_qty) + int(delta), 0)
+        except ValueError:
+            pass
+        return None
+
+    def _cart_changed(self, order_sudo, values):
         events = self._cart_updated_events(
             order_sudo, warning=values.get("warning"), quick_reorder=True
         )
         if not order_sudo.cart_quantity:
-            return render_fragments(
-                request.env, events=events, redirect="/shop/cart", data=values
-            )
-        return render_fragments(
-            request.env,
+            return [], {"events": events, "redirect": "/shop/cart", "data": values}
+        return [
             self._get_cart_lines_fragment(order_sudo),
             self._get_cart_total_fragment(order_sudo),
             self._get_quick_reorder_history_fragment(order_sudo),
-            events=events,
-            data=values,
-        )
+        ], {"events": events, "data": values}
 
     def _cart_updated_events(self, order_sudo, warning=None, quick_reorder=False):
         # what the page around the swapped cart follows: the header's cart

@@ -318,3 +318,18 @@ test("a submitter's formaction is where the form posts", async () => {
         "post /shop/cart/line/remove 1 csrf_token=t0k3n&quantity=1&remove=1",
     ]);
 });
+
+test("the field just submitted shows the server's value, though focused", async () => {
+    await startInteraction(FragmentForm, line(1));
+    serve(() => line(10));
+    const input = /** @type {HTMLInputElement} */ (queryOne(".o_qty"));
+    input.focus();
+    input.value = "99";
+
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    await animationFrame();
+
+    expect.verifySteps(["post /shop/cart/line 1 csrf_token=t0k3n&quantity=99"]);
+    expect(document.activeElement).toBe(input);
+    expect(input).toHaveValue("10");
+});

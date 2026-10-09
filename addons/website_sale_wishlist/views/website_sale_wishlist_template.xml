@@ -47,33 +47,50 @@
         inherit_id="website_sale.cart_lines"
         active="True">
         <xpath
-            expr="//div[@name='o_wsale_cart_line_button_container']/a"
+            expr="//div[@name='o_wsale_cart_line_button_container']/form"
             position="after">
             <t t-if="line._is_sellable()">
                 <span class="text-300">|</span>
-                <a
-                    href="#"
-                    class="o_add_wishlist js_delete_product small"
-                    t-att-data-product-template-id="line.product_id.product_tmpl_id.id"
-                    t-att-data-product-product-id="line.product_id.id"
-                    data-action="o_wishlist">
-                    Save for Later
-                </a>
+                <form
+                    class="d-contents"
+                    method="post"
+                    action="/shop/wishlist/save_for_later"
+                    data-fragment-form="">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()" />
+                    <input type="hidden" name="line_id" t-att-value="line.id" />
+                    <button
+                        type="submit"
+                        class="o_wsale_save_for_later btn btn-link p-0 small">
+                        Save for Later
+                    </button>
+                </form>
             </t>
         </xpath>
 
         <xpath
-            expr="//div[@name='o_wsale_cart_line_button_container_mobile']/button"
+            expr="//div[@name='o_wsale_cart_line_button_container_mobile']/form"
             position="before">
-            <button
+            <form
                 t-if="line._is_sellable()"
-                class="o_add_wishlist js_delete_product btn btn-link d-inline-block d-md-none px-2"
-                t-att-data-product-template-id="line.product_id.product_tmpl_id.id"
-                t-att-data-product-product-id="line.product_id.id"
-                data-action="o_wishlist"
-                title="Wishlist">
-                <i class="fa-regular fa-heart" />
-            </button>
+                class="d-contents"
+                method="post"
+                action="/shop/wishlist/save_for_later"
+                data-fragment-form="">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    t-att-value="request.csrf_token()" />
+                <input type="hidden" name="line_id" t-att-value="line.id" />
+                <button
+                    type="submit"
+                    class="o_wsale_save_for_later btn btn-link d-inline-block d-md-none px-2"
+                    title="Wishlist">
+                    <i class="fa-regular fa-heart" />
+                </button>
+            </form>
         </xpath>
     </template>
 

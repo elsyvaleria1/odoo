@@ -13,6 +13,20 @@ import { ConfirmationDialog } from "@web/ui/dialog";
 const FRAGMENTS_HEADER = "X-Odoo-Fragments";
 
 /**
+ * The morph leaves the field being typed in as typed; a field that was just
+ * submitted shows the server's answer instead (a quantity clamped to the
+ * stock, a corrected value).
+ *
+ * @param {FormData} submitted
+ */
+function showServerValue(submitted) {
+    const field = /** @type {HTMLInputElement | null} */ (document.activeElement);
+    if (field && "defaultValue" in field && field.name && submitted.has(field.name)) {
+        field.value = field.defaultValue;
+    }
+}
+
+/**
  * A post form that works without JavaScript, its route redirecting to the
  * page to show next (post/redirect/get), and updates the page in place with
  * it (htmx's boosted forms). The form's data is posted with
@@ -126,6 +140,7 @@ export class FragmentForm extends Interaction {
             const payload = await this.waitFor(response.json());
             if (response.ok) {
                 this.swapFragments(payload);
+                showServerValue(body);
                 return;
             }
             if (payload.error?.message) {
@@ -152,6 +167,7 @@ export class FragmentForm extends Interaction {
             browser.location.assign(response.url);
             return;
         }
+        showServerValue(body);
         if (next.href !== shown.href) {
             // what a post/redirect/get leaves in the address bar
             browser.history.replaceState(browser.history.state, "", response.url);

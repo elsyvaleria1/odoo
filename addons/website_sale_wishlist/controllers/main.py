@@ -4,42 +4,46 @@ from odoo.libs.debug_log import DebugLog
 _debug = DebugLog(__name__)
 
 
+def add_product_to_wishlist(product):
+    price = product._get_combination_info_variant()["price"]
+
+    Wishlist = request.env["product.wishlist"]
+    if request.env.user._is_public():
+        Wishlist = Wishlist.sudo()
+        partner_id = False
+    else:
+        partner_id = request.env.user.partner_id.id
+
+    wish = Wishlist._add_to_wishlist(
+        request.pricelist.id,
+        request.website.currency_id.id,
+        request.website.id,
+        price,
+        product.id,
+        partner_id,
+    )
+
+    if not partner_id:
+        request.session["wishlist_ids"] = request.session.get("wishlist_ids", []) + [
+            wish.id
+        ]
+
+    _debug.lifecycle(
+        "wishlist_add",
+        product=product,
+        wish=wish,
+        price=price,
+        anonymous=not partner_id,
+    )
+    return wish
+
+
 class WebsiteSaleWishlist(Controller):
     @route("/shop/wishlist/add", type="jsonrpc", auth="public", website=True)
     def add_to_wishlist(self, product_id, **kw) -> int:
-        product = request.env["product.product"].browse(product_id)
-
-        price = product._get_combination_info_variant()["price"]
-
-        Wishlist = request.env["product.wishlist"]
-        if request.env.user._is_public():
-            Wishlist = Wishlist.sudo()
-            partner_id = False
-        else:
-            partner_id = request.env.user.partner_id.id
-
-        wish = Wishlist._add_to_wishlist(
-            request.pricelist.id,
-            request.website.currency_id.id,
-            request.website.id,
-            price,
-            product_id,
-            partner_id,
-        )
-
-        if not partner_id:
-            request.session["wishlist_ids"] = request.session.get(
-                "wishlist_ids", []
-            ) + [wish.id]
-
-        _debug.lifecycle(
-            "wishlist_add",
-            product=product,
-            wish=wish,
-            price=price,
-            anonymous=not partner_id,
-        )
-        return wish.id
+        return add_product_to_wishlist(
+            request.env["product.product"].browse(product_id)
+        ).id
 
     @route("/shop/wishlist", type="http", auth="public", website=True, sitemap=False)
     def get_wishlist(self, **kw):

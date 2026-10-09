@@ -365,10 +365,13 @@ def fragments_or_redirect(
     *fragments: Fragment,
     events: Mapping[str, Mapping[str, Any]] | None = None,
     data: Mapping[str, Any] | None = None,
+    redirect: str | None = None,
 ) -> Any:
     if request.httprequest.headers.get(FRAGMENTS_HEADER):
         return request.prepare_json_response(
-            render_fragments(env, *fragments, events=events, data=data)
+            render_fragments(
+                env, *fragments, events=events, redirect=redirect, data=data
+            )
         )
     return request.redirect(location, code=303)
 
