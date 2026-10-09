@@ -35,7 +35,12 @@ class NuveiController(http.Controller):
         )
         if tx_ref and error_access_token:
             _logger.warning("Nuvei errored on transaction: %s.", tx_ref)
-        request.admission.subject._process("nuvei", request.admission.extra["data"])
+        tx_sudo = request.admission.subject
+        data = request.admission.extra["data"]
+        if not tx_sudo._is_notification_signature_valid(data):
+            # Admitted on the cancel URL's access token alone: the customer's own data.
+            data = {}
+        tx_sudo._process("nuvei", data)
         return request.redirect("/payment/status")
 
     # csrf=False: auth="receiver" admits the caller through its inbound gate

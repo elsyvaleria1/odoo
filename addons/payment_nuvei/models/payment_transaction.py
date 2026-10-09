@@ -20,44 +20,52 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _receiver_for_nuvei_return(self, **path_args) -> tuple:
-        params = request.get_http_params()
-        tx_ref = params.pop("tx_ref", None)
-        error_access_token = params.pop("error_access_token", None)
-        tx_data = params or {"invoice_id": tx_ref}
+        params = self._get_nuvei_payment_data()
+        tx_data = params or {"invoice_id": request.get_http_params().get("tx_ref")}
         tx, _extra = self._resolve_notification(
             "nuvei", tx_data, Acknowledged.redirect("/payment/status")
         )
-        return tx, {"data": params, "error_access_token": error_access_token}
+        return tx, {"data": params}
 
     @api.model
     def _receiver_for_nuvei_webhook(self, **path_args):
         return self._resolve_notification(
-            "nuvei", request.get_http_params(), Acknowledged("OK")
+            "nuvei", self._get_nuvei_payment_data(), Acknowledged("OK")
         )
+
+    @api.model
+    def _get_nuvei_payment_data(self):
+        params = request.get_http_params()
+        params.pop("tx_ref", None)
+        params.pop("error_access_token", None)
+        return params
 
     def _inbound_notification_data(self, headers, body):
         if self.provider_code != "nuvei":
             return super()._inbound_notification_data(headers, body)
-        params = request.get_http_params()
-        params.pop("tx_ref", None)
-        return params
+        return self._get_nuvei_payment_data()
 
-    def _is_notification_signature_valid(
-        self, payment_data, error_access_token=None
-    ) -> bool:
+    def _is_inbound_request_authentic(self, headers, body) -> bool:
+        if super()._is_inbound_request_authentic(headers, body):
+            return True
+        return (
+            self.provider_code == "nuvei"
+            and request.httprequest.path == NuveiController._return_url
+            and self._is_nuvei_cancel_token_valid()
+        )
+
+    def _is_nuvei_cancel_token_valid(self) -> bool:
+        error_access_token = request.get_http_params().get("error_access_token")
+        if not error_access_token:
+            return False
+        if not payment_utils.is_access_token_valid(error_access_token, self.reference):
+            _logger.warning("Received cancel/error with invalid access token.")
+            return False
+        return True
+
+    def _is_notification_signature_valid(self, payment_data) -> bool:
         if self.provider_code != "nuvei":
             return super()._is_notification_signature_valid(payment_data)
-        error_access_token = error_access_token or payment_data.pop(
-            "error_access_token", None
-        )
-        if error_access_token:
-            # The access token is not included when the payment goes through.
-            if not payment_utils.is_access_token_valid(
-                error_access_token, self.reference
-            ):
-                _logger.warning("Received cancel/error with invalid access token.")
-                return False
-            return True
         received_signature = payment_data.get("advanceResponseChecksum")
         if not received_signature:
             _logger.warning("Received payment data with missing signature")
