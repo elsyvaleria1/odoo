@@ -20,8 +20,8 @@ class PaymentTransaction(models.Model):
 
     nuvei_ppp_transaction_id = fields.Char(
         string="Nuvei Payment Page Transaction ID",
-        readonly=True,
         copy=False,
+        readonly=True,
     )
 
     _nuvei_ppp_transaction_id_unique = models.UniqueIndex(

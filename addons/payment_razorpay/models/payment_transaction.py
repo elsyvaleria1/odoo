@@ -30,8 +30,8 @@ class PaymentTransaction(models.Model):
 
     razorpay_order_id = fields.Char(
         string="Razorpay Order ID",
-        readonly=True,
         copy=False,
+        readonly=True,
     )
 
     @api.model
