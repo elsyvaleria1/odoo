@@ -79,10 +79,41 @@ class PosPaymentMethod(models.Model):
                     )
                 )
 
+    def _mollie_check_session(self, pos_session_id) -> None:
+        session = (
+            self.env["pos.session"].browse(pos_session_id).exists()
+            if isinstance(pos_session_id, int)
+            else self.env["pos.session"]
+        )
+        if (
+            not session
+            or session.state != "opened"
+            or self not in session.config_id.payment_method_ids
+        ):
+            raise AccessError(
+                self.env._(
+                    "Mollie payments are taken in an open session using %s.",
+                    self.display_name,
+                )
+            )
+
+    def _mollie_own_payment(self, payment_id) -> dict:
+        if not isinstance(payment_id, str) or not self._MOLLIE_PAYMENT_ID.fullmatch(
+            payment_id
+        ):
+            raise AccessError(self.env._("Invalid Mollie payment reference."))
+        payment_info = self._mollie_get_payment(payment_id)
+        if not self._is_own_mollie_payment(payment_info):
+            raise AccessError(
+                self.env._("This Mollie payment was not requested by this method.")
+            )
+        return payment_info
+
     def mollie_create_payment(
         self, amount: float, payment_uuid: str, pos_session_id: int
     ):
         self.check_singleton()
+        self._mollie_check_session(pos_session_id)
 
         user_lang = self.env.context.get("lang")
         currency = self.journal_id.currency_id or self.company_id.currency_id
@@ -118,6 +149,8 @@ class PosPaymentMethod(models.Model):
         pos_session_id: int,
     ):
         self.check_singleton()
+        self._mollie_check_session(pos_session_id)
+        self._mollie_own_payment(original_payment_id)
 
         currency = self.journal_id.currency_id or self.company_id.currency_id
         payment_request = {
@@ -133,6 +166,7 @@ class PosPaymentMethod(models.Model):
 
     def mollie_cancel_payment(self, payment_id: str):
         self.check_singleton()
+        self._mollie_own_payment(payment_id)
         return self.mollie_payment_provider_id._send_api_request(
             "DELETE", f"/payments/{payment_id}"
         )
@@ -147,16 +181,9 @@ class PosPaymentMethod(models.Model):
 
     def mollie_get_payment_status(self, payment_id: str) -> dict:
         self.check_singleton()
-        if not isinstance(payment_id, str) or not self._MOLLIE_PAYMENT_ID.fullmatch(
-            payment_id
-        ):
-            raise AccessError(self.env._("Invalid Mollie payment reference."))
-        payment_info = self._mollie_get_payment(payment_id)
-        if not self._is_own_mollie_payment(payment_info):
-            raise AccessError(
-                self.env._("This Mollie payment was not requested by this method.")
-            )
-        return self._mollie_payment_status(payment_id, payment_info)
+        return self._mollie_payment_status(
+            payment_id, self._mollie_own_payment(payment_id)
+        )
 
     def _is_own_mollie_payment(self, payment_info) -> bool:
         webhook_url = (
