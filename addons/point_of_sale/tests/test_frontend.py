@@ -2420,6 +2420,61 @@ class TestUi(TestPointOfSaleHttpCommon):
             login="pos_user",
         )
 
+    def test_customer_display_hears_its_till_over_the_bus(self):
+        config = self.main_pos_config
+        config.with_user(self.pos_user).open_ui()
+        code = """
+            (async () => {
+                const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                const until = async (predicate) => {
+                    for (let i = 0; i < 150 && !predicate(); i++) {
+                        await wait(100);
+                    }
+                    return predicate();
+                };
+                const shows = (text) => document.body.innerText.includes(text);
+                await until(() => shows("Welcome"));
+                await wait(1500);
+                const line = {
+                    productName: "Live bus probe", price: "$ 1.00", qty: "1.00",
+                    unit: "Units", unitPrice: "$ 1.00", customerNote: "",
+                    internalNote: "[]", comboParent: "", packLotLines: [],
+                    price_without_discount: "$ 1.00", isSelected: false,
+                };
+                await fetch("/web/dataset/call_kw/pos.config/update_customer_display", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "call",
+                        params: {
+                            model: "pos.config",
+                            method: "update_customer_display",
+                            args: [
+                                [%(config)s],
+                                { lines: [line], finalized: false, amount: "1.00",
+                                  paymentLines: [], change: 0, onlinePaymentData: {} },
+                                "display-test-device",
+                            ],
+                            kwargs: {},
+                        },
+                    }),
+                });
+                if (await until(() => shows("Live bus probe"))) {
+                    console.log("test successful");
+                } else {
+                    console.error("the till's order never reached the display");
+                }
+            })();
+        """ % {"config": config.id}
+        self.browser_js(
+            f"/pos_customer_display/{config.id}/display-test-device"
+            f"?access_token={config.customer_display_token}",
+            code,
+            login="pos_user",
+            timeout=60,
+        )
+
     def test_customer_display_with_qr(self):
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(
