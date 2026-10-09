@@ -36,14 +36,8 @@ export class WebsiteForum extends Interaction {
         ".o_wforum_flag_mark_as_offensive": {
             "t-on-click.prevent.withTarget": this.onFlagMarkAsOffensiveClick,
         },
-        ".vote_up:not(.karma_required), .vote_down:not(.karma_required)": {
-            "t-on-click.prevent.withTarget": this.onVotePostClick,
-        },
         ".o_wforum_validation_queue a[href*='/validate']": {
             "t-on-click.prevent.withTarget": this.onValidationQueueClick,
-        },
-        ".o_wforum_validate_toggler:not(.karma_required)": {
-            "t-on-click.prevent.withTarget": this.onToggleValidateClick,
         },
         ".o_wforum_favorite_toggle": {
             "t-on-click.prevent.withTarget": this.onToggleFavoriteClick,
@@ -342,66 +336,6 @@ export class WebsiteForum extends Interaction {
      * @param {MouseEvent} ev
      * @param {HTMLElement} currentTargetEl
      */
-    async onVotePostClick(ev, currentTargetEl) {
-        if (this.warnIfPublicUser()) {
-            return;
-        }
-        const data = await this.waitFor(rpc(currentTargetEl.dataset.href));
-        if (data.error) {
-            const message =
-                data.error === "own_post"
-                    ? _t("Sorry, you cannot vote for your own posts")
-                    : data.error;
-            this.displayAccessDeniedNotification(message);
-        } else {
-            const containerEl = currentTargetEl.closest(".vote");
-            const voteUpEl = containerEl.querySelector(".vote_up");
-            const voteDownEl = containerEl.querySelector(".vote_down");
-            const voteCountEl = containerEl.querySelector(".vote_count");
-            const userVote = parseInt(data["user_vote"]);
-
-            voteUpEl.disabled = userVote === 1;
-            voteDownEl.disabled = userVote === -1;
-
-            [voteUpEl, voteDownEl, voteCountEl].forEach((el) => {
-                el.classList.remove(
-                    "text-success",
-                    "text-danger",
-                    "text-muted",
-                    "opacity-75",
-                    "o_forum_vote_animate",
-                );
-            });
-            void containerEl.offsetWidth;
-
-            if (userVote === 1) {
-                voteUpEl.classList.add("text-success");
-                voteCountEl.classList.add("text-success");
-                voteDownEl.classList.remove("karma_required");
-            }
-            if (userVote === -1) {
-                voteDownEl.classList.add("text-danger");
-                voteCountEl.classList.add("text-danger");
-                voteUpEl.classList.remove("karma_required");
-            }
-            if (userVote === 0) {
-                voteCountEl.classList.add("text-muted", "opacity-75");
-                if (!voteDownEl.dataset.canDownvote) {
-                    voteDownEl.classList.add("karma_required");
-                }
-                if (!voteUpEl.dataset.canUpvote) {
-                    voteUpEl.classList.add("karma_required");
-                }
-            }
-            voteCountEl.textContent = parseInt(data["vote_count"]);
-            voteCountEl.classList.add("o_forum_vote_animate");
-        }
-    }
-
-    /**
-     * @param {MouseEvent} ev
-     * @param {HTMLElement} currentTargetEl
-     */
     async onValidationQueueClick(ev, currentTargetEl) {
         const postBeingValidated = currentTargetEl.closest(".post_to_validate");
         if (!postBeingValidated) {
@@ -432,63 +366,6 @@ export class WebsiteForum extends Interaction {
                 .querySelector(".o_wforum_btn_filter_tool")
                 ?.classList.add("d-none");
             queueCountBadge.classList.add("d-none");
-        }
-    }
-
-    /**
-     * @param {MouseEvent} ev
-     * @param {HTMLElement} currentTargetEl
-     */
-    async onToggleValidateClick(ev, currentTargetEl) {
-        if (this.warnIfPublicUser()) {
-            return;
-        }
-        const target = currentTargetEl.dataset.target;
-        const data = await this.waitFor(rpc(currentTargetEl.dataset.href));
-        if (data.error) {
-            const message =
-                data.error === "own_post"
-                    ? _t("Sorry, you cannot select your own posts as best answer")
-                    : data.error;
-            this.displayAccessDeniedNotification(message);
-            return;
-        }
-        for (const answer of document.querySelectorAll(".o_wforum_answer")) {
-            const isCorrect = answer.matches(target) ? data : false;
-            const toggler = answer.querySelector(".o_wforum_validate_toggler");
-            toggler.setAttribute(
-                "data-bs-original-title",
-                isCorrect
-                    ? toggler.dataset.helperDecline
-                    : toggler.dataset.helperAccept,
-            );
-            const styleForCorrect = isCorrect
-                ? answer.classList.add
-                : answer.classList.remove;
-            const styleForIncorrect = isCorrect
-                ? answer.classList.remove
-                : answer.classList.add;
-            styleForCorrect.call(
-                answer.classList,
-                "o_wforum_answer_correct",
-                "my-2",
-                "mx-n3",
-                "mx-lg-n2",
-                "mx-xl-n3",
-                "py-3",
-                "px-3",
-                "px-lg-2",
-                "px-xl-3",
-            );
-            styleForIncorrect.call(toggler.classList, "opacity-50");
-            const answerBorder = answer.querySelector("div .border-start");
-            styleForCorrect.call(answerBorder.classList, "border-success");
-            const togglerIcon = toggler.querySelector("i");
-            styleForCorrect.call(togglerIcon.classList, "fa-solid", "text-success");
-            styleForIncorrect.call(togglerIcon.classList, "fa-regular");
-            const correctBadge = answer.querySelector(".o_wforum_answer_correct_badge");
-            styleForCorrect.call(correctBadge.classList, "d-inline");
-            styleForIncorrect.call(correctBadge.classList, "d-none");
         }
     }
 

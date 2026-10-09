@@ -655,19 +655,22 @@ class WebsiteForum(WebsiteProfile):
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/post/<model("forum.post"):post>/toggle_correct',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
         website=True,
     )
-    def post_toggle_correct(self, forum, post, **kwargs):
+    def post_toggle_correct(self, forum, post, redirect=None, **kwargs):
         if not post.parent_id:
             raise request.prepare_not_found_error()
         if request.env.uid == post.create_uid.id:
-            return {"error": "own_post"}
+            raise UserError(
+                request.env._("Sorry, you cannot select your own posts as best answer")
+            )
 
         (post.parent_id.child_ids - post).write({"is_correct": False})
         post.is_correct = not post.is_correct
-        return post.is_correct
+        return self._back_to_post(forum, post, redirect)
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/post/<model("forum.post"):post>/delete',
@@ -732,29 +735,37 @@ class WebsiteForum(WebsiteProfile):
         slug = request.env["ir.http"]._slug
         return request.redirect("/forum/%s/%s" % (slug(forum), slug(question)))
 
+    def _back_to_post(self, forum, post, redirect=None):
+        slug = request.env["ir.http"]._slug
+        return request.redirect(
+            redirect or f"/forum/{slug(forum)}/{slug(post.parent_id or post)}"
+        )
+
     @http.route(
         '/forum/<model("forum.forum"):forum>/post/<model("forum.post"):post>/upvote',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
         website=True,
     )
-    def post_upvote(self, forum, post, **kwargs):
+    def post_upvote(self, forum, post, redirect=None, **kwargs):
         if request.env.uid == post.create_uid.id:
-            return {"error": "own_post"}
-        upvote = bool(not post.user_vote > 0)
-        return post.vote(upvote=upvote)
+            raise UserError(request.env._("Sorry, you cannot vote for your own posts"))
+        post.vote(upvote=bool(not post.user_vote > 0))
+        return self._back_to_post(forum, post, redirect)
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/post/<model("forum.post"):post>/downvote',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
         website=True,
     )
-    def post_downvote(self, forum, post, **kwargs):
+    def post_downvote(self, forum, post, redirect=None, **kwargs):
         if request.env.uid == post.create_uid.id:
-            return {"error": "own_post"}
-        upvote = post.user_vote < 0
-        return post.vote(upvote=upvote)
+            raise UserError(request.env._("Sorry, you cannot vote for your own posts"))
+        post.vote(upvote=post.user_vote < 0)
+        return self._back_to_post(forum, post, redirect)
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/validation_queue',

@@ -69,7 +69,11 @@ export class FragmentForm extends Interaction {
             if (form.dataset.confirm && !(await this.confirm(form.dataset.confirm))) {
                 return;
             }
-            await this.post(body);
+            const action = submitter?.getAttribute("formaction");
+            await this.post(
+                body,
+                action ? new URL(action, browser.location.href).href : form.action,
+            );
         } catch {
             this.native = true;
             form.requestSubmit(submitter);
@@ -99,12 +103,14 @@ export class FragmentForm extends Interaction {
         );
     }
 
-    /** @param {FormData} body */
-    async post(body) {
-        const form = /** @type {HTMLFormElement} */ (this.el);
+    /**
+     * @param {FormData} body
+     * @param {string} action the submitter's formaction or the form's action
+     */
+    async post(body, action) {
         const regions = this.regions();
         const response = await this.waitFor(
-            browser.fetch(form.action, {
+            browser.fetch(action, {
                 method: "POST",
                 body,
                 credentials: "same-origin",

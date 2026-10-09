@@ -300,3 +300,21 @@ test("a redirect to the same path with another query swaps in place and shows it
     ]);
     expect(".o_comments li").toHaveCount(0);
 });
+
+test("a submitter's formaction is where the form posts", async () => {
+    await startInteraction(
+        FragmentForm,
+        line(1).replace(
+            'class="o_remove" type="submit"',
+            'class="o_remove" type="submit" formaction="/shop/cart/line/remove"',
+        ),
+    );
+    serve(() => line(0));
+
+    await click(".o_remove");
+    await animationFrame();
+
+    expect.verifySteps([
+        "post /shop/cart/line/remove 1 csrf_token=t0k3n&quantity=1&remove=1",
+    ]);
+});

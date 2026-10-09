@@ -454,10 +454,10 @@
             <t t-set="helper_own_post">You can't vote for your own post</t>
             <t t-set="helper_no_karma">You don't have enough karma</t>
             <t t-set="helper_decline">Unmark as Best Answer</t>
-            <a
+            <button
+                type="submit"
                 t-if="question.can_answer and question.forum_id.mode == 'questions'"
                 t-attf-class="o_wforum_validate_toggler btn #{ 'opacity-50 opacity-100-hover' if not answer.is_correct and answer.create_uid.id != uid and post_id.can_accept else ''} #{ 'karma_required opacity-25 ' if not post_id.can_accept else ''}#{ 'opacity-25' if answer.create_uid.id == uid else ''}"
-                href="#"
                 t-attf-data-karma="#{post_id.karma_accept}"
                 t-att-data-helper-accept="helper_accept"
                 t-att-data-helper-own-post="helper_own_post"
@@ -465,11 +465,10 @@
                 t-att-data-helper-decline="helper_decline"
                 t-att-title="helper_no_karma if not post_id.can_accept else (helper_decline if answer.is_correct else (helper_accept if not answer.is_correct else (helper_own_post if answer.is_correct and answer.create_uid.id == uid else '')))"
                 data-bs-toggle="tooltip"
-                t-attf-data-target="#answer-#{post_id.id}"
-                t-attf-data-href="/forum/#{ slug(question.forum_id) }/post/#{ slug(answer) }/toggle_correct">
+                t-attf-formaction="/forum/#{ slug(question.forum_id) }/post/#{ slug(answer) }/toggle_correct">
             <i
                 t-attf-class="fa-lg #{ 'fa-solid fa-circle-check text-success' if answer.is_correct else 'fa-regular fa-circle-check' }" />
-            </a>
+            </button>
             </t>
             </t>
             <div class="d-flex align-items-center ms-auto">

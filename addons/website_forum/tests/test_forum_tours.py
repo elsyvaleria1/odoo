@@ -61,3 +61,12 @@ class TestUi(HttpCaseGamification):
                 lambda message: "PN doomed comment" in message.body
             )
         )
+
+    def test_05_vote_in_place(self):
+        forum = self.env.ref("website_forum.forum_help")
+        question = self.env["forum.post"].create(
+            {"name": "PN Votable", "forum_id": forum.id}
+        )
+        self.user_demo.karma = forum.karma_upvote + 1
+        self.start_tour(question.website_url, "forum_vote_in_place", login="demo")
+        self.assertEqual(question.vote_count, 1)

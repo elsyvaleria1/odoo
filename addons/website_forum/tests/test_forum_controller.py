@@ -1,7 +1,7 @@
 from lxml import html
 
 from odoo import http
-from odoo.tests import HttpCase, JsonRpcException, new_test_user, tagged
+from odoo.tests import HttpCase, new_test_user, tagged
 
 from odoo.addons.http_routing.tests.common import MockRequest
 from odoo.addons.website_forum.controllers.website_forum import WebsiteForum
@@ -190,14 +190,56 @@ class TestForumPostRoutes(HttpCase):
         slug = self.env["ir.http"]._slug
         return f"/forum/{slug(self.forum)}/post/{slug(post)}/{action}"
 
+    def _post(self, post, action, headers=None, **values):
+        return self.url_open(
+            self._post_url(post, action),
+            data={"csrf_token": http.Request.csrf_token(self), **values},
+            headers=headers,
+            allow_redirects=False,
+        )
+
     def test_a_question_cannot_be_marked_as_the_correct_answer(self):
         self.authenticate("admin", "admin")
 
-        with self.assertRaises(JsonRpcException) as refused:
-            self.call_jsonrpc(self._post_url(self.question, "toggle_correct"))
+        refused = self._post(self.question, "toggle_correct")
 
-        self.assertEqual(refused.exception.code, 404)
+        self.assertEqual(refused.status_code, 404)
         self.assertFalse(self.question.is_correct)
+
+    def test_marking_the_correct_answer_returns_to_the_page_given(self):
+        self.authenticate("forum_asker", "forum_asker")
+
+        response = self._post(self.answer, "toggle_correct", redirect="/forum/x?y=1")
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/forum/x?y=1"))
+        self.assertTrue(self.answer.is_correct)
+
+    def test_a_vote_returns_to_the_question_and_counts(self):
+        self.authenticate("forum_asker", "forum_asker")
+        slug = self.env["ir.http"]._slug
+
+        response = self._post(self.answer, "upvote")
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(
+            response.headers["Location"].endswith(
+                f"/forum/{slug(self.forum)}/{slug(self.question)}"
+            )
+        )
+        self.assertEqual(self.answer.vote_count, 1)
+
+    def test_a_vote_on_ones_own_post_asked_in_place_is_refused_as_json(self):
+        self.authenticate("forum_asker", "forum_asker")
+
+        refused = self._post(self.question, "upvote", {"X-Odoo-Fragments": "1"})
+
+        self.assertEqual(refused.status_code, 422)
+        self.assertEqual(
+            refused.json()["error"]["message"],
+            "Sorry, you cannot vote for your own posts",
+        )
+        self.assertEqual(self.question.vote_count, 0)
 
     def _comment(self, author):
         return self.question.with_user(author).message_post(
