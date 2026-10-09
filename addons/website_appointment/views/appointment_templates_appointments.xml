@@ -230,7 +230,11 @@
 
     <template id="appointments_cards_layout" name="Appointment Types" track="1">
         <t t-call="website.layout">
-            <div id="wrap" class="o_appointment_index">
+            <div
+                id="wrap"
+                class="o_appointment_index"
+                data-fragment="website_appointment.appointments_cards_layout"
+                data-partial-navigation=".o_appointment_index .o_searchbar_form, #o_appointment_index_main_col .pagination">
                 <div class="oe_structure" />
                 <t t-call="website_appointment.website_calendar_index" />
                 <t t-call="website_appointment.website_calendar_index_topbar" />

@@ -22,3 +22,12 @@ class TestSearchbarAppointments(HttpCase):
             "test_searchbar_within_appointments",
             login="admin",
         )
+
+    def test_appointments_search_in_place(self):
+        self.env["appointment.type"].create(
+            [
+                {"name": name, "appointment_tz": "UTC", "is_published": True}
+                for name in ("PN Yoga", "PN Pilates")
+            ]
+        )
+        self.start_tour("/appointment", "appointments_partial_navigation")
