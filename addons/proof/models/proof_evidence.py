@@ -9,9 +9,9 @@ from odoo import api, fields, models
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.tools import frozendict
 
-from .proof_method import STRENGTHS
+from .proof_method import STRENGTHS, VERDICTS
 
-HASH_VERSION = 2
+HASH_VERSION = 3
 HASHED_FIELDS_V1 = (
     "sequence",
     "prev_hash",
@@ -35,6 +35,7 @@ HASHED_FIELDS_V1 = (
 HASHED_FIELDS = {
     1: HASHED_FIELDS_V1,
     2: (*HASHED_FIELDS_V1, "partner_id"),
+    3: (*HASHED_FIELDS_V1, "partner_id", "verdict"),
 }
 
 
@@ -133,6 +134,12 @@ class ProofEvidence(models.Model):
     payload = fields.Json(
         readonly=True,
         help="The proof as the method accepted it, kept so it can be checked again.",
+    )
+    verdict = fields.Selection(
+        selection=VERDICTS,
+        readonly=True,
+        help="What the contact answered to what they were asked to confirm, when "
+        "they were asked to confirm it on their own channel or at the counter.",
     )
     date = fields.Datetime(
         readonly=True,

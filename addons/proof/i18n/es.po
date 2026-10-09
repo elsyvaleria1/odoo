@@ -24,6 +24,12 @@ msgstr ""
 "dice ser."
 
 #. module: proof
+#. odoo-python
+#: code:addons/proof/models/mixin_proof_confirmation.py:0
+msgid "%s does not wait for its contact to confirm it."
+msgstr "%s no espera la confirmación de su contacto."
+
+#. module: proof
 #: model:ir.model.constraint,message:proof.constraint_proof_evidence_nonce_uniq
 msgid "A proof challenge is answered once."
 msgstr "Un desafío de comprobación se responde una sola vez."
@@ -59,6 +65,51 @@ msgid "Active"
 msgstr "Activo"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__address
+msgid "Address"
+msgstr "Dirección"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_delivery__state__answered
+msgid "Answered"
+msgstr "Respondido"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__confirmation_sent_to
+msgid "Answered From"
+msgstr "Respondido desde"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__confirmation_date
+msgid "Answered On"
+msgstr "Respondido el"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__kind__submit
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__mode__submit
+msgid "Answered in the dialog"
+msgstr "Respondido en el diálogo"
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_method__mode
+msgid ""
+"Answered in the dialog: the user, or a contact through them, gives the proof"
+" on the screen that asked for it. Answered on the contact's own channel: the"
+" contact receives what they are asked to confirm and answers it there, on "
+"their own time."
+msgstr ""
+"Respondido en el diálogo: el usuario, o un contacto a través de él, da la "
+"comprobación en la pantalla que la pidió. Respondido en el canal propio del "
+"contacto: el contacto recibe lo que se le pide confirmar y lo responde ahí, "
+"cuando pueda."
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__kind__confirm
+#: model:ir.model.fields.selection,name:proof.selection__proof_method__mode__confirm
+msgid "Answered on the contact's own channel"
+msgstr "Respondido en el canal propio del contacto"
+
+#. module: proof
 #. odoo-javascript
 #: code:addons/proof/static/src/proof_dialog/proof_dialog.xml:0
 msgid "Cancel"
@@ -73,6 +124,11 @@ msgstr "Cadena"
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__sequence
 msgid "Chain Position"
 msgstr "Posición en la cadena"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__challenge_id
+msgid "Challenge"
+msgstr "Desafío"
 
 #. module: proof
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_list
@@ -109,12 +165,42 @@ msgid "Confirm it is you"
 msgstr "Confirme que es usted"
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Confirm, this is right"
+msgstr "Confirmar, es correcto"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__confirmation_challenge_ids
+msgid "Confirmation Requests"
+msgstr "Solicitudes de confirmación"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__confirmed
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__confirmed
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__confirmed
+msgid "Confirmed"
+msgstr "Confirmado"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__partner_id
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__partner_id
 msgid "Contact"
 msgstr "Contacto"
 
 #. module: proof
+#: model:ir.model,name:proof.model_mixin_proof_confirmation
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__confirmation_state
+msgid "Contact Confirmation"
+msgstr "Confirmación del contacto"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__unreachable
+msgid "Contact Unreachable"
+msgstr "Contacto ilocalizable"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__create_uid
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__create_uid
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__create_uid
 #: model:ir.model.fields,field_description:proof.field_proof_method__create_uid
 msgid "Created by"
@@ -122,6 +208,7 @@ msgstr "Creado por"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__create_date
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__create_date
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__create_date
 #: model:ir.model.fields,field_description:proof.field_proof_method__create_date
 msgid "Created on"
@@ -138,17 +225,31 @@ msgid "Date Expire"
 msgstr "Fecha de vencimiento"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__delivery_ids
+msgid "Delivery"
+msgstr "Mensaje"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__digest
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__digest
 msgid "Digest"
 msgstr "Resumen"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__display_name
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__display_name
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__display_name
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__display_name
 #: model:ir.model.fields,field_description:proof.field_proof_method__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__disputed
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__disputed
+#: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__disputed
+msgid "Disputed"
+msgstr "Disputado"
 
 #. module: proof
 #: model:ir.model.constraint,message:proof.constraint_proof_method_code_uniq
@@ -162,15 +263,26 @@ msgid "Every recorded proof is intact."
 msgstr "Todas las comprobaciones registradas están intactas."
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__evidence_id
 #: model:ir.ui.menu,name:proof.menu_proof_evidence
 msgid "Evidence"
 msgstr "Evidencia"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__state__expired
+msgid "Expired"
+msgstr "Vencido"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__facts
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__facts
 msgid "Facts"
 msgstr "Datos"
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "For example: I paid a different amount"
+msgstr "Por ejemplo: pagué otro importe"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__hash
@@ -183,7 +295,9 @@ msgid "Hash Version"
 msgstr "Versión del hash"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_mixin_proof_confirmation__id
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__id
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__id
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__id
 #: model:ir.model.fields,field_description:proof.field_proof_method__id
 msgid "ID"
@@ -206,7 +320,13 @@ msgid "Issued"
 msgstr "Emitido"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__write_uid
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__write_uid
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__write_uid
 #: model:ir.model.fields,field_description:proof.field_proof_method__write_uid
 msgid "Last Updated by"
@@ -214,12 +334,19 @@ msgstr "Última actualización por"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__write_date
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__write_date
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__write_date
 #: model:ir.model.fields,field_description:proof.field_proof_method__write_date
 msgid "Last Updated on"
 msgstr "Última actualización el"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__ref
+msgid "Message Reference"
+msgstr "Referencia del mensaje"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__method_id
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__method_id
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_search
 msgid "Method"
@@ -235,6 +362,11 @@ msgstr "Código del método"
 #: model:ir.ui.menu,name:proof.menu_proof_method
 msgid "Methods"
 msgstr "Métodos"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_method__mode
+msgid "Mode"
+msgstr "Modo"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_method__name
@@ -255,6 +387,16 @@ msgstr ""
 " navegador."
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
+msgid "Not Answered"
+msgstr "Sin respuesta"
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Not right"
+msgstr "No es correcto"
+
+#. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__proof_method__code__password
 #: model:proof.method,name:proof.proof_method_password
 msgid "Password"
@@ -264,6 +406,11 @@ msgstr "Contraseña"
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__payload
 msgid "Payload"
 msgstr "Datos de la comprobación"
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Please confirm"
+msgstr "Por favor, confirme"
 
 #. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_evidence__prev_hash
@@ -305,6 +452,11 @@ msgid "Proof Challenge"
 msgstr "Desafío de comprobación"
 
 #. module: proof
+#: model:ir.model,name:proof.model_proof_delivery
+msgid "Proof Confirmation Message"
+msgstr "Mensaje de confirmación de comprobación"
+
+#. module: proof
 #: model:ir.actions.act_window,name:proof.action_proof_evidence
 #: model:ir.model,name:proof.model_proof_evidence
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
@@ -328,6 +480,15 @@ msgstr "Métodos de comprobación"
 #: code:addons/proof/models/proof_evidence.py:0
 msgid "Proof evidence chain"
 msgstr "Cadena de evidencias de comprobación"
+
+#. module: proof
+#: model:ir.actions.server,name:proof.ir_cron_follow_up_confirmations_ir_actions_server
+msgid ""
+"Proof: remind contacts who have not confirmed, and expire what they left "
+"unanswered"
+msgstr ""
+"Comprobación: recordar a los contactos que no han confirmado y vencer lo que"
+" dejaron sin responder"
 
 #. module: proof
 #: model:ir.ui.menu,name:proof.menu_proof
@@ -380,6 +541,11 @@ msgid "Redeemed"
 msgstr "Utilizado"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__date_remind
+msgid "Remind On"
+msgstr "Recordar el"
+
+#. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__strength__device_attested
 #: model:ir.model.fields.selection,name:proof.selection__proof_method__strength__device_attested
 msgid "Reported by a trusted device"
@@ -402,6 +568,16 @@ msgid "Secret shared with the server"
 msgstr "Secreto compartido con el servidor"
 
 #. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_delivery__state__sent
+msgid "Sent"
+msgstr "Enviado"
+
+#. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__sent_to
+msgid "Sent To"
+msgstr "Enviado a"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_method__sequence
 msgid "Sequence"
 msgstr "Secuencia"
@@ -413,7 +589,13 @@ msgid "Signed by the user's own key"
 msgstr "Firmado con la clave propia del usuario"
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Something is not right?"
+msgstr "¿Algo no es correcto?"
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__state
+#: model:ir.model.fields,field_description:proof.field_proof_delivery__state
 msgid "State"
 msgstr "Estado"
 
@@ -430,7 +612,40 @@ msgid "Summary"
 msgstr "Resumen"
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Thank you. We received your answer and will contact you."
+msgstr ""
+"Gracias. Recibimos su respuesta y nos pondremos en contacto con usted."
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "Thank you. You confirmed it."
+msgstr "Gracias. Usted lo confirmó."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_mixin_proof_confirmation__confirmation_sent_to
+msgid "The channel the contact answered on, masked."
+msgstr "El canal en el que respondió el contacto, enmascarado."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_delivery__address
+msgid ""
+"The channel's own id of the chat or address the message went to, which an "
+"answer must come from."
+msgstr ""
+"El identificador propio del canal del chat o la dirección a la que fue el "
+"mensaje, de donde debe venir la respuesta."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_delivery__ref
+msgid "The channel's own id of the message, which an answer replies to."
+msgstr ""
+"El identificador propio del canal del mensaje, al que responde una "
+"respuesta."
+
+#. module: proof
 #: model:ir.model.fields,help:proof.field_proof_challenge__partner_id
+#: model:ir.model.fields,help:proof.field_proof_delivery__partner_id
 msgid "The contact asked to prove it is them, when it is not the user."
 msgstr ""
 "El contacto al que se pide comprobar que es quien dice ser, cuando no es el "
@@ -487,6 +702,12 @@ msgstr ""
 
 #. module: proof
 #. odoo-python
+#: code:addons/proof/models/proof_delivery.py:0
+msgid "This answer is not one we asked for."
+msgstr "Esta respuesta no es una de las que pedimos."
+
+#. module: proof
+#. odoo-python
 #: code:addons/proof/models/proof_challenge.py:0
 msgid "This proof method was not offered for this request."
 msgstr "Este método de comprobación no se ofreció para esta solicitud."
@@ -511,6 +732,21 @@ msgid "This proof request was issued to someone else."
 msgstr "Esta solicitud de comprobación se emitió para otra persona."
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid ""
+"This request is no longer current. If you were asked again, answer the "
+"newest message."
+msgstr ""
+"Esta solicitud ya no está vigente. Si se le preguntó de nuevo, responda el "
+"mensaje más reciente."
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_delivery.py:0
+msgid "This request was already answered or is no longer current."
+msgstr "Esta solicitud ya fue respondida o ya no está vigente."
+
+#. module: proof
 #: model:ir.model.fields,field_description:proof.field_proof_challenge__token_hash
 msgid "Token Hash"
 msgstr "Hash del token"
@@ -531,9 +767,20 @@ msgid "User Agent"
 msgstr "Agente de usuario"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__verdict
+#: model:ir.model.fields,field_description:proof.field_proof_evidence__verdict
+msgid "Verdict"
+msgstr "Respuesta"
+
+#. module: proof
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
 msgid "Vouched For"
 msgstr "Respaldado"
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__pending
+msgid "Waiting for the Contact"
+msgstr "Esperando al contacto"
 
 #. module: proof
 #: model:ir.model.fields,help:proof.field_proof_method__strength
@@ -548,9 +795,34 @@ msgstr ""
 "recibió el correo o el teléfono del firmante."
 
 #. module: proof
+#: model:ir.model.fields,help:proof.field_proof_evidence__verdict
+msgid ""
+"What the contact answered to what they were asked to confirm, when they were"
+" asked to confirm it on their own channel or at the counter."
+msgstr ""
+"Lo que respondió el contacto a lo que se le pidió confirmar, cuando se le "
+"pidió confirmarlo en su propio canal o en el mostrador."
+
+#. module: proof
 #: model:ir.model.fields,help:proof.field_proof_evidence__summary
 msgid "What the user was shown when asked for the proof."
 msgstr "Lo que se le mostró al usuario al pedirle la comprobación."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__date_remind
+msgid "When a contact who has not answered yet is reminded."
+msgstr "Cuándo se le recuerda a un contacto que aún no ha respondido."
+
+#. module: proof
+#: model:ir.model.fields,help:proof.field_proof_delivery__sent_to
+msgid "Where the message went, masked."
+msgstr "A dónde fue el mensaje, enmascarado."
+
+#. module: proof
+#: model:ir.model.fields.selection,name:proof.selection__proof_challenge__state__withdrawn
+#: model:ir.model.fields.selection,name:proof.selection__proof_delivery__state__withdrawn
+msgid "Withdrawn"
+msgstr "Retirado"
 
 #. module: proof
 #. odoo-python
@@ -563,13 +835,32 @@ msgstr ""
 "administrador qué métodos de comprobación aplican y configure uno."
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid ""
+"Your answer was not recorded: this request was already answered or is no "
+"longer current."
+msgstr ""
+"Su respuesta no se registró: esta solicitud ya fue respondida o ya no está "
+"vigente."
+
+#. module: proof
 #. odoo-javascript
 #: code:addons/proof/static/src/password_proof/password_proof.xml:0
 msgid "Your password"
 msgstr "Su contraseña"
 
 #. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "asks"
+msgstr "pide a"
+
+#. module: proof
 #. odoo-javascript
 #: code:addons/proof/static/src/proof_dialog/proof_dialog.xml:0
 msgid "proves it is them, and you enter their answer."
 msgstr "comprueba que es quien dice ser, y usted captura su respuesta."
+
+#. module: proof
+#: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
+msgid "to confirm the following."
+msgstr "confirmar lo siguiente."

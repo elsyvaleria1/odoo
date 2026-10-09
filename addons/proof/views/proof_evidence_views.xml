@@ -49,6 +49,7 @@
                 <field name="res_model" optional="show" />
                 <field name="res_id" optional="show" />
                 <field name="method_id" />
+                <field name="verdict" optional="show" />
                 <field name="strength" optional="hide" />
                 <field name="ip" optional="hide" />
             </list>
@@ -72,6 +73,7 @@
                         </group>
                         <group string="Proof">
                             <field name="method_id" />
+                            <field name="verdict" invisible="not verdict" />
                             <field name="strength" />
                             <field name="ip" />
                             <field name="user_agent" />

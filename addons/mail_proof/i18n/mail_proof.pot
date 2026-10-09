@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 16:43+0000\n"
-"PO-Revision-Date: 2026-10-09 16:43+0000\n"
+"POT-Creation-Date: 2026-10-09 20:14+0000\n"
+"PO-Revision-Date: 2026-10-09 20:14+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,11 +16,18 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid ". If something is not right, tell us on the same page."
+msgstr ""
+
+#. module: mail_proof
 #: model:res.groups,comment:mail_proof.privilege_send_proof_code
 msgid ""
 "Asking a user or a contact for an email-code proof sends them the code at "
-"once. The user who asks holds no mail administration right for that: only "
-"the outgoing mail carrying the code, which is deleted once sent."
+"once, and asking a contact to confirm a record sends them what they confirm "
+"with the link they answer on. The user who asks holds no mail administration"
+" right for that: only the outgoing mail carrying it, which is deleted once "
+"sent."
 msgstr ""
 
 #. module: mail_proof
@@ -56,6 +63,11 @@ msgid "Confirm"
 msgstr ""
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "Confirm or report a problem"
+msgstr ""
+
+#. module: mail_proof
 #: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__display_name
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__display_name
 msgid "Display Name"
@@ -68,12 +80,19 @@ msgid "Email Code"
 msgstr ""
 
 #. module: mail_proof
+#: model:ir.model.fields.selection,name:mail_proof.selection__proof_method__code__email_confirm
+#: model:proof.method,name:mail_proof.proof_method_email_confirm
+msgid "Email Confirmation"
+msgstr ""
+
+#. module: mail_proof
 #: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_hash
 msgid "HMAC of the one-time code sent by email, under the database secret."
 msgstr ""
 
 #. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
 msgid "Hello"
 msgstr ""
 
@@ -89,8 +108,14 @@ msgid "If you did not expect this, do not give the code to anyone."
 msgstr ""
 
 #. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Please confirm"
+msgstr ""
+
+#. module: mail_proof
 #: model:res.groups,name:mail_proof.privilege_send_proof_code
-msgid "Privilege: a proof request mails its one-time code to the signer"
+msgid "Privilege: a proof request mails the signer what it asks them"
 msgstr ""
 
 #. module: mail_proof
@@ -104,8 +129,19 @@ msgid "Proof Method"
 msgstr ""
 
 #. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Reminder: please confirm"
+msgstr ""
+
+#. module: mail_proof
 #: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_sent_to
 msgid "The address the code went to, masked."
+msgstr ""
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "The link works until"
 msgstr ""
 
 #. module: mail_proof
@@ -121,9 +157,19 @@ msgid "Too many wrong codes. Start again to send a new one."
 msgstr ""
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "We have not heard from you yet."
+msgstr ""
+
+#. module: mail_proof
 #. odoo-python
 #: code:addons/mail_proof/models/proof_method.py:0
 msgid "Your confirmation code"
+msgstr ""
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "asks you to confirm the following:"
 msgstr ""
 
 #. module: mail_proof

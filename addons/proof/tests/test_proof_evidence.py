@@ -45,23 +45,43 @@ class TestProofEvidence(ProofCase):
             error, f"Proof {evidence.sequence} was changed after it was recorded."
         )
 
-    def test_a_row_recorded_under_version_1_still_verifies(self):
-        evidence = self._prove().sudo()
-        recorded_hash = evidence.hash
-        vals = {**evidence._get_hash_vals(), "hash_version": 1}
-        legacy_hash = self.env["proof.evidence"]._get_chained_hash(vals)
+    def test_rows_recorded_under_earlier_versions_still_verify(self):
+        for version in (1, 2):
+            with self.subTest(version=version):
+                evidence = self._prove().sudo()
+                recorded_hash = evidence.hash
+                vals = {**evidence._get_hash_vals(), "hash_version": version}
+                legacy_hash = self.env["proof.evidence"]._get_chained_hash(vals)
+                self.env.cr.execute(
+                    SQL(
+                        "UPDATE proof_evidence SET hash_version = %s, hash = %s "
+                        "WHERE id = %s",
+                        version,
+                        legacy_hash,
+                        evidence.id,
+                    )
+                )
+                self.env["proof.evidence"].invalidate_model()
+                self._prove()
+
+                self.assertNotEqual(legacy_hash, recorded_hash)
+                self.assertIsNone(self.env["proof.evidence"]._get_chain_error())
+
+    def test_the_verdict_is_part_of_the_hash(self):
+        evidence = self._prove()
         self.env.cr.execute(
             SQL(
-                "UPDATE proof_evidence SET hash_version = 1, hash = %s WHERE id = %s",
-                legacy_hash,
+                "UPDATE proof_evidence SET verdict = 'disputed' WHERE id = %s",
                 evidence.id,
             )
         )
         self.env["proof.evidence"].invalidate_model()
-        self._prove()
 
-        self.assertNotEqual(legacy_hash, recorded_hash)
-        self.assertIsNone(self.env["proof.evidence"]._get_chain_error())
+        error = self.env["proof.evidence"]._get_chain_error()
+
+        self.assertEqual(
+            error, f"Proof {evidence.sequence} was changed after it was recorded."
+        )
 
     def test_the_contact_who_proved_is_part_of_the_hash(self):
         evidence = self._prove()
@@ -84,6 +104,12 @@ class TestProofEvidence(ProofCase):
         evidence = self._prove()
         position = evidence.sequence
         self._prove()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE proof_challenge SET evidence_id = NULL WHERE evidence_id = %s",
+                evidence.id,
+            )
+        )
         self.env.cr.execute(
             SQL("DELETE FROM proof_evidence WHERE id = %s", evidence.id)
         )

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_follow_up_confirmations" model="ir.cron">
+        <field
+            name="name">Proof: remind contacts who have not confirmed, and expire what they left unanswered</field>
+        <field name="model_id" ref="model_proof_challenge" />
+        <field name="state">code</field>
+        <field name="code">model._cron_follow_up_confirmations()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">hour</field>
+    </record>
+
+</odoo>

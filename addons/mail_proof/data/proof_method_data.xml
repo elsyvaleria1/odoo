@@ -8,4 +8,12 @@
         <field name="sequence">50</field>
     </record>
 
+    <record id="proof_method_email_confirm" model="proof.method">
+        <field name="name">Email Confirmation</field>
+        <field name="code">email_confirm</field>
+        <field name="mode">confirm</field>
+        <field name="strength">possession</field>
+        <field name="sequence">60</field>
+    </record>
+
 </odoo>

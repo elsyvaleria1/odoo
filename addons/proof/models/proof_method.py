@@ -10,6 +10,14 @@ STRENGTHS = [
     ("shared_secret", "Secret shared with the server"),
     ("possession", "Code delivered to the signer's own channel"),
 ]
+VERDICTS = [
+    ("confirmed", "Confirmed"),
+    ("disputed", "Disputed"),
+]
+MODES = [
+    ("submit", "Answered in the dialog"),
+    ("confirm", "Answered on the contact's own channel"),
+]
 
 
 class ProofMethod(models.Model):
@@ -35,6 +43,16 @@ class ProofMethod(models.Model):
         "only the user holds, a device the server trusts, a secret the server "
         "can check, or a code only the signer's own email or phone received.",
     )
+    mode = fields.Selection(
+        selection=MODES,
+        default="submit",
+        readonly=True,
+        required=True,
+        help="Answered in the dialog: the user, or a contact through them, gives "
+        "the proof on the screen that asked for it. Answered on the contact's own "
+        "channel: the contact receives what they are asked to confirm and "
+        "answers it there, on their own time.",
+    )
     sequence = fields.Integer(
         default=10,
     )
@@ -52,10 +70,28 @@ class ProofMethod(models.Model):
         return self.code == "password"
 
     def _is_enrolled_contact(self, partner: models.BaseModel) -> bool:
-        """Whether a contact with no user account can prove with this method,
-        through the user who asks them."""
+        """Whether a contact with no user account can prove with this method:
+        through the user who asks them, or, for a method answered on their own
+        channel, whether that channel reaches them."""
         self.check_singleton()
         return False
+
+    def _deliver_confirmation(
+        self, challenge: models.BaseModel, reminder: bool = False
+    ) -> models.BaseModel:
+        """Send the contact what ``challenge`` asks them to confirm, with a way
+        to answer it, and return the ``proof.delivery`` that answer arrives on;
+        an empty one when the channel could not take it."""
+        self.check_singleton()
+        raise UserError(
+            self.env._(
+                "The proof method %(method)s is not available.", method=self.name
+            )
+        )
+
+    def _withdraw_delivery(self, delivery: models.BaseModel) -> None:
+        """Tell the contact a message they can no longer answer is spent."""
+        self.check_singleton()
 
     def _get_proof_options(self, challenge: models.BaseModel) -> dict[str, Any]:
         self.check_singleton()

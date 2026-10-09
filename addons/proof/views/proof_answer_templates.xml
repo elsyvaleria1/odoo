@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="proof_answer_page" name="Confirmation Request">
+        <t t-call="web.frontend_layout">
+            <div class="container py-5" style="max-width: 640px;">
+                <h1 class="h3 mb-1">Please confirm</h1>
+                <p class="text-muted mb-4">
+                    <t t-out="challenge.user_id.company_id.name" />
+                    asks <t t-out="challenge.partner_id.name" /> to confirm the following.
+                </p>
+                <div t-if="error" class="alert alert-warning" role="alert">
+                    Your answer was not recorded: this request was already answered or is no longer current.
+                </div>
+                <table class="table">
+                    <tbody>
+                        <tr t-foreach="challenge.summary or []" t-as="line">
+                            <th scope="row" t-out="line[0]" />
+                            <td t-out="line[1]" />
+                        </tr>
+                    </tbody>
+                </table>
+                <t t-if="open">
+                    <form
+                        method="POST"
+                        t-attf-action="/proof/answer/#{delivery.id}/submit">
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            t-att-value="request.csrf_token()" />
+                        <input
+                            type="hidden"
+                            name="access_token"
+                            t-att-value="access_token" />
+                        <button
+                            type="submit"
+                            name="verdict"
+                            value="confirmed"
+                            class="btn btn-primary btn-lg w-100 mb-4">
+                            Confirm, this is right
+                        </button>
+                        <label for="reason" class="form-label">Something is not right?</label>
+                        <textarea
+                            id="reason"
+                            name="reason"
+                            class="form-control mb-2"
+                            rows="3"
+                            maxlength="2000"
+                            placeholder="For example: I paid a different amount" />
+                        <button
+                            type="submit"
+                            name="verdict"
+                            value="disputed"
+                            class="btn btn-outline-danger w-100">
+                            Not right
+                        </button>
+                    </form>
+                </t>
+                <div
+                    t-elif="challenge.state == 'redeemed' and challenge.verdict == 'confirmed'"
+                    class="alert alert-success"
+                    role="status">
+                    Thank you. You confirmed it.
+                </div>
+                <div
+                    t-elif="challenge.state == 'redeemed' and challenge.verdict == 'disputed'"
+                    class="alert alert-info"
+                    role="status">
+                    Thank you. We received your answer and will contact you.
+                </div>
+                <div t-else="" class="alert alert-secondary" role="status">
+                    This request is no longer current. If you were asked again, answer the newest message.
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

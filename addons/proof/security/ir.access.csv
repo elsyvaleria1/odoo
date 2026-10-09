@@ -5,3 +5,5 @@ privilege_record_proof_challenge,proof.challenge: a user's proof issues and rede
 privilege_record_proof_evidence,proof.evidence: an accepted proof is chained after the last recorded one,model_proof_evidence,privilege_record_proof,permission,cr,,,
 access_proof_evidence_user,proof.evidence: a user reads the proofs they gave,model_proof_evidence,base.group_user,permission,r,own,,
 access_proof_evidence_system,proof.evidence: administrators read and check every recorded proof,model_proof_evidence,base.group_system,permission,r,all,,
+privilege_record_proof_delivery,proof.delivery: asking a contact to confirm sends them a message they answer on,model_proof_delivery,privilege_record_proof,permission,cru,,,
+access_proof_delivery_system,proof.delivery: administrators read the confirmation messages sent,model_proof_delivery,base.group_system,permission,r,all,,

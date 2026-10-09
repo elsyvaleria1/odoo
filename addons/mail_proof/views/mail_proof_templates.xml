@@ -26,4 +26,38 @@
         </div>
     </template>
 
+    <template id="email_confirm_body">
+        <div style="font-family: sans-serif; font-size: 14px;">
+            <p>
+                Hello <t t-out="signer.name" />,
+            </p>
+            <p t-if="reminder">
+                We have not heard from you yet. <t t-out="company.name" /> asks you to confirm the following:
+            </p>
+            <p t-else="">
+                <t t-out="company.name" /> asks you to confirm the following:
+            </p>
+            <table
+                t-if="summary"
+                style="border-collapse: collapse; margin-bottom: 16px;">
+                <tr t-foreach="summary" t-as="line">
+                    <th
+                        style="text-align: left; padding: 2px 12px 2px 0;"
+                        t-out="line[0]" />
+                    <td style="padding: 2px 0;" t-out="line[1]" />
+                </tr>
+            </table>
+            <p>
+                <a
+                    t-att-href="url"
+                    style="display: inline-block; padding: 10px 20px; background-color: #714B67; color: #FFFFFF; text-decoration: none; border-radius: 4px;">
+                    Confirm or report a problem
+                </a>
+            </p>
+            <p style="color: #777;">
+                The link works until <t t-out="date_expire" t-options="{'widget': 'datetime'}" />. If something is not right, tell us on the same page.
+            </p>
+        </div>
+    </template>
+
 </odoo>

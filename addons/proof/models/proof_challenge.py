@@ -8,7 +8,10 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.http import request
 
+from .proof_method import MODES, VERDICTS
+
 CHALLENGE_LIFETIME = timedelta(minutes=5)
+CONFIRMATION_LIFETIME = timedelta(days=3)
 CHALLENGE_RETENTION = timedelta(days=1)
 GC_UNLINK_LIMIT = 10000
 
@@ -20,6 +23,12 @@ class ProofChallenge(models.Model):
 
     token_hash = fields.Char(
         copy=False,
+        readonly=True,
+        required=True,
+    )
+    kind = fields.Selection(
+        selection=MODES,
+        default="submit",
         readonly=True,
         required=True,
     )
@@ -69,14 +78,35 @@ class ProofChallenge(models.Model):
         readonly=True,
         required=True,
     )
+    date_remind = fields.Datetime(
+        string="Remind On",
+        readonly=True,
+        help="When a contact who has not answered yet is reminded.",
+    )
     state = fields.Selection(
         selection=[
             ("issued", "Issued"),
             ("redeemed", "Redeemed"),
+            ("withdrawn", "Withdrawn"),
+            ("expired", "Expired"),
         ],
         default="issued",
         readonly=True,
         required=True,
+    )
+    verdict = fields.Selection(
+        selection=VERDICTS,
+        readonly=True,
+    )
+    evidence_id = fields.Many2one(
+        comodel_name="proof.evidence",
+        readonly=True,
+        ondelete="restrict",
+    )
+    delivery_ids = fields.One2many(
+        comodel_name="proof.delivery",
+        inverse_name="challenge_id",
+        readonly=True,
     )
 
     _token_hash_uniq = models.Constraint(
@@ -106,6 +136,7 @@ class ProofChallenge(models.Model):
         """
         record.check_singleton()
         user = self.env.user
+        methods = methods.filtered(lambda method: method.mode == "submit")
         if partner:
             partner.check_singleton()
             methods = methods.filtered(
@@ -152,13 +183,15 @@ class ProofChallenge(models.Model):
         record: models.BaseModel,
         purpose: str,
         facts: dict[str, Any],
+        verdict: str | None = None,
     ) -> models.BaseModel:
         """Accept the current user's answer to a challenge and record it.
 
         Returns the ``proof.evidence`` row. Raises UserError when the challenge is
         unknown, used, expired, someone else's, issued for another act, answered
         with a method it did not offer, when the facts moved since it was issued,
-        or when the method refuses the proof.
+        or when the method refuses the proof. ``verdict`` is what a contact
+        answered to what they were asked to confirm, when they were.
         """
         record.check_singleton()
         challenge = self._with_proof_privilege().search(
@@ -173,11 +206,120 @@ class ProofChallenge(models.Model):
                 self.env._("This proof method was not offered for this request.")
             )
         accepted = method._accept_proof(challenge, payload or {})
-        challenge.state = "redeemed"
-        evidence = challenge.env["proof.evidence"].create(
-            challenge._prepare_evidence_vals(method, accepted)
-        )
+        evidence = challenge._record_answer(method, accepted, verdict)
         return self.env["proof.evidence"].browse(evidence.id)
+
+    @api.model
+    def _issue_confirmation(
+        self,
+        record: models.BaseModel,
+        purpose: str,
+        facts: dict[str, Any],
+        partner: models.BaseModel,
+        summary: list[list[str]] | None = None,
+        lifetime: timedelta = CONFIRMATION_LIFETIME,
+        remind_after: timedelta | None = None,
+    ) -> ProofChallenge:
+        """Ask ``partner`` to confirm ``facts`` about ``record`` on every channel
+        of theirs a confirmation method reaches; they answer there, until
+        ``lifetime`` runs out. A challenge no channel reached is still issued,
+        with no message out, so the record shows its contact was unreachable.
+        """
+        record.check_singleton()
+        partner.check_singleton()
+        methods = (
+            self.env["proof.method"]
+            .search([("mode", "=", "confirm")])
+            .filtered(lambda method: method._is_enrolled_contact(partner))
+        )
+        now = fields.Datetime.now()
+        challenge = self._with_proof_privilege().create(
+            {
+                "kind": "confirm",
+                # never handed out: the contact answers on the messages sent
+                "token_hash": self._get_token_hash(secrets.token_urlsafe(32)),
+                "user_id": self.env.user.id,
+                "partner_id": partner.id,
+                "purpose": purpose,
+                "res_model": record._name,
+                "res_id": record.id,
+                "facts": facts,
+                "summary": summary or [],
+                "digest": self._get_digest(purpose, record, facts),
+                "method_ids": methods.ids,
+                "date_expire": now + lifetime,
+                "date_remind": now + remind_after if remind_after else False,
+            }
+        )
+        challenge._deliver()
+        return self.browse(challenge.id)
+
+    def _deliver(self, reminder: bool = False) -> None:
+        for challenge in self:
+            for method in challenge.method_ids:
+                method._deliver_confirmation(challenge, reminder=reminder)
+
+    def _record_answer(
+        self,
+        method: models.BaseModel,
+        accepted: dict[str, Any],
+        verdict: str | None = None,
+        signer_request: bool = True,
+    ) -> models.BaseModel:
+        self.check_singleton()
+        evidence = self.env["proof.evidence"].create(
+            self._prepare_evidence_vals(
+                method, accepted, verdict=verdict, signer_request=signer_request
+            )
+        )
+        self.write(
+            {"state": "redeemed", "verdict": verdict, "evidence_id": evidence.id}
+        )
+        return evidence
+
+    def _withdraw(self) -> None:
+        """Take back what was asked: its messages can no longer be answered."""
+        challenges = self._with_proof_privilege().browse(self.ids)
+        challenges.filtered(lambda c: c.state == "issued").state = "withdrawn"
+        challenges._withdraw_deliveries()
+
+    def _withdraw_deliveries(self) -> None:
+        for delivery in self.delivery_ids.filtered(lambda d: d.state == "sent"):
+            delivery.state = "withdrawn"
+            delivery.method_id._withdraw_delivery(delivery)
+
+    def _notify_record(self, hook: str, *args: Any) -> None:
+        self.check_singleton()
+        record = self.env[self.res_model].browse(self.res_id).exists()
+        # a record outside the confirmation mixin asked its contact directly
+        # and follows the answer from the challenge
+        if record and hasattr(record, hook):
+            getattr(record, hook)(*args)
+
+    @api.model
+    def _cron_follow_up_confirmations(self) -> None:
+        challenges = self._with_proof_privilege()
+        now = fields.Datetime.now()
+        expired = challenges.search(
+            [
+                ("kind", "=", "confirm"),
+                ("state", "=", "issued"),
+                ("date_expire", "<=", now),
+            ]
+        )
+        for challenge in expired:
+            challenge.state = "expired"
+            challenge._withdraw_deliveries()
+            challenge._notify_record("_on_confirmation_expired")
+        due = challenges.search(
+            [
+                ("kind", "=", "confirm"),
+                ("state", "=", "issued"),
+                ("date_remind", "<=", now),
+            ]
+        )
+        due.date_remind = False
+        due._deliver(reminder=True)
 
     def _get_client_params(self, token: str) -> dict[str, Any]:
         self.check_singleton()
@@ -201,6 +343,7 @@ class ProofChallenge(models.Model):
     ) -> None:
         if (
             not self
+            or self.kind != "submit"
             or self.state != "issued"
             or self.date_expire < fields.Datetime.now()
         ):
@@ -230,10 +373,14 @@ class ProofChallenge(models.Model):
             )
 
     def _prepare_evidence_vals(
-        self, method: models.BaseModel, accepted: dict[str, Any]
+        self,
+        method: models.BaseModel,
+        accepted: dict[str, Any],
+        verdict: str | None = None,
+        signer_request: bool = True,
     ) -> dict[str, Any]:
         self.check_singleton()
-        httprequest = request.httprequest if request else None
+        httprequest = request.httprequest if request and signer_request else None
         return {
             "user_id": self.user_id.id,
             "partner_id": self.partner_id.id,
@@ -248,6 +395,7 @@ class ProofChallenge(models.Model):
             "method_code": method.code,
             "strength": method.strength,
             "payload": accepted,
+            "verdict": verdict,
             "date": fields.Datetime.now(),
             "ip": httprequest.remote_addr if httprequest else False,
             "user_agent": httprequest.user_agent.string[:512] if httprequest else False,
@@ -283,8 +431,12 @@ class ProofChallenge(models.Model):
 
     @api.autovacuum
     def _gc_challenges(self) -> tuple[int, bool]:
+        # a confirmation stays: its record reads its answer from it
         stale = self.search(
-            [("date_expire", "<", fields.Datetime.now() - CHALLENGE_RETENTION)],
+            [
+                ("kind", "=", "submit"),
+                ("date_expire", "<", fields.Datetime.now() - CHALLENGE_RETENTION),
+            ],
             limit=GC_UNLINK_LIMIT,
         )
         stale.unlink()

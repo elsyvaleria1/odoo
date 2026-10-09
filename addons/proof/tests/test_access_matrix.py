@@ -26,6 +26,13 @@ class TestProofAccessMatrix(AccessMatrixCase):
             note="reached only through the proof privilege, for the one challenge a user answers",
         ),
         Cell(
+            "proof.delivery",
+            "delivery",
+            note="written only through the proof privilege; administrators read "
+            "the confirmation messages sent",
+            admin_a="r",
+        ),
+        Cell(
             "proof.evidence",
             "evidence_a",
             note="a user reads the proofs they gave; administrators read and check them all; "
@@ -56,10 +63,14 @@ class TestProofAccessMatrix(AccessMatrixCase):
         pending = challenges.with_user(cls.users["employee_b"])._issue(
             subject, "matrix.handover", facts, method
         )
+        challenge = challenges.sudo().search(
+            [("token_hash", "=", challenges._get_token_hash(pending["token"]))]
+        )
         return {
             "password_method": method,
-            "challenge": challenges.sudo().search(
-                [("token_hash", "=", challenges._get_token_hash(pending["token"]))]
-            ),
+            "challenge": challenge,
+            "delivery": cls.env["proof.delivery"]
+            .sudo()
+            .create({"challenge_id": challenge.id, "method_id": method.id}),
             "evidence_a": evidence.sudo(),
         }

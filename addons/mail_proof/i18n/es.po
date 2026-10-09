@@ -16,16 +16,24 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid ". If something is not right, tell us on the same page."
+msgstr ". Si algo no es correcto, díganoslo en la misma página."
+
+#. module: mail_proof
 #: model:res.groups,comment:mail_proof.privilege_send_proof_code
 msgid ""
 "Asking a user or a contact for an email-code proof sends them the code at "
-"once. The user who asks holds no mail administration right for that: only "
-"the outgoing mail carrying the code, which is deleted once sent."
+"once, and asking a contact to confirm a record sends them what they confirm "
+"with the link they answer on. The user who asks holds no mail administration"
+" right for that: only the outgoing mail carrying it, which is deleted once "
+"sent."
 msgstr ""
 "Pedir a un usuario o a un contacto una comprobación por código de correo le "
-"envía el código de inmediato. El usuario que lo pide no tiene ningún derecho"
-" de administración de correo para ello: solo el correo saliente con el "
-"código, que se elimina una vez enviado."
+"envía el código de inmediato, y pedir a un contacto que confirme un registro"
+" le envía lo que confirma con el enlace en el que responde. El usuario que "
+"lo pide no tiene ningún derecho de administración de correo para ello: solo "
+"el correo saliente que lo lleva, que se elimina una vez enviado."
 
 #. module: mail_proof
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__code
@@ -60,6 +68,11 @@ msgid "Confirm"
 msgstr "Confirmar"
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "Confirm or report a problem"
+msgstr "Confirmar o reportar un problema"
+
+#. module: mail_proof
 #: model:ir.model.fields,field_description:mail_proof.field_proof_challenge__display_name
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__display_name
 msgid "Display Name"
@@ -72,6 +85,12 @@ msgid "Email Code"
 msgstr "Código por correo"
 
 #. module: mail_proof
+#: model:ir.model.fields.selection,name:mail_proof.selection__proof_method__code__email_confirm
+#: model:proof.method,name:mail_proof.proof_method_email_confirm
+msgid "Email Confirmation"
+msgstr "Confirmación por correo"
+
+#. module: mail_proof
 #: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_hash
 msgid "HMAC of the one-time code sent by email, under the database secret."
 msgstr ""
@@ -80,6 +99,7 @@ msgstr ""
 
 #. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
 msgid "Hello"
 msgstr "Hola"
 
@@ -95,11 +115,17 @@ msgid "If you did not expect this, do not give the code to anyone."
 msgstr "Si no esperaba este mensaje, no le dé el código a nadie."
 
 #. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Please confirm"
+msgstr "Por favor, confirme"
+
+#. module: mail_proof
 #: model:res.groups,name:mail_proof.privilege_send_proof_code
-msgid "Privilege: a proof request mails its one-time code to the signer"
+msgid "Privilege: a proof request mails the signer what it asks them"
 msgstr ""
-"Privilegio: una solicitud de comprobación envía por correo su código de un "
-"solo uso al firmante"
+"Privilegio: una solicitud de comprobación envía por correo al firmante lo "
+"que le pide"
 
 #. module: mail_proof
 #: model:ir.model,name:mail_proof.model_proof_challenge
@@ -112,9 +138,20 @@ msgid "Proof Method"
 msgstr "Método de comprobación"
 
 #. module: mail_proof
+#. odoo-python
+#: code:addons/mail_proof/models/proof_method.py:0
+msgid "Reminder: please confirm"
+msgstr "Recordatorio: por favor, confirme"
+
+#. module: mail_proof
 #: model:ir.model.fields,help:mail_proof.field_proof_challenge__code_sent_to
 msgid "The address the code went to, masked."
 msgstr "La dirección a la que se envió el código, enmascarada."
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "The link works until"
+msgstr "El enlace funciona hasta el"
 
 #. module: mail_proof
 #. odoo-python
@@ -130,13 +167,38 @@ msgstr ""
 "Demasiados códigos incorrectos. Empiece de nuevo para enviar uno nuevo."
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "We have not heard from you yet."
+msgstr "Aún no hemos sabido de usted."
+
+#. module: mail_proof
 #. odoo-python
 #: code:addons/mail_proof/models/proof_method.py:0
 msgid "Your confirmation code"
 msgstr "Su código de confirmación"
 
 #. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
+msgid "asks you to confirm the following:"
+msgstr "le pide confirmar lo siguiente:"
+
+#. module: mail_proof
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
 msgid ""
 "is asking you to confirm the following. If you agree, give them this code:"
 msgstr "le pide confirmar lo siguiente. Si está de acuerdo, dele este código:"
+
+#~ msgid ""
+#~ "Asking a user or a contact for an email-code proof sends them the code at "
+#~ "once. The user who asks holds no mail administration right for that: only "
+#~ "the outgoing mail carrying the code, which is deleted once sent."
+#~ msgstr ""
+#~ "Pedir a un usuario o a un contacto una comprobación por código de correo le "
+#~ "envía el código de inmediato. El usuario que lo pide no tiene ningún derecho"
+#~ " de administración de correo para ello: solo el correo saliente con el "
+#~ "código, que se elimina una vez enviado."
+
+#~ msgid "Privilege: a proof request mails its one-time code to the signer"
+#~ msgstr ""
+#~ "Privilegio: una solicitud de comprobación envía por correo su código de un "
+#~ "solo uso al firmante"

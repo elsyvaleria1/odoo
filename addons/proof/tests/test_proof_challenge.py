@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError
@@ -160,3 +161,55 @@ class TestProofChallenge(ProofCase):
 
         self.assertFalse(stale.exists())
         self.assertTrue(fresh.exists())
+
+    def _issue_confirmation(self):
+        return (
+            self.env["proof.challenge"]
+            .with_user(self.user)
+            ._issue_confirmation(
+                self.subject,
+                "test.confirmation",
+                self.facts,
+                self.env["res.partner"].create({"name": "Customer"}),
+                summary=self.summary,
+            )
+        )
+
+    def test_a_confirmation_no_channel_reaches_is_issued_with_nothing_sent(self):
+        challenge = self._issue_confirmation().sudo()
+
+        self.assertEqual(
+            (challenge.kind, challenge.state, challenge.user_id),
+            ("confirm", "issued", self.user),
+        )
+        self.assertFalse(challenge.method_ids)
+        self.assertFalse(challenge.delivery_ids)
+        self.assertEqual(
+            challenge.date_expire.date(),
+            (fields.Datetime.now() + timedelta(days=3)).date(),
+        )
+
+    def test_a_confirmation_is_never_answered_in_the_dialog(self):
+        challenge = self._issue_confirmation().sudo()
+        with patch.object(
+            type(self.env["proof.challenge"]),
+            "_get_token_hash",
+            return_value=challenge.token_hash,
+        ):
+            with self.assertRaisesRegex(UserError, "expired or was already used"):
+                self._redeem({"token": "any"}, purpose="test.confirmation")
+
+    def test_confirmations_outlive_the_collection_of_stale_challenges(self):
+        confirmation = self._issue_confirmation().sudo()
+
+        with freeze_time(fields.Datetime.now() + timedelta(days=5)):
+            self.env["proof.challenge"]._gc_challenges()
+
+        self.assertTrue(confirmation.exists())
+
+    def test_withdrawn_confirmation_is_spent(self):
+        challenge = self._issue_confirmation().sudo()
+
+        challenge._withdraw()
+
+        self.assertEqual(challenge.state, "withdrawn")
