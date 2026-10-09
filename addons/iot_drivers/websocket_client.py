@@ -48,6 +48,9 @@ class WebsocketClient(Thread):
         When the client is setup, this function send a message to subscribe to the iot websocket channel
         """
         self.connect_timestamp = time.monotonic()
+        # the server may have answered the box's last /iot/setup with another
+        # channel since this client started: every reconnect takes the latest
+        self.channel = main.manager.ws_channel or self.channel
         ws.send(
             json_dumps(
                 {
