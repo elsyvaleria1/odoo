@@ -216,6 +216,8 @@ class IotBox(models.Model):
     token = fields.Char(
         default=lambda self: self._default_token(),
         readonly=True,
+        classification="secret.credential",
+        groups="base.group_system",
     )
 
     @api.model_create_multi

@@ -36,3 +36,13 @@ class TestAnInternalUserReadsBoxes(TransactionCase):
         self.assertFalse(self.user.has_group("device.group_device_user"))
         with self.assertRaises(AccessError):
             self.other_device.with_user(self.user).read(["name"])
+
+    def test_the_token_a_box_proves_itself_with_is_the_system_s_to_read(self):
+        """The paired token is the credential a box's calls are checked
+        against; a user who can read it can speak as the box."""
+        with self.assertRaises(AccessError):
+            self.box.with_user(self.user).read(["token"])
+        admin = new_test_user(
+            self.env, login="till_admin", groups="base.group_user,base.group_system"
+        )
+        self.assertTrue(self.box.with_user(admin).read(["token"])[0]["token"])
