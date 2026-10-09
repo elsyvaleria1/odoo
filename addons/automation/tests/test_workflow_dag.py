@@ -1517,13 +1517,21 @@ class TestApprovalNode(TransactionCase):
         self.assertEqual(runtime.state, "error")
         self.assertIn("fresh approval round", line.error_message)
 
-    def test_disabled_rule_does_not_settle_a_recorded_approval(self):
+    def test_a_paused_rule_does_not_settle_a_recorded_approval(self):
+        gate = self._approval()
+        runtime = self._run()
+        self._line(runtime, gate).activity_ids._action_done()
+        self.automation.action_pause()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+
+    def test_a_retired_rule_settles_a_recorded_approval(self):
         gate = self._approval()
         runtime = self._run()
         self._line(runtime, gate).activity_ids._action_done()
         self.automation.active = False
         self.env["automation.runtime"]._dispatch_due_steps()
-        self.assertEqual(runtime.state, "waiting_resume")
+        self.assertEqual(self._line(runtime, gate).state, "done")
 
     def test_scoped_dispatch_does_not_settle_another_rules_approval(self):
         gate = self._approval()

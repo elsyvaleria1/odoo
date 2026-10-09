@@ -245,8 +245,10 @@ to another document withdraws its vote. Under `all`, any withdrawn or missing re
 step. Under `any`, another pending approver can still approve. Archiving an
 activity is not an approval. Retry creates a new round and retains old decisions.
 
-The dispatcher still enforces the active-runtime and rule-selection boundaries.
-It alone transitions the step and runs successors. An upgraded, paused legacy
+The dispatcher still enforces the active-runtime and rule-selection boundaries:
+a paused rule's approvals wait with its other steps, a retired (archived) rule's
+are settled so its open runs finish. It alone transitions the step and runs
+successors. An upgraded, paused legacy
 approval without durable decisions fails safely with an instruction to retry;
 missing historical votes cannot be reconstructed from surviving activities.
 Settled legacy runs remain unchanged. No backfill guesses at historical consent.
