@@ -6,10 +6,10 @@ import pytz
 
 from odoo import api, fields, models
 
-from ..services import catalog
-from ..services.catalog import available_queries
+from ..services import catalog, documents
+from ..services.catalog import NotFound, available_queries
 from ..services.insight_agent import InsightAgent
-from ..services.insight_assistant import HELP, InsightAssistant
+from ..services.insight_assistant import HELP, SEND_DOCUMENT, InsightAssistant
 from ..services.odoo_reader import OdooReader
 from ..services.odoo_tools import OdooTools
 from odoo.addons.telegram.tools import format as tg
@@ -86,7 +86,12 @@ class TelegramChat(models.Model):
                 question, chat._insight_history(), queries, today=today.isoformat()
             )
             key = interpretation["query"]
-            if key == HELP:
+            if key == SEND_DOCUMENT:
+                answer = self._insight_send_documents(
+                    bot, chat, interpretation, reader_user, tr_env
+                )
+                answered_by = SEND_DOCUMENT
+            elif key == HELP:
                 answer = _help_text(tr_env, queries, InsightAgent(bot).available)
                 answered_by = HELP
             elif key in queries and not _needs_agent(interpretation, bot):
@@ -128,6 +133,41 @@ class TelegramChat(models.Model):
                 "answer": answer,
             }
         )
+
+    def _insight_send_documents(self, bot, chat, interpretation, reader_user, tr_env):
+        """Send the files a request for documents asks for, and say what was
+        sent. Printing writes report caches, so it runs in this job's own
+        transaction, as the reader in superuser mode over every company."""
+        kind = interpretation.get("document_kind") or "credit_file"
+        env = self.env(user=reader_user.id, su=True)
+        env = env(
+            context={
+                **env.context,
+                "lang": tr_env.lang,
+                "allowed_company_ids": env["res.company"].search([]).ids,
+            }
+        )
+        try:
+            files, names = documents.collect(env, kind, interpretation)
+        except NotFound as error:
+            return str(error)
+        if not files:
+            return tr_env._("I found no file to send for that request.")
+        bot.send_chat_action(chat, "upload_document")
+        for filename, content in files:
+            bot.send_document(chat.chat_id, content, filename)
+        lines = [
+            tr_env._("I sent you %(count)s file(s):", count=len(files)),
+            *(f"• {filename}" for filename, _content in files),
+        ]
+        if len(names) > len(files):
+            lines.append(
+                tr_env._(
+                    "%(count)s more matched; ask for one by its number.",
+                    count=len(names) - len(files),
+                )
+            )
+        return "\n".join(lines)
 
     def _insight_ask_agent(self, bot, chat, question, reader, tz, today) -> str:
         """The agent's answer to a question no report answers, or nothing
@@ -198,6 +238,7 @@ def _help_text(tr_env, queries, with_agent):
         "deliveries": tr_env._("pending deliveries"),
         "production": tr_env._("production"),
         "payments": tr_env._("payments received and made"),
+        "credit": tr_env._("credit and guarantees"),
         "statement": tr_env._("account statements"),
         "salaries": tr_env._("salaries"),
         "headcount": tr_env._("employees"),

@@ -38,7 +38,14 @@ account.move (move_type out_invoice/out_refund/in_invoice/in_refund, state \
 posted, invoice_date, invoice_date_due, amount_residual_signed); confirmed \
 sales and purchase orders have state "done" (not "sale"/"purchase"); stock \
 on hand is stock.quant in internal locations; employees are hr.employee and \
-their wage is on current_version_id.wage; contacts are res.partner. You can \
+their wage is on current_version_id.wage; contacts are res.partner. \
+Guarantees, promissory notes (pagarés), guarantor (aval) documents, \
+identifications and guarantee releases are files in document.document \
+(partner_id, document_type_id, is_guarantor, collateral_amount, amount, \
+date_expiration); a customer's credit file is res.partner.credit_document_ids \
+and credit.profile (one per company: state, grade_id, collateral_amount, \
+exposure_open, exposure_overdue) with credit.facility lines. Check related \
+models before concluding something does not exist. You can \
 read all of them: never answer that you have no access.
 - Datetimes are stored in UTC; the owner lives in {tz}. Today is {today}.
 - Records of every company are visible: {companies}. Say which company a \

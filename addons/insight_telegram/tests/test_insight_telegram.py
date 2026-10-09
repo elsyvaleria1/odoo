@@ -10,7 +10,7 @@ from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.insight_telegram.models.telegram_chat import CHUNK_LIMIT, _chunks
-from odoo.addons.insight_telegram.services import catalog
+from odoo.addons.insight_telegram.services import catalog, documents
 from odoo.addons.insight_telegram.services.insight_agent import InsightAgent
 from odoo.addons.insight_telegram.services.insight_assistant import (
     InsightAssistant,
@@ -54,6 +54,15 @@ class TestOdooReader(TransactionCase):
         with self.reader.env() as env:
             env.cr.execute("SHOW statement_timeout")
             self.assertEqual(env.cr.fetchone()[0], "20s")
+
+
+# the smallest PDF a reader opens: a document's page count is read on save
+TINY_PDF = (
+    b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 3 3]>>endobj\n"
+    b"trailer<</Root 1 0 R>>\n%%EOF"
+)
 
 
 def _call(reader, name, **arguments):
@@ -344,6 +353,87 @@ class TestCatalog(TransactionCase):
         result = json_loads(tools.call("run_report", {"report": "weather"}))
         self.assertIn("No report", result["error"])
 
+    def _guarantee_file(self, partner):
+        kind = self.env["document.type"].create(
+            {
+                "name": "Garantía",
+                "code": "ASK_PROBE_GUARANTEE",
+                **(
+                    {"has_collateral": True}
+                    if "has_collateral" in self.env["document.type"]._fields
+                    else {}
+                ),
+            }
+        )
+        release = self.env["document.type"].create(
+            {"name": "Liberación de garantía", "code": "ASK_PROBE_RELEASE"}
+        )
+        document = self.env["document.document"].create(
+            {
+                "name": "Contrato de terreno.pdf",
+                "partner_id": partner.id,
+                "document_type_id": kind.id,
+                "raw": TINY_PDF + b"guarantee",
+                "mimetype": "application/pdf",
+            }
+        )
+        self.env["document.document"].create(
+            {
+                "name": "Acuse de liberación.pdf",
+                "partner_id": partner.id,
+                "document_type_id": release.id,
+                "raw": TINY_PDF + b"release",
+                "mimetype": "application/pdf",
+            }
+        )
+        return document
+
+    def test_the_credit_file_finds_the_guarantees(self):
+        if "document.type" not in self.env:
+            self.skipTest("document is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Borrower"})
+        self._guarantee_file(customer)
+        text = self._answer("credit", partner="Ask Probe Borrower")
+        self.assertIn("Credit and guarantees of Ask Probe Borrower", text)
+        self.assertIn("Garantía: Contrato de terreno.pdf", text)
+        self.assertIn("guarantee release document", text)
+        if "has_collateral" in self.env["document.type"]._fields:
+            self.assertIn("guarantee without amount captured", text)
+
+    def test_a_guarantee_file_is_collected(self):
+        if "document.type" not in self.env:
+            self.skipTest("document is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Pledger"})
+        self._guarantee_file(customer)
+        self.env.flush_all()
+        files, names = documents.collect(
+            self.env, "guarantee", {"partner": "Ask Probe Pledger"}
+        )
+        self.assertEqual(names, ["Contrato de terreno.pdf"])
+        self.assertEqual(files, [("Contrato de terreno.pdf", TINY_PDF + b"guarantee")])
+
+    def test_a_printed_document_is_rendered(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Buyer"})
+        order = self._confirmed_order(customer, 50)
+        with patch.object(
+            type(self.env["ir.actions.report"]),
+            "_render_qweb_pdf",
+            return_value=(b"%PDF-1.4 order", "pdf"),
+        ) as render:
+            files, names = documents.collect(
+                self.env, "sale_order", {"reference": order.name}
+            )
+        self.assertEqual(render.call_count, 1)
+        self.assertEqual(names, [order.display_name])
+        self.assertEqual(files[0][1], b"%PDF-1.4 order")
+        self.assertTrue(files[0][0].endswith(".pdf"))
+
+    def test_a_missing_partner_is_said(self):
+        with self.assertRaises(catalog.NotFound):
+            documents.collect(self.env, "guarantee", {"partner": "Nobody 7c1e"})
+
     def test_every_report_runs_on_an_empty_period(self):
         # a report must answer, not crash, whatever the data
         for key in catalog.available_queries(self.env):
@@ -633,3 +723,38 @@ class TestInsightHandler(TelegramBotTestCase):
             )
         self.assertFalse(agent.called)
         self.assertIn("Active employees", sent)
+
+    def test_a_request_for_documents_sends_them(self):
+        with (
+            patch.object(
+                InsightAssistant,
+                "available",
+                new_callable=PropertyMock,
+                return_value=True,
+            ),
+            patch.object(
+                InsightAssistant,
+                "interpret",
+                return_value={
+                    "query": "send_document",
+                    "document_kind": "guarantee",
+                    "partner": "X",
+                },
+            ),
+            patch(
+                "odoo.addons.insight_telegram.services.documents.collect",
+                return_value=([("garantia.pdf", b"%PDF")], ["garantia.pdf"]),
+            ),
+            patch.object(type(self.test_bot), "send_document") as send,
+            self.mock_api_gateway_post(self.mock_ok),
+        ):
+            self.test_chat._insight_answer(
+                self.test_bot.id, {"text": "mándame la garantía de X"}, self.company.id
+            )
+        self.assertEqual(send.call_count, 1)
+        self.assertEqual(send.call_args.args[1:3], (b"%PDF", "garantia.pdf"))
+        log = self.env["telegram.insight.log"].search(
+            [("bot_id", "=", self.test_bot.id)]
+        )
+        self.assertEqual(log.query, "send_document")
+        self.assertIn("garantia.pdf", log.answer)

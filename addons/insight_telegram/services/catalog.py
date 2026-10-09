@@ -841,6 +841,120 @@ def run_payments(ask):
     return lines
 
 
+CREDIT_DOCUMENTS = 25
+
+
+def run_credit(ask):
+    """A customer's credit file across every company: profile, credit lines,
+    the guarantees, promissory notes and guarantor documents on file, what
+    the grade still requires, and any guarantee release."""
+    name = (ask.params.get("partner") or "").strip()
+    if not name:
+        return [
+            ask.env._(
+                "Tell me whose credit or guarantees you want: the customer's name."
+            )
+        ]
+    partners = ask.matches("res.partner", name, ("name", "vat"))
+    partner = partners[:1].commercial_partner_id
+    lines = [
+        "**"
+        + ask.env._("Credit and guarantees of %(name)s", name=partner.display_name)
+        + "**",
+        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
+    ]
+    env = ask.env
+    if "credit.profile" in env:
+        states = dict(
+            env["credit.profile"]._fields["state"]._description_selection(env)
+        )
+        for profile in env["credit.profile"].search([("partner_id", "=", partner.id)]):
+            currency = profile.currency_id
+            lines.append(
+                ask.env._(
+                    "• %(company)s: %(state)s, grade %(grade)s, guarantee amount %(collateral)s, open %(open)s, overdue %(overdue)s",
+                    company=profile.company_id.display_name,
+                    state=states.get(profile.state, profile.state or "-"),
+                    grade=profile.grade_id.display_name or "-",
+                    collateral=money(profile.collateral_amount, currency),
+                    open=money(profile.exposure_open, currency),
+                    overdue=money(profile.exposure_overdue, currency),
+                )
+            )
+            issues = profile._render_document_issues(profile._get_document_issues())
+            if issues:
+                lines.append(ask.env._("  What the grade still requires:"))
+                lines += [f"  {issue}" for issue in issues]
+    if "credit.facility" in env:
+        for facility in env["credit.facility"].search(
+            [("partner_id", "=", partner.id), ("state", "=", "active")]
+        ):
+            lines.append(
+                ask.env._(
+                    "• Credit line %(name)s in %(company)s: %(amount)s until %(end)s",
+                    name=facility.name or "-",
+                    company=facility.company_id.display_name,
+                    amount=money(facility.amount, facility.currency_id),
+                    end=ask.format_day(facility.date_end) if facility.date_end else "-",
+                )
+            )
+    documents = env["document.document"].search(
+        [("partner_id", "child_of", partner.id), ("type", "!=", "folder")],
+        order="document_type_id, id desc",
+    )
+    if not documents:
+        lines.append(ask.env._("No documents on file."))
+        return lines
+    lines.append(ask.env._("Documents on file:"))
+    for document in documents[:CREDIT_DOCUMENTS]:
+        kind = document.document_type_id
+        tags = []
+        if document.is_guarantor:
+            tags.append(ask.env._("guarantor's"))
+        if "has_collateral" in kind._fields and kind.has_collateral:
+            tags.append(
+                ask.env._(
+                    "guarantee of %(amount)s",
+                    amount=f"{document.collateral_amount:,.2f}",
+                )
+                if document.collateral_amount
+                else ask.env._("guarantee without amount captured")
+            )
+        if "amount" in document._fields and document.amount:
+            tags.append(
+                ask.env._("amount %(amount)s", amount=f"{document.amount:,.2f}")
+            )
+        if document.date_expiration:
+            tags.append(
+                ask.env._(
+                    "expires %(day)s", day=ask.format_day(document.date_expiration)
+                )
+            )
+        if document.expiration_state == "expired":
+            tags.append(ask.env._("EXPIRED"))
+        label = kind.display_name or ask.env._("(no type)")
+        extra = f" ({', '.join(tags)})" if tags else ""
+        lines.append(f"• {label}: {document.name}{extra}")
+    if len(documents) > CREDIT_DOCUMENTS:
+        lines.append(
+            ask.env._("… and %(count)s more", count=len(documents) - CREDIT_DOCUMENTS)
+        )
+    released = documents.filtered(
+        lambda document: (
+            "liberaci" in (document.document_type_id.display_name or "").lower()
+            or "release" in (document.document_type_id.display_name or "").lower()
+        )
+    )
+    if released:
+        lines.append(
+            ask.env._(
+                "Note: there is a guarantee release document on file (%(names)s): the guarantee may have been returned.",
+                names=", ".join(released.mapped("name")),
+            )
+        )
+    return lines
+
+
 STATEMENT_DAYS = 90
 STATEMENT_DOCUMENTS = 15
 
@@ -1084,6 +1198,19 @@ QUERIES = {
             ("company", "partner", "month"),
             ("company", "partner"),
             requires="account.payment",
+        ),
+        Query(
+            "credit",
+            "A customer's credit file and guarantees (garantías, colateral, "
+            "pagarés, avales, línea de crédito, documentos de crédito): credit "
+            "status and grade per company, credit lines, the guarantee, "
+            "promissory-note and guarantor documents on file, what is missing, "
+            "and guarantee releases. Needs the partner.",
+            run_credit,
+            (),
+            ("partner",),
+            periodic=False,
+            requires="document.document",
         ),
         Query(
             "statement",

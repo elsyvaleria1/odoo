@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 19:59+0000\n"
-"PO-Revision-Date: 2026-10-09 19:59+0000\n"
+"POT-Creation-Date: 2026-10-09 20:21+0000\n"
+"PO-Revision-Date: 2026-10-09 20:21+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,19 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "  What the grade still requires:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid " (%(days)s days late)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "%(count)s more matched; ask for one by its number."
 msgstr ""
 
 #. module: insight_telegram
@@ -51,6 +63,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "%(products)s products, %(orders)s manufacturing orders"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "(no type)"
 msgstr ""
 
 #. module: insight_telegram
@@ -213,6 +231,12 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "Credit and guarantees of %(name)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "Customer invoicing, before taxes, net of credit notes"
 msgstr ""
 
@@ -222,6 +246,18 @@ msgstr ""
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_handler_insight__display_name
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Documents on file:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "EXPIRED"
 msgstr ""
 
 #. module: insight_telegram
@@ -265,6 +301,7 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+#: code:addons/insight_telegram/services/documents.py:0
 msgid "I could not find «%(value)s»."
 msgstr ""
 
@@ -278,6 +315,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I did not find what you asked for."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I found no file to send for that request."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I sent you %(count)s file(s):"
 msgstr ""
 
 #. module: insight_telegram
@@ -346,6 +395,12 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "No documents on file."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "No employee with a contract found."
 msgstr ""
 
@@ -371,6 +426,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "No stock found."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid ""
+"Note: there is a guarantee release document on file (%(names)s): the "
+"guarantee may have been returned."
 msgstr ""
 
 #. module: insight_telegram
@@ -538,9 +601,33 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/documents.py:0
+msgid "Tell me which one: its number or the partner."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid ""
 "Tell me whose account statement you want: the customer's or supplier's name."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Tell me whose credit or guarantees you want: the customer's name."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/documents.py:0
+msgid "Tell me whose documents you want: the name."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/documents.py:0
+msgid "That document cannot be printed on this database."
 msgstr ""
 
 #. module: insight_telegram
@@ -674,6 +761,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "amount %(amount)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "bank and cash balances"
 msgstr ""
@@ -692,6 +785,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "credit and guarantees"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "credit notes issued"
 msgstr ""
@@ -706,6 +805,30 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "employees"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "expires %(day)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "guarantee of %(amount)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "guarantee without amount captured"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "guarantor's"
 msgstr ""
 
 #. module: insight_telegram
@@ -795,6 +918,20 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "«%(value)s» matched: %(names)s%(more)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid ""
+"• %(company)s: %(state)s, grade %(grade)s, guarantee amount %(collateral)s, "
+"open %(open)s, overdue %(overdue)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "• Credit line %(name)s in %(company)s: %(amount)s until %(end)s"
 msgstr ""
 
 #. module: insight_telegram

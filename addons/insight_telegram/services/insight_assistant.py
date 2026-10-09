@@ -1,4 +1,5 @@
 from .catalog import FILTERS, GROUPS
+from .documents import KINDS
 from odoo.addons.integration.tools.exceptions import CommError
 from odoo.addons.integration_machine_learning.tools import MlRequest, get_router
 from odoo.addons.speech_telegram.tools.assistant import BotAssistant
@@ -11,6 +12,7 @@ TRANSCRIBE_CONTEXT = (
     "Captacol, Teltonika, CFDI, IEPS, NOM-232."
 )
 NONE = "none"
+SEND_DOCUMENT = "send_document"
 HELP = "help"
 
 _TEXT = {"type": ["string", "null"]}
@@ -36,6 +38,13 @@ supplier), product, salesperson, employee: the names as the owner wrote them, \
 else null. Keep a name even when you do not recognise it (it may be a brand, \
 a product or a voice transcription error): never drop it nor swap it for \
 another report.
+- To have a document sent (mándame, envíame, pásame, el PDF, the file) \
+answer "{send}" with document_kind: guarantee (garantía, colateral), \
+promissory_note (pagaré), identification (INE), contract, guarantee_release \
+(liberación de garantía), credit_file (all his credit documents), statement \
+(estado de cuenta), invoice (factura), payment_receipt (recibo de pago), \
+sale_order (cotización, pedido), purchase_order (orden de compra); partner \
+and reference (the document's number) as said.
 - confidence: from 0 to 1, how sure you are that the report you picked \
 answers what he is after. Below 0.6 means the question needs more than one \
 report, a comparison, or data no report has.
@@ -84,7 +93,11 @@ class InsightAssistant(BotAssistant):
             MlRequest(
                 purpose=PURPOSE,
                 system=SYSTEM_PROMPT.format(
-                    reports=reports, today=today, none=NONE, help=HELP
+                    reports=reports,
+                    today=today,
+                    none=NONE,
+                    help=HELP,
+                    send=SEND_DOCUMENT,
                 ),
                 prompt=f"{earlier}\n\nQuestion: {question}".strip(),
                 response_schema=_schema(queries),
@@ -95,14 +108,22 @@ class InsightAssistant(BotAssistant):
             company_id=self._company.id,
         )
         data = result.data if isinstance(result.data, dict) else {}
-        if data.get("query") not in queries and data.get("query") != HELP:
+        if data.get("query") not in queries and data.get("query") not in (
+            HELP,
+            SEND_DOCUMENT,
+        ):
             data["query"] = NONE
         return data
 
 
 def _schema(queries) -> dict:
     properties = {
-        "query": {"type": "string", "enum": [*queries, HELP, NONE]},
+        "query": {
+            "type": "string",
+            "enum": [*queries, HELP, SEND_DOCUMENT, NONE],
+        },
+        "document_kind": {"type": ["string", "null"], "enum": [*KINDS, None]},
+        "reference": _TEXT,
         "date_from": _TEXT,
         "date_to": _TEXT,
         "group_by": {"type": ["string", "null"], "enum": [*GROUPS, None]},
