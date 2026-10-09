@@ -172,7 +172,7 @@ assert_doc_cites "TEST_TAGS header cites the real static/tests JS count" \
 assert_doc_cites "TEST_TAGS body cites the real static/tests JS count" \
     "$JS_TESTS" '^%s `\.js` files\.' TEST_TAGS.md
 assert_eq "tour definitions (static/tests/tours)" \
-    "$(find "$WEB/static/tests/tours" -name '*.js' -type f | wc -l)" "86"
+    "$(find "$WEB/static/tests/tours" -name '*.js' -type f | wc -l)" "87"
 assert_doc_cites "ARCHITECTURE cites the real *.edit.js variant count" \
     "$(find "$WEB/static/src" -name '*.edit.js' -type f | wc -l)" \
     '^\| JavaScript \(`\.edit\.js` variants\) \| %s \|' ARCHITECTURE.md

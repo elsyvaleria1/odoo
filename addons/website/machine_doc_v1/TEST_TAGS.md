@@ -2,7 +2,7 @@
 
 Quick reference for running targeted subsets of `website`'s tests. Two surfaces:
 **Python** (`tests/`, 56 `.py` files = 55 test modules incl. `common.py`, + `__init__.py`)
-run through `odoo-bin`; **JS/HOOT + tours** (`static/tests/`, 226 `.js`) run in
+run through `odoo-bin`; **JS/HOOT + tours** (`static/tests/`, 227 `.js`) run in
 the browser test runner.
 
 > Unlike the `web` module, website does **not** define a rich `web_*`-style tag
@@ -92,7 +92,7 @@ used nowhere** — all browser interaction goes through `start_tour`.
 
 ## JS / HOOT & Tours (`static/tests/`)
 
-226 `.js` files. Tour *definitions* live under `static/tests/tours/` (86 files)
+227 `.js` files. Tour *definitions* live under `static/tests/tours/` (87 files)
 and are registered into `registry.category("web_tour.tours")`, then launched by
 the Python `start_tour` calls above. HOOT suites (`*.test.js`) run in the JS test
 runner (`/web/tests`), driven by `WebsiteSuite` (tag `website_js`, desktop preset):
@@ -102,7 +102,7 @@ of its own. `-i website --test-tags /website:WebsiteSuite` with an HTTP port.
 
 | Area | Files | Tests |
 |------|------:|-------|
-| `tours/` | 86 | Interactive tour definitions (snippets, editor, configurator, form builder, navigation, …) |
+| `tours/` | 87 | Interactive tour definitions (snippets, editor, configurator, form builder, navigation, …) |
 | `builder/` (+ `options/`, `theme_tab/`, `website_builder/`, `custom_tab/`) | 72 | Website builder/editor OWL: actions, overlay, drag-drop, snippet options, per-snippet option panels |
 | `interactions/` (+ carousel/cookies/dropdown/header/popup/snippets) | 50 | Public-site Interactions (frontend behaviors + `.edit.` variants) |
 | `mock_server/` (+ `mock_models/`) | 3 | HOOT mock models for `website` / `website.visitor` + livechat data patch |

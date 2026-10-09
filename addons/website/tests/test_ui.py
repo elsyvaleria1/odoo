@@ -967,3 +967,22 @@ class TestUi(HttpCaseWithWebsiteUser):
             "anchor_behaviour_on_accordion_new_tab",
             login="admin",
         )
+
+
+@odoo.tests.tagged("-at_install", "post_install")
+class TestUiSearchListsInPlace(odoo.tests.HttpCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        website = cls.env["website"].get_current_website()
+        for name in ("PN Alpha Page", "PN Beta Page"):
+            page = cls.env["website.page"].browse(website.new_page(name)["page_id"])
+            page.is_published = True
+
+    def test_pages_list_search_in_place(self):
+        self.start_tour("/pages", "pages_list_partial_navigation")
+
+    def test_search_results_search_in_place(self):
+        self.start_tour(
+            "/website/search?search=PN+Page", "search_results_partial_navigation"
+        )
