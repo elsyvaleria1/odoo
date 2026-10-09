@@ -133,6 +133,7 @@
             "@document_compliance/*": ["./addons/document_compliance/static/src/*"],
             "@document_hr_payroll/*": ["./addons/document_hr_payroll/static/src/*"],
             "@document_physical/*": ["../agromarin/document_physical/static/src/*"],
+            "@document_product/*": ["./addons/document_product/static/src/*"],
             "@document_sign/*": ["./addons/document_sign/static/src/*"],
             "@document_spreadsheet/*": ["./addons/document_spreadsheet/static/src/*"],
             "@document_spreadsheet_survey/*": ["./addons/document_spreadsheet_survey/static/src/*"],

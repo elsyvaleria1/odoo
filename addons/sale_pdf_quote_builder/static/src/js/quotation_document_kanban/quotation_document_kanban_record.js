@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { ProductDocumentKanbanRecord } from "@product/js/product_document_kanban/product_document_kanban_record";
+import { ProductDocumentKanbanRecord } from "@document_product/js/product_document_kanban/product_document_kanban_record";
 
 export class QuotationDocumentKanbanRecord extends ProductDocumentKanbanRecord {
     /** @override */

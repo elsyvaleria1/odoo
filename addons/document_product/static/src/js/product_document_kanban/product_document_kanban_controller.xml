@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates>
     <t
-        t-name="product.ProductDocumentKanbanView.Buttons"
+        t-name="document_product.ProductDocumentKanbanView.Buttons"
         t-inherit="web.KanbanView.Buttons"
         t-inherit-mode="primary"
     >

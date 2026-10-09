@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { ProductDocumentKanbanRecord } from "@product/js/product_document_kanban/product_document_kanban_record";
+import { ProductDocumentKanbanRecord } from "@document_product/js/product_document_kanban/product_document_kanban_record";
 import {
     FileUploadProgressContainer,
     FileUploadProgressKanbanRecord,
@@ -14,7 +14,7 @@ export class ProductDocumentKanbanRenderer extends KanbanRenderer {
         FileUploadProgressKanbanRecord,
         KanbanRecord: ProductDocumentKanbanRecord,
     };
-    static template = "product.ProductDocumentKanbanRenderer";
+    static template = "document_product.ProductDocumentKanbanRenderer";
     setup() {
         super.setup();
         this.ui = useService("ui");

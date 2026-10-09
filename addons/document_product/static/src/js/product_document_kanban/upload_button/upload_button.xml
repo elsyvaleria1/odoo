@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates>
-    <t t-name="product.UploadButton">
+    <t t-name="document_product.UploadButton">
         <input
             type="file"
             multiple="true"

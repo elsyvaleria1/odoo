@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import { UploadButton } from "@product/js/product_document_kanban/upload_button/upload_button";
+import { UploadButton } from "@document_product/js/product_document_kanban/upload_button/upload_button";
 import { KanbanController } from "@web/views/kanban";
 
 export class ProductDocumentKanbanController extends KanbanController {

@@ -1,6 +1,6 @@
 /** @odoo-module native */
-import { ProductDocumentKanbanRenderer } from "@product/js/product_document_kanban/product_document_kanban_renderer";
-import { UploadButton } from "@product/js/product_document_kanban/upload_button/upload_button";
+import { ProductDocumentKanbanRenderer } from "@document_product/js/product_document_kanban/product_document_kanban_renderer";
+import { UploadButton } from "@document_product/js/product_document_kanban/upload_button/upload_button";
 import { registry } from "@web/core/registry";
 import { X2ManyField, x2ManyField } from "@web/fields/relational/x2many";
 

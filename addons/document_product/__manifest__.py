@@ -25,5 +25,13 @@
     "demo": [
         "demo/document_document_demo.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "document_product/static/src/js/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "document_product/static/tests/**/*",
+        ],
+    },
     "auto_install": True,
 }

@@ -5,7 +5,7 @@ import { checkFileType } from "@web/core/utils/files";
 import { useBus, useService } from "@web/core/utils/hooks";
 
 export class UploadButton extends Component {
-    static template = "product.UploadButton";
+    static template = "document_product.UploadButton";
     static props = {
         formData: t.object().optional({}),
         allowedMIMETypes: t.string().optional(),
