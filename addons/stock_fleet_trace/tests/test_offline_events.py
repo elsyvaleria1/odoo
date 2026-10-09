@@ -2,6 +2,8 @@ from odoo import Command
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged
 
+from .common import OfflineEventsMixin
+
 # A standalone 1x1 transparent PNG, valid enough for the Image field to accept.
 TEST_PNG_B64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY"
@@ -10,7 +12,7 @@ TEST_PNG_B64 = (
 
 
 @tagged("post_install", "-at_install")
-class TestOfflineEvents(TransactionCase):
+class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -171,36 +173,6 @@ class TestOfflineEvents(TransactionCase):
     def _return(self, trip):
         trip.write({"odometer_return": 1100.0, "fuel_return": 40.0})
         trip.action_return()
-
-    def _chain(self, trip, events):
-        """Set prev_hash/event_hash on ``events`` as the phone would, in order."""
-        Event = self.env["stock.trip.offline.event"]
-        chain_hash = trip._trip_last_event_hash()
-        for event in events:
-            event["prev_hash"] = chain_hash
-            event["event_hash"] = Event._trip_hash_event(event)
-            chain_hash = event["event_hash"]
-        return events
-
-    def _send(self, trip, *events, user=None, chain=True, head=None):
-        """Send events as the driver's phone does, one dict per event."""
-        events = list(events)
-        if chain:
-            self._chain(trip, events)
-        trip = trip.with_user(user or self.driver_user)
-        return trip._trip_receive_offline_events(events, head=head)
-
-    def _event(self, uuid, event_type, picking=None, **payload):
-        return {
-            "client_uuid": uuid,
-            "event_type": event_type,
-            "picking_id": picking.id if picking else False,
-            "payload": payload,
-            "captured_at": "2026-09-29T15:30:00Z",
-            "latitude": 20.6597,
-            "longitude": -103.3496,
-            "device_uuid": "phone-1",
-        }
 
     def _checkpoint(self, trip, event_type):
         return trip.trip_checkpoint_ids.filtered(lambda c: c.event_type == event_type)

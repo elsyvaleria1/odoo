@@ -127,3 +127,37 @@ class TripFixtureMixin:
                 "fuel_departure": 80.0,
             }
         )
+
+
+class OfflineEventsMixin:
+    """What the driver's phone sends: events chained as it chains them."""
+
+    def _chain(self, trip, events):
+        """Set prev_hash/event_hash on ``events`` as the phone would, in order."""
+        Event = self.env["stock.trip.offline.event"]
+        chain_hash = trip._trip_last_event_hash()
+        for event in events:
+            event["prev_hash"] = chain_hash
+            event["event_hash"] = Event._trip_hash_event(event)
+            chain_hash = event["event_hash"]
+        return events
+
+    def _send(self, trip, *events, user=None, chain=True, head=None):
+        """Send events as the driver's phone does, one dict per event."""
+        events = list(events)
+        if chain:
+            self._chain(trip, events)
+        trip = trip.with_user(user or self.driver_user)
+        return trip._trip_receive_offline_events(events, head=head)
+
+    def _event(self, uuid, event_type, picking=None, **payload):
+        return {
+            "client_uuid": uuid,
+            "event_type": event_type,
+            "picking_id": picking.id if picking else False,
+            "payload": payload,
+            "captured_at": "2026-09-29T15:30:00Z",
+            "latitude": 20.6597,
+            "longitude": -103.3496,
+            "device_uuid": "phone-1",
+        }
