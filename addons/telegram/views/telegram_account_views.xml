@@ -52,6 +52,7 @@
                                     <field name="partner_id" />
                                     <field name="user_id" />
                                     <field name="method" />
+                                    <field name="invited_by_id" optional="show" />
                                     <field name="state" />
                                     <field name="proven_at" />
                                     <field name="expires_at" />

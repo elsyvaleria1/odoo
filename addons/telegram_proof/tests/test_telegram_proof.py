@@ -308,3 +308,85 @@ class TestTelegramProof(TelegramBotTestCase):
         self.assertEqual(delivery.method_id.code, "telegram_confirm")
         self.assertEqual(delivery.state, "sent")
         self.assertEqual(challenge.method_ids.mapped("code"), ["telegram_confirm"])
+
+    def test_a_question_withdrawn_in_the_outbox_does_not_go_out(self):
+        challenge = (
+            self.env["proof.challenge"]
+            .with_user(self.collector)
+            ._issue_confirmation(
+                self.subject, "test.collection", self.facts, self.customer
+            )
+            .sudo()
+        )
+        ledger = self.env["telegram.message"].browse(int(challenge.delivery_ids.ref))
+        self.assertTrue(ledger._still_wanted())
+
+        challenge._withdraw()
+
+        self.assertFalse(ledger._still_wanted())
+
+    def test_a_person_of_the_customer_company_answers_for_it(self):
+        company = self.env["res.partner"].create(
+            {"name": "Ferreteria SA", "is_company": True, "lang": "en_US"}
+        )
+        person = self.env["res.partner"].create(
+            {"name": "Rosa", "parent_id": company.id}
+        )
+        self.env["telegram.chat"].create(
+            {
+                "chat_id": "700005",
+                "chat_type": "private",
+                "bot_id": self.test_bot.id,
+                "account_id": self._bound_account("700005", person).id,
+            }
+        )
+        challenge, _ledger = self._ask(partner=company)
+
+        self._press(f"prf:{challenge.delivery_ids.id}:c", chat_id="700005")
+
+        self.assertEqual(challenge.verdict, "confirmed")
+
+    def test_a_stand_in_contact_is_never_reached(self):
+        stand_in = self.env["res.partner"].create({"name": "Unknown Sender"})
+        account = self.env["telegram.account"]._from_telegram(
+            {"id": 700006, "first_name": "Unknown"}
+        )
+        account._bind(stand_in, method="contact")
+        self.env["telegram.chat"].create(
+            {
+                "chat_id": "700006",
+                "chat_type": "private",
+                "bot_id": self.test_bot.id,
+                "account_id": account.id,
+            }
+        )
+
+        challenge, _ledger = self._ask(partner=stand_in)
+
+        self.assertFalse(challenge.delivery_ids)
+
+    def test_the_binding_keeps_who_invited_it(self):
+        newcomer = self.env["res.partner"].create(
+            {"name": "Ferreteria Nueva", "lang": "en_US"}
+        )
+        challenge, _ledgers = self._ask(partner=newcomer)
+        token = (
+            self.env["telegram.link.token"]
+            .with_user(self.collector)
+            ._issue_invitation(self.test_bot, newcomer)
+        )
+        self._say(f"/start {token}", chat_id="700003")
+        ledger = self.env["telegram.message"].browse(int(challenge.delivery_ids.ref))
+        ledger.write({"state": "sent", "msg_uid": "777"})
+
+        self._press(
+            f"prf:{challenge.delivery_ids.id}:c", chat_id="700003", message_id=777
+        )
+
+        binding = (
+            self.env["telegram.chat"]
+            .search([("chat_id", "=", "700003")])
+            .account_id.binding_id
+        )
+        self.assertEqual(binding.invited_by_id, self.collector)
+        self.assertEqual(challenge.evidence_id.payload["invited_by"], self.collector.id)

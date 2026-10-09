@@ -1,6 +1,14 @@
+import logging
+
 from odoo import models
+from odoo.exceptions import UserError
 
 from odoo.addons.whatsapp.tools import phone_validation as wa_phone_validation
+
+_logger = logging.getLogger(__name__)
+# country codes whose mobiles WhatsApp may report with a digit their numbers
+# no longer carry: Mexico's 1, Argentina's 9
+_MOBILE_PREFIX = {"52": "1", "54": "9"}
 
 
 class WhatsappAccount(models.Model):
@@ -28,19 +36,35 @@ class WhatsappAccount(models.Model):
         verdict = delivery.method_id._get_reply_verdict(
             parent_whatsapp_message, message
         )
-        if verdict:
-            delivery._answer(
-                verdict,
-                payload={
-                    "whatsapp_message": message.get("id"),
-                    "from": message.get("from"),
-                },
-                signer_request=False,
-            )
+        if not verdict:
+            return
+        # a late or repeated press is refused by the answer itself: it must not
+        # fail the webhook, whose other messages would be lost with it
+        try:
+            with self.env.cr.savepoint():
+                delivery._answer(
+                    verdict,
+                    payload={
+                        "whatsapp_message": message.get("id"),
+                        "from": message.get("from"),
+                    },
+                    signer_request=False,
+                )
+        except UserError as refusal:
+            _logger.info("WhatsApp confirmation %s not taken: %s", delivery.id, refusal)
 
     def _is_same_number(self, address, sender) -> bool:
         if not address or not sender:
             return False
-        return wa_phone_validation.wa_phone_format_for_blacklist(
-            address
-        ) == wa_phone_validation.wa_phone_format_for_blacklist(sender)
+        return self._canonical_number(address) == self._canonical_number(sender)
+
+    def _canonical_number(self, number) -> str:
+        digits = "".join(
+            char
+            for char in wa_phone_validation.wa_phone_format_for_blacklist(number)
+            if char.isdigit()
+        )
+        for country, extra in _MOBILE_PREFIX.items():
+            if digits.startswith(country + extra) and len(digits) == len(country) + 11:
+                return country + digits[len(country) + 1 :]
+        return digits

@@ -222,7 +222,7 @@ class TelegramAccount(models.Model):
             return self.env["res.partner"]
         return binding.partner_id.with_env(self.env)
 
-    def _bind(self, partner, *, user=None, method, expires_at=False):
+    def _bind(self, partner, *, user=None, method, expires_at=False, invited_by=None):
         """Make `partner` (and `user`, when a session proved it) who this
         account is, superseding any binding it had."""
         self.check_singleton()
@@ -239,6 +239,7 @@ class TelegramAccount(models.Model):
                 "user_id": user.id if user else False,
                 "method": method,
                 "expires_at": expires_at,
+                "invited_by_id": invited_by.id if invited_by else False,
             }
         )
         # the contact made for the person on first contact was a stand-in for

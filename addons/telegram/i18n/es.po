@@ -2367,3 +2367,18 @@ msgstr "🗑 Descartar lo que traigo"
 #~ msgstr ""
 #~ "La empresa en nombre de la que habla este bot: lo que lee y registra es de "
 #~ "esa empresa, se ejecute la actualización como quien se ejecute."
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__invited_by_id
+msgid "Invited By"
+msgstr "Invitado por"
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_binding__invited_by_id
+msgid ""
+"Who issued the invitation the contact opened, for a binding proven with one:"
+" whoever handed a contact the link could open it themselves."
+msgstr ""
+"Quién emitió la invitación que abrió el contacto, para una vinculación "
+"probada con una: quien le dio el enlace a un contacto podría abrirlo por sí "
+"mismo."

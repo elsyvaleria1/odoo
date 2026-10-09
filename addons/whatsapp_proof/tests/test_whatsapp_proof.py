@@ -1,6 +1,7 @@
 import time
+from datetime import timedelta
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import tagged
 
@@ -171,6 +172,54 @@ class TestWhatsAppProof(WhatsAppCommon, MockIncomingWhatsApp):
 
     def test_without_an_approved_template_nobody_is_reached(self):
         self.method.wa_template_id = False
+
+        challenge, sent = self._ask()
+
+        self.assertFalse(challenge.delivery_ids)
+        self.assertFalse(sent)
+
+    def test_a_mexican_reply_matches_with_or_without_the_mobile_one(self):
+        account = self.env["whatsapp.account"]
+
+        self.assertTrue(account._is_same_number("525512345678", "5215512345678"))
+        self.assertTrue(account._is_same_number("+52 55 1234 5678", "525512345678"))
+        self.assertFalse(account._is_same_number("525512345678", "525512345679"))
+
+    def test_a_template_without_two_quick_replies_reaches_nobody(self):
+        self.template.button_ids.filtered(
+            lambda button: button.name == "Not right"
+        ).unlink()
+
+        challenge, sent = self._ask()
+
+        self.assertFalse(challenge.delivery_ids)
+        self.assertFalse(sent)
+
+    def test_a_late_press_does_not_fail_the_webhook(self):
+        challenge, _sent = self._ask()
+        challenge.date_expire = fields.Datetime.now() - timedelta(minutes=5)
+
+        self._reply(challenge, "Confirm")
+
+        self.assertEqual(challenge.state, "issued")
+        self.assertTrue(
+            self.env["discuss.channel"]
+            .sudo()
+            .search_count([("whatsapp_number", "like", "%499123456")])
+        )
+
+    def test_a_message_whatsapp_refused_did_not_reach_the_contact(self):
+        challenge, _sent = self._ask()
+        message = (
+            self.env["whatsapp.message"].sudo().browse(int(challenge.delivery_ids.ref))
+        )
+
+        message.write({"state": "error"})
+
+        self.assertEqual(challenge.delivery_ids.state, "failed")
+
+    def test_a_template_the_asker_cannot_read_reaches_nobody(self):
+        self.template.allowed_user_ids = self.user_admin
 
         challenge, sent = self._ask()
 

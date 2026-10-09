@@ -2186,3 +2186,15 @@ msgstr ""
 #: code:addons/telegram/models/telegram_router.py:0
 msgid "🗑 Discard what I have going"
 msgstr ""
+
+#. module: telegram
+#: model:ir.model.fields,field_description:telegram.field_telegram_binding__invited_by_id
+msgid "Invited By"
+msgstr ""
+
+#. module: telegram
+#: model:ir.model.fields,help:telegram.field_telegram_binding__invited_by_id
+msgid ""
+"Who issued the invitation the contact opened, for a binding proven with one:"
+" whoever handed a contact the link could open it themselves."
+msgstr ""

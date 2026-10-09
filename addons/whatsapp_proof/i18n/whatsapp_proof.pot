@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 22:01+0000\n"
-"PO-Revision-Date: 2026-10-09 22:01+0000\n"
+"POT-Creation-Date: 2026-10-09 22:46+0000\n"
+"PO-Revision-Date: 2026-10-09 22:46+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -23,12 +23,14 @@ msgstr ""
 #. module: whatsapp_proof
 #: model:ir.model.fields,field_description:whatsapp_proof.field_proof_method__display_name
 #: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_account__display_name
+#: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_message__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: whatsapp_proof
 #: model:ir.model.fields,field_description:whatsapp_proof.field_proof_method__id
 #: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_account__id
+#: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_message__id
 msgid "ID"
 msgstr ""
 
@@ -56,6 +58,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:whatsapp_proof.selection__proof_method__code__whatsapp_confirm
 #: model:proof.method,name:whatsapp_proof.proof_method_whatsapp_confirm
 msgid "WhatsApp Confirmation"
+msgstr ""
+
+#. module: whatsapp_proof
+#: model:ir.model,name:whatsapp_proof.model_whatsapp_message
+msgid "WhatsApp Messages"
 msgstr ""
 
 #. module: whatsapp_proof

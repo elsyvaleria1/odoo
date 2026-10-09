@@ -33,6 +33,11 @@ msgid "Code"
 msgstr "Código"
 
 #. module: telegram_proof
+#: model:ir.model.fields,help:telegram_proof.field_telegram_message__display_name
+msgid "Computed display name with message preview"
+msgstr "Nombre para mostrar calculado con vista previa del mensaje"
+
+#. module: telegram_proof
 #. odoo-python
 #: code:addons/telegram_proof/models/proof_method.py:0
 msgid "Confirm, this is right"
@@ -41,12 +46,14 @@ msgstr "Confirmar, es correcto"
 #. module: telegram_proof
 #: model:ir.model.fields,field_description:telegram_proof.field_proof_method__display_name
 #: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__display_name
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_message__display_name
 msgid "Display Name"
 msgstr "Nombre mostrado"
 
 #. module: telegram_proof
 #: model:ir.model.fields,field_description:telegram_proof.field_proof_method__id
 #: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__id
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_message__id
 msgid "ID"
 msgstr "ID"
 
@@ -98,6 +105,11 @@ msgid "Telegram Confirmation"
 msgstr "Confirmación por Telegram"
 
 #. module: telegram_proof
+#: model:ir.model,name:telegram_proof.model_telegram_message
+msgid "Telegram Message"
+msgstr "Mensaje de Telegram"
+
+#. module: telegram_proof
 #. odoo-python
 #: code:addons/telegram_proof/models/proof_method.py:0
 msgid "Telegram did not take the code for %(signer)s. Ask for another way."
@@ -113,6 +125,12 @@ msgstr "Telegram: confirmaciones"
 #: code:addons/telegram_proof/models/telegram_handler.py:0
 msgid "Thank you. We passed it on."
 msgstr "Gracias. Lo hicimos llegar."
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "Thank you. We will contact you."
+msgstr "Gracias. Nos pondremos en contacto con usted."
 
 #. module: telegram_proof
 #. odoo-python

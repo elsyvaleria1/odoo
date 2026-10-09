@@ -91,7 +91,10 @@ class TelegramHandlerBase(models.AbstractModel):
             )
             return
         binding = account._bind(
-            link.partner_id, user=link.user_id or None, method=link.method
+            link.partner_id,
+            user=link.user_id or None,
+            method=link.method,
+            invited_by=link.create_uid if link.method == "invitation" else None,
         )
         _logger.info(
             "Telegram account %s bound to partner %s (user %s) by %s link %s",

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:24+0000\n"
-"PO-Revision-Date: 2026-10-09 20:24+0000\n"
+"POT-Creation-Date: 2026-10-09 22:46+0000\n"
+"PO-Revision-Date: 2026-10-09 22:46+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -33,6 +33,11 @@ msgid "Code"
 msgstr ""
 
 #. module: telegram_proof
+#: model:ir.model.fields,help:telegram_proof.field_telegram_message__display_name
+msgid "Computed display name with message preview"
+msgstr ""
+
+#. module: telegram_proof
 #. odoo-python
 #: code:addons/telegram_proof/models/proof_method.py:0
 msgid "Confirm, this is right"
@@ -41,12 +46,14 @@ msgstr ""
 #. module: telegram_proof
 #: model:ir.model.fields,field_description:telegram_proof.field_proof_method__display_name
 #: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__display_name
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_message__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: telegram_proof
 #: model:ir.model.fields,field_description:telegram_proof.field_proof_method__id
 #: model:ir.model.fields,field_description:telegram_proof.field_telegram_handler_proof__id
+#: model:ir.model.fields,field_description:telegram_proof.field_telegram_message__id
 msgid "ID"
 msgstr ""
 
@@ -98,6 +105,11 @@ msgid "Telegram Confirmation"
 msgstr ""
 
 #. module: telegram_proof
+#: model:ir.model,name:telegram_proof.model_telegram_message
+msgid "Telegram Message"
+msgstr ""
+
+#. module: telegram_proof
 #. odoo-python
 #: code:addons/telegram_proof/models/proof_method.py:0
 msgid "Telegram did not take the code for %(signer)s. Ask for another way."
@@ -112,6 +124,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/telegram_proof/models/telegram_handler.py:0
 msgid "Thank you. We passed it on."
+msgstr ""
+
+#. module: telegram_proof
+#. odoo-python
+#: code:addons/telegram_proof/models/telegram_handler.py:0
+msgid "Thank you. We will contact you."
 msgstr ""
 
 #. module: telegram_proof

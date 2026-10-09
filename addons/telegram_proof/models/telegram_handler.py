@@ -4,7 +4,6 @@ from odoo import fields, models
 from odoo.exceptions import UserError
 
 from .proof_method import ANSWERS, CALLBACK
-from odoo.addons.telegram.tools.authority import operating
 
 COMMENT_MAX_LENGTH = 2000
 
@@ -23,11 +22,14 @@ class TelegramHandlerProof(models.AbstractModel):
     def _on_account_bound(self, bot, chat, binding) -> None:
         # a contact who connects Telegram while a question waits for them is
         # asked it here too: typically a customer scanning the collector's QR
+        if binding.method == "contact":
+            return
+        partners = binding.partner_id | binding.partner_id.commercial_partner_id
         self.env["proof.challenge"]._with_proof_privilege().search(
             [
                 ("kind", "=", "confirm"),
                 ("state", "=", "issued"),
-                ("partner_id", "=", binding.partner_id.id),
+                ("partner_id", "in", partners.ids),
             ]
         )._reach_again()
 
@@ -45,7 +47,7 @@ class TelegramHandlerProof(models.AbstractModel):
             or delivery.address != str(chat.id)
             or delivery.method_id._get_delivery_ledger(delivery).msg_uid
             != str(message_id)
-            or chat.account_id.binding_id.partner_id != delivery.partner_id
+            or not self._binding_speaks_for(chat.account_id.binding_id, delivery)
         ):
             bot.send_message(chat.chat_id, tr._("That button is no longer valid."))
             return True
@@ -65,8 +67,11 @@ class TelegramHandlerProof(models.AbstractModel):
         if ANSWERS[answer] == "confirmed":
             bot.send_message(chat.chat_id, tr._("Thank you. You confirmed it."))
             return True
-        if not chat._flow_is_open():
-            self._flow_start(chat, "comment", {"evidence": evidence.id})
+        if chat._flow_is_open():
+            # their next words belong to what they have going already
+            bot.send_message(chat.chat_id, tr._("Thank you. We will contact you."))
+            return True
+        self._flow_start(chat, "comment", {"evidence": evidence.id})
         bot.send_message(
             chat.chat_id,
             tr._(
@@ -75,6 +80,20 @@ class TelegramHandlerProof(models.AbstractModel):
             ),
         )
         return True
+
+    @staticmethod
+    def _binding_speaks_for(binding, delivery) -> bool:
+        """Whether the account's binding answers for the delivery's contact:
+        the contact, or a person of the same company, bound by an invitation or
+        a session; never a stand-in contact a stranger's first message made."""
+        partner = binding.partner_id
+        return bool(
+            binding.state == "active"
+            and binding.method != "contact"
+            and partner
+            and partner.commercial_partner_id
+            == delivery.partner_id.commercial_partner_id
+        )
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         if self._flow_step(chat) != "comment":
@@ -107,27 +126,14 @@ class TelegramHandlerProof(models.AbstractModel):
         return deliveries.browse(int(delivery_id)).exists()
 
     def _get_answer_payload(self, chat, callback_query) -> dict[str, Any]:
-        account = chat.account_id
-        binding = account.binding_id
-        invitation = (
-            operating(self.env["telegram.link.token"]).search(
-                [
-                    ("consumed_account_id", "=", account.id),
-                    ("partner_id", "=", binding.partner_id.id),
-                    ("method", "=", "invitation"),
-                ],
-                order="consumed_at desc",
-                limit=1,
-            )
-            if binding.method == "invitation"
-            else None
-        )
+        binding = chat.account_id.binding_id
         return {
             "chat": chat.id,
             "message": (callback_query.get("message") or {}).get("message_id"),
             "telegram_user": (callback_query.get("from") or {}).get("id"),
             "binding": binding.id,
+            "binding_partner": binding.partner_id.id,
             "binding_method": binding.method,
             "bound_at": fields.Datetime.to_string(binding.proven_at),
-            "invited_by": invitation.create_uid.id if invitation else None,
+            "invited_by": binding.invited_by_id.id or None,
         }

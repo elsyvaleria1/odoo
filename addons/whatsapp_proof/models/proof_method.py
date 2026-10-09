@@ -1,6 +1,10 @@
+import re
+
 from odoo import fields, models
 
 PHONE_FIELD = "phone_ids"
+# Meta refuses a template variable with a line break, a tab or four spaces
+_VARIABLE_SPACING = re.compile(r"\s*[\r\n\t]+\s*| {4,}")
 ANSWERS = ("confirmed", "disputed")
 
 
@@ -30,8 +34,17 @@ class ProofMethod(models.Model):
         return super()._is_enrolled_contact(partner)
 
     def _get_wa_template(self) -> models.BaseModel:
+        """The method's template while it can carry the question, else none:
+        approved, with the two quick replies that answer it. One whoever asks
+        cannot read (limited to some users, another company's) reaches nobody
+        rather than refusing the act that asks."""
         template = self.wa_template_id
-        if template.status != "approved" or len(template.button_ids) < 2:
+        if not template or not template.has_access("read"):
+            return template.browse()
+        replies = template.button_ids.filtered(
+            lambda button: button.button_type == "quick_reply"
+        )
+        if template.status != "approved" or len(replies) < 2:
             return template.browse()
         return template
 
@@ -56,7 +69,9 @@ class ProofMethod(models.Model):
                 "address": number,
             }
         )
-        summary = "; ".join(f"{label}: {value}" for label, value in challenge.summary)
+        summary = _VARIABLE_SPACING.sub(
+            " ", "; ".join(f"{label}: {value}" for label, value in challenge.summary)
+        )
         message = self.env["mail.message"].create(
             {
                 "model": delivery._name,
@@ -73,7 +88,9 @@ class ProofMethod(models.Model):
                 "wa_template_id": template.id,
                 "wa_account_id": template.wa_account_id.id,
                 "free_text_json": {
-                    "free_text_1": challenge.user_id.company_id.name,
+                    "free_text_1": (
+                        challenge.company_id or challenge.user_id.company_id
+                    ).name,
                     "free_text_2": summary,
                 },
             }

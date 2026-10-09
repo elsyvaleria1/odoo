@@ -64,6 +64,14 @@ class TelegramBinding(models.Model):
         readonly=True,
         required=True,
     )
+    invited_by_id = fields.Many2one(
+        comodel_name="res.users",
+        string="Invited By",
+        readonly=True,
+        ondelete="set null",
+        help="Who issued the invitation the contact opened, for a binding proven "
+        "with one: whoever handed a contact the link could open it themselves.",
+    )
     state = fields.Selection(
         selection=[("active", "Active"), ("revoked", "Revoked")],
         default="active",

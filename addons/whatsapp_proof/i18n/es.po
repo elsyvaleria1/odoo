@@ -23,12 +23,14 @@ msgstr "Código"
 #. module: whatsapp_proof
 #: model:ir.model.fields,field_description:whatsapp_proof.field_proof_method__display_name
 #: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_account__display_name
+#: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_message__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
 
 #. module: whatsapp_proof
 #: model:ir.model.fields,field_description:whatsapp_proof.field_proof_method__id
 #: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_account__id
+#: model:ir.model.fields,field_description:whatsapp_proof.field_whatsapp_message__id
 msgid "ID"
 msgstr "ID"
 
@@ -62,6 +64,11 @@ msgstr "Cuenta de WhatsApp Business"
 #: model:proof.method,name:whatsapp_proof.proof_method_whatsapp_confirm
 msgid "WhatsApp Confirmation"
 msgstr "Confirmación por WhatsApp"
+
+#. module: whatsapp_proof
+#: model:ir.model,name:whatsapp_proof.model_whatsapp_message
+msgid "WhatsApp Messages"
+msgstr "Mensajes de WhatsApp"
 
 #. module: whatsapp_proof
 #: model:ir.model.fields,field_description:whatsapp_proof.field_proof_method__wa_template_id

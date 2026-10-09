@@ -44,10 +44,17 @@ class ProofMethod(models.Model):
     ) -> models.BaseModel:
         """The private chat that reaches ``partner``, preferring a bot of
         ``company``: only an account bound to the contact reaches them."""
+        # the contact's own chats and their company's people's, never one a
+        # stand-in contact holds: a stranger's first message made it
         chats = (
             operating(self.env["telegram.chat"])
-            ._for_partner(partner)
-            .filtered(lambda chat: not chat.bot_blocked)
+            ._for_partner(partner | partner.child_ids)
+            .filtered(
+                lambda chat: (
+                    not chat.bot_blocked
+                    and chat.account_id.binding_id.method != "contact"
+                )
+            )
         )
         if company:
             chats = chats.sorted(
@@ -66,7 +73,9 @@ class ProofMethod(models.Model):
         self, challenge: models.BaseModel, signer: models.BaseModel
     ) -> models.BaseModel:
         if challenge.partner_id:
-            return self._get_contact_chat(signer, challenge.user_id.company_id)
+            return self._get_contact_chat(
+                signer, challenge.company_id or challenge.user_id.company_id
+            )
         return self._get_user_chat(challenge.user_id)
 
     def _send_code(
@@ -119,7 +128,7 @@ class ProofMethod(models.Model):
             }
         )
         env = translation_env(chat.bot_id, chat)
-        company = challenge.user_id.company_id.name
+        company = (challenge.company_id or challenge.user_id.company_id).name
         text = "\n".join(
             [
                 env._(
