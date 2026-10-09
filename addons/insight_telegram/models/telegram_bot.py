@@ -70,6 +70,7 @@ class TelegramBot(models.Model):
     insight_reader_user_id = fields.Many2one(
         comodel_name="res.users",
         string="Questions Reader",
+        domain=[("principal_type", "in", ("person", "service"))],
         default=lambda self: self.env.ref(
             "insight_telegram.user_reader", raise_if_not_found=False
         ),

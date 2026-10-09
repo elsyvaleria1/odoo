@@ -136,6 +136,7 @@ class ResPartner(models.Model):
                 [("user_ids", "!=", False)],
                 [("user_ids.active", "=", True)],
                 [("user_ids.share", "=", False)],
+                [("user_ids.principal_type", "=", "person")],
             ]
         )
         channel = self.env["discuss.channel"]
@@ -192,7 +193,7 @@ class ResPartner(models.Model):
                 ("channel_ids", "in", (channel.parent_channel_id | channel).ids),
             ]
         )
-        extra_domain = Domain(
+        extra_domain = self._get_domain_mention_suggestions(search) & Domain(
             [
                 ("user_ids", "!=", False),
                 ("user_ids.active", "=", True),

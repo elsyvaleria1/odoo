@@ -404,9 +404,10 @@ class ResPartner(models.Model):
     def _search_mention_suggestions(
         self, domain: DomainType, limit: int, extra_domain: DomainType | None = None
     ) -> Self:
-        domain = Domain(domain)
+        people = Domain.TRUE
         if service := self.env["res.users"]._get_service_partner_ids():
-            domain &= Domain("id", "not in", service)
+            people = Domain("id", "not in", service)
+        domain = Domain(domain) & people
         domain_is_user = (
             Domain("user_ids", "!=", False)
             & Domain("user_ids.active", "=", True)
@@ -418,7 +419,7 @@ class ResPartner(models.Model):
             domain,
         ]
         if extra_domain:
-            priority_conditions.append(Domain(extra_domain))
+            priority_conditions.append(Domain(extra_domain) & people)
         limit = clamp_limit(limit, default=MENTION_SUGGESTIONS_LIMIT)
         partners = self.env["res.partner"]
         for domain in priority_conditions:

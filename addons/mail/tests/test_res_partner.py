@@ -11,6 +11,7 @@ from odoo.tools import mute_logger
 
 from odoo.addons.base.models.res_partner import ResPartner
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
+from odoo.addons.mail.tools.discuss import Store
 
 
 @tagged("res_partner", "mail_tools", "mail_thread_api")
@@ -946,6 +947,26 @@ class TestPartnerMentionAndReplies(MailCommon):
         suggested = {partner["id"] for partner in result["res.partner"]}
         self.assertIn(person.partner_id.id, suggested)
         self.assertNotIn(service.partner_id.id, suggested)
+
+        channel = self.env["discuss.channel"]._create_channel(
+            name="Wombat burrow", group_id=None
+        )
+        result = self.env["res.partner"].get_mention_suggestions_from_channel(
+            channel.id, "Wombat"
+        )
+        suggested = {partner["id"] for partner in result["res.partner"]}
+        self.assertIn(person.partner_id.id, suggested)
+        self.assertNotIn(service.partner_id.id, suggested)
+        self.assertNotIn(
+            self.env.ref("base.user_admin").partner_id.id,
+            suggested,
+            "a member suggestion still matches what was typed",
+        )
+        invitable = self.env["res.partner"]._search_for_channel_invite(
+            Store(), "Wombat", channel.id
+        )["partner_ids"]
+        self.assertIn(person.partner_id.id, invitable)
+        self.assertNotIn(service.partner_id.id, invitable)
 
     def test_reply_suggestions_read_only_the_last_reply(self):
         partner = self.env["res.partner"].create({"name": "Chatty"})
