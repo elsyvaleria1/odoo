@@ -81,12 +81,28 @@ class ProductTemplate(models.Model):
                 vals["self_order_available"] = False
 
         res = super().write(vals)
-
         if "self_order_available" in vals:
-            for record in self:
-                for product in record.product_variant_ids:
-                    product._send_availability_status()
+            self._send_availability_status()
         return res
+
+    def _send_availability_status(self) -> None:
+        configs = (
+            self.env["pos.config"]
+            .sudo()
+            .search([("self_ordering_mode", "!=", "nothing")])
+            .filtered("current_session_id")
+        )
+        self_models = self.env["pos.config"]._load_self_data_models()
+        for config in configs:
+            records = (
+                self.env["product.template"]
+                .sudo()
+                .load_product_from_pos(config.id, [("id", "in", self.ids)])
+            )
+            payload = {
+                model: records[model] for model in records if model in self_models
+            }
+            config._notify_self_order("PRODUCT_CHANGED", payload)
 
     def _can_return_content(self, field_name=None, access_token=None) -> bool:
         if (
@@ -112,35 +128,6 @@ class ProductProduct(models.Model):
             for id in self.attribute_line_ids.ids
             if attributes_by_ptal_id.get(id) is not None
         ]
-
-    def write(self, vals):
-        res = super().write(vals)
-        if "self_order_available" in vals:
-            for record in self:
-                record._send_availability_status()
-        return res
-
-    def _send_availability_status(self) -> None:
-        config_self = (
-            self.env["pos.config"]
-            .sudo()
-            .search([("self_ordering_mode", "!=", "nothing")])
-        )
-        for config in config_self:
-            if config.current_session_id:
-                records = (
-                    self.env["product.template"]
-                    .sudo()
-                    .load_product_from_pos(
-                        config.id, [("id", "=", self.product_tmpl_id.id)]
-                    )
-                )
-                payload = {}
-                self_models = self.env["pos.config"]._load_self_data_models()
-                for model in records:
-                    if model in self_models:
-                        payload[model] = records[model]
-                config._notify_self_order("PRODUCT_CHANGED", payload)
 
     def _can_return_content(self, field_name=None, access_token=None) -> bool:
         if field_name == "image_512" and self.sudo().self_order_available:

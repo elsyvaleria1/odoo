@@ -122,3 +122,123 @@ class TestSelfOrderChannels(SelfOrderCommonTest):
             self.env, POS_CHANNEL, self.pos_config._pos_bus_key("till")
         )
         self.assertNotIn(till, [target for target, _, _ in self.sent])
+
+    def test_a_product_change_tells_each_kiosk_once_whichever_door_it_came_by(self):
+        size = self.env["product.attribute"].create(
+            {
+                "name": "Size",
+                "value_ids": [
+                    Command.create({"name": "S"}),
+                    Command.create({"name": "L"}),
+                ],
+            }
+        )
+        sized = self.env["product.template"].create(
+            {
+                "name": "Sized",
+                "available_in_pos": True,
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": size.id,
+                            "value_ids": [Command.set(size.value_ids.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        self.assertEqual(len(sized.product_variant_ids), 2)
+        public = channel_target(
+            self.env, SELF_ORDER_CHANNEL, self.pos_config._self_order_bus_key()
+        )
+
+        def changes():
+            sent = [
+                name
+                for target, name, _ in self.sent
+                if target == public and name.endswith("-PRODUCT_CHANGED")
+            ]
+            self.sent.clear()
+            return len(sent)
+
+        self.sent.clear()
+        self.cola.write({"self_order_available": False})
+        self.assertEqual(changes(), 1, "a variant's write")
+        sized.write({"self_order_available": False})
+        self.assertEqual(changes(), 1, "a template of two variants")
+
+
+@tagged("post_install", "-at_install")
+class TestSelfOrderLive(SelfOrderCommonTest):
+    # Apart from TestSelfOrderChannels: a _sendone patched on the registry class
+    # shadows the one browser_js wraps to commit and notify every send.
+    def setUp(self):
+        super().setUp()
+        self.pos_config.write(
+            {
+                "self_ordering_mode": "kiosk",
+                "self_ordering_pay_after": "each",
+                "self_ordering_service_mode": "counter",
+            }
+        )
+        self.pos_config.with_user(self.pos_user).open_ui()
+        self.pos_config.current_session_id.set_opening_control(0, "")
+
+    def test_an_open_kiosk_hears_a_product_made_available_over_the_bus(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "Live bus probe",
+                "list_price": 1,
+                "taxes_id": False,
+                "available_in_pos": True,
+                "self_order_available": False,
+                "pos_categ_ids": self.cola.pos_categ_ids.ids,
+            }
+        )
+        code = """
+            (async () => {
+                const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                const until = async (predicate) => {
+                    for (let i = 0; i < 150 && !predicate(); i++) {
+                        await wait(100);
+                    }
+                    return predicate();
+                };
+                const selfOrder = () => window.posmodel;
+                const offers = () =>
+                    selfOrder()?.models["product.template"].some(
+                        (template) => template.name === "Live bus probe",
+                    );
+                if (!(await until(() => selfOrder()?.models))) {
+                    console.error("the kiosk never loaded");
+                    return;
+                }
+                if (offers()) {
+                    console.error("the product was offered before it was made available");
+                    return;
+                }
+                await wait(1500);
+                await fetch("/web/dataset/call_kw/product.product/write", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "call",
+                        params: {
+                            model: "product.product",
+                            method: "write",
+                            args: [[%(product)s], { self_order_available: true }],
+                            kwargs: {},
+                        },
+                    }),
+                });
+                if (await until(offers)) {
+                    console.log("test successful");
+                } else {
+                    console.error("the product never reached the open kiosk");
+                }
+            })();
+        """ % {"product": product.id}
+        self.browser_js(
+            self.pos_config._get_self_order_route(), code, login="admin", timeout=60
+        )
