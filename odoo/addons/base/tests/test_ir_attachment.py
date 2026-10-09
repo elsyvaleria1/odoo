@@ -2405,7 +2405,13 @@ class TestPermissions(TransactionCaseWithUserDemo):
             SELECT "ir_attachment"."id"
             FROM "ir_attachment"
             WHERE ("ir_attachment"."res_field" IN (%s) AND "ir_attachment"."res_id" IN (%s) AND "ir_attachment"."res_model" IN (%s) AND (
-                "ir_attachment"."public" IS TRUE
+                (
+                    "ir_attachment"."public" IS TRUE
+                    AND (
+                        ("ir_attachment"."res_model" NOT IN (%s) OR "ir_attachment"."res_model" IS NULL)
+                        OR ("ir_attachment"."url" NOT LIKE %s OR "ir_attachment"."url" IS NULL)
+                    )
+                )
                 OR ((
                     "ir_attachment"."res_model" = %s
                     AND EXISTS (
