@@ -1,4 +1,6 @@
+import importlib.util
 from datetime import timedelta
+from pathlib import Path
 
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
@@ -254,6 +256,23 @@ class TestPausedAndRetiredRule(QueuedCase):
 
         self.assertEqual(runtime.state, "cancel")
         self.assertEqual(self._line(runtime, first).state, "cancel")
+
+    def test_the_upgrade_keeps_an_archived_rules_hold_as_a_pause(self):
+        migration = (
+            Path(__file__).parents[1] / "migrations" / "1.19" / "post-migrate.py"
+        )
+        spec = importlib.util.spec_from_file_location("automation_1_19", migration)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        archived = self.automation.copy({"name": "Archived before"})
+        archived.write({"active": False, "is_paused": False})
+        self.env.flush_all()
+
+        module.migrate(self.env.cr, "1.18")
+        archived.invalidate_recordset()
+
+        self.assertTrue(archived.is_paused)
+        self.assertFalse(self.automation.is_paused, "an active rule is untouched")
 
     def test_a_paused_immediate_run_waits_and_resumes(self):
         self.automation.run_mode = "immediate"

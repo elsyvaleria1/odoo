@@ -231,7 +231,11 @@ class AutomationRuntime(models.Model):
 
     def _run_start_steps(self) -> None:
         for runtime in self.filtered(
-            lambda run: run.state == "in_progress" and run.st_line_id,
+            lambda run: (
+                run.state == "in_progress"
+                and run.st_line_id
+                and not run.automation_id.is_paused
+            ),
         ):
             context = runtime._prepare_execution_context()
             for line in runtime.line_ids.filtered(

@@ -258,6 +258,15 @@ class TestRuntimeWizard(AutomationAccountCommon):
         self.assertEqual(lines.mapped("state"), ["done", "ready"])
         self.assertEqual(runtime.state, "in_progress")
 
+    def test_run_at_start_waits_while_the_automation_is_paused(self):
+        self._first_step().run_at_start = True
+        self.automation.action_pause()
+        st_line = self._make_statement_line(1500.0, "TEST-RUN-AT-START-PAUSED")
+
+        runtime = self._make_runtime(st_line_id=st_line.id)
+
+        self.assertEqual(runtime.line_ids.sorted("sequence")[:1].state, "ready")
+
     def test_run_at_start_waits_without_a_statement_line(self):
         self._first_step().run_at_start = True
 

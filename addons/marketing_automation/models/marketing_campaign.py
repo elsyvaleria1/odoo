@@ -278,6 +278,7 @@ class MarketingCampaign(models.Model):
                         "step_error_policy": "close_branch",
                         "create_runtime_instance": True,
                         "active": vals.get("state") == "running",
+                        "is_paused": vals.get("state") != "running",
                     }
                     for vals in vals_list
                 ]
@@ -298,6 +299,7 @@ class MarketingCampaign(models.Model):
             "step_error_policy": "close_branch",
             "create_runtime_instance": True,
             "active": self.state == "running",
+            "is_paused": self.state != "running",
         }
 
     def unlink(self):
@@ -348,6 +350,8 @@ class MarketingCampaign(models.Model):
                     rule_vals["is_paused"] = not running
                 if rule_vals:
                     rule.write(rule_vals)
+                if running and rule_vals.get("is_paused") is False:
+                    self.env["automation.runtime"]._request_dispatch()
             if "model_id" in vals:
                 self.marketing_activity_ids._sync_nodes()
         return res

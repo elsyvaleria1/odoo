@@ -581,3 +581,13 @@ class TestCampaignHoldsItsRule(SyncingCase):
         campaign.action_start_campaign()
         self.assertTrue(rule.active)
         self.assertFalse(rule.is_paused)
+
+    def test_a_draft_campaigns_rule_holds_its_test_participants(self):
+        campaign = self.env["marketing.campaign"].create(
+            {"name": "Draft Hold", "model_id": self.campaign.model_id.id}
+        )
+        rule = campaign.automation_rule_id.with_context(active_test=False)
+
+        self.assertEqual(campaign.state, "draft")
+        self.assertFalse(rule.active)
+        self.assertTrue(rule.is_paused, "the hourly dispatcher leaves its runs alone")

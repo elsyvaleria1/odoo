@@ -518,7 +518,11 @@ of a paused rule (`automation.rule.is_paused`, Pause / Resume on the form):
 `_settle_approvals`, `_resume_waiting_executions` and the dispatcher filter on
 `automation_id.is_paused`, and `action_run_all` returns at once for an immediate
 run, so a paused rule's runs -- the ones it starts while paused included -- wait
-where they stand; `action_unpause` advances them and requests a dispatch.
+where they stand; `action_unpause` advances them and requests a dispatch. A
+person stepping a run with `action_next_step` still moves it: a click on one
+run is the explicit request the pause otherwise withholds, as a rule named to
+the dispatcher is. A rule archived before 1.19 is paused by the upgrade, so
+its runs keep the hold they had.
 Archiving a rule retires it instead: it starts no new run, the runs under way
 finish, and `action_cancel_open_runs` cancels them when that is the intent.
 
