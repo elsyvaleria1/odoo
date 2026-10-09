@@ -22,9 +22,15 @@ class CaptchaAdapterTurnstile(models.AbstractModel):
         )
 
     @api.model
+    def _has_secret(self):
+        return self.env["credential.credential"]._has_system_secret(
+            "captcha_turnstile.secret_key"
+        )
+
+    @api.model
     def _post_verification(self, data):
         return self.env.ref(
             "captcha_turnstile.service_turnstile"
         )._shared_egress_request(
-            "POST", "/turnstile/v0/siteverify", data=data, timeout=3.05
+            "POST", "/turnstile/v0/siteverify", data=data, timeout=3.05, budgeted=False
         )

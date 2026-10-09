@@ -1389,7 +1389,7 @@ HTTP routing, authentication, and request dispatch.
 - `_auth_method_none()`, `_auth_method_user()`, `_auth_method_public()`, `_auth_method_bearer()` — Auth handlers
 - `_pre_dispatch(rule, args)` — Pre-dispatch hook (upload limits, then `_update_request_context()`, then each record argument checked for read)
 - `_update_request_context()` — Settles the request context (language; http_routing adds the frontend's website, companies, language) before any record argument is checked
-- `_dispatch(endpoint)` — Execute endpoint with reCAPTCHA verification
+- `_dispatch(endpoint)` — Execute endpoint, after the captcha check of a route that asks for one (`_check_request_captcha_token`)
 - `_post_dispatch(response)` — Post-dispatch hook
 - `_handle_error(exception)` — Error handler
 - `_serve_fallback()` — Serve files from attachments

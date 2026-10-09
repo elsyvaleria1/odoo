@@ -3,7 +3,7 @@ import logging
 from typing import Any
 
 from odoo import SUPERUSER_ID, http
-from odoo.exceptions import AccessDenied, AccessError
+from odoo.exceptions import AccessDenied, AccessError, UserError
 from odoo.http import Response, request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
@@ -231,7 +231,12 @@ class Home(http.Controller):
                 )
                 if request.env["res.users"]._is_captcha_login_required(credential):
                     _debug.logic("login_captcha_required")
-                    request.env["ir.http"]._check_request_captcha_token("login")
+                    try:
+                        request.env["ir.http"]._check_request_captcha_token("login")
+                    except UserError as e:
+                        # a refused captcha is said on the login form, as a
+                        # refused password is, not on an error page
+                        raise AccessDenied(e.args[0]) from e
                 with _debug.perf("login_authenticate", cr=request.env.cr):
                     auth_info = request.session.authenticate(request.env, credential)
                 request.params["login_success"] = True

@@ -52,8 +52,13 @@ export class Captcha {
                 token: await this.provider.getToken(this.config.site_key, action),
             };
         } catch {
+            // the provider's script failed to load, its key was refused, or the
+            // person did not pass its challenge: none of which the form can tell
             return {
-                error: _t("The %s site key is invalid.", this.provider.label),
+                error: _t(
+                    "%s could not check that this form was sent by a person. Please try again.",
+                    this.provider.label,
+                ),
             };
         }
     }

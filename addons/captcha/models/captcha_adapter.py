@@ -30,6 +30,11 @@ class CaptchaAdapter(models.AbstractModel):
         raise NotImplementedError
 
     @api.model
+    def _has_secret(self) -> bool:
+        """Whether a secret is set, without reading it."""
+        raise NotImplementedError
+
+    @api.model
     def _post_verification(self, data: dict) -> requests.Response:
         """Send `data` to the provider's siteverify endpoint."""
         raise NotImplementedError
@@ -42,6 +47,8 @@ class CaptchaAdapter(models.AbstractModel):
         secret = self._secret()
         if not secret:
             return "no_secret"
+        if not token:
+            return "wrong_token"
         try:
             response = self._post_verification(
                 {"secret": secret, "response": token, "remoteip": ip_addr}

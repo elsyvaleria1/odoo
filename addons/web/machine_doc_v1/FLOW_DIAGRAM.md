@@ -145,7 +145,7 @@ Browser                          Server (Python)                    Database
   │                                │  ├─ _is_captcha_login_required()      │
   │                                │  │  └─ Check failed attempt count├──▶ SELECT
   │                                │  │     └─ Threshold exceeded?    │
-  │                                │  │        └─ Yes → verify reCAPTCHA token
+  │                                │  │        └─ Yes → verify the captcha token
   │                                │  ├─ session.authenticate(env, credential)
   │                                │  │  ├─ res.users._login()        ├──▶ SELECT
   │                                │  │  │  └─ Verify password hash   │

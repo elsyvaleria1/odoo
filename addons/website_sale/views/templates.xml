@@ -2892,7 +2892,7 @@
                         action="/website/form/"
                         method="post"
                         enctype="multipart/form-data"
-                        class="o_mark_required s_website_form_no_recaptcha"
+                        class="o_mark_required"
                         data-mark="*"
                         data-force_action="shop.sale.order"
                         data-model_name="sale.order"

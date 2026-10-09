@@ -5,7 +5,12 @@ from unittest.mock import MagicMock, patch
 from odoo.libs.guarded_http import GuardedSession
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.captcha.provider import CaptchaProvider
+from odoo.addons.captcha_recaptcha.models.ir_http import RECAPTCHA
+
 ADAPTER = "odoo.addons.captcha_recaptcha.models.captcha_adapter_recaptcha"
+# a provider configured beside reCAPTCHA, on the base adapter
+OTHER = CaptchaProvider(code="turnstile", label="Other", adapter="captcha.adapter")
 
 
 @tagged("post_install", "-at_install")
@@ -86,23 +91,63 @@ class TestRecaptcha(TransactionCase):
         )
         self.assertFalse(self.icp.get_param("captcha_recaptcha.secret_key"))
 
-    def test_the_upgrade_keeps_recaptcha_checking_the_forms(self):
-        Credential = self.env["credential.credential"]
-        self.icp.set_param("recaptcha_public_key", "SITE")
-        self.icp.set_param("recaptcha_min_score", "0.5")
-        self.icp.set_param("enable_recaptcha", "True")
-        self.icp.set_param("captcha.provider", "")
-        Credential._set_system_secret("recaptcha_private_key", "OLD")
+    def _migrate(self):
         path = Path(__file__).parents[1] / "migrations" / "2.0" / "post-migrate.py"
         spec = importlib.util.spec_from_file_location("recaptcha_2_0", path)
         migration = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(migration)
-
         migration.migrate(self.env.cr, "1.1")
+
+    def _old_recaptcha(self, *, enabled="True", secret="OLD"):
+        Credential = self.env["credential.credential"]
+        Credential._set_system_secret("captcha_recaptcha.secret_key", False)
+        self.icp.set_param("recaptcha_public_key", "SITE")
+        self.icp.set_param("recaptcha_min_score", "0.5")
+        self.icp.set_param("enable_recaptcha", enabled)
+        self.icp.set_param("captcha.provider", "")
+        Credential._set_system_secret("recaptcha_private_key", secret)
+
+    def test_a_recaptcha_without_a_secret_leaves_turnstile_checking(self):
+        """reCAPTCHA with a site key and no secret checked nothing, while a
+        configured Turnstile did: the upgrade keeps Turnstile checking."""
+        self._old_recaptcha(secret=False)
+        with (
+            patch.object(
+                type(self.env["ir.http"]),
+                "_captcha_providers",
+                lambda model: {"recaptcha": RECAPTCHA, "turnstile": OTHER},
+            ),
+            patch.object(
+                type(self.env["captcha.adapter"]),
+                "_site_key",
+                lambda model: "OTHER-SITE",
+                create=True,
+            ),
+            patch.object(
+                type(self.env["captcha.adapter"]),
+                "_has_secret",
+                lambda model: True,
+                create=True,
+            ),
+        ):
+            self._migrate()
+            self.assertEqual(self.env["ir.http"]._captcha_provider(), OTHER)
+
+    def test_a_recaptcha_switched_off_stays_off(self):
+        self._old_recaptcha(enabled="False")
+        self._migrate()
+        self.assertEqual(self.icp.get_param("captcha.provider"), "none")
+        self.assertIsNone(self.env["ir.http"]._captcha_provider())
+
+    def test_the_upgrade_keeps_recaptcha_checking_the_forms(self):
+        Credential = self.env["credential.credential"]
+        self._old_recaptcha()
+
+        self._migrate()
 
         self.assertEqual(self.icp.get_param("captcha_recaptcha.site_key"), "SITE")
         self.assertEqual(self.icp.get_param("captcha_recaptcha.min_score"), "0.5")
-        self.assertEqual(self.icp.get_param("captcha.provider"), "recaptcha")
+        self.assertFalse(self.icp.get_param("captcha.provider"))
         self.assertEqual(
             Credential._get_system_secret("captcha_recaptcha.secret_key"), "OLD"
         )

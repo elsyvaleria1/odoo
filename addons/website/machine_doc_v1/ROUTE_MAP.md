@@ -22,7 +22,7 @@ themed, translated, multi-website page instead of a bare backend response:
 | `multilang=False` | Disables the `/<lang>/` URL prefix — used by machine endpoints (`/robots.txt`, `/sitemap.xml`, `/website/lang/...`, image back-compat) that must not be language-rewritten. |
 | `sitemap=True` / `sitemap=<callable>` / `sitemap=False` | Controls inclusion in `/sitemap.xml`. A callable is a generator `f(env, rule, qs)` yielding `{"loc": ...}` entries. |
 | `csrf=False` | Public POST endpoints that accept cross-origin form submissions (`/website/form/...`). |
-| `captcha="website_form"` | Enables reCAPTCHA verification on the form-builder submission route. |
+| `captcha="website_form"` | Enables the captcha provider's verification on the form-builder submission route. |
 
 ## Public Site — Page Serving & Navigation
 

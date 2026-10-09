@@ -27,6 +27,15 @@ class TestCaptcha(TransactionCase):
         self.startPatcher(
             patch.object(CaptchaAdapter, "_site_key", lambda self: "SITE", create=True)
         )
+        self.has_secret = True
+        self.startPatcher(
+            patch.object(
+                CaptchaAdapter,
+                "_has_secret",
+                lambda adapter: self.has_secret,
+                create=True,
+            )
+        )
         self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "fake")
 
     @contextmanager
@@ -59,11 +68,27 @@ class TestCaptcha(TransactionCase):
                 with self.assertRaises(error):
                     self.env["ir.http"]._check_request_captcha_token("login")
 
-    def test_without_a_provider_nothing_is_checked(self):
-        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "")
+    def test_with_none_chosen_nothing_is_checked(self):
+        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "none")
         with self._request("is_bot") as (__, asked):
             self.env["ir.http"]._check_request_captcha_token("login")
         asked.assert_not_called()
+
+    def test_with_no_choice_the_configured_provider_checks(self):
+        """Entering a provider's keys is enough, as it was before the
+        captcha module: an unset choice is the first configured provider."""
+        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "")
+        self.assertEqual(self.env["ir.http"]._captcha_provider(), FAKE)
+        self.has_secret = False
+        self.assertIsNone(self.env["ir.http"]._captcha_provider())
+
+    def test_with_no_choice_the_first_configured_provider_by_code_checks(self):
+        other = CaptchaProvider(code="aaa", label="Other", adapter="captcha.adapter")
+        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "")
+        with patch.object(
+            IrHttp, "_captcha_providers", lambda self: {"fake": FAKE, "aaa": other}
+        ):
+            self.assertEqual(self.env["ir.http"]._captcha_provider(), other)
 
     def test_outside_a_request_nothing_is_checked(self):
         self.assertIsNone(self.env["ir.http"]._check_request_captcha_token("login"))
@@ -73,7 +98,7 @@ class TestCaptcha(TransactionCase):
             self.env["ir.http"]._add_captcha_to_session_info({})["captcha"],
             {"provider": "fake", "site_key": "SITE"},
         )
-        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "")
+        self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "none")
         self.assertNotIn(
             "captcha", self.env["ir.http"]._add_captcha_to_session_info({})
         )
@@ -144,10 +169,15 @@ class TestSiteverify(TransactionCase):
         self.assertLess(len(logged), 500)
         self.assertIn("invalid-input-response", logged)
 
-    def test_a_missing_token_still_logs(self):
-        with self.assertLogs(ADAPTER, "WARNING"):
-            verdict = self._verdict(
-                answer={"success": False, "error-codes": ["missing-input-response"]},
-                token=False,
-            )
-        self.assertEqual(verdict, "wrong_token")
+    def test_a_missing_token_is_refused_without_asking(self):
+        """Nothing a visitor posts without a token spends a provider call."""
+        with (
+            patch.object(CaptchaAdapter, "_secret", lambda self: "SECRET", create=True),
+            patch.object(CaptchaAdapter, "_post_verification", create=True) as sent,
+        ):
+            for token in (False, ""):
+                self.assertEqual(
+                    self.env["captcha.adapter"]._verdict("10.0.0.1", token, "login"),
+                    "wrong_token",
+                )
+        sent.assert_not_called()

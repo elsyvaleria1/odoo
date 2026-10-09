@@ -295,7 +295,7 @@
             t-if="registration_error_code == 'captcha_failed'"
             class="alert alert-danger my-3"
             role="alert">
-            Registration failed! Suspicious activity detected by Google reCaptcha.
+            Registration failed! The captcha check refused it.
         </div>
         <t t-if="not event.event_registrations_open">
             <div

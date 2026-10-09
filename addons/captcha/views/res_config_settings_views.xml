@@ -10,7 +10,7 @@
                 <setting
                     id="captcha_provider"
                     string="Captcha Provider"
-                    help="Which installed provider checks the forms. Without one, nothing is checked.">
+                    help="Which installed provider checks the forms. Left empty, the first one with a site key and a secret does; None checks nothing.">
                     <field name="captcha_provider" />
                 </setting>
             </setting>

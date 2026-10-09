@@ -839,11 +839,15 @@ class IntegrationService(models.Model):
             credential_id=credential.id if credential else None,
         )
 
-    def _shared_egress_request(self, method: str, path: str, **kwargs: Any):
+    def _shared_egress_request(
+        self, method: str, path: str, *, budgeted: bool = True, **kwargs: Any
+    ):
         """Send `path` on this service's endpoint through its shared connection,
         whoever the caller is: a public form's captcha or a visitor's address
-        lookup reads the service only to know where to send, and the
-        connection's breaker and budget still bind."""
+        lookup reads the service only to know where to send. The connection's
+        breaker binds; its budget and the service's rate limit bind unless
+        `budgeted` is false, for a call anonymous traffic drives and that must
+        not be refused to everyone once visitors have spent the budget."""
         self.check_singleton()
         service = self.with_privilege(
             "integration.privilege_shared_egress",
@@ -856,6 +860,7 @@ class IntegrationService(models.Model):
                 method,
                 f"{service.endpoint_url}{path}",
                 purpose=service.code,
+                budgeted=budgeted,
                 **kwargs,
             )
         )

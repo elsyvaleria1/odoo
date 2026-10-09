@@ -12,8 +12,11 @@ SETTINGS = {
 
 
 def migrate(cr, version):
-    """reCAPTCHA's keys take the captcha module's names, and reCAPTCHA becomes
-    the provider when it was the one checking the forms."""
+    """reCAPTCHA's keys take the captcha module's names. With no provider
+    chosen, the first one with a site key and a secret checks the forms; a
+    reCAPTCHA that was switched off leaves them to Turnstile when Turnstile is
+    configured, under its old names or its new ones whichever migration ran
+    first, and to none otherwise."""
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
@@ -27,9 +30,16 @@ def migrate(cr, version):
     if secret := Credential._get_system_secret("recaptcha_private_key"):
         Credential._set_system_secret("captcha_recaptcha.secret_key", secret)
         Credential._set_system_secret("recaptcha_private_key", False)
-    if site_key and enabled and not ICP.get_param("captcha.provider"):
-        ICP.set_param("captcha.provider", "recaptcha")
-        _logger.info("captcha: reCAPTCHA checks the forms, as it did")
+    if site_key and not enabled and not ICP.get_param("captcha.provider"):
+        turnstile = (
+            ICP.get_param("cf.turnstile_site_key")
+            or ICP.get_param("captcha_turnstile.site_key")
+        ) and (
+            Credential._has_system_secret("cf.turnstile_secret_key")
+            or Credential._has_system_secret("captcha_turnstile.secret_key")
+        )
+        ICP.set_param("captcha.provider", "turnstile" if turnstile else "none")
+        _logger.info("captcha: reCAPTCHA was switched off and stays off")
     ICP.search(
         [("key", "in", [*SETTINGS, "enable_recaptcha", "recaptcha_private_key"])]
     ).unlink()

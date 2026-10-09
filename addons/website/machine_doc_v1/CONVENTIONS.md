@@ -50,7 +50,7 @@ Public website routes are declared with a distinct kwarg set (full detail in
 | `multilang=False` | Suppress the `/<lang>/` URL prefix. For machine endpoints (`/robots.txt`, `/sitemap.xml`, `/website/lang/...`, image back-compat). |
 | `sitemap=True` / `<callable>` / `False` | Sitemap inclusion. A callable is a generator `f(env, rule, qs)` yielding `{"loc": ...}`. |
 | `csrf=False` | Cross-origin form POST (`/website/form/...`). |
-| `captcha="website_form"` | reCAPTCHA on form-builder submission. |
+| `captcha="website_form"` | The captcha provider's check on form-builder submission. |
 | `readonly=True` | Route to a read replica (same meaning as web: NOT about permissions — a `readonly` route that writes corrupts replicated data). |
 
 - **Auth:** public routes use `auth="public"` (works with or without session, via

@@ -7,6 +7,8 @@ _debug = DebugLog(__name__)
 
 # the request parameter every form sends its token in, whichever the provider
 TOKEN_PARAM = "captcha_token"
+# the setting's value that checks nothing, where an unset one picks a provider
+NO_PROVIDER = "none"
 
 
 class IrHttp(models.AbstractModel):
@@ -20,11 +22,21 @@ class IrHttp(models.AbstractModel):
     @api.model
     def _captcha_provider(self):
         """The provider chosen in the settings, when it is installed and has a
-        site key; None otherwise."""
+        site key; with none chosen, the first installed one, by code, that has
+        a site key and a secret; None when the settings say none."""
         code = self.env.registry.settings.get(self.env, "captcha.provider", False)
-        provider = self._captcha_providers().get(code)
-        if provider and self.env[provider.adapter]._site_key():
-            return provider
+        if code == NO_PROVIDER:
+            return None
+        providers = self._captcha_providers()
+        if code:
+            provider = providers.get(code)
+            if provider and self.env[provider.adapter]._site_key():
+                return provider
+            return None
+        for _code, provider in sorted(providers.items()):
+            adapter = self.env[provider.adapter]
+            if adapter._site_key() and adapter._has_secret():
+                return provider
         return None
 
     def session_info(self):

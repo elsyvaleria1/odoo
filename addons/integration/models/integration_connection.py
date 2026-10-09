@@ -757,7 +757,9 @@ class IntegrationConnection(models.Model):
         )
         return connection
 
-    def _egress_session(self, purpose: str, **session_options: Any):
+    def _egress_session(
+        self, purpose: str, *, budgeted: bool = True, **session_options: Any
+    ):
         self.check_singleton()
         connection = self.sudo()
         # the breaker holds a probe for the call's worst case, which only a
@@ -773,7 +775,8 @@ class IntegrationConnection(models.Model):
         def request(*args, **kwargs):
             url = kwargs.get("url", args[1] if len(args) > 1 else "")
             attempt = connection._admit_call(
-                session.get_worst_case_seconds(url, kwargs.get("timeout"))
+                session.get_worst_case_seconds(url, kwargs.get("timeout")),
+                budgeted=budgeted,
             )
             try:
                 response = send(*args, **kwargs)
@@ -792,7 +795,13 @@ class IntegrationConnection(models.Model):
     def _egress_request(self, method: str, url: str, *, purpose: str, **kwargs: Any):
         session_options = {
             name: kwargs.pop(name)
-            for name in ("policy", "max_bytes", "max_seconds", "max_redirects")
+            for name in (
+                "policy",
+                "max_bytes",
+                "max_seconds",
+                "max_redirects",
+                "budgeted",
+            )
             if name in kwargs
         }
         session = self._egress_session(purpose, **session_options)
@@ -810,7 +819,9 @@ class IntegrationConnection(models.Model):
             operation_timeout=timeout,
         )
 
-    def _admit_call(self, expected_seconds: float | None = None) -> Attempt:
+    def _admit_call(
+        self, expected_seconds: float | None = None, *, budgeted: bool = True
+    ) -> Attempt:
         self.check_singleton()
         attempt = breaker_for(self.env, self).acquire_attempt(expected_seconds)
         if attempt is None:
@@ -821,6 +832,8 @@ class IntegrationConnection(models.Model):
                     connection=self.display_name,
                 )
             )
+        if not budgeted:
+            return attempt
         try:
             self._check_call_budget()
         except BaseException:

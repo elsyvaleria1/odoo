@@ -26,12 +26,18 @@ class CaptchaAdapterRecaptcha(models.AbstractModel):
         )
 
     @api.model
+    def _has_secret(self):
+        return self.env["credential.credential"]._has_system_secret(
+            "captcha_recaptcha.secret_key"
+        )
+
+    @api.model
     def _post_verification(self, data):
         # it takes ~50ms to answer; a slow answer is not worth a stuck form
         return self.env.ref(
             "captcha_recaptcha.service_recaptcha"
         )._shared_egress_request(
-            "POST", "/recaptcha/api/siteverify", data=data, timeout=2
+            "POST", "/recaptcha/api/siteverify", data=data, timeout=2, budgeted=False
         )
 
     @api.model

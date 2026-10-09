@@ -48,7 +48,8 @@ class TestTurnstile(TransactionCase):
         self._migrate()
 
         self.assertEqual(self.icp.get_param("captcha_turnstile.site_key"), "SITE")
-        self.assertEqual(self.icp.get_param("captcha.provider"), "turnstile")
+        self.assertFalse(self.icp.get_param("captcha.provider"))
+        self.assertEqual(self.env["ir.http"]._captcha_provider().code, "turnstile")
         self.assertEqual(
             Credential._get_system_secret("captcha_turnstile.secret_key"), "OLD"
         )
