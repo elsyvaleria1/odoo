@@ -596,19 +596,11 @@ patch(PosOrder.prototype, {
                 }
                 const linesForRule = linesPerRule[rule.id] ? linesPerRule[rule.id] : [];
                 const amountWithTax = linesForRule.reduce(
-                    (sum, line) =>
-                        sum +
-                        (line.combo_line_ids.length > 0
-                            ? line.comboTotalPrice
-                            : line.prices.total_included),
+                    (sum, line) => sum + line.comboTotalPrice,
                     0,
                 );
                 const amountWithoutTax = linesForRule.reduce(
-                    (sum, line) =>
-                        sum +
-                        (line.combo_line_ids.length > 0
-                            ? line.comboTotalPriceWithoutTax
-                            : line.prices.total_excluded),
+                    (sum, line) => sum + line.comboTotalPriceWithoutTax,
                     0,
                 );
                 const amountCheck =
@@ -661,10 +653,7 @@ patch(PosOrder.prototype, {
                                 line._reward_product_id?.id || line.getProduct().id
                             ] = lineQty;
                         }
-                        orderedProductPaid +=
-                            line.combo_line_ids.length > 0
-                                ? line.comboTotalPrice
-                                : line.prices.total_included;
+                        orderedProductPaid += line.comboTotalPrice;
                         if (!line.is_reward_line) {
                             totalProductQty += lineQty;
                         }
@@ -1075,14 +1064,9 @@ patch(PosOrder.prototype, {
         if (!cheapestLine) {
             return { discountable: 0, discountablePerTax: {} };
         }
-        const pricedLines = cheapestLine.combo_line_ids.length
-            ? cheapestLine
-                  .getAllLinesInCombo()
-                  .filter((line) => !line.combo_line_ids.length)
-            : [cheapestLine];
         let discountable = 0;
         const discountablePerTax = {};
-        for (const line of pricedLines) {
+        for (const line of cheapestLine._comboLeafLines()) {
             const taxKey = this._getDiscountTaxKey(reward, line);
             discountable += line.prices.total_included / cheapestLine.qty;
             discountablePerTax[taxKey] =

@@ -105,17 +105,21 @@ export class PosOrderlineAccounting extends Base {
     }
 
     get comboTotalPrice() {
-        const childLines = this.getAllLinesInCombo().filter(
-            (line) => !line.combo_line_ids.length,
+        return this._comboLeafLines().reduce(
+            (total, line) => total + line.prices.total_included,
+            0,
         );
-        return childLines.reduce((total, line) => total + line.priceIncl, 0);
     }
 
     get comboTotalPriceWithoutTax() {
-        const childLines = this.getAllLinesInCombo().filter(
-            (line) => !line.combo_line_ids.length,
+        return this._comboLeafLines().reduce(
+            (total, line) => total + line.prices.total_excluded,
+            0,
         );
-        return childLines.reduce((total, line) => total + line.priceExcl, 0);
+    }
+
+    _comboLeafLines() {
+        return this.getAllLinesInCombo().filter((line) => !line.combo_line_ids.length);
     }
 
     get taxGroupLabels() {

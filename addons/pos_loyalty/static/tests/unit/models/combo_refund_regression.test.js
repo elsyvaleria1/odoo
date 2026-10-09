@@ -8,14 +8,26 @@ definePosLoyaltyModels();
  * `comboTotalPrice` / `comboTotalPriceWithoutTax` (point_of_sale, on
  * pos.order.line) exist solely for pos_loyalty: `pointsForPrograms` sums them
  * as the "amount with tax" / "amount without tax" gating every rule's
- * `minimum_amount`, and `_getDiscountableOnCheapest` uses the pair as a
- * discount base. Nothing else reads them, and nothing covered them.
+ * `minimum_amount` and as the base of money-mode points, and `_getCheapestLine`
+ * divides them by `qty` to rank lines. Nothing else reads them.
  *
  * Product templates used: 5 = "TEST" (combo parent), 6 = "TEST 2" and
  * 8 = "Wood chair" (leaf children), 9 = "Steel chair" (plain line). Template 7
  * is deliberately avoided: it is itself a combo product, so it acquires its own
  * `combo_line_ids` and would be filtered out of the leaf sum.
  */
+
+const addLine = async (store, order, tmplId, qty, vals = {}, opts = {}) =>
+    await store.addLineToOrder(
+        {
+            product_tmpl_id: store.models["product.template"].get(tmplId),
+            qty,
+            ...vals,
+        },
+        order,
+        { force: true, ...opts },
+        false, // configure: skip the combo configurator dialog
+    );
 
 /**
  * Builds a combo parent with two leaf children plus one plain (non-combo) line.
@@ -25,25 +37,20 @@ definePosLoyaltyModels();
  * `combo_line_ids` onto the refund's parent line. `isSaleDisallowed` rejects
  * positive-qty lines on a refund order, hence the sign of `qty` here.
  */
-const setupComboOrder = async (store, { qty = 2, isRefund = false } = {}) => {
+const setupComboOrder = async (
+    store,
+    { qty = 2, isRefund = false, withPlain = true } = {},
+) => {
     const order = store.addNewOrder();
     order.is_refund = isRefund;
-    const lineQty = isRefund ? -qty : qty;
+    const sign = isRefund ? -1 : 1;
 
-    const mkLine = async (tmplId, q) =>
-        await store.addLineToOrder(
-            { product_tmpl_id: store.models["product.template"].get(tmplId), qty: q },
-            order,
-            { force: true },
-            false, // configure: skip the combo configurator dialog
-        );
-
-    const parent = await mkLine(5, isRefund ? -1 : 1);
-    const child1 = await mkLine(6, lineQty);
-    const child2 = await mkLine(8, lineQty);
+    const parent = await addLine(store, order, 5, sign, { price_unit: 0 });
+    const child1 = await addLine(store, order, 6, sign * qty);
+    const child2 = await addLine(store, order, 8, sign * qty);
     child1.combo_parent_id = parent;
     child2.combo_parent_id = parent;
-    const plain = await mkLine(9, lineQty);
+    const plain = withPlain ? await addLine(store, order, 9, sign * qty) : null;
 
     return { order, parent, children: [child1, child2], plain };
 };
@@ -56,7 +63,7 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         // Pre-fix this summed `displayPriceUnitExcl` (= unitPrices, computed as
         // if qty were 1), so every child with qty > 1 was undercounted -- it
         // under-gated rule minimum_amounts and under-sized discount bases.
-        const lineTotals = children.reduce((s, l) => s + l.priceExcl, 0);
+        const lineTotals = children.reduce((s, l) => s + l.prices.total_excluded, 0);
         const unitTotals = children.reduce(
             (s, l) => s + l.unitPrices.total_excluded,
             0,
@@ -66,7 +73,7 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         // Guard the guard: the two bases must actually differ at qty > 1, else
         // this would pass against the pre-fix code too.
         expect(unitTotals).not.toBe(lineTotals);
-        expect(children.every((l) => l.priceExcl !== 0)).toBe(true);
+        expect(children.every((l) => l.prices.total_excluded !== 0)).toBe(true);
     });
 
     test("the pair is independent of the iface_tax_included display setting", async () => {
@@ -88,77 +95,95 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         expect(parent.comboTotalPriceWithoutTax).toBe(withoutTax);
     });
 
-    test("refund combo totals stay quantity-aware (and keep their sign)", async () => {
+    test("a refund's combo totals are quantity-aware and carry the refund's sign", async () => {
         const store = await setupPosEnv();
-        const { parent, children } = await setupComboOrder(store, {
+        const { order, parent, children } = await setupComboOrder(store, {
             qty: 2,
             isRefund: true,
         });
+        order.config.iface_tax_included = "total";
 
-        // A refund line carries negative qty, and orderSign is -1, so the two
-        // cancel: priceExcl is positive. The pre-fix basis (displayPriceUnitExcl
-        // = unitPrices, qty-1) was positive too, so the money-math fix changed
-        // the MAGNITUDE here, not the sign.
-        expect(parent.comboTotalPriceWithoutTax).toBeGreaterThan(0);
-        expect(parent.comboTotalPrice).toBeGreaterThan(0);
+        expect(parent.comboTotalPriceWithoutTax).toBeLessThan(0);
+        expect(parent.comboTotalPrice).toBeLessThan(0);
         expect(parent.comboTotalPriceWithoutTax).toBe(
-            children.reduce((s, l) => s + l.priceExcl, 0),
+            children.reduce((s, l) => s + l.prices.total_excluded, 0),
         );
+        expect(parent.displayPrice).toBe(-parent.comboTotalPrice);
     });
 });
 
 describe("combo totals on refunds — sign convention", () => {
-    /**
-     * Refund + combo + loyalty is reachable: ticket_screen sets
-     * `is_refund = true` and relinks `combo_line_ids` onto the refund parent;
-     * neither `_updatePrograms` nor `_programIsApplicable` excludes refunds; and
-     * `pointsForPrograms` keeps combo parents (it filters out combo *children*).
-     *
-     * In that reduce the two branches disagree on a refund:
-     *
-     *     line.combo_line_ids.length > 0
-     *         ? line.comboTotalPriceWithoutTax   // priceExcl: qty(-) * sign(-) => POSITIVE
-     *         : line.prices.total_excluded       // raw: qty(-)      => NEGATIVE
-     *
-     * So a refunded combo adds +N to the same total a refunded plain line
-     * subtracts -N from. The result gates
-     * `if (rule.minimum_amount > amountCheck) continue;`, so the two line kinds
-     * push that gate in opposite directions on the same refund.
-     *
-     * This predates the money-math fix -- the old basis (displayPriceUnitExcl)
-     * was positive on refunds too, so both before and after, combo is positive
-     * while plain is negative. The fix changed magnitude only; it neither
-     * introduced nor worsened this.
-     *
-     * The assertion is deliberately convention-NEUTRAL: it only requires the two
-     * branches to agree. Either signing the non-combo branch or unsigning the
-     * combo getters would satisfy it. The decision is genuinely open because the
-     * pair's other consumer, `_getDiscountableOnCheapest`, feeds a value bounded
-     * by the signed `priceIncl` (`Math.min(this.priceIncl, discountable)`), so
-     * the two consumers currently want opposite conventions.
-     *
-     * Marked `todo`: HOOT suppresses the failure while the asymmetry stands and
-     * fails with `remove "todo" test modifier` once it is resolved -- so whoever
-     * fixes it is forced to read this note rather than silently flip behaviour.
-     */
-    test.todo("a refund's combo branch agrees in sign with its plain-line branch", async () => {
+    test("a refund's combo branch agrees in sign with its plain-line branch", async () => {
         const store = await setupPosEnv();
         const { parent, plain } = await setupComboOrder(store, {
             qty: 2,
             isRefund: true,
         });
 
-        // Both must be non-zero, or Math.sign comparison would be vacuous.
         expect(parent.comboTotalPriceWithoutTax).not.toBe(0);
         expect(plain.prices.total_excluded).not.toBe(0);
-
-        // These two are summed together in pointsForPrograms; opposite signs
-        // make that total meaningless.
         expect(Math.sign(parent.comboTotalPriceWithoutTax)).toBe(
             Math.sign(plain.prices.total_excluded),
         );
         expect(Math.sign(parent.comboTotalPrice)).toBe(
             Math.sign(plain.prices.total_included),
         );
+        expect(plain.comboTotalPrice).toBe(plain.prices.total_included);
+    });
+
+    test("refunding a combo onto a gift card earns no points, like refunding a plain line", async () => {
+        const store = await setupPosEnv();
+        const models = store.models;
+        const program = models["loyalty.program"].get(1);
+        const giftCardProgram = models["loyalty.program"].get(3);
+        program.rule_ids[0].update({
+            any_product: true,
+            reward_point_mode: "money",
+            reward_point_amount: 1,
+            reward_point_split: false,
+            minimum_qty: 0,
+            minimum_amount: 10,
+            minimum_amount_tax_mode: "incl",
+        });
+
+        const creditToGiftCard = async (order) =>
+            await addLine(
+                store,
+                order,
+                10,
+                1,
+                { price_unit: -order.priceIncl, tax_ids: [] },
+                { eWalletGiftCardProgram: giftCardProgram },
+            );
+
+        const { order: comboRefund } = await setupComboOrder(store, {
+            qty: 1,
+            isRefund: true,
+            withPlain: false,
+        });
+        await creditToGiftCard(comboRefund);
+
+        const plainRefund = store.addNewOrder();
+        plainRefund.is_refund = true;
+        await addLine(store, plainRefund, 9, -1);
+        await creditToGiftCard(plainRefund);
+
+        expect(comboRefund.priceIncl).toBe(0);
+        expect(plainRefund.priceIncl).toBe(0);
+        expect(plainRefund.pointsForPrograms([program])[program.id]).toEqual([]);
+        expect(comboRefund.pointsForPrograms([program])[program.id]).toEqual([]);
+    });
+
+    test("on a refund the cheapest line is the cheapest product, not the dearest", async () => {
+        const store = await setupPosEnv();
+        const order = store.addNewOrder();
+        order.is_refund = true;
+        const cheap = await addLine(store, order, 6, -1, { price_unit: 2 });
+        const dear = await addLine(store, order, 9, -1, { price_unit: 9 });
+
+        const reward = {
+            all_discount_product_ids: [cheap.product_id, dear.product_id],
+        };
+        expect(order._getCheapestLine(reward)).toBe(cheap);
     });
 });
