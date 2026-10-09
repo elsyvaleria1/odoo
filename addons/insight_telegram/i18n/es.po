@@ -1139,3 +1139,63 @@ msgstr "Listo, olvidé nuestra conversación: empezamos de cero."
 #: code:addons/insight_telegram/services/documents.py:0
 msgid "Statement"
 msgstr "Estado de cuenta"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "I found no one called exactly «%(value)s» with a GPS; I took %(names)s."
+msgstr "No encontré a nadie llamado exactamente «%(value)s» con GPS; tomé a %(names)s."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "at %(partner)s's land (%(distance)s m)"
+msgstr "en el predio de %(partner)s (a %(distance)s m)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "I found no GPS unit for «%(value)s»."
+msgstr "No encontré ninguna unidad con GPS de «%(value)s»."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Where they are"
+msgstr "Dónde están"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Last signal: %(day)s %(time)s"
+msgstr "Última señal: %(day)s %(time)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "(old: it may be off or without signal)"
+msgstr "(vieja: puede estar apagado o sin señal)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Moving at %(speed)s km/h"
+msgstr "En movimiento a %(speed)s km/h"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Stopped, engine on"
+msgstr "Detenido, motor encendido"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Stopped"
+msgstr "Detenido"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(count)s more units: ask for a person."
+msgstr "%(count)s unidades más: pregunta por una persona."

@@ -480,6 +480,39 @@ class TestCatalog(TransactionCase):
         # unpatched, the report's options are the ones it accepts
         self.assertEqual(len(documents.statements(self.env, customer)), 1)
 
+    def test_a_person_is_located_by_their_gps(self):
+        if "device.device" not in self.env:
+            self.skipTest("device_gps is not installed")
+        kind = self.env["device.kind"].create(
+            {"name": "Ask Probe GPS", "code": "gps_tracker", "comm_protocol": "http"}
+        )
+        device = self.env["device.device"].create(
+            {
+                "name": "Ask Probe Unit",
+                "identifier": "ASK-PROBE-GPS",
+                "device_category_id": kind.id,
+                "comm_protocol": "http",
+            }
+        )
+        reading = self.env["device.data.log.gps"].create(
+            {
+                "device_id": device.id,
+                "timestamp": fields.Datetime.now(),
+                "latitude": 19.2596,
+                "longitude": -99.6498,
+                "speed": 0,
+            }
+        )
+        device.log_gps_last_id = reading
+        employee = self.env["hr.employee"].create({"name": "Felipe Ferreyra Probe"})
+        employee.resource_id.gps_device_id = device
+        # a dictated surname misheard: the first name still finds him
+        text = self._answer("location", employee="Felipe Carreira")
+        self.assertIn("Felipe Ferreyra Probe", text)
+        self.assertIn("https://www.google.com/maps?q=19.259600,-99.649800", text)
+        self.assertIn("Felipe Carreira", text, "the guess is said")
+        self.assertIn("I found no GPS unit", self._answer("location", employee="Zzyzx"))
+
     def test_a_missing_partner_is_said(self):
         with self.assertRaises(catalog.NotFound):
             documents.collect(self.env, "guarantee", {"partner": "Nobody 7c1e"})

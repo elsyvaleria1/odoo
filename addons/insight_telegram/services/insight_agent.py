@@ -97,7 +97,9 @@ identifications and guarantee releases are files in document.document \
 (partner_id, document_type_id, is_guarantor, collateral_amount, amount, \
 date_expiration); a customer's credit file is res.partner.credit_document_ids \
 and credit.profile (one per company: state, grade_id, collateral_amount, \
-exposure_open, exposure_overdue) with credit.facility lines. Check related \
+exposure_open, exposure_overdue) with credit.facility lines. Where a person \
+or vehicle is now (GPS) is run_report "location" with the person's name: \
+units are device.device, their driver asset_operator_id. Check related \
 models before concluding something does not exist. You can \
 read all of them: never answer that you have no access.
 - Datetimes are stored in UTC; the owner lives in {tz}. Today is {today}.

@@ -1201,6 +1201,162 @@ def _aging(ask, moves, sign, currency) -> list:
     return lines
 
 
+LOCATIONS = 10
+# a reading older than this is said to be old: the unit may be off or out
+# of coverage, and where it was is not where it is
+STALE_READING = timedelta(hours=2)
+
+
+def _tracked_devices(env):
+    """``{device: employee}``: the GPS units with a position, and who they
+    track -- the driver of the vehicle they are in, or the employee they
+    are bound to."""
+    devices = env["device.device"].search(
+        [("is_gps_device", "=", True), ("log_gps_last_id", "!=", False)]
+    )
+    owners = {}
+    if "asset_operator_id" in devices._fields:
+        for device in devices:
+            owners[device] = device.asset_operator_id
+    if "hr.employee" in env:
+        employees = env["hr.employee"].search(
+            [("resource_id.gps_device_id", "in", devices.ids)]
+        )
+        for employee in employees:
+            owners[employee.resource_id.gps_device_id] = employee
+    return {device: owners.get(device) or env["hr.employee"] for device in devices}
+
+
+def _whose(ask, tracked, value):
+    """The units `value` names: by the person they track, as said or
+    dictated, else by the unit or its plate."""
+    people = ask.env["hr.employee"].browse(
+        sorted({employee.id for employee in tracked.values() if employee})
+    )
+    found = find(ask.env, "hr.employee", value, ("name",), [("id", "in", people.ids)])
+    if not found:
+        # a dictated surname is often misheard ("Carreira" for "Ferreyra"):
+        # any word that names one of the tracked people
+        words = [word for word in _WORD.findall(value) if len(word) >= 3]
+        found = people.filtered(
+            lambda employee: any(
+                remove_accents(word).lower()
+                in remove_accents(employee.name or "").lower()
+                for word in words
+            )
+        )
+        if found:
+            ask.notes.append(
+                ask.env._(
+                    "I found no one called exactly «%(value)s» with a GPS; I took "
+                    "%(names)s.",
+                    value=value,
+                    names=", ".join(found.mapped("name")),
+                )
+            )
+    if found:
+        return [device for device, owner in tracked.items() if owner & found]
+    text = remove_accents(value).lower()
+    return [
+        device
+        for device in tracked
+        if text
+        in remove_accents(
+            f"{device.display_name} {getattr(device, 'asset_license_plate', '') or ''}"
+        ).lower()
+    ]
+
+
+def _place_text(device, live):
+    """Where a unit is, in words: the customer's land it is on, and the
+    address of its last position -- looked up now when `live`, else only
+    the one cached for that very position."""
+    parts = []
+    partner = getattr(device, "current_client_partner_id", None)
+    if partner:
+        parts.append(
+            device.env._(
+                "at %(partner)s's land (%(distance)s m)",
+                partner=partner.display_name,
+                distance=device.current_client_distance_m,
+            )
+        )
+    latitude, longitude = device.log_gps_last_latitude, device.log_gps_last_longitude
+    address = False
+    if hasattr(device, "current_address"):
+        key = f"{latitude:.4f},{longitude:.4f}"
+        if device.current_address and device.current_address_key == key:
+            address = device.current_address
+        elif live:
+            try:
+                address = device._reverse_geocode(latitude, longitude)
+            except Exception:
+                address = False
+    if address:
+        parts.append(address)
+    return " · ".join(parts)
+
+
+def run_location(ask):
+    tracked = _tracked_devices(ask.env)
+    value = (ask.params.get("employee") or "").strip()
+    devices = _whose(ask, tracked, value) if value else list(tracked)
+    if value and not devices:
+        raise NotFound(ask.env._("I found no GPS unit for «%(value)s».", value=value))
+    devices = sorted(
+        devices, key=lambda device: device.log_gps_last_id.timestamp, reverse=True
+    )
+    zone = pytz.timezone(ask.tz)
+    now = fields.Datetime.now()
+    lines = ["📍 **" + ask.env._("Where they are") + "**"]
+    for device in devices[: LOCATIONS if not value else 5]:
+        reading = device.log_gps_last_id
+        owner = tracked[device]
+        plate = getattr(device, "asset_license_plate", "") or ""
+        title = owner.name or device.display_name
+        lines.append("")
+        lines.append(f"**{title}**" + (f" · {plate}" if plate else ""))
+        local = pytz.UTC.localize(reading.timestamp).astimezone(zone)
+        age = now - reading.timestamp
+        seen = ask.env._(
+            "Last signal: %(day)s %(time)s",
+            day=ask.format_day(local.date()),
+            time=local.strftime("%H:%M"),
+        )
+        if age > STALE_READING:
+            seen += " ⚠️ " + ask.env._("(old: it may be off or without signal)")
+        lines.append(seen)
+        if (reading.speed or 0) > 3:
+            lines.append(
+                "🚗 "
+                + ask.env._("Moving at %(speed)s km/h", speed=round(reading.speed or 0))
+            )
+        else:
+            lines.append(
+                "🅿️ "
+                + (
+                    ask.env._("Stopped, engine on")
+                    if reading.ignition
+                    else ask.env._("Stopped")
+                )
+            )
+        place = _place_text(device, live=bool(value))
+        if place:
+            lines.append("🏠 " + place)
+        latitude = device.log_gps_last_latitude
+        longitude = device.log_gps_last_longitude
+        lines.append(f"🗺 https://www.google.com/maps?q={latitude:.6f},{longitude:.6f}")
+    if not value and len(devices) > LOCATIONS:
+        lines.append("")
+        lines.append(
+            ask.env._(
+                "%(count)s more units: ask for a person.",
+                count=len(devices) - LOCATIONS,
+            )
+        )
+    return lines
+
+
 GROUPS = ("company", "warehouse", "salesperson", "partner", "product", "month")
 FILTERS = ("company", "warehouse", "partner", "product", "salesperson", "employee")
 
@@ -1344,6 +1500,17 @@ QUERIES = {
             ("company", "employee"),
             periodic=False,
             requires="hr.version",
+        ),
+        Query(
+            "location",
+            "Where a person, vehicle or GPS unit is right now (ubicación, dónde "
+            "está, GPS, rastreo): by the employee who drives it or carries it, "
+            "or every tracked unit. A map link and the place it is at.",
+            run_location,
+            (),
+            ("employee",),
+            periodic=False,
+            requires="device.device",
         ),
         Query(
             "headcount",
