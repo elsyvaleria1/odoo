@@ -178,3 +178,21 @@ class TestWebhookSecurity(TransactionCase):
         self.assertEqual(call.state, "failed")
         self.assertEqual(call.status_code, 500)
         self.assertIn("ValidationError", call.error_message)
+
+    def test_a_failing_call_s_row_outlives_the_rollback_of_its_request(self):
+        rule = self._new_rule(auth_type="none", record_getter="model.browse([])")
+        try:
+            self._call(rule, {"id": 1})
+        except ValidationError:
+            pass
+        else:
+            self.fail("a webhook with no record ran")
+
+        cr = self.env.cr
+        cr.clear()
+        with self.sync_env_with_side_cursors():
+            cr.postrollback.run()
+
+        kept = self._calls(rule).sorted("id")[-1]
+        self.assertEqual(kept.state, "failed")
+        self.assertIn("ValidationError", kept.error_message)

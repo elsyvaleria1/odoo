@@ -189,3 +189,30 @@ class TestWebhookOverHttp(HttpCase):
             "no",
             "a non-webhook rule ran over HTTP",
         )
+
+    def test_a_failing_chain_leaves_nothing_behind(self):
+        rule = self._rule("half-run", auth_type="none")
+        self.env["ir.actions.server"].create(
+            {
+                "name": "half-run-breaks",
+                "model_id": self.model_partner.id,
+                "state": "code",
+                "usage": "automation",
+                "automation_rule_id": rule.id,
+                "sequence": 100,
+                "code": "raise UserError('the second step broke')",
+            }
+        )
+        parameters = self.env["ir.config_parameter"].sudo()
+        parameters.set_param("automation.webhook_probe", "no")
+
+        response = self._post(rule)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json()["error"], "webhook_failed")
+        self.env.invalidate_all()
+        self.assertEqual(
+            parameters.get_param("automation.webhook_probe"),
+            "no",
+            "the first step of a failed run was committed",
+        )
