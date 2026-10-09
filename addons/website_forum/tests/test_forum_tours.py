@@ -32,3 +32,11 @@ class TestUi(HttpCaseGamification):
             [("name", "in", ["Tag", "tag", "test tag"])]
         )
         self.assertEqual(len(tags), 3)
+
+    def test_03_listing_filters_in_place(self):
+        forum = self.env.ref("website_forum.forum_help")
+        Post = self.env["forum.post"]
+        answered = Post.create({"name": "PN Answered", "forum_id": forum.id})
+        Post.create({"forum_id": forum.id, "parent_id": answered.id, "content": "Yes"})
+        Post.create({"name": "PN Open", "forum_id": forum.id})
+        self.start_tour(f"/forum/{forum.id}", "forum_partial_navigation")

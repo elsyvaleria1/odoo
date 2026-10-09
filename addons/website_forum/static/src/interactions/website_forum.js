@@ -10,7 +10,6 @@ import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { htmlJoin } from "@web/core/utils/dom/html";
-import { Popover, Tooltip } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
 import { session } from "@web/session";
 import { ConfirmationDialog } from "@web/ui/dialog";
@@ -68,26 +67,17 @@ export class WebsiteForum extends Interaction {
         "span[data-oe-model='forum.post'][data-oe-field='content'] img.float-start": {
             "t-att-class": () => ({ "float-start": false }),
         },
+        ".o_wforum_relative_datetime": {
+            "t-out": (el) => this.relativeLastActivity(el),
+        },
+        ".forum_register_url": {
+            "t-att-href": () =>
+                `${browser.location.origin}/odoo?redirect=${encodeURIComponent(browser.location.href)}`,
+        },
     };
 
     setup() {
         this.lastsearch = [];
-
-        const forumRegisterUrlEl = this.el.querySelector(".forum_register_url");
-        if (forumRegisterUrlEl) {
-            const forumLogin = `${browser.location.origin}/odoo?redirect=${encodeURIComponent(browser.location.href)}`;
-            forumRegisterUrlEl.href = forumLogin;
-        }
-
-        this.el.querySelectorAll("[data-bs-toggle='tooltip']").forEach((el) => {
-            const bsTooltip = Tooltip.getOrCreateInstance(el);
-            this.registerCleanup(() => bsTooltip.dispose());
-        });
-
-        this.el.querySelectorAll("[data-bs-toggle='popover']").forEach((el) => {
-            const bsPopover = Popover.getOrCreateInstance(el);
-            this.registerCleanup(() => bsPopover.dispose());
-        });
 
         const selectMenuWrapperEl = document.querySelector(
             "div.js_select_menu_wrapper",
@@ -107,27 +97,17 @@ export class WebsiteForum extends Interaction {
         this.wysiwygTextareaEls = [
             ...this.el.querySelectorAll("textarea.o_wysiwyg_loader"),
         ];
+    }
 
-        this.el.querySelectorAll(".o_wforum_bio_popover").forEach((authorBox) => {
-            const bsPopover = Popover.getOrCreateInstance(authorBox, {
-                trigger: "hover",
-                offset: "10",
-                animation: false,
-                html: true,
-                customClass: "o_wforum_bio_popover_container shadow-sm",
-            });
-            this.registerCleanup(() => bsPopover.dispose());
-        });
-
-        this.el
-            .querySelectorAll(
+    /** @param {HTMLElement} el */
+    relativeLastActivity(el) {
+        const post = /** @type {HTMLElement | null} */ (
+            el.closest(
                 ".o_wforum_question, .o_wforum_answer, .o_wforum_post_comment, .o_wforum_last_activity",
             )
-            .forEach((post) => {
-                const lastActivity = parseSQL(post.dataset.lastActivity, "UTC");
-                post.querySelector(".o_wforum_relative_datetime").textContent =
-                    lastActivity ? toRelative(lastActivity) : "";
-            });
+        );
+        const lastActivity = post && parseSQL(post.dataset.lastActivity, "UTC");
+        return lastActivity ? toRelative(lastActivity) : "";
     }
 
     async willStart() {

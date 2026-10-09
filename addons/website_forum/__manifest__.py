@@ -90,6 +90,7 @@
             "website_forum/static/src/interactions/website_forum_share.js",
             "website_forum/static/src/interactions/website_forum_spam.js",
             "website_forum/static/src/interactions/website_forum.js",
+            "website_forum/static/src/interactions/website_forum_popovers.js",
             "website_forum/static/src/components/**/*",
             "website_forum/static/src/plugins/**/*",
             "website_forum/static/src/xml/public_templates.xml",

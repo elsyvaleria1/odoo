@@ -123,11 +123,13 @@
             <div
                 t-if="tag or tags or search or question_count or page_name or website_forum_action"
                 t-attf-class="d-flex justify-content-lg-end gap-2 flex-grow-1 flex-wrap flex-md-nowrap w-100 w-lg-auto #{'mw-xl-75' if search else 'mw-xl-50'}">
-            <span t-if="tag and not tags" class="btn btn-light rounded ps-2">
+            <span
+                t-if="tag and not tags"
+                class="o_wforum_filter_chip btn btn-light rounded ps-2">
             <span t-if="tag"><i class="fa-solid fa-tag me-1 opacity-50" /><t t-out="tag.name" /></span>
             <a t-attf-href="#{ url_for('/forum') }/#{ _forum_slug }?#{ keep_query('search', 'sorting', 'my', 'create_uid') }" class="p-1 text-decoration-none text-reset opacity-50"><i class="oi oi-close d-inline-block" /></a>
             </span>
-            <span t-if="search" class="btn btn-light rounded ps-2">
+            <span t-if="search" class="o_wforum_filter_chip btn btn-light rounded ps-2">
             <em t-if="search" class="text-muted">"<t t-out="search" />"</em>
             <a
                 t-attf-href="?#{ keep_query('sorting', 'my') }"
@@ -238,7 +240,9 @@
             <div class="oe_structure" id="oe_structure_website_forum_header_1" />
             <div
                 id="wrap"
-                t-attf-class="o_wforum_wrapper position-relative container row mx-auto px-0 #{ 'h-100' if forum_welcome_message else ''} #{website_forum_action}">
+                t-attf-class="o_wforum_wrapper position-relative container row mx-auto px-0 #{ 'h-100' if forum_welcome_message else ''} #{website_forum_action}"
+                data-fragment="website_forum.header"
+                t-att-data-partial-navigation="'#o_wforum_nav .dropdown-menu, #o_wforum_nav .o_searchbar_form, #o_wforum_nav .o_wforum_filter_chip, .o_wforum_table thead, .o_wforum_content_wrapper .pagination, .o_wforum_content_wrapper select[data-o-navigate]' if _page_name in ('list_questions', 'my_posts', 'my_favorites', 'tags') else None">
             <t t-set="_forum_slug" t-value="slug(forum) if forum else 'all'" />
             <t t-set="_forum_path" t-value="url_for('/forum') + '/' + _forum_slug" />
             <t t-call="website_forum.user_sidebar" />
