@@ -1466,9 +1466,10 @@ msgstr "Por qué la mercancía regresó sin entregar en el último viaje."
 #: model:ir.model.fields,help:stock_fleet.field_stock_picking_type__delivery_paper_days
 msgid ""
 "Working days, on the company's calendar, whoever delivered has to hand the "
-"signed delivery slip in on paper; past them they are reminded every day. "
-"Zero sends no reminder."
-msgstr "Días hábiles, según el calendario de la compañía, que tiene quien entregó para entregar en papel la OUT firmada; pasados, se le recuerda cada día. Cero no envía recordatorio."
+"signed delivery slip in on paper; past them they are reminded once, and the "
+"reviewers get the list of every overdue slip each day. Zero sends no "
+"reminder."
+msgstr "Días hábiles, según el calendario de la compañía, que tiene quien entregó para entregar en papel la OUT firmada; pasados, se le recuerda una vez, y los revisores reciben cada día la lista de todas las vencidas. Cero no envía recordatorio."
 
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__zip
@@ -1515,3 +1516,39 @@ msgstr "tractocamión"
 
 #~ msgid "Planned Weight:"
 #~ msgstr "Peso planeado:"
+
+#. module: stock_fleet
+#: model:ir.model.fields,field_description:stock_fleet.field_stock_picking__delivery_paper_reminded
+msgid "Paper Reminder Sent on"
+msgstr "Recordatorio de papel enviado el"
+
+#. module: stock_fleet
+#: model:ir.model.fields,help:stock_fleet.field_stock_picking__delivery_paper_reminded
+msgid ""
+"When whoever holds the signed slip was reminded to hand it in on paper: "
+"once, the day after it fell due."
+msgstr ""
+"Cuándo se le recordó a quien tiene la remisión firmada entregarla en papel: "
+"una sola vez, al día siguiente de vencer."
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "Overdue signed delivery slips: %(count)s"
+msgstr "Remisiones firmadas vencidas: %(count)s"
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid "due %(due)s"
+msgstr "venció el %(due)s"
+
+#. module: stock_fleet
+#. odoo-python
+#: code:addons/stock_fleet/models/stock_picking_delivery_proof.py:0
+msgid ""
+"These signed delivery slips of %(type)s are past the days to hand them in on "
+"paper:"
+msgstr ""
+"Estas remisiones firmadas de %(type)s ya pasaron el plazo para entregarse en "
+"papel:"

@@ -359,3 +359,56 @@ class TestDeliveryProof(TransactionCase):
             self.env["stock.picking"].search([("delivery_proof_due", "=", True)]),
             "a type that no longer asks for it has no deliveries to review",
         )
+
+    def _overdue(self):
+        self.out_type.delivery_proof_since = fields.Datetime.now() - timedelta(days=60)
+        self.out_type.delivery_paper_days = 3
+        picking = self._delivered()
+        picking.date_done = fields.Datetime.now() - timedelta(days=30)
+        return picking
+
+    def test_whoever_holds_the_paper_is_reminded_once(self):
+        picking = self._overdue()
+        Picking = self.env["stock.picking"]
+        Picking._cron_remind_delivery_paper()
+        reminder = picking.activity_ids.filtered(
+            lambda activity: activity.user_id == self.clerk
+        )
+        self.assertEqual(len(reminder), 1, "whoever filed the slip holds the paper")
+        self.assertTrue(picking.delivery_paper_reminded)
+        reminder.action_feedback()
+        Picking._cron_remind_delivery_paper()
+        self.assertFalse(
+            picking.activity_ids,
+            "a reminder marked done without the paper is not sent again",
+        )
+
+    def test_the_reviewers_get_the_overdue_list_every_day(self):
+        overdue = self._overdue()
+        on_time = self._delivered()
+        Message = self.env["mail.message"]
+        for _day in range(2):
+            last = Message.search([], order="id desc", limit=1).id
+            self.env["stock.picking"]._cron_remind_delivery_paper()
+            listed = Message.search(
+                [
+                    ("id", ">", last),
+                    ("model", "=", "stock.picking.type"),
+                    ("res_id", "=", self.out_type.id),
+                    ("partner_ids", "in", self.reviewer.partner_id.ids),
+                ]
+            )
+            self.assertEqual(len(listed), 1)
+            self.assertIn(overdue.name, listed.body)
+            self.assertNotIn(on_time.name, listed.body)
+            self.assertNotIn(self.clerk.partner_id, listed.partner_ids)
+
+    def test_no_list_when_nothing_is_overdue(self):
+        self._delivered()
+        last = self.env["mail.message"].search([], order="id desc", limit=1).id
+        self.env["stock.picking"]._cron_remind_delivery_paper()
+        self.assertFalse(
+            self.env["mail.message"].search(
+                [("id", ">", last), ("model", "=", "stock.picking.type")]
+            )
+        )

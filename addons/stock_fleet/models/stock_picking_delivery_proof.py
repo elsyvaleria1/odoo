@@ -1,6 +1,8 @@
 import base64
 from datetime import datetime, time, timedelta
 
+from markupsafe import Markup
+
 from odoo import api, fields, models
 from odoo.exceptions import RedirectWarning
 from odoo.fields import Domain
@@ -27,7 +29,8 @@ class StockPickingType(models.Model):
         default=3,
         help="Working days, on the company's calendar, whoever delivered has to "
         "hand the signed delivery slip in on paper; past them they are reminded "
-        "every day. Zero sends no reminder.",
+        "once, and the reviewers get the list of every overdue slip each day. "
+        "Zero sends no reminder.",
     )
     delivery_proof_since = fields.Datetime(
         string="Required Since",
@@ -135,6 +138,13 @@ class StockPicking(models.Model):
         string="Paper Received on",
         copy=False,
         readonly=True,
+    )
+    delivery_paper_reminded = fields.Date(
+        string="Paper Reminder Sent on",
+        copy=False,
+        readonly=True,
+        help="When whoever holds the signed slip was reminded to hand it in on "
+        "paper: once, the day after it fell due.",
     )
 
     @api.depends("delivery_proof", "signature")
@@ -355,6 +365,8 @@ class StockPicking(models.Model):
         )
 
     def _cron_remind_delivery_paper(self) -> None:
+        """Remind whoever holds each overdue signed slip, once, and send the
+        reviewers the list of every slip still overdue."""
         today = fields.Date.context_today(self)
         activity_type = self.env.ref("mail.mail_activity_data_todo")
         pending = self.search(
@@ -364,30 +376,100 @@ class StockPicking(models.Model):
                 ("picking_type_id.delivery_paper_days", ">", 0),
             ]
         )
+        overdue = {}
         for picking in pending:
             due = picking._get_delivery_paper_due_date()
+            if not due or due >= today:
+                continue
+            overdue[picking.id] = due
+            if picking.delivery_paper_reminded:
+                continue
             holder = picking._get_delivery_paper_holder()
-            if (
-                not due
-                or due >= today
-                or not holder
-                or picking.activity_ids.filtered(
-                    lambda activity, holder=holder: (
-                        activity.activity_type_id == activity_type
-                        and activity.user_id == holder
-                    )
+            if not holder:
+                continue
+            # an activity left open from before the reminder was dated is the
+            # reminder already sent
+            if not picking.activity_ids.filtered(
+                lambda activity, holder=holder: (
+                    activity.activity_type_id == activity_type
+                    and activity.user_id == holder
                 )
             ):
-                continue
-            picking.activity_schedule(
-                act_type_xmlid="mail.mail_activity_data_todo",
-                date_deadline=today,
-                summary=self.env._("Hand in the signed delivery slip"),
-                note=self.env._(
-                    "Delivered on %(date)s; the signed slip was due on paper by "
-                    "%(due)s.",
-                    date=picking.date_done.date(),
-                    due=due,
-                ),
-                user_id=holder.id,
+                picking.activity_schedule(
+                    act_type_xmlid="mail.mail_activity_data_todo",
+                    date_deadline=today,
+                    summary=self.env._("Hand in the signed delivery slip"),
+                    note=self.env._(
+                        "Delivered on %(date)s; the signed slip was due on paper "
+                        "by %(due)s.",
+                        date=picking.date_done.date(),
+                        due=due,
+                    ),
+                    user_id=holder.id,
+                )
+            picking.delivery_paper_reminded = today
+        self._notify_overdue_delivery_paper(overdue)
+
+    def _notify_overdue_delivery_paper(self, overdue) -> None:
+        """Send each reviewer the overdue signed slips of the companies they
+        work in, one notification per operation type, in their language.
+
+        :param dict overdue: ``{picking id: due date}``
+        """
+        if not overdue:
+            return
+        reviewers = self.env.ref(
+            "stock_fleet.group_delivery_proof_reviewer"
+        ).all_user_ids.filtered(lambda user: user.active and not user.share)
+        pickings = self.browse(list(overdue)).sorted(
+            lambda picking: (overdue[picking.id], picking.name)
+        )
+        for picking_type in pickings.picking_type_id:
+            listed = pickings.filtered(
+                lambda picking, picking_type=picking_type: (
+                    picking.picking_type_id == picking_type
+                )
             )
+            readers = reviewers.filtered(
+                lambda user, picking_type=picking_type: (
+                    picking_type.company_id in user.company_ids
+                )
+            )
+            for lang in set(readers.mapped(lambda user: user.lang or "")):
+                partners = readers.filtered(
+                    lambda user, lang=lang: (user.lang or "") == lang
+                ).partner_id
+                localized = picking_type.with_context(lang=lang or self.env.lang)
+                localized.message_notify(
+                    partner_ids=partners.ids,
+                    subject=localized.env._(
+                        "Overdue signed delivery slips: %(count)s",
+                        count=len(listed),
+                    ),
+                    body=listed.with_context(
+                        lang=lang or self.env.lang
+                    )._overdue_delivery_paper_body(overdue),
+                )
+
+    def _overdue_delivery_paper_body(self, overdue) -> Markup:
+        """The reviewers' list of these overdue deliveries, of one operation
+        type: each one's customer, who holds the paper and when it was due."""
+        lines = Markup().join(
+            Markup('<li><a href="/odoo/stock.picking/%s">%s</a> · %s · %s · %s</li>')
+            % (
+                picking.id,
+                picking.name,
+                picking.partner_id.display_name or "-",
+                picking._get_delivery_paper_holder().name or "-",
+                self.env._("due %(due)s", due=overdue[picking.id].strftime("%d/%m/%Y")),
+            )
+            for picking in self
+        )
+        return Markup("<p>%s</p><ul>%s</ul>") % (
+            self.env._(
+                "These signed delivery slips of %(type)s are past the days to hand "
+                "them in on paper:",
+                type=self.picking_type_id[:1].display_name,
+            ),
+            lines,
+        )

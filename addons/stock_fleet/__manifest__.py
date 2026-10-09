@@ -1,6 +1,6 @@
 {
     "name": "Stock Transport and Trips",
-    "version": "2.10",
+    "version": "2.11",
     "oldest_upgradable_version": "2.8",
     "category": "Supply Chain/Inventory",
     "summary": "Assign fleet vehicles and drivers to dispatch batches and track trips",
