@@ -87,6 +87,10 @@
             ),
             "calendar/static/tests/booking/*",
         ],
+        "web.assets_unit_tests_setup": [
+            "calendar/static/src/booking/interactions/appointment_select_appointment_slot.js",
+            "calendar/static/src/booking/xml/*.xml",
+        ],
         "web.assets_tests": [
             "calendar/static/tests/tours/**/*",
         ],

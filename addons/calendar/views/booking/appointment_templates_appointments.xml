@@ -426,79 +426,81 @@
     </template>
 
     <template id="appointment_calendar" name="Appointment">
-        <div
-            t-if="appointment_type.active"
-            class="o_appointment_slots_loading d-flex align-items-center py-5 my-5">
-            <i class="fa-solid fa-circle-notch fa-3x fa-spin mx-auto" />
-        </div>
-        <div id="slots_availabilities" class="d-none">
-            <input
-                type="hidden"
-                name="max_resource_capacity"
-                t-att-value="max_resource_capacity" />
+        <div class="d-contents" data-fragment="calendar.appointment_calendar">
             <div
-                id="calendar"
-                t-attf-class="p-0 border rounded-3 overflow-hidden #{'d-none' if (month_first_available is False or not appointment_type.active) and capacity == 1 else ''}">
-                <t
-                    t-set="displayed_month_id"
-                    t-value="month_kept_from_update if month_kept_from_update is not False else month_first_available" />
+                t-if="appointment_type.active"
+                class="o_appointment_slots_loading d-flex align-items-center py-5 my-5">
+                <i class="fa-solid fa-circle-notch fa-3x fa-spin mx-auto" />
+            </div>
+            <div id="slots_availabilities" class="d-none">
+                <input
+                    type="hidden"
+                    name="max_resource_capacity"
+                    t-att-value="max_resource_capacity" />
                 <div
-                    t-foreach="slots"
-                    t-as="month"
-                    t-attf-id="month-#{month['id']}"
-                    t-attf-class="o_appointment_month #{'d-none' if month['id'] != displayed_month_id else ''}">
+                    id="calendar"
+                    t-attf-class="p-0 border rounded-3 overflow-hidden #{'d-none' if (month_first_available is False or not appointment_type.active) and capacity == 1 else ''}">
+                    <t
+                        t-set="displayed_month_id"
+                        t-value="month_kept_from_update if month_kept_from_update is not False else month_first_available" />
                     <div
-                        id="calendarHeader"
-                        class="position-relative d-flex align-items-center p-3 border-bottom">
-                        <button
-                            t-if="month['id'] &gt; 0"
-                            type="button"
-                            id="prevCal"
-                            class="btn btn-light o_js_calendar_navigate position-absolute top-50 start-0 ms-2 translate-middle-y">
-                            <i class="oi oi-chevron-left" />
-                        </button>
-                        <h5
-                            t-out="month['month']"
-                            class="o_appointment_month_name mx-auto mb-0" />
-                        <button
-                            t-if="len(slots) &gt; month['id'] + 1"
-                            type="button"
-                            id="nextCal"
-                            class="btn btn-light o_js_calendar_navigate position-absolute top-50 end-0 me-2 translate-middle-y">
-                            <i class="oi oi-chevron-right" />
-                        </button>
+                        t-foreach="slots"
+                        t-as="month"
+                        t-attf-id="month-#{month['id']}"
+                        t-attf-class="o_appointment_month #{'d-none' if month['id'] != displayed_month_id else ''}">
+                        <div
+                            id="calendarHeader"
+                            class="position-relative d-flex align-items-center p-3 border-bottom">
+                            <button
+                                t-if="month['id'] &gt; 0"
+                                type="button"
+                                id="prevCal"
+                                class="btn btn-light o_js_calendar_navigate position-absolute top-50 start-0 ms-2 translate-middle-y">
+                                <i class="oi oi-chevron-left" />
+                            </button>
+                            <h5
+                                t-out="month['month']"
+                                class="o_appointment_month_name mx-auto mb-0" />
+                            <button
+                                t-if="len(slots) &gt; month['id'] + 1"
+                                type="button"
+                                id="nextCal"
+                                class="btn btn-light o_js_calendar_navigate position-absolute top-50 end-0 me-2 translate-middle-y">
+                                <i class="oi oi-chevron-right" />
+                            </button>
+                        </div>
+                        <table class="w-100">
+                            <tr class="o_website_calendar_weekdays">
+                                <t t-foreach="formated_days" t-as="day">
+                                    <th class="py-2 text-center"><small t-out="day" /></th>
+                                </t>
+                            </tr>
+                            <tr
+                                t-foreach="month['weeks']"
+                                t-as="weeks"
+                                class="o_appointment_days">
+                                <t t-foreach="weeks" t-as="day">
+                                    <td
+                                        t-attf-class="text-center#{day['slots'] and ' o_day' or ''} #{day['weekend_cls']} #{day['today_cls']}"
+                                        t-attf-title="#{day['today_cls'] and 'Today' or ''}">
+                                        <t t-if="day['slots']">
+                                            <div
+                                                t-att-id="day['day']"
+                                                t-attf-class="o_day_wrapper o_slot_button btn btn-outline-primary d-block position-relative m-1 p-2 border"
+                                                t-out="day['day'].day"
+                                                t-att-data-available-slots="json.dumps(day['slots'])"
+                                                t-att-data-slot-date="day['day']" />
+                                        </t>
+                                        <t t-if="not day['slots']">
+                                            <div
+                                                t-out="day['day'].day"
+                                                t-attf-class="o_day_wrapper border border-transparent #{day['mute_cls']} position-relative m-1 p-2" />
+                                        </t>
+                                    </td>
+                                </t>
+                            </tr>
+                        </table>
                     </div>
-                    <table class="w-100">
-                        <tr class="o_website_calendar_weekdays">
-                            <t t-foreach="formated_days" t-as="day">
-                                <th class="py-2 text-center"><small t-out="day" /></th>
-                            </t>
-                        </tr>
-                        <tr
-                            t-foreach="month['weeks']"
-                            t-as="weeks"
-                            class="o_appointment_days">
-                            <t t-foreach="weeks" t-as="day">
-                                <td
-                                    t-attf-class="text-center#{day['slots'] and ' o_day' or ''} #{day['weekend_cls']} #{day['today_cls']}"
-                                    t-attf-title="#{day['today_cls'] and 'Today' or ''}">
-                                    <t t-if="day['slots']">
-                                        <div
-                                            t-att-id="day['day']"
-                                            t-attf-class="o_day_wrapper o_slot_button btn btn-outline-primary d-block position-relative m-1 p-2 border"
-                                            t-out="day['day'].day"
-                                            t-att-data-available-slots="json.dumps(day['slots'])"
-                                            t-att-data-slot-date="day['day']" />
-                                    </t>
-                                    <t t-if="not day['slots']">
-                                        <div
-                                            t-out="day['day'].day"
-                                            t-attf-class="o_day_wrapper border border-transparent #{day['mute_cls']} position-relative m-1 p-2" />
-                                    </t>
-                                </td>
-                            </t>
-                        </tr>
-                    </table>
                 </div>
             </div>
         </div>

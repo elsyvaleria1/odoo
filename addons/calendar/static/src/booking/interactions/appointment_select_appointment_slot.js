@@ -58,8 +58,6 @@ export class appointmentSlotSelect extends Interaction {
         this.slotsListEl = this.el.querySelector("#slotsList");
         // Resource or staff user selection, shown once an hour slot is picked
         this.resourceSelectionEl = this.el.querySelector("#resourceSelection");
-        // First day containing an available slot
-        this.firstEl = this.el.querySelector(".o_slot_button");
     }
 
     async start() {
@@ -72,6 +70,8 @@ export class appointmentSlotSelect extends Interaction {
      * Adapts the availability helpers to the calendar currently rendered.
      */
     async initSlots() {
+        // First day containing an available slot, read again after every slot update
+        this.firstEl = this.el.querySelector(".o_slot_button");
         await this.updateSlotAvailability();
     }
 
@@ -598,9 +598,9 @@ export class appointmentSlotSelect extends Interaction {
                     .querySelector(".o_appointment_slot_list_loading")
                     .classList.remove("d-none");
             }
-            let updatedAppointmentCalendarHtml;
+            let response;
             try {
-                updatedAppointmentCalendarHtml = await rpc(
+                response = await rpc(
                     `/appointment/${appointmentTypeID}/update_available_slots`,
                     {
                         asked_capacity: resourceCapacity,
@@ -619,25 +619,22 @@ export class appointmentSlotSelect extends Interaction {
                 this.removeLoadingSpinner();
                 throw error;
             }
-            if (updatedAppointmentCalendarHtml) {
-                this.el.querySelector("#slots_availabilities").outerHTML =
-                    updatedAppointmentCalendarHtml;
-                this.initSlots();
-                this._updateResourceCapacityOptions();
-                // If possible, we keep the current month, and display the helper if it has no availability.
-                const displayedMonthEl = this.el.querySelector(
-                    ".o_appointment_month:not(.d-none)",
-                );
-                if (!!this.firstEl && !displayedMonthEl.querySelector(".o_day")) {
-                    this.renderNoAvailabilityForMonth(displayedMonthEl);
-                }
-                this.removeLoadingSpinner();
-                // Select previous selected date (in displayed month) if possible.
-                const selectedDayEl = displayedMonthEl?.querySelector(
-                    `div[data-slot-date="${daySlotSelected}"]`,
-                );
-                selectedDayEl && this.onClickDaySlot({ currentTarget: selectedDayEl });
+            this.swapFragments(response);
+            this.initSlots();
+            this._updateResourceCapacityOptions();
+            // If possible, we keep the current month, and display the helper if it has no availability.
+            const displayedMonthEl = this.el.querySelector(
+                ".o_appointment_month:not(.d-none)",
+            );
+            if (!!this.firstEl && !displayedMonthEl.querySelector(".o_day")) {
+                this.renderNoAvailabilityForMonth(displayedMonthEl);
             }
+            this.removeLoadingSpinner();
+            // Select previous selected date (in displayed month) if possible.
+            const selectedDayEl = displayedMonthEl?.querySelector(
+                `div[data-slot-date="${daySlotSelected}"]`,
+            );
+            selectedDayEl && this.onClickDaySlot({ currentTarget: selectedDayEl });
         }
     }
 

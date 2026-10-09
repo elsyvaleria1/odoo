@@ -23,6 +23,7 @@ from odoo.tools.urls import keep_query
 
 from odoo.addons.base.models.res_partner import _selection_timezones
 from odoo.addons.phone_validation.tools import phone_validation
+from odoo.addons.web.controllers.utils import Fragment, render_fragments
 
 _lt = LazyTranslate(__name__)
 
@@ -1649,17 +1650,20 @@ class AppointmentController(http.Controller):
                 filter_resources, resource_selected_id
             )
 
-        return request.env["ir.qweb"]._render(
-            "calendar.appointment_calendar",
-            {
-                "appointment_type": appointment_type,
-                "available_appointments": available_appointments,
-                "asked_capacity": asked_capacity,
-                "timezone": request.session["timezone"],
-                "formated_days": formated_days,
-                "slots": slots,
-                "month_kept_from_update": month_kept_from_update,
-                "month_first_available": month_first_available,
-                "max_resource_capacity": max_possible_capacity,
-            },
+        return render_fragments(
+            request.env,
+            Fragment(
+                "calendar.appointment_calendar",
+                {
+                    "appointment_type": appointment_type,
+                    "available_appointments": available_appointments,
+                    "asked_capacity": asked_capacity,
+                    "timezone": request.session["timezone"],
+                    "formated_days": formated_days,
+                    "slots": slots,
+                    "month_kept_from_update": month_kept_from_update,
+                    "month_first_available": month_first_available,
+                    "max_resource_capacity": max_possible_capacity,
+                },
+            ),
         )

@@ -48,6 +48,22 @@ class AppointmentUICommon(AppointmentCommon, common.HttpCase):
 @tagged("appointment_ui", "-at_install", "post_install")
 class AppointmentUITest(AppointmentUICommon):
     @users("apt_manager")
+    def test_update_available_slots_answers_with_the_keyed_calendar(self):
+        self.authenticate(self.env.user.login, self.env.user.login)
+        response = self.url_open(
+            f"/appointment/{self.apt_type_bxls_2days.id}/update_available_slots",
+            data=json_dumps({"params": {"timezone": "Europe/Brussels"}}),
+            headers={"Content-Type": "application/json"},
+        ).json()["result"]
+
+        [fragment] = response["fragments"]
+        self.assertEqual(fragment["key"], "calendar.appointment_calendar")
+        self.assertEqual(fragment["swap"], "morph")
+        root = html.fromstring(fragment["html"])
+        self.assertEqual(root.get("data-fragment"), "calendar.appointment_calendar")
+        self.assertEqual(len(root.xpath("./div[@id='slots_availabilities']")), 1)
+
+    @users("apt_manager")
     def test_route_apt_type_search_create_anytime(self):
         self.authenticate(self.env.user.login, self.env.user.login)
         request = self.url_open(
