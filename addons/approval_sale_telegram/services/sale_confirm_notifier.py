@@ -18,7 +18,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
     _description = "Telegram Sale Order Confirmation Notifier"
 
     @api.model
-    def notify_ready_to_confirm(self, order):
+    def _notify_ready_to_confirm(self, order):
         approval_notifier = self.env["telegram.approval.notifier"]
         if not approval_notifier._feature_active():
             return
@@ -35,7 +35,7 @@ class TelegramSaleConfirmNotifier(models.AbstractModel):
             )
 
     @api.model
-    def confirm(self, order, user, bot):
+    def _confirm(self, order, user, bot):
         """Confirm ``order`` as ``user``, in the order's company and no other,
         which ``bot`` must serve; returns the error to show, or None.
         ``order`` comes elevated from the handler, who resolved it from a

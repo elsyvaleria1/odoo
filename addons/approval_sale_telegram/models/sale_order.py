@@ -10,7 +10,7 @@ class SaleOrder(models.Model):
         # that left draft there needs nobody to confirm it. The push is queued,
         # so Telegram is reached after commit and cannot abort the approval.
         if self.state == "draft":
-            self.env["telegram.sale.confirm.notifier"].notify_ready_to_confirm(self)
+            self.env["telegram.sale.confirm.notifier"]._notify_ready_to_confirm(self)
 
     def _get_telegram_confirm_users(self):
         self.check_singleton()

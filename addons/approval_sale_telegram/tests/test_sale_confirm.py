@@ -139,7 +139,7 @@ class TestReadyToConfirmPush(SaleConfirmTestBase):
 
     def test_no_push_without_confirmers(self):
         self.category.telegram_confirm_user_ids = False
-        self.notifier.notify_ready_to_confirm(self._order())
+        self.notifier._notify_ready_to_confirm(self._order())
         self.assertFalse(self._queued())
 
 
