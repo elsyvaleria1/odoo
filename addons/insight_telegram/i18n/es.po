@@ -1133,3 +1133,9 @@ msgstr "Olvidar esta conversación y empezar de cero"
 #: code:addons/insight_telegram/models/telegram_handler.py:0
 msgid "Done, I forgot our conversation: we start from zero."
 msgstr "Listo, olvidé nuestra conversación: empezamos de cero."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/documents.py:0
+msgid "Statement"
+msgstr "Estado de cuenta"

@@ -12,7 +12,7 @@ from ..services.catalog import NotFound, available_queries
 from ..services.insight_agent import InsightAgent
 from ..services.insight_assistant import HELP, SEND_DOCUMENT, InsightAssistant
 from ..services.odoo_reader import OdooReader
-from ..services.odoo_tools import OdooTools
+from ..services.odoo_tools import STATEMENT_ID, OdooTools
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.authority import keeping, operating
@@ -477,6 +477,11 @@ class TelegramChat(models.Model):
         )
         bot.send_chat_action(chat, "upload_document")
         for report_id, model, ids in requests:
+            if report_id == STATEMENT_ID:
+                for partner in env["res.partner"].browse(ids).exists():
+                    for filename, content in documents.statements(env, partner):
+                        bot.send_document(chat.chat_id, content, filename)
+                continue
             report = env["ir.actions.report"].browse(report_id)
             for record in env[model].browse(ids).exists():
                 content, _format = env["ir.actions.report"]._render_qweb_pdf(

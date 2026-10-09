@@ -461,6 +461,25 @@ class TestCatalog(TransactionCase):
         self.assertEqual(files[0][1], b"%PDF-1.4 order")
         self.assertTrue(files[0][0].endswith(".pdf"))
 
+    def test_a_statement_is_the_customer_statement_report(self):
+        report = self.env.ref(documents.STATEMENT_REPORT, raise_if_not_found=False)
+        if not report:
+            self.skipTest("the customer statement report is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Statement"})
+        with patch.object(
+            type(report), "export_to_pdf", return_value={"file_content": b"%PDF stmt"}
+        ) as export:
+            files, names = documents.collect(
+                self.env, "statement", {"partner_id": customer.id}
+            )
+        self.assertEqual(export.call_count, 1, "the accounting report, no letter")
+        self.assertEqual(export.call_args.args[0]["partner_ids"], customer.ids)
+        self.assertEqual(files[0][1], b"%PDF stmt")
+        self.assertIn("Ask Probe Statement", files[0][0])
+        self.assertEqual(names, [customer.display_name])
+        # unpatched, the report's options are the ones it accepts
+        self.assertEqual(len(documents.statements(self.env, customer)), 1)
+
     def test_a_missing_partner_is_said(self):
         with self.assertRaises(catalog.NotFound):
             documents.collect(self.env, "guarantee", {"partner": "Nobody 7c1e"})
@@ -1087,6 +1106,12 @@ class TestWriteOperations(TransactionCase):
             tools.call("send_pdf", {"report_id": 0, "ids": [order.id]})
         )
         self.assertIn("No such PDF report", refused["error"])
+        reports = json_loads(tools.call("pdf_reports", {"model": "res.partner"}))[
+            "reports"
+        ]
+        self.assertEqual(reports[0]["id"], -1, "the statement comes first")
+        tools.call("send_pdf", {"report_id": -1, "ids": [customer.id]})
+        self.assertEqual(tools.pdf_requests[-1], (-1, "res.partner", [customer.id]))
 
     def test_a_created_order_is_printed_with_its_main_report(self):
         customer, _product = self._sale()

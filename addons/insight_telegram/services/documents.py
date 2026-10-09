@@ -19,7 +19,9 @@ FILED_KINDS = {
 # Documents Odoo prints, by the report that prints them and how the record
 # is found: a partner for a statement, else the document's reference.
 PRINTED_KINDS = {
-    "statement": ("res.partner", ("account_followup.report_followup_print_all",)),
+    # a statement is the Customer Statement accounting report, not a report
+    # action: the follow-up letter Odoo prints for a partner is another thing
+    "statement": ("res.partner", ()),
     "invoice": ("account.move", ("account.report_invoice_with_payments",)),
     "payment_receipt": (
         "account.payment",
@@ -91,7 +93,48 @@ def _is(document, words) -> bool:
     return any(word in text.lower() for word in words)
 
 
+STATEMENT_REPORT = "account.customer_statement_report"
+
+
+def statement_companies(env, partner):
+    """The companies where `partner` has open receivable or payable entries,
+    else the current one: each has its own statement."""
+    lines = env["account.move.line"].search(
+        [
+            ("partner_id", "child_of", partner.commercial_partner_id.id),
+            ("account_type", "in", ("asset_receivable", "liability_payable")),
+            ("parent_state", "=", "posted"),
+            ("reconciled", "=", False),
+        ]
+    )
+    return lines.company_id.sorted("id") or env.company
+
+
+def statements(env, partner) -> list:
+    """``[(filename, bytes)]``: the Customer Statement of `partner` as Odoo
+    exports it to PDF, one per company where it has something open."""
+    report = env.ref(STATEMENT_REPORT, raise_if_not_found=False)
+    if not report:
+        raise NotFound(env._("That document cannot be printed on this database."))
+    partner = partner.commercial_partner_id
+    companies = statement_companies(env, partner)
+    files = []
+    for company in companies:
+        scoped = env(context={**env.context, "allowed_company_ids": company.ids})
+        options = partner.with_env(scoped)._get_partner_account_report_options(
+            report.with_env(scoped)
+        )
+        content = report.with_env(scoped).export_to_pdf(options)["file_content"]
+        name = (partner.display_name or "").replace("/", "-")
+        suffix = f" - {company.display_name}" if len(companies) > 1 else ""
+        files.append((f"{env._('Statement')} - {name}{suffix}.pdf", content))
+    return files
+
+
 def _printed(env, kind, params):
+    if kind == "statement":
+        partner = _partner(env, params)
+        return statements(env, partner), partner.mapped("display_name")
     model, reports = PRINTED_KINDS[kind]
     if model not in env:
         raise NotFound(env._("That document cannot be printed on this database."))
@@ -113,23 +156,20 @@ def _printed(env, kind, params):
                 break
     if not report:
         raise NotFound(env._("That document cannot be printed on this database."))
-    if model == "res.partner":
-        records = _partner(env, params)
-    else:
-        reference = (params.get("reference") or "").strip()
-        domain = [("name", "ilike", reference)] if reference else []
-        partner_name = (params.get("partner") or "").strip()
-        if partner_name:
-            domain.append(("partner_id", "child_of", _partner(env, params).id))
-        if not domain:
-            raise NotFound(env._("Tell me which one: its number or the partner."))
-        if model == "account.move":
-            domain.append(("state", "=", "posted"))
-        records = env[model].search(domain, order="id desc", limit=MAX_FILES)
-        if not records:
-            raise NotFound(
-                env._("I could not find «%(value)s».", value=reference or partner_name)
-            )
+    reference = (params.get("reference") or "").strip()
+    domain = [("name", "ilike", reference)] if reference else []
+    partner_name = (params.get("partner") or "").strip()
+    if partner_name:
+        domain.append(("partner_id", "child_of", _partner(env, params).id))
+    if not domain:
+        raise NotFound(env._("Tell me which one: its number or the partner."))
+    if model == "account.move":
+        domain.append(("state", "=", "posted"))
+    records = env[model].search(domain, order="id desc", limit=MAX_FILES)
+    if not records:
+        raise NotFound(
+            env._("I could not find «%(value)s».", value=reference or partner_name)
+        )
     files = []
     for record in records:
         attachment = (

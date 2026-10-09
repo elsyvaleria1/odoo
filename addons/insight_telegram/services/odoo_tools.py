@@ -119,6 +119,9 @@ TOOLS = [
 
 
 MAX_PDFS = 5
+# pdf_reports' id for a partner's account statement, which no report action
+# prints
+STATEMENT_ID = -1
 
 PDF_TOOLS = [
     {
@@ -381,14 +384,30 @@ class OdooTools:
         )
 
     def _tool_pdf_reports(self, env, model="") -> dict:
+        model = (model or "").strip()
         reports = env["ir.actions.report"].search(
-            [("model", "=", (model or "").strip()), ("report_type", "=", "qweb-pdf")]
+            [("model", "=", model), ("report_type", "=", "qweb-pdf")]
         )
-        return {
-            "reports": [{"id": report.id, "name": report.name} for report in reports]
-        }
+        listed = [{"id": report.id, "name": report.name} for report in reports]
+        if model == "res.partner":
+            # the account statement is an accounting report, not a report action
+            listed.insert(
+                0, {"id": STATEMENT_ID, "name": "Account statement (estado de cuenta)"}
+            )
+        return {"reports": listed}
 
     def _tool_send_pdf(self, env, report_id=0, ids=None) -> dict:
+        if int(report_id or 0) == STATEMENT_ID:
+            partners = env["res.partner"].browse([int(i) for i in ids or []]).exists()
+            if not partners:
+                raise ReaderError(f"No res.partner record {ids}.")
+            if len(self.pdf_requests) >= MAX_PDFS:
+                raise ReaderError("Too many PDFs at once.")
+            self.pdf_requests.append((STATEMENT_ID, "res.partner", partners.ids))
+            return {
+                "queued": "Account statement",
+                "records": partners.mapped("display_name"),
+            }
         report = env["ir.actions.report"].browse(int(report_id or 0)).exists()
         if not report or report.report_type != "qweb-pdf":
             raise ReaderError("No such PDF report; call pdf_reports for the model.")
