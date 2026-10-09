@@ -1300,7 +1300,7 @@ class WebsocketConnectionHandler:
         "sec-websocket-version",
         "upgrade",
     }
-    _VERSION = "19.0-10"
+    _VERSION = "19.0-11"
     RETRY_AFTER_AT_CAPACITY = 5
 
     @classmethod
