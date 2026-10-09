@@ -123,9 +123,27 @@ class AccountReturnPayment(models.Model):
             self.company_id
         ).settlement_account_id
 
+    def _get_open_settlement_lines(self):
+        """The return's settlement lines this payment pays, each tax its own
+        when the return settles per concept."""
+        self.check_singleton()
+        return self.return_id._get_settlement_lines().filtered(
+            lambda line: (
+                line.company_id == self.company_id
+                and not line.reconciled
+                and line.amount_residual < 0
+            )
+        )
+
+    def _is_per_concept(self) -> bool:
+        self.check_singleton()
+        return not self._get_settlement_account() and bool(
+            self.return_id.type_id.settle_per_concept
+        )
+
     def _prepare_payment_vals(self) -> dict:
         self.check_singleton()
-        return {
+        vals = {
             "payment_type": "outbound",
             "partner_type": "supplier",
             "partner_id": self.partner_id.id,
@@ -135,7 +153,26 @@ class AccountReturnPayment(models.Model):
             "company_id": self.company_id.id,
             "date": fields.Date.context_today(self),
             "memo": self.reference or self.return_id.name,
-            "destination_account_id": self._get_settlement_account().id,
+        }
+        if not self._is_per_concept():
+            return {**vals, "destination_account_id": self._get_settlement_account().id}
+        # one payment pays every concept: its counterpart settles the first
+        # line, and a line of its own settles each other one on its account
+        first, *others = self._get_open_settlement_lines().sorted("id")
+        return {
+            **vals,
+            "destination_account_id": first.account_id.id,
+            "write_off_line_vals": [
+                {
+                    "name": line.name,
+                    "account_id": line.account_id.id,
+                    "partner_id": line.partner_id.id,
+                    "currency_id": line.company_currency_id.id,
+                    "amount_currency": -line.amount_residual,
+                    "balance": -line.amount_residual,
+                }
+                for line in others
+            ],
         }
 
     def _check_can_create_payment(self) -> None:
@@ -157,7 +194,30 @@ class AccountReturnPayment(models.Model):
                     date=self.date_due,
                 )
             )
-        if not self._get_settlement_account():
+        if self._is_per_concept():
+            open_lines = self._get_open_settlement_lines()
+            owed = -sum(open_lines.mapped("amount_residual"))
+            if not open_lines:
+                raise UserError(
+                    self.env._(
+                        "%s owes nothing still open.", self.return_id.display_name
+                    )
+                )
+            if (
+                self.currency_id != self.company_id.currency_id
+                or self.currency_id.compare_amounts(self.amount, owed)
+            ):
+                raise UserError(
+                    self.env._(
+                        "%(name)s settles each tax on its own account: one payment pays "
+                        "them all, %(owed)s in %(currency)s, or the bank is reconciled with "
+                        "each line.",
+                        name=self.return_id.display_name,
+                        owed=owed,
+                        currency=self.company_id.currency_id.name,
+                    )
+                )
+        elif not self._get_settlement_account():
             raise UserError(
                 self.env._(
                     "The return type %(type)s has no settlement account for %(company)s.",
@@ -184,6 +244,18 @@ class AccountReturnPayment(models.Model):
 
     def _reconcile_with_settlement(self) -> None:
         self.check_singleton()
+        if self._is_per_concept():
+            settlement = self._get_open_settlement_lines()
+            payment_lines = self.payment_id.move_id.line_ids
+            for account in settlement.account_id:
+                lines = (settlement | payment_lines).filtered(
+                    lambda line, account=account: (
+                        line.account_id == account and not line.reconciled
+                    )
+                )
+                if lines.filtered("debit") and lines.filtered("credit"):
+                    lines.reconcile()
+            return
         account = self._get_settlement_account()
         lines = (
             self.payment_id.move_id.line_ids | self.return_id._get_settlement_lines()

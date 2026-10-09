@@ -15,9 +15,10 @@
                 <group invisible="not has_settlement">
                     <field name="company_id" invisible="1" />
                     <field name="communication" string="Payment Reference" />
+                    <field name="can_pay_from_journal" invisible="1" />
                     <field
                         name="journal_id"
-                        invisible="not has_single_settlement"
+                        invisible="not can_pay_from_journal"
                         required="has_single_settlement" />
                 </group>
                 <footer>
@@ -25,7 +26,7 @@
                         name="action_create_payment"
                         type="object"
                         string="Create Payment"
-                        invisible="not has_single_settlement"
+                        invisible="not can_pay_from_journal"
                         class="btn-primary"
                         data-hotkey="q" />
                     <button

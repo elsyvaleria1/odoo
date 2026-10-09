@@ -53,6 +53,11 @@ class WizardAccountReturnPay(models.TransientModel):
     )
     has_settlement = fields.Boolean(compute="_compute_has_settlement")
     has_single_settlement = fields.Boolean(compute="_compute_has_settlement")
+    can_pay_from_journal = fields.Boolean(
+        compute="_compute_has_settlement",
+        help="A payment from a journal settles the return: on its one settlement "
+        "account, or on each tax's account when it settles per concept.",
+    )
     journal_id = fields.Many2one(
         comodel_name="account.journal",
         string="Paid From",
@@ -81,6 +86,10 @@ class WizardAccountReturnPay(models.TransientModel):
             wizard.has_single_settlement = (
                 wizard.has_settlement
                 and wizard.return_id._has_single_settlement_account()
+            )
+            wizard.can_pay_from_journal = wizard.has_single_settlement or (
+                wizard.has_settlement
+                and bool(wizard.return_id.type_id.settle_per_concept)
             )
 
     @api.depends("company_id")
