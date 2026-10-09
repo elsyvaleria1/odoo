@@ -1,7 +1,7 @@
 // @ts-check
 
 import { after, describe, expect, test } from "@odoo/hoot";
-import { click, queryOne } from "@odoo/hoot-dom";
+import { click, queryAll, queryOne } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
@@ -360,4 +360,104 @@ test("requestNavigation runs the caller's fallback outside any scope", async () 
         "fetch /my/orders?search=SO6",
         "push portal.list /my/orders",
     ]);
+});
+
+/** @param {string} href */
+const crumbs = (href) =>
+    `<nav class="o_crumbs" data-fragment="t.crumbs" data-partial-navigation-oob=""><a href="${href}">Orders</a></nav>`;
+
+test("out-of-band elements follow the page, paired by key and document order", async () => {
+    await startInteraction(
+        PartialNavigation,
+        `${crumbs("/my/orders")}${region("")}${crumbs("/my/orders#footer")}`,
+    );
+    serve(
+        () =>
+            `<html><body>${crumbs("/my/orders?sortby=name")}${region("")}${crumbs("/my/orders?sortby=name#footer")}</body></html>`,
+    );
+    const [first, second] = queryAll(".o_crumbs");
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["fetch /my/orders?sortby=name", "push portal.list /my/orders"]);
+    expect(queryAll(".o_crumbs")).toEqual([first, second]);
+    expect(queryAll(".o_crumbs a").map((a) => a.getAttribute("href"))).toEqual([
+        "/my/orders?sortby=name",
+        "/my/orders?sortby=name#footer",
+    ]);
+});
+
+test("an out-of-band element the next page lacks is hidden, and shown again", async () => {
+    await startInteraction(PartialNavigation, `${crumbs("/my/orders")}${region("")}`);
+    let withCrumbs = false;
+    serve(
+        () =>
+            `<html><body>${withCrumbs ? crumbs("/my/orders?p=2") : ""}${region("")}</body></html>`,
+    );
+
+    await click(".o_sort");
+    await animationFrame();
+    expect(".o_crumbs").not.toBeVisible();
+
+    withCrumbs = true;
+    await click(".o_next");
+    await animationFrame();
+    expect(".o_crumbs").toBeVisible();
+    expect(".o_crumbs a").toHaveAttribute("href", "/my/orders?p=2");
+    expect.verifySteps([
+        "fetch /my/orders?sortby=name",
+        "push portal.list /my/orders",
+        "fetch /my/orders/page/2",
+        "push portal.list /my/orders/page/2",
+    ]);
+});
+
+/**
+ * @param {string} href
+ * @param {string} [className]
+ */
+const langLink = (href, className = "") =>
+    `<a class="o_lang ${className}" data-fragment="t.lang.fr" data-partial-navigation-oob="href" href="${href}">FR</a>`;
+
+test("attribute out-of-band elements take only their listed attributes, every copy from the one counterpart", async () => {
+    await startInteraction(
+        PartialNavigation,
+        `<header>${langLink("/fr/my/orders", "o_desktop")}</header>${region("")}<footer>${langLink("/fr/my/orders", "o_footer")}</footer>`,
+    );
+    serve(
+        () =>
+            `<html><body>${region("")}<div hidden="">${langLink("/fr/my/orders?sortby=name")}</div></body></html>`,
+    );
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["fetch /my/orders?sortby=name", "push portal.list /my/orders"]);
+    expect(
+        queryAll(".o_lang").map((a) => [a.className, a.getAttribute("href")]),
+    ).toEqual([
+        ["o_lang o_desktop", "/fr/my/orders?sortby=name"],
+        ["o_lang o_footer", "/fr/my/orders?sortby=name"],
+    ]);
+});
+
+test("the fetch asks the server for the page without its header and footer", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    patchWithCleanup(browser, {
+        fetch: async (url, init) => {
+            expect.step(`header ${init.headers["X-Odoo-Partial-Navigation"]}`);
+            return /** @type {Response} */ ({
+                ok: true,
+                url: String(url),
+                text: async () => page(""),
+            });
+        },
+    });
+    patchWithCleanup(browser.history, { pushState: () => {} });
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["header portal.list"]);
 });

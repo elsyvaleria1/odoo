@@ -2,8 +2,6 @@
 import { _t } from "@web/core/translation";
 import { clickOnElement } from "@website/js/tours/tour_utils";
 
-export { waitForPartialNavigation } from "@website/js/tours/tour_utils";
-
 export function addToCart({
     productName,
     search = true,

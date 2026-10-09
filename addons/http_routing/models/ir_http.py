@@ -22,6 +22,10 @@ from odoo.addons.base.models.ir_http import RequestUID
 from odoo.addons.base.models.res_lang import LangData
 
 _logger = logging.getLogger(__name__)
+
+# sent by @web/public/partial_navigation: the page is wanted without the parts
+# a navigation in place keeps (header, footer)
+PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation"
 _debug = DebugLog(__name__)
 
 _SLUG_NAME = r"\w{1,2}|\w[\w-]+?\w"
@@ -601,6 +605,18 @@ class IrHttp(models.AbstractModel):
         super()._update_request_context()
         if request.is_frontend:
             cls._frontend_pre_dispatch()
+
+    @classmethod
+    def _is_partial_navigation(cls) -> bool:
+        return bool(
+            request and request.httprequest.headers.get(PARTIAL_NAVIGATION_HEADER)
+        )
+
+    @classmethod
+    def _post_dispatch(cls, response) -> None:
+        super()._post_dispatch(response)
+        if getattr(request, "is_frontend", False):
+            response.headers.add("Vary", PARTIAL_NAVIGATION_HEADER)
 
     @classmethod
     def _pre_dispatch(

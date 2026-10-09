@@ -1,5 +1,5 @@
 import { registry } from "@web/core/registry";
-import { waitForPartialNavigation } from "@website/js/tours/tour_utils";
+import { waitForPartialNavigation } from "@web_tour/js/utils/tour_utils";
 
 registry.category("web_tour.tours").add("appointments_partial_navigation", {
     steps: () => [

@@ -105,6 +105,7 @@
 
     <template id="group_messages" name="Message Threads">
         <t t-call="portal.portal_layout">
+            <t t-set="partial_navigation_scopes" t-valuef="#group_mode" />
             <section class="container">
                 <div class="row w-100 mt-4">
                     <div class="col-lg-3">

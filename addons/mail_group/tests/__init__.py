@@ -3,3 +3,4 @@ from . import test_mail_group_mailing
 from . import test_mail_group_message
 from . import test_mail_group_moderation
 from . import test_mail_group_links
+from . import test_mail_group_ui

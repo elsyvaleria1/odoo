@@ -559,6 +559,7 @@ class WebsitePage(models.Model):
             request.session.debug,
             request.env["ir.http"]._is_allowed_cookie("optional"),
             request.env.access_signature,
+            request.env["ir.http"]._is_partial_navigation(),
         )
 
     def _get_response(self, request):

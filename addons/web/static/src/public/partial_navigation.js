@@ -4,6 +4,7 @@
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Modal, Offcanvas } from "@web/libs/bootstrap";
+import { swapFragment } from "@web/public/fragments";
 import { Interaction } from "@web/public/interaction";
 
 // what a page says about itself in <head>, kept in step with the page shown
@@ -15,6 +16,49 @@ const HEAD_SELECTORS = [
     'meta[property^="og:"]',
     'meta[name^="twitter:"]',
 ].join(", ");
+
+const OUT_OF_BAND = "[data-fragment][data-partial-navigation-oob]";
+
+// http_routing's PARTIAL_NAVIGATION_HEADER: the server leaves out the header
+// and footer, which a navigation in place keeps
+const PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation";
+
+/**
+ * The out-of-band elements of `root` outside `region`, by key, in document
+ * order.
+ *
+ * @param {ParentNode} root
+ * @param {Element} region
+ * @returns {Map<string, HTMLElement[]>}
+ */
+function outOfBandByKey(root, region) {
+    const byKey = new Map();
+    for (const el of /** @type {NodeListOf<HTMLElement>} */ (
+        root.querySelectorAll(OUT_OF_BAND)
+    )) {
+        if (!region.contains(el)) {
+            const key = el.dataset.fragment;
+            byKey.set(key, [...(byKey.get(key) || []), el]);
+        }
+    }
+    return byKey;
+}
+
+/**
+ * @param {Element} current
+ * @param {Element} next
+ * @param {string[]} names
+ */
+function syncAttributes(current, next, names) {
+    for (const name of names) {
+        const value = next.getAttribute(name);
+        if (value === null) {
+            current.removeAttribute(name);
+        } else {
+            current.setAttribute(name, value);
+        }
+    }
+}
 
 /**
  * The page metadata <html> carries (main object, view, website, lang).
@@ -74,7 +118,8 @@ export function requestNavigation(
  * in-place navigation, `window` receives an `o-partial-navigation` event
  * (`detail.key`, `detail.url`, and `detail.page`, the fetched page as a
  * Document) for code that otherwise runs on page load or reads what the
- * server rendered outside the region.
+ * server rendered outside the region. Elements outside the region marked
+ * `data-partial-navigation-oob` with a `data-fragment` key follow along.
  */
 export class PartialNavigation extends Interaction {
     static selector = "[data-fragment][data-partial-navigation]";
@@ -201,7 +246,10 @@ export class PartialNavigation extends Interaction {
         let response;
         try {
             response = await this.waitFor(
-                browser.fetch(url, { credentials: "same-origin" }),
+                browser.fetch(url, {
+                    credentials: "same-origin",
+                    headers: { [PARTIAL_NAVIGATION_HEADER]: this.key },
+                }),
             );
         } catch {
             browser.location.assign(url);
@@ -244,6 +292,7 @@ export class PartialNavigation extends Interaction {
             redirect: null,
             data: {},
         });
+        this.swapOutOfBand(page, region);
         if (scrolledPast) {
             (el.firstElementChild || el).scrollIntoView({ block: "start" });
         }
@@ -252,6 +301,51 @@ export class PartialNavigation extends Interaction {
                 detail: { key: this.key, url: response.url, page },
             }),
         );
+    }
+
+    /**
+     * Elements outside the region that the server renders for the URL
+     * follow the page (htmx's hx-swap-oob), found in the next page by their
+     * `data-fragment` key:
+     * - `data-partial-navigation-oob=""` (the breadcrumbs): each is morphed
+     *   from its counterpart, paired by document order, and hidden when the
+     *   next page has none. It must live in the page's content, which a page
+     *   asked for in place still renders.
+     * - `data-partial-navigation-oob="href"` (the language links, in the
+     *   header and footer a page asked for in place leaves out): every
+     *   element of the key takes the listed attributes from the first
+     *   counterpart, which the server also renders, hidden, in that case.
+     *
+     * @param {Document} page
+     * @param {Element} region the region in `page`
+     */
+    swapOutOfBand(page, region) {
+        const interactions = this.services["public.interactions"];
+        const next = outOfBandByKey(page, region);
+        for (const [key, elements] of outOfBandByKey(document, this.el)) {
+            const counterparts = next.get(key) || [];
+            const attributes = elements[0].dataset.partialNavigationOob;
+            if (attributes) {
+                if (counterparts[0]) {
+                    for (const el of elements) {
+                        syncAttributes(
+                            el,
+                            counterparts[0],
+                            attributes.split(/\s*,\s*/),
+                        );
+                    }
+                }
+                continue;
+            }
+            elements.forEach((el, index) => {
+                const counterpart = counterparts[index];
+                if (counterpart) {
+                    swapFragment(el, counterpart.outerHTML, "morph", interactions);
+                } else {
+                    el.hidden = true;
+                }
+            });
+        }
     }
 
     /** @param {Element} el */

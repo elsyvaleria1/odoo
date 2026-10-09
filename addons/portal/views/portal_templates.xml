@@ -110,6 +110,25 @@
         </xpath>
     </template>
 
+    <template
+        id="partial_navigation_carrier"
+        name="Partial navigation: the language links of a page served without header"
+        inherit_id="web.frontend_layout">
+        <xpath expr="//main" position="after">
+            <div
+                t-if="partial_navigation and len(frontend_languages) &gt; 1"
+                hidden=""
+                class="d-none">
+                <a
+                    t-foreach="frontend_languages.values()"
+                    t-as="lg"
+                    t-att-href="url_localized(lang_code=lg.code, prefetch_langs=True, force_default_lang=True)"
+                    t-att-data-fragment="'portal.language_link.%s' % lg.url_code"
+                    data-partial-navigation-oob="href" />
+            </div>
+        </xpath>
+    </template>
+
     <template id="language_selector" name="Language Selector">
         <t t-set="language_selector_visible" t-value="len(frontend_languages) &gt; 1" />
         <div
@@ -138,6 +157,8 @@
                         t-att-href="url_localized(lang_code=lg.code, prefetch_langs=True, force_default_lang=True)"
                         t-attf-class="dropdown-item js_change_lang #{active_lang == lg and 'active'}"
                         t-att-data-url_code="lg.url_code"
+                        t-att-data-fragment="'portal.language_link.%s' % lg.url_code"
+                        data-partial-navigation-oob="href"
                         t-att-title="lg.name.split('/').pop()"
                         role="menuitem">
                         <span
@@ -242,7 +263,9 @@
 
             <div
                 t-if="not no_breadcrumbs and not my_details and not breadcrumbs_searchbar"
-                class="o_portal container mt-3">
+                class="o_portal container mt-3"
+                data-fragment="portal.portal_breadcrumbs"
+                data-partial-navigation-oob="">
                 <div
                     class="d-flex justify-content-between align-items-center flex-wrap">
                     <t t-call="portal.portal_breadcrumbs" />
@@ -285,7 +308,7 @@
                         t-else=""
                         class="d-contents"
                         data-fragment="portal.portal_layout"
-                        data-partial-navigation="#o_portal_navbar_content, .o_portal_pager">
+                        t-att-data-partial-navigation="', '.join(filter(None, ['#o_portal_navbar_content, .o_portal_pager', partial_navigation_scopes]))">
                         <t t-out="0" />
                     </div>
                 </div>

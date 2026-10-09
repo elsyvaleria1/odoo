@@ -1,7 +1,7 @@
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { delay } from "@web/core/utils/concurrency";
-import { waitForPartialNavigation } from "@website_sale/js/tours/tour_utils";
+import { waitForPartialNavigation } from "@web_tour/js/utils/tour_utils";
 
 registry.category("web_tour.tours").add("shop_wishlist", {
     url: "/shop?search=Customizable Desk",

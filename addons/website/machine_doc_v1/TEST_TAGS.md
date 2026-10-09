@@ -1,7 +1,7 @@
 # Website Module Test Tags
 
 Quick reference for running targeted subsets of `website`'s tests. Two surfaces:
-**Python** (`tests/`, 56 `.py` files = 55 test modules incl. `common.py`, + `__init__.py`)
+**Python** (`tests/`, 57 `.py` files = 56 test modules incl. `common.py`, + `__init__.py`)
 run through `odoo-bin`; **JS/HOOT + tours** (`static/tests/`, 227 `.js`) run in
 the browser test runner.
 
@@ -62,6 +62,7 @@ used nowhere** — all browser interaction goes through `start_tour`.
 | `test_menu.py` | TransactionCase / HttpCase | Menu CRUD (tours `edit_menus`, `edit_megamenu`) |
 | `test_multi_website.py` | HttpCase | Multi-website switching / isolation |
 | `test_page.py` | TransactionCase / HttpCase | Page model CRUD / new-page creation |
+| `test_partial_navigation.py` | HttpCase | A page asked in place (`X-Odoo-Partial-Navigation`): no header or footer, the language-link carrier, `Vary`, its own page-cache entry |
 | `test_page_manager.py` | HttpCase | Page manager UI (tour `page_manager`) |
 | `test_performance.py` | HttpCaseWithUserPortal/Demo | Query-count / render performance benchmarks |
 | `test_qweb.py` | TransactionCase(WithUserDemo) | QWeb rendering, attribute processing, data-snippet |

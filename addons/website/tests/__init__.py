@@ -27,6 +27,7 @@ from . import test_res_lang
 from . import test_menu
 from . import test_multi_website
 from . import test_page
+from . import test_partial_navigation
 from . import test_page_manager
 from . import test_performance
 from . import test_qweb

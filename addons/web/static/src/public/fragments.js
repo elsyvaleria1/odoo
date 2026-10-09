@@ -36,16 +36,9 @@ export function applyFragments(response, { interactions, root = document }) {
             root.querySelectorAll(`[data-fragment="${CSS.escape(key)}"]`)
         );
         for (const target of targets) {
-            if (!target.isConnected) {
-                continue;
+            if (target.isConnected) {
+                swapFragment(target, html, swap, interactions);
             }
-            interactions.stopInteractions(target);
-            const swapped = swapInto(target, markup(html), swap);
-            interactions.startInteractions(swapped);
-            interactions.updateEnclosing(swapped);
-            swapped.dispatchEvent(
-                new CustomEvent("o-fragment-swapped", { bubbles: true }),
-            );
         }
     }
     for (const { name, detail } of response.events) {
@@ -55,6 +48,26 @@ export function applyFragments(response, { interactions, root = document }) {
         browser.location.assign(response.redirect);
     }
     return response.data;
+}
+
+/**
+ * Swaps `html` into `target`: stops the interactions inside it, swaps,
+ * starts those of the result, refreshes those around it and dispatches
+ * `o-fragment-swapped` on it.
+ *
+ * @param {HTMLElement} target
+ * @param {string} html trusted server markup
+ * @param {"morph" | "inner" | "outer"} swap
+ * @param {InteractionService} interactions
+ * @returns {HTMLElement} the element now standing where `target` stood
+ */
+export function swapFragment(target, html, swap, interactions) {
+    interactions.stopInteractions(target);
+    const swapped = swapInto(target, markup(html), swap);
+    interactions.startInteractions(swapped);
+    interactions.updateEnclosing(swapped);
+    swapped.dispatchEvent(new CustomEvent("o-fragment-swapped", { bubbles: true }));
+    return swapped;
 }
 
 /**

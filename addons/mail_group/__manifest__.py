@@ -31,6 +31,9 @@
         "demo/mail_group_demo.xml",
     ],
     "assets": {
+        "web.assets_tests": [
+            "mail_group/static/tests/tours/*.js",
+        ],
         "web.assets_frontend": [
             "mail_group/static/src/css/mail_group.scss",
             "mail_group/static/src/interactions/*",

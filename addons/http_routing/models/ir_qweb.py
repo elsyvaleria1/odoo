@@ -50,4 +50,8 @@ class IrQweb(models.AbstractModel):
     def _prepare_frontend_environment(self, values):
         values["url_for"] = self.env["ir.http"]._url_for
         values["url_localized"] = self.env["ir.http"]._url_localized
+        if self.env["ir.http"]._is_partial_navigation():
+            values["partial_navigation"] = True
+            values.setdefault("no_header", True)
+            values.setdefault("no_footer", True)
         return self
