@@ -103,12 +103,6 @@ class LunchController(http.Controller):
 
         return False
 
-    @http.route("/lunch/payment_message", type="jsonrpc", auth="user")
-    def payment_message(self):
-        return {
-            "message": request.env["ir.qweb"]._render("lunch.lunch_payment_dialog", {})
-        }
-
     @http.route("/lunch/user_location_set", type="jsonrpc", auth="user")
     def set_user_location(self, location_id=None, user_id=None, context=None):
         if context:

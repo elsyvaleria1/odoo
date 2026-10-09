@@ -15,7 +15,6 @@
         "security/lunch_security.xml",
         "security/ir.access.csv",
         "reports/lunch_cashmove_report_views.xml",
-        "views/lunch_templates.xml",
         "views/lunch_alert_views.xml",
         "views/lunch_cashmove_views.xml",
         "views/lunch_location_views.xml",
