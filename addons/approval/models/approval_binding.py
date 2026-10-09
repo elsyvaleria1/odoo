@@ -481,7 +481,20 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-    _SYSTEM_MODELS = ("ir.", "res.users", "res.groups", "res.company")
+    _SYSTEM_MODELS = (
+        "ir.",
+        "res.users",
+        "res.groups",
+        "res.company",
+        "res.config",
+        "mail.mail",
+        "base.",
+        "bus.",
+    )
+    # what the gate stops or whom it stops; any other field leaves both as they are
+    _SYSTEM_GATED_FIELDS = frozenset(
+        {"model_id", "method", "verb", "action_id", "mode", "subject_domain"}
+    )
 
     def _check_model_bindable(self, model) -> None:
         self.check_singleton()
@@ -496,22 +509,36 @@ class ApprovalBinding(models.Model):
                     model=model._name,
                 ),
             )
-        # Not env.su: constraints run elevated here, and sudo() keeps the uid.
+
+    def _check_gate_left_to_system(self) -> None:
+        """A non-system user may not gate a system model, nor set what a gate that
+        applies to everyone stops: either can stop the superuser and the server.
+        Checked on the changes themselves, not as a constraint, so an approval
+        manager still edits the rest of a shipped `enforce` binding."""
         if self.env.context.get("install_module") or self.env.user._is_system():
             return
-        if model._name.startswith(self._SYSTEM_MODELS) or self.sudo_policy == "enforce":
+        for binding in self:
+            system_model = binding.model_id.model.startswith(self._SYSTEM_MODELS)
+            if not (system_model or binding.sudo_policy == "enforce"):
+                continue
             trace.REFUSAL.event(
                 "binding_needs_system",
-                binding=self.id,
-                model=model._name,
-                policy=self.sudo_policy,
+                binding=binding.id,
+                model=binding.model_id.model,
+                policy=binding.sudo_policy,
             )
             raise ValidationError(
                 self.env._(
-                    "Only a system administrator can gate %(model)s or make a gate "
-                    "apply to everyone: either can stop the superuser and the "
-                    "server itself.",
-                    model=model._name,
+                    "Only a system administrator can gate %(model)s or set what a "
+                    "gate that applies to everyone stops: either can stop the "
+                    "superuser and the server itself.",
+                    model=binding.model_id.model,
+                )
+                if system_model
+                else self.env._(
+                    "Only a system administrator can set what %(name)s stops: it "
+                    "applies to everyone, the superuser and the server included.",
+                    name=binding.name,
                 ),
             )
 
@@ -844,6 +871,14 @@ class ApprovalBinding(models.Model):
                     "Ask for approval on the document first.",
                     record=record.display_name,
                     method=self._get_operation_label(),
+                )
+                if "approval_request_id" in record._fields
+                else self.env._(
+                    "%(record)s needs an approval before %(method)s can run.\n\n"
+                    "Ask an approver of %(category)s to approve it from this button.",
+                    record=record.display_name,
+                    method=self._get_operation_label(),
+                    category=self.category_id.display_name,
                 ),
             )
         trace.BINDING.note(
@@ -1145,6 +1180,7 @@ class ApprovalBinding(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         bindings = super().create(vals_list)
+        bindings._check_gate_left_to_system()
         bindings._apply_to_registry()
         return bindings
 
@@ -1153,6 +1189,11 @@ class ApprovalBinding(models.Model):
         if {"model_id", "method", "verb", "action_id"} & vals.keys():
             self._check_target_unchanged_once_requested(vals)
         result = super().write(vals)
+        if (
+            self._SYSTEM_GATED_FIELDS & vals.keys()
+            or vals.get("sudo_policy") == "enforce"
+        ):
+            self._check_gate_left_to_system()
         self._apply_to_registry()
         return result
 

@@ -382,6 +382,23 @@ class ApprovalRequestAccess(models.Model):
             "approval.request", _RECORD_ADMISSION
         )
 
+    def _without_engine_defaults(self):
+        """`self` without context defaults for the engine's own fields.
+
+        `create` checks the values it is given; defaults are filled in after, so a
+        `default_res_id` would set a source link nobody checked. Leaked defaults
+        are common (the attachment action carries `default_res_model`), so they are
+        dropped rather than refused."""
+        owned = self._WORKFLOW_FIELDS | self._SOURCE_LINK_FIELDS
+        context = {
+            key: value
+            for key, value in self.env.context.items()
+            if not (key.startswith("default_") and key[8:] in owned)
+        }
+        if len(context) == len(self.env.context):
+            return self
+        return self.with_context(context)
+
     def _check_engine_owned_fields(self, vals: dict, create: bool = False) -> None:
         if self.env.su:
             return

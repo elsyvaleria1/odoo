@@ -81,6 +81,20 @@ class TestConsentApproval(common.TransactionCase):
         self.env["approval.request"].cron_consent_approval()
         self.assertEqual(request.state, "pending")
 
+    def test_consent_keeps_the_window_the_request_was_submitted_under(self):
+        widened = self._create_and_confirm()
+        closed = self._create_and_confirm()
+        self.category.consent_approval_hours = 72
+        widened.date_confirmed = fields.Datetime.now() - timedelta(hours=30)
+        self.env["approval.request"].cron_consent_approval()
+        self.assertEqual(widened.state, "approved")
+        self.assertEqual(closed.state, "pending")
+
+        self.category.consent_approval_hours = 0
+        closed.date_confirmed = fields.Datetime.now() - timedelta(hours=30)
+        self.env["approval.request"].cron_consent_approval()
+        self.assertEqual(closed.state, "approved")
+
     def test_consent_ignores_non_pending_requests(self):
         request = self._create_and_confirm()
         request.date_confirmed = fields.Datetime.now() - timedelta(hours=30)

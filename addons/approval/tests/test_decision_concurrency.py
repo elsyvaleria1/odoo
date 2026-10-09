@@ -4,6 +4,7 @@ import psycopg
 
 from odoo import Command
 from odoo.tests import TransactionCase, tagged
+from odoo.tools import SQL
 
 
 @tagged("post_install", "-at_install")
@@ -65,13 +66,35 @@ class TestConcurrentDecisions(TransactionCase):
         finally:
             with self.leave_registry_test_mode(), self.registry.cursor() as cr:
                 if ids:
+                    request_id = ids["request"]
+                    for table, model_column in (
+                        ("mail_message", "model"),
+                        ("mail_followers", "res_model"),
+                        ("mail_activity", "res_model"),
+                    ):
+                        cr.execute(
+                            SQL(
+                                "DELETE FROM %s WHERE %s = 'approval.request' "
+                                "AND res_id = %s",
+                                SQL.identifier(table),
+                                SQL.identifier(model_column),
+                                request_id,
+                            )
+                        )
+                    # decision logs are append-only through the ORM
                     cr.execute(
                         "DELETE FROM approval_decision_log WHERE request_id = %s",
-                        [ids["request"]],
+                        [request_id],
                     )
                     cr.execute(
-                        "DELETE FROM approval_request WHERE id = %s", [ids["request"]]
+                        "DELETE FROM approval_request WHERE id = %s", [request_id]
                     )
                     env = self.env(cr=cr)
                     env["approval.category"].browse(ids["category"]).unlink()
-                    env["res.users"].browse(ids["users"]).action_archive()
+                    users = env["res.users"].browse(ids["users"])
+                    partners = users.partner_id
+                    env["res.users.grant"].sudo().search(
+                        [("user_id", "in", users.ids)]
+                    ).unlink()
+                    users.unlink()
+                    partners.unlink()

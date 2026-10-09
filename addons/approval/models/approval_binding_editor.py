@@ -1,7 +1,6 @@
 from typing import Any, Self
 
 from odoo import api, models
-from odoo.exceptions import UserError
 
 from . import approval_trace as trace
 
@@ -75,15 +74,6 @@ class ApprovalBinding(models.Model):
         )
         if not binding:
             return self._create_binding_for_button(model, method, action_id)
-        if binding.mode == "act_decides":
-            trace.REFUSAL.event("button_moves_its_document", binding=binding.id)
-            raise UserError(
-                self.env._(
-                    "%(name)s is how its document decides its own approval: it takes "
-                    "no approval steps of its own.",
-                    name=binding.name,
-                )
-            )
         if binding.active and binding.mode != "advise" and binding.category_id:
             return binding
         trace.EDITOR.note(

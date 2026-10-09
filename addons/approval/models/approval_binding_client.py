@@ -29,6 +29,7 @@ class ApprovalBinding(models.Model):
                 spec.get("res_id"),
                 spec.get("method"),
                 spec.get("action_id"),
+                configured=spec.get("configured", False),
             )
             for spec in specs
         ]
@@ -164,10 +165,17 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _get_button_approval(
-        self, model: str, res_id=False, method=False, action_id=False
+        self,
+        model: str,
+        res_id=False,
+        method=False,
+        action_id=False,
+        configured: bool = False,
     ) -> dict[str, Any]:
+        """`configured` answers what is configured, kill switch or not: Studio's
+        editor shows and edits the steps while bindings are switched off."""
         ungated = {"gated": False, "approved": True, "request": False, "steps": []}
-        if not self._enabled():
+        if not (configured or self._enabled()):
             return ungated
         bindings = self._get_button_bindings(model, method, action_id).filtered(
             lambda binding: binding.mode not in ("advise", "act_decides")

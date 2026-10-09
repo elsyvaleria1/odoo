@@ -127,7 +127,7 @@
    |       (captures refusal_reason_id + note -> persisted on approver
    |        row AND request-level refusal_reason_id/refusal_note)
    +-- _apply_decision(decision, approver) — the single funnel:
-       +-- _lock_for_approval_action() -> SELECT FOR UPDATE
+       +-- _lock_for_approval_action() -> UPDATE of the request row
        +-- invalidate_recordset(["state"]) (guard vs stale ORM cache)
        +-- _get_current_pending_approver() (delegation-aware) unless a
        |       resolved approver was passed (re-filtered to still-pending)
@@ -573,7 +573,7 @@ Rules evaluate conditions and take actions:
 Smart Escalation (cron_smart_escalation, every 4 hours, max 500
 requests per priority bucket per tick):
     (A delegate's To-Do follows the row when the delegation is written and
-    at the daily cron_hand_delegated_activities_over, which also closes a
+    at the hourly cron_hand_delegated_activities_over, which also closes a
     duplicate; the escalation tick no longer does it.)
     For each priority level in _get_escalation_rules():
         Find pending requests past reminder threshold (oldest first),
@@ -620,21 +620,21 @@ by `_get_escalation_rules()`:
 
 4 scheduled actions (`data/ir_cron_data.xml`). The three on requests are batched via
 `CRON_BATCH_LIMIT = 500`. The cap is per TICK for auto-expire and
-consent — both build one OR-of-per-category-windows domain through
-`_eligible_by_category_domain()` and issue a single capped, globally
-oldest-first search. (It used to be per CATEGORY: the search sat inside
-a `for category` loop with the limit on the inner query, so a
-deployment's tick size scaled with how many categories it had
-configured.) Smart escalation caps per PRIORITY BUCKET, so its
+consent — both select, in one SQL query through `_get_past_window()`,
+the pending requests past the window each was submitted under (its
+`category_snapshot`, else its category's), oldest first, and cap that.
+(It used to be per CATEGORY: the search sat inside a `for category`
+loop with the limit on the inner query, so a deployment's tick size
+scaled with how many categories it had configured.) Smart escalation caps per PRIORITY BUCKET, so its
 worst case is 4 x `CRON_BATCH_LIMIT` — deliberate, since each priority
 carries its own thresholds:
 
 | XML ID | Method | Schedule | Active | Purpose |
 |--------|--------|----------|--------|---------|
 | `ir_cron_smart_escalation` | `cron_smart_escalation()` | Every 4 hours | Yes | Priority-based reminders and manager escalation |
-| `ir_cron_auto_expire` | `cron_auto_expire()` | Daily | Yes | **Cancel** (terminal `cancelled`, via `_force_terminal`) requests past `category.auto_expire_hours` |
-| `ir_cron_consent_approval` | `cron_consent_approval()` | Every 4 hours | Yes | Auto-approve if no refusal within `consent_approval_hours`; skips sequential categories, requests with `pending_change_field`, and `_can_consent_approve()` vetoes |
-| `ir_cron_hand_delegated_activities_over` | `approval.approver.cron_hand_delegated_activities_over()` | Daily | Yes | `is_delegated` is computed from today, so who may decide a delegated row changes when its window opens or closes. The approval activity is moved to that person (`_hand_activities_to_effective_approver`, also run by every write of the delegation fields). Unbatched: it reads only pending rows that carry a delegate |
+| `ir_cron_auto_expire` | `cron_auto_expire()` | Daily | Yes | **Cancel** (terminal `cancelled`, via `_force_terminal`) requests past the `auto_expire_hours` they were submitted under (`category_snapshot`, else the category's), selected in SQL by `_get_past_window` |
+| `ir_cron_consent_approval` | `cron_consent_approval()` | Every 4 hours | Yes | Auto-approve if no refusal within the `consent_approval_hours` the request was submitted under (as for auto-expire); skips sequential categories, requests with `pending_change_field`, and `_can_consent_approve()` vetoes |
+| `ir_cron_hand_delegated_activities_over` | `approval.approver.cron_hand_delegated_activities_over()` | Hourly | Yes | `is_delegated` is computed from today in the approver's timezone, so who may decide a delegated row changes when its window opens or closes. The approval activity, `pending_user_ids` and the Decider group move to that person (`_hand_activities_to_effective_approver`, also run by every write of the delegation fields). Unbatched: it reads only undecided rows of pending requests that carry a delegate |
 
 Removed: the weekly `ir_cron_performance_report` (and its
 `approver_compute_ms` column) — unlinked/dropped by the 19.0.1.0.7
@@ -644,17 +644,22 @@ migration; and the legacy `cron_escalate_overdue_approvals`.
 
 ## Concurrency Control
 
-`_lock_for_approval_action()` acquires `SELECT FOR UPDATE` on `approval_request`
-rows before any approval action (approve, refuse, withdraw). This prevents:
-- Duplicate activity creation in sequential workflows
-- Two approvers promoting the same "next" approver simultaneously
-- State corruption from concurrent approve + refuse
+`_lock_for_approval_action()` updates the `approval_request` rows (`write_date`,
+`write_uid`, taken in id order) before any decision funnel (approve, refuse,
+withdraw, reset, consent) reads them. Under REPEATABLE READ a `SELECT FOR UPDATE`
+conflicts only with a transaction that changed the row, and a decision often
+changes only the approver rows: two approvers of a 2-of-2 request each locked
+it without conflict, each saw the other's row pending, and both rows ended
+approved with the stored state `pending`. With the update, the later locker
+fails to serialize; the HTTP layer, `ir.cron` and `ir.job` retry it on fresh
+rows. Invalidating the cache does not read fresher values inside a REPEATABLE
+READ transaction; only the retry does.
 
-The lock is blocking (no NOWAIT) -- concurrent requests wait rather than fail.
-After acquiring the lock, `_apply_decision()` and `action_withdraw()`
-invalidate the ORM cache for `state` (`invalidate_recordset`) so the
-"still pending?" filter reads fresh DB values, and `_create_activity()`
-is idempotent per (user, request) as a second guard.
+The bulk funnel re-raises the retryable errors (`PG_RETRY_EXCEPTIONS`) out of its
+per-request savepoints so the whole call is retried. The escalation, consent and
+auto-expire crons do the opposite: a request decided meanwhile fails in its own
+savepoint and is left to the next run, so one decision does not roll a run back.
+`_create_activity()` is idempotent per (user, request) as a second guard.
 
 ---
 

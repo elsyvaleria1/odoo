@@ -1,9 +1,8 @@
 import logging
 from typing import Any
 
-import psycopg
-
 from odoo import fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.text import nl2br
@@ -62,7 +61,7 @@ class ApprovalRequestLifecycle(models.Model):
                         before(request)
                     getattr(request.with_context(skip_wizard=True), action_method)()
                 success_count += 1
-            except psycopg.errors.OperationalError:
+            except PG_RETRY_EXCEPTIONS:
                 raise
             except (UserError, ValidationError) as e:
                 trace.LIFECYCLE.event(
@@ -1366,15 +1365,23 @@ class ApprovalRequestLifecycle(models.Model):
         # approver rows, so a transaction that read this request before another
         # decided on it would lock it afterwards without conflict and decide on rows
         # it no longer sees. Touching the row makes it fail to serialize instead,
-        # and the server retries it on fresh rows.
+        # and the server retries it on fresh rows. Rows are locked in id order so
+        # two multi-request lockers cannot deadlock.
         self.env.cr.execute(
             SQL(
-                "UPDATE approval_request SET write_date = %s WHERE id = ANY(%s)",
+                """
+                UPDATE approval_request SET write_date = %s, write_uid = %s
+                WHERE id IN (
+                    SELECT id FROM approval_request WHERE id = ANY(%s)
+                    ORDER BY id FOR NO KEY UPDATE
+                )
+                """,
                 self.env.cr.now(),
+                self.env.uid,
                 list(self.ids),
             )
         )
-        self.invalidate_recordset(["write_date"])
+        self.invalidate_recordset(["write_date", "write_uid"])
 
     def _lock_and_reload(self, with_approvers: bool = False) -> None:
         with trace.LIFECYCLE.span(

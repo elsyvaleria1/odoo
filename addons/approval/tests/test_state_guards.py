@@ -348,6 +348,23 @@ class TestEngineOwnedFields(ApprovalCommon):
             for field, value in self.FORGED.items()
         }
 
+    def test_context_defaults_do_not_set_them_on_create(self):
+        Request = self.env["approval.request"].with_user(self.owner_user)
+
+        def create(**context):
+            return Request.with_context(**context).create(
+                {
+                    "category_id": self.category.id,
+                    "request_owner_id": self.owner_user.id,
+                }
+            )
+
+        plain = create()
+        for field, value in self._forged(self.owner_user).items():
+            with self.subTest(field=field):
+                request = create(**{f"default_{field}": value})
+                self.assertEqual(request[field], plain[field])
+
     def test_neither_owner_nor_approver_writes_them_on_a_pending_request(self):
         request = self._prepare_request(self.category)
         for user in (self.owner_user, self.approver_1, self.manager_user):

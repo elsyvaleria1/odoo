@@ -238,7 +238,7 @@ export class ButtonProperties extends Component {
         const [approvals] = await this.orm.call(
             "approval.binding",
             "get_button_approvals",
-            [[{ model, res_id: false, method, action_id: action }]],
+            [[{ model, res_id: false, method, action_id: action, configured: true }]],
         );
         const stepIds = approvals.gated
             ? approvals.steps.map((step) => step.id).filter(Boolean)

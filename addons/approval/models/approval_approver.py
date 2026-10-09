@@ -425,7 +425,11 @@ class ApprovalApprover(models.Model):
         """Move what a delegation gives when its window opens or closes today: the
         activity, the reach into the document and the Decider group."""
         rows = self.search(
-            [("state", "in", ("pending", "waiting")), ("delegate_id", "!=", False)]
+            [
+                ("state", "in", ("pending", "waiting")),
+                ("delegate_id", "!=", False),
+                ("request_id.state", "=", "pending"),
+            ]
         )
         rows._hand_activities_to_effective_approver()
         requests = rows.request_id

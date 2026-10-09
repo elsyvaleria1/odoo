@@ -1,6 +1,6 @@
 {
     "name": "Approval Framework",
-    "version": "19.0.2.14.1",
+    "version": "19.0.2.14.2",
     "oldest_upgradable_version": "19.0.2.14.1",
     "category": "Human Resources/Approvals",
     "sequence": 190,

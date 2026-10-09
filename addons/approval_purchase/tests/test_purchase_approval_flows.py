@@ -424,6 +424,34 @@ class TestPurchaseApprovalFlows(TransactionCase):
         with self.assertRaises(AccessError):
             approval.with_user(self.purchase_user).action_approve()
 
+    def test_an_order_approved_at_zero_does_not_confirm_at_another_amount(self):
+        po = self.env["purchase.order"].create(
+            {
+                "partner_id": self.vendor.id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 50.0,
+                            "price_unit": 75.0,
+                        }
+                    )
+                ],
+            },
+        )
+        po.action_confirm()
+        approval = po.approval_request_id
+        approval.with_user(self.approver_user).action_approve()
+        # what a request raised while the order totalled zero carries
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE approval_request SET amount = 0 WHERE id = %s", [approval.id]
+        )
+        approval.invalidate_recordset(["amount"])
+        po.action_unlock()
+        with self.assertRaisesRegex(UserError, "amount has changed"):
+            po.action_confirm()
+
     def test_mixin_flow_no_approval_for_low_amount(self):
         po = self.env["purchase.order"].create(
             {

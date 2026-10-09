@@ -174,6 +174,44 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         with self.assertRaises(ValidationError):
             binding.write({"sudo_policy": "enforce"})
 
+    def _approval_manager(self):
+        manager = self._partner_user(
+            "integrity_manager",
+            group_ids=[
+                (4, self.env.ref("base.group_user").id),
+                (4, self.env.ref("base.group_partner_manager").id),
+                (4, self.env.ref("approval.group_approval_manager").id),
+            ],
+        )
+        self.assertFalse(manager._is_system())
+        return manager
+
+    def test_an_approval_manager_edits_an_enforced_gate_but_not_what_it_stops(self):
+        binding = self._bind(mode="request", sudo_policy="enforce")
+        as_manager = binding.with_user(self._approval_manager())
+        as_manager.write({"run_on_approval": False, "name": "Renamed"})
+        as_manager.write({"active": False})
+        as_manager.write({"active": True})
+        for vals in ({"mode": "block"}, {"method": "action_unarchive"}):
+            with self.subTest(vals=vals), self.assertRaises(ValidationError):
+                as_manager.write(vals)
+
+    def test_an_approval_manager_cannot_gate_mail_sending_or_the_settings(self):
+        Binding = self.Binding.with_user(self._approval_manager())
+        for model, method in (
+            ("mail.mail", "send"),
+            ("res.config.settings", "execute"),
+        ):
+            with self.subTest(model=model), self.assertRaises(ValidationError):
+                Binding.create(
+                    {
+                        "model_id": self.env["ir.model"]._get(model).id,
+                        "method": method,
+                        "mode": "block",
+                        "category_id": self.category.id,
+                    }
+                )
+
     def test_a_system_administrator_may_bind_a_system_model_and_enforce(self):
         admin = self.env["res.users"].create(
             {
@@ -402,3 +440,25 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         )
         binding.active = False
         self._assert_adopted_by_the_editor(binding)
+
+    # -- the editor and the reset --------------------------------------------
+
+    def test_the_editor_sees_the_steps_while_bindings_are_switched_off(self):
+        self.Binding.create_step_for_button("res.partner", "action_archive", False)
+        self.env["ir.config_parameter"].set_param("approval.binding_enabled", "False")
+        spec = {"model": "res.partner", "res_id": False, "method": "action_archive"}
+        at_runtime, in_editor = self.Binding.get_button_approvals(
+            [spec, spec | {"configured": True}]
+        )
+        self.assertFalse(at_runtime["gated"])
+        self.assertTrue(in_editor["gated"])
+        self.assertEqual(len(in_editor["steps"]), 1)
+
+    def test_a_reset_spares_an_approval_the_binding_did_not_raise(self):
+        binding = self._bind(mode="block")
+        partner = self._partner()
+        unrelated = self._approved_request_for(partner)
+        own = self._approved_request_for(partner, binding)
+        binding._reset_coverage(partner)
+        self.assertEqual(unrelated.state, "approved")
+        self.assertNotEqual(own.state, "approved")

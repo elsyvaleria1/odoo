@@ -406,8 +406,9 @@ class ApprovalRequest(models.Model):
         readonly=True,
         ondelete="set null",
         help="The gated operation this request was raised for, when an "
-        "approval.binding in Request mode raised it. Approving the request "
-        "runs that operation once, as the requester.",
+        "approval.binding raised it. Approving it covers the record for that "
+        "binding; a Request-mode binding that runs on approval then runs the "
+        "operation once, as the requester.",
     )
     subject_key = fields.Char(
         index="btree_not_null",
@@ -488,7 +489,9 @@ class ApprovalRequest(models.Model):
             if "approval_minimum" not in vals:
                 vals["approval_minimum"] = minimum_by_category[vals["category_id"]]
 
-        created_requests = super().create(vals_list)
+        created_requests = super(
+            ApprovalRequest, self._without_engine_defaults()
+        ).create(vals_list)
 
         trace.CRUD.items(
             "created",

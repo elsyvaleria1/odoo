@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
+import psycopg
 from freezegun import freeze_time
 
 from odoo import fields
@@ -424,6 +425,57 @@ class TestDeadlineEscalation(common.TransactionCase):
             activity.summary or "",
             "The pending approver's activity should be updated with a reminder summary",
         )
+
+    def test_a_request_decided_during_the_run_is_left_to_the_next_run(self):
+        decided = self._make_urgent_pending_request("2026-01-05 08:00:00")
+        reminded = self._make_urgent_pending_request("2026-01-05 08:00:00")
+        Request = type(self.env["approval.request"])
+        remind = Request._escalate_or_remind_one
+
+        def decided_meanwhile(model, request, threshold):
+            if request == decided:
+                raise psycopg.errors.SerializationFailure("decided meanwhile")
+            return remind(model, request, threshold)
+
+        with (
+            freeze_time("2026-01-05 13:00:00"),
+            patch.object(
+                Request,
+                "_escalate_or_remind_one",
+                autospec=True,
+                side_effect=decided_meanwhile,
+            ),
+        ):
+            self.env["approval.request"].cron_smart_escalation()
+            self.env.flush_all()
+
+        (decided | reminded).invalidate_recordset()
+        self.assertFalse(decided.last_reminder_date)
+        self.assertEqual(decided.reminder_count, 0)
+        self.assertEqual(reminded.reminder_count, 1)
+
+    def test_a_request_whose_reminder_fails_is_stamped_not_counted(self):
+        request = self._make_urgent_pending_request("2026-01-05 08:00:00")
+        with (
+            freeze_time("2026-01-05 13:00:00"),
+            patch.object(
+                type(request),
+                "_escalate_or_remind_one",
+                autospec=True,
+                side_effect=ValueError("broken template"),
+            ),
+            self.assertLogs(approval_request_escalation._logger.name, "ERROR"),
+        ):
+            sent = self.env["approval.request"].cron_smart_escalation()
+            self.env.flush_all()
+
+        request.invalidate_recordset()
+        self.assertEqual(sent, 0)
+        self.assertEqual(
+            request.last_reminder_date,
+            fields.Datetime.to_datetime("2026-01-05 13:00:00"),
+        )
+        self.assertEqual(request.reminder_count, 0)
 
     def test_cron_smart_escalation_before_threshold_is_a_noop(self):
         confirmed_at = "2026-01-05 08:00:00"

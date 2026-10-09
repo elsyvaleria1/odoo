@@ -147,9 +147,10 @@ class ApprovalApprover(models.Model):
     _delegate_idx = models.Index("(delegate_id) WHERE delegate_id IS NOT NULL")
 
     def write(self, vals):
-        before = self.delegate_id if "delegate_id" in vals else self.env["res.users"]
+        delegation = not self._DELEGATION_ONLY_FIELDS.isdisjoint(vals)
+        before = self.delegate_id if delegation else self.env["res.users"]
         result = super().write(vals)
-        if "delegate_id" in vals:
+        if delegation:
             _sync_decider_grants(self.env, before | self.delegate_id)
         return result
 
@@ -164,9 +165,10 @@ class ApprovalCategoryStepMember(models.Model):
         return members
 
     def write(self, vals):
-        before = self.user_id if "user_id" in vals else self.env["res.users"]
+        reach = not {"user_id", "date_end"}.isdisjoint(vals)
+        before = self.user_id if reach else self.env["res.users"]
         result = super().write(vals)
-        if "user_id" in vals:
+        if reach:
             _sync_decider_grants(self.env, before | self.user_id)
         return result
 

@@ -53,3 +53,12 @@ class TestGateRunStamp(ApprovalCommon):
         self._approve(document)
         self.assertEqual(document.ship_count, 1)
         self.assertTrue(document.approval_request_id.date_operation_run)
+
+    def test_a_category_set_after_the_flag_was_read_still_gates(self):
+        document = self._document()
+        document.test_category_id = False
+        self.assertFalse(document.approval_required)
+        document.test_category_id = self.category
+        document.action_ship()
+        self.assertEqual(document.ship_count, 0)
+        self.assertTrue(document.approval_request_id)

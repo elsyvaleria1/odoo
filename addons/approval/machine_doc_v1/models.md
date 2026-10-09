@@ -352,7 +352,7 @@ requester re-submits (`action_resubmit`).
 | `_notify_if_terminal_transition()` | lifecycle.py | Fire source-doc hook once on entering a terminal state |
 | `_get_notifiable_source_document()` | lifecycle.py | The adopting document to tell, or None: registry, `mixin.approval` and two-way-link checks; returned under `sudo()` with `approval_acting_user_id` |
 | `_notify_source_document_progress()` | lifecycle.py | Calls the document's `_on_approval_progress()` after an approval that met a step while the request stays pending |
-| `_lock_for_approval_action()` | lifecycle.py | SELECT FOR UPDATE to prevent race conditions |
+| `_lock_for_approval_action()` | lifecycle.py | UPDATE of the request rows, so a concurrent decision fails to serialize and is retried |
 | `_check_auto_action_rules()` | routing.py | Auto-approve/refuse rules; auto-refuse stamps `refusal_reason_auto_rule` metadata |
 | `_get_desired_approvers()` | routing.py | Every request takes its approvers from its applicable steps alone, each row staged with its member's `required` and `sequence`, and hands back the steps' `when_rule_ids` as the matched rules `applied_rule_ids` records. The rules steps read are evaluated once per request per sync (`_get_step_rule_matches`, remembered in the `approval_rule_matches` context) |
 | `_reroute_steps_live(desired)` | routing.py | A pending request its steps route, after a routing field changed: rows join the steps that now apply (an approval given for a step that stopped applying carries to the step that replaced it), a user only an arriving step names gets a row, and nothing happens when no step arrived or departed, so a member added to a step already applying is not asked mid-flight |

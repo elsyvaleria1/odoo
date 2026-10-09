@@ -5,8 +5,8 @@ from typing import Any
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.fields import Domain
-from odoo.tools import TransactionMemo
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
+from odoo.tools import SQL, TransactionMemo
 
 from . import approval_trace as trace
 from .approval_utils import boolean_search_domain
@@ -20,6 +20,8 @@ DEFAULT_ESCALATION_MANAGER = TransactionMemo(
 )
 
 _logger = logging.getLogger(__name__)
+
+_DECIDED_MEANWHILE = "%s: request %s was decided meanwhile; left to the next run."
 
 CRON_BATCH_LIMIT = 500
 
@@ -301,42 +303,9 @@ class ApprovalRequestEscalation(models.Model):
                 requests=requests_to_remind.ids,
                 limit=CRON_BATCH_LIMIT,
             )
-            acknowledged_by_count: dict[int, list[int]] = {}
-            # A request nobody could be reminded about is stamped all the same:
-            # left unstamped, the oldest of them would fill every later batch.
-            passed_over: list[int] = []
-
             for request in requests_to_remind:
-                did_work = 0
-                try:
-                    with self.env.cr.savepoint():
-                        did_work = self._escalate_or_remind_one(
-                            request, escalation_threshold
-                        )
-                except Exception:
-                    _logger.exception(
-                        "Smart escalation failed for request %s; skipping.",
-                        request.id,
-                    )
-
-                if not did_work:
-                    passed_over.append(request.id)
-                    continue
-
-                acknowledged_by_count.setdefault(
-                    request.reminder_count,
-                    [],
-                ).append(request.id)
-                reminders_sent += 1
-
-            if passed_over:
-                self.browse(passed_over).write({"last_reminder_date": now})
-            for prior_count, ids in acknowledged_by_count.items():
-                self.browse(ids).write(
-                    {
-                        "last_reminder_date": now,
-                        "reminder_count": prior_count + 1,
-                    }
+                reminders_sent += self._remind_one_isolated(
+                    request, escalation_threshold, now
                 )
 
         trace.annotate(work=reminders_sent)
@@ -345,6 +314,41 @@ class ApprovalRequestEscalation(models.Model):
             _logger.info("Smart escalation: Sent %s reminders", reminders_sent)
 
         return reminders_sent
+
+    def _remind_one_isolated(self, request, escalation_threshold, now) -> bool:
+        """Remind or escalate `request` in a savepoint of its own, then stamp it.
+
+        A request nobody could be reminded about, or whose reminder failed, is
+        stamped all the same: left unstamped, the oldest of them would fill every
+        later batch. One decided meanwhile is left to the next run.
+        """
+        try:
+            with self.env.cr.savepoint():
+                reminded = bool(
+                    self._escalate_or_remind_one(request, escalation_threshold)
+                )
+                request.write(
+                    {"last_reminder_date": now}
+                    | (
+                        {"reminder_count": request.reminder_count + 1}
+                        if reminded
+                        else {}
+                    )
+                )
+                return reminded
+        except PG_RETRY_EXCEPTIONS:
+            _logger.info(_DECIDED_MEANWHILE, "Smart escalation", request.id)
+            return False
+        except Exception:
+            _logger.exception(
+                "Smart escalation failed for request %s; skipping.", request.id
+            )
+        try:
+            with self.env.cr.savepoint():
+                request.write({"last_reminder_date": now})
+        except PG_RETRY_EXCEPTIONS:
+            _logger.info(_DECIDED_MEANWHILE, "Smart escalation", request.id)
+        return False
 
     def _escalate_or_remind_one(self, request, escalation_threshold) -> int:
         has_stalled_approver = any(
@@ -400,6 +404,8 @@ class ApprovalRequestEscalation(models.Model):
                         subtype_xmlid="mail.mt_note",
                     )
                 expired_count += 1
+            except PG_RETRY_EXCEPTIONS:
+                _logger.info(_DECIDED_MEANWHILE, "Auto-expire", request.id)
             except Exception:
                 _logger.exception(
                     "Auto-expire failed for request %s; skipping.",
@@ -417,50 +423,38 @@ class ApprovalRequestEscalation(models.Model):
 
     @api.model
     def _get_past_window(self, hours_field: str, extra_domain=None):
-        """Pending requests past the `hours_field` window they were submitted under."""
-        now = fields.Datetime.now()
-        candidates = self._eligible_by_category_domain(hours_field, extra_domain)
-        return candidates.filtered(
-            lambda request: (
-                (hours := request._get_snapshot_config(hours_field))
-                and request.date_confirmed <= now - timedelta(hours=hours)
-            )
-        )[:CRON_BATCH_LIMIT]
-
-    @api.model
-    def _eligible_by_category_domain(self, hours_field: str, extra_domain=None):
-        categories = self.env["approval.category"].search([(hours_field, ">", 0)])
-        if not categories:
-            return self.browse()
-
-        now = fields.Datetime.now()
-        hours_by_category = {c.id: c[hours_field] for c in categories}
-        windows = Domain.FALSE
-        for category in categories:
-            windows |= Domain(
-                [
-                    ("category_id", "=", category.id),
-                    (
-                        "date_confirmed",
-                        "<=",
-                        now - timedelta(hours=hours_by_category[category.id]),
-                    ),
-                ],
-            )
-        domain = Domain([("state", "=", "pending")]) & windows
-        if extra_domain:
-            domain &= Domain(extra_domain)
-        # Unlimited: the window a request was submitted under can be wider than its
-        # category's today, or closed, so the first rows found need not be due, and
-        # a limit here would keep the same undue ones at the head of every run.
-        requests = self.search(domain, order="date_confirmed asc")
-        trace.CRON.event(
-            "eligible_by_window",
-            window=hours_field,
-            categories=len(categories),
-            requests=requests.ids,
+        """Pending requests past the `hours_field` window they were submitted under:
+        the snapshot's, or the category's for a request confirmed before the
+        snapshot carried it (as `_get_snapshot_config` reads it)."""
+        self.flush_model(
+            ["state", "date_confirmed", "category_snapshot", "category_id"]
         )
-        return requests
+        self.env["approval.category"].flush_model([hours_field])
+        hours = SQL(
+            "COALESCE((ar.category_snapshot ->> %s)::integer, ac.%s)",
+            hours_field,
+            SQL.identifier(hours_field),
+        )
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT ar.id
+                FROM approval_request ar
+                JOIN approval_category ac ON ac.id = ar.category_id
+                WHERE ar.state = 'pending'
+                  AND %(hours)s > 0
+                  AND ar.date_confirmed <= %(now)s - %(hours)s * INTERVAL '1 hour'
+                ORDER BY ar.date_confirmed
+                """,
+                hours=hours,
+                now=fields.Datetime.now(),
+            )
+        )
+        due = self.browse([row[0] for row in self.env.cr.fetchall()])
+        if extra_domain:
+            due = due.filtered_domain(extra_domain)
+        trace.CRON.event("past_window", window=hours_field, requests=due.ids)
+        return due[:CRON_BATCH_LIMIT]
 
     @api.model
     def cron_consent_approval(self) -> None:
@@ -474,6 +468,8 @@ class ApprovalRequestEscalation(models.Model):
                 with self.env.cr.savepoint():
                     if self._consent_approve_one(request):
                         consent_count += 1
+            except PG_RETRY_EXCEPTIONS:
+                _logger.info(_DECIDED_MEANWHILE, "Consent approval", request.id)
             except Exception:
                 _logger.exception(
                     "Consent approval failed for request %s; skipping.",

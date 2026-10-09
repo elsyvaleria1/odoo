@@ -102,6 +102,16 @@ class TestDecisionAuthority(ApprovalRequestTestBase):
         self.assertIn(("refuse", self.test_user.id, False), doors)
         self.assertEqual(self.approval_request.state, "refused")
 
+    def test_a_refusal_with_its_reason_reaches_the_request(self):
+        reason = self.env.ref("approval.refusal_reason_policy_violation")
+        self.env["telegram.approval.notifier"]._refuse(
+            self.approver.with_user(self.test_user), reason_id=reason.id, note="tg note"
+        )
+
+        self.assertEqual(self.approval_request.state, "refused")
+        self.assertEqual(self.approval_request.refusal_reason_id, reason)
+        self.assertEqual(self.approval_request.refusal_note, "tg note")
+
     def test_an_approver_asks_for_a_change_as_themself(self):
         self._press(f"ar:cf:{self.approver.id}:reason")
         doors, _mock_send = self._type("add the invoice number")
