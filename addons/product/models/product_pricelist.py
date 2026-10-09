@@ -290,7 +290,7 @@ class ProductPricelist(models.Model):
     def _get_chained_base_prices(
         self, products, rule_by_pid, quantity, uom, date, currency, **kwargs
     ):
-        products_by_base_pricelist = defaultdict(lambda: self.env[products._name])
+        products_by_base_pricelist = defaultdict(products.browse)
         for product in products:
             rule = rule_by_pid[product.id]
             if (

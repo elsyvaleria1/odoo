@@ -611,3 +611,59 @@ class TestPricelist(ProductVariantsCommon):
             item_form.product_id = self.env["product.product"]
         self.assertEqual(pricelist.item_ids.applied_on, "1_product")
         self.assertFalse(pricelist.item_ids.product_id)
+
+    def test_a_base_pricelist_prices_the_no_variant_extras_too(self):
+        attribute = self.env["product.attribute"].create(
+            {
+                "name": "Chained sauce",
+                "create_variant": "no_variant",
+                "value_ids": [Command.create({"name": "Extra"})],
+            }
+        )
+        template = self.env["product.template"].create(
+            {
+                "name": "Chained extra",
+                "list_price": 100,
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": attribute.id,
+                            "value_ids": [Command.set(attribute.value_ids.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        extra = template.attribute_line_ids.product_template_value_ids
+        extra.price_extra = 5
+        product = template.product_variant_id
+        product = product.with_context(**product._prepare_product_price_context(extra))
+        base = self.env["product.pricelist"].create({"name": "Empty base"})
+        via_base, via_list = self.env["product.pricelist"].create(
+            [
+                {
+                    "name": name,
+                    "item_ids": [
+                        Command.create(
+                            {
+                                "applied_on": "3_global",
+                                "compute_price": "formula",
+                                "price_discount": 10,
+                                **item,
+                            }
+                        )
+                    ],
+                }
+                for name, item in (
+                    ("Via base", {"base": "pricelist", "base_pricelist_id": base.id}),
+                    ("Via list", {"base": "list_price"}),
+                )
+            ]
+        )
+
+        self.assertAlmostEqual(via_list._get_product_price(product, 1), 94.5)
+        self.assertAlmostEqual(
+            via_base._get_product_price(product, 1),
+            94.5,
+            msg="90 means the base pricelist priced the product without its extras",
+        )
