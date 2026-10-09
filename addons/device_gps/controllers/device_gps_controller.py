@@ -62,7 +62,7 @@ class DeviceGpsController(http.Controller):
             "quality_checks_passed": 0,
             "quality_checks_failed": 0,
         }
-        processor = request.env["device.gps.data.processor"].sudo()
+        processor = request.env["device.gps.data.processor"]
 
         validation_start = time.perf_counter()
         is_valid, message, device, vals = processor._process_gps_data(
@@ -96,7 +96,7 @@ class DeviceGpsController(http.Controller):
 
         try:
             with request.env.cr.savepoint():
-                request.env["device.data.log.gps"].sudo().create_gps_log(vals)
+                request.env["device.data.log.gps"].create_gps_log(vals)
 
             processing_stats["db_operation_time"] = time.perf_counter() - db_start_time
             admission.settle()

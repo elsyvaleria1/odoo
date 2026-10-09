@@ -27,6 +27,7 @@ TRACKER_NACK = b"\x00"
 
 class DeviceDevice(models.Model):
     _inherit = "device.device"
+    _receiver_privileges = ("device_gps.privilege_receive_fix",)
 
     def _gps_timezone(self):
         """Working timezone of the observation target, with a neutral fallback."""

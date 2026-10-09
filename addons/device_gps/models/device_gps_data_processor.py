@@ -167,7 +167,7 @@ class GpsDataProcessor(models.AbstractModel):
     ) -> dict[str, Any]:
         device_protocol = device.config_id.gps_protocol or "teltonika"
         fields_mapped = field_mapping or self.get_field_mapping(device_protocol)
-        logs_model = self.env["device.data.log.gps"].sudo()
+        logs_model = self.env["device.data.log.gps"]
         available_fields = set(logs_model._fields.keys())
         composite_fields = {"latitude_longitude"}
         log_vals = {"device_id": device.id}
@@ -210,7 +210,7 @@ class GpsDataProcessor(models.AbstractModel):
         logs = self.env["device.data.log.gps"]
         if not device:
             return logs
-        return logs.sudo().search(
+        return logs.search(
             [("device_id", "=", device.id)],
             order="timestamp desc, id desc",
             limit=limit,
@@ -508,18 +508,14 @@ class GpsDataProcessor(models.AbstractModel):
             None,
         )
         if previous is None:
-            previous = (
-                self.env["device.data.log.gps"]
-                .sudo()
-                .search(
-                    [
-                        ("device_id", "=", device.id),
-                        ("odometer_valid", "=", True),
-                        ("real_odometer", ">", 0),
-                    ],
-                    order="timestamp desc, id desc",
-                    limit=1,
-                )
+            previous = self.env["device.data.log.gps"].search(
+                [
+                    ("device_id", "=", device.id),
+                    ("odometer_valid", "=", True),
+                    ("real_odometer", ">", 0),
+                ],
+                order="timestamp desc, id desc",
+                limit=1,
             )
         if not previous:
             return

@@ -6,3 +6,4 @@ device_data_log_gps_report_company_rule_group_device_gps_manager,GPS Report: com
 privilege_read_resource_odometer_logs,GPS observations: a resource reads its own odometer,model_device_data_log_gps,privilege_read_resource_odometer,permission,r,company,,
 resource_gps_binding_user,GPS attachment history,model_resource_gps_binding,group_device_gps_user,permission,r,company,,
 resource_gps_binding_odometer,Resource GPS attachment history,model_resource_gps_binding,privilege_read_resource_odometer,permission,r,company,,
+privilege_receive_fix_logs,Receive a fix: the fix filed and the recent ones it is checked against,model_device_data_log_gps,privilege_receive_fix,permission,cr,company,,
