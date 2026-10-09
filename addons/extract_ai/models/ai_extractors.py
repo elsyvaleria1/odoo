@@ -4,6 +4,8 @@ import base64
 import logging
 from typing import Any
 
+import psycopg
+
 from .prompt import ExtractionPrompt, prepare_prompt
 from odoo.addons.extract.tools import (
     GENERATIVE,
@@ -64,6 +66,8 @@ class _AiExtractor(BaseExtractor):
                 )
                 .data
             )
+        except psycopg.Error:
+            raise
         except Exception:
             _logger.exception(
                 "%s could not read %r; the cascade continues without it",

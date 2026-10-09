@@ -78,8 +78,20 @@ def _engine_attempt(env):
     if env is None:
         yield
         return
-    with env.cr.savepoint():
+    savepoint = env.cr.savepoint()
+    try:
         yield
+    except BaseException:
+        savepoint.close(rollback=True)
+        raise
+    if env.cr.in_failed_transaction():
+        # an engine that caught its own database error and carried on: its
+        # savepoint is rolled back and the error goes on all the same
+        savepoint.close(rollback=True)
+        raise psycopg.errors.InFailedSqlTransaction(
+            "an extraction strategy caught a database error and carried on"
+        )
+    savepoint.close(rollback=False)
 
 
 def _is_two_phase(extractor) -> bool:

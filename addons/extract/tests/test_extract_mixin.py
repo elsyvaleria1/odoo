@@ -118,6 +118,20 @@ class TestExtractMixin(TransactionCase):
         self.env.cr.execute("SELECT 1")
         self.assertEqual(self.env.cr.fetchone(), (1,))
 
+    def test_an_engine_that_swallowed_a_database_error_still_reaches_the_job(self):
+        class _Silent(_Stub):
+            def extract(self, source, doc_type, wanted, env=None):
+                with contextlib.suppress(psycopg.Error):
+                    env.cr.execute("SELECT * FROM extract_no_such_table")
+
+        with _only(_Silent({})), mute_logger("odoo.db.cursor"):
+            attachment = self._attachment()
+            with self.assertRaises(psycopg.errors.InFailedSqlTransaction):
+                attachment.action_extract()
+
+        self.env.cr.execute("SELECT 1")
+        self.assertEqual(self.env.cr.fetchone(), (1,))
+
     def test_an_engine_that_broke_the_transaction_is_rolled_back_and_the_next_runs(
         self,
     ):
