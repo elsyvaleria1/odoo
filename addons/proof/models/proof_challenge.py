@@ -30,6 +30,13 @@ class ProofChallenge(models.Model):
         required=True,
         ondelete="cascade",
     )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Contact",
+        readonly=True,
+        ondelete="cascade",
+        help="The contact asked to prove it is them, when it is not the user.",
+    )
     purpose = fields.Char(
         readonly=True,
         required=True,
@@ -85,6 +92,7 @@ class ProofChallenge(models.Model):
         facts: dict[str, Any],
         methods: models.BaseModel,
         summary: list[list[str]] | None = None,
+        partner: models.BaseModel | None = None,
     ) -> dict[str, Any]:
         """Ask the current user to prove they vouch for ``facts`` about ``record``,
         and return what the client needs to ask them: the only place the
@@ -93,14 +101,26 @@ class ProofChallenge(models.Model):
         ``facts`` must be JSON-serialisable and carry every figure the user agrees
         to; redeeming recomputes the digest from the facts as they are then, so a
         figure that moved in between refuses the proof. ``summary`` is what the
-        user is shown, as label/value pairs.
+        user is shown, as label/value pairs. With ``partner``, the contact is the
+        one who proves, through the current user, who enters their answer.
         """
         record.check_singleton()
         user = self.env.user
-        methods = methods.filtered(lambda method: method._is_enrolled(user))
+        if partner:
+            partner.check_singleton()
+            methods = methods.filtered(
+                lambda method: method._is_enrolled_contact(partner)
+            )
+        else:
+            methods = methods.filtered(lambda method: method._is_enrolled(user))
         if not methods:
             raise UserError(
                 self.env._(
+                    "%(contact)s has no way set up to prove it is them.",
+                    contact=partner.display_name,
+                )
+                if partner
+                else self.env._(
                     "You have no way set up to prove this is you. Ask an "
                     "administrator which proof methods apply, and set one up."
                 )
@@ -110,6 +130,7 @@ class ProofChallenge(models.Model):
             {
                 "token_hash": self._get_token_hash(token),
                 "user_id": user.id,
+                "partner_id": partner.id if partner else False,
                 "purpose": purpose,
                 "res_model": record._name,
                 "res_id": record.id,
@@ -164,6 +185,7 @@ class ProofChallenge(models.Model):
             "token": token,
             "expires": fields.Datetime.to_string(self.date_expire),
             "summary": self.summary or [],
+            "signer": self.partner_id.display_name or None,
             "methods": [
                 {
                     "code": method.code,
@@ -214,6 +236,7 @@ class ProofChallenge(models.Model):
         httprequest = request.httprequest if request else None
         return {
             "user_id": self.user_id.id,
+            "partner_id": self.partner_id.id,
             "purpose": self.purpose,
             "res_model": self.res_model,
             "res_id": self.res_id,

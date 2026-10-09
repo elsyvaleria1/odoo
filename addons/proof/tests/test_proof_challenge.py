@@ -119,6 +119,18 @@ class TestProofChallenge(ProofCase):
                 self.env["proof.method"],
             )
 
+    def test_a_contact_with_no_method_for_contacts_is_not_asked(self):
+        contact = self.env["res.partner"].create({"name": "Outside custodian"})
+
+        with self.assertRaisesRegex(UserError, "Outside custodian has no way set up"):
+            self.env["proof.challenge"].with_user(self.user)._issue(
+                self.subject,
+                "test.handover",
+                self.facts,
+                self.password_method,
+                partner=contact,
+            )
+
     def test_users_cannot_reach_challenges_directly(self):
         challenge = self._get_challenge(self._issue())
         challenges = self.env["proof.challenge"].with_user(self.user)

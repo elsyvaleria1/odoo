@@ -35,11 +35,25 @@ async function openProof(submit) {
     return { result };
 }
 
+const assertion = {
+    id: "credential-id",
+    rawId: "credential-id",
+    type: "public-key",
+    clientExtensionResults: {},
+    authenticatorAttachment: "platform",
+    response: {
+        authenticatorData: "YXV0aA",
+        clientDataJSON: "Y2xpZW50",
+        signature: "c2ln",
+        userHandle: "dXNlcg",
+    },
+};
+
 test("the passkey is offered first and its assertion is the proof", async () => {
     patchWithCleanup(passkeyLib, {
         startAuthentication: async (/** @type {any} */ options) => {
             expect.step(options);
-            return { id: "credential-id", response: { signature: "c2ln" } };
+            return assertion;
         },
     });
     const { result } = await openProof(async (proof) => {
@@ -55,9 +69,7 @@ test("the passkey is offered first and its assertion is the proof", async () => 
         {
             token: "challenge-token",
             method: "passkey",
-            payload: {
-                credential: { id: "credential-id", response: { signature: "c2ln" } },
-            },
+            payload: { credential: assertion },
         },
     ]);
     expect(await result).toBe("approved");

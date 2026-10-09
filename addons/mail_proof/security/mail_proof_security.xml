@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_send_proof_code" model="res.groups">
+        <field
+            name="name">Privilege: a proof request mails its one-time code to the signer</field>
+        <field
+            name="comment">Asking a user or a contact for an email-code proof sends them the code at once. The user who asks holds no mail administration right for that: only the outgoing mail carrying the code, which is deleted once sent.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -44,6 +44,7 @@
                 <field name="sequence" />
                 <field name="date" />
                 <field name="user_id" />
+                <field name="partner_id" optional="show" />
                 <field name="purpose" />
                 <field name="res_model" optional="show" />
                 <field name="res_id" optional="show" />
@@ -63,6 +64,7 @@
                     <group>
                         <group string="Act">
                             <field name="user_id" />
+                            <field name="partner_id" invisible="not partner_id" />
                             <field name="purpose" />
                             <field name="res_model" />
                             <field name="res_id" />

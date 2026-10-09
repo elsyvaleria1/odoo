@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_send_proof_code_mail,mail.mail: a proof request mails its one-time code,mail.model_mail_mail,privilege_send_proof_code,permission,cru,,,

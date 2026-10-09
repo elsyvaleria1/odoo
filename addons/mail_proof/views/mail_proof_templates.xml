@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="email_code_body">
+        <div style="font-family: sans-serif; font-size: 14px;">
+            <p>
+                Hello <t t-out="signer.name" />,
+            </p>
+            <p>
+                <t t-out="asker.name" /> is asking you to confirm the following. If you agree, give them this code:
+            </p>
+            <p style="font-size: 28px; font-weight: bold; letter-spacing: 6px;">
+                <t t-out="code" />
+            </p>
+            <table t-if="summary" style="border-collapse: collapse;">
+                <tr t-foreach="summary" t-as="line">
+                    <th
+                        style="text-align: left; padding: 2px 12px 2px 0;"
+                        t-out="line[0]" />
+                    <td style="padding: 2px 0;" t-out="line[1]" />
+                </tr>
+            </table>
+            <p style="color: #777;">
+                If you did not expect this, do not give the code to anyone.
+            </p>
+        </div>
+    </template>
+
+</odoo>

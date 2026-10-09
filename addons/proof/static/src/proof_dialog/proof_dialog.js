@@ -33,7 +33,9 @@ export class ProofDialog extends Component {
     }
 
     get title() {
-        return _t("Confirm it is you");
+        return this.props.params.signer
+            ? _t("Confirm it is %s", this.props.params.signer)
+            : _t("Confirm it is you");
     }
 
     get method() {

@@ -8,6 +8,7 @@ STRENGTHS = [
     ("cryptographic", "Signed by the user's own key"),
     ("device_attested", "Reported by a trusted device"),
     ("shared_secret", "Secret shared with the server"),
+    ("possession", "Code delivered to the signer's own channel"),
 ]
 
 
@@ -31,8 +32,8 @@ class ProofMethod(models.Model):
         readonly=True,
         required=True,
         help="What an accepted proof of this method rests on: a signature by a key "
-        "only the user holds, a device the server trusts, or a secret the server "
-        "can check.",
+        "only the user holds, a device the server trusts, a secret the server "
+        "can check, or a code only the signer's own email or phone received.",
     )
     sequence = fields.Integer(
         default=10,
@@ -49,6 +50,12 @@ class ProofMethod(models.Model):
     def _is_enrolled(self, user: models.BaseModel) -> bool:
         self.check_singleton()
         return self.code == "password"
+
+    def _is_enrolled_contact(self, partner: models.BaseModel) -> bool:
+        """Whether a contact with no user account can prove with this method,
+        through the user who asks them."""
+        self.check_singleton()
+        return False
 
     def _get_proof_options(self, challenge: models.BaseModel) -> dict[str, Any]:
         self.check_singleton()

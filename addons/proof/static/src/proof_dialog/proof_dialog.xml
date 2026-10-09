@@ -3,6 +3,9 @@
 
     <t t-name="proof.ProofDialog">
         <Dialog size="'md'" title="this.title">
+            <p t-if="this.props.params.signer" class="o_proof_signer">
+                <t t-out="this.props.params.signer"/> proves it is them, and you enter their answer.
+            </p>
             <table t-if="this.props.params.summary.length" class="table table-sm o_proof_summary">
                 <tbody>
                     <tr t-foreach="this.props.params.summary" t-as="line" t-key="line_index">

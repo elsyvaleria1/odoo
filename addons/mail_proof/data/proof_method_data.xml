@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="proof_method_email_code" model="proof.method">
+        <field name="name">Email Code</field>
+        <field name="code">email_code</field>
+        <field name="strength">possession</field>
+        <field name="sequence">50</field>
+    </record>
+
+</odoo>

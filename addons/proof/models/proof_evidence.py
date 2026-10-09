@@ -11,9 +11,8 @@ from odoo.tools import frozendict
 
 from .proof_method import STRENGTHS
 
-HASH_VERSION = 1
-
-HASHED_FIELDS = (
+HASH_VERSION = 2
+HASHED_FIELDS_V1 = (
     "sequence",
     "prev_hash",
     "hash_version",
@@ -32,6 +31,11 @@ HASHED_FIELDS = (
     "ip",
     "user_agent",
 )
+# a row is rehashed with the fields of the version it was recorded under
+HASHED_FIELDS = {
+    1: HASHED_FIELDS_V1,
+    2: (*HASHED_FIELDS_V1, "partner_id"),
+}
 
 
 class ProofEvidence(models.Model):
@@ -65,6 +69,17 @@ class ProofEvidence(models.Model):
         readonly=True,
         required=True,
         ondelete="restrict",
+        help="The user who proved it is them, or who asked the contact for the "
+        "proof and entered it.",
+    )
+    partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Proven By Contact",
+        index="btree_not_null",
+        readonly=True,
+        ondelete="restrict",
+        help="The contact with no user account who proved it is them, through "
+        "the user who asked them.",
     )
     purpose = fields.Char(
         readonly=True,
@@ -188,7 +203,8 @@ class ProofEvidence(models.Model):
 
     def _get_chained_hash(self, vals: dict[str, Any]) -> str:
         payload = {
-            name: self._normalize_hashed(name, vals.get(name)) for name in HASHED_FIELDS
+            name: self._normalize_hashed(name, vals.get(name))
+            for name in HASHED_FIELDS[vals["hash_version"]]
         }
         text = json.dumps(
             payload, sort_keys=True, ensure_ascii=True, separators=(",", ":")
@@ -210,7 +226,7 @@ class ProofEvidence(models.Model):
 
     def _get_hash_vals(self) -> dict[str, Any]:
         self.check_singleton()
-        return {name: self[name] for name in HASHED_FIELDS}
+        return {name: self[name] for name in HASHED_FIELDS[self.hash_version]}
 
     def _get_chain_error(self) -> str | None:
         """Why the whole chain no longer vouches for its proofs, or None: the first

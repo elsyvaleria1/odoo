@@ -45,6 +45,41 @@ class TestProofEvidence(ProofCase):
             error, f"Proof {evidence.sequence} was changed after it was recorded."
         )
 
+    def test_a_row_recorded_under_version_1_still_verifies(self):
+        evidence = self._prove().sudo()
+        recorded_hash = evidence.hash
+        vals = {**evidence._get_hash_vals(), "hash_version": 1}
+        legacy_hash = self.env["proof.evidence"]._get_chained_hash(vals)
+        self.env.cr.execute(
+            SQL(
+                "UPDATE proof_evidence SET hash_version = 1, hash = %s WHERE id = %s",
+                legacy_hash,
+                evidence.id,
+            )
+        )
+        self.env["proof.evidence"].invalidate_model()
+        self._prove()
+
+        self.assertNotEqual(legacy_hash, recorded_hash)
+        self.assertIsNone(self.env["proof.evidence"]._get_chain_error())
+
+    def test_the_contact_who_proved_is_part_of_the_hash(self):
+        evidence = self._prove()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE proof_evidence SET partner_id = %s WHERE id = %s",
+                self.subject.id,
+                evidence.id,
+            )
+        )
+        self.env["proof.evidence"].invalidate_model()
+
+        error = self.env["proof.evidence"]._get_chain_error()
+
+        self.assertEqual(
+            error, f"Proof {evidence.sequence} was changed after it was recorded."
+        )
+
     def test_chain_check_reports_a_missing_row(self):
         evidence = self._prove()
         position = evidence.sequence

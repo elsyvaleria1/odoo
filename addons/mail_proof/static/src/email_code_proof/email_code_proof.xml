@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail_proof.EmailCodeProof">
+        <form class="o_proof_email_code" t-on-submit="this.onSubmit">
+            <label class="form-label" for="o_proof_email_code_input">
+                Code sent to <strong t-out="this.props.options.sent_to"/>
+            </label>
+            <div class="input-group">
+                <input id="o_proof_email_code_input" type="text" class="form-control"
+                    inputmode="numeric" autocomplete="one-time-code" t-att-maxlength="this.props.options.digits"
+                    t-ref="this.inputRef" t-att-value="this.state.code" t-on-input="this.onInput"
+                    t-att-disabled="this.props.busy"/>
+                <button type="submit" class="btn btn-primary" t-att-disabled="this.props.busy or !this.isComplete">Confirm</button>
+            </div>
+        </form>
+    </t>
+
+</templates>
