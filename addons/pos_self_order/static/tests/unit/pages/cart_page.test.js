@@ -33,6 +33,47 @@ test("changeQuantity", async () => {
     expect(order.lines).toHaveLength(1);
 });
 
+test("changeQuantity moves a combo's items by their share of it", async () => {
+    const store = await setupSelfPosEnv();
+    const models = store.models;
+    const item = (id, qty) => ({
+        combo_item_id: models["product.combo.item"].get(id),
+        configuration: {
+            attribute_custom_values: {},
+            attribute_value_ids: [],
+            price_extra: 0,
+        },
+        qty,
+    });
+    store.addToCart(models["product.template"].get(7), 1, "", {}, {}, [
+        item(1, 2),
+        item(3, 1),
+    ]);
+    const parent = store.currentOrder.lines.find((ol) => ol.combo_line_ids.length);
+    const items = () =>
+        parent.combo_line_ids
+            .map((line) => [line.qty, line.combo_qty_per_parent])
+            .sort(([a], [b]) => b - a);
+    expect(items()).toEqual([
+        [2, 2],
+        [1, 1],
+    ]);
+    const comp = await mountWithCleanup(CartPage, {});
+
+    comp.changeQuantity(parent, true);
+    expect(parent.qty).toBe(2);
+    expect(items()).toEqual([
+        [4, 2],
+        [2, 1],
+    ]);
+
+    comp.changeQuantity(parent, false);
+    expect(items()).toEqual([
+        [2, 2],
+        [1, 1],
+    ]);
+});
+
 test("pay", async () => {
     const store = await setupSelfPosEnv();
     const order = await getFilledSelfOrder(store);

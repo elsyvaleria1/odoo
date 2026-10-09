@@ -243,16 +243,14 @@ export class CartPage extends Component {
     }
 
     changeQuantity(line, increase) {
-        if (!increase && !this.canChangeQuantity(line)) {
+        if (
+            !increase &&
+            ![line, ...line.combo_line_ids].every((l) => this.canChangeQuantity(l))
+        ) {
             return;
         }
 
-        // Update combo first
-        for (const cline of line.combo_line_ids) {
-            this.changeQuantity(cline, increase);
-        }
-
-        increase ? line.qty++ : line.qty--;
+        line.setQuantity(line.qty + (increase ? 1 : -1), true);
 
         if (line.qty <= 0) {
             this.removeLine(line);
