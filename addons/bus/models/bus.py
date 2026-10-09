@@ -179,22 +179,29 @@ def get_notify_payloads(channels):
 # makes its row visible is skipped for good. A flush (every savepoint) inserts
 # the pending bus rows and draws their ids mid-transaction. Deferred to the
 # commit, this redraws, in insertion order, the ids of a transaction older than
-# a second -- well inside the hold-back window.
+# a second -- well inside the hold-back window. It redates them too: create_date
+# is the transaction's start, and a client still at last=0 polls a lookback
+# window on it, which would miss a transaction longer than the window.
 # (A plain string: its plpgsql has no query parameters.)
-DRAW_IDS_AT_COMMIT = """
-    CREATE OR REPLACE FUNCTION bus_bus_draw_id_at_commit() RETURNS trigger
+RESTAMP_AT_COMMIT = """
+    DROP TRIGGER IF EXISTS bus_bus_draw_id_at_commit ON bus_bus;
+    DROP FUNCTION IF EXISTS bus_bus_draw_id_at_commit();
+    CREATE OR REPLACE FUNCTION bus_bus_restamp_at_commit() RETURNS trigger
     LANGUAGE plpgsql AS $$
     BEGIN
         IF clock_timestamp() - transaction_timestamp() > interval '1 second' THEN
-            UPDATE bus_bus SET id = nextval('bus_bus_id_seq') WHERE id = NEW.id;
+            UPDATE bus_bus
+               SET id = nextval('bus_bus_id_seq'),
+                   create_date = clock_timestamp() AT TIME ZONE 'UTC'
+             WHERE id = NEW.id;
         END IF;
         RETURN NULL;
     END
     $$;
-    DROP TRIGGER IF EXISTS bus_bus_draw_id_at_commit ON bus_bus;
-    CREATE CONSTRAINT TRIGGER bus_bus_draw_id_at_commit
+    DROP TRIGGER IF EXISTS bus_bus_restamp_at_commit ON bus_bus;
+    CREATE CONSTRAINT TRIGGER bus_bus_restamp_at_commit
         AFTER INSERT ON bus_bus DEFERRABLE INITIALLY DEFERRED
-        FOR EACH ROW EXECUTE FUNCTION bus_bus_draw_id_at_commit();
+        FOR EACH ROW EXECUTE FUNCTION bus_bus_restamp_at_commit();
 """
 
 
@@ -211,7 +218,7 @@ class BusBus(models.Model):
 
     def init(self) -> None:
         super().init()
-        self.env.cr.execute(DRAW_IDS_AT_COMMIT)
+        self.env.cr.execute(RESTAMP_AT_COMMIT)
 
     @api.autovacuum
     def _gc_messages(self) -> tuple:

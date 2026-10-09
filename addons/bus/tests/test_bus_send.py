@@ -7,6 +7,7 @@ from odoo.libs.json import loads as json_loads
 from odoo.tests import BaseCase, TransactionCase, tagged
 from odoo.tests.common import get_db_name
 
+from ..models import bus as bus_module
 from ..models.bus import NOTIFICATION_HOLD_BACK_SECONDS
 from ..websocket import NotificationDispatchState
 
@@ -247,6 +248,19 @@ class TestIdsDrawnAtCommit(BaseCase):
         self.assertEqual(delivered, ["first", "second", "long"])
         ids = self._ids()
         self.assertGreater(ids["long"], ids["second"], "its id was drawn at commit")
+
+    def test_a_client_from_zero_hears_a_transaction_longer_than_its_lookback(self):
+        with self.db.cursor() as long_cr:
+            self._env(long_cr)["bus.bus"]._sendone(self.CHANNEL, "t", "long")
+            with long_cr.savepoint():
+                pass
+            time.sleep(2.2)
+        with (
+            patch.object(bus_module, "POLL_LOOKBACK_SECONDS", 1),
+            self.db.cursor() as cr,
+        ):
+            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=0)
+        self.assertEqual([n["message"]["payload"] for n in notifications], ["long"])
 
     def test_a_prompt_transaction_keeps_the_ids_it_drew(self):
         with self.db.cursor() as cr:
