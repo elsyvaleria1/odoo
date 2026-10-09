@@ -159,13 +159,21 @@ class TestRequest(common.TransactionCase):
         self.assertEqual(record.state, "approved")
 
         category_test.step_ids.minimum = 2
+        self.assertEqual(
+            record.state, "approved", "a request keeps the quorum it was routed under"
+        )
         record.action_withdraw(first_approver)
         record.action_withdraw(second_approver)
         self.assertEqual(record.state, "pending")
         record.action_approve(first_approver)
-        self.assertEqual(record.state, "pending")
-        record.action_approve(second_approver)
         self.assertEqual(record.state, "approved")
+
+        later = record.copy()
+        later.action_confirm()
+        later.action_approve(
+            later.approver_ids.filtered(lambda a: a.user_id == self.approver_user_1)
+        )
+        self.assertEqual(later.state, "pending", "a new request routes under 2")
 
     def test_copy_logs_source_and_resets_the_name(self):
         category = self.env["approval.category"].create(

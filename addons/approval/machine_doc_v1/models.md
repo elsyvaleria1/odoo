@@ -169,6 +169,7 @@ so category names are unique per company, archived rows included.
 | `create_request()` | Opens new request form with defaults |
 | `_get_view_request()` | Base helper for all dashboard view actions |
 | `_add_approver(user, required, sequence)` | Adds `user` as a member of the category's pool step, the first counting approvers added by hand, creating that step when the category has none |
+| `_can_be_met_for(document)` | Whether the request this category would raise for `document` could be approved: built in memory from `document._prepare_approval_request_values`, it runs the request's own `_get_applicable_steps` (conditions, when and unless rules) and `_get_unmeetable_steps` (pools without the future owner), so a category is judged by what routing and confirm would find. An authority walk nobody covers counts as unmeetable |
 
 ### Constraints
 
@@ -299,7 +300,7 @@ State is a **stored computed field** based on `approver_ids.state`
 - Any approver `refused` => `refused`
 - Any approver `cancelled` => `cancelled`
 - Any approver `new` => `new`
-- approved_count >= `approval_minimum` (NOT clamped to len(approvers)) AND all required approved => `approved`
+- Steps: every blocking step meets the quorum it was routed under (`_get_routed_step`); no steps: distinct approvers >= `approval_minimum` (NOT clamped to len(approvers)) AND all required approved => `approved`. One person counts once (`_get_decider_key`)
 - Otherwise => `pending`
 
 `refused` outranks `cancelled` so a real decision is never masked.
@@ -358,7 +359,7 @@ requester re-submits (`action_resubmit`).
 | `_reroute_steps_live(desired)` | routing.py | A pending request its steps route, after a routing field changed: rows join the steps that now apply (an approval given for a step that stopped applying carries to the step that replaced it), a user only an arriving step names gets a row, and nothing happens when no step arrived or departed, so a member added to a step already applying is not asked mid-flight |
 | `_get_escalation_rules()` | escalation.py | `ESCALATION_RULES` defaults + `approval.escalation.<priority>.<kind>` ir.config_parameter overrides |
 | `_get_escalation_manager()` | escalation.py | Hook: manager to escalate to (base returns empty; approval_hr overrides) |
-| `_prepare_category_snapshot()` | routing.py | Audit snapshot of the category's configuration, its applicable steps and the `effective_*` keys |
+| `_prepare_category_snapshot()` | routing.py | Snapshot of the category's configuration, its applicable steps and the `effective_*` keys. The steps (`_prepare_step_snapshot`) carry `id`, `minimum`, `exclusive`, `advisory`, `sequence` and `required`, which `_get_routed_step` judges the request by |
 | `_notify_source_document_state_change()` | lifecycle.py | Calls mixin hook on source doc (registry isinstance check) |
 | `_check_access_write()` | access.py | Owner OR assigned approver write access |
 | `_check_locked_fields()` | access.py | **Business rule, never bypassed**: value fields frozen outside draft; `pending_change_field` selectively reopens date/reason, and only for the requester (owner/manager/sudo) |
@@ -371,13 +372,16 @@ requester re-submits (`action_resubmit`).
 | `cron_consent_approval()` | escalation.py | Auto-approve after consent window; skips sequential categories, refused approvers, `pending_change_field`, `_can_consent_approve()` vetoes |
 | `_replay_bound_operation()` | Called from `_notify_if_terminal_transition` when a request becomes `approved`, AFTER `_notify_source_document_state_change`, so an adopter sees itself approved before the operation it gated runs. Hands off to `approval.binding._replay`; does nothing once `date_binding_replayed` is set, when the binding's `run_on_approval` is off, or while an invoking call is recording its own approval |
 | `_get_applicable_steps()` | The category's steps whose condition this request meets, in order. Routing stages one row per user over them |
-| `_is_quorum_met(state_counts, threshold)` | When any row carries steps: every applicable step meets its quorum. Otherwise (rows added by hand where no step applies) the request's `approval_minimum` |
-| `_get_step_counts()` / `_get_step_assignment()` | Approvals per step. An approved row counts toward every step its decision was given for (`decided_step_ids`). Only a row approved for several steps one of which is exclusive -- consent, an automatic rule -- is resolved here, toward the lowest step still short |
+| `_is_quorum_met(state_counts, threshold)` | When any row carries steps: every blocking step meets the quorum it was routed under. Otherwise (rows added by hand where no step applies) the request's `approval_minimum`, counted in distinct approvers |
+| `_get_routed_step(step)` / `_get_live_step(step)` | A step's `minimum`, `exclusive`, `advisory`, `sequence` and required users as the request was routed under them (`category_snapshot["steps"]`), or as the step is now for a draft or a snapshot without step ids |
+| `_get_quorum_short_of_people()` | The first quorum delegation leaves fewer distinct people than it asks; what `approval.approver._check_delegation_keeps_quorum` refuses |
+| `_settle_routing_change(states_before)` | routing.py: carries an archived or restored step, or a live re-route that concluded the request, to the request the way a decision would: activities, waiting rows, the document and the gated operation |
+| `_get_step_counts()` / `_get_step_assignment()` | Approvals per step, one per person (`_get_decider_key`). An approved row counts toward every step its decision was given for (`decided_step_ids`). Only a row approved for several steps one of which is exclusive -- consent, an automatic rule -- is resolved here, toward the lowest step still short |
 | `_get_steps_for_decision(approver)` | The steps an approval naming none is given for: every undecided step of the row, or, beside an exclusive step, the first still short of its quorum (exclusive first within a sequence). Decided when taken, so who decided which step stays fixed as later approvals come in |
 | `_check_steps_decidable(approvers, steps)` | Studio's exclusivity for decisions that name steps: a step already decided by the row, or a second step beside an exclusive decided one, raises |
 | `_get_rows_decidable_by(user)` | The user's rows an approval naming no step decides -- pending rows, and approved rows with a step still open to the user (their decided step was archived, or the button decided only some of their steps). `approval.binding._approve_on_invoke` decides these, so a click after an archive decides the rest, as Studio's click did |
 | `_get_unmet_steps()` / `_get_open_steps()` | The steps still short of their quorum, and the lowest-sequence ones among them, which are the ones being asked |
-| `_check_steps_can_be_met(steps)` | At confirmation, refuses a step whose pool is smaller than its quorum, rather than leaving a request that could never be approved |
+| `_check_steps_can_be_met(steps)` / `_get_unmeetable_steps(steps)` | At confirmation, refuses a step whose pool -- without the owner and requester routing gives no row, unless the document's own move decides -- is smaller than its quorum, rather than leaving a request that could never be approved or dropping the step |
 | `_notify_step_decision(approvers, acting_user, decision, steps)` | Posts an internal note to the notify list of every step the decision counts toward -- the named steps, or the decided ones, narrowed on approval to where the assignment put them |
 
 ### Constraints
@@ -453,6 +457,7 @@ resolved by `_get_escalation_rules()`:
 | `_check_business_rules_create/unlink()` | Business rules layer: DRAFT only since 19.0.1.0.13 (relaxed only by `env.su` + `approver_ids_computation` sync context) — rows on decided requests are state-transition vehicles and are re-cycled via reset-to-draft |
 | `_check_delegation_dates` (constraint) | Delegation requires both dates, end >= start |
 | `_check_delegate_identity` (constraint) | Delegate must not be the approver themselves, the request owner, or a co-approver on the same request |
+| `_check_delegation_keeps_quorum` (constraint) | A delegation may not leave a quorum fewer distinct people than it asks (`approval.request._get_quorum_short_of_people`): one person standing in for several gives one approval (`_get_decider_key`) |
 | `_filtered_notifiable()` | The rows whose approver should be asked now. Every activity goes through `_create_activity`, which applies this first, so it orders the asking for all six callers: a row on a `notify_sequentially` category is asked only once one of its steps is among the lowest unmet ones. Only a row whose user is listed for one of its steps is asked, and, when the category requests its steps in order, once a step they are listed for opens, not one they may decide through its group. A listed approver is asked only while one of their steps is still short of its quorum; after a decision or a withdrawal, `_retire_unasked_approval_activities` unlinks the approval activities of rows this stops asking |
 | `_approve_for_every_step()` | Approves rows nobody decided -- consent approval, an auto-approve rule -- for all their steps, so they count as those paths always counted |
 
@@ -1058,6 +1063,7 @@ since 19.0.2.8.0 every category routes by steps.
 | `user_ids` | Many2many(`res.users`) | No | No | compute + inverse: the current members as an editable list; the inverse syncs plain members and leaves delegation rows (`delegated_by_id`) alone |
 | `_get_member_user_ids(document, company)` / `_get_pool_user_ids(document, company)` | Listed members within their term plus the users the document names, who are asked; the pool adds the group's users, who may decide but are not asked. Given a company, both keep only users allowed in it (`_filter_company_user_ids`), since an approver row belongs to its request's company. Every caller passes the request's source document and company, or on the approval button the gated record and the company its request is (or would be) raised in. Past the company, the pool asks a record adopting `mixin.approval.source` to narrow it through `_filter_approval_step_user_ids` (`_filter_document_user_ids`), so no one holds a row the document's own policy would refuse. `_get_managed_approver_user_ids` alone reads `_get_candidate_user_ids(document)`, every user the step names before either narrowing, so a row whose user lost the company or the document's favour is still recognised as routing's own |
 | `_unlink_except_step_holding_decisions()` | A step some approver row decided under cannot be deleted; archive it |
+| `write()` | Archiving or restoring a step settles the pending requests some row routes through it (`_get_pending_routed_requests`, read from the relation so an archived step still finds them; `approval.request._settle_routing_change`). Its other parameters reach no routed request |
 | `_check_pool()` | Fires on `user_ids` too, so an approvers list given without a group is checked after its inverse has created the members |
 
 ### Constraints

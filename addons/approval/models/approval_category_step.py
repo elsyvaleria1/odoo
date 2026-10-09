@@ -1,6 +1,7 @@
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
+from odoo.tools import SQL
 
 from . import approval_trace as trace
 from .approval_utils import ApprovalStepUnstaffed
@@ -419,6 +420,37 @@ class ApprovalCategoryStep(models.Model):
             ).unlink()
         self._check_pool()
 
+    def write(self, vals):
+        if "active" not in vals:
+            return super().write(vals)
+        requests = self._get_pending_routed_requests()
+        before = {request.id: request.state for request in requests}
+        result = super().write(vals)
+        requests._settle_routing_change(before)
+        return result
+
+    def _get_pending_routed_requests(self):
+        """The pending requests some row routes through these steps, archived or not."""
+        if not self.ids:
+            return self.env["approval.request"]
+        self.env["approval.approver"].flush_model(["request_id", "step_ids"])
+        self.env["approval.request"].flush_model(["state"])
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT DISTINCT approver.request_id
+                  FROM approval_approver_step_rel rel
+                  JOIN approval_approver approver ON approver.id = rel.approver_id
+                  JOIN approval_request request ON request.id = approver.request_id
+                 WHERE rel.step_id = ANY(%s) AND request.state = 'pending'
+                """,
+                self.ids,
+            )
+        )
+        return self.env["approval.request"].browse(
+            [request_id for (request_id,) in self.env.cr.fetchall()]
+        )
+
     def _get_member_user_ids(
         self, document=None, company=None, request=None
     ) -> set[int]:
@@ -498,13 +530,6 @@ class ApprovalCategoryStep(models.Model):
             pool=sorted(pool),
         )
         return pool
-
-    def _can_be_met_for(self, document, company) -> bool:
-        self.check_singleton()
-        # a walk names its approver per request, from the requester
-        if self.advisory or self.walk != "none":
-            return True
-        return len(self._get_pool_user_ids(document, company)) >= self.minimum
 
     def _walk(self, document, company, request) -> set[int]:
         """The one approver the walk stops at: the first whose limit covers the amount.

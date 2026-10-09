@@ -334,13 +334,17 @@ class ApprovalBinding(models.Model):
             )
             or self.env.company
         )
+        routed = {
+            step.id: request._get_routed_step(step) if request else step
+            for step in steps
+        }
         drawn = [
             {
                 "id": step.id,
                 "name": step.name,
-                "sequence": step.sequence,
-                "minimum": step.minimum,
-                "exclusive": step.exclusive,
+                "sequence": routed[step.id].sequence,
+                "minimum": routed[step.id].minimum,
+                "exclusive": routed[step.id].exclusive,
                 "can_decide": is_open
                 and user.id in step._get_pool_user_ids(record, company)
                 and (not request or request._can_decide_step(step, user)),
@@ -354,7 +358,7 @@ class ApprovalBinding(models.Model):
                     )
                 ],
             }
-            for step in steps.sorted(lambda step: (step.sequence, step.id))
+            for step in steps.sorted(lambda step: (routed[step.id].sequence, step.id))
         ]
         trace.BUTTON.event(
             "steps_drawn",

@@ -657,7 +657,8 @@ class ApprovalRequestAccess(models.Model):
             )
         ).decided_step_ids
         can = step not in decided and not (
-            decided and (step.exclusive or any(decided.mapped("exclusive")))
+            decided
+            and any(self._get_routed_step(each).exclusive for each in step | decided)
         )
         trace.ACCESS.event(
             "can_decide_step",
@@ -707,12 +708,12 @@ class ApprovalRequestAccess(models.Model):
         own_steps = steps or approvers.decided_step_ids or approvers.step_ids
         if not own_steps:
             return False
-        last = max(own_steps.mapped("sequence"))
+        last = max(self._get_routed_step(step).sequence for step in own_steps)
         document = self.get_source_document()
         is_member = any(
             user.id in step._get_pool_user_ids(document, self.company_id, self)
             for step in self.approver_ids.step_ids
-            if step.sequence > last
+            if self._get_routed_step(step).sequence > last
         )
         trace.ACCESS.event(
             "later_step_member",

@@ -7,6 +7,7 @@ from odoo.exceptions import ValidationError
 from odoo.fields import Command, Domain
 
 from . import approval_trace as trace
+from .approval_utils import ApprovalStepUnstaffed
 from odoo.addons.base.models.mixin_catalog import name_uniq_index
 
 ROUTES_BY_STEPS_CONTEXT = "approval_category_routes_by_steps"
@@ -653,13 +654,23 @@ class ApprovalCategory(models.Model):
         return True
 
     def _can_be_met_for(self, document) -> bool:
+        """Whether a request this category raised for `document` could be approved:
+        judged on the request it would raise, so the steps that apply and who may
+        staff them are the ones routing and confirm would find."""
         self.check_singleton()
-        company = document.company_id if "company_id" in document._fields else None
-        return all(
-            step._can_be_met_for(document, company)
-            for step in self.step_ids
-            if step._is_applicable_to_document(document)
+        request = self.env["approval.request"].new(
+            document._prepare_approval_request_values(self)
         )
+        try:
+            return not request._get_unmeetable_steps(request._get_applicable_steps())
+        except ApprovalStepUnstaffed as uncovered:
+            trace.STEPS.event(
+                "category_cannot_be_met",
+                category=self.id,
+                document=document,
+                step=uncovered.step.id if uncovered.step else None,
+            )
+            return False
 
     def _get_view_request(
         self, label: str, extra_domain: list | None = None

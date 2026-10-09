@@ -382,7 +382,7 @@ class TestApprovalDelegationAuditRegressions(ApprovalCommon):
     def test_action_approve_fans_in_sibling_rows_sharing_one_delegate(self):
         category = self._make_category(
             approvers=[self.approver_1, self.approver_2],
-            approval_minimum=2,
+            approval_minimum=1,
         )
         request = self._prepare_request(category)
         row_1 = request.approver_ids.filtered(

@@ -324,19 +324,7 @@ class ApprovalRequestLifecycle(models.Model):
                 deciding[:1].refusal_reason_id, deciding[:1].note
             )
         self._get_approval_activities(user=acting_user).sudo().action_feedback()
-        if decision == "approve" and self.state == "pending":
-            self._refresh_turn_states()
-            self.approver_ids.filtered(
-                lambda a: a.state == "pending" and a.step_ids,
-            ).sudo()._create_activity()
-            self._retire_unasked_approval_activities()
-        if self.state in self._TERMINAL_STATES:
-            self._cancel_activities()
-        if self.state == "approved":
-            self.approver_ids.sudo().filtered(
-                lambda a: a.state == "pending",
-            ).write({"flow_state": "waiting"})
-        self._notify_if_terminal_transition(old_state)
+        self._follow_state_change(old_state, reask=decision == "approve")
         if (
             unmet_before is not None
             and decision == "approve"
@@ -356,6 +344,26 @@ class ApprovalRequestLifecycle(models.Model):
         self._log_cycle("decide", decision=decision, actor=acting_user.login)
         if decision == "refuse" and self.state == "refused":
             self._refuse_approval_request()
+
+    def _follow_state_change(self, old_state: str, reask: bool = True) -> None:
+        """What the request's state now asks of its rows, activities and document:
+        a pending request asks whoever's turn it is, a concluded one stops asking,
+        an approved one leaves its undecided rows waiting, and a request that just
+        concluded tells its document and runs what it gated."""
+        self.check_singleton()
+        if reask and self.state == "pending":
+            self._refresh_turn_states()
+            self.approver_ids.filtered(
+                lambda a: a.state == "pending" and a.step_ids,
+            ).sudo()._create_activity()
+            self._retire_unasked_approval_activities()
+        if self.state in self._TERMINAL_STATES:
+            self._cancel_activities()
+        if self.state == "approved":
+            self.approver_ids.sudo().filtered(
+                lambda a: a.state == "pending",
+            ).write({"flow_state": "waiting"})
+        self._notify_if_terminal_transition(old_state)
 
     def action_approve(
         self,
@@ -378,7 +386,7 @@ class ApprovalRequestLifecycle(models.Model):
         undecided = (approver.step_ids - approver.decided_step_ids).filtered(
             lambda step: self._is_row_turn(approver, step)
         )
-        if not any(approver.step_ids.mapped("exclusive")):
+        if not any(self._get_routed_step(step).exclusive for step in approver.step_ids):
             trace.DECISION.event(
                 "steps_for_decision",
                 request=self.id,
@@ -389,10 +397,10 @@ class ApprovalRequestLifecycle(models.Model):
             )
             return undecided
         counts = self._get_step_counts()
-        ordered = undecided.sorted(
-            lambda step: (step.sequence, not step.exclusive, step.id)
+        ordered = self._sort_routed_steps(undecided, exclusive_first=True)
+        short = ordered.filtered(
+            lambda step: counts.get(step.id, 0) < self._get_routed_step(step).minimum
         )
-        short = ordered.filtered(lambda step: counts.get(step.id, 0) < step.minimum)
         chosen = short[:1] or ordered[:1]
         trace.DECISION.event(
             "steps_for_decision",
@@ -428,7 +436,7 @@ class ApprovalRequestLifecycle(models.Model):
                     ),
                 )
             wanted = steps or approver.step_ids - decided
-            if any((decided | wanted).mapped("exclusive")):
+            if any(self._get_routed_step(step).exclusive for step in decided | wanted):
                 trace.REFUSAL.event(
                     "step_exclusive",
                     request=self.id,
@@ -1132,45 +1140,76 @@ class ApprovalRequestLifecycle(models.Model):
                 ),
             )
 
-    def _check_steps_can_be_met(self, steps) -> None:
+    def _get_unmeetable_steps(self, steps) -> dict[Any, tuple[set[int], set[int]]]:
+        """The deciding steps fewer people may approve than their quorum asks, with
+        who may and who was passed over: the pool routing gives rows to, so a step
+        that only the owner or the requester could staff counts as unstaffed rather
+        than being dropped. A document whose own state move decides keeps them: the
+        move is the decision there, not a row."""
         self.check_singleton()
         document = self.get_source_document()
+        excluded = (
+            set()
+            if self._is_decided_by_its_document()
+            else set(self._get_excluded_approvers().ids)
+        )
+        added = set(
+            self.approver_ids.filtered(lambda row: not row.source_synced).user_id.ids
+        )
+        unmeetable = {}
         for step in steps.filtered(lambda step: not step.advisory):
             pool = step._get_pool_user_ids(document, self.company_id, self)
             if step.counts_added_approvers:
-                pool |= set(
-                    self.approver_ids.filtered(
-                        lambda row: not row.source_synced
-                    ).user_id.ids
+                pool |= added
+            if len(pool - excluded) < step.minimum:
+                unmeetable[step] = (pool - excluded, pool & excluded)
+        return unmeetable
+
+    def _is_decided_by_its_document(self) -> bool:
+        self.check_singleton()
+        model = self.res_model and self.env.get(self.res_model)
+        return model is not None and getattr(
+            model, "_approval_request_follows_document", False
+        )
+
+    def _check_steps_can_be_met(self, steps) -> None:
+        self.check_singleton()
+        document = self.get_source_document()
+        for step, (pool, passed_over) in self._get_unmeetable_steps(steps).items():
+            candidates = step._get_candidate_user_ids(document, self)
+            unstaffed = bool(candidates) and not step._filter_company_user_ids(
+                candidates, self.company_id
+            )
+            message = self.env._(
+                "Step '%(step)s' needs %(minimum)d approval(s) but only "
+                "%(count)d user(s) can give one, so this request could never "
+                "be approved. Add members to the step or lower its quorum.",
+                step=step.name,
+                minimum=step.minimum,
+                count=len(pool),
+            )
+            if passed_over:
+                message += "\n\n" + self.env._(
+                    "%(users)s cannot approve a request they asked for or that is "
+                    "for them.",
+                    users=", ".join(
+                        self.env["res.users"].browse(passed_over).mapped("name")
+                    ),
                 )
-                if not self.binding_id:
-                    pool -= set(self._get_excluded_approvers().ids)
-            if len(pool) < step.minimum:
-                candidates = step._get_candidate_user_ids(document, self)
-                unstaffed = bool(candidates) and not step._filter_company_user_ids(
-                    candidates, self.company_id
-                )
-                message = self.env._(
-                    "Step '%(step)s' needs %(minimum)d approval(s) but only "
-                    "%(count)d user(s) can give one, so this request could never "
-                    "be approved. Add members to the step or lower its quorum.",
-                    step=step.name,
-                    minimum=step.minimum,
-                    count=len(pool),
-                )
-                trace.REFUSAL.event(
-                    "step_unmeetable",
-                    request=self.id,
-                    step=step.id,
-                    pool=len(pool),
-                    minimum=step.minimum,
-                    unstaffed=unstaffed,
-                )
-                raise (
-                    ApprovalStepUnstaffed(message, step=step, company=self.company_id)
-                    if unstaffed
-                    else UserError(message)
-                )
+            trace.REFUSAL.event(
+                "step_unmeetable",
+                request=self.id,
+                step=step.id,
+                pool=len(pool),
+                passed_over=sorted(passed_over),
+                minimum=step.minimum,
+                unstaffed=unstaffed,
+            )
+            raise (
+                ApprovalStepUnstaffed(message, step=step, company=self.company_id)
+                if unstaffed
+                else UserError(message)
+            )
 
     def action_withdraw_approver(
         self, approver_id: int, step_id: int | bool = False
@@ -1270,10 +1309,7 @@ class ApprovalRequestLifecycle(models.Model):
 
     def _check_moved_from_source_document(self) -> None:
         for request in self:
-            model = request.res_model and self.env.get(request.res_model)
-            if model is not None and getattr(
-                model, "_approval_request_follows_document", False
-            ):
+            if request._is_decided_by_its_document():
                 trace.REFUSAL.event(
                     "moved_from_document",
                     request=request.id,

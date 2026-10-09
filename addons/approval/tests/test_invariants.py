@@ -72,6 +72,72 @@ class TestOnePersonOneApproval(ApprovalCommon):
             "one human clicking Approve once must not satisfy a minimum of 2",
         )
 
+    def _stand_in(self):
+        return self.env["res.users"].create(
+            {"name": "A4 Stand In", "login": "a4_stand_in", "email": "a4s@test.com"},
+        )
+
+    def test_one_person_standing_in_for_two_gives_one_approval(self):
+        stand_in = self._stand_in()
+        category = self._make_category(
+            "A4 two of three",
+            approvers=[
+                (self.approver_1, False, 10),
+                (self.approver_2, False, 20),
+                (self.manager_user, False, 30),
+            ],
+            approval_minimum=2,
+        )
+        request = self._prepare_request(category, confirm=False)
+        for row in request.approver_ids.filtered(
+            lambda row: row.user_id in self.approver_1 | self.approver_2
+        ):
+            self._delegate(row, stand_in)
+        request.action_confirm()
+
+        request.with_user(stand_in).action_approve()
+        self.assertEqual(
+            request.state,
+            "pending",
+            "one click by the person standing in for two must not fill a quorum of 2",
+        )
+        request.with_user(self.manager_user).action_approve()
+        self.assertEqual(request.state, "approved")
+
+    def test_without_steps_one_person_standing_in_for_two_gives_one_approval(self):
+        stand_in = self._stand_in()
+        category = self._make_category(
+            "A4 two rows", with_pool=False, approval_minimum=2
+        )
+        request = self._prepare_request(category, confirm=False)
+        rows = self.env["approval.approver"].create(
+            [
+                {"request_id": request.id, "user_id": user.id}
+                for user in (self.approver_1, self.approver_2, self.manager_user)
+            ]
+        )
+        for row in rows[:2]:
+            self._delegate(row, stand_in)
+        request.action_confirm()
+
+        request.with_user(stand_in).action_approve()
+        self.assertEqual(request.state, "pending")
+        request.with_user(self.manager_user).action_approve()
+        self.assertEqual(request.state, "approved")
+
+    def test_a_delegation_leaving_too_few_people_for_the_quorum_is_refused(self):
+        stand_in = self._stand_in()
+        category = self._make_category(
+            "A4 two of two",
+            approvers=[(self.approver_1, False, 10), (self.approver_2, False, 20)],
+            approval_minimum=2,
+        )
+        request = self._prepare_request(category)
+        first, second = request.approver_ids.sorted("sequence")
+        self._delegate(first, stand_in)
+        with self.assertRaises(ValidationError):
+            self._delegate(second, stand_in)
+
     def test_multi_principal_fan_in_to_a_non_approver_still_works(self):
         third = self.env["res.users"].create(
             {"name": "A4 Third", "login": "a4_third", "email": "a4t@test.com"},

@@ -14,7 +14,7 @@ dashboards.
 | Key | Value |
 |-----|-------|
 | Technical name | `approval` |
-| Version | 19.0.2.15.0 (matches `__manifest__.py`) |
+| Version | 19.0.2.16.0 (matches `__manifest__.py`) |
 | Category | Human Resources/Approvals |
 | Dependencies | `mail`, and nothing else. `approval_automation` (which needs `automation`) and `approval_analytics` (which needs `mixin_report_sql`) were split out at 19.0.2.0.0 so that adopting `mixin.approval` costs one manifest row rather than nineteen prerequisites; both auto-install |
 | Conflicts | `approvals` (upstream module — the two cannot coexist, and NOTHING enforces it: this fork's loader reads no `excludes` manifest key, so the one that used to sit here was inert) |
@@ -27,7 +27,7 @@ dashboards.
 | Cron jobs | 4 (escalation, auto-expire, consent, delegated activity hand-over) |
 | Test files | 47 (+ `common.py` shared fixtures); the reporting and reset suites went to the two split modules |
 | JS files | 25 (14 `static/src` + 11 `static/tests`, the tours and the mock-server models included) |
-| Migrations | 2 script directories: `2.14.2` turns the delegation hand-over cron hourly (its data is `noupdate`); `2.15.0` turns `escalate_overdue` on where it was off, since it now decides whether a request escalates |
+| Migrations | 3 script directories: `2.14.2` turns the delegation hand-over cron hourly (its data is `noupdate`); `2.15.0` turns `escalate_overdue` on where it was off, since it now decides whether a request escalates; `2.16.0` records the routed steps of pending requests confirmed before the snapshot kept them |
 
 ## File Inventory
 
@@ -269,7 +269,7 @@ approval/
 | Transient models | 2 |
 | Test-only models | 3 |
 | Cron jobs | 5 |
-| Migration script directories | 2 |
+| Migration script directories | 3 |
 
 Re-measure rather than trusting these: `find . -name '*.py' -not -path './tests/*'
 -not -path './migrations/*' -not -path '*__pycache__*' -not -path './machine_doc_v1/*'

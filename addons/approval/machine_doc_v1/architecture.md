@@ -230,8 +230,46 @@ so all five promotion paths are covered by construction.
 | 1 | Any approver `refused` | `refused` |
 | 2 | Any approver `cancelled` | `cancelled` |
 | 3 | Any approver `new` | `new` |
-| 4 | approved_count >= `approval_minimum` (hard contract, NOT clamped to len(approvers)) AND all required approved | `approved` |
+| 4 | Steps: every blocking step meets the quorum it was routed under. No steps: distinct approvers >= `approval_minimum` (hard contract, NOT clamped to len(approvers)) AND all required approved. Either way one person counts once, however many rows they decided as a delegate | `approved` |
 | 5 | Otherwise | `pending` |
+
+### What a request is judged by
+
+A request is judged by the configuration it was routed under, not the category as
+it is now. Confirm (`_prepare_category_snapshot`) and a live re-route
+(`_reroute_steps_live`) record each applicable step's `minimum`, `exclusive`,
+`advisory`, `sequence` and required users in `category_snapshot["steps"]`, keyed by
+step id; `_get_routed_step(step)` reads them, and every quorum, exclusivity, advisory
+and ordering read of the engine goes through it, so editing a step decides no request
+it already routed. A draft, or a request confirmed before the snapshot carried ids,
+reads the step as it is (`_get_live_step`). Archiving or restoring a step is the one
+configuration change that reaches routed requests: its pending requests are settled
+as a decision would settle them (`approval.category.step.write` ->
+`_settle_routing_change`): the rows count again, a request it approves stops asking,
+tells its document and runs what it gated.
+
+**One person, one approval.** An approved row counts as whoever approved it
+(`approval.approver._get_decider_key`: `decided_by_user_id`, or the row itself when
+nobody did, as consent or an automatic rule approve), so a delegate standing in for
+two principals is one approval toward a step's quorum or the request's minimum. A
+delegation that would leave a quorum fewer distinct people than it asks
+(`_get_quorum_short_of_people`) is refused (`_check_delegation_keeps_quorum`); a step
+a group staffs is not checked, its members decide without a row.
+
+**Required is per step.** A member required on a step holds that step until they
+approve it, and nothing else: being a plain member of another step changes nothing,
+and a required member of an advisory step holds no more than the step does. Row-level
+`required` matters only on a request with no steps.
+
+**Who staffs a step at confirm is who routing gives a row.** The owner and the
+requester get no row (`_get_excluded_approvers`, unless the category allows
+self-approval or an exception names them), so confirm counts them out of a step's pool
+too (`_get_unmeetable_steps`): a step only they could staff is refused at confirm,
+naming them, instead of being dropped or never met. A document whose own state move
+decides its request (`_approval_request_follows_document`, hr_holidays and hr_expense)
+keeps them: the move is the decision there. `approval.category._can_be_met_for` judges
+the request a category would raise for a document by the same rules, when and unless
+rules included.
 
 ### Departure Handover (SM-7)
 

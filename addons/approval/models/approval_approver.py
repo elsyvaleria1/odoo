@@ -342,6 +342,28 @@ class ApprovalApprover(models.Model):
                     ),
                 )
 
+    @api.constrains("delegate_id")
+    def _check_delegation_keeps_quorum(self) -> None:
+        """One person standing in for several principals gives one approval, so a
+        delegation may not leave a quorum fewer people than it asks for."""
+        for request in self.filtered("delegate_id").request_id:
+            short = request._get_quorum_short_of_people()
+            if short is None:
+                continue
+            trace.REFUSAL.event(
+                "delegation_short_of_people", request=request.id, short=short
+            )
+            raise ValidationError(
+                self.env._(
+                    "%(name)s needs %(minimum)d different people to approve it, "
+                    "and with this delegation only %(count)d remain: one person "
+                    "standing in for several approvers gives one approval.",
+                    name=short["name"],
+                    minimum=short["minimum"],
+                    count=short["people"],
+                )
+            )
+
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         if any("state" in vals for vals in vals_list):
@@ -661,10 +683,22 @@ class ApprovalApprover(models.Model):
             return {}
         return target.sudo()._prepare_approval_activity_vals(self)
 
+    def _get_decider_key(self) -> tuple[str, int]:
+        """Who this row's approval counts as: the person who gave it, so one
+        person deciding several rows is one approval toward a quorum. A row
+        nobody decided -- consent, an automatic rule -- counts on its own."""
+        self.check_singleton()
+        if self.decided_by_user_id:
+            return ("user", self.decided_by_user_id.id)
+        return ("row", self.id)
+
     def _is_advisory_only(self) -> bool:
         """Whether every step this row counts toward is advisory."""
         self.check_singleton()
-        advisory_only = bool(self.step_ids) and all(self.step_ids.mapped("advisory"))
+        request = self.request_id
+        advisory_only = bool(self.step_ids) and all(
+            request._get_routed_step(step).advisory for step in self.step_ids
+        )
         trace.STEPS.event(
             "advisory_only",
             approver=self.id,
@@ -692,7 +726,7 @@ class ApprovalApprover(models.Model):
         request's document chooses it."""
         self.check_singleton()
         step_type = (
-            self.step_ids.sorted(lambda step: (step.sequence, step.id))
+            self.request_id._sort_routed_steps(self.step_ids)
             .filtered("activity_type_id")[:1]
             .activity_type_id
         )

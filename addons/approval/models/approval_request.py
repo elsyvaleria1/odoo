@@ -1,6 +1,6 @@
 import logging
 from collections import Counter
-from typing import Any, Self
+from typing import Any, NamedTuple, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
@@ -10,6 +10,16 @@ from . import approval_trace as trace
 from .approval_utils import boolean_search_domain, is_approval_manager
 
 _logger = logging.getLogger(__name__)
+
+
+class RoutedStep(NamedTuple):
+    """A step's parameters as the request was routed under them."""
+
+    minimum: int
+    exclusive: bool
+    advisory: bool
+    sequence: int
+    required_user_ids: frozenset[int]
 
 
 class ApprovalRequest(models.Model):
@@ -687,6 +697,51 @@ class ApprovalRequest(models.Model):
                 **outcomes,
             )
 
+    def _get_routed_step(self, step) -> RoutedStep:
+        """`step` as this request was routed under it, so editing the step decides
+        no request it already routed. A request routed before its snapshot kept the
+        steps, or still a draft, reads the step as it is."""
+        self.check_singleton()
+        for entry in (self.category_snapshot or {}).get("steps", ()):
+            if entry.get("id") == step.id:
+                return RoutedStep(
+                    entry["minimum"],
+                    entry["exclusive"],
+                    entry["advisory"],
+                    entry["sequence"],
+                    frozenset(entry["required"]),
+                )
+        return self._get_live_step(step)
+
+    def _get_live_step(self, step) -> RoutedStep:
+        self.check_singleton()
+        required = set(step.member_ids.filtered("required").user_id.ids)
+        if step.subject_user_required:
+            required |= step.sudo()._get_source_user_ids(
+                self.get_source_document(), self
+            )
+        return RoutedStep(
+            step.minimum,
+            step.exclusive,
+            step.advisory,
+            step.sequence,
+            frozenset(required),
+        )
+
+    def _sort_routed_steps(self, steps, exclusive_first: bool = False):
+        self.check_singleton()
+        if exclusive_first:
+            return steps.sorted(
+                lambda step: (
+                    self._get_routed_step(step).sequence,
+                    not self._get_routed_step(step).exclusive,
+                    step.id,
+                )
+            )
+        return steps.sorted(
+            lambda step: (self._get_routed_step(step).sequence, step.id)
+        )
+
     def _get_snapshot_config(self, key: str) -> Any:
         self.check_singleton()
         snapshot = self.category_snapshot or {}
@@ -808,9 +863,8 @@ class ApprovalRequest(models.Model):
         "approval_minimum",
         "approver_ids.step_ids",
         "approver_ids.decided_step_ids",
-        "approver_ids.step_ids.minimum",
-        "approver_ids.step_ids.exclusive",
-        "approver_ids.step_ids.active",
+        "approver_ids.decided_by_user_id",
+        "category_snapshot",
         "revoked_state",
         "granted_by_user_id",
     )
@@ -887,7 +941,13 @@ class ApprovalRequest(models.Model):
                 met=not blocking,
             )
             return not blocking
-        approved = state_counts.get("approved", 0)
+        approved = len(
+            {
+                approver._get_decider_key()
+                for approver in self.approver_ids
+                if approver.state == "approved"
+            }
+        )
         required_pending = self.approver_ids.filtered(
             lambda row: row.required and row.state != "approved"
         )
@@ -903,6 +963,53 @@ class ApprovalRequest(models.Model):
         )
         return met
 
+    def _get_quorum_short_of_people(self) -> dict[str, Any] | None:
+        """The first quorum delegation leaves fewer distinct people than it asks
+        for: a delegated row counts as its delegate, an approved row as whoever
+        approved it. A step a group staffs is left alone, anyone in the group may
+        decide it without a row; so is a quorum already short without delegation."""
+        self.check_singleton()
+        if self.state not in ("new", "pending"):
+            return None
+        rows = self.approver_ids.filtered(lambda row: row.state != "refused")
+
+        def short(name, minimum, quorum_rows):
+            def count(delegated):
+                return len(
+                    {
+                        row._get_decider_key()
+                        if row.state == "approved"
+                        else (
+                            "user",
+                            ((delegated and row.delegate_id) or row.user_id).id,
+                        )
+                        for row in quorum_rows
+                    }
+                )
+
+            people = count(delegated=True)
+            if people < minimum <= count(delegated=False):
+                return {"name": name, "minimum": minimum, "people": people}
+            return None
+
+        if not rows.step_ids:
+            return short(self.display_name, self.approval_minimum, rows)
+        for step in rows.step_ids.filtered(
+            lambda step: (
+                not self._get_routed_step(step).advisory
+                and not step.group_id
+                and step.walk == "none"
+            )
+        ):
+            found = short(
+                step.name,
+                self._get_routed_step(step).minimum,
+                rows.filtered(lambda row, step=step: step in row.step_ids),
+            )
+            if found:
+                return found
+        return None
+
     def _get_step_counts(self) -> dict[int, int]:
         self.check_singleton()
         return {
@@ -911,7 +1018,9 @@ class ApprovalRequest(models.Model):
         }
 
     def _get_step_assignment(self) -> dict[int, Any]:
-        """Which approved rows count toward each step, exclusivity applied.
+        """Which approved rows count toward each step, exclusivity applied, one per
+        person: whoever decided several rows standing in for their principals
+        counts once toward a step, as they clicked once.
 
         An approved row counts toward every step its decision was given for. That is
         Studio's rule -- a user who decided an exclusive step decides nothing else on
@@ -923,24 +1032,30 @@ class ApprovalRequest(models.Model):
         quorum counts.
         """
         self.check_singleton()
-        steps = self.approver_ids.step_ids.sorted(lambda step: (step.sequence, step.id))
+        steps = self._sort_routed_steps(self.approver_ids.step_ids)
+        routed = {step.id: self._get_routed_step(step) for step in steps}
         assigned = {step.id: self.env["approval.approver"] for step in steps}
+        deciders = {step.id: set() for step in steps}
         approved = self.approver_ids.filtered(
             lambda approver: approver.state == "approved" and approver.decided_step_ids,
         ).sorted(lambda approver: (approver.sequence, approver.id))
         for approver in approved:
-            own = approver.decided_step_ids.filtered(
-                lambda step: step.id in assigned
-            ).sorted(lambda step: (step.sequence, step.id))
-            if any(own.mapped("exclusive")):
-                target = own.sorted(
-                    lambda step: (step.sequence, not step.exclusive, step.id)
-                ).filtered(lambda step: len(assigned[step.id]) < step.minimum)[:1]
-                if target:
-                    assigned[target.id] |= approver
-                continue
+            decider = approver._get_decider_key()
+            own = approver.decided_step_ids.filtered(lambda step: step.id in assigned)
+            if any(routed[step.id].exclusive for step in own):
+                own = self._sort_routed_steps(own, exclusive_first=True).filtered(
+                    lambda step, decider=decider: (
+                        len(assigned[step.id]) < routed[step.id].minimum
+                        and decider not in deciders[step.id]
+                    )
+                )[:1]
+            else:
+                own = self._sort_routed_steps(own)
             for step in own:
+                if decider in deciders[step.id]:
+                    continue
                 assigned[step.id] |= approver
+                deciders[step.id].add(decider)
         if trace.STEPS.on():
             trace.STEPS.event(
                 "assignment",
@@ -954,24 +1069,20 @@ class ApprovalRequest(models.Model):
         counts = self._get_step_counts()
         return self.approver_ids.step_ids.filtered(
             lambda step: (
-                counts[step.id] < step.minimum
+                counts[step.id] < self._get_routed_step(step).minimum
                 or self._get_step_required_rows_pending(step)
             ),
         )
 
     def _get_step_required_rows_pending(self, step):
-        """The rows of a step's required members that have not approved it yet."""
+        """The rows of a step's required members that have not approved it yet.
+
+        Required is per step: a member required on one step holds that step until
+        they approve it, whatever else they are asked for, and holds nothing on a
+        step they are a plain member of. A required member of an advisory step
+        holds no more than the step does, which is nothing."""
         self.check_singleton()
-        required = set(step.member_ids.filtered("required").user_id.ids)
-        if step.subject_user_required:
-            named = step.sudo()._get_source_user_ids(self.get_source_document(), self)
-            trace.STEPS.event(
-                "named_users_required",
-                request=self.id,
-                step=step.id,
-                named=sorted(named),
-            )
-            required |= named
+        required = self._get_routed_step(step).required_user_ids
         if not required:
             return self.env["approval.approver"]
         return self.approver_ids.filtered(
@@ -985,7 +1096,9 @@ class ApprovalRequest(models.Model):
     def _get_blocking_unmet_steps(self):
         """The unmet steps the request waits for: advisory steps never hold it."""
         self.check_singleton()
-        return self._get_unmet_steps().filtered(lambda step: not step.advisory)
+        return self._get_unmet_steps().filtered(
+            lambda step: not self._get_routed_step(step).advisory
+        )
 
     def _get_step_turn_row(self, step):
         """On a step whose members decide in order, the row whose turn it is: the first
@@ -1050,14 +1163,17 @@ class ApprovalRequest(models.Model):
         blocking ones, and every advisory step still unmet, which waits for nobody."""
         self.check_singleton()
         unmet = self._get_unmet_steps()
-        blocking = unmet.filtered(lambda step: not step.advisory)
+        blocking = unmet.filtered(lambda step: not self._get_routed_step(step).advisory)
         advisory = unmet - blocking
         if not blocking:
             open_steps = advisory
         else:
-            lowest = min(blocking.mapped("sequence"))
+            lowest = min(self._get_routed_step(step).sequence for step in blocking)
             open_steps = (
-                blocking.filtered(lambda step: step.sequence == lowest) | advisory
+                blocking.filtered(
+                    lambda step: self._get_routed_step(step).sequence == lowest
+                )
+                | advisory
             )
         trace.STEPS.event(
             "open",

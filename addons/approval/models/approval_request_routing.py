@@ -39,7 +39,6 @@ class ApprovalRequestRouting(models.Model):
     def _prepare_category_snapshot(self) -> dict[str, Any]:
         self.check_singleton()
         cat = self.category_id
-        document = self.get_source_document()
         snapshot: dict[str, Any] = {
             "category_name": cat.name,
             "approval_minimum": cat.approval_minimum,
@@ -60,21 +59,7 @@ class ApprovalRequestRouting(models.Model):
                 }
                 for r in cat.rule_ids.filtered("active")
             ],
-            "steps": [
-                {
-                    "name": step.name,
-                    "sequence": step.sequence,
-                    "minimum": step.minimum,
-                    "exclusive": step.exclusive,
-                    "group": step.group_id.name or False,
-                    "members": sorted(
-                        step._get_pool_user_ids(document, self.company_id, self)
-                    ),
-                    "condition": step.subject_domain or False,
-                    "source_user_path": step.subject_user_path or False,
-                }
-                for step in self._get_applicable_steps()
-            ],
+            "steps": self._prepare_step_snapshot(self._get_applicable_steps()),
             "effective_approval_minimum": self.approval_minimum,
             "effective_approvers": [
                 {
@@ -96,6 +81,33 @@ class ApprovalRequestRouting(models.Model):
             minimum=snapshot["effective_approval_minimum"],
         )
         return snapshot
+
+    def _prepare_step_snapshot(self, steps) -> list[dict[str, Any]]:
+        """The steps as routed: what the request's state is judged by from now on
+        (`_get_routed_step`), and who could staff each, for the record."""
+        self.check_singleton()
+        document = self.get_source_document()
+        entries = []
+        for step in steps:
+            live = self._get_live_step(step)
+            entries.append(
+                {
+                    "id": step.id,
+                    "name": step.name,
+                    "sequence": live.sequence,
+                    "minimum": live.minimum,
+                    "exclusive": live.exclusive,
+                    "advisory": live.advisory,
+                    "required": sorted(live.required_user_ids),
+                    "group": step.group_id.name or False,
+                    "members": sorted(
+                        step._get_pool_user_ids(document, self.company_id, self)
+                    ),
+                    "condition": step.subject_domain or False,
+                    "source_user_path": step.subject_user_path or False,
+                }
+            )
+        return entries
 
     def _get_applicable_steps(self):
         """The category's steps whose condition this request meets, in order."""
@@ -488,15 +500,15 @@ class ApprovalRequestRouting(models.Model):
                 "applied_rule_ids": [
                     Command.link(rule.id) for rule in current.when_rule_ids
                 ],
+                "category_snapshot": dict(
+                    self.category_snapshot or {},
+                    steps=self._prepare_step_snapshot(current),
+                ),
             }
         )
         self.invalidate_recordset()
-        self._refresh_turn_states()
-        self.approver_ids.filtered(
-            lambda row: row.state == "pending"
-        )._create_activity()
-        self._retire_unasked_approval_activities()
-        if created:
+        self._follow_state_change("pending")
+        if created and self.state == "pending":
             self.message_post(
                 body=self.env._(
                     "Approver(s) added because the request changed: %(names)s.\n\n"
@@ -509,6 +521,22 @@ class ApprovalRequestRouting(models.Model):
             )
             self._log_cycle("reroute", added=len(created))
         return created
+
+    def _settle_routing_change(self, states_before: dict[int, str]) -> None:
+        """Carry a change of the steps a request routes through -- one archived or
+        restored -- to its state the way a decision would: the rows count again,
+        and a request it approves tells its document, runs what it gated and stops
+        asking. Its other parameters are fixed at routing (`_get_routed_step`)."""
+        if not self:
+            return
+        self.env["approval.approver"].invalidate_model(["step_ids", "decided_step_ids"])
+        self.env.add_to_compute(self._fields["state"], self)
+        for request in self:
+            old_state = states_before.get(request.id, request.state)
+            trace.STEPS.event(
+                "routing_settled", request=request.id, was=old_state, now=request.state
+            )
+            request._follow_state_change(old_state)
 
     def _create_live_approver_rows(self, missing: dict[int, dict]):
         self.check_singleton()
