@@ -243,13 +243,13 @@ class PaymentTransaction(models.Model):
         if self.provider_code != "mercado_pago":
             return super()._extract_amount_data(payment_data)
 
-        if self.operation in ("online_redirect", "online_direct"):
+        if self.operation == "online_redirect":
             amount = (
                 payment_data.get("additional_info", {})
                 .get("items", [{}])[0]
                 .get("unit_price")
             )
-        else:  # 'online_token', 'offline'
+        else:  # 'online_direct', 'online_token', 'offline': the amount charged.
             amount = payment_data.get("transaction_amount")
         currency_code = payment_data.get("currency_id")
         return {
@@ -267,6 +267,22 @@ class PaymentTransaction(models.Model):
         payment_id = payment_data.get("id")
         if not payment_id:
             self._set_error(self.env._("Received data with missing payment id."))
+            return None
+        payment_status = payment_data.get("status")
+        if (
+            self.provider_reference
+            and str(payment_id) != self.provider_reference
+            and payment_status not in const.TRANSACTION_STATUS_MAPPING["done"]
+        ):
+            # Another attempt at the same transaction: only its approval may
+            # take over, so a late or replayed earlier attempt moves nothing.
+            _logger.info(
+                "Ignored payment %s (%s) of transaction %s, whose payment is %s.",
+                payment_id,
+                payment_status,
+                self.reference,
+                self.provider_reference,
+            )
             return None
         self.provider_reference = payment_id
 
@@ -292,7 +308,6 @@ class PaymentTransaction(models.Model):
         self.payment_method_id = payment_method or self.payment_method_id
 
         # Update the payment state.
-        payment_status = payment_data.get("status")
         if not payment_status:
             self._set_error(self.env._("Received data with missing status."))
             return None
@@ -303,6 +318,13 @@ class PaymentTransaction(models.Model):
             self._set_done()
         elif payment_status in const.TRANSACTION_STATUS_MAPPING["canceled"]:
             self._set_canceled()
+        elif payment_status in const.TRANSACTION_STATUS_MAPPING["refunded"]:
+            # The refund of a confirmed payment leaves its transaction done;
+            # a payment refunded before it was confirmed paid nothing.
+            if self.state != "done":
+                self._set_canceled(
+                    state_message=self.env._("The payment was refunded.")
+                )
         elif payment_status in const.TRANSACTION_STATUS_MAPPING["error"]:
             status_detail = payment_data.get("status_detail")
             _logger.warning(

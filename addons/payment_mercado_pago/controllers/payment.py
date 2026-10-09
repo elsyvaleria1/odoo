@@ -1,4 +1,5 @@
 import pprint
+import re
 
 from odoo import http
 from odoo.exceptions import ValidationError
@@ -12,24 +13,27 @@ _logger = get_payment_logger(__name__)
 
 
 class MercadoPagoPaymentController(http.Controller):
+    _PAYMENT_ID = re.compile(r"[0-9]+")
+
     @http.route("/payment/mercado_pago/payments", type="jsonrpc", auth="public")
     def mercado_pago_payment(
         self,
         reference,
-        transaction_amount,
         token,
         installments,
         payment_method_brand,
         issuer_id,
+        transaction_amount=None,
     ):
         """Make a payment request and process the payment data.
 
         :param str reference: The reference of the transaction
-        :param int transaction_amount: The amount of the transaction in minor units of the currency
         :param int token: The transaction token of card received from Mercado Pago.
         :param int installments:
         :param int payment_method_brand: The payment method of the transaction.
         :param int issuer_id: The issuer id of the card received from Mercado Pago.
+        :param transaction_amount: Ignored, as a page loaded before it was dropped sends
+                                   it: the amount charged is the transaction's.
         :rtype: None
         """
         tx_sudo = (
@@ -40,7 +44,7 @@ class MercadoPagoPaymentController(http.Controller):
         payload = tx_sudo._mercado_pago_prepare_payment_request_payload()
         payload.update(
             {
-                "transaction_amount": float(transaction_amount),
+                "transaction_amount": tx_sudo._mercado_pago_convert_amount(),
                 "token": token,
                 "installments": installments,
                 "payment_method_id": payment_method_brand,
@@ -113,7 +117,11 @@ class MercadoPagoPaymentController(http.Controller):
         admission = request.admission
         tx_sudo = admission.subject
         payment_id = admission.extra["data"].get("payment_id")
-        if not isinstance(payment_id, str | int) or not str(payment_id).isdigit():
+        if (
+            isinstance(payment_id, bool)
+            or not isinstance(payment_id, str | int)
+            or not MercadoPagoPaymentController._PAYMENT_ID.fullmatch(str(payment_id))
+        ):
             admission.refuse(400, "payment_id missing or malformed", "bad_request")
         try:
             verified_data = tx_sudo._send_api_request(

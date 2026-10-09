@@ -163,7 +163,6 @@ patch(PaymentForm.prototype, {
             await this.waitFor(
                 rpc("/payment/mercado_pago/payments", {
                     reference: processingValues.reference,
-                    transaction_amount: processingValues.amount,
                     token: this.mercadoPagoFormData.token,
                     installments: this.mercadoPagoFormData.installments,
                     payment_method_brand: this.mercadoPagoFormData.payment_method_id,

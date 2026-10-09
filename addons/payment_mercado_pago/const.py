@@ -98,8 +98,9 @@ PAYMENT_METHODS_MAPPING = {
 # See https://www.mercadopago.com.mx/developers/en/reference/payments/_payments_id/get.
 TRANSACTION_STATUS_MAPPING = {
     "pending": ("pending", "in_process", "in_mediation", "authorized"),
-    "done": ("approved", "refunded"),
+    "done": ("approved",),
     "canceled": ("cancelled", "null"),
+    "refunded": ("refunded",),
     "error": ("rejected",),
 }
 
