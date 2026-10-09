@@ -12,7 +12,6 @@ import { _t } from "@web/core/translation";
 import { htmlJoin } from "@web/core/utils/dom/html";
 import { Interaction } from "@web/public/interaction";
 import { session } from "@web/session";
-import { ConfirmationDialog } from "@web/ui/dialog";
 
 import { FlagMarkAsOffensiveDialog } from "../components/flag_mark_as_offensive/flag_mark_as_offensive.js";
 import { WebsiteForumTagsWrapper } from "../components/website_forum_tags_wrapper.js";
@@ -48,9 +47,6 @@ export class WebsiteForum extends Interaction {
         },
         ".o_wforum_favorite_toggle": {
             "t-on-click.prevent.withTarget": this.onToggleFavoriteClick,
-        },
-        ".comment_delete:not(.karma_required)": {
-            "t-on-click.prevent.withTarget": this.onDeleteCommentClick,
         },
         ".js_close_intro": {
             "t-on-click.prevent": this.onCloseIntroClick,
@@ -508,34 +504,6 @@ export class WebsiteForum extends Interaction {
         currentTargetEl_icon.classList.toggle("fa-regular", !data);
         currentTargetEl_icon.classList.toggle("fa-solid", data);
         currentTargetEl_icon.classList.toggle("o_wforum_gold", data);
-    }
-
-    /**
-     * @param {EvenMouseEventt} ev
-     * @param {HTMLElement} currentTargetEl
-     */
-    onDeleteCommentClick(ev, currentTargetEl) {
-        if (this.warnIfPublicUser()) {
-            return;
-        }
-        this.services.dialog.add(ConfirmationDialog, {
-            body: _t("Are you sure you want to delete this comment?"),
-            confirmLabel: _t("Delete"),
-            confirm: () => {
-                rpc(currentTargetEl.closest("form").attributes.action.value)
-                    .then(() => {
-                        currentTargetEl.closest(".o_wforum_post_comment").remove();
-                    })
-                    .catch((error) => {
-                        this.services.notification.add(error.data.message, {
-                            title: _t("Karma Error"),
-                            sticky: false,
-                            type: "warning",
-                        });
-                    });
-            },
-            cancel: () => {},
-        });
     }
 
     onCloseIntroClick() {

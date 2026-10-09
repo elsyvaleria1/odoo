@@ -27,7 +27,9 @@
             <form
                 t-attf-method="#{form_method or 'POST'}"
                 t-att-action="url"
-                t-attf-class="#{form_classes}">
+                t-attf-class="#{form_classes}"
+                t-att-data-fragment-form="fragment_form"
+                t-att-data-confirm="confirm_question">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
             <button
                 t-if="label"

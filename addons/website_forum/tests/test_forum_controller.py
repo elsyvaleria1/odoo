@@ -199,6 +199,55 @@ class TestForumPostRoutes(HttpCase):
         self.assertEqual(refused.exception.code, 404)
         self.assertFalse(self.question.is_correct)
 
+    def _comment(self, author):
+        return self.question.with_user(author).message_post(
+            body="A comment", message_type="comment", subtype_xmlid="mail.mt_comment"
+        )
+
+    def _delete_comment_url(self, comment):
+        slug = self.env["ir.http"]._slug
+        return (
+            f"/forum/{slug(self.forum)}/post/{slug(self.question)}"
+            f"/comment/{slug(comment)}/delete"
+        )
+
+    def test_deleting_a_comment_returns_to_its_question(self):
+        comment = self._comment(self.env.ref("base.user_admin"))
+        self.authenticate("admin", "admin")
+        slug = self.env["ir.http"]._slug
+
+        response = self.url_open(
+            self._delete_comment_url(comment),
+            data={"csrf_token": http.Request.csrf_token(self)},
+            allow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(
+            response.headers["Location"].endswith(
+                f"/forum/{slug(self.forum)}/{slug(self.question)}"
+            ),
+            response.headers["Location"],
+        )
+        self.assertFalse(comment.exists())
+
+    def test_a_refused_comment_delete_asked_in_place_answers_json(self):
+        comment = self._comment(self.env.ref("base.user_admin"))
+        self.forum.karma_comment_unlink_all = 1000
+        self.authenticate("forum_asker", "forum_asker")
+
+        response = self.url_open(
+            self._delete_comment_url(comment),
+            data={"csrf_token": http.Request.csrf_token(self)},
+            headers={"X-Odoo-Fragments": "1"},
+            allow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(response.headers["Content-Type"].startswith("application/json"))
+        self.assertIn("karma", response.json()["error"]["message"])
+        self.assertTrue(comment.exists())
+
     def test_deleting_an_answer_returns_to_its_question(self):
         self.authenticate("admin", "admin")
         slug = self.env["ir.http"]._slug

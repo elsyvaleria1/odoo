@@ -778,6 +778,8 @@
                 t-valuef="/forum/#{ slug(forum) }/post/#{ slug(object) }/comment/#{ slug(message) }" />
             <t t-call="website_forum.link_button">
             <t t-set="url" t-valuef="#{ comment_url }/delete" />
+            <t t-set="fragment_form" t-value="''" />
+            <t t-set="confirm_question">Are you sure you want to delete this comment?</t>
             <t t-set="label">Delete</t>
             <t t-set="title">Delete</t>
             <t t-set="inDropdown" t-value="True" />

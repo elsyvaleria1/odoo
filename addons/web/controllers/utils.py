@@ -354,6 +354,25 @@ def render_fragments(
     }
 
 
+# sent by @web/public/fragment_form: the answer to a form post is wanted as
+# fragments, not as the page a browser would be redirected to
+FRAGMENTS_HEADER = "X-Odoo-Fragments"
+
+
+def fragments_or_redirect(
+    env: Any,
+    location: str,
+    *fragments: Fragment,
+    events: Mapping[str, Mapping[str, Any]] | None = None,
+    data: Mapping[str, Any] | None = None,
+) -> Any:
+    if request.httprequest.headers.get(FRAGMENTS_HEADER):
+        return request.prepare_json_response(
+            render_fragments(env, *fragments, events=events, data=data)
+        )
+    return request.redirect(location, code=303)
+
+
 def _check_fragment_root(html: str, key: str) -> None:
     try:
         nodes = lxml.html.fragments_fromstring(html)

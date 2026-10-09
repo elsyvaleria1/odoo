@@ -4,20 +4,8 @@
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Modal, Offcanvas } from "@web/libs/bootstrap";
-import { swapFragment } from "@web/public/fragments";
 import { Interaction } from "@web/public/interaction";
-
-// what a page says about itself in <head>, kept in step with the page shown
-const HEAD_SELECTORS = [
-    'link[rel="canonical"]',
-    'link[rel="alternate"][hreflang]',
-    'meta[name="description"]',
-    'meta[name="robots"]',
-    'meta[property^="og:"]',
-    'meta[name^="twitter:"]',
-].join(", ");
-
-const OUT_OF_BAND = "[data-fragment][data-partial-navigation-oob]";
+import { PARTIAL_NAVIGATION_HEADER, swapPage } from "@web/public/page_swap";
 
 /** @typedef {{ url: string, html: string }} FetchedPage */
 
@@ -25,68 +13,6 @@ const OUT_OF_BAND = "[data-fragment][data-partial-navigation-oob]";
 const PRELOAD_DELAY = 65;
 // how long a preloaded page stays good for the click it announced
 const PRELOAD_TTL = 10000;
-
-// http_routing's PARTIAL_NAVIGATION_HEADER: the server leaves out the header
-// and footer, which a navigation in place keeps
-const PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation";
-
-/**
- * The out-of-band elements of `root` outside `region`, by key, in document
- * order.
- *
- * @param {ParentNode} root
- * @param {Element} region
- * @returns {Map<string, HTMLElement[]>}
- */
-function outOfBandByKey(root, region) {
-    const byKey = new Map();
-    for (const el of /** @type {NodeListOf<HTMLElement>} */ (
-        root.querySelectorAll(OUT_OF_BAND)
-    )) {
-        if (!region.contains(el)) {
-            const key = el.dataset.fragment;
-            byKey.set(key, [...(byKey.get(key) || []), el]);
-        }
-    }
-    return byKey;
-}
-
-/**
- * @param {Element} current
- * @param {Element} next
- * @param {string[]} names
- */
-function syncAttributes(current, next, names) {
-    for (const name of names) {
-        const value = next.getAttribute(name);
-        if (value === null) {
-            current.removeAttribute(name);
-        } else {
-            current.setAttribute(name, value);
-        }
-    }
-}
-
-/**
- * The page metadata <html> carries (main object, view, website, lang).
- *
- * @param {Element} current
- * @param {Element} next
- */
-function syncPageAttributes(current, next) {
-    const isPageAttribute = (/** @type {string} */ name) =>
-        name.startsWith("data-") || name === "lang" || name === "dir";
-    for (const { name } of [...current.attributes]) {
-        if (isPageAttribute(name) && !next.hasAttribute(name)) {
-            current.removeAttribute(name);
-        }
-    }
-    for (const { name, value } of next.attributes) {
-        if (isPageAttribute(name)) {
-            current.setAttribute(name, value);
-        }
-    }
-}
 
 /**
  * Navigates to `url` in place when `el` sits in a partial navigation scope,
@@ -368,38 +294,18 @@ export class PartialNavigation extends Interaction {
             return;
         }
         const page = new DOMParser().parseFromString(fetched.html, "text/html");
-        const region = page.querySelector(`[data-fragment="${CSS.escape(this.key)}"]`);
-        if (!region) {
+        if (!page.querySelector(`[data-fragment="${CSS.escape(this.key)}"]`)) {
             browser.location.assign(url);
             return;
         }
         if (push) {
             browser.history.pushState({ partialNavigation: this.key }, "", fetched.url);
         }
-        const title = page.querySelector("title")?.textContent;
-        if (title) {
-            document.title = title;
-        }
-        for (const el of document.head.querySelectorAll(HEAD_SELECTORS)) {
-            el.remove();
-        }
-        document.head.append(
-            ...[...page.head.querySelectorAll(HEAD_SELECTORS)].map((el) =>
-                document.importNode(el, true),
-            ),
-        );
-        syncPageAttributes(document.documentElement, page.documentElement);
         // the region may be display: contents, which has no box of its own
         const anchor = () => this.el.firstElementChild || this.el;
         const scrolledPast = anchor().getBoundingClientRect().top < 0;
         const el = this.el;
-        this.swapFragments({
-            fragments: [{ key: this.key, html: region.outerHTML, swap: "morph" }],
-            events: [],
-            redirect: null,
-            data: {},
-        });
-        this.swapOutOfBand(page, region);
+        swapPage(page, [el], this.services["public.interactions"]);
         if (scrolledPast) {
             (el.firstElementChild || el).scrollIntoView({ block: "start" });
         }
@@ -408,51 +314,6 @@ export class PartialNavigation extends Interaction {
                 detail: { key: this.key, url: fetched.url, page },
             }),
         );
-    }
-
-    /**
-     * Elements outside the region that the server renders for the URL
-     * follow the page (htmx's hx-swap-oob), found in the next page by their
-     * `data-fragment` key:
-     * - `data-partial-navigation-oob=""` (the breadcrumbs): each is morphed
-     *   from its counterpart, paired by document order, and hidden when the
-     *   next page has none. It must live in the page's content, which a page
-     *   asked for in place still renders.
-     * - `data-partial-navigation-oob="href"` (the language links, in the
-     *   header and footer a page asked for in place leaves out): every
-     *   element of the key takes the listed attributes from the first
-     *   counterpart, which the server also renders, hidden, in that case.
-     *
-     * @param {Document} page
-     * @param {Element} region the region in `page`
-     */
-    swapOutOfBand(page, region) {
-        const interactions = this.services["public.interactions"];
-        const next = outOfBandByKey(page, region);
-        for (const [key, elements] of outOfBandByKey(document, this.el)) {
-            const counterparts = next.get(key) || [];
-            const attributes = elements[0].dataset.partialNavigationOob;
-            if (attributes) {
-                if (counterparts[0]) {
-                    for (const el of elements) {
-                        syncAttributes(
-                            el,
-                            counterparts[0],
-                            attributes.split(/\s*,\s*/),
-                        );
-                    }
-                }
-                continue;
-            }
-            elements.forEach((el, index) => {
-                const counterpart = counterparts[index];
-                if (counterpart) {
-                    swapFragment(el, counterpart.outerHTML, "morph", interactions);
-                } else {
-                    el.hidden = true;
-                }
-            });
-        }
     }
 
     /**

@@ -1216,9 +1216,12 @@ class WebsiteForum(WebsiteProfile):
 
     @http.route(
         '/forum/<model("forum.forum"):forum>/post/<model("forum.post"):post>/comment/<model("mail.message"):comment>/delete',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
         website=True,
     )
     def remove_comment(self, forum, post, comment, **kwarg):
-        return post.unlink_comment(comment.id)[0]
+        post.unlink_comment(comment.id)
+        slug = request.env["ir.http"]._slug
+        return request.redirect(f"/forum/{slug(forum)}/{slug(post.parent_id or post)}")

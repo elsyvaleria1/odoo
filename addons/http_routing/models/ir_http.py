@@ -11,7 +11,7 @@ import werkzeug.routing
 from werkzeug.exceptions import HTTPException, NotFound
 
 from odoo import api, exceptions, http, models, tools
-from odoo.exceptions import AccessError, MissingError
+from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.fields import Domain
 from odoo.http import Response, request
 from odoo.libs.debug_log import DebugLog
@@ -20,6 +20,7 @@ from odoo.tools.urls import keep_query
 from odoo.addons.base.models import ir_http
 from odoo.addons.base.models.ir_http import RequestUID
 from odoo.addons.base.models.res_lang import LangData
+from odoo.addons.web.controllers.utils import FRAGMENTS_HEADER
 
 _logger = logging.getLogger(__name__)
 
@@ -730,6 +731,16 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _handle_error(cls, exception):
+        # a refusal of a form posted in place (@web/public/fragment_form) is
+        # told to the page, which stays as it is
+        if isinstance(exception, UserError) and request.httprequest.headers.get(
+            FRAGMENTS_HEADER
+        ):
+            request.env.cr.rollback()
+            return request.prepare_json_response(
+                {"error": {"message": exception.args[0]}},
+                status=403 if isinstance(exception, AccessError) else 422,
+            )
         response = super()._handle_error(exception)
 
         is_frontend_request = bool(getattr(request, "is_frontend", False))

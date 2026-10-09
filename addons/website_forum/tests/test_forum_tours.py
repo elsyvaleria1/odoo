@@ -40,3 +40,24 @@ class TestUi(HttpCaseGamification):
         Post.create({"forum_id": forum.id, "parent_id": answered.id, "content": "Yes"})
         Post.create({"name": "PN Open", "forum_id": forum.id})
         self.start_tour(f"/forum/{forum.id}", "forum_partial_navigation")
+
+    def test_04_comment_delete_in_place(self):
+        question = self.env["forum.post"].create(
+            {
+                "name": "PN Question",
+                "forum_id": self.env.ref("website_forum.forum_help").id,
+            }
+        )
+        question.with_user(self.env.ref("base.user_admin")).message_post(
+            body="PN doomed comment",
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+        )
+        self.start_tour(
+            question.website_url, "forum_comment_delete_in_place", login="admin"
+        )
+        self.assertFalse(
+            question.website_message_ids.filtered(
+                lambda message: "PN doomed comment" in message.body
+            )
+        )
