@@ -177,7 +177,7 @@ every one as a literal, so re-run it rather than trusting this table.
 | Category | Count |
 |----------|------:|
 | Python models (`models/`, incl. `discuss/`) | 90 (76 + 14 in `discuss/`) |
-| Python controllers | 21 files · **61** routes across **83** URL strings |
+| Python controllers | 21 files · **61** routes across **82** URL strings |
 | Python wizards | 9 |
 | Python tests | 89 `test_*.py` |
 | JavaScript (`static/src/`) | 412 |
