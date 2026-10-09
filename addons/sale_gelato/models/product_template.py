@@ -93,70 +93,184 @@ class ProductTemplate(models.Model):
         }
 
     def _create_attributes_from_gelato_info(self, template_info):
-        if len(template_info["variants"]) == 1:
+        self.check_singleton()
+        gelato_variants = template_info["variants"]
+        if len(gelato_variants) == 1:
             _debug.logic("gelato_single_variant", template=self)
-            self.gelato_product_uid = template_info["variants"][0]["productUid"]
-        else:
-            for variant_data in template_info["variants"]:
-                current_variant_pavs = self.env["product.attribute.value"]
-                for attribute_data in variant_data["variantOptions"]:
-                    attribute = self.env["product.attribute"].search(  # noqa: E8507 - one lookup per Gelato attribute; the record may have been created by an earlier pass
-                        [
-                            ("name", "=", attribute_data["name"]),
-                            ("create_variant", "=", "always"),
-                        ],
-                        limit=1,
+            self.gelato_product_uid = gelato_variants[0]["productUid"]
+            return
+        options_by_uid = self._plan_gelato_variants(gelato_variants)
+        values_by_uid = self._ensure_gelato_attribute_values(options_by_uid)
+        self._assign_gelato_variants(values_by_uid)
+
+    def _plan_gelato_variants(self, gelato_variants) -> dict:
+        options_by_uid = {}
+        option_names = None
+        for variant_data in gelato_variants:
+            options = {
+                option["name"]: option["value"]
+                for option in variant_data["variantOptions"]
+            }
+            if len(options) != len(variant_data["variantOptions"]) or (
+                option_names is not None and set(options) != option_names
+            ):
+                raise UserError(
+                    self.env._(
+                        "Gelato describes the variant %s with options that differ from"
+                        " the other variants of the template.",
+                        variant_data["productUid"],
                     )
-                    if not attribute:
-                        attribute = self.env["product.attribute"].create(
-                            {"name": attribute_data["name"]}
-                        )
-
-                    attribute_value = self.env["product.attribute.value"].search(  # noqa: E8507 - one lookup per Gelato attribute; the record may have been created by an earlier pass
-                        [
-                            ("name", "=", attribute_data["value"]),
-                            ("attribute_id", "=", attribute.id),
-                        ],
-                        limit=1,
-                    )
-                    if not attribute_value:
-                        attribute_value = self.env["product.attribute.value"].create(
-                            {
-                                "name": attribute_data["value"],
-                                "attribute_id": attribute.id,
-                            }
-                        )
-                    current_variant_pavs += attribute_value
-
-                    ptal = self.env["product.template.attribute.line"].search(  # noqa: E8507 - one lookup per Gelato attribute; the record may have been created by an earlier pass
-                        [
-                            ("product_tmpl_id", "=", self.id),
-                            ("attribute_id", "=", attribute.id),
-                        ],
-                        limit=1,
-                    )
-                    if not ptal:
-                        self.env["product.template.attribute.line"].create(
-                            {
-                                "product_tmpl_id": self.id,
-                                "attribute_id": attribute.id,
-                                "value_ids": [Command.link(attribute_value.id)],
-                            }
-                        )
-                    else:
-                        ptal.value_ids = [Command.link(attribute_value.id)]
-
-                for variant in self.product_variant_ids:
-                    corresponding_ptavs = variant.product_template_attribute_value_ids
-                    corresponding_pavs = corresponding_ptavs.product_attribute_value_id
-                    if corresponding_pavs == current_variant_pavs:
-                        variant.gelato_product_uid = variant_data["productUid"]
-                        break
-
-            variants_without_gelato = self.env["product.product"].search(
-                [("product_tmpl_id", "=", self.id), ("gelato_product_uid", "=", False)]
+                )
+            option_names = set(options)
+            options_by_uid[variant_data["productUid"]] = options
+        combinations = [
+            frozenset(options.items()) for options in options_by_uid.values()
+        ]
+        if len(set(combinations)) != len(combinations):
+            raise UserError(
+                self.env._("Gelato describes two variants with the same options.")
             )
-            variants_without_gelato._unlink_or_archive()
+
+        variant_attributes = self.valid_product_template_attribute_line_ids._without_no_variant_attributes().attribute_id
+        not_offered = variant_attributes.filtered(
+            lambda attribute: attribute.name not in option_names
+        )
+        if not_offered:
+            raise UserError(
+                self.env._(
+                    "%(attributes)s is on %(product)s but Gelato does not offer it, so"
+                    " no variant can match Gelato's. Remove it from the product, or"
+                    " make it not create variants, then synchronize again.",
+                    attributes=", ".join(not_offered.mapped("name")),
+                    product=self.display_name,
+                )
+            )
+        not_always = variant_attributes.filtered(
+            lambda attribute: attribute.create_variant != "always"
+        )
+        if not_always:
+            raise UserError(
+                self.env._(
+                    "%(attributes)s must create its variants instantly to be"
+                    " synchronized with Gelato.",
+                    attributes=", ".join(not_always.mapped("name")),
+                )
+            )
+        return options_by_uid
+
+    def _ensure_gelato_attribute_values(self, options_by_uid) -> dict:
+        Attribute = self.env["product.attribute"]
+        Value = self.env["product.attribute.value"]
+        values_by_name = {}
+        for options in options_by_uid.values():
+            for name, value in options.items():
+                values_by_name.setdefault(name, set()).add(value)
+
+        lines_by_name = {
+            line.attribute_id.name: line
+            for line in self.valid_product_template_attribute_line_ids._without_no_variant_attributes()
+        }
+        attributes = {name: line.attribute_id for name, line in lines_by_name.items()}
+        for attribute in Attribute.search(
+            [
+                (
+                    "name",
+                    "in",
+                    [name for name in values_by_name if name not in attributes],
+                ),
+                ("create_variant", "=", "always"),
+            ]
+        ):
+            attributes.setdefault(attribute.name, attribute)
+        missing = [name for name in values_by_name if name not in attributes]
+        for attribute in Attribute.create([{"name": name} for name in missing]):
+            attributes[attribute.name] = attribute
+
+        value_by_key = {
+            (value.attribute_id.name, value.name): value
+            for value in Value.search(
+                [
+                    (
+                        "attribute_id",
+                        "in",
+                        [attribute.id for attribute in attributes.values()],
+                    )
+                ]
+            )
+        }
+        missing = [
+            {"name": value, "attribute_id": attributes[name].id}
+            for name, values in values_by_name.items()
+            for value in sorted(values)
+            if (name, value) not in value_by_key
+        ]
+        for value in Value.create(missing):
+            value_by_key[value.attribute_id.name, value.name] = value
+
+        line_commands = []
+        for name, values in values_by_name.items():
+            wanted = Value.concat(
+                *(value_by_key[name, value] for value in sorted(values))
+            )
+            line = lines_by_name.get(name)
+            if not line:
+                line_commands.append(
+                    Command.create(
+                        {
+                            "attribute_id": attributes[name].id,
+                            "value_ids": [Command.set(wanted.ids)],
+                        }
+                    )
+                )
+            elif wanted - line.value_ids:
+                line_commands.append(
+                    Command.update(
+                        line.id,
+                        {
+                            "value_ids": [
+                                Command.link(value.id)
+                                for value in wanted - line.value_ids
+                            ]
+                        },
+                    )
+                )
+        if line_commands:
+            self.write({"attribute_line_ids": line_commands})
+
+        return {
+            uid: Value.concat(
+                *(value_by_key[name, value] for name, value in options.items())
+            )
+            for uid, options in options_by_uid.items()
+        }
+
+    def _assign_gelato_variants(self, values_by_uid) -> None:
+        variant_by_values = {
+            frozenset(
+                variant.product_template_attribute_value_ids.product_attribute_value_id.ids
+            ): variant
+            for variant in self.product_variant_ids
+        }
+        unmatched = [
+            uid
+            for uid, values in values_by_uid.items()
+            if frozenset(values.ids) not in variant_by_values
+        ]
+        if unmatched:
+            raise UserError(
+                self.env._(
+                    "Gelato's variants %(variants)s have no counterpart on %(product)s;"
+                    " an exclusion on the product may forbid them.",
+                    variants=", ".join(unmatched),
+                    product=self.display_name,
+                )
+            )
+        synced = self.env["product.product"]
+        for uid, values in values_by_uid.items():
+            variant = variant_by_values[frozenset(values.ids)]
+            variant.gelato_product_uid = uid
+            synced |= variant
+        (self.product_variant_ids - synced)._unlink_or_archive()
 
     def _create_print_images_from_gelato_info(self, template_info) -> None:
         for print_image_data in template_info["variants"][0]["imagePlaceholders"]:
