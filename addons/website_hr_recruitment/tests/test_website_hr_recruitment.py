@@ -7,6 +7,15 @@ from odoo.addons.website_hr_recruitment.controllers.main import WebsiteHrRecruit
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestWebsiteHrRecruitmentForm(odoo.tests.HttpCase):
+    def test_jobs_search_in_place(self):
+        self.env["hr.job"].create(
+            [
+                {"name": "PN Gardener", "is_published": True},
+                {"name": "PN Welder", "is_published": True},
+            ]
+        )
+        self.start_tour("/jobs", "jobs_partial_navigation")
+
     def test_tour(self):
         department = self.env["hr.department"].create({"name": "guru team"})
         job_guru = self.env["hr.job"].create(

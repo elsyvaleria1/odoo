@@ -3,7 +3,11 @@
 
     <template id="index" name="Jobs">
         <t t-call="website.layout">
-            <div id="wrap" class="o_website_hr_recruitment_jobs_list">
+            <div
+                id="wrap"
+                class="o_website_hr_recruitment_jobs_list"
+                data-fragment="website_hr_recruitment.index"
+                data-partial-navigation=".oe_website_jobs &gt; .o_wevent_index_topbar_filters, #jobs_grid .pagination">
                 <div class="oe_structure" id="oe_structure_hr_recruitment_index_top" />
 
                 <div class="container oe_website_jobs">
