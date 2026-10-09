@@ -4,6 +4,18 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 
 from .resource_asset_room import ROOM_KIND
+from odoo.addons.bus.tools.channel_capability import (
+    channel_capability,
+    channel_target,
+    register_channel_scope,
+    token_revision,
+)
+
+KIOSK_CHANNEL = register_channel_scope(
+    "room.kiosk",
+    purpose="the bookings of one room, as its public kiosk shows them",
+    lifetime="until the room's access token is rotated",
+)
 
 BOOKABLE_BACKGROUND_COLOR = "#83c5be"
 BOOKED_BACKGROUND_COLOR = "#dd2d4a"
@@ -160,13 +172,22 @@ class ResourceResource(models.Model):
         action["name"] = self.env._("Bookings")
         return action
 
+    def _room_bus_key(self) -> str:
+        return f"{self.id}.{token_revision(self.access_token)}"
+
+    def _room_bus_channel(self) -> str:
+        return channel_capability(self.env, KIOSK_CHANNEL, self._room_bus_key())
+
+    def _room_bus_target(self) -> tuple:
+        return channel_target(self.env, KIOSK_CHANNEL, self._room_bus_key())
+
     def _notify_booking_view(self, method, events=False) -> None:
         self.check_singleton()
         if not self.access_token:
             return
         if method != "reload" and (not self.active or not self._get_room_resources()):
             return
-        channel = f"room_booking#{self.access_token}"
+        channel = self._room_bus_target()
         if method == "reload":
             self.env["bus.bus"]._sendone(
                 channel, f"room#{self.id}/reload", self.room_booking_url

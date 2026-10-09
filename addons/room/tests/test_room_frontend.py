@@ -1,11 +1,14 @@
 import pathlib
+import re
 from datetime import datetime
+from unittest.mock import patch
 
 from freezegun import freeze_time
 
 from odoo.tests.common import HttpCase, JsonRpcException, tagged
 from odoo.tools.misc import file_path
 
+from odoo.addons.bus.tools.channel_capability import resolve_capability
 from odoo.addons.room.tests.common import RoomCommon
 from odoo.addons.web.tests.test_split_frontend_page import _MODULE_SCRIPT_RE
 
@@ -175,3 +178,25 @@ class TestRoomFrontend(RoomCommon, HttpCase):
                 and info["bytes"] == session.stat().st_size
             ]
             self.assertEqual(inlined, [], src)
+
+    @freeze_time("2023-05-15 07:00:00")
+    def test_the_kiosk_listens_on_its_room_capability(self):
+        resource = self.resources[0]
+        self.authenticate(None, None)
+        page = self.url_open(f"/room/{resource.short_code}/book").text
+        channel = re.search(
+            r"busChannel(?:&#34;|&quot;|\")\s*:\s*(?:&#34;|&quot;|\")([^&\"]+)", page
+        )
+        self.assertTrue(channel, "the kiosk page names its bus channel")
+        self.assertEqual(
+            resolve_capability(self.env, channel.group(1)), resource._room_bus_target()
+        )
+        sent = []
+        with patch.object(
+            type(self.env["bus.bus"]),
+            "_sendone",
+            lambda _bus, target, *_args: sent.append(target),
+        ):
+            self.bookings[0].name = "Renamed"
+        self.assertEqual(sent, [resource._room_bus_target()])
+        self.assertNotIn(resource.access_token, repr(sent))

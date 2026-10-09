@@ -46,7 +46,7 @@ export async function mountRoomBookingView(useBus) {
         logout();
         // Subscription to the bus will be done by the component in `mount`.
         // We need to wait for the subscription to be done before sending notifications.
-        const busSubscriptionPromise = waitUntilSubscribe("room_booking#room_test");
+        const busSubscriptionPromise = waitUntilSubscribe("room_bus_test");
         /**
          * Send a notification to the view through the bus and wait for the notification to
          * be received.
@@ -54,11 +54,7 @@ export async function mountRoomBookingView(useBus) {
         notifyView = async (notificationType, bookings) => {
             notificationType = "room#1/" + notificationType;
             await busSubscriptionPromise;
-            pyEnv["bus.bus"]._sendone(
-                "room_booking#room_test",
-                notificationType,
-                bookings,
-            );
+            pyEnv["bus.bus"]._sendone("room_bus_test", notificationType, bookings);
             await runAllTimers();
             await waitNotifications([env, notificationType, bookings]);
             await animationFrame();
@@ -74,6 +70,7 @@ export async function mountRoomBookingView(useBus) {
                 "<p class='text-danger o_test_description'>Room's description</p>",
             name: "Test Room",
             accessToken: "room_test",
+            busChannel: "room_bus_test",
             bookableBgColor: "#00FF00",
             bookedBgColor: "#FF0000",
         },

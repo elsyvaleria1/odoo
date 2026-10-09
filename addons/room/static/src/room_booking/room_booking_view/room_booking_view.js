@@ -74,6 +74,7 @@ export class RoomBookingView extends Component {
         accessToken: t.string(),
         bookableBgColor: t.string(),
         bookedBgColor: t.string(),
+        busChannel: t.string(),
         description: t.string(),
         id: t.number(),
         name: t.string(),
@@ -96,7 +97,7 @@ export class RoomBookingView extends Component {
         });
         // Show bookings updates in live
         this.busService = useService("bus_service");
-        this.busService.addChannel("room_booking#" + this.props.accessToken);
+        this.busService.addChannel(this.props.busChannel);
         this.busService.subscribe(`room#${this.props.id}/booking/create`, (bookings) =>
             bookings.forEach((booking) =>
                 this.addBooking(formatServerBooking(booking)),
