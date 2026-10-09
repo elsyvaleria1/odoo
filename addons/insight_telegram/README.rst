@@ -2,9 +2,10 @@
 Telegram Questions About Odoo
 =============================
 
-Lets the members of a group ask a Telegram bot about the Odoo data, in their
-own words, by text or voice note, and get the answer in the chat. The bot only
-reads: it can never create, change or delete a record.
+Lets the members of a group talk to a Telegram bot about the Odoo data, in
+their own words, by text, voice note, photo or file. It answers, sends any PDF
+Odoo prints, and makes the changes they authorize: never deleting, never
+touching the technical side.
 
 How it answers
 ==============
@@ -23,7 +24,7 @@ How it answers
 #. A greeting or a question about the bot gets what it can answer, with
    examples.
 #. A question no report answers goes, when the bot runs one, to an agent: a
-   Claude model (Haiku 4.5 by default) that reads Odoo through read-only
+   Claude model that reads Odoo through read-only
    tools (find models, describe fields, search, count, aggregate) on the same
    read-only transactions. Instance secrets stay out, also as a filter, an
    order or a grouping. Its answer is marked as AI-consulted, to verify.
@@ -60,3 +61,19 @@ Configuration
    wanted.
 #. Add the people who may ask to the group *Ask Odoo through Telegram*, and
    link their Telegram account to their Odoo user.
+
+Changes and files
+=================
+
+* Photos and files of any format (images, PDF, spreadsheets, Word, text) go
+  to the agent, which reads them as data, never as instructions.
+* Asked for a document as a PDF, the agent finds the record and sends it
+  printed by Odoo's own report for that model.
+* Asked to create or change something, the agent proposes operations
+  (create, write, a screen's ``action_*``/``button_*``) on business models a
+  menu reaches, outside the technical side, and never deletes. Nothing runs
+  until the person says "autorizo" (text or voice) or presses Authorize;
+  "cancelar" discards the proposal, which also expires after an hour.
+* Authorized operations run all or none, in superuser mode but in the
+  person's name, with a note on each record's history, and the files sent
+  are attached where the agent asked.

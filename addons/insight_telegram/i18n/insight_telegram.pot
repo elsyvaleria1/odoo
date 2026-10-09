@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:21+0000\n"
-"PO-Revision-Date: 2026-10-09 20:21+0000\n"
+"POT-Creation-Date: 2026-10-09 20:36+0000\n"
+"PO-Revision-Date: 2026-10-09 20:36+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -118,6 +118,12 @@ msgid "Agent AI Provider"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Analyse the file(s) I sent."
+msgstr ""
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answer
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
 msgid "Answer"
@@ -196,6 +202,18 @@ msgid "Bot"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Cancelled: nothing was changed."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Changes waiting for your authorization:"
+msgstr ""
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__company_id
 msgid "Company"
 msgstr ""
@@ -256,6 +274,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Done:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "EXPIRED"
 msgstr ""
@@ -296,6 +320,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I could not answer that right now. Please try again."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I could not apply the changes, so nothing was changed: %(error)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -575,6 +605,14 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"Say «autorizo» (text or voice) or press Authorize to apply them; «cancelar» "
+"discards them."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "Stock on hand"
 msgstr ""
@@ -635,14 +673,6 @@ msgstr ""
 msgid ""
 "The answer runs as the person who asked, who reads no question log: "
 "recording each question, answered or not, is the bot's own bookkeeping."
-msgstr ""
-
-#. module: insight_telegram
-#. odoo-python
-#: code:addons/insight_telegram/models/telegram_handler.py:0
-msgid ""
-"The bot only reads: it never creates or changes anything. It remembers the "
-"last few questions, so you can follow up."
 msgstr ""
 
 #. module: insight_telegram
@@ -727,9 +757,10 @@ msgstr ""
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_enabled
 msgid ""
-"When a question fits no catalogued report, let a chat model read the "
-"database with read-only tools and answer it, marked as an AI answer to "
-"verify. Off: such a question is declined."
+"When a question fits no catalogued report, or comes with files, let a chat "
+"model read the database and the files, send Odoo's own PDFs, and propose "
+"changes that run only once the person says 'autorizo', marked as an AI "
+"answer to verify. Off: such a question is declined."
 msgstr ""
 
 #. module: insight_telegram
@@ -737,7 +768,8 @@ msgstr ""
 msgid ""
 "When enabled, this bot answers questions about Odoo data asked by members of"
 " the 'Ask Odoo through Telegram' group, from a catalogue of read-only "
-"reports. It can never write."
+"reports and, through the agent, changes they authorize (never deleting, "
+"never the technical side)."
 msgstr ""
 
 #. module: insight_telegram
@@ -751,6 +783,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_handler.py:0
 msgid "You can also ask with a voice note 🎙."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid ""
+"You can also send photos and files, ask for any document as a PDF, or ask it"
+" to create or change something: it asks you to say «autorizo» before doing "
+"it, and it never deletes. It remembers the last few questions, so you can "
+"follow up."
 msgstr ""
 
 #. module: insight_telegram
@@ -938,6 +980,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "… and %(count)s more"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "✅ Authorize"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "❌ Cancel"
 msgstr ""
 
 #. module: insight_telegram

@@ -8,7 +8,8 @@ class TelegramBot(models.Model):
         string="Answer Odoo Questions",
         help="When enabled, this bot answers questions about Odoo data asked "
         "by members of the 'Ask Odoo through Telegram' group, from a catalogue "
-        "of read-only reports. It can never write.",
+        "of read-only reports and, through the agent, changes they authorize "
+        "(never deleting, never the technical side).",
     )
     insight_ai_provider_id = fields.Many2one(
         comodel_name="integration.ml.provider",
@@ -35,9 +36,11 @@ class TelegramBot(models.Model):
     )
     insight_agent_enabled = fields.Boolean(
         string="Answer the Rest with an AI Agent",
-        help="When a question fits no catalogued report, let a chat model read "
-        "the database with read-only tools and answer it, marked as an AI "
-        "answer to verify. Off: such a question is declined.",
+        help="When a question fits no catalogued report, or comes with files, "
+        "let a chat model read the database and the files, send Odoo's own "
+        "PDFs, and propose changes that run only once the person says "
+        "'autorizo', marked as an AI answer to verify. Off: such a question "
+        "is declined.",
     )
     insight_agent_provider_id = fields.Many2one(
         comodel_name="integration.ml.provider",

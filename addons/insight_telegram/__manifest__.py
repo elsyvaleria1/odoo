@@ -1,10 +1,10 @@
 {
     "name": "Telegram Questions About Odoo",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "oldest_upgradable_version": "19.0.1.0.0",
     "category": "Hidden",
-    "summary": "Answer questions about Odoo data from Telegram, read-only",
-    "description": "Lets members of a group ask a Telegram bot questions about Odoo data in their own words, as text or voice notes. A chat model only routes each question to a catalogued report and extracts its parameters; the report reads the database on a read-only transaction that sees every company, so every figure comes from Odoo. Questions no report answers go to an optional agent that reads Odoo through read-only tools and marks its answer as AI-consulted; without it they are declined. Every question is logged. Requires a bot with questions enabled, a company policy allowing the telegram.insight purpose on a chat model and, for voice notes, a transcription policy.",
+    "summary": "Ask Odoo from Telegram: answers, PDFs and authorized changes",
+    "description": "Lets members of a group talk to a Telegram bot about Odoo data in their own words, by text, voice notes, photos or files. A fast model routes each question to a catalogued report whose figures come from Odoo on a read-only transaction; an optional agent answers the rest, reads the files sent, sends any PDF Odoo prints, and proposes changes that run only after the person says autorizo, in superuser mode in their name, never deleting and never touching the technical side. Every question is logged. Requires a bot with questions enabled and company policies for its machine-learning purposes.",
     "author": "AgroMarin",
     "license": "LGPL-3",
     "depends": [

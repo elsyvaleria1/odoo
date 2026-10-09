@@ -5,6 +5,9 @@ from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools.dispatch import translation_env
 
 GROUP = "insight_telegram.group_insight_telegram"
+AUTHORIZE = "ins_ok"
+CANCEL = "ins_no"
+CALLBACKS = (AUTHORIZE, CANCEL)
 
 
 class TelegramHandlerInsight(models.AbstractModel):
@@ -15,7 +18,25 @@ class TelegramHandlerInsight(models.AbstractModel):
     # no command: on a bot that answers questions, whatever a member writes or
     # says is a question
     def _telegram_intakes(self):
-        return frozenset({"text", "voice"})
+        return frozenset({"text", "voice", "photo", "document", "audio", "video"})
+
+    def _telegram_callback_prefixes(self):
+        return CALLBACKS
+
+    def _on_callback(self, bot, chat, callback_query, partner, internal_user):
+        data = callback_query.get("data") or ""
+        if data not in CALLBACKS:
+            return False
+        bot.answer_callback_query(callback_query.get("id"))
+        self._clear_keyboard(bot, chat, callback_query)
+        if not self._may_ask(bot, internal_user):
+            return True
+        # a button stands for the words: the job decides as it would for them
+        words = "autorizo" if data == AUTHORIZE else "cancelar"
+        chat.delayed(
+            identity_key=f"telegram_insight:{chat.id}:cb:{callback_query.get('id')}"
+        )._insight_answer(bot.id, {"text": words}, bot._acting_company().id)
+        return True
 
     def _telegram_intake_label(self, bot, chat, kind):
         return self._tr(bot, chat)._("Question about Odoo")
@@ -68,7 +89,9 @@ class TelegramHandlerInsight(models.AbstractModel):
             tr_env._("Example: %(example)s")
             % {"example": tg.code("¿Cuánto vendimos este mes por sucursal?")},
             tr_env._(
-                "The bot only reads: it never creates or changes anything. It "
+                "You can also send photos and files, ask for any document as a "
+                "PDF, or ask it to create or change something: it asks you to "
+                "say «autorizo» before doing it, and it never deletes. It "
                 "remembers the last few questions, so you can follow up."
             ),
         ]

@@ -21,6 +21,10 @@ class OdooReader:
         self._uid = reader_uid
         self._context = {**(context or {}), "active_test": True}
 
+    @property
+    def uid(self) -> int:
+        return self._uid
+
     @contextmanager
     def env(self):
         with self._registry.cursor(readonly=True, primary=True) as cr:

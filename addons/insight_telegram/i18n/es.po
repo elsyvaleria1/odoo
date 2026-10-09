@@ -119,6 +119,12 @@ msgid "Agent AI Provider"
 msgstr "Proveedor de IA del agente"
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Analyse the file(s) I sent."
+msgstr "Analiza el o los archivos que te mandé."
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__answer
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_form
 msgid "Answer"
@@ -199,6 +205,18 @@ msgid "Bot"
 msgstr "Bot"
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Cancelled: nothing was changed."
+msgstr "Cancelado: no se cambió nada."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Changes waiting for your authorization:"
+msgstr "Cambios en espera de tu autorización:"
+
+#. module: insight_telegram
 #: model:ir.model.fields,field_description:insight_telegram.field_telegram_insight_log__company_id
 msgid "Company"
 msgstr "Compañía"
@@ -259,6 +277,12 @@ msgstr "Documentos en su expediente:"
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Done:"
+msgstr "Listo:"
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "EXPIRED"
 msgstr "VENCIDO"
@@ -302,6 +326,12 @@ msgstr "Respondo con cifras exactas sobre: %(topics)s."
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I could not answer that right now. Please try again."
 msgstr "No pude responder eso en este momento. Intenta de nuevo, por favor."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "I could not apply the changes, so nothing was changed: %(error)s"
+msgstr "No pude aplicar los cambios, así que no se cambió nada: %(error)s"
 
 #. module: insight_telegram
 #. odoo-python
@@ -593,6 +623,16 @@ msgstr "Sueldos según contrato vigente"
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"Say «autorizo» (text or voice) or press Authorize to apply them; «cancelar» "
+"discards them."
+msgstr ""
+"Di «autorizo» (texto o voz) o pícale a Autorizar para aplicarlos; «cancelar»"
+" los descarta."
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "Stock on hand"
 msgstr "Existencias"
@@ -660,16 +700,6 @@ msgstr ""
 "La respuesta corre como la persona que preguntó, que no lee la bitácora de "
 "preguntas: registrar cada pregunta, respondida o no, es contabilidad del "
 "propio bot."
-
-#. module: insight_telegram
-#. odoo-python
-#: code:addons/insight_telegram/models/telegram_handler.py:0
-msgid ""
-"The bot only reads: it never creates or changes anything. It remembers the "
-"last few questions, so you can follow up."
-msgstr ""
-"El bot solo consulta: nunca crea ni modifica nada. Recuerda las últimas "
-"preguntas, así que puedes seguir preguntando sobre el mismo tema."
 
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__company_id
@@ -763,25 +793,29 @@ msgstr "Sin respuesta"
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_enabled
 msgid ""
-"When a question fits no catalogued report, let a chat model read the "
-"database with read-only tools and answer it, marked as an AI answer to "
-"verify. Off: such a question is declined."
+"When a question fits no catalogued report, or comes with files, let a chat "
+"model read the database and the files, send Odoo's own PDFs, and propose "
+"changes that run only once the person says 'autorizo', marked as an AI "
+"answer to verify. Off: such a question is declined."
 msgstr ""
-"Cuando una pregunta no corresponde a ningún reporte del catálogo, un modelo "
-"de chat lee la base de datos con herramientas de solo lectura y la responde,"
-" marcada como respuesta de IA por verificar. Apagado: esa pregunta se "
-"rechaza."
+"Cuando una pregunta no corresponde a ningún reporte del catálogo, o trae "
+"archivos, un modelo de chat lee la base de datos y los archivos, manda los "
+"PDF propios de Odoo y propone cambios que solo se hacen cuando la persona "
+"dice «autorizo», marcados como respuesta de IA por verificar. Apagado: esa "
+"pregunta se rechaza."
 
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_enabled
 msgid ""
 "When enabled, this bot answers questions about Odoo data asked by members of"
 " the 'Ask Odoo through Telegram' group, from a catalogue of read-only "
-"reports. It can never write."
+"reports and, through the agent, changes they authorize (never deleting, "
+"never the technical side)."
 msgstr ""
 "Si está activo, este bot responde las preguntas sobre los datos de Odoo que "
 "hagan los miembros del grupo 'Preguntar a Odoo por Telegram', con un "
-"catálogo de reportes de solo lectura. Nunca puede escribir."
+"catálogo de reportes de solo lectura y, mediante el agente, hace los cambios"
+" que ellos autoricen (nunca borra ni toca lo técnico)."
 
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
@@ -797,6 +831,20 @@ msgstr ""
 #: code:addons/insight_telegram/models/telegram_handler.py:0
 msgid "You can also ask with a voice note 🎙."
 msgstr "También puedes preguntar con una nota de voz 🎙."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid ""
+"You can also send photos and files, ask for any document as a PDF, or ask it"
+" to create or change something: it asks you to say «autorizo» before doing "
+"it, and it never deletes. It remembers the last few questions, so you can "
+"follow up."
+msgstr ""
+"También puedes mandar fotos y archivos, pedir cualquier documento en PDF, o "
+"pedirle que cree o cambie algo: antes de hacerlo te pide que digas "
+"«autorizo», y nunca borra. Recuerda las últimas preguntas, así que puedes "
+"seguir preguntando sobre el mismo tema."
 
 #. module: insight_telegram
 #. odoo-python
@@ -986,6 +1034,18 @@ msgstr "• Línea de crédito %(name)s en %(company)s: %(amount)s hasta %(end)s
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "… and %(count)s more"
 msgstr "… y %(count)s más"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "✅ Authorize"
+msgstr "✅ Autorizar"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "❌ Cancel"
+msgstr "❌ Cancelar"
 
 #. module: insight_telegram
 #. odoo-python

@@ -1,3 +1,5 @@
+import contextlib
+import io
 from datetime import date
 from types import SimpleNamespace
 from unittest.mock import PropertyMock, patch
@@ -9,8 +11,12 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged
 
-from odoo.addons.insight_telegram.models.telegram_chat import CHUNK_LIMIT, _chunks
-from odoo.addons.insight_telegram.services import catalog, documents
+from odoo.addons.insight_telegram.models.telegram_chat import (
+    CHUNK_LIMIT,
+    _chunks,
+    _decision,
+)
+from odoo.addons.insight_telegram.services import catalog, documents, files, write_ops
 from odoo.addons.insight_telegram.services.insight_agent import InsightAgent
 from odoo.addons.insight_telegram.services.insight_assistant import (
     InsightAssistant,
@@ -56,13 +62,18 @@ class TestOdooReader(TransactionCase):
             self.assertEqual(env.cr.fetchone()[0], "20s")
 
 
-# the smallest PDF a reader opens: a document's page count is read on save
-TINY_PDF = (
-    b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 3 3]>>endobj\n"
-    b"trailer<</Root 1 0 R>>\n%%EOF"
-)
+def _tiny_pdf() -> bytes:
+    """A one-page PDF any reader opens: a document's page count is read on save."""
+    from pypdf import PdfWriter
+
+    buffer = io.BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=3, height=3)
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+TINY_PDF = _tiny_pdf()
 
 
 def _call(reader, name, **arguments):
@@ -373,7 +384,7 @@ class TestCatalog(TransactionCase):
                 "name": "Contrato de terreno.pdf",
                 "partner_id": partner.id,
                 "document_type_id": kind.id,
-                "raw": TINY_PDF + b"guarantee",
+                "raw": TINY_PDF,
                 "mimetype": "application/pdf",
             }
         )
@@ -382,7 +393,7 @@ class TestCatalog(TransactionCase):
                 "name": "Acuse de liberación.pdf",
                 "partner_id": partner.id,
                 "document_type_id": release.id,
-                "raw": TINY_PDF + b"release",
+                "raw": TINY_PDF,
                 "mimetype": "application/pdf",
             }
         )
@@ -410,7 +421,7 @@ class TestCatalog(TransactionCase):
             self.env, "guarantee", {"partner": "Ask Probe Pledger"}
         )
         self.assertEqual(names, ["Contrato de terreno.pdf"])
-        self.assertEqual(files, [("Contrato de terreno.pdf", TINY_PDF + b"guarantee")])
+        self.assertEqual(files, [("Contrato de terreno.pdf", TINY_PDF)])
 
     def test_a_printed_document_is_rendered(self):
         if "sale.order" not in self.env:
@@ -758,3 +769,324 @@ class TestInsightHandler(TelegramBotTestCase):
         )
         self.assertEqual(log.query, "send_document")
         self.assertIn("garantia.pdf", log.answer)
+
+
+@tagged("post_install", "-at_install")
+class TestWriteOperations(TransactionCase):
+    def _sale(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe Writer"})
+        product = self.env["product.product"].create(
+            {"name": "Ask Probe Writable", "list_price": 10}
+        )
+        return customer, product
+
+    def test_the_technical_side_and_deleting_are_refused(self):
+        for operation in (
+            {"op": "create", "model": "res.users", "values": {"name": "x"}},
+            {"op": "write", "model": "ir.ui.view", "ids": [1], "values": {"name": "x"}},
+            {"op": "create", "model": "ir.cron", "values": {"name": "x"}},
+            {"op": "unlink", "model": "res.partner", "ids": [1]},
+            {"op": "action", "model": "res.partner", "ids": [1], "method": "unlink"},
+            {
+                "op": "action",
+                "model": "res.partner",
+                "ids": [1],
+                "method": "action_delete",
+            },
+        ):
+            with (
+                self.subTest(operation=operation),
+                self.assertRaises(write_ops.OperationError),
+            ):
+                write_ops.check(self.env, operation)
+
+    def test_an_unknown_field_is_explained(self):
+        with self.assertRaisesRegex(write_ops.OperationError, "no field"):
+            write_ops.check(
+                self.env,
+                {"op": "create", "model": "res.partner", "values": {"no_such": 1}},
+            )
+
+    def test_an_order_is_created_confirmed_noted_and_attached(self):
+        customer, product = self._sale()
+        operations = [
+            {
+                "op": "create",
+                "model": "sale.order",
+                "values": {
+                    "partner_id": customer.id,
+                    "line_ids": [[0, 0, {"product_id": product.id, "product_qty": 2}]],
+                },
+                "attach_files": True,
+            },
+            {
+                "op": "action",
+                "model": "sale.order",
+                "ids": ["ref:1"],
+                "method": "action_confirm",
+            },
+        ]
+        operations = [write_ops.check(self.env, operation) for operation in operations]
+        touched = write_ops.apply(
+            self.env(su=True),
+            operations,
+            [("ticket.txt", b"ticket", "text/plain")],
+            self.env.user,
+        )
+        order = touched[0]
+        self.assertEqual(order.state, "done")
+        self.assertEqual(order.line_ids.product_id, product)
+        self.assertTrue(
+            self.env["ir.attachment"].search(
+                [("res_model", "=", "sale.order"), ("res_id", "=", order.id)]
+            )
+        )
+        self.assertIn("a petición de", order.message_ids[:1].body)
+
+    def test_a_failing_operation_changes_nothing(self):
+        customer, _product = self._sale()
+        before = self.env["sale.order"].search_count([])
+        operations = [
+            {
+                "op": "create",
+                "model": "sale.order",
+                "values": {"partner_id": customer.id},
+            },
+            {
+                "op": "action",
+                "model": "sale.order",
+                "ids": [999999999],
+                "method": "action_confirm",
+            },
+        ]
+        with self.assertRaises(write_ops.OperationError):
+            write_ops.apply(self.env(su=True), operations, [], self.env.user)
+        self.assertEqual(self.env["sale.order"].search_count([]), before)
+
+    def test_proposals_write_nothing(self):
+        reader = OdooReader(
+            self.registry, self.env.ref("insight_telegram.user_reader").id
+        )
+        tools = OdooTools(reader, writable=True)
+        self.assertIn("propose_create", [tool["name"] for tool in tools.tools()])
+        result = json_loads(
+            tools.call(
+                "propose_create",
+                {"model": "res.partner", "values": {"name": "Ask Probe Proposed"}},
+            )
+        )
+        self.assertEqual(result["proposal"], 1)
+        self.assertEqual(len(tools.proposals), 1)
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Ask Probe Proposed")])
+        )
+        refused = json_loads(
+            tools.call(
+                "propose_create", {"model": "res.users", "values": {"name": "x"}}
+            )
+        )
+        self.assertIn("cannot be changed", refused["error"])
+
+    def test_any_odoo_pdf_can_be_queued(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer, _product = self._sale()
+        order = self.env["sale.order"].create({"partner_id": customer.id})
+        self.env.flush_all()
+        reader = OdooReader(
+            self.registry, self.env.ref("insight_telegram.user_reader").id
+        )
+        tools = OdooTools(reader)
+        reports = json_loads(tools.call("pdf_reports", {"model": "sale.order"}))[
+            "reports"
+        ]
+        self.assertTrue(reports)
+        queued = json_loads(
+            tools.call("send_pdf", {"report_id": reports[0]["id"], "ids": [order.id]})
+        )
+        self.assertIn(order.display_name, queued["records"])
+        self.assertEqual(
+            tools.pdf_requests, [(reports[0]["id"], "sale.order", [order.id])]
+        )
+        refused = json_loads(
+            tools.call("send_pdf", {"report_id": 0, "ids": [order.id]})
+        )
+        self.assertIn("No such PDF report", refused["error"])
+
+    def test_a_read_only_bot_offers_no_change(self):
+        reader = OdooReader(
+            self.registry, self.env.ref("insight_telegram.user_reader").id
+        )
+        names = [tool["name"] for tool in OdooTools(reader).tools()]
+        self.assertNotIn("propose_create", names)
+
+
+@tagged("post_install", "-at_install")
+class TestFiles(TransactionCase):
+    def test_each_kind_of_file_becomes_a_block(self):
+        blocks = files.blocks(
+            [
+                ("photo.jpg", b"\xff\xd8jpeg", "image/jpeg"),
+                ("factura.pdf", TINY_PDF, "application/pdf"),
+                ("lista.csv", b"a,b\n1,2", "text/csv"),
+                ("raro.bin", b"\x00\x01", "application/octet-stream"),
+            ]
+        )
+        kinds = [block["type"] for block in blocks]
+        self.assertEqual(kinds[0], "image")
+        self.assertIn("document", kinds)
+        texts = " ".join(block.get("text", "") for block in blocks)
+        self.assertIn("a,b", texts)
+        self.assertIn("not readable as text", texts)
+
+    def test_a_word_document_is_read(self):
+        import zipfile
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr(
+                "word/document.xml",
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+                'wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Hola contrato'
+                "</w:t></w:r></w:p></w:body></w:document>",
+            )
+        blocks = files.blocks([("c.docx", buffer.getvalue(), "")])
+        self.assertIn("Hola contrato", blocks[0]["text"])
+
+    def test_authorizing_words(self):
+        self.assertEqual(_decision("Autorizo"), "authorize")
+        self.assertEqual(_decision("sí, autorízalo por favor"), "authorize")
+        self.assertEqual(_decision("cancelar"), "cancel")
+        self.assertEqual(_decision("no autorizo"), "cancel")
+        self.assertIsNone(_decision("¿cuánto vendimos?"))
+
+
+@tagged("post_install", "-at_install")
+class TestSuperBotFlow(TelegramBotTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env.ref("base.main_company")
+        cls.test_bot.insight_ai_enabled = True
+        cls.mock_ok = cls.mock_telegram_response(success=True, result={"message_id": 9})
+
+    def _job(self, message, interpretation=None, agent=None):
+        patches = [
+            self.mock_api_gateway_post(self.mock_ok),
+            patch.object(
+                InsightAssistant,
+                "available",
+                new_callable=PropertyMock,
+                return_value=True,
+            ),
+            patch.object(
+                InsightAssistant,
+                "interpret",
+                return_value=interpretation or {"query": "none"},
+            ),
+        ]
+        if agent is not None:
+            patches += [
+                patch.object(
+                    InsightAgent,
+                    "available",
+                    new_callable=PropertyMock,
+                    return_value=True,
+                ),
+                patch.object(
+                    type(self.test_chat), "_insight_ask_agent", return_value=agent
+                ),
+            ]
+        with contextlib.ExitStack() as stack:
+            post = stack.enter_context(patches[0])
+            mocks = [stack.enter_context(p) for p in patches[1:]]
+            self.test_chat._insight_answer(self.test_bot.id, message, self.company.id)
+        return str(post.call_args_list), mocks
+
+    def test_proposals_wait_for_authorization_then_apply(self):
+        proposal = [
+            {
+                "op": "create",
+                "model": "res.partner",
+                "values": {"name": "Ask Probe Super"},
+            }
+        ]
+        sent, _mocks = self._job(
+            {"text": "da de alta al cliente Ask Probe Super"},
+            agent=("Propongo crear el cliente.", proposal),
+        )
+        self.assertIn("ins_ok", sent)
+        self.assertTrue(self.test_chat._insight_pending())
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Ask Probe Super")])
+        )
+        self._job({"text": "autorizo"})
+        partner = self.env["res.partner"].search([("name", "=", "Ask Probe Super")])
+        self.assertTrue(partner)
+        self.assertEqual(partner.create_uid, self.env.user)
+        self.assertFalse(self.test_chat._insight_pending())
+
+    def test_cancelling_discards_the_proposals(self):
+        proposal = [
+            {
+                "op": "create",
+                "model": "res.partner",
+                "values": {"name": "Ask Probe Never"},
+            }
+        ]
+        self._job({"text": "crea Ask Probe Never"}, agent=("Propongo.", proposal))
+        sent, _mocks = self._job({"text": "cancelar"})
+        self.assertIn("nothing was changed", sent)
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Ask Probe Never")])
+        )
+        self.assertFalse(self.test_chat._insight_pending())
+
+    def test_a_photo_goes_to_the_agent_with_its_file(self):
+        message = {
+            "photo": [{"file_id": "small"}, {"file_id": "big"}],
+            "caption": "¿Qué es esto?",
+        }
+        with patch.object(
+            type(self.test_chat),
+            "_insight_download",
+            return_value=[("photo.jpg", b"\xff\xd8jpeg", "image/jpeg")],
+        ) as download:
+            _sent, mocks = self._job(message, agent=("Es una factura.", []))
+        self.assertEqual(
+            download.call_args.args[1], [("big", "photo.jpg", "image/jpeg")]
+        )
+        ask_agent = mocks[-1]
+        blocks = ask_agent.call_args.args[-1]
+        self.assertEqual(blocks[0]["type"], "image")
+        self.assertFalse(mocks[1].called, "a file skips the classifier")
+
+    def test_queued_pdfs_are_printed_and_sent(self):
+        if "sale.order" not in self.env:
+            self.skipTest("sale is not installed")
+        customer = self.env["res.partner"].create({"name": "Ask Probe PDF"})
+        order = self.env["sale.order"].create({"partner_id": customer.id})
+        report = self.env.ref("sale.action_report_saleorder")
+        reader = OdooReader(
+            self.registry, self.env.ref("insight_telegram.user_reader").id
+        )
+        with (
+            patch.object(
+                type(self.env["ir.actions.report"]),
+                "_render_qweb_pdf",
+                return_value=(TINY_PDF, "pdf"),
+            ) as render,
+            patch.object(type(self.test_bot), "send_document") as send,
+            self.mock_api_gateway_post(self.mock_ok),
+        ):
+            self.test_chat._insight_send_pdfs(
+                self.test_bot,
+                self.test_chat,
+                [(report.id, "sale.order", order.ids)],
+                reader,
+            )
+        self.assertEqual(render.call_args.args[:2], (report.id, order.ids))
+        self.assertEqual(send.call_args.args[1], TINY_PDF)
+        self.assertTrue(send.call_args.args[2].endswith(".pdf"))
