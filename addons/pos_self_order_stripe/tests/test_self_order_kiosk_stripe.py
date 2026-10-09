@@ -1,9 +1,11 @@
+import contextlib
 from unittest.mock import patch
 
 import odoo.tests
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests import Command
+from odoo.tests.http import JsonRpcException
 
 from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCommonTest
 
@@ -115,9 +117,15 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
                 "last_order_preparation_change": "{}",
             }
         )
+        order._set_kiosk_terminal_request(False, "1")
         with patch(
             stripe_capture_payment,
-            return_value={"id": "1", "status": "succeeded", "amount": 1000},
+            return_value={
+                "id": "1",
+                "status": "succeeded",
+                "amount": 1000,
+                "currency": self.env.company.currency_id.name.lower(),
+            },
         ):
             payload = self._build_payload(
                 {
@@ -158,3 +166,117 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
         self.assertFalse(
             order.payment_ids, "No payments should be registered for the order"
         )
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestSelfOrderKioskStripeCapture(SelfOrderCommonTest):
+    CAPTURE = "odoo.addons.pos_stripe.models.pos_payment_method.PosPaymentMethod.stripe_capture_payment"
+    INTENT = "odoo.addons.pos_stripe.models.pos_payment_method.PosPaymentMethod.stripe_payment_intent"
+
+    def setUp(self):
+        super().setUp()
+        self.stripe = self.env["pos.payment.method"].create(
+            {
+                "name": "Stripe",
+                "journal_id": self.bank_journal.id,
+                "use_payment_terminal": "stripe",
+            }
+        )
+        self.pos_config.write(
+            {
+                "self_ordering_mode": "kiosk",
+                "self_ordering_pay_after": "each",
+                "self_ordering_service_mode": "counter",
+                "payment_method_ids": [Command.set([self.stripe.id])],
+            }
+        )
+        self.pos_config.with_user(self.pos_user).open_ui()
+        self.pos_config.current_session_id.set_opening_control(0, "")
+        self.currency = self.env.company.currency_id.name.lower()
+
+    def _order(self):
+        order = self.env["pos.order"].create(
+            {
+                "session_id": self.pos_config.current_session_id.id,
+                "amount_tax": 0,
+                "amount_total": 0,
+                "amount_paid": 0,
+                "amount_return": 0,
+                "lines": [
+                    Command.create(
+                        {
+                            "product_id": self.fanta.id,
+                            "qty": 1,
+                            "price_unit": 10,
+                            "price_subtotal": 10,
+                            "price_subtotal_incl": 10,
+                            "tax_ids": [],
+                        }
+                    )
+                ],
+            }
+        )
+        order._recompute_amounts()
+        return order
+
+    def _capture(self, order, intent_id, answer):
+        with (
+            patch(self.CAPTURE, return_value=answer) as capture,
+            contextlib.suppress(JsonRpcException),
+        ):
+            self.call_jsonrpc(
+                "/pos-self-order/stripe-capture-payment/",
+                {
+                    "access_token": self.pos_config.self_ordering_access_token,
+                    "order_access_token": order.access_token,
+                    "payment_intent_id": intent_id,
+                    "payment_method_id": self.stripe.id,
+                },
+            )
+        self.env.invalidate_all()
+        return capture
+
+    def _succeeded(self, intent_id, amount=1000, currency=None):
+        return {
+            "id": intent_id,
+            "status": "succeeded",
+            "amount": amount,
+            "currency": currency or self.currency,
+        }
+
+    def test_the_kiosk_request_records_its_intent(self):
+        order = self._order()
+        with patch(self.INTENT, return_value={"id": "pi_1", "client_secret": "s"}):
+            self.stripe._payment_request_from_kiosk(order)
+
+        self.assertEqual(order.kiosk_terminal_request, "pi_1")
+
+    def test_another_orders_intent_is_not_captured_for_this_order(self):
+        paid, target = self._order(), self._order()
+        paid._set_kiosk_terminal_request(False, "pi_paid")
+        target._set_kiosk_terminal_request(False, "pi_target")
+
+        capture = self._capture(target, "pi_paid", self._succeeded("pi_paid"))
+
+        capture.assert_not_called()
+        self.assertEqual(target.state, "draft")
+        self.assertFalse(target.payment_ids)
+
+    def test_its_own_intent_pays_it_once(self):
+        order = self._order()
+        order._set_kiosk_terminal_request(False, "pi_1")
+
+        self._capture(order, "pi_1", self._succeeded("pi_1"))
+        self._capture(order, "pi_1", self._succeeded("pi_1"))
+
+        self.assertEqual(order.state, "paid")
+        self.assertEqual(order.payment_ids.mapped("transaction_id"), ["pi_1"])
+
+    def test_a_capture_in_another_currency_pays_nothing(self):
+        order = self._order()
+        order._set_kiosk_terminal_request(False, "pi_1")
+
+        self._capture(order, "pi_1", self._succeeded("pi_1", currency="xyz"))
+
+        self.assertEqual(order.state, "draft")
+        self.assertFalse(order.payment_ids)

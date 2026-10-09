@@ -8,8 +8,10 @@ class PosPaymentMethod(models.Model):
     def _payment_request_from_kiosk(self, order):
         if self.use_payment_terminal != "stripe":
             return super()._payment_request_from_kiosk(order)
-        else:
-            return self.stripe_payment_intent(order.amount_total)
+        intent = self.stripe_payment_intent(order.amount_total)
+        if isinstance(intent, dict) and intent.get("id"):
+            order._set_kiosk_terminal_request(False, intent["id"])
+        return intent
 
     @api.model
     def _load_pos_self_data_domain(self, data, config):

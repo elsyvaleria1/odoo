@@ -1,6 +1,7 @@
 from werkzeug.exceptions import Unauthorized
 
 from odoo import fields, http
+from odoo.exceptions import UserError
 
 from odoo.addons.pos_self_order.controllers.orders import PosSelfOrderController
 
@@ -30,50 +31,55 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         self, access_token, order_access_token, payment_intent_id, payment_method_id
     ):
         pos_config, _ = self._get_pos_config_and_table(access_token, "", {})
-        stripe_confirmation = pos_config.env[
-            "pos.payment.method"
-        ].stripe_capture_payment(payment_intent_id)
         order = pos_config.env["pos.order"].search(  # noqa: E8537  device: a device's or a service's credential, presented by a program
             [
                 ("access_token", "=", order_access_token),
                 ("config_id", "=", pos_config.id),
             ]
         )
-
-        if not order:
+        payment_method = pos_config.payment_method_ids.filtered(
+            lambda p: p.id == payment_method_id and p.use_payment_terminal == "stripe"
+        )
+        # the intent the server created for this order, never one the kiosk
+        # names: capturing someone else's would book it here
+        if (
+            not order
+            or not payment_method
+            or pos_config.self_ordering_mode != "kiosk"
+            or not payment_intent_id
+            or payment_intent_id != order.kiosk_terminal_request
+        ):
             raise Unauthorized
 
-        payment_method = pos_config.payment_method_ids.filtered(
-            lambda p: p.id == payment_method_id
+        stripe_confirmation = payment_method.stripe_capture_payment(payment_intent_id)
+        currency = (
+            payment_method.journal_id.currency_id
+            or payment_method.company_id.currency_id
         )
-        stripe_order_amount = payment_method._stripe_get_amount(order.amount_total)
-
-        if (
-            pos_config.currency_id.is_zero(
-                stripe_order_amount - stripe_confirmation["amount"]
-            )
-            and stripe_confirmation["status"] == "succeeded"
+        if not (
+            stripe_confirmation.get("status") == "succeeded"
+            and stripe_confirmation.get("id") == payment_intent_id
+            and stripe_confirmation.get("amount")
+            == payment_method._stripe_get_amount(order.amount_total)
+            and str(stripe_confirmation.get("currency") or "").upper() == currency.name
         ):
-            transaction_id = stripe_confirmation["id"]
-            payment_result = stripe_confirmation["status"]
-
-            order.add_payment(
-                {
-                    "amount": order.amount_total,
-                    "payment_date": fields.Datetime.now(),
-                    "payment_method_id": payment_method.id,
-                    "card_type": False,
-                    "cardholder_name": "",
-                    "transaction_id": transaction_id,
-                    "payment_status": payment_result,
-                    "ticket": "",
-                    "pos_order_id": order.id,
-                }
-            )
-
-            order.action_pos_order_paid()
-
-            if order.config_id.self_ordering_mode == "kiosk":
-                order._send_payment_result("Success")
-        else:
             order._send_payment_result("fail")
+            return
+        try:
+            with order.env.cr.savepoint():
+                paid = order._add_kiosk_terminal_payment(
+                    payment_method,
+                    {
+                        "payment_date": fields.Datetime.now(),
+                        "card_type": False,
+                        "cardholder_name": "",
+                        "transaction_id": payment_intent_id,
+                        "payment_status": stripe_confirmation["status"],
+                        "ticket": "",
+                    },
+                )
+        except UserError:
+            order._send_payment_result("fail")
+            return
+        if paid:
+            order._send_payment_result("Success")
