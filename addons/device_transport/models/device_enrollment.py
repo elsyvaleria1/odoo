@@ -121,7 +121,14 @@ class DeviceEnrollment(models.Model):
             "created",
             [(record.id, None, record._audit_snapshot()) for record in records],
         )
+        records._place_service_user()
         return records
+
+    def _place_service_user(self) -> None:
+        Gate = self.env["mixin.inbound.gate"]
+        live = self.filtered(lambda enrollment: enrollment.state != "revoked")
+        for principal, enrollments in live.grouped("service_user_id").items():
+            Gate._place_principal_in_companies(principal, enrollments.company_id)
 
     def write(self, vals):
         self.check_access("write")
@@ -176,6 +183,8 @@ class DeviceEnrollment(models.Model):
             and before[record.id] != (after := record._audit_snapshot())
         ]
         self.env["device.transport.event"]._append("changed", changes)
+        if "service_user_id" in vals or "state" in vals:
+            self._place_service_user()
         if "state" in vals or "credential_id" in vals:
             _debug.lifecycle(
                 "enrollment_changed",

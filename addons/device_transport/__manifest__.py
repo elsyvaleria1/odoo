@@ -1,6 +1,6 @@
 {
     "name": "Device Channels and Enrollment",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "oldest_upgradable_version": "19.0.1.2.0",
     "category": "Supply Chain/IoT",
     "summary": "Provision machine identities and independently scoped communication channels",
