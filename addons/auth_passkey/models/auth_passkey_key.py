@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 from odoo import Command, api, fields, models
@@ -16,8 +17,10 @@ from .._vendor.webauthn import (
     verify_authentication_response,
     verify_registration_response,
 )
+from .._vendor.webauthn.helpers.exceptions import InvalidAuthenticationResponse
 from .._vendor.webauthn.helpers.structs import (
     AuthenticatorSelectionCriteria,
+    PublicKeyCredentialDescriptor,
     ResidentKeyRequirement,
     UserVerificationRequirement,
 )
@@ -126,6 +129,81 @@ class AuthPasskeyKey(models.Model):
             require_user_verification=True,
         )
         return auth_verification.new_sign_count
+
+    @api.model
+    def _get_own_authentication_options(self, challenge: bytes) -> dict[str, Any]:
+        """Options asking one of the current user's own passkeys to sign
+        ``challenge``, with the user verified (fingerprint, face or PIN)."""
+        self.env.cr.execute(
+            SQL(
+                "SELECT credential_identifier FROM auth_passkey_key "
+                "WHERE create_uid = %s ORDER BY id DESC",
+                self.env.uid,
+            )
+        )
+        allowed = [
+            PublicKeyCredentialDescriptor(id=base64url_to_bytes(row[0]))
+            for row in self.env.cr.fetchall()
+        ]
+        return json_loads(
+            options_to_json(
+                generate_authentication_options(
+                    rp_id=urlsplit(self.get_base_url()).hostname,
+                    challenge=challenge,
+                    allow_credentials=allowed,
+                    user_verification=UserVerificationRequirement.REQUIRED,
+                )
+            )
+        )
+
+    @api.model
+    def _accept_own_assertion(
+        self, credential: dict[str, Any], challenge: bytes
+    ) -> dict[str, Any]:
+        """Verify that one of the current user's own passkeys signed ``challenge``
+        with the user verified, advance its sign count, and return what checking
+        the signature again needs. Raises AccessDenied otherwise."""
+        self.env.cr.execute(
+            SQL(
+                "SELECT id, public_key, sign_count FROM auth_passkey_key "
+                "WHERE create_uid = %s AND credential_identifier = %s",
+                self.env.uid,
+                str(credential.get("id") or ""),
+            )
+        )
+        row = self.env.cr.fetchone()
+        if not row:
+            raise AccessDenied(self.env._("This passkey is not one of yours."))
+        key_id, public_key, sign_count = row
+        parsed_url = urlsplit(self.get_base_url())
+        origin = urlunsplit(parsed_url._replace(path=""))
+        try:
+            verification = verify_authentication_response(
+                credential=credential,
+                expected_challenge=challenge,
+                expected_origin=origin,
+                expected_rp_id=parsed_url.hostname,
+                credential_public_key=base64url_to_bytes(public_key),
+                credential_current_sign_count=sign_count or 0,
+                require_user_verification=True,
+            )
+        except InvalidAuthenticationResponse as error:
+            raise AccessDenied(error.args[0]) from None
+        self.env.cr.execute(
+            SQL(
+                "UPDATE auth_passkey_key SET sign_count = %s WHERE id = %s",
+                verification.new_sign_count,
+                key_id,
+            )
+        )
+        self.browse(key_id).invalidate_recordset(["sign_count"])
+        return {
+            "credential_id": credential["id"],
+            "public_key": public_key,
+            "sign_count": verification.new_sign_count,
+            "rp_id": parsed_url.hostname,
+            "origin": origin,
+        }
 
     @api.model
     def _start_registration(self):

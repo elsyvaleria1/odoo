@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="auth_passkey_proof.PasskeyProof">
+        <div class="o_proof_passkey">
+            <p class="text-muted">Confirm with your fingerprint, your face or your security key.</p>
+            <button type="button" class="btn btn-primary" t-att-disabled="this.props.busy or this.state.waiting" t-on-click="this.onUsePasskey">
+                <i class="fa fa-fingerprint me-1" aria-hidden="true"/>
+                Use your passkey
+            </button>
+            <div t-if="this.state.dismissed" class="text-muted small mt-2 o_proof_passkey_dismissed">
+                No passkey answered. Try again, or use another device.
+            </div>
+        </div>
+    </t>
+
+</templates>
