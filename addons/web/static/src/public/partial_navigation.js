@@ -19,6 +19,13 @@ const HEAD_SELECTORS = [
 
 const OUT_OF_BAND = "[data-fragment][data-partial-navigation-oob]";
 
+/** @typedef {{ url: string, html: string }} FetchedPage */
+
+// a pointer resting this long on a link announces a click
+const PRELOAD_DELAY = 65;
+// how long a preloaded page stays good for the click it announced
+const PRELOAD_TTL = 10000;
+
 // http_routing's PARTIAL_NAVIGATION_HEADER: the server leaves out the header
 // and footer, which a navigation in place keeps
 const PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation";
@@ -120,6 +127,11 @@ export function requestNavigation(
  * Document) for code that otherwise runs on page load or reads what the
  * server rendered outside the region. Elements outside the region marked
  * `data-partial-navigation-oob` with a `data-fragment` key follow along.
+ *
+ * A link in scope is preloaded (htmx's preload extension) once a mouse rests
+ * on it, a finger touches it or the keyboard focuses it: the click then
+ * finds its page fetched or on its way. One preload at a time, none when
+ * the browser asks to save data.
  */
 export class PartialNavigation extends Interaction {
     static selector = "[data-fragment][data-partial-navigation]";
@@ -128,12 +140,20 @@ export class PartialNavigation extends Interaction {
             "t-on-click": this.onClick,
             "t-on-submit": this.onSubmit,
             "t-on-o-navigate": this.onNavigateRequest,
+            "t-on-pointerover.noUpdate": this.onPointerOver,
+            "t-on-pointerout.noUpdate": this.onPointerOut,
+            "t-on-focusin.noUpdate": this.onFocusIn,
         },
         _window: { "t-on-popstate": this.onPopState },
     };
 
     setup() {
         this.key = this.el.dataset.fragment;
+        /** @type {Map<string, { page: Promise<FetchedPage>, at: number }>} */
+        this.preloads = new Map();
+        /** @type {Promise<FetchedPage> | null} */
+        this.preloading = null;
+        this.preloadTimer = 0;
         // a page embedded by a same-origin frame (the website builder's preview)
         // navigates as usual: the embedder follows the page through its loads
         this.scopes = window.frameElement ? null : this.el.dataset.partialNavigation;
@@ -143,6 +163,13 @@ export class PartialNavigation extends Interaction {
                 "",
             );
         }
+    }
+
+    start() {
+        // passive: a touch listener that may cancel would hold back scrolling
+        this.addListener(this.el, "touchstart", (ev) => this.onTouchStart(ev), {
+            passive: true,
+        });
     }
 
     /** @param {MouseEvent} ev */
@@ -158,26 +185,113 @@ export class PartialNavigation extends Interaction {
             ev.metaKey ||
             ev.ctrlKey ||
             ev.shiftKey ||
-            ev.altKey ||
-            (link.target && link.target !== "_self") ||
-            link.hasAttribute("download") ||
-            !this._isInScope(link)
+            ev.altKey
         ) {
             return;
         }
-        const href = link.getAttribute("href");
-        const url = new URL(href, browser.location.href);
-        const current = new URL(browser.location.href);
+        const url = this._linkTarget(link);
+        if (url) {
+            ev.preventDefault();
+            this.navigate(url, { push: true });
+        }
+    }
+
+    /** @param {PointerEvent} ev */
+    onPointerOver(ev) {
+        const link = this._closestLink(ev.target);
+        if (ev.pointerType === "mouse" && link) {
+            this.schedulePreload(link);
+        }
+    }
+
+    /** @param {PointerEvent} ev */
+    onPointerOut(ev) {
+        const link = this._closestLink(ev.target);
+        if (link && !link.contains(/** @type {Node | null} */ (ev.relatedTarget))) {
+            clearTimeout(this.preloadTimer);
+        }
+    }
+
+    /** @param {FocusEvent} ev */
+    onFocusIn(ev) {
+        const link = this._closestLink(ev.target);
+        if (link) {
+            this.schedulePreload(link);
+        }
+    }
+
+    /** @param {TouchEvent} ev */
+    onTouchStart(ev) {
+        const link = this._closestLink(ev.target);
+        if (link) {
+            this.preload(link);
+        }
+    }
+
+    /** @param {HTMLAnchorElement} link */
+    schedulePreload(link) {
+        clearTimeout(this.preloadTimer);
+        this.preloadTimer = this.waitForTimeout(
+            () => this.preload(link),
+            PRELOAD_DELAY,
+        );
+    }
+
+    /** @param {HTMLAnchorElement} link */
+    preload(link) {
+        const url = this._linkTarget(link);
         if (
-            url.origin !== current.origin ||
-            (href.includes("#") &&
-                url.pathname === current.pathname &&
-                url.search === current.search)
+            !url ||
+            this.preloading ||
+            this.el.hasAttribute("aria-busy") ||
+            /** @type {{ connection?: { saveData?: boolean } }} */ (browser.navigator)
+                .connection?.saveData ||
+            this._freshPreload(url)
         ) {
             return;
         }
-        ev.preventDefault();
-        this.navigate(url.href, { push: true });
+        const page = this.fetchPage(url);
+        this.preloads.set(url, { page, at: Date.now() });
+        this.preloading = page;
+        page.then(
+            () => {
+                this.preloading = null;
+            },
+            () => {
+                this.preloading = null;
+                this.preloads.delete(url);
+            },
+        );
+    }
+
+    /**
+     * @param {string} url
+     * @returns {Promise<FetchedPage> | null}
+     */
+    _freshPreload(url) {
+        const preload = this.preloads.get(url);
+        if (preload && Date.now() - preload.at < PRELOAD_TTL) {
+            return preload.page;
+        }
+        this.preloads.delete(url);
+        return null;
+    }
+
+    /**
+     * The page at `url`, asked without its header and footer.
+     *
+     * @param {string} url
+     * @returns {Promise<FetchedPage>}
+     */
+    async fetchPage(url) {
+        const response = await browser.fetch(url, {
+            credentials: "same-origin",
+            headers: { [PARTIAL_NAVIGATION_HEADER]: this.key },
+        });
+        return {
+            url: response.url,
+            html: response.ok ? await response.text() : "",
+        };
     }
 
     /** @param {SubmitEvent} ev */
@@ -241,33 +355,26 @@ export class PartialNavigation extends Interaction {
         for (const el of this.el.querySelectorAll(".modal.show")) {
             Modal.getInstance(el)?.hide();
         }
+        clearTimeout(this.preloadTimer);
         // the swapped-in region carries no aria-busy, so the morph clears it
         this.el.setAttribute("aria-busy", "true");
-        let response;
+        const preloaded = this._freshPreload(url);
+        this.preloads.delete(url);
+        let fetched;
         try {
-            response = await this.waitFor(
-                browser.fetch(url, {
-                    credentials: "same-origin",
-                    headers: { [PARTIAL_NAVIGATION_HEADER]: this.key },
-                }),
-            );
+            fetched = await this.waitFor(preloaded || this.fetchPage(url));
         } catch {
             browser.location.assign(url);
             return;
         }
-        const html = response.ok ? await this.waitFor(response.text()) : "";
-        const page = new DOMParser().parseFromString(html, "text/html");
+        const page = new DOMParser().parseFromString(fetched.html, "text/html");
         const region = page.querySelector(`[data-fragment="${CSS.escape(this.key)}"]`);
         if (!region) {
             browser.location.assign(url);
             return;
         }
         if (push) {
-            browser.history.pushState(
-                { partialNavigation: this.key },
-                "",
-                response.url,
-            );
+            browser.history.pushState({ partialNavigation: this.key }, "", fetched.url);
         }
         const title = page.querySelector("title")?.textContent;
         if (title) {
@@ -298,7 +405,7 @@ export class PartialNavigation extends Interaction {
         }
         window.dispatchEvent(
             new CustomEvent("o-partial-navigation", {
-                detail: { key: this.key, url: response.url, page },
+                detail: { key: this.key, url: fetched.url, page },
             }),
         );
     }
@@ -346,6 +453,44 @@ export class PartialNavigation extends Interaction {
                 }
             });
         }
+    }
+
+    /**
+     * @param {EventTarget | null} target
+     * @returns {HTMLAnchorElement | null}
+     */
+    _closestLink(target) {
+        return target instanceof Element ? target.closest("a[href]") : null;
+    }
+
+    /**
+     * The URL a link in scope navigates to in place; null for a link the
+     * browser keeps: out of scope, another window, a download, another
+     * origin, an anchor in this page.
+     *
+     * @param {HTMLAnchorElement} link
+     * @returns {string | null}
+     */
+    _linkTarget(link) {
+        if (
+            (link.target && link.target !== "_self") ||
+            link.hasAttribute("download") ||
+            !this._isInScope(link)
+        ) {
+            return null;
+        }
+        const href = link.getAttribute("href");
+        const url = new URL(href, browser.location.href);
+        const current = new URL(browser.location.href);
+        if (
+            url.origin !== current.origin ||
+            (href.includes("#") &&
+                url.pathname === current.pathname &&
+                url.search === current.search)
+        ) {
+            return null;
+        }
+        return url.href;
     }
 
     /** @param {Element} el */

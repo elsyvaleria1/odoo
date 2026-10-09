@@ -1,8 +1,8 @@
 // @ts-check
 
 import { after, describe, expect, test } from "@odoo/hoot";
-import { click, queryAll, queryOne } from "@odoo/hoot-dom";
-import { animationFrame } from "@odoo/hoot-mock";
+import { click, hover, queryAll, queryOne } from "@odoo/hoot-dom";
+import { advanceTime, animationFrame } from "@odoo/hoot-mock";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
 import { Offcanvas } from "@web/libs/bootstrap";
@@ -460,4 +460,89 @@ test("the fetch asks the server for the page without its header and footer", asy
     await animationFrame();
 
     expect.verifySteps(["header portal.list"]);
+});
+
+test("a mouse resting on a link preloads it, and the click uses the preload", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page("<tr><td>SO2</td></tr>"));
+
+    await hover(".o_sort");
+    await advanceTime(70);
+    expect.verifySteps(["fetch /my/orders?sortby=name"]);
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps(["push portal.list /my/orders"]);
+    expect("tbody tr").toHaveCount(1);
+});
+
+test("a mouse passing over a link preloads nothing", async () => {
+    await startInteraction(
+        PartialNavigation,
+        `${region("")}<p class="o_outside">out</p>`,
+    );
+    serve(() => page(""));
+
+    await hover(".o_sort");
+    await advanceTime(20);
+    await hover(".o_outside");
+    await advanceTime(100);
+
+    expect.verifySteps([]);
+});
+
+test("a touch preloads at once, a focus after the delay", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page(""));
+
+    queryOne(".o_sort").dispatchEvent(new TouchEvent("touchstart", { bubbles: true }));
+    await animationFrame();
+    expect.verifySteps(["fetch /my/orders?sortby=name"]);
+
+    queryOne(".o_next").focus();
+    await advanceTime(70);
+    expect.verifySteps(["fetch /my/orders/page/2"]);
+});
+
+test("nothing is preloaded when the browser asks to save data", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page(""));
+    patchWithCleanup(browser.navigator, { connection: { saveData: true } });
+
+    await hover(".o_sort");
+    await advanceTime(70);
+
+    expect.verifySteps([]);
+});
+
+test("a preload past its 10 seconds is fetched again on click", async () => {
+    let now = 1000;
+    patchWithCleanup(Date, { now: () => now });
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page(""));
+
+    await hover(".o_sort");
+    await advanceTime(70);
+    now += 10001;
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps([
+        "fetch /my/orders?sortby=name",
+        "fetch /my/orders?sortby=name",
+        "push portal.list /my/orders",
+    ]);
+});
+
+test("a click before the hover delay fetches once", async () => {
+    await startInteraction(PartialNavigation, region(""));
+    serve(() => page(""));
+
+    await hover(".o_sort");
+    await click(".o_sort");
+    await advanceTime(100);
+    await animationFrame();
+
+    expect.verifySteps(["fetch /my/orders?sortby=name", "push portal.list /my/orders"]);
 });
