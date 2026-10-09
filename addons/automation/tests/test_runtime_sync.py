@@ -284,8 +284,44 @@ class TestPausedAndRetiredRule(QueuedCase):
         self.assertEqual(runtime.state, "in_progress")
         self.assertEqual(self._line(runtime, first).state, "ready")
         self.automation.action_unpause()
+        self.assertEqual(
+            self._line(runtime, first).state,
+            "ready",
+            "resuming runs nothing in the request that resumes",
+        )
+        self._dispatch()
         self.assertEqual(self._line(runtime, first).state, "done")
         self.assertEqual(runtime.state, "done")
+
+    def test_a_held_immediate_run_waits_for_its_rule_to_resume(self):
+        self.automation.run_mode = "immediate"
+        first = self._action("first", "record.write({'ref': 'ran'})")
+        self.automation.action_pause()
+        runtime = self._run()
+
+        self._dispatch()
+
+        self.assertEqual(self._line(runtime, first).state, "ready")
+        self.assertTrue(runtime.is_held_by_pause)
+
+    def test_resuming_leaves_a_run_stepped_by_hand_to_its_steps(self):
+        self.automation.run_mode = "immediate"
+        first = self._action("first", "record.write({'ref': 'ran'})")
+        runtime = self.env["automation.runtime"].create(
+            {
+                "automation_id": self.automation.id,
+                "res_model": "res.partner",
+                "res_id": self.partner.id,
+            }
+        )
+        runtime.action_start()
+        self.automation.action_pause()
+
+        self.automation.action_unpause()
+        self._dispatch()
+
+        self.assertEqual(self._line(runtime, first).state, "ready")
+        self.assertEqual(runtime.state, "in_progress")
 
 
 class TestStepErrorPolicy(QueuedCase):

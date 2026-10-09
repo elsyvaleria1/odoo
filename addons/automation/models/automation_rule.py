@@ -612,8 +612,6 @@ class AutomationRule(models.Model):
     def action_unpause(self) -> None:
         paused = self.filtered("is_paused")
         paused.write({"is_paused": False})
-        # what waited moves on now, as the dispatcher would have moved it
-        paused.live_runtime_ids._advance()
         if paused:
             self.env["automation.runtime"]._request_dispatch()
 

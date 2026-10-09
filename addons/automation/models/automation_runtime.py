@@ -156,6 +156,14 @@ class AutomationRuntime(models.Model):
         related="automation_id.is_paused",
         string="Automation Paused",
     )
+    is_held_by_pause = fields.Boolean(
+        string="Held by Pause",
+        index=True,
+        copy=False,
+        readonly=True,
+        help="Its rule's pause stopped it from running its ready steps; the "
+        "dispatcher runs them once the rule resumes.",
+    )
     awaiting_input = fields.Boolean(
         compute="_compute_awaiting_input",
         help="A step waits for someone to fill in fields of this run",
@@ -291,8 +299,11 @@ class AutomationRuntime(models.Model):
     def action_run_all(self):
         self.check_singleton()
         if self.automation_id.is_paused:
-            # held where it stands; resuming the automation advances it
+            if not self.is_held_by_pause:
+                self.is_held_by_pause = True
             return self.state
+        if self.is_held_by_pause:
+            self.is_held_by_pause = False
 
         while self.state == "in_progress":
             ready_lines = self.line_ids.filtered(lambda l: l.state == "ready")
@@ -497,10 +508,34 @@ class AutomationRuntime(models.Model):
         return len(waiting)
 
     @api.model
+    def _advance_held_runs(self, rules=None) -> int:
+        held = self.search(
+            [
+                ("is_held_by_pause", "=", True),
+                ("state", "in", ("in_progress", "waiting_resume")),
+                *(
+                    [("automation_id", "in", rules.ids)]
+                    if rules is not None
+                    else [("automation_id.is_paused", "=", False)]
+                ),
+            ],
+            limit=DISPATCH_BATCH_SIZE,
+        )
+        for runtime in held:
+            runtime._advance()
+            if self.env.context.get("cron_id") and not self.env[
+                "ir.cron"
+            ]._commit_progress(1):
+                self._request_dispatch()
+                break
+        return len(held)
+
+    @api.model
     def _dispatch_due_steps(self, rules=None) -> int:
         self = self.with_context(tracking_disable=True)
         self.env["automation.runtime.line"]._settle_approvals(rules=rules)
         self._resume_waiting_executions(rules=rules)
+        self._advance_held_runs(rules=rules)
         Line = self.env["automation.runtime.line"]
         handled = set()
         while lines := Line.search(

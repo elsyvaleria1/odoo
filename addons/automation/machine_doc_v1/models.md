@@ -518,7 +518,12 @@ of a paused rule (`automation.rule.is_paused`, Pause / Resume on the form):
 `_settle_approvals`, `_resume_waiting_executions` and the dispatcher filter on
 `automation_id.is_paused`, and `action_run_all` returns at once for an immediate
 run, so a paused rule's runs -- the ones it starts while paused included -- wait
-where they stand; `action_unpause` advances them and requests a dispatch. A
+where they stand. A run `action_run_all` turned away is marked
+`is_held_by_pause`; `action_unpause` only clears the pause and requests a
+dispatch, whose `_advance_held_runs` advances the marked runs from the cron,
+not in the request of whoever resumed. A run started from its form and stepped
+by hand never went through `action_run_all`, so resuming leaves it to its
+clicks. A
 person stepping a run with `action_next_step` still moves it: a click on one
 run is the explicit request the pause otherwise withholds, as a rule named to
 the dispatcher is. A rule archived before 1.19 is paused by the upgrade, so
