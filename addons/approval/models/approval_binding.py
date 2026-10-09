@@ -4,6 +4,7 @@ import functools
 import inspect
 import logging
 from collections.abc import Callable
+from contextlib import nullcontext
 from typing import Any, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
@@ -120,12 +121,13 @@ class ApprovalBinding(models.Model):
           flows that were quietly relying on not being gated, in production.
         • Block: the operation is refused unless an approved request covers
           the record. A document implementing mixin.approval asks through its
-          own button; any other record only by a request this binding raised,
-          in Request mode, and that was approved.
+          own button. On any other record, clicking the gated button asks for
+          the person who clicked and runs nothing; once approved, the next
+          click runs. A call made without the button is refused.
         • Request: the call raises an approval instead of running. With Run On
           Approval, the operation then runs once the request is approved --
-          exactly once, and as the person who called it; without it, approval
-          only clears the gate for the next call.
+          exactly once, and as the person who called it, which spends the
+          approval; without it, approval clears the gate for later calls.
         • The Move Decides: a document whose state is its approval (time off,
           an allocation, an expense) ships it on each verb of its state: the
           person who moves the state has decided the request, which follows.
@@ -166,9 +168,10 @@ class ApprovalBinding(models.Model):
     run_on_approval = fields.Boolean(
         default=True,
         help="Request mode only. Run the operation, once and as the person who "
-        "asked, when the request is approved. Off, approval only clears the gate "
-        "and the operation runs when it is next called, which is how Studio "
-        "approvals behave.",
+        "asked, when the request is approved; the approval is spent on that run, "
+        "so the next call asks again. Off, approval clears the gate and the "
+        "operation runs whenever it is called, which is how Studio approvals "
+        "behave.",
     )
     observation_ids = fields.One2many(
         comodel_name="approval.observation",
@@ -419,8 +422,9 @@ class ApprovalBinding(models.Model):
                     self.env._(
                         "%(action)s is a report, and a report cannot wait for an "
                         "approval: refusing to render rolls back the request that "
-                        "would have asked for one. Use Block, and let the client "
-                        "raise the request before printing.",
+                        "would have asked for one. Use Block: printing from its "
+                        "button asks for the approval, and prints once it is "
+                        "granted.",
                         action=self.action_id.name,
                     ),
                 )
@@ -773,6 +777,9 @@ class ApprovalBinding(models.Model):
             ("res_id", "in", records.ids),
             ("state", "=", "approved"),
         ]
+        if self.run_on_approval:
+            # an approval that runs its operation is spent on that run
+            domain.append(("date_binding_replayed", "=", False))
         by_id = {record.id: record for record in records}
         covered = set()
         for request in self.env["approval.request"].sudo().search(domain):
@@ -833,7 +840,16 @@ class ApprovalBinding(models.Model):
             "would_block": would_block,
         }
 
-    def _enforce(self, record, elevation: str, observations: list, covered_ids) -> bool:
+    def _enforce(
+        self,
+        record,
+        elevation: str,
+        observations: list,
+        covered_ids,
+        asking: bool = False,
+    ) -> bool:
+        """Whether `record` wants a request; `asking` is the button's check, where
+        Block asks too, since nothing runs that the refusal would have to undo."""
         self.check_singleton()
         covered = record.id in covered_ids
 
@@ -857,7 +873,7 @@ class ApprovalBinding(models.Model):
             )
             return False
 
-        if self.mode == "block":
+        if self.mode == "block" and not asking:
             trace.REFUSAL.event(
                 "blocked",
                 binding=self.id,
@@ -875,7 +891,7 @@ class ApprovalBinding(models.Model):
                 if "approval_request_id" in record._fields
                 else self.env._(
                     "%(record)s needs an approval before %(method)s can run.\n\n"
-                    "Ask an approver of %(category)s to approve it from this button.",
+                    "Click its button to ask %(category)s for one.",
                     record=record.display_name,
                     method=self._get_operation_label(),
                     category=self.category_id.display_name,
@@ -889,6 +905,35 @@ class ApprovalBinding(models.Model):
             elevation=elevation,
         )
         return True
+
+    def _get_latest_requests(self, records) -> dict[int, Any]:
+        """The latest request raised through this binding for each of `records`, read
+        under sudo: a caller who cannot read the request an earlier caller raised
+        must find it all the same, not raise a second one."""
+        self.check_singleton()
+        if not records:
+            return {}
+        if "approval_request_id" in records._fields:
+            return {
+                record.id: record.approval_request_id
+                for record in records.sudo()
+                if record.approval_request_id
+            }
+        latest = {}
+        for request in (
+            self.env["approval.request"]
+            .sudo()
+            .search(
+                [
+                    ("binding_id", "=", self.id),
+                    ("res_model", "=", records._name),
+                    ("res_id", "in", records.ids),
+                ],
+                order="id desc",
+            )
+        ):
+            latest.setdefault(request.res_id, request)
+        return latest
 
     def _raise_requests_for(self, records):
         self.check_singleton()
@@ -911,18 +956,10 @@ class ApprovalBinding(models.Model):
                 requests |= request
             return requests
 
-        latest_by_res_id = {}
-        for request in Request.search(
-            [
-                ("binding_id", "=", self.id),
-                ("res_model", "=", records._name),
-                ("res_id", "in", records.ids),
-            ],
-            order="id desc",
-        ):
-            latest_by_res_id.setdefault(request.res_id, request)
+        latest_by_res_id = self._get_latest_requests(records)
         for record in records:
             request = latest_by_res_id.get(record.id)
+            request = request and request.with_env(Request.env)
             if request and request.state == "refused":
                 requests |= request
                 continue
@@ -1024,6 +1061,20 @@ class ApprovalBinding(models.Model):
     def _get_requests_action(self, requests):
         if not requests:
             return False
+        readable = requests._filtered_access("read")
+        if not readable:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "type": "warning",
+                    "message": self.env._(
+                        "This is already waiting for an approval someone else asked "
+                        "for."
+                    ),
+                },
+            }
+        requests = readable
         action = {
             "type": "ir.actions.act_window",
             "res_model": "approval.request",
@@ -1444,6 +1495,7 @@ class ApprovalBinding(models.Model):
         call,
         replayable: bool = True,
         mark_run: bool = True,
+        asking: bool = False,
     ):
         elevation = self._elevation()
         observations = []
@@ -1456,7 +1508,9 @@ class ApprovalBinding(models.Model):
             covered_ids = binding._get_covered_ids(selected)
             covered[binding] = selected.browse(covered_ids)
             for record in selected:
-                if binding._enforce(record, elevation, observations, covered_ids):
+                if binding._enforce(
+                    record, elevation, observations, covered_ids, asking=asking
+                ):
                     wanting[binding] = wanting.get(binding, records.browse()) | record
 
         if observations:
@@ -1467,16 +1521,6 @@ class ApprovalBinding(models.Model):
                 for binding, done in covered.items():
                     binding._mark_invoked_run(done)
             return result
-        if not replayable and any(binding.run_on_approval for binding in wanting):
-            trace.REFUSAL.event("gate_not_replayable", method=label, records=records)
-            raise UserError(
-                records.env._(
-                    "%(method)s needs an approval, and this call cannot be replayed "
-                    "once it is granted: its arguments are not part of the "
-                    "request. Hold it for approval where it is made instead.",
-                    method=label,
-                ),
-            )
         if records.env.transaction.admitted_ids("approval.binding", REPLAY_ADMISSION):
             trace.REFUSAL.event(
                 "replay_uncovered",
@@ -1490,15 +1534,36 @@ class ApprovalBinding(models.Model):
                     method=label,
                 ),
             )
+        # A call approval would replay without its arguments is refused, unless
+        # its caller approves it on invoke and it runs now: the savepoint takes
+        # back the requests raised for a call that is refused after all.
+        unreplayable = not replayable and any(
+            binding.run_on_approval for binding in wanting
+        )
         waiting = records.browse()
         shown = records.env["approval.request"]
-        for binding, pending in wanting.items():
-            requests = binding._raise_requests_for(pending)
-            if binding.approve_on_invoke:
-                binding._approve_on_invoke(requests)
-            covered_ids = binding._get_covered_ids(pending)
-            still = pending.filtered_domain([("id", "not in", list(covered_ids))])
-            if still:
+        with records.env.cr.savepoint() if unreplayable else nullcontext():
+            for binding, pending in wanting.items():
+                requests = binding._raise_requests_for(pending)
+                if binding.approve_on_invoke:
+                    binding._approve_on_invoke(requests)
+                covered_ids = binding._get_covered_ids(pending)
+                still = pending.filtered_domain([("id", "not in", list(covered_ids))])
+                if not still:
+                    continue
+                if unreplayable and binding.run_on_approval:
+                    trace.REFUSAL.event(
+                        "gate_not_replayable", method=label, records=still
+                    )
+                    raise UserError(
+                        records.env._(
+                            "%(method)s needs an approval, and this call cannot be "
+                            "replayed once it is granted: its arguments are not "
+                            "part of the request. Hold it for approval where it is "
+                            "made instead.",
+                            method=label,
+                        ),
+                    )
                 waiting |= still
                 shown |= requests
         runnable = records - waiting

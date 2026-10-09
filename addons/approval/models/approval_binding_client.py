@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any
 
 from odoo import api, fields, models
@@ -22,22 +23,41 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def get_button_approvals(self, specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """One answer per spec, asked by button kind: a list of 80 rows asks each
+        binding, its coverage and its requests once, not once per row."""
         trace.BUTTON.event("batch_asked", specs=len(specs), uid=self.env.uid)
-        return [
-            self._get_button_approval(
+        by_button = defaultdict(list)
+        for index, spec in enumerate(specs):
+            button = (
                 spec["model"],
-                spec.get("res_id"),
-                spec.get("method"),
-                spec.get("action_id"),
-                configured=spec.get("configured", False),
+                spec.get("method") or False,
+                spec.get("action_id") or False,
+                bool(spec.get("configured")),
             )
-            for spec in specs
-        ]
+            by_button[button].append(index)
+        answers = [None] * len(specs)
+        for (model, method, action_id, configured), indexes in by_button.items():
+            for index, answer in zip(
+                indexes,
+                self._get_button_approvals_for(
+                    model,
+                    [specs[index].get("res_id") or False for index in indexes],
+                    method,
+                    action_id,
+                    configured,
+                ),
+                strict=True,
+            ):
+                answers[index] = answer
+        return answers
 
     @api.model
     def check_button_approval(
-        self, model: str, res_id: int, method=False, action_id=False
+        self, model: str, res_id: int | list[int], method=False, action_id=False
     ) -> dict[str, Any]:
+        """Whether the button may run on `res_id` (one record, or a list header's
+        selection) now. A Block or Request binding not covering them asks for the
+        caller, and the button runs nothing until that is approved."""
         if not self._enabled():
             return {"approved": True, "request_id": False}
         bindings = self._get_button_bindings(model, method, action_id)
@@ -52,6 +72,7 @@ class ApprovalBinding(models.Model):
             method or bindings[:1].action_id.name,
             lambda runnable: True,
             mark_run=False,
+            asking=True,
         )
         trace.BUTTON.note(
             "checked",
@@ -102,6 +123,7 @@ class ApprovalBinding(models.Model):
                 ),
             )
         if request.state != "pending":
+            binding._check_someone_asked(records, request)
             request = binding._raise_requests_for(records)
         request = request.with_user(self.env.user)
         trace.BUTTON.note(
@@ -165,65 +187,96 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _get_button_approval(
+        self, model: str, res_id=False, method=False, action_id=False
+    ) -> dict[str, Any]:
+        return self._get_button_approvals_for(model, [res_id], method, action_id)[0]
+
+    @api.model
+    def _get_button_approvals_for(
         self,
         model: str,
-        res_id=False,
+        res_ids: list,
         method=False,
         action_id=False,
         configured: bool = False,
-    ) -> dict[str, Any]:
-        """`configured` answers what is configured, kill switch or not: Studio's
+    ) -> list[dict[str, Any]]:
+        """One button's state on each of `res_ids` (False: a record not saved yet).
+
+        `configured` answers what is configured, kill switch or not: Studio's
         editor shows and edits the steps while bindings are switched off."""
         ungated = {"gated": False, "approved": True, "request": False, "steps": []}
         if not (configured or self._enabled()):
-            return ungated
+            return [ungated] * len(res_ids)
         bindings = self._get_button_bindings(model, method, action_id).filtered(
             lambda binding: binding.mode not in ("advise", "act_decides")
         )
         if not bindings:
-            return ungated
-        records = self._get_records_for_button(model, res_id)
-        if records:
-            bindings = bindings.filtered(lambda binding: binding._get_selected(records))
-        if not bindings:
-            return ungated
-        waiting = bindings.filtered(
-            lambda binding: (
-                not records or records.id not in binding._get_covered_ids(records)
-            )
-        )
-        binding = (waiting or bindings)[:1]
-        request = binding._get_button_request(records)
-        user = self.env.user
-        trace.BUTTON.event(
-            "state",
-            model=model,
-            res_id=res_id or None,
-            bindings=bindings.ids,
-            waiting=waiting.ids,
-            binding=binding.id,
-            request=request.id,
-        )
-        return {
-            "gated": True,
-            "approved": bool(records) and not waiting,
-            "request": {
-                "id": request.id,
-                "state": request.state,
-                "can_reopen": request._is_standing_refusal()
-                and request._can_reopen_refusal(user),
-            }
-            if request
-            else False,
-            "steps": binding._get_button_steps(request, records),
+            return [ungated] * len(res_ids)
+        records = self._get_records_for_button(model, [i for i in res_ids if i])
+        none = records.browse()
+        selected = {binding: binding._get_selected(records) for binding in bindings}
+        covered = {
+            binding: binding._get_covered_ids(chosen)
+            for binding, chosen in selected.items()
         }
+        requests = {
+            binding: binding._get_latest_requests(chosen)
+            for binding, chosen in selected.items()
+        }
+        user = self.env.user
+        answers = []
+        for res_id in res_ids:
+            record = records.browse(int(res_id)) & records if res_id else none
+            gating = (
+                bindings.filtered(
+                    lambda binding, record=record: record in selected[binding]
+                )
+                if record
+                else bindings
+            )
+            if not gating:
+                answers.append(ungated)
+                continue
+            waiting = gating.filtered(
+                lambda binding, record=record: (
+                    not record or record.id not in covered[binding]
+                )
+            )
+            binding = (waiting or gating)[:1]
+            request = requests[binding].get(record.id, self.env["approval.request"])
+            trace.BUTTON.event(
+                "state",
+                model=model,
+                res_id=res_id or None,
+                bindings=gating.ids,
+                waiting=waiting.ids,
+                binding=binding.id,
+                request=request.id,
+            )
+            answers.append(
+                {
+                    "gated": True,
+                    "approved": bool(record) and not waiting,
+                    "request": {
+                        "id": request.id,
+                        "state": request.state,
+                        "can_reopen": request._is_standing_refusal()
+                        and request._can_reopen_refusal(user),
+                    }
+                    if request
+                    else False,
+                    "steps": binding._get_button_steps(request, record),
+                }
+            )
+        return answers
 
     @api.model
     def _get_records_for_button(self, model: str, res_id, operation: str = "read"):
         records = self.env[model]
         records.check_access(operation)
-        if res_id:
-            records = records.browse(int(res_id)).exists()
+        res_ids = res_id if isinstance(res_id, list) else [res_id] if res_id else []
+        if res_ids:
+            records = records.browse([int(i) for i in res_ids]).exists()
             records.check_access(operation)
         return records
 
@@ -285,20 +338,31 @@ class ApprovalBinding(models.Model):
         return steps.sudo(False)
 
     def _get_button_request(self, record):
+        return self._get_latest_requests(record).get(
+            record.id, self.env["approval.request"]
+        )
+
+    def _check_someone_asked(self, records, request) -> None:
+        """An approver deciding from the button decides what a caller asked: a
+        request they raised themselves would be theirs, and theirs to approve only
+        where the category allows self-approval."""
         self.check_singleton()
-        Request = self.env["approval.request"].sudo()
-        if not record:
-            return Request
-        if "approval_request_id" in record._fields:
-            return record.sudo().approval_request_id
-        return Request.search(
-            [
-                ("binding_id", "=", self.id),
-                ("res_model", "=", record._name),
-                ("res_id", "=", record.id),
-            ],
-            order="id desc",
-            limit=1,
+        if (
+            "approval_request_id" in records._fields
+            or request.state in ("new", "refused")
+            or self.category_id.allow_self_approval
+        ):
+            return
+        trace.REFUSAL.event(
+            "button_nobody_asked", binding=self.id, records=records, request=request.id
+        )
+        raise UserError(
+            self.env._(
+                "Nobody has asked for %(operation)s on %(record)s yet: it is asked "
+                "when someone clicks its button.",
+                operation=self._get_operation_label(),
+                record=records.display_name,
+            )
         )
 
     def _get_button_steps(self, request, record) -> list[dict[str, Any]]:

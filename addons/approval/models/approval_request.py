@@ -418,7 +418,7 @@ class ApprovalRequest(models.Model):
         help="The gated operation this request was raised for, when an "
         "approval.binding raised it. Approving it covers the record for that "
         "binding; a Request-mode binding that runs on approval then runs the "
-        "operation once, as the requester.",
+        "operation once, as the requester, and that run spends it.",
     )
     subject_key = fields.Char(
         index="btree_not_null",

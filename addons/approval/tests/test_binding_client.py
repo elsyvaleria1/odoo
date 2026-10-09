@@ -99,6 +99,35 @@ class TestApprovalBindingClient(common.TransactionCase):
         views = self.env["res.partner"].get_views([[False, "form"]])
         self.assertTrue(views["models"]["res.partner"]["has_approval_bindings"])
 
+    def test_a_list_of_gated_rows_costs_what_one_row_does(self):
+        self._bind(self.step_category)
+        partners = self.env["res.partner"].create(
+            [{"name": f"Client Row {index}"} for index in range(20)]
+        )
+        for partner in partners[::4]:
+            self.Binding.with_user(self.requester).check_button_approval(
+                "res.partner", partner.id, "action_archive", False
+            )
+        Binding = self.Binding.with_user(self.peer)
+
+        def queries(rows):
+            specs = [
+                {
+                    "model": "res.partner",
+                    "res_id": partner.id,
+                    "method": "action_archive",
+                }
+                for partner in rows
+            ]
+            Binding.get_button_approvals(specs)
+            self.env.invalidate_all()
+            before = self.env.cr.sql_statement_count
+            answers = Binding.get_button_approvals(specs)
+            self.assertEqual(len(answers), len(rows))
+            return self.env.cr.sql_statement_count - before
+
+        self.assertEqual(queries(partners), queries(partners[:2]))
+
     def test_an_ungated_button_draws_nothing(self):
         result = self._spec(self._partner(), self.requester, "open_commercial_entity")
         self.assertEqual(

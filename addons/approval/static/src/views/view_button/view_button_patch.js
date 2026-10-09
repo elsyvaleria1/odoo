@@ -1,6 +1,8 @@
 /** @odoo-module native */
 import { useApprovalContext } from "@approval/views/approval_context";
 import { onWillUpdateProps } from "@odoo/owl";
+import { _t } from "@web/core/translation";
+import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import {
     provideViewButtonContext,
@@ -18,13 +20,17 @@ patch(ViewButton.prototype, {
         this.approvalContext = useApprovalContext();
         this.viewButtonContext = useViewButtonContext();
         const { name, type } = this.props.clickParams || {};
+        const kind = (type || "").replace(/=$/, "");
+        if (!this.props.record && this.props.list) {
+            this._gateSelection(name, kind);
+            return;
+        }
         const model = this.props.record?.resModel;
         // Every button of every row reaches this line, so it stays silent: the
         // ungated case is the common one and says nothing a reader needs.
         if (!name || !model || !this._isApprovalGated()) {
             return;
         }
-        const kind = (type || "").replace(/=$/, "");
         if (kind !== "object" && kind !== "action") {
             trace.event("button", "kind_not_gated", { name, model, kind });
             return;
@@ -66,6 +72,54 @@ patch(ViewButton.prototype, {
                             return true;
                         }
                         return this.approvalGate.check();
+                    },
+                }),
+        });
+        this.viewButtonContext = useViewButtonContext();
+    },
+
+    /**
+     * A list header's window action runs on the selection, with nothing on the
+     * server to refuse it: it is checked on every selected record first, and runs
+     * once all are approved. An object button is gated where it runs.
+     *
+     * @param {string} name
+     * @param {string} kind
+     */
+    _gateSelection(name, kind) {
+        const list = this.props.list;
+        if (
+            kind !== "action" ||
+            !this.approvalContext.approvalGatedModels?.[list.resModel]
+        ) {
+            return;
+        }
+        const orm = useService("orm");
+        const notification = useService("notification");
+        const onClickViewButton = this.viewButtonContext.onClickViewButton;
+        provideViewButtonContext({
+            onClickViewButton: (params) =>
+                onClickViewButton({
+                    ...params,
+                    beforeExecute: async () => {
+                        if (
+                            params.beforeExecute &&
+                            (await params.beforeExecute()) === false
+                        ) {
+                            return false;
+                        }
+                        const { approved } = await orm.call(
+                            "approval.binding",
+                            "check_button_approval",
+                            [list.resModel, await list.getResIds(true), false, name],
+                        );
+                        if (!approved) {
+                            notification.add(
+                                _t("This needs an approval before it can run."),
+                                { type: "warning" },
+                            );
+                        }
+                        return approved;
                     },
                 }),
         });

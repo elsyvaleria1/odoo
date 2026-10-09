@@ -1,4 +1,4 @@
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
 from odoo.addons.approval.tests.common import ApprovalCommon, add_category_approver
@@ -462,3 +462,140 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         binding._reset_coverage(partner)
         self.assertEqual(unrelated.state, "approved")
         self.assertNotEqual(own.state, "approved")
+
+    # -- Block asks from its button ------------------------------------------
+
+    def test_a_block_button_asks_for_the_caller_and_runs_once_approved(self):
+        binding = self._bind(mode="block")
+        partner = self._partner()
+        Binding = self.Binding.with_user(self.caller)
+        check = Binding.check_button_approval(
+            "res.partner", partner.id, "action_archive", False
+        )
+        request = self._requests_for(binding, partner)
+        self.assertEqual(check, {"approved": False, "request_id": request.id})
+        self.assertEqual(request.state, "pending")
+        self.assertEqual(request.request_owner_id, self.caller)
+        self.assertTrue(partner.active)
+
+        self._approve(request)
+        self.assertTrue(partner.active, "Block runs nothing on approval")
+        check = Binding.check_button_approval(
+            "res.partner", partner.id, "action_archive", False
+        )
+        self.assertTrue(check["approved"])
+        partner.with_user(self.caller).action_archive()
+        self.assertFalse(partner.active)
+
+    def test_a_block_call_outside_the_button_is_refused_and_asks_nothing(self):
+        binding = self._bind(mode="block")
+        partner = self._partner()
+        with self.assertRaisesRegex(UserError, "Click its button"):
+            partner.with_user(self.caller).action_archive()
+        self.assertFalse(self._requests_for(binding, partner))
+
+    def test_a_blocked_report_asks_from_its_button(self):
+        report = self.env["ir.actions.report"].create(
+            {
+                "name": "Integrity report",
+                "model": "res.partner",
+                "report_name": "integrity.partner",
+                "report_type": "qweb-pdf",
+            }
+        )
+        binding = self.Binding.create(
+            {
+                "model_id": self.partner_model.id,
+                "action_id": report.id,
+                "mode": "block",
+                "category_id": self.category.id,
+            }
+        )
+        partner = self._partner()
+        check = self.Binding.with_user(self.caller).check_button_approval(
+            "res.partner", partner.id, False, report.id
+        )
+        request = self._requests_for(binding, partner)
+        self.assertEqual(check, {"approved": False, "request_id": request.id})
+        self.assertEqual(request.request_owner_id, self.caller)
+
+    def test_an_approver_cannot_ask_and_decide_what_nobody_asked(self):
+        self._bind(mode="block")
+        partner = self._partner()
+        with self.assertRaisesRegex(UserError, "Nobody has asked"):
+            self.Binding.with_user(self.decider).action_decide_approval(
+                "res.partner", partner.id, "action_archive", False, True
+            )
+
+    def test_an_approver_decides_the_request_the_caller_raised(self):
+        binding = self._bind(mode="block")
+        partner = self._partner()
+        self.Binding.with_user(self.caller).check_button_approval(
+            "res.partner", partner.id, "action_archive", False
+        )
+        self.Binding.with_user(self.decider).action_decide_approval(
+            "res.partner", partner.id, "action_archive", False, True
+        )
+        request = self._requests_for(binding, partner)
+        self.assertEqual(len(request), 1)
+        self.assertEqual(request.request_owner_id, self.caller)
+        self.assertEqual(request.state, "approved")
+
+    # -- one approval, one run -------------------------------------------------
+
+    def test_an_approval_that_ran_its_operation_does_not_cover_the_next_call(self):
+        binding = self._bind(mode="request", run_on_approval=True)
+        partner = self._partner()
+        partner.with_user(self.caller).action_archive()
+        request = self._requests_for(binding, partner)
+        self._approve(request)
+        self.assertFalse(partner.active)
+        self.assertTrue(request.date_binding_replayed)
+
+        partner.action_unarchive()
+        partner.with_user(self.caller).action_archive()
+        self.assertTrue(partner.active, "the approval was spent on its run")
+        self.assertEqual(
+            self._requests_for(binding, partner).sorted("id").mapped("state"),
+            ["approved", "pending"],
+        )
+
+    # -- one request per record ------------------------------------------------
+
+    def test_a_caller_who_cannot_read_the_pending_request_raises_no_second_one(self):
+        binding = self._bind(mode="request", run_on_approval=False)
+        partner = self._partner()
+        partner.with_user(self.caller).action_archive()
+        request = self._requests_for(binding, partner)
+        other = self._partner_user("integrity_other_caller")
+        with self.assertRaises(AccessError):
+            request.with_user(other).check_access("read")
+
+        result = partner.with_user(other).action_archive()
+        self.assertEqual(self._requests_for(binding, partner), request)
+        self.assertEqual(result["type"], "ir.actions.client")
+        self.assertTrue(partner.active)
+
+    # -- approve on invoke before refusing a call it could not replay ---------
+
+    def test_a_call_with_arguments_runs_when_its_caller_approves_it_on_invoke(self):
+        category = self.env["approval.category"].create(
+            {
+                "name": "Integrity Invoke",
+                "approval_minimum": 1,
+                "allow_self_approval": True,
+            }
+        )
+        add_category_approver(category, self.caller, required=False, sequence=10)
+        binding = self._bind(
+            mode="request",
+            method="message_subscribe",
+            category_id=category.id,
+            approve_on_invoke=True,
+            run_on_approval=True,
+        )
+        partner = self._partner()
+        follower = self._partner(name="Integrity Follower")
+        partner.with_user(self.caller).message_subscribe(partner_ids=follower.ids)
+        self.assertIn(follower, partner.message_partner_ids)
+        self.assertEqual(self._requests_for(binding, partner).state, "approved")

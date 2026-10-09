@@ -1,6 +1,6 @@
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import { describe, expect, test } from "@odoo/hoot";
-import { animationFrame, Deferred } from "@odoo/hoot-mock";
+import { animationFrame, Deferred, runAllTimers } from "@odoo/hoot-mock";
 import {
     contains,
     defineModels,
@@ -263,6 +263,85 @@ test("an action button is checked before it runs, and does not run unapproved", 
     approved = true;
     await contains("button[name='42'] span:first").click();
     expect.verifySteps(["check 42", "run 42"]);
+});
+
+function actionGate(approvedRef) {
+    mockService("action", {
+        async doActionButton(params) {
+            expect.step(`run ${params.name}`);
+        },
+    });
+    onRpc("approval.binding", "get_button_approvals", ({ args }) =>
+        args[0].map(() => result()),
+    );
+    onRpc("approval.binding", "check_button_approval", ({ args }) => {
+        expect.step(`check ${JSON.stringify(args[1])} ${args[3]}`);
+        return { approved: approvedRef.approved, request_id: 5 };
+    });
+}
+
+test("a list row's action button is checked before it runs", async () => {
+    const gate = { approved: false };
+    actionGate(gate);
+    await mountView({
+        type: "list",
+        resModel: "partner",
+        arch: `<list><field name="name"/><button type="action" name="42" string="Go"/></list>`,
+    });
+    await contains(".o_data_row:eq(0) button[name='42'] span:first").click();
+    expect.verifySteps(["check 1 42"]);
+    gate.approved = true;
+    await contains(".o_data_row:eq(0) button[name='42'] span:first").click();
+    expect.verifySteps(["check 1 42", "run 42"]);
+});
+
+test("a kanban card's action button is checked before it runs", async () => {
+    const gate = { approved: false };
+    actionGate(gate);
+    await mountView({
+        type: "kanban",
+        resModel: "partner",
+        arch: `
+            <kanban>
+                <templates>
+                    <t t-name="card">
+                        <field name="name"/>
+                        <button type="action" name="42" string="Go"/>
+                    </t>
+                </templates>
+            </kanban>`,
+    });
+    // a kanban card's action button is debounced
+    await contains(".o_kanban_record:eq(1) button[name='42'] span:first").click();
+    await runAllTimers();
+    expect.verifySteps(["check 2 42"]);
+    gate.approved = true;
+    await contains(".o_kanban_record:eq(1) button[name='42'] span:first").click();
+    await runAllTimers();
+    expect.verifySteps(["check 2 42", "run 42"]);
+});
+
+test("a list header's action is checked on every selected record", async () => {
+    const gate = { approved: false };
+    actionGate(gate);
+    await mountView({
+        type: "list",
+        resModel: "partner",
+        arch: `
+            <list>
+                <header>
+                    <button type="action" name="42" string="Go" display="always"/>
+                </header>
+                <field name="name"/>
+            </list>`,
+    });
+    await contains(".o_data_row:eq(0) .o_list_record_selector input").click();
+    await contains(".o_data_row:eq(1) .o_list_record_selector input").click();
+    await contains("button[name='42']").click();
+    expect.verifySteps(["check [1,2] 42"]);
+    gate.approved = true;
+    await contains("button[name='42']").click();
+    expect.verifySteps(["check [1,2] 42", "run 42"]);
 });
 
 test("a gated object button stopped by its approvals warns and does not run", async () => {
