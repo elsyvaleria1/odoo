@@ -1,4 +1,5 @@
 from odoo import models
+from odoo.tools import float_round
 
 TIMEOUT = 10
 
@@ -17,7 +18,12 @@ class PosPayment(models.Model):
         data = {
             "originalReference": self.transaction_id,
             "modificationAmount": {
-                "value": int(self.amount * 10**self.currency_id.decimal_places),
+                "value": int(
+                    float_round(
+                        self.amount * 10**self.currency_id.decimal_places,
+                        precision_digits=0,
+                    )
+                ),
                 "currency": self.currency_id.name,
             },
             "merchantAccount": self.payment_method_id.adyen_merchant_account,

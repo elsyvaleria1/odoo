@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="pos_self_view_pos_order_form" model="ir.ui.view">
+        <field name="name">pos.self.order.form.view</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_kiosk_payment_approved"
+                    type="object"
+                    string="Terminal Payment Approved"
+                    confirm="Record the kiosk's terminal payment as paid? Do this only if the terminal shows it approved."
+                    invisible="not kiosk_payment_to_verify_method_id"
+                    class="oe_highlight" />
+                <button
+                    name="action_kiosk_payment_not_approved"
+                    type="object"
+                    string="Terminal Payment Not Approved"
+                    confirm="Let the customer pay again at the kiosk? Do this only if the terminal shows the payment was not approved."
+                    invisible="not kiosk_payment_to_verify_method_id" />
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div
+                    class="alert alert-warning mb-0"
+                    role="alert"
+                    invisible="not kiosk_payment_to_verify_method_id">
+                    The kiosk could not confirm a terminal payment of
+                    <field name="kiosk_payment_to_verify_amount" class="oe_inline" />
+                    with
+                    <field name="kiosk_payment_to_verify_method_id" class="oe_inline" />
+                    (reference
+                    <field name="kiosk_payment_to_verify" class="oe_inline" />):
+                    check the terminal, then record whether it was approved.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

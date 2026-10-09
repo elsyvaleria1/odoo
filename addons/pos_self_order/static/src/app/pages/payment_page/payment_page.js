@@ -36,6 +36,9 @@ export class PaymentPage extends Component {
     }
 
     selectMethod(methodId) {
+        if (this.paymentToVerify) {
+            return;
+        }
         this.state.selection = false;
         this.state.paymentMethodId = methodId;
         this.startPayment();
@@ -47,9 +50,16 @@ export class PaymentPage extends Component {
         );
     }
 
+    get paymentToVerify() {
+        return Boolean(this.selfOrder.currentOrder?.kiosk_payment_to_verify_method_id);
+    }
+
     // this function will be override by pos_online_payment_self_order module
     // in mobile is the only available payment method
     async startPayment() {
+        if (this.paymentToVerify) {
+            return;
+        }
         this.selfOrder.paymentError = false;
         try {
             await rpc(`/kiosk/payment/${this.selfOrder.config.id}/kiosk`, {

@@ -3,7 +3,7 @@ from datetime import timedelta
 from werkzeug.exceptions import BadRequest, NotFound, Unauthorized
 
 from odoo import Command, fields, http
-from odoo.exceptions import MissingError
+from odoo.exceptions import MissingError, UserError
 from odoo.fields import Domain
 from odoo.http import request
 
@@ -406,6 +406,13 @@ class PosSelfOrderController(http.Controller):
             or payment_method_sudo not in order_sudo.config_id.payment_method_ids
         ):
             raise NotFound("Order or payment method not found")
+        if order_sudo.kiosk_payment_to_verify_method_id:
+            raise UserError(
+                order_sudo.env._(
+                    "The payment of this order is being verified: please ask a "
+                    "staff member."
+                )
+            )
 
         status = payment_method_sudo._payment_request_from_kiosk(order_sudo)
 

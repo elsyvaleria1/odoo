@@ -109,7 +109,12 @@ export class SelfOrder extends SignalStore {
                 }
             });
             this.data.connectWebSocket("PAYMENT_STATUS", ({ payment_result, data }) => {
-                if (payment_result === "Success") {
+                if (payment_result === "unverified" || payment_result === "fail") {
+                    this.models.connectNewData(data);
+                }
+                if (payment_result === "unverified") {
+                    this.paymentError = false;
+                } else if (payment_result === "Success") {
                     this.models.connectNewData(data);
                     const order = this.models["pos.order"].find(
                         (o) => o.access_token === data["pos.order"][0].access_token,

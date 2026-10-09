@@ -51,6 +51,24 @@ class PosOrder(models.Model):
     _inherit = "pos.order"
 
     table_stand_number = fields.Char()
+    kiosk_payment_to_verify = fields.Char(
+        string="Kiosk Payment to Verify",
+        copy=False,
+        readonly=True,
+        help="Reference of a kiosk terminal payment whose outcome is unknown: "
+        "the kiosk takes no other payment for the order until staff check the "
+        "terminal and record it as approved or not.",
+    )
+    kiosk_payment_to_verify_method_id = fields.Many2one(
+        comodel_name="pos.payment.method",
+        copy=False,
+        readonly=True,
+    )
+    kiosk_payment_to_verify_amount = fields.Monetary(
+        currency_field="currency_id",
+        copy=False,
+        readonly=True,
+    )
     self_ordering_table_id = fields.Many2one(
         comodel_name="restaurant.table",
         string="Table reference",
@@ -137,6 +155,46 @@ class PosOrder(models.Model):
             )
         mail_template.send_mail(self.id, force_send=True, email_values=email_values)
 
+    def _hold_kiosk_payment_to_verify(self, payment_method, amount, reference):
+        self.check_singleton()
+        self.write(
+            {
+                "kiosk_payment_to_verify": reference,
+                "kiosk_payment_to_verify_method_id": payment_method.id,
+                "kiosk_payment_to_verify_amount": amount,
+            }
+        )
+        self._send_payment_result("unverified")
+
+    def _clear_kiosk_payment_to_verify(self):
+        self.write(
+            {
+                "kiosk_payment_to_verify": False,
+                "kiosk_payment_to_verify_method_id": False,
+                "kiosk_payment_to_verify_amount": 0.0,
+            }
+        )
+
+    def action_kiosk_payment_approved(self):
+        for order in self.filtered("kiosk_payment_to_verify_method_id"):
+            payment = {
+                "amount": order.kiosk_payment_to_verify_amount,
+                "payment_date": fields.Datetime.now(),
+                "payment_method_id": order.kiosk_payment_to_verify_method_id.id,
+                "transaction_id": order.kiosk_payment_to_verify,
+                "payment_status": "Success",
+                "pos_order_id": order.id,
+            }
+            order._clear_kiosk_payment_to_verify()
+            order.add_payment(payment)
+            order.action_pos_order_paid()
+            order._send_payment_result("Success")
+
+    def action_kiosk_payment_not_approved(self):
+        for order in self.filtered("kiosk_payment_to_verify_method_id"):
+            order._clear_kiosk_payment_to_verify()
+            order._send_payment_result("fail")
+
     def _send_payment_result(self, payment_result) -> None:
         self.check_singleton()
         self.config_id._notify(
@@ -198,6 +256,8 @@ class PosOrder(models.Model):
             "internal_note",
             "nb_print",
             "pos_reference",
+            "kiosk_payment_to_verify",
+            "kiosk_payment_to_verify_method_id",
             "fiscal_position_id",
             "payment_ids",
             "to_invoice",

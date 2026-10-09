@@ -1,6 +1,7 @@
 import logging
 import random
 from datetime import UTC, datetime
+from urllib.parse import parse_qs
 
 from odoo import api, fields, models
 from odoo.fields import Domain
@@ -51,11 +52,16 @@ class PosPaymentMethod(models.Model):
             order_sudo._send_payment_result("Success")
         elif state == "unconfirmed":
             _logger.warning(
-                "Adyen could not confirm the approval of kiosk order %s: check "
-                "the terminal before taking another payment for it",
+                "Adyen could not confirm the approval of kiosk order %s: it waits "
+                "for staff to check the terminal",
                 order_sudo.pos_reference,
             )
-            order_sudo._send_payment_result("unconfirmed")
+            additional = parse_qs(payment_response["Response"]["AdditionalResponse"])
+            order_sudo._hold_kiosk_payment_to_verify(
+                self,
+                payment_response["PaymentResult"]["AmountsResp"]["AuthorizedAmount"],
+                (additional.get("pspReference") or [""])[0],
+            )
         else:
             order_sudo._send_payment_result(payment_response["Response"]["Result"])
 
