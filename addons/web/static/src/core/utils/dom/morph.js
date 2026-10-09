@@ -33,7 +33,8 @@ const SCAN_LIMIT = 10;
  * Makes `target` (or its children, with `inner`) match `content` while keeping
  * every node that can be matched: elements by persistent id first, then by
  * identical or same-tag siblings. Kept nodes keep their listeners, their
- * interactions, the focus and the caret.
+ * interactions, the focus and the caret. A kept element marked
+ * `data-morph-preserve` is left exactly as it is, attributes and children.
  *
  * @param {Element} target
  * @param {Markup | Element | DocumentFragment} content
@@ -363,6 +364,11 @@ function morphNode(ctx, oldNode, newNode) {
         return;
     }
     if (!(oldNode instanceof Element) || !(newNode instanceof Element)) {
+        return;
+    }
+    // htmx's hx-preserve: the client owns what grew inside (a mounted app, a
+    // player, a map), which the server's markup never shows
+    if (oldNode.hasAttribute("data-morph-preserve")) {
         return;
     }
     copyAttributes(oldNode, newNode);

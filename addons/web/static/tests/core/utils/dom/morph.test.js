@@ -215,3 +215,25 @@ test("a plain string is refused: it is text, not HTML", () => {
     ).toThrow(TypeError);
     expect(target).toHaveText("safe");
 });
+
+test("a kept element marked data-morph-preserve is left as it is", () => {
+    const target = mount(
+        `<div><p>old</p><div id="chatter" data-morph-preserve="" data-token="a"></div></div>`,
+    );
+    const chatter = /** @type {HTMLElement} */ (target.querySelector("#chatter"));
+    const app = document.createElement("div");
+    app.id = "chatterRoot";
+    chatter.append(app);
+
+    morph(
+        target,
+        markup(
+            `<div><p>new</p><div id="chatter" data-morph-preserve="" data-token="b"></div></div>`,
+        ),
+    );
+
+    expect(target.querySelector("p")).toHaveText("new");
+    expect(target.querySelector("#chatter")).toBe(chatter);
+    expect(chatter.firstElementChild).toBe(app);
+    expect(chatter).toHaveAttribute("data-token", "a");
+});

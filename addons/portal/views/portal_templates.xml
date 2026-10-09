@@ -1145,6 +1145,7 @@
         <div
             id="discussion"
             data-anchor="true"
+            data-morph-preserve=""
             class="d-print-none o_portal_chatter o_not_editable p-0"
             t-att-data-token="token"
             t-att-data-res_model="object._name"

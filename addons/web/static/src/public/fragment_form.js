@@ -18,9 +18,10 @@ const FRAGMENTS_HEADER = "X-Odoo-Fragments";
  * it (htmx's boosted forms). The form's data is posted with
  * `X-Odoo-Fragments`; the answer is either
  * - fragments, from a route answering with `fragments_or_redirect`: swapped;
- * - the page the route redirected to, asked without header and footer: the
- *   form's regions are swapped from it when it is the page shown, like a
- *   navigation in place; any other page is loaded in full.
+ * - the page the route redirected to, asked without header and footer: on
+ *   the path shown, the form's regions are swapped from it, like a
+ *   navigation in place, and its URL replaces the one shown; any other page
+ *   is loaded in full.
  *
  * The regions are the elements keyed by `data-fragment-form` (a comma list),
  * or the closest element with a `data-fragment` key. `data-confirm` asks
@@ -140,10 +141,14 @@ export class FragmentForm extends Interaction {
         if (
             !regions.length ||
             next.pathname !== shown.pathname ||
-            next.search !== shown.search ||
             !swapPage(page, regions, this.services["public.interactions"])
         ) {
             browser.location.assign(response.url);
+            return;
+        }
+        if (next.href !== shown.href) {
+            // what a post/redirect/get leaves in the address bar
+            browser.history.replaceState(browser.history.state, "", response.url);
         }
     }
 

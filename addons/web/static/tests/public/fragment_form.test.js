@@ -282,3 +282,21 @@ test("data-confirm asks first: declined posts nothing, accepted posts", async ()
     expect.verifySteps(["ask Delete it?", "post forum.question"]);
     expect(".o_comments li").toHaveCount(0);
 });
+
+test("a redirect to the same path with another query swaps in place and shows its URL", async () => {
+    await startInteraction(FragmentForm, question("<li>one</li>"));
+    redirectTo(questionPage(""), "http://localhost/forum/1/question?access_token=abc");
+    patchWithCleanup(browser.location, { href: "http://localhost/forum/1/question" });
+    patchWithCleanup(browser.history, {
+        replaceState: (_state, _title, url) => expect.step(`replace ${url}`),
+    });
+
+    await click(".o_delete");
+    await animationFrame();
+
+    expect.verifySteps([
+        "post forum.question",
+        "replace http://localhost/forum/1/question?access_token=abc",
+    ]);
+    expect(".o_comments li").toHaveCount(0);
+});
