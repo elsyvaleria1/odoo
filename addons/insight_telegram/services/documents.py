@@ -208,7 +208,7 @@ def main_report(env, model):
     base = [("model", "=", model), ("report_type", "=", "qweb-pdf")]
     names = MAIN_REPORTS.get(model, ())
     if names:
-        found = Report.search(base + [("report_name", "in", names)])
+        found = Report.search(base + [("report_name", "in", list(names))])
         by_name = {report.report_name: report for report in found}
         for name in names:
             if name in by_name:

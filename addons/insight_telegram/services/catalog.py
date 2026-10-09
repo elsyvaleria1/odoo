@@ -145,7 +145,9 @@ def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
     Model = env[model]
     base = list(extra or [])
     order = (
-        "customer_rank desc, supplier_rank desc, id" if model == "res.partner" else None
+        "customer_rank desc, supplier_rank desc, id"
+        if "customer_rank" in Model._fields
+        else None
     )
     phrase = Domain.OR(Domain(name, "ilike", value) for name in fields_)
     found = Model.search(Domain(base) & phrase, limit=limit, order=order)
