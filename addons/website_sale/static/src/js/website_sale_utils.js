@@ -1,8 +1,6 @@
 /** @odoo-module native */
-import { markup } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { _t } from "@web/core/translation";
-import { setElementContent } from "@web/core/utils/dom/html";
 
 /**
  * @param {HTMLElement} cart
@@ -111,15 +109,6 @@ function updateCartNavBar(data) {
         }
     }
 
-    const cartLinesEl = document.querySelector(".js_cart_lines");
-    if (cartLinesEl && data["website_sale.cart_lines"]) {
-        const temp = document.createElement("div");
-        temp.innerHTML = data["website_sale.cart_lines"];
-        cartLinesEl.replaceWith(...temp.childNodes);
-    }
-
-    updateCartSummary(data);
-
     document
         .querySelector(".oe_cart")
         ?.classList.toggle("col-lg-7", !!data.cart_quantity);
@@ -136,42 +125,11 @@ function updateCartNavBar(data) {
 }
 
 /**
- * @param {Object} data
  * @return {void}
  */
-function updateCartSummary(data) {
-    if (data["website_sale.shorter_cart_summary"]) {
-        const shorterCartSummaryEl = document.querySelector(
-            ".o_wsale_shorter_cart_summary",
-        );
-        setElementContent(
-            shorterCartSummaryEl,
-            markup(data["website_sale.shorter_cart_summary"]),
-        );
-    }
-    if (data["website_sale.total"]) {
-        document
-            .querySelectorAll("div.o_cart_total")
-            .forEach((div) => (div.innerHTML = data["website_sale.total"]));
-    }
-}
-
-/**
- * @param {Object} data
- * @return {void}
- */
-function updateQuickReorderSidebar(data) {
+function updateQuickReorderButton() {
     const quickReorderButton = document.getElementById("quick_reorder_button");
-    document
-        .querySelectorAll(".o_wsale_quick_reorder_line_group")
-        .forEach((el) => el.remove());
-    if (data["website_sale.quick_reorder_history"].trim()) {
-        document
-            .querySelector("#quick_reorder_sidebar .offcanvas-body")
-            .insertAdjacentHTML(
-                "afterbegin",
-                data["website_sale.quick_reorder_history"],
-            );
+    if (document.querySelector(".o_wsale_quick_reorder_line_group")) {
         quickReorderButton.removeAttribute("disabled");
         quickReorderButton.parentElement.title = "";
     } else {
@@ -240,5 +198,5 @@ export default {
     showWarning: showWarning,
     getSelectedAttributeValues: getSelectedAttributeValues,
     getSelectedVariantAttributeValues: getSelectedVariantAttributeValues,
-    updateQuickReorderSidebar: updateQuickReorderSidebar,
+    updateQuickReorderButton: updateQuickReorderButton,
 };

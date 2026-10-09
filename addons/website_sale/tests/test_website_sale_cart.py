@@ -200,6 +200,57 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
             self.assertEqual(sale_order.cart_quantity, 0.0)
             self.assertEqual(sale_order.line_ids, SaleOrderLine)
 
+    def test_update_cart_answers_with_the_cart_fragments_and_redirects_once_empty(self):
+        website = self.website.with_user(self.user_portal)
+        with MockRequest(website.env, website=website) as request:
+            self.WebsiteSaleCartController.add_to_cart(
+                product_template_id=self.product.product_tmpl_id,
+                product_id=self.product.id,
+                quantity=1,
+            )
+            line = request.cart.line_ids
+
+            response = self.WebsiteSaleCartController.update_cart(
+                line_id=line.id, quantity=3
+            )
+            self.assertEqual(
+                [(f["key"], f["swap"]) for f in response["fragments"]],
+                [
+                    ("website_sale.cart_lines", "morph"),
+                    ("website_sale.total", "inner"),
+                    ("website_sale.quick_reorder_history", "morph"),
+                ],
+            )
+            self.assertEqual(response["data"]["quantity"], 3)
+            self.assertEqual(response["data"]["cart_quantity"], 3)
+            self.assertIsNone(response["redirect"])
+
+            emptied = self.WebsiteSaleCartController.update_cart(
+                line_id=line.id, quantity=0
+            )
+            self.assertEqual(emptied["fragments"], [])
+            self.assertEqual(emptied["redirect"], "/shop/cart")
+            self.assertEqual(emptied["data"]["cart_quantity"], 0)
+
+    def test_quick_add_answers_with_the_lines_summary_and_history(self):
+        website = self.website.with_user(self.user_portal)
+        with MockRequest(website.env, website=website):
+            response = self.WebsiteSaleCartController.quick_add(
+                product_template_id=self.product.product_tmpl_id.id,
+                product_id=self.product.id,
+                quantity=2,
+            )
+        self.assertEqual(
+            [f["key"] for f in response["fragments"]],
+            [
+                "website_sale.cart_lines",
+                "website_sale.shorter_cart_summary",
+                "website_sale.quick_reorder_history",
+            ],
+        )
+        self.assertEqual(response["data"]["cart_quantity"], 2)
+        self.assertTrue(response["data"]["cart_ready"])
+
     def test_a_zero_quantity_and_price_reach_the_rendered_inputs(self):
         self.product.lst_price = 0.0
         line = self._create_so(

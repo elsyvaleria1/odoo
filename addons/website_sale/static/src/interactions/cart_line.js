@@ -2,7 +2,6 @@
 import { browser } from "@web/core/browser/browser";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
-import { redirect } from "@web/core/utils/urls";
 import { Interaction } from "@web/public/interaction";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
 
@@ -66,30 +65,31 @@ export class CartLine extends Interaction {
             quantity = 1;
         }
         const lineId = parseInt(input.dataset.lineId);
-        const data = await this.waitFor(
+        const response = await this.waitFor(
             rpc("/shop/cart/update", {
                 line_id: lineId,
                 product_id: parseInt(input.dataset.productId),
                 quantity: quantity,
             }),
         );
-
-        if (!data.cart_quantity) {
+        const data = response.data;
+        if (response.redirect) {
             browser.sessionStorage.setItem("website_sale_cart_quantity", 0);
-            return redirect("/shop/cart");
+            this.swapFragments(response);
+            return;
         }
-        input.value = data.quantity;
+        // the morph leaves a focused field as typed: the server's quantity goes in first
         this.el
             .querySelectorAll(`.js_quantity[data-line-id="${lineId}"]`)
             .forEach((input) => (input.value = data.quantity));
+        input.value = data.quantity;
 
-        const cart = this.el.closest("#shop_cart");
-        this.services["public.interactions"].stopInteractions(cart);
+        const bus = this.env.bus;
         wSaleUtils.updateCartNavBar(data);
-        wSaleUtils.updateQuickReorderSidebar(data);
-        this.services["public.interactions"].startInteractions(cart);
+        this.swapFragments(response);
+        wSaleUtils.updateQuickReorderButton();
         wSaleUtils.showWarning(data.warning);
-        this.env.bus.trigger("cart_amount_changed", [data.amount, data.minor_amount]);
+        bus.trigger("cart_amount_changed", [data.amount, data.minor_amount]);
     }
 }
 

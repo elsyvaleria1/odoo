@@ -39,17 +39,15 @@ patch(WebsiteSale.prototype, {
     },
 
     async _checkNewDatesOnCart() {
-        const { start_date, end_date, values } =
-            (await this.waitFor(
-                rpc("/shop/cart/update_renting", this._getSerializedRentingDates()),
-            )) ?? {};
-        if (!values) {
+        const response = await this.waitFor(
+            rpc("/shop/cart/update_renting", this._getSerializedRentingDates()),
+        );
+        if (!response) {
             return;
         }
-        const cart = this.el.querySelector("#shop_cart");
-        this.services["public.interactions"].stopInteractions(cart);
-        wSaleUtils.updateCartNavBar(values);
-        this.services["public.interactions"].startInteractions(cart);
+        const { start_date, end_date } = response.data;
+        wSaleUtils.updateCartNavBar(response.data);
+        this.swapFragments(response);
         const format = this._isDurationWithHours() ? formatDateTime : formatDate;
         document.querySelector("input[name=renting_start_date]").value = format(
             deserializeDateTime(start_date, { tz: this.websiteTz }),

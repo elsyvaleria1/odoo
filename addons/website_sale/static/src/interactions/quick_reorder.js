@@ -126,7 +126,7 @@ export class QuickReorder extends Interaction {
                 }));
         }
 
-        const data = await this.waitFor(
+        const response = await this.waitFor(
             rpc("/shop/cart/quick_add", {
                 product_template_id: productTemplateId,
                 product_id: productId,
@@ -134,12 +134,9 @@ export class QuickReorder extends Interaction {
                 ...(isCombo && { linked_products: linkedProducts }),
             }),
         );
-
-        const cart = document.getElementById("shop_cart");
-        this.services["public.interactions"].stopInteractions(cart);
-        wSaleUtils.updateCartNavBar(data);
-        wSaleUtils.updateQuickReorderSidebar(data);
-        this.services["public.interactions"].startInteractions(cart);
+        wSaleUtils.updateCartNavBar(response.data);
+        this.swapFragments(response);
+        wSaleUtils.updateQuickReorderButton();
 
         this._focusNextQuantityInput(currentButtonIndex);
     }

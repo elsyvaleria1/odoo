@@ -12,6 +12,11 @@ from odoo.tools.image import image_data_uri
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.controllers.portal import PaymentPortal
 from odoo.addons.sale.controllers.portal import CustomerPortal
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    render_fragments,
+)
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 _debug = DebugLog(__name__)
@@ -270,14 +275,32 @@ class Cart(PaymentPortal):
         methods=["POST"],
         website=True,
     )
-    def quick_add(self, product_template_id, product_id, quantity=1.0, **kwargs):
+    def quick_add(
+        self, product_template_id, product_id, quantity=1.0, **kwargs
+    ) -> FragmentResponse:
         values = self.add_to_cart(
             product_template_id, product_id, quantity=quantity, **kwargs
         )
-
-        IrUiView = request.env["ir.ui.view"]
         order_sudo = request.cart
-        values["website_sale.cart_lines"] = IrUiView._render_template(
+        values["cart_ready"] = order_sudo._is_cart_ready()
+        return render_fragments(
+            request.env,
+            self._get_cart_lines_fragment(order_sudo),
+            Fragment(
+                "website_sale.shorter_cart_summary",
+                {
+                    "website_sale_order": order_sudo,
+                    "show_shorter_cart_summary": True,
+                    **self._prepare_express_shop_payment_context(order_sudo),
+                    **request.website._prepare_checkout_step_values(),
+                },
+            ),
+            self._get_quick_reorder_history_fragment(order_sudo),
+            data=values,
+        )
+
+    def _get_cart_lines_fragment(self, order_sudo) -> Fragment:
+        return Fragment(
             "website_sale.cart_lines",
             {
                 "website_sale_order": order_sudo,
@@ -285,24 +308,22 @@ class Cart(PaymentPortal):
                 "suggested_products": order_sudo._cart_accessories(),
             },
         )
-        values["website_sale.shorter_cart_summary"] = IrUiView._render_template(
-            "website_sale.shorter_cart_summary",
-            {
-                "website_sale_order": order_sudo,
-                "show_shorter_cart_summary": True,
-                **self._prepare_express_shop_payment_context(order_sudo),
-                **request.website._prepare_checkout_step_values(),
-            },
+
+    def _get_cart_total_fragment(self, order_sudo) -> Fragment:
+        # inner: every total on the page keeps the classes its own t-call gave it;
+        # show_shorter_cart_summary: these routes serve the cart page, where
+        # nothing renders beside the total's root
+        return Fragment(
+            "website_sale.total",
+            {"website_sale_order": order_sudo, "show_shorter_cart_summary": True},
+            swap="inner",
         )
-        values["website_sale.quick_reorder_history"] = IrUiView._render_template(
+
+    def _get_quick_reorder_history_fragment(self, order_sudo) -> Fragment:
+        return Fragment(
             "website_sale.quick_reorder_history",
-            {
-                "website_sale_order": order_sudo,
-                **self._prepare_order_history(),
-            },
+            {"website_sale_order": order_sudo, **self._prepare_order_history()},
         )
-        values["cart_ready"] = order_sudo._is_cart_ready()
-        return values
 
     def _prepare_express_shop_payment_context(self, order, **kwargs) -> dict[str, Any]:
         payment_form_values = CustomerPortal._prepare_payment_form_context(
@@ -341,10 +362,11 @@ class Cart(PaymentPortal):
         website=True,
         sitemap=False,
     )
-    def update_cart(self, line_id, quantity, product_id=None, **kwargs):
+    def update_cart(
+        self, line_id, quantity, product_id=None, **kwargs
+    ) -> FragmentResponse:
         order_sudo = request.cart
         quantity = int(quantity)
-        IrUiView = request.env["ir.ui.view"]
 
         if not line_id:
             line_id = order_sudo.line_ids.filtered(
@@ -369,28 +391,15 @@ class Cart(PaymentPortal):
                 order_sudo.amount_total, order_sudo.currency_id
             )
         ) or 0.0
-        values["website_sale.cart_lines"] = IrUiView._render_template(
-            "website_sale.cart_lines",
-            {
-                "website_sale_order": order_sudo,
-                "date": fields.Date.today(),
-                "suggested_products": order_sudo._cart_accessories(),
-            },
+        if not values["cart_quantity"]:
+            return render_fragments(request.env, redirect="/shop/cart", data=values)
+        return render_fragments(
+            request.env,
+            self._get_cart_lines_fragment(order_sudo),
+            self._get_cart_total_fragment(order_sudo),
+            self._get_quick_reorder_history_fragment(order_sudo),
+            data=values,
         )
-        values["website_sale.total"] = IrUiView._render_template(
-            "website_sale.total",
-            {
-                "website_sale_order": order_sudo,
-            },
-        )
-        values["website_sale.quick_reorder_history"] = IrUiView._render_template(
-            "website_sale.quick_reorder_history",
-            {
-                "website_sale_order": order_sudo,
-                **self._prepare_order_history(),
-            },
-        )
-        return values
 
     def _prepare_order_history(self):
 
