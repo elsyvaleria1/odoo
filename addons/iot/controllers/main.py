@@ -223,9 +223,10 @@ class IoTController(IoTBoxLookup, http.Controller):
     def _upsert_box(self, iot_box):
         """Create or update the ``iot.box`` record this payload describes.
 
-        Returns an empty recordset when the box is unknown and carries a token
-        the database did not hand out, which is what stops a stranger enrolling
-        itself.
+        Returns an empty recordset when the payload does not carry the token
+        of the box it names -- the box's own when it is known, one the database
+        handed out when it is not -- which is what stops a stranger enrolling
+        itself or rewriting a box it found the identifier of.
         """
         iot_identifier = iot_box["identifier"]
         new_iot_ip = iot_box["ip"]
@@ -237,6 +238,12 @@ class IoTController(IoTBoxLookup, http.Controller):
             "version": new_iot_version,
         }
         if box:
+            if not (box.token and consteq(iot_box.get("token") or "", box.token)):
+                _logger.warning(
+                    "IoT %s offered a token that is not the one it was paired with",
+                    iot_identifier,
+                )
+                return request.env["iot.box"]
             if (box.identifier, box.ip, box.version) != (
                 iot_identifier,
                 new_iot_ip,

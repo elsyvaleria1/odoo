@@ -103,6 +103,20 @@ class TestBoxEnrolment(HttpCase):
         self.assertEqual(devices.identifier, "serial_ttyS1")
         self.assertEqual(devices.connection_state, "connected")
 
+    def test_a_known_box_is_rewritten_only_under_its_token(self):
+        token = self._hand_out_token()
+        self._setup(self._payload(token), {})
+        box = self._box()
+        moved = {**self._payload("not-the-box-token"), "ip": "10.6.6.6"}
+
+        self.assertIsNone(self._setup(moved, {}))
+        self.env.invalidate_all()
+        self.assertEqual(box.ip, "10.0.0.9", "a stranger rewrote a known box")
+
+        self.assertTrue(self._setup({**moved, "token": box.token}, {}))
+        self.env.invalidate_all()
+        self.assertEqual(box.ip, "10.6.6.6")
+
     def test_the_first_box_is_answered_the_channel_it_creates(self):
         self.env["ir.config_parameter"].sudo().set_param("iot.ws_channel", False)
         token = self._hand_out_token()

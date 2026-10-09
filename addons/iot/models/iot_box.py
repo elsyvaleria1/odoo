@@ -8,14 +8,15 @@ from odoo import api, fields, models
 from odoo.http import request
 
 from odoo.addons.integration.tools.admission import Acknowledged
+from odoo.addons.integration.tools.authentication import is_bearer_token_valid
 
 _logger = logging.getLogger(__name__)
 
 IOT_TOKEN_VALIDITY = timedelta(minutes=15)
 
-# What a box and its peripherals are in the registry: pushed to, admitted by
-# the identifier the box sends (`_is_inbound_request_authentic`), and holding no
-# credential of their own until the box image sends a device token.
+# What a box and its peripherals are in the registry: pushed to, and admitted
+# by the token the box was paired with (`_is_inbound_request_authentic`), which
+# the box record holds itself rather than as a registry credential.
 REGISTRY_DEFAULTS = {
     "link_mode": "push",
     "auth_type": "none",
@@ -82,10 +83,8 @@ class IotBox(models.Model):
         return self, label, purpose
 
     def _is_inbound_request_authentic(self, headers, body) -> bool:
-        # A box asks for its handlers by identifier alone, before it holds a
-        # token; the identifier is the identity this route has.
         self.check_singleton()
-        return True
+        return is_bearer_token_valid(headers, self.sudo().token)
 
     device_ids = fields.One2many(
         comodel_name="iot.device",

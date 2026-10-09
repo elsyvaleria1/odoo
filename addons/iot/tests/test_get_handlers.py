@@ -16,8 +16,10 @@ class TestHandlerShipping(HttpCase):
     so these pin the two keys rather than a list of module names.
     """
 
+    token = ""
+
     def _box(self, version="L25.07", auto_update=True):
-        return (
+        box = (
             self.env["iot.box"]
             .sudo()
             .create(
@@ -30,9 +32,15 @@ class TestHandlerShipping(HttpCase):
                 }
             )
         )
+        self.token = box.token
+        return box
 
-    def _fetch(self, identifier="handler-box", auto="False"):
-        return self.url_open(f"/iot/get_handlers?identifier={identifier}&auto={auto}")
+    def _fetch(self, identifier="handler-box", auto="False", token=None):
+        token = self.token if token is None else token
+        return self.url_open(
+            f"/iot/get_handlers?identifier={identifier}&auto={auto}",
+            headers={"Authorization": f"Bearer {token}"} if token else None,
+        )
 
     def _names(self, response):
         self.assertEqual(response.status_code, 200)
@@ -98,6 +106,16 @@ class TestHandlerShipping(HttpCase):
     def test_an_unknown_box_gets_nothing(self):
         self.assertEqual(self._fetch(identifier="no-such-box").status_code, 404)
 
+    def test_a_box_that_does_not_present_its_token_gets_nothing(self):
+        self._box()
+        for token in ("", "not-the-box-token"):
+            with self.subTest(token=token):
+                response = self._fetch(token=token)
+                self.assertEqual(response.status_code, 401)
+                self.assertNotEqual(
+                    response.headers.get("Content-Type"), "application/zip"
+                )
+
     def test_auto_update_off_refuses_an_automatic_request(self):
         self._box(auto_update=False)
         self.assertEqual(self._fetch(auto="True").status_code, 401)
@@ -106,6 +124,34 @@ class TestHandlerShipping(HttpCase):
             200,
             "a hand-triggered update is still allowed",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestBoxLog(HttpCase):
+    def _post_log(self, box, token):
+        return self.url_open(
+            "/iot/log",
+            data=b"identifier " + box.identifier.encode() + b"<log/>\n20,a line",
+            headers={"Authorization": f"Bearer {token}"} if token else None,
+        )
+
+    def test_a_box_logs_only_under_its_token(self):
+        box = (
+            self.env["iot.box"]
+            .sudo()
+            .create(
+                {
+                    "name": "Log Box",
+                    "identifier": "log-box",
+                    "ip": "10.0.0.5",
+                    "version": "L25.07",
+                }
+            )
+        )
+
+        self.assertEqual(self._post_log(box, "").status_code, 401)
+        self.assertEqual(self._post_log(box, "not-the-box-token").status_code, 401)
+        self.assertEqual(self._post_log(box, box.token).status_code, 200)
 
 
 @tagged("post_install", "-at_install")
