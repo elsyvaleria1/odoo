@@ -91,8 +91,14 @@ class AssetAttachmentStore:
             name=name, mimetype=mimetype, raw=raw, url=url
         )
 
-    def _unlink_attachments(self, attachments: IrAttachment) -> None:
-        attachments |= attachments._encoded_variants()
+    def _unlink_attachments(
+        self, attachments: IrAttachment, keep: IrAttachment | None = None
+    ) -> None:
+        variants = attachments._encoded_variants()
+        if keep:
+            # a twin shares the kept row's url, and so its copies' urls
+            variants -= variants.browse(keep._newest_encoded_variant_ids().values())
+        attachments |= variants
         fname_by_id = {
             attach.id: attach.store_fname
             for attach in attachments
@@ -166,7 +172,7 @@ class AssetAttachmentStore:
                 to_clean_pattern,
                 keep_id,
             )
-            self._unlink_attachments(attachments)
+            self._unlink_attachments(attachments, keep=ira.browse(keep_id))
 
     def get_attachments(
         self, extension: str, ignore_version: bool = False

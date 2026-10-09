@@ -6,6 +6,7 @@ from typing import Any, Self
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
+from odoo.exceptions import MissingError
 from odoo.fields import Domain
 from odoo.http import Stream
 from odoo.libs.debug_log import DebugLog
@@ -91,9 +92,9 @@ class IrAttachment(models.Model):
     @tools.ormcache("self.id", cache="assets")
     def _encoded_asset_variants(self) -> tuple[str, frozendict]:
         """(this generated asset's mimetype, {encoding: id of its encoded
-        copy}): an asset and its copies never change once made, and going they
-        clear the assets cache, so the hot path neither searches its copies nor
-        reads the asset it serves one of."""
+        copy}), so the hot path neither searches its copies nor reads the asset
+        it serves one of. A copy's going clears the assets cache; one deleted
+        under a stale entry is caught where it is served."""
         self.check_singleton()
         url = self.url or ""
         if (
@@ -101,12 +102,7 @@ class IrAttachment(models.Model):
             or self.file_size < _ENCODED_ASSET_FLOOR
         ):
             return self.mimetype, frozendict()
-        ids = {
-            variant.url: variant.id
-            for variant in self._search_generated_assets(
-                urls=[url + suffix for _encoding, suffix, _m, _c in ASSET_ENCODINGS]
-            )
-        }
+        ids = self._newest_encoded_variant_ids()
         return self.mimetype, frozendict(
             {
                 encoding: ids[url + suffix]
@@ -131,12 +127,32 @@ class IrAttachment(models.Model):
         if accept_encodings is not None and self.id:
             variant, encoding = self._get_encoded_asset_variant(accept_encodings)
             if variant:
-                encoded = binary._get_stream_from_record(variant, "raw", filename)
-                encoded.mimetype = self._encoded_asset_variants()[0]
-                encoded.encoding = encoding
-                _debug.logic("asset_encoded", filename=filename, encoding=encoding)
-                return encoded
+                try:
+                    encoded = binary._get_stream_from_record(variant, "raw", filename)
+                except MissingError:
+                    # a copy deleted since it was cached (a transaction that read
+                    # before the delete committed can cache it again): the asset
+                    # itself serves, and the copies are looked up anew
+                    _debug.logic("asset_encoded_copy_gone", filename=filename)
+                    self.env.registry.clear_cache("assets")
+                else:
+                    encoded.mimetype = self._encoded_asset_variants()[0]
+                    encoded.encoding = encoding
+                    _debug.logic("asset_encoded", filename=filename, encoding=encoding)
+                    return encoded
         return binary._get_stream_from_record(self, "raw", filename)
+
+    def _newest_encoded_variant_ids(self) -> dict[str, int]:
+        """{copy url: id} of this asset's encoded copies. Twins of one bundle
+        share its url and so its copies' urls; each copy is created right after
+        its own asset, so the newest per url is the newest twin's."""
+        self.check_singleton()
+        ids: dict[str, int] = {}
+        for variant in self._search_generated_assets(
+            urls=[self.url + suffix for _encoding, suffix, _m, _c in ASSET_ENCODINGS]
+        ):
+            ids[variant.url] = max(ids.get(variant.url, 0), variant.id)
+        return ids
 
     def _encoded_variants(self) -> Self:
         variant_urls = [
@@ -162,7 +178,9 @@ class IrAttachment(models.Model):
             _debug.lifecycle(
                 "assets_cache_cleared", reason="attachment_unlink", count=len(self)
             )
-            self.env.registry.clear_cache("assets")
+            # again after commit: a transaction that read before it can cache
+            # what this one deleted
+            self.env["ir.asset"]._invalidate_assets_cache()
         return res
 
     @api.model
@@ -301,8 +319,10 @@ class IrAttachment(models.Model):
         cutoff = fields.Datetime.now() - timedelta(
             days=self._get_esm_bridge_gc_grace_days()
         )
+        # the shims alone: a reuse refreshes a shim, not its encoded copies,
+        # which go with their shim when it goes
         domain = self._get_domain_generated_assets(
-            url_pattern=f"{ESM_BRIDGE_URL_PREFIX}%"
+            url_pattern=f"{ESM_BRIDGE_URL_PREFIX}%.js"
         ) & Domain("write_date", "<", cutoff)
         aged = self.sudo().search(domain, limit=self._ESM_GC_BATCH)
         _debug.lifecycle("esm_bridges_gc", aged=len(aged), batch=self._ESM_GC_BATCH)

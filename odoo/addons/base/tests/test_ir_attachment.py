@@ -382,8 +382,8 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
                 self.assertEqual(bool(variant), bool(expected))
 
     def test_serving_an_encoded_copy_reads_the_copy_alone(self):
-        """An asset and its copies never change: once known, serving a copy
-        searches nothing and reads neither the asset nor another copy."""
+        """Once an asset's copies are known, serving one searches nothing and
+        reads neither the asset nor another copy."""
         asset = self._create_generated_asset(
             b"a{color:red}\n" * 2000, mimetype="text/css"
         )
@@ -393,6 +393,25 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         with self.assertQueryCount(1):
             stream = asset._get_asset_stream("a.css", accept)
         self.assertEqual((stream.encoding, stream.mimetype), ("gzip", "text/css"))
+
+    def test_a_copy_gone_since_it_was_known_serves_the_asset(self):
+        """A transaction that read before a delete committed can cache the
+        deleted copy again: serving it falls back to the asset."""
+        raw = b"a{color:red}\n" * 2000
+        asset = self._create_generated_asset(raw, mimetype="text/css")
+        accept = parse_accept_header("gzip")
+        self.assertEqual(asset._get_asset_stream("a.css", accept).encoding, "gzip")
+        gzip_copy = self._asset_variants(asset).filtered(
+            lambda copy: copy.url.endswith(".gz")
+        )
+        self.env.cr.execute("DELETE FROM ir_attachment WHERE id = %s", [gzip_copy.id])
+        self.env.invalidate_all()
+
+        stream = asset._get_asset_stream("a.css", accept)
+
+        self.assertFalse(stream.encoding)
+        self.assertEqual(stream.read(), raw)
+        self.assertNotIn("gzip", asset._encoded_asset_variants()[1])
 
     def test_the_variants_go_with_their_asset(self):
         asset = self._create_generated_asset(b"function g(){}\n" * 1000)

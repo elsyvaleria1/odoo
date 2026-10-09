@@ -630,9 +630,9 @@ class TestAssetsBundleWithIRAMock(FileTouchable):
             counter.update(["create"] * len(vals_list))
             return origin_create(self, vals_list)
 
-        def unlink(self, attachments):
+        def unlink(self, attachments, **kwargs):
             counter.update(["unlink"])
-            return origin_unlink(self, attachments)
+            return origin_unlink(self, attachments, **kwargs)
 
         self.patch(IrAttachment, "create", create)
         self.patch(AssetAttachmentStore, "_unlink_attachments", unlink)

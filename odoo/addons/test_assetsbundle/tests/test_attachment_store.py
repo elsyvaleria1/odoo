@@ -356,6 +356,22 @@ class TestSaveKeepsOneRowPerUrl(TransactionCase):
             bundle.get_attachments("min.js", ignore_version=True).ids, [second.id]
         )
 
+    def test_a_second_save_keeps_the_new_rows_encoded_copies(self):
+        bundle = AssetsBundle("test.audit_one", self.FILES, env=self.env, css=False)
+        content = "function f(){return 1}\n" * 1000
+        bundle.save_attachment("min.js", content)
+        second = bundle.save_attachment("min.js", content)
+
+        copies = self.env["ir.attachment"]._search_generated_assets(
+            url_pattern=f"{second.url}.%"
+        )
+        self.assertEqual(
+            sorted(copy.url.rsplit(".", 1)[-1] for copy in copies), ["gz", "zst"]
+        )
+        self.assertEqual(
+            set(second._encoded_asset_variants()[1].values()), set(copies.ids)
+        )
+
     def test_a_debug_build_writes_its_map_once_with_content(self):
         bundle = AssetsBundle(
             "test.audit_map", self.FILES, env=self.env, css=False, debug_assets=True
@@ -763,6 +779,47 @@ class TestEsmAssetGc(TransactionCase):
             "(23 rows = 13 kB measured) and content-addressed with no supersession, "
             "so collecting them on the artifact clock deleted live rows for nothing",
         )
+
+    def _mk_encoded_bridge(self, digest: str):
+        Attachment = self.env["ir.attachment"].with_user(SUPERUSER_ID)
+        url = f"/web/assets/esm/bridges/{digest}.js"
+        Attachment.create(
+            Attachment._prepare_generated_asset_vals(
+                name=f"{digest}.js",
+                mimetype="text/javascript",
+                raw=b"export const x = 1;\n" * 1000,
+                url=url,
+            )
+        )
+        rows = Attachment._search_generated_assets(url_pattern=f"{url}%")
+        self.assertEqual(len(rows), 3, "the shim and its two encoded copies")
+        return rows
+
+    def _age(self, rows, days: int):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET write_date = write_date - %s::interval"
+            " WHERE id = ANY(%s)",
+            [f"{days} days", rows.ids],
+        )
+        rows.invalidate_recordset(["write_date"])
+
+    def test_a_reused_bridge_keeps_its_encoded_copies(self):
+        rows = self._mk_encoded_bridge("c0ffee" * 5 + "ab")
+        # a reuse refreshes the shim alone
+        self._age(rows.filtered(lambda row: not row.url.endswith(".js")), 400)
+
+        self.env["ir.attachment"]._gc_esm_bridges()
+
+        self.assertEqual(len(rows.exists()), 3)
+
+    def test_an_aged_bridge_goes_with_its_encoded_copies(self):
+        rows = self._mk_encoded_bridge("deadbe" * 5 + "ef")
+        self._age(rows, 400)
+
+        self.env["ir.attachment"]._gc_esm_bridges()
+
+        self.assertFalse(rows.exists())
 
     def test_young_bridge_survives(self):
         bridge_new = self._mk(
