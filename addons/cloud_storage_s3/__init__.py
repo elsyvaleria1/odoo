@@ -10,7 +10,7 @@ def uninstall_hook(env):
     icp.search(
         [("key", "in", [s3.PARAM_BUCKET, s3.PARAM_REGION, s3.PARAM_ENDPOINT])]
     ).unlink()
-    env["credential.credential"].sudo().search(
+    env["credential.credential"].search(
         [("category_id.code", "=", "cloud_storage_s3"), ("active", "in", [True, False])]
     ).unlink()
     s3.clear_cache(env)

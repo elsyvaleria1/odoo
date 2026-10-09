@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,domain
+access_read_s3_credential,credential.credential: S3 requests are signed with the storage keys,credential.model_credential_credential,privilege_read_s3_credential,permission,r,"[('category_id.code', '=', 'cloud_storage_s3')]"
+access_store_s3_credential,credential.credential: the settings form stores the storage keys,credential.model_credential_credential,privilege_store_s3_credential,permission,cru,"[('category_id.code', '=', 'cloud_storage_s3')]"

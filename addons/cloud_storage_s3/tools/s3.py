@@ -22,24 +22,31 @@ AWS_URL_PATTERN = re.compile(
 _ClientCache = {}
 
 
-def get_credential(env):
+def get_credential(env, credentials=None):
+    if credentials is None:
+        credentials = env["credential.credential"].with_privilege(
+            "cloud_storage_s3.privilege_read_s3_credential",
+            reason="sign S3 requests with the storage keys",
+        )
     category = env.ref(CREDENTIAL_CATEGORY_XMLID, raise_if_not_found=False)
     if not category:
-        return env["credential.credential"].sudo()
-    return (
-        env["credential.credential"]
-        .sudo()
-        .search(
-            [("category_id", "=", category.id), ("active", "=", True)],
-            order="write_date desc, id desc",
-            limit=1,
-        )
+        return credentials
+    return credentials.search(
+        [("category_id", "=", category.id), ("active", "=", True)],
+        order="write_date desc, id desc",
+        limit=1,
     )
 
 
 def get_keys(env):
     credential = get_credential(env)
-    keys = credential.get_credential_dict() if credential else {}
+    # the payload column is system-only by design; the use path reads it for
+    # the one credential the privilege found
+    keys = (
+        credential.sudo()._use_secret_payload("cloud_storage_s3:sign")
+        if credential
+        else {}
+    )
     if not (keys.get("access_key_id") and keys.get("secret_access_key")):
         return {}
     return keys
@@ -49,11 +56,17 @@ def store_keys(env, access_key_id, secret_access_key) -> None:
     payload = json_dumps(
         {"access_key_id": access_key_id, "secret_access_key": secret_access_key}
     )
-    credential = get_credential(env)
+    credential = get_credential(
+        env,
+        env["credential.credential"].with_privilege(
+            "cloud_storage_s3.privilege_store_s3_credential",
+            reason="store the S3 keys entered in Settings",
+        ),
+    )
     if credential:
         credential.credential_data = payload
     else:
-        env["credential.credential"].sudo().create(
+        credential.create(
             {
                 "name": CREDENTIAL_NAME,
                 "category_id": env.ref(CREDENTIAL_CATEGORY_XMLID).id,
@@ -71,17 +84,15 @@ def normalize_endpoint(endpoint) -> str:
 
 
 def get_endpoint(env) -> str:
-    return normalize_endpoint(
-        env["ir.config_parameter"].sudo().get_param(PARAM_ENDPOINT)
-    )
+    return normalize_endpoint(env.registry.settings.get(env, PARAM_ENDPOINT, False))
 
 
 def get_config(env):
-    icp = env["ir.config_parameter"].sudo()
+    settings = env.registry.settings
     credential = get_credential(env)
     config = {
-        "bucket_name": icp.get_param(PARAM_BUCKET),
-        "region": icp.get_param(PARAM_REGION),
+        "bucket_name": settings.get(env, PARAM_BUCKET, False),
+        "region": settings.get(env, PARAM_REGION, False),
         "credential": f"{credential.id}:{credential.write_date}"
         if credential and credential.storage_method == "json"
         else False,
@@ -89,7 +100,10 @@ def get_config(env):
     if not all(config.values()):
         return {}
     config["endpoint_url"] = get_endpoint(env)
-    if not config["endpoint_url"] and icp.get_param("cloud_storage_provider") == "ovh":
+    if (
+        not config["endpoint_url"]
+        and settings.get(env, "cloud_storage_provider", False) == "ovh"
+    ):
         # without its endpoint an OVHcloud bucket would be looked up on Amazon
         return {}
     return config

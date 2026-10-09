@@ -9,6 +9,7 @@ from typing import Self
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools import SQL
 
 from ..tools import s3
 
@@ -45,10 +46,11 @@ class IrAttachment(models.Model):
     def _is_s3_hybrid(self) -> bool:
         if not self._s3_is_enabled():
             return False
-        icp = self.env["ir.config_parameter"].sudo()
+        settings = self.env.registry.settings
         return (
-            icp.get_param("cloud_storage_provider") in s3.PROVIDERS
-            and icp.get_param("cloud_storage_s3_storage_mode") == "hybrid"
+            settings.get(self.env, "cloud_storage_provider", False) in s3.PROVIDERS
+            and settings.get(self.env, "cloud_storage_s3_storage_mode", False)
+            == "hybrid"
         )
 
     def _filtered_s3_mirrorable(self) -> Self:
@@ -166,7 +168,7 @@ class IrAttachment(models.Model):
     def _parse_s3_url(self):
         return s3.parse_object_url(
             self.url,
-            self.env["ir.config_parameter"].sudo().get_param(s3.PARAM_REGION),
+            self.env.registry.settings.get(self.env, s3.PARAM_REGION, False),
             s3.get_endpoint(self.env),
         )
 
@@ -177,10 +179,10 @@ class IrAttachment(models.Model):
         return info
 
     def _generate_s3_url(self, blob_name):
-        icp = self.env["ir.config_parameter"].sudo()
+        settings = self.env.registry.settings
         return s3.object_url(
-            icp.get_param(s3.PARAM_BUCKET),
-            icp.get_param(s3.PARAM_REGION),
+            settings.get(self.env, s3.PARAM_BUCKET, False),
+            settings.get(self.env, s3.PARAM_REGION, False),
             blob_name,
             s3.get_endpoint(self.env),
         )
@@ -265,9 +267,9 @@ class IrAttachment(models.Model):
         :return: attachment ids by outcome, ``moved`` or the reason for a skip
         :rtype: dict
         """
-        icp = self.env["ir.config_parameter"].sudo()
-        bucket = icp.get_param(s3.PARAM_BUCKET)
-        region = icp.get_param(s3.PARAM_REGION)
+        settings = self.env.registry.settings
+        bucket = settings.get(self.env, s3.PARAM_BUCKET, False)
+        region = settings.get(self.env, s3.PARAM_REGION, False)
         endpoint = s3.get_endpoint(self.env)
         client = s3.get_client(self.env)
         outcome = defaultdict(list)
@@ -378,6 +380,20 @@ class IrAttachment(models.Model):
             self._remove_stored_file_multi(fnames)
         return dict(outcome)
 
+    def _s3_still_referenced(self, column: str, values) -> set[str]:
+        # whoever deletes, an object another attachment still points at stays:
+        # the user's reach on ir.attachment would hide the ones they cannot read
+        self.flush_model([column])
+        rows = self.env.execute_query(
+            SQL(
+                "SELECT DISTINCT %s FROM ir_attachment WHERE %s = ANY(%s)",
+                SQL.identifier(column),
+                SQL.identifier(column),
+                list(values),
+            )
+        )
+        return {value for (value,) in rows}
+
     def unlink(self):
         if not self._s3_is_enabled():
             return super().unlink()
@@ -396,23 +412,13 @@ class IrAttachment(models.Model):
             # a copied document shares its source's url, and so its blob
             endpoint = s3.get_endpoint(self.env)
             shared_keys = set()
-            for url in (
-                self.sudo()
-                ._with_field_rows()
-                .search([("url", "in", list(cloud_urls))])
-                .mapped("url")
-            ):
+            for url in self._s3_still_referenced("url", cloud_urls):
                 if info := s3.parse_object_url(url, None, endpoint):
                     shared_keys.add((info["bucket_name"], info["blob_name"]))
             for bucket, blobs in blobs_by_bucket.items():
                 blobs[:] = [b for b in blobs if (bucket, b) not in shared_keys]
         if hybrid_candidates:
-            still_used = set(
-                self.sudo()
-                ._with_field_rows()
-                .search([("s3_blob_name", "in", hybrid_candidates)])
-                .mapped("s3_blob_name")
-            )
+            still_used = self._s3_still_referenced("s3_blob_name", hybrid_candidates)
             for blob in set(hybrid_candidates):
                 if blob not in still_used:
                     blobs_by_bucket[hybrid_bucket].append(blob)

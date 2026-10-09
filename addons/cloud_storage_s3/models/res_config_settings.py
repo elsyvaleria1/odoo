@@ -101,11 +101,11 @@ class ResConfigSettings(models.TransientModel):
     def _setup_cloud_storage_provider(self):
         if not self._is_s3_provider():
             return super()._setup_cloud_storage_provider()
-        icp = self.env["ir.config_parameter"]
-        if icp.sudo().get_param("cloud_storage_s3_enabled") != "True":
+        settings = self.env.registry.settings
+        if settings.get(self.env, "cloud_storage_s3_enabled", False) != "True":
             return None
 
-        bucket = icp.get_param(s3.PARAM_BUCKET)
+        bucket = settings.get(self.env, s3.PARAM_BUCKET, False)
         client = s3.get_client(self.env)
         blob_name = "0/_setup_test.txt"
 
@@ -133,7 +133,7 @@ class ResConfigSettings(models.TransientModel):
         with contextlib.suppress(Exception):
             client.delete_object(Bucket=bucket, Key=blob_name)
 
-        if icp.get_param("cloud_storage_s3_storage_mode") == "hybrid":
+        if settings.get(self.env, "cloud_storage_s3_storage_mode", False) == "hybrid":
             return None
 
         cors_config = {

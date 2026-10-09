@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_s3_credential" model="res.groups">
+        <field name="name">Privilege: sign S3 requests with the bucket's keys</field>
+        <field
+            name="comment">Read the active S3 storage credential to sign uploads, downloads and deletions on behalf of whoever touches an attachment; that credential category, and only it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_store_s3_credential" model="res.groups">
+        <field name="name">Privilege: store the S3 keys entered in Settings</field>
+        <field
+            name="comment">Create or replace the S3 storage credential from the settings form, which only administrators reach; that credential category, and only it.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

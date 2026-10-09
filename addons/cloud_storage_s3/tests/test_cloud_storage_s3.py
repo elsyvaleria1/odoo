@@ -5,8 +5,8 @@ from urllib.parse import parse_qs, quote, urlencode, urlsplit
 from botocore.exceptions import ClientError
 
 from odoo import http
-from odoo.exceptions import UserError, ValidationError
-from odoo.tests.common import HttpCase, TransactionCase, tagged
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tests.common import HttpCase, TransactionCase, new_test_user, tagged
 
 from .. import uninstall_hook
 from ..tools import s3
@@ -529,6 +529,42 @@ class TestCloudStorageS3Move(TestCloudStorageS3Common):
         self.mock_s3_client.delete_objects.assert_not_called()
         copy.unlink()
         self.mock_s3_client.delete_objects.assert_called_once()
+
+    def test_a_user_keeps_a_blob_an_attachment_they_cannot_read_uses(self):
+        employee = new_test_user(
+            self.env, login="s3_employee", groups="base.group_user"
+        )
+        parameter = self.env["ir.config_parameter"].search([], limit=1)
+        hidden = self._local(res_model="ir.config_parameter", res_id=parameter.id)
+        hidden._s3_move_to_cloud()
+        own = hidden.copy({"res_model": False, "res_id": False})
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET create_uid = %s WHERE id = %s",
+            (employee.id, own.id),
+        )
+        self.env.invalidate_all()
+        self.assertFalse(
+            self.env["ir.attachment"]
+            .with_user(employee)
+            .search([("id", "=", hidden.id)])
+        )
+        own.with_user(employee).unlink()
+        self.mock_s3_client.delete_objects.assert_not_called()
+
+    def test_an_employee_signs_with_keys_they_cannot_read(self):
+        employee = new_test_user(self.env, login="s3_signer", groups="base.group_user")
+        attachment = (
+            self.env["ir.attachment"]
+            .with_user(employee)
+            .create([{"name": "nota.txt", "mimetype": "text/plain", "datas": b""}])
+        )
+        attachment._post_add_create(cloud_storage=True)
+        s3.clear_cache()
+        info = attachment._generate_cloud_storage_download_info()
+        self.assertIn("url", info)
+        self.mock_s3_client.generate_presigned_url.assert_called()
+        with self.assertRaises(AccessError):
+            self.env["credential.credential"].with_user(employee).search_count([])
 
 
 class TestCloudStorageS3Hybrid(TestCloudStorageS3Common):
