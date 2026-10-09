@@ -23,7 +23,6 @@ export function changePricelist(pricelistName) {
             content: `Activate Pricelist ${pricelistName}`,
             trigger: `.dropdown-item:contains(${pricelistName})`,
             run: "click",
-            expectUnloadPage: true,
         },
         {
             content: "Wait for pricelist to load",
