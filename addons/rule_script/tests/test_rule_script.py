@@ -220,3 +220,56 @@ class TestRuleScript(TransactionCase):
         self._load({"rules/ping.py": ping})
         with self.assertRaises(UserError):
             pong_version._activate()
+
+    def test_a_figure_keeps_the_versions_that_computed_it(self):
+        self._load(
+            {
+                "rules/round.py": round_rule(),
+                "rules/surcharge_2026.py": surcharge_rule("2026-01-01", 0.0207),
+            }
+        )
+        document = self.Script.search([("code", "=", "test.round")])
+
+        value = self.Script._evaluate_for(
+            document,
+            "surcharge of a test",
+            "test.surcharge",
+            "2026-03-01",
+            amount=10000.0,
+            months=1,
+        )
+
+        trace = self.env["rule.script.trace"].search(
+            [("res_model", "=", "rule.script"), ("res_id", "=", document.id)]
+        )
+        self.assertEqual(value, 207)
+        self.assertEqual(trace.code, "test.surcharge")
+        self.assertEqual(trace.version_id, self._versions("test.surcharge"))
+        self.assertEqual(
+            trace.used_version_ids,
+            self._versions("test.surcharge") | self._versions("test.round"),
+        )
+        self.assertEqual(trace.value, "207.0")
+        with self.assertRaises(UserError):
+            trace.purpose = "something else"
+
+    def test_nobody_writes_a_trace_by_hand(self):
+        self._load({"rules/round.py": round_rule()})
+        version = self._versions("test.round")
+        approver = new_test_user(
+            self.env, "trace_writer", groups="rule_script.group_rule_script_approver"
+        )
+
+        with self.assertRaises(AccessError):
+            self.env["rule.script.trace"].with_user(approver).create(
+                {
+                    "res_model": "rule.script",
+                    "res_id": version.script_id.id,
+                    "purpose": "forged",
+                    "code": "test.round",
+                    "date_on": "2026-01-01",
+                    "version_id": version.id,
+                    "inputs": "{}",
+                    "value": "1",
+                }
+            )

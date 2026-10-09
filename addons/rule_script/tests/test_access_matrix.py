@@ -49,6 +49,16 @@ class TestRuleScriptAccessMatrix(AccessMatrixCase):
             author_a="rwcd",
             approver_a="rwcd",
         ),
+        Cell(
+            "rule.script.trace",
+            "trace",
+            note="anyone reads which rule versions computed a figure; only an "
+            "evaluation creates a trace, through rule_script.privilege_record_trace, "
+            "and a trace never changes",
+            employee_a="r",
+            author_a="r",
+            approver_a="r",
+        ),
     )
 
     @classmethod
@@ -68,4 +78,16 @@ class TestRuleScriptAccessMatrix(AccessMatrixCase):
                 "expected": "1",
             }
         )
-        return {"rule": script, "version": version, "test": test}
+        trace = cls.env["rule.script.trace"].create(
+            {
+                "res_model": "rule.script",
+                "res_id": script.id,
+                "purpose": "matrix",
+                "code": "matrix.round",
+                "date_on": "2026-01-01",
+                "version_id": version.id,
+                "inputs": "{}",
+                "value": "1",
+            }
+        )
+        return {"rule": script, "version": version, "test": test, "trace": trace}

@@ -78,6 +78,15 @@ class RuleScript(models.Model):
         value, _trace = self._evaluate_traced(code, on_date, inputs)
         return value
 
+    def _evaluate_for(self, record, purpose, code, on_date, **inputs):
+        """_evaluate, keeping a rule.script.trace on `record`: what a filed or
+        posted figure was computed by, to answer for it later."""
+        value, trace = self._evaluate_traced(code, on_date, inputs)
+        self.env["rule.script.trace"]._record(
+            record, purpose, code, fields.Date.to_date(on_date), inputs, value, trace
+        )
+        return value
+
     def _evaluate_traced(self, code, on_date, inputs) -> tuple:
         """(value, trace): the trace lists every rule evaluated, nested calls
         included, as {code, version id, inputs, value} in completion order."""

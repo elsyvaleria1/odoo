@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_rule_script_trace_list" model="ir.ui.view">
+        <field name="name">rule.script.trace.list</field>
+        <field name="model">rule.script.trace</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="create_date" string="Recorded" />
+                <field name="res_model" />
+                <field name="res_id" />
+                <field name="purpose" />
+                <field name="code" />
+                <field name="date_on" />
+                <field name="version_id" />
+                <field name="value" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_rule_script_trace_form" model="ir.ui.view">
+        <field name="name">rule.script.trace.form</field>
+        <field name="model">rule.script.trace</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="res_model" />
+                            <field name="res_id" />
+                            <field name="purpose" />
+                        </group>
+                        <group>
+                            <field name="code" />
+                            <field name="date_on" />
+                            <field name="version_id" />
+                        </group>
+                    </group>
+                    <group>
+                        <field name="inputs" />
+                        <field name="value" />
+                        <field name="used_version_ids" widget="many2many_tags" />
+                        <field name="steps" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_rule_script_trace_search" model="ir.ui.view">
+        <field name="name">rule.script.trace.search</field>
+        <field name="model">rule.script.trace</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code" />
+                <field name="res_model" />
+                <field name="res_id" />
+                <field name="used_version_ids" />
+                <separator />
+                <filter
+                    name="groupby_code"
+                    string="Rule"
+                    context="{'group_by': 'code'}" />
+                <filter
+                    name="groupby_version"
+                    string="Version"
+                    context="{'group_by': 'version_id'}" />
+            </search>
+        </field>
+    </record>
+
+    <record id="action_rule_script_trace" model="ir.actions.act_window">
+        <field name="name">Rule Traces</field>
+        <field name="res_model">rule.script.trace</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_rule_script_trace_search" />
+    </record>
+
+</odoo>

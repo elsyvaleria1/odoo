@@ -28,4 +28,11 @@
         action="action_rule_script_test"
         sequence="30" />
 
+    <menuitem
+        id="menu_rule_script_trace"
+        name="Traces"
+        parent="menu_rule_script_root"
+        action="action_rule_script_trace"
+        sequence="40" />
+
 </odoo>

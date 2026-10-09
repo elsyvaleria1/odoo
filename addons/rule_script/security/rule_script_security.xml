@@ -30,4 +30,10 @@
             eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
     </record>
 
+    <record id="privilege_record_trace" model="res.groups">
+        <field
+            name="name">Privilege: keep the rule evaluation behind a document's figure</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

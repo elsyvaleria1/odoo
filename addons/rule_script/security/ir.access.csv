@@ -5,3 +5,5 @@ access_rule_script_version_user,rule.script.version: an employee evaluates the v
 access_rule_script_version_author,rule.script.version: an author writes draft versions,model_rule_script_version,group_rule_script_author,permission,crud,
 access_rule_script_test_user,rule.script.test: an employee reads what a rule is tested against,model_rule_script_test,base.group_user,permission,r,
 access_rule_script_test_author,rule.script.test: an author writes and runs tests,model_rule_script_test,group_rule_script_author,permission,crud,
+access_rule_script_trace_user,rule.script.trace: an employee reads which rule versions computed a figure,model_rule_script_trace,base.group_user,permission,r,
+access_rule_script_trace_record,rule.script.trace: an evaluation keeps the trace behind a document's figure,model_rule_script_trace,privilege_record_trace,permission,cr,
