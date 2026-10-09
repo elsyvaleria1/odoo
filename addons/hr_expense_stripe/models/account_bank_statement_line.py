@@ -64,7 +64,11 @@ class AccountBankStatementLine(models.Model):
     @api.model
     def _create_from_stripe_transaction(self, tr_object) -> None:
         card = self.env["hr.expense.stripe.card"].search(
-            [("stripe_id", "=", tr_object["card"])], limit=1
+            [
+                ("stripe_id", "=", tr_object["card"]),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
         )
         if not card:
             raise UserError(
@@ -96,7 +100,10 @@ class AccountBankStatementLine(models.Model):
         stmt_line = self.create([create_vals])
 
         expenses = self.env["hr.expense"].search(
-            [("stripe_transaction_id", "=", tr_object["id"])]
+            [
+                ("stripe_transaction_id", "=", tr_object["id"]),
+                ("company_id", "=", stmt_line.company_id.id),
+            ]
         )
         if expenses:
             for expense in expenses:
@@ -117,7 +124,11 @@ class AccountBankStatementLine(models.Model):
     def _update_from_stripe_transaction(self, tr_object) -> None:
         self.check_singleton()
         card = self.env["hr.expense.stripe.card"].search(
-            [("stripe_id", "=", tr_object["card"])], limit=1
+            [
+                ("stripe_id", "=", tr_object["card"]),
+                ("company_id", "=", self.company_id.id),
+            ],
+            limit=1,
         )
         amount, amount_currency, _journal, journal_currency, merchant_currency = (
             self._acquire_transaction_data(card, tr_object)

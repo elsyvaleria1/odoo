@@ -1,6 +1,6 @@
 import logging
 
-from odoo import SUPERUSER_ID, api
+from odoo import api
 from odoo.exceptions import MissingError, ValidationError
 from odoo.http import Controller, request, route
 
@@ -47,11 +47,7 @@ class StripeIssuingController(Controller):
             "Content-Type": "application/json",
         }
         company_sudo = admission.subject
-        env = request.env(
-            user=SUPERUSER_ID,
-            su=True,
-            context={"allowed_company_ids": company_sudo.ids},
-        )
+        env = request.env(su=True, context={"allowed_company_ids": company_sudo.ids})
 
         event_mode = "live" if event["livemode"] else "test"
         if company_sudo._get_stripe_mode() != event_mode:
@@ -245,12 +241,18 @@ class StripeIssuingController(Controller):
         if transaction_id and not authorization_id:
             # In case of a force capture
             existing_expenses = env["hr.expense"].search(
-                [("stripe_transaction_id", "=", transaction_id)]
+                [
+                    ("stripe_transaction_id", "=", transaction_id),
+                    ("company_id", "=", env.company.id),
+                ]
             )
 
         elif authorization_id:
             existing_expenses = env["hr.expense"].search(
-                [("stripe_authorization_id", "=", authorization_id)]
+                [
+                    ("stripe_authorization_id", "=", authorization_id),
+                    ("company_id", "=", env.company.id),
+                ]
             )
             expense_transaction_ids = set(
                 existing_expenses.mapped("stripe_transaction_id")
@@ -291,7 +293,10 @@ class StripeIssuingController(Controller):
             existing_expenses._stripe_cancel_expense_or_reverse_move(tr_object)
         if event["type"] == "issuing_transaction.created":
             existing_statement_line = env["account.bank.statement.line"].search(
-                [("stripe_id", "=", transaction_id)]
+                [
+                    ("stripe_id", "=", transaction_id),
+                    ("company_id", "=", env.company.id),
+                ]
             )
             if existing_statement_line:
                 # if the event is sent twice
@@ -302,7 +307,10 @@ class StripeIssuingController(Controller):
                 )
         elif event["type"] == "issuing_transaction.updated":
             statement_line = env["account.bank.statement.line"].search(
-                [("stripe_id", "=", transaction_id)]
+                [
+                    ("stripe_id", "=", transaction_id),
+                    ("company_id", "=", env.company.id),
+                ]
             )
             statement_line._update_from_stripe_transaction(tr_object)
         return {"message": "Expense & Bank Statement Line Created/Updated"}
@@ -315,7 +323,7 @@ class StripeIssuingController(Controller):
     def _process_topup_event(self, env, event):
         tu_object = event["data"]["object"]
         statement_line = env["account.bank.statement.line"].search(
-            [("stripe_id", "=", tu_object["id"])]
+            [("stripe_id", "=", tu_object["id"]), ("company_id", "=", env.company.id)]
         )
         if statement_line:
             return {

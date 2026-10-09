@@ -125,7 +125,11 @@ class HrExpense(models.Model):
             auth_object["pending_request"] or auth_object
         )  # The key is always present, but the value may be empty
         card = self.env["hr.expense.stripe.card"].search(
-            [("stripe_id", "=", auth_object["card"]["id"])], limit=1
+            [
+                ("stripe_id", "=", auth_object["card"]["id"]),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
         )
         if not card:
             raise UserError(
@@ -135,7 +139,11 @@ class HrExpense(models.Model):
             )
 
         if self.env["hr.expense"].search(
-            [("stripe_authorization_id", "=", auth_object["id"])], limit=1
+            [
+                ("stripe_authorization_id", "=", auth_object["id"]),
+                ("company_id", "=", card.company_id.id),
+            ],
+            limit=1,
         ):
             return self._update_from_stripe_authorization(auth_object)
         card = card.with_company(card.company_id)
@@ -143,6 +151,7 @@ class HrExpense(models.Model):
         domain &= Domain(
             "stripe_mcc_ids", "any", [("code", "=", merchant_data["category_code"])]
         )
+        domain &= Domain("company_id", "in", [False, card.company_id.id])
         default_product = self.env.ref(
             "hr_expense.product_product_no_cost", raise_if_not_found=False
         )
@@ -299,7 +308,11 @@ class HrExpense(models.Model):
         """
         merchant_data = tr_object["merchant_data"]
         card = self.env["hr.expense.stripe.card"].search(
-            [("stripe_id", "=", tr_object["card"])], limit=1
+            [
+                ("stripe_id", "=", tr_object["card"]),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
         )
         if not card:
             raise UserError(
@@ -313,6 +326,7 @@ class HrExpense(models.Model):
         domain &= Domain(
             "stripe_mcc_ids", "any", [("code", "=", merchant_data["category_code"])]
         )
+        domain &= Domain("company_id", "in", [False, card.company_id.id])
         product = self.env["product.product"].search(domain) or self.env.ref(
             "hr_expense.product_product_no_cost", raise_if_not_found=False
         )
@@ -479,7 +493,8 @@ class HrExpense(models.Model):
                             "stripe_id",
                             "in",
                             tuple(expenses_per_stripe_transaction_id.keys()),
-                        )
+                        ),
+                        ("company_id", "in", self.company_id.ids),
                     ],
                     groupby=["stripe_id"],
                     aggregates=["id:recordset"],
