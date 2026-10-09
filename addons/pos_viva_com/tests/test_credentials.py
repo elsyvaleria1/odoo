@@ -53,6 +53,17 @@ class TestVivaComCredentials(TransactionCase):
         self.assertEqual(values["viva_com_webhook_verification_key"], "viva_com_test")
         self.assertIn("token=viva_com_test", values["viva_com_webhook_endpoint"])
 
+    def test_a_system_administrator_reads_them(self):
+        admin = new_test_user(
+            self.env,
+            "viva_admin",
+            groups="point_of_sale.group_pos_user,base.group_system",
+        )
+
+        values = self.method.with_user(admin).read(list(SECRETS))[0]
+
+        self.assertEqual(values["viva_com_api_key"], "api-key")
+
     def test_a_cashier_request_still_spends_the_bearer_token(self):
         spent = []
 

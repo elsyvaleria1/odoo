@@ -47,13 +47,22 @@
     <record id="access_class_terminal_credential" model="ir.access.class">
         <field name="name">point_of_sale.terminal_credential</field>
         <field
-            name="description">The secrets a point of sale reaches a payment terminal, a cash machine or a delivery platform with. Its managers read and change them; a till's own requests spend them through privilege_spend_terminal_credentials, and a cashier reads none.</field>
+            name="description">The secrets a point of sale reaches a payment terminal, a cash machine or a delivery platform with. Its managers and the system administrators read and change them, as they do every secret.credential; a till's own requests spend them through privilege_spend_terminal_credentials, and a cashier reads none.</field>
     </record>
 
     <record id="access_terminal_credential_manager" model="ir.access">
         <field
             name="name">point_of_sale.terminal_credential: point of sale managers</field>
         <field name="group_id" ref="group_pos_manager" />
+        <field name="kind">permission</field>
+        <field name="operation">ru</field>
+        <field name="class_id" ref="access_class_terminal_credential" />
+    </record>
+
+    <record id="access_terminal_credential_system" model="ir.access">
+        <field
+            name="name">point_of_sale.terminal_credential: system administrators</field>
+        <field name="group_id" ref="base.group_system" />
         <field name="kind">permission</field>
         <field name="operation">ru</field>
         <field name="class_id" ref="access_class_terminal_credential" />
