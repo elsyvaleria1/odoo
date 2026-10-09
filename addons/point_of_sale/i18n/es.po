@@ -1502,6 +1502,20 @@ msgid "Before Closing Difference"
 msgstr "Antes de la diferencia de cierre"
 
 #. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/components/popups/sync_popup/sync_popup.xml:0
+msgid ""
+"Before reloading data, the orders and operations not yet saved on the "
+"server, such as cash moves, are sent. Whatever cannot be sent yet stays on "
+"this device and is sent once the connection allows: nothing is deleted."
+msgstr ""
+"Antes de volver a cargar los datos, se envían los pedidos y las "
+"operaciones que aún no se han guardado en el servidor, como los "
+"movimientos de efectivo. Lo que todavía no se pueda enviar se queda en "
+"este dispositivo y se enviará en cuanto la conexión lo permita: no se "
+"elimina nada."
+
+#. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.ticket_validation_screen
 msgid "Billing address:"
 msgstr "Dirección de facturación:"
@@ -5917,17 +5931,6 @@ msgstr "Operaciones aún no enviadas"
 
 #. module: point_of_sale
 #. odoo-javascript
-#: code:addons/point_of_sale/static/src/app/components/popups/sync_popup/sync_popup.xml:0
-msgid ""
-"Operations not yet sent to the server, such as cash moves, are kept and sent"
-" once the connection allows."
-msgstr ""
-"Las operaciones que aún no se han enviado al servidor, como los "
-"movimientos de efectivo, se conservan y se enviarán en cuanto la conexión"
-" lo permita."
-
-#. module: point_of_sale
-#. odoo-javascript
 #: code:addons/point_of_sale/static/src/app/components/popups/optional_products_popup/optional_products_popup.xml:0
 msgid "Optional Products"
 msgstr "Productos opcionales"
@@ -7784,6 +7787,12 @@ msgid "Reload Data"
 msgstr "Volver a cargar datos"
 
 #. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/services/pos_store.js:0
+msgid "Reload Data needs the server"
+msgstr "Para volver a cargar los datos se necesita el servidor"
+
+#. module: point_of_sale
 #: model:ir.actions.client,name:point_of_sale.action_client_pos_menu
 msgid "Reload POS Menu"
 msgstr "Volver a cargar el menú de TPV"
@@ -7915,6 +7924,12 @@ msgstr "Comercio al por menor"
 #: code:addons/point_of_sale/static/src/app/screens/payment_screen/payment_lines/payment_lines.xml:0
 msgid "Retry"
 msgstr "Volver a intentar"
+
+#. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/services/pos_store.js:0
+msgid "Retry now"
+msgstr "Volver a intentar ahora"
 
 #. module: point_of_sale
 #. odoo-python
@@ -8850,6 +8865,18 @@ msgstr "Se ha impreso correctamente un recibo de prueba"
 #: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
 msgid "Successfully made a cash %s of %s."
 msgstr "Se ha realizado un pago en efectivo %s de %s con éxito."
+
+#. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
+msgid "Successfully made a cash in of %(amount)s."
+msgstr "Se ha realizado con éxito una entrada de efectivo de %(amount)s."
+
+#. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/components/popups/cash_move_popup/cash_move_popup.js:0
+msgid "Successfully made a cash out of %(amount)s."
+msgstr "Se ha realizado con éxito una salida de efectivo de %(amount)s."
 
 #. module: point_of_sale
 #: model_terms:ir.ui.view,arch_db:point_of_sale.view_pos_order_line
@@ -9853,13 +9880,16 @@ msgstr ""
 msgid ""
 "These operations made on this register have not reached the server yet:\n"
 "%(operations)s\n"
-"The register cannot be closed until they are sent. Check the connection and try again."
+"The register cannot be closed until they are sent: once the session is closed, this register can no longer send them. Check the connection and retry. If they still cannot be sent, leave the Point of Sale, record them in the backend and close the session from there."
 msgstr ""
 "Las siguientes operaciones realizadas en esta caja registradora aún no "
 "han llegado al servidor:\n"
 "%(operations)s\n"
-"No se puede cerrar la caja registradora hasta que se envíen. Compruebe la"
-" conexión e inténtelo de nuevo."
+"No se puede cerrar la caja registradora hasta que se envíen: una vez "
+"cerrada la sesión, esta caja registradora ya no podrá enviarlas. "
+"Compruebe la conexión y vuelva a intentarlo. Si siguen sin poder "
+"enviarse, salga del punto de venta, regístrelas en el backend y cierre la"
+" sesión desde allí."
 
 #. module: point_of_sale
 #: model:ir.model.fields,help:point_of_sale.field_pos_config__fast_payment_method_ids
@@ -10020,6 +10050,18 @@ msgstr "Este producto se utiliza como referencia en los recibos del cliente."
 #: code:addons/point_of_sale/models/pos_order.py:0
 msgid "This refund returns more than was sold: %(lines)s"
 msgstr "Este reembolso devuelve más de lo vendido: %(lines)s"
+
+#. module: point_of_sale
+#. odoo-javascript
+#: code:addons/point_of_sale/static/src/app/services/pos_store.js:0
+msgid ""
+"This register cannot reach the server. Reloading its data now would leave it"
+" unable to start, so nothing was changed. Try again once the connection is "
+"back."
+msgstr ""
+"Esta caja registradora no puede acceder al servidor. Volver a cargar sus "
+"datos ahora la dejaría sin poder iniciarse, así que no se ha cambiado "
+"nada. Inténtelo de nuevo cuando vuelva la conexión."
 
 #. module: point_of_sale
 #. odoo-python
