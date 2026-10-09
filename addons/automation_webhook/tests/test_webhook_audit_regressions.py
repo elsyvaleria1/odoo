@@ -1,5 +1,8 @@
 import hashlib
 import hmac
+from unittest.mock import patch
+
+import psycopg
 
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import HttpCase, tagged
@@ -215,4 +218,33 @@ class TestWebhookOverHttp(HttpCase):
             parameters.get_param("automation.webhook_probe"),
             "no",
             "the first step of a failed run was committed",
+        )
+
+    def test_a_concurrency_failure_is_run_again_not_answered_500(self):
+        """A run that lost to a concurrent transaction did not fail: the
+        request owns the transaction and runs it again from scratch."""
+        rule = self._rule("lost-a-race", auth_type="none")
+        Rule = type(rule)
+        dispatch = Rule._dispatch_webhook
+        runs = []
+
+        def loses_once(self, payload):
+            runs.append(payload)
+            if len(runs) == 1:
+                raise psycopg.errors.SerializationFailure(
+                    "could not serialize access due to concurrent update"
+                )
+            return dispatch(self, payload)
+
+        with patch.object(Rule, "_dispatch_webhook", loses_once):
+            response = self._post(rule)
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(runs), 2, "the run that lost was not run again")
+        self.env.invalidate_all()
+        self.assertEqual(
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("automation.webhook_probe"),
+            "fired",
         )

@@ -1,3 +1,5 @@
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
+from odoo.exceptions import ConcurrencyError
 from odoo.http import Controller, request, route
 
 from odoo.addons.automation_webhook.models.automation_rule import (
@@ -25,6 +27,9 @@ class AutomationRuleController(Controller):
         data = get_webhook_request_payload()
         try:
             rule._execute_webhook(data, admission)
+        except (*PG_RETRY_EXCEPTIONS, ConcurrencyError):
+            # lost to a concurrent transaction: the request runs it again
+            raise
         except Exception as error:
             # raised, not returned: a returned answer commits the steps that
             # ran before the failure, and the sender's retry runs them again
