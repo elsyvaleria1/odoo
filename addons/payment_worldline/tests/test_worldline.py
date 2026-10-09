@@ -142,9 +142,7 @@ class WorldlineTest(WorldlineCommon, PaymentHttpCommon):
         """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(
-            tx._is_worldline_signature_valid(
-                json_dumps_bytes(self.payment_data), None
-            )
+            tx._is_worldline_signature_valid(json_dumps_bytes(self.payment_data), None)
         )
 
     @mute_logger("odoo.addons.payment_worldline.models.payment_transaction")
@@ -218,3 +216,10 @@ class WorldlineTest(WorldlineCommon, PaymentHttpCommon):
                     [call.args[1] for call in sent.call_args_list],
                     [expected_url] if is_sent else [],
                 )
+
+    def test_the_secrets_are_system_only_credentials(self):
+        for field_name in ("worldline_api_secret", "worldline_webhook_secret"):
+            with self.subTest(field_name=field_name):
+                field = self.env["payment.provider"]._fields[field_name]
+                self.assertEqual(field.groups, "base.group_system")
+                self.assertEqual(field.classification, "secret.credential")

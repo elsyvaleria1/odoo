@@ -40,7 +40,9 @@ class PaymentProvider(models.Model):
         string="Worldline API Secret",
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
+        classification="secret.credential",
         required_if_provider="worldline",
+        groups="base.group_system",
     )
     worldline_webhook_key = fields.Char(
         compute="_compute_credential_doors",
@@ -50,7 +52,9 @@ class PaymentProvider(models.Model):
     worldline_webhook_secret = fields.Char(
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
+        classification="secret.credential",
         required_if_provider="worldline",
+        groups="base.group_system",
     )
 
     # === COMPUTE METHODS === #
