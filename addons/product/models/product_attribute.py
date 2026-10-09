@@ -76,13 +76,17 @@ class ProductAttribute(models.Model):
         store=True,
     )
     count_product_tmpl = fields.Integer(compute="_compute_count_product_tmpl")
+    count_variant_product_tmpl = fields.Integer(
+        string="Products varying on it",
+        compute="_compute_count_product_tmpl",
+    )
 
     def write(self, vals):
         if "create_variant" in vals:
             for pa in self:
                 if (
                     vals["create_variant"] != pa.create_variant
-                    and pa.count_product_tmpl
+                    and pa.count_variant_product_tmpl
                 ):
                     raise UserError(
                         self.env._(
@@ -104,21 +108,24 @@ class ProductAttribute(models.Model):
 
     @api.depends("product_tmpl_ids")
     def _compute_count_product_tmpl(self) -> None:
-        res = {
-            attribute.id: count
-            for attribute, count in self.env[
-                "product.template.attribute.line"
-            ]._read_group(
-                domain=[
-                    ("attribute_id", "in", self.ids),
-                    ("product_tmpl_id.active", "=", True),
-                ],
-                groupby=["attribute_id"],
-                aggregates=["product_tmpl_id:count_distinct"],
-            )
-        }
+        counts = {}
+        for attribute, purpose, count in self.env[
+            "product.template.attribute.line"
+        ]._read_group(
+            domain=[
+                ("attribute_id", "in", self.ids),
+                ("product_tmpl_id.active", "=", True),
+            ],
+            groupby=["attribute_id", "purpose"],
+            aggregates=["product_tmpl_id:count_distinct"],
+        ):
+            counts[attribute.id, purpose] = count
         for pa in self:
-            pa.count_product_tmpl = res.get(pa.id, 0)
+            variant_count = counts.get((pa.id, "variant"), 0)
+            pa.count_variant_product_tmpl = variant_count
+            pa.count_product_tmpl = variant_count + counts.get(
+                (pa.id, "specification"), 0
+            )
 
     @api.constrains("value_type")
     def _check_value_type(self) -> None:

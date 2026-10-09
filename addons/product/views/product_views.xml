@@ -47,6 +47,7 @@
                 <field
                     name="product_template_attribute_value_ids"
                     groups="product.group_product_variant" />
+                <field name="specification_line_ids" string="Specifications" />
                 <field name="product_tmpl_id" string="Product Template" />
                 <!-- Filter -->
                 <filter
@@ -253,7 +254,6 @@
                                 <field
                                     name="product_template_attribute_value_ids"
                                     widget="many2many_tags"
-                                    domain="[('id', 'in', parent.ids)]"
                                     options="{'color_field': 'color'}"
                                     groups="product.group_product_variant"
                                     invisible="not product_template_attribute_value_ids" />

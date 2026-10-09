@@ -451,6 +451,29 @@ class TestSpecificationLines(ProductVariantsCommon):
             )
             self.env.flush_all()
 
+    def test_products_are_found_by_their_specifications(self):
+        wine = self._wine()
+        merlot = self.grapes.value_ids[0]
+        self.assertIn(
+            wine,
+            self.env["product.template"].search(
+                [("specification_line_ids.value_ids", "in", merlot.ids)]
+            ),
+        )
+        self.assertIn(
+            wine.product_variant_id,
+            self.env["product.product"].search(
+                [("specification_line_ids.value_ids", "in", merlot.ids)]
+            ),
+        )
+
+    def test_a_specification_does_not_lock_the_variant_mode(self):
+        self._wine()
+        self.assertEqual(self.grapes.count_variant_product_tmpl, 0)
+        self.assertEqual(self.grapes.count_product_tmpl, 1)
+        self.grapes.create_variant = "dynamic"
+        self.assertEqual(self.grapes.create_variant, "dynamic")
+
     def test_turning_a_variant_line_into_a_specification_drops_the_dimension(self):
         template = self.product_template_sofa
         self.assertEqual(len(template.product_variant_ids), 3)

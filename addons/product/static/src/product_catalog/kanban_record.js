@@ -210,7 +210,14 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
      * @param {Event} event
      */
     setQuantity(event) {
-        this.updateQuantity(parseFloat(event.target.value));
+        const quantity = parseFloat(event.target.value);
+        if (Number.isNaN(quantity)) {
+            // An empty or unreadable entry changes nothing: removing the
+            // product is the remove button's job, not a typo's.
+            event.target.value = this.productCatalogData.quantity;
+            return;
+        }
+        this.updateQuantity(quantity);
     }
 
     /**

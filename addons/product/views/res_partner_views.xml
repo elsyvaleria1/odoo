@@ -80,7 +80,7 @@
                             <a
                                 type="object"
                                 name="action_view_manufacturer_products"
-                                class="mt-2 text-black">
+                                class="mt-2 text-body">
                                 <field name="count_manufactured_products" /> PRODUCTS
                             </a>
                         </main>

@@ -8,11 +8,6 @@ export function provideProductCatalogContext(context) {
     envScope.provide(context);
 }
 
-/** @param {Record<string, any>} context */
-export function provideChildProductCatalogContext(context) {
-    envScope.provide(context);
-}
-
 /** @returns {Record<string, any>} */
 export function useProductCatalogContext() {
     return envScope.use();

@@ -7,6 +7,7 @@
             <Layout display="{ controlPanel: {} }">
                 <t t-set-slot="control-panel-always-buttons">
                     <button t-on-click="this.onClickPrint" type="button" class="btn btn-primary" title="Print">Print</button>
+                    <label class="visually-hidden" for="formats">Export format</label>
                     <select name="formats" id="formats" t-ref="this.formatRef" class="form-select border-1 w-auto">
                         <option value="pdf">pdf</option>
                         <option value="csv">csv</option>
@@ -60,19 +61,23 @@
                             <div class="d-flex align-items-center w-50">
                                 <span class="o_badges_list d-flex">
                                     <t t-foreach="this.quantities" t-as="qty" t-key="qty">
-                                        <span class="text-bg-300 o_remove_qty badge rounded-pill me-2 py-1 border " t-att-value="qty">
-                                            <t class="me-2" t-out="qty"/>
-                                            <i class="oi oi-close ms-1 opacity-50 opacity-100-hover text-900 cursor-pointer"
-                                            title="Remove quantity"
-                                            t-on-click="() => this.onClickRemoveQty(qty)"/>
+                                        <span class="text-bg-300 o_remove_qty badge rounded-pill me-2 py-1 border">
+                                            <span class="me-2" t-out="qty"/>
+                                            <button type="button"
+                                                class="btn btn-link p-0 ms-1 lh-1 opacity-50 opacity-100-hover text-900"
+                                                title="Remove quantity"
+                                                aria-label="Remove quantity"
+                                                t-on-click="() => this.onClickRemoveQty(qty)">
+                                                <i class="oi oi-close"/>
+                                            </button>
                                         </span>
                                     </t>
                                 </span>
                             </div>
                         </div>
                     </form>
-                    <div style="margin-left:300px;">
-                        <button t-on-click="this.onClickAddProducts" string="All Products" class="btn btn-link">
+                    <div class="ms-auto">
+                        <button type="button" t-on-click="this.onClickAddProducts" class="btn btn-link">
                             <i class="fa-solid fa-pencil"/>
                             Add Products
                         </button>

@@ -15,7 +15,6 @@ export class ProductCatalogSearchPanel extends SearchPanel {
         super.setup();
         this.searchModel = useSearchModel();
         this.model = useViewModel();
-        this.ui = useService("ui");
 
         this.notification = useService("notification");
         this.state = proxy({
@@ -55,6 +54,13 @@ export class ProductCatalogSearchPanel extends SearchPanel {
         return this.searchModel.selectedSection;
     }
 
+    onSectionKeydown(sectionId, ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            this.setSelectedSection(sectionId, this.selectedSection.filtered);
+        }
+    }
+
     onDragStart(sectionId, ev) {
         ev.dataTransfer.setData("section_id", sectionId);
     }
@@ -66,7 +72,9 @@ export class ProductCatalogSearchPanel extends SearchPanel {
     onDrop(targetSecId, ev) {
         ev.preventDefault();
         const moveSecId = parseInt(ev.dataTransfer.getData("section_id"));
-        if (moveSecId !== targetSecId) {
+        // "No Section" is the head of the list, not a section to move or to
+        // drop onto: the server finds no line for it and appends at the end.
+        if (targetSecId && moveSecId && moveSecId !== targetSecId) {
             this.reorderSections(moveSecId, targetSecId);
         }
     }

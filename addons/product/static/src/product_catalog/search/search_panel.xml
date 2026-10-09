@@ -28,7 +28,7 @@
                 </header>
                 <ul class="list-group d-block">
                     <li
-                        draggable="true"
+                        t-att-draggable="sectionId ? 'true' : 'false'"
                         t-foreach="this.state.sections.keys()"
                         t-as="sectionId"
                         t-key="sectionId"
@@ -45,11 +45,16 @@
                                 t-if="sectionId"
                                 class="o_row_handle oi oi-draggable ui-sortable-handle"
                             />
-                            <i
+                            <button
                                 t-else=""
-                                class="fa-solid fa-pencil"
+                                type="button"
+                                class="btn btn-link p-0 text-reset"
+                                title="Name the products with no section"
+                                aria-label="Name the products with no section"
                                 t-on-click="() => this.enableSectionInput('top')"
-                            />
+                            >
+                                <i class="fa-solid fa-pencil"/>
+                            </button>
                             <input
                                 t-if="sectionId === false and this.state.isAddingSection === 'top'"
                                 class="ms-2 o_section_input"
@@ -61,9 +66,12 @@
                             <div
                                 t-else=""
                                 class="w-100 ms-2 d-flex align-items-center justify-content-between overflow-hidden"
+                                role="button"
+                                tabindex="0"
                                 t-on-click="() => this.setSelectedSection(
                                     sectionId, this.selectedSection.filtered
                                 )"
+                                t-on-keydown="(ev) => this.onSectionKeydown(sectionId, ev)"
                                 t-att-title="section.name"
                             >
                                 <span class="o_section_name text-truncate" t-out="section.name"/>

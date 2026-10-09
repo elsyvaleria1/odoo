@@ -80,6 +80,9 @@ class MixinProductLabelReport(models.AbstractModel):
             self._get_label_id(product_id): self._get_label_quantity(quantity)
             for product_id, quantity in (data.get("quantity_by_product") or {}).items()
         }
+        # A label sheet is filled cell by cell: a zero quantity would hold a cell
+        # without a label and push a real one off the last page.
+        requested = {key: quantity for key, quantity in requested.items() if quantity}
         for product in Product.search(
             [("id", "in", list(requested))], order="name desc"
         ):
@@ -92,9 +95,12 @@ class MixinProductLabelReport(models.AbstractModel):
             if not product:
                 continue
             pairs = [
-                (barcode, self._get_label_quantity(quantity))
+                (barcode, label_quantity)
                 for barcode, quantity in barcodes
+                if (label_quantity := self._get_label_quantity(quantity))
             ]
+            if not pairs:
+                continue
             quantity_by_product[product] += pairs
             total += sum(quantity for _, quantity in pairs)
 

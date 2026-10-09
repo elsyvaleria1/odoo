@@ -34,19 +34,20 @@ export class ProductPricelistReport extends Component {
         this.formatRef = elementRef();
 
         const pastState = this.props.state || {};
-        const activeModel =
-            pastState.activeModel || this.props.action.context.active_model;
-        const noProducts = activeModel === "product.pricelist";
+        const context = this.props.action.context;
+        const openedFromPricelist = context.active_model === "product.pricelist";
+        const noProducts = pastState.noProducts ?? openedFromPricelist;
 
-        this.activeModel = noProducts ? "product.template" : activeModel;
-        this.defaultPricelistId = noProducts
-            ? this.props.action.context.active_id
-            : false;
+        this.activeModel =
+            pastState.activeModel ||
+            (openedFromPricelist ? "product.template" : context.active_model);
+        this.defaultPricelistId = openedFromPricelist ? context.active_id : false;
 
         this.state = proxy({
-            activeIds: noProducts
-                ? []
-                : pastState.activeIds || this.props.action.context.active_ids || [],
+            activeIds:
+                openedFromPricelist && !pastState.activeIds
+                    ? []
+                    : pastState.activeIds || context.active_ids || [],
             displayPricelistTitle: pastState.displayPricelistTitle || false,
             html: "",
             noProducts,
@@ -58,12 +59,11 @@ export class ProductPricelistReport extends Component {
         onWillStart(async () => {
             this.state.pricelists = await this.getPricelists();
             this.state.selectedPricelist =
-                (this.defaultPricelistId &&
-                    this.pricelists.find((p) => p.id === this.defaultPricelistId)) ||
-                (!this.defaultPricelistId && pastState.selectedPricelist) ||
+                pastState.selectedPricelist ||
+                this.pricelists.find((p) => p.id === this.defaultPricelistId) ||
                 this.pricelists[0] ||
                 {};
-            if (this.noProducts) {
+            if (this.noProducts && !pastState.noProducts) {
                 this.onClickAddProducts();
             }
             await this.renderHtml();
@@ -85,6 +85,7 @@ export class ProductPricelistReport extends Component {
                 selectedPricelist: this.selectedPricelist,
                 activeModel: this.activeModel,
                 activeIds: this.activeIds,
+                noProducts: this.noProducts,
             }),
         });
     }
@@ -132,7 +133,14 @@ export class ProductPricelistReport extends Component {
     // orm calls
 
     getPricelists() {
-        return this.orm.searchRead("product.pricelist", [], ["id", "name"]);
+        // The pricelist the report was opened from is listed even archived:
+        // otherwise another one would be priced silently.
+        return this.orm.searchRead(
+            "product.pricelist",
+            ["|", ["active", "=", true], ["id", "=", this.defaultPricelistId || 0]],
+            ["id", "name"],
+            { context: { active_test: false } },
+        );
     }
 
     async renderHtml() {
@@ -183,22 +191,18 @@ export class ProductPricelistReport extends Component {
     }
 
     onClickLink(ev) {
-        ev.preventDefault();
-
-        const parent = ev.target.parentElement;
-        const classes = parent.getAttribute("class");
-        const resModel = parent.getAttribute("data-model");
-        const resId = parent.getAttribute("data-res-id");
-
-        if (classes && classes.includes("o_action") && resModel && resId) {
-            this.action.doAction({
-                type: "ir.actions.act_window",
-                res_model: resModel,
-                res_id: parseInt(resId, 10),
-                views: [[false, "form"]],
-                target: "self",
-            });
+        const link = ev.target.closest("a.o_action[data-model][data-res-id]");
+        if (!link) {
+            return;
         }
+        ev.preventDefault();
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: link.dataset.model,
+            res_id: parseInt(link.dataset.resId, 10),
+            views: [[false, "form"]],
+            target: "self",
+        });
     }
 
     async onClickPrint() {

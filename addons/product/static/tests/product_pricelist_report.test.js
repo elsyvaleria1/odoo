@@ -24,6 +24,7 @@ class ProductPricelist extends models.Model {
     ];
 
     name = fields.Char();
+    active = fields.Boolean({ default: true });
 }
 
 defineModels([ProductProduct, ProductPricelist]);

@@ -26,6 +26,8 @@
                     class="input-group o_product_catalog_quantity o_product_catalog_cancel_global_click w-50">
                 <div class="d-flex">
                     <button class="btn btn-primary border"
+                            title="Remove one"
+                            aria-label="Remove one"
                             t-on-click.stop="this.catalogContext.decreaseQuantity"
                             t-att-disabled="this.disableRemove"
                             t-att-data-tooltip="this.disabledButtonTooltip">
@@ -34,6 +36,7 @@
                     <div class="d-flex w-100">
                         <input class="o_input text-center text-bg-light rounded-0 border border-end-0"
                                 type="number"
+                                aria-label="Quantity"
                                 t-att-class="this.catalogContext.displayUoM ? 'w-50' : 'w-100'"
                                 t-att-value="this.quantity"
                                 t-on-change="this.catalogContext.setQuantity"
@@ -41,6 +44,8 @@
                         <span class="fst-italic text-muted text-bg-light text-truncate w-50 border border-start-0 py-1" t-if="this.catalogContext.displayUoM" t-out="this.props.uomDisplayName"/>
                     </div>
                     <button class="btn btn-primary border"
+                            title="Add one"
+                            aria-label="Add one"
                             t-on-click.stop="(ev) => this.catalogContext.increaseQuantity()">
                         <i class="fa-solid fa-plus"/>
                     </button>

@@ -88,6 +88,19 @@ class TestProductLabelLayout(ProductCommon):
         )
         self.assertEqual(values["page_numbers"], 2)
 
+    def test_a_zero_quantity_takes_no_cell(self):
+        other = self.env["product.product"].create(
+            {"name": "Other", "barcode": "OTHER"}
+        )
+        self.wizard.custom_quantity = 14
+        _xml_id, data = self.wizard._prepare_report_data()
+        data["quantity_by_product"] = {self.product.id: 14, other.id: 0}
+        data["custom_barcodes"] = {str(self.product.id): [("LOT-0", 0)]}
+        values = self._prepare_data(data)
+        self.assertEqual(values["quantity"][self.product], [("PROD-1", 14)])
+        self.assertNotIn(other, values["quantity"])
+        self.assertEqual(values["page_numbers"], 1)
+
     def test_template_path(self):
         template = self.product.product_tmpl_id
         wizard = self.env["wizard.product.product.print.label"].create(

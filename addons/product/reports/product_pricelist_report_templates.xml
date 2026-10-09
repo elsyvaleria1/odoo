@@ -43,7 +43,7 @@
                             <t t-foreach="products" t-as="product">
                                 <tr>
                                     <td
-                                        t-att-class="is_product_tmpl and 'fw-bold px-1' or None">
+                                        t-attf-class="px-1 {{ 'fw-bold' if is_product_tmpl else '' }}">
                                         <a
                                             t-if="is_html_type"
                                             href="#"

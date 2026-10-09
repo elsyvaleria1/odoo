@@ -68,7 +68,8 @@
                                 widget="radio"
                                 force_save="1"
                                 options="{'horizontal': True}"
-                                readonly="count_product_tmpl != 0 or display_type == 'multi'" />
+                                readonly="count_variant_product_tmpl != 0 or display_type == 'multi'" />
+                            <field name="count_variant_product_tmpl" invisible="1" />
                         </group>
                     </group>
                     <notebook>

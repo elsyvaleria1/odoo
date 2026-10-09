@@ -138,7 +138,7 @@ export class ProductNameAndDescriptionField extends Component {
         }
         return {
             ...p,
-            canOpen: !this.props.readonly || this.isProductClickable,
+            canOpen: p.canOpen && (!this.props.readonly || this.isProductClickable),
             placeholder: _t("Search a product"),
             // product.product name_search ORs in a barcode match, so a
             // longer term can find what a shorter one did not -- no empty

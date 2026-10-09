@@ -1,6 +1,8 @@
 import { expect, test } from "@odoo/hoot";
 import { ProductCatalogKanbanModel } from "@product/product_catalog/kanban_model";
+import { ProductCatalogKanbanRecord } from "@product/product_catalog/kanban_record";
 import { ProductCatalogOrderLine } from "@product/product_catalog/order_line/order_line";
+import { ProductCatalogSearchPanel } from "@product/product_catalog/search/search_panel";
 
 /**
  * `_getSampleOrderLineInfo` stands in for `/product/catalog/order_lines_info`
@@ -50,4 +52,38 @@ test("grouped records are collected from every opened subgroup", () => {
             .map((r) => r.id)
             .sort((a, b) => a - b),
     ).toEqual([1, 2, 3, 4]);
+});
+
+/** @param {Record<string, any>} self @param {any} target @param {string} moved */
+function dropOn(self, target, moved) {
+    ProductCatalogSearchPanel.prototype.onDrop.call(self, target, {
+        preventDefault() {},
+        dataTransfer: { getData: () => moved },
+    });
+}
+
+test("a section dropped onto or from No Section moves nothing", () => {
+    const moves = [];
+    const panel = { reorderSections: (...args) => moves.push(args) };
+    dropOn(panel, false, "4");
+    dropOn(panel, 4, "false");
+    dropOn(panel, 4, "4");
+    expect(moves).toEqual([]);
+    dropOn(panel, 4, "7");
+    expect(moves).toEqual([[7, 4]]);
+});
+
+test("an unreadable catalog quantity changes nothing", () => {
+    const updates = [];
+    const record = {
+        productCatalogData: { quantity: 3 },
+        updateQuantity: (quantity) => updates.push(quantity),
+    };
+    const input = { value: "" };
+    ProductCatalogKanbanRecord.prototype.setQuantity.call(record, { target: input });
+    expect(updates).toEqual([]);
+    expect(input.value).toBe(3);
+    input.value = "5";
+    ProductCatalogKanbanRecord.prototype.setQuantity.call(record, { target: input });
+    expect(updates).toEqual([5]);
 });

@@ -39,9 +39,6 @@
             width: 100%;
         }
     }
-    div.o_label_right_column {
-        float: right;
-    }
     div.o_label_small_barcode {
         font-size: 0.6em;
         padding: 0 4px;
@@ -50,7 +47,7 @@
     strong.o_label_price {
         font-size: 2em;
     }
-    strong.o_label_price_medium {
+    .o_label_price_medium {
         font-size: 1.3em;
         line-height: normal;
         padding: 0;
@@ -65,7 +62,7 @@
         overflow: hidden;
         height: 2.5em;
         padding: 0;
-        .img {
+        img {
             max-height: 100%;
             max-width: 100%;
         }
