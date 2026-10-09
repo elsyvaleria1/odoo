@@ -6,6 +6,7 @@ from markupsafe import Markup
 from werkzeug.exceptions import BadRequest, NotFound, Unauthorized
 
 from odoo import fields, http, tools
+from odoo.exceptions import UserError
 from odoo.http import Response, request
 
 
@@ -390,33 +391,101 @@ class MassMailController(http.Controller):
             "lists_public": lists_public,
         }
 
-    @http.route("/mailing/list/update", type="jsonrpc", auth="public", csrf=True)
-    def mailing_update_list_subscription(
+    # what a subscription action leaves the page saying (last_action)
+    _SUBSCRIPTION_ACTIONS = frozenset(
+        {
+            "subscription_updated",
+            "subscription_updated_optout",
+            "blocklist_add",
+            "blocklist_remove",
+            "feedback_sent",
+        }
+    )
+
+    def _subscription_request(self, mailing_id, document_id, email, hash_token):
+        email_found, hash_token_found = self._get_user_information(email, hash_token)
+        try:
+            mailing_sudo = self._check_mailing_email_token(
+                int(mailing_id) if mailing_id else None,
+                int(document_id) if document_id else None,
+                email_found,
+                hash_token_found,
+                required_mailing_id=False,
+            )
+        except BadRequest, NotFound, ValueError:
+            raise Unauthorized from None
+        return mailing_sudo, email_found, hash_token_found
+
+    def _subscriptions_page(
+        self, last_action, mailing_id, document_id, email, hash_token
+    ):
+        query = {
+            "mailing_id": mailing_id,
+            "document_id": document_id,
+            "email": email,
+            "hash_token": hash_token,
+            "last_action": last_action,
+        }
+        return request.redirect(
+            "/mailing/subscriptions?"
+            + urllib.parse.urlencode(
+                {key: value for key, value in query.items() if value}
+            )
+        )
+
+    @http.route(
+        "/mailing/subscriptions",
+        type="http",
+        website=True,
+        auth="public",
+        sitemap=False,
+    )
+    def mailing_subscriptions(
         self,
         mailing_id=None,
         document_id=None,
         email=None,
         hash_token=None,
-        lists_optin_ids=None,
-        **post,
+        last_action=None,
+        **kwargs,
     ):
-        email_found, hash_token_found = self._get_user_information(email, hash_token)
-        try:
-            _mailing_sudo = self._check_mailing_email_token(
-                mailing_id,
-                document_id,
-                email_found,
-                hash_token_found,
-                required_mailing_id=False,
-            )
-        except BadRequest:
-            return "error"
-        except NotFound, Unauthorized:
-            return "unauthorized"
+        mailing_sudo, email_found, hash_token_found = self._subscription_request(
+            mailing_id, document_id, email, hash_token
+        )
+        values = self._prepare_mailing_subscription_values(
+            mailing_sudo, document_id, email_found, hash_token_found
+        )
+        last_action = last_action if last_action in self._SUBSCRIPTION_ACTIONS else None
+        values.update(
+            last_action=last_action,
+            feedback_enabled=last_action
+            in {"blocklist_add", "subscription_updated_optout", "feedback_sent"},
+        )
+        return request.render("mass_mailing.page_mailing_unsubscribe", values)
 
+    @http.route(
+        "/mailing/list/update",
+        type="http",
+        website=True,
+        auth="public",
+        methods=["POST"],
+    )
+    def mailing_update_list_subscription(
+        self, mailing_id=None, document_id=None, email=None, hash_token=None, **post
+    ):
+        _mailing_sudo, email_found, _hash = self._subscription_request(
+            mailing_id, document_id, email, hash_token
+        )
         contacts = self._get_contacts(email_found)
         lists_optin = (
-            request.env["mailing.list"].sudo().browse(lists_optin_ids or []).exists()
+            request.env["mailing.list"]
+            .sudo()
+            .browse(
+                int(list_id)
+                for list_id in request.httprequest.form.getlist("mailing_list_ids")
+                if list_id.isdigit()
+            )
+            .exists()
         )
         # opt-out all not chosen lists
         lists_to_optout = contacts.subscription_ids.filtered(
@@ -430,9 +499,19 @@ class MassMailController(http.Controller):
         lists_to_optout._update_subscription_from_email(email_found, opt_out=True)
         lists_to_optin._update_subscription_from_email(email_found, opt_out=False)
 
-        return len(lists_to_optout)
+        return self._subscriptions_page(
+            "subscription_updated_optout"
+            if lists_to_optout
+            else "subscription_updated",
+            mailing_id,
+            document_id,
+            email,
+            hash_token,
+        )
 
-    @http.route("/mailing/feedback", type="jsonrpc", auth="public", csrf=True)
+    @http.route(
+        "/mailing/feedback", type="http", website=True, auth="public", methods=["POST"]
+    )
     def mailing_send_feedback(
         self,
         mailing_id=None,
@@ -452,22 +531,13 @@ class MassMailController(http.Controller):
         in 'mailing.subscription.optout' model) and the feedback itself (which
         is triggered by the optout reason 'is_feedback' fields).
         """
-        email_found, hash_token_found = self._get_user_information(email, hash_token)
-        try:
-            mailing_sudo = self._check_mailing_email_token(
-                mailing_id,
-                document_id,
-                email_found,
-                hash_token_found,
-                required_mailing_id=False,
-            )
-        except BadRequest:
-            return "error"
-        except NotFound, Unauthorized:
-            return "unauthorized"
-
-        if not opt_out_reason_id:
-            return "error"
+        mailing_sudo, email_found, _hash = self._subscription_request(
+            mailing_id, document_id, email, hash_token
+        )
+        if not str(opt_out_reason_id or "").isdigit():
+            raise UserError(request.env._("Please choose a reason."))
+        opt_out_reason_id = int(opt_out_reason_id)
+        record_id = int(document_id) if document_id else None
         feedback = feedback.strip() if feedback else ""
         message = ""
         if feedback:
@@ -511,13 +581,15 @@ class MassMailController(http.Controller):
             documents_for_post = (
                 request.env[mailing_sudo.mailing_model_real]
                 .sudo()
-                .search([("id", "=", document_id)])
+                .search([("id", "=", record_id)])
             )
 
         for document_sudo in documents_for_post:
             document_sudo.message_post(body=message)
 
-        return True
+        return self._subscriptions_page(
+            "feedback_sent", mailing_id, document_id, email, hash_token
+        )
 
     @http.route(
         ["/unsubscribe_from_list"],
@@ -669,23 +741,19 @@ class MassMailController(http.Controller):
     # BLACKLIST
     # ------------------------------------------------------------
 
-    @http.route("/mailing/blocklist/add", type="jsonrpc", auth="public")
+    @http.route(
+        "/mailing/blocklist/add",
+        type="http",
+        website=True,
+        auth="public",
+        methods=["POST"],
+    )
     def mail_blocklist_add(
-        self, mailing_id=None, document_id=None, email=None, hash_token=None
+        self, mailing_id=None, document_id=None, email=None, hash_token=None, **kwargs
     ):
-        email_found, hash_token_found = self._get_user_information(email, hash_token)
-        try:
-            mailing_sudo = self._check_mailing_email_token(
-                mailing_id,
-                document_id,
-                email_found,
-                hash_token_found,
-                required_mailing_id=False,
-            )
-        except BadRequest:
-            return "error"
-        except NotFound, Unauthorized:
-            return "unauthorized"
+        mailing_sudo, email_found, _hash = self._subscription_request(
+            mailing_id, document_id, email, hash_token
+        )
 
         if mailing_sudo:
             message = Markup(
@@ -698,28 +766,24 @@ class MassMailController(http.Controller):
                 "Blocklist request from portal"
             )
 
-        _blocklist_rec = (
-            request.env["mail.blacklist"].sudo()._add(email_found, message=message)
+        request.env["mail.blacklist"].sudo()._add(email_found, message=message)
+        return self._subscriptions_page(
+            "blocklist_add", mailing_id, document_id, email, hash_token
         )
-        return True
 
-    @http.route("/mailing/blocklist/remove", type="jsonrpc", auth="public")
+    @http.route(
+        "/mailing/blocklist/remove",
+        type="http",
+        website=True,
+        auth="public",
+        methods=["POST"],
+    )
     def mail_blocklist_remove(
-        self, mailing_id=None, document_id=None, email=None, hash_token=None
+        self, mailing_id=None, document_id=None, email=None, hash_token=None, **kwargs
     ):
-        email_found, hash_token_found = self._get_user_information(email, hash_token)
-        try:
-            mailing_sudo = self._check_mailing_email_token(
-                mailing_id,
-                document_id,
-                email_found,
-                hash_token_found,
-                required_mailing_id=False,
-            )
-        except BadRequest:
-            return "error"
-        except NotFound, Unauthorized:
-            return "unauthorized"
+        mailing_sudo, email_found, _hash = self._subscription_request(
+            mailing_id, document_id, email, hash_token
+        )
 
         if mailing_sudo and document_id:
             message = Markup(
@@ -732,10 +796,10 @@ class MassMailController(http.Controller):
                 "Blocklist removal request from portal"
             )
 
-        _blocklist_rec = (
-            request.env["mail.blacklist"].sudo()._remove(email_found, message=message)
+        request.env["mail.blacklist"].sudo()._remove(email_found, message=message)
+        return self._subscriptions_page(
+            "blocklist_remove", mailing_id, document_id, email, hash_token
         )
-        return True
 
     def _format_bl_request(self, mailing, document_id):
         mailing_model_name = (

@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from markupsafe import Markup
 from requests import PreparedRequest, Response, Session
 
-from odoo import tools
+from odoo import http, tools
 from odoo.tests import HttpCase, tagged
 from odoo.tools import mute_logger
 
@@ -215,6 +215,44 @@ class TestMailingControllers(TestMailingControllersCommon):
             .sudo()
             .get_param("mass_mailing.mass_mailing_reports")
         )
+
+    def test_mailing_blocklist_without_javascript_returns_to_the_subscriptions(self):
+        test_mailing = self.test_mailing_on_documents.with_env(self.env)
+        partner = self.env["res.partner"].create(
+            {"email": "no.script@example.com", "name": "No Script"}
+        )
+        identity = {
+            "mailing_id": test_mailing.id,
+            "document_id": partner.id,
+            "email": partner.email_normalized,
+            "hash_token": test_mailing._generate_mailing_recipient_token(
+                partner.id, partner.email_normalized
+            ),
+        }
+
+        self.authenticate(None, None)
+        response = self.url_open(
+            "/mailing/blocklist/add",
+            data={**identity, "csrf_token": http.Request.csrf_token(self)},
+            allow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        location = response.headers["Location"]
+        self.assertIn("/mailing/subscriptions?", location)
+        self.assertIn("last_action=blocklist_add", location)
+        self.assertTrue(partner.is_blacklisted)
+        page = self.url_open(location)
+        self.assertIn("Email added to our blocklist", page.text)
+        self.assertIn('id="button_blocklist_remove"', page.text)
+
+    def test_the_subscriptions_page_refuses_a_wrong_token(self):
+        test_mailing = self.test_mailing_on_documents.with_env(self.env)
+        response = self.url_open(
+            f"/mailing/subscriptions?mailing_id={test_mailing.id}&document_id=1"
+            "&email=someone@example.com&hash_token=wrong"
+        )
+        self.assertIn(response.status_code, (401, 403))
 
     def test_mailing_unsubscribe_from_document_tour(self):
         """Test portal unsubscribe on mailings performed on documents (not

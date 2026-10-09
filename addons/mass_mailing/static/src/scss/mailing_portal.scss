@@ -13,4 +13,13 @@
         color: #005326;
         font-size: 90%;
     }
+
+    // the free-text feedback is asked only for a reason that wants it
+    .o_mailing_subscription_feedback_text {
+        display: none;
+    }
+    fieldset:has(.o_mailing_subscription_opt_out_reason[data-is-feedback]:checked)
+        .o_mailing_subscription_feedback_text {
+        display: block;
+    }
 }

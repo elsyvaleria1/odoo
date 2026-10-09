@@ -156,10 +156,6 @@
         ],
         "mass_mailing.mailing_assets": [
             "mass_mailing/static/src/scss/mailing_portal.scss",
-            "mass_mailing/static/src/interactions/subscribe.js",
-            "mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml",
-            "mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml",
-            "mass_mailing/static/src/xml/mailing_portal_subscription_form.xml",
         ],
         "web.assets_backend": [
             "mass_mailing/static/src/editor/**/*",

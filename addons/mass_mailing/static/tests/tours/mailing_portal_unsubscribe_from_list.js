@@ -37,6 +37,7 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_list", 
             content: "Hit Send",
             trigger: "button#button_feedback",
             run: "click",
+            expectUnloadPage: true,
         },
         {
             content: "Confirmation feedback is sent",
@@ -46,7 +47,7 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_list", 
         },
         {
             content: "Now exclude me",
-            trigger: "div#button_blocklist_add",
+            trigger: "button#button_blocklist_add",
             run: "click",
         },
         {
@@ -122,6 +123,7 @@ registry
                 content: "Hit Send",
                 trigger: "button#button_feedback",
                 run: "click",
+                expectUnloadPage: true,
             },
             {
                 content: "Confirmation feedback is sent",
@@ -131,7 +133,7 @@ registry
             },
             {
                 content: "Now exclude me",
-                trigger: "div#button_blocklist_add",
+                trigger: "button#button_blocklist_add",
                 run: "click",
             },
             {
@@ -148,7 +150,7 @@ registry
             },
             {
                 content: "Revert exclusion list",
-                trigger: "div#button_blocklist_remove",
+                trigger: "button#button_blocklist_remove",
                 run: "click",
             },
             {
@@ -212,7 +214,7 @@ registry
             },
             {
                 content: "Now exclude me (again)",
-                trigger: "div#button_blocklist_add",
+                trigger: "button#button_blocklist_add",
                 run: "click",
             },
             {

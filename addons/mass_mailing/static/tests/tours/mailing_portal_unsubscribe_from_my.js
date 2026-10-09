@@ -63,6 +63,7 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_my", {
             content: "Update subscription",
             trigger: "button#button_form_send",
             run: "click",
+            expectUnloadPage: true,
         },
         {
             content: "Confirmation changes are done",
@@ -116,15 +117,12 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_my", {
             run: "click",
         },
         {
-            trigger: "textarea[disabled]",
-        },
-        {
             content: "Once sent feedback area is readonly",
-            trigger: "fieldset input.o_mailing_subscription_opt_out_reason[disabled]",
+            trigger: "fieldset[disabled] input.o_mailing_subscription_opt_out_reason",
         },
         {
             content: "Now exclude me",
-            trigger: "div#button_blocklist_add",
+            trigger: "button#button_blocklist_add",
             run: "click",
         },
         {
