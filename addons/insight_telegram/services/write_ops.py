@@ -110,6 +110,20 @@ def check(env, operation) -> dict:
         for name, value in values.items():
             if model._fields[name].type in ("one2many", "many2many"):
                 _check_lines(model, normalized.get("ids"), name, value)
+        company = model._fields.get("company_id")
+        if (
+            op == "create"
+            and company
+            and company.type == "many2one"
+            and company.required
+            and not values.get("company_id")
+        ):
+            # with every company allowed, the default one is arbitrary: the
+            # company is always the person's choice, said explicitly
+            raise OperationError(
+                f"{model_name} needs company_id: ask the person which company "
+                "if they have not said it."
+            )
         normalized["values"] = values
     if op == "action":
         method = (operation.get("method") or "").strip()
@@ -251,9 +265,14 @@ def _values_lines(model, values) -> list:
             )
         else:
             lines.append(
-                f"• {field.string}: {_value_text(model, field, value, currency)}"
+                f"• {_label(model, field)}: {_value_text(model, field, value, currency)}"
             )
     return lines
+
+
+def _label(model, field) -> str:
+    """A field's label in the language of `model`'s environment."""
+    return field._description_string(model.env) or field.name
 
 
 def _value_text(model, field, value, currency) -> str:
@@ -281,7 +300,7 @@ def _value_text(model, field, value, currency) -> str:
 def _relation_lines(comodel, field, commands, currency) -> list:
     """An x2many's commands: new lines one per row, with a total where the
     rows carry a quantity and a unit price."""
-    lines = [f"• {field.string}:"]
+    lines = [f"• {_label(comodel, field)}:"]
     total = 0.0
     priced = False
     for command in commands:
@@ -325,7 +344,7 @@ def _row_text(comodel, values, currency):
             return text, subtotal
         return f"{name} — {_number(quantity)}", None
     parts = [
-        f"{comodel._fields[name].string}: "
+        f"{_label(comodel, comodel._fields[name])}: "
         f"{_value_text(comodel, comodel._fields[name], value, currency)}"
         for name, value in values.items()
         if name in comodel._fields

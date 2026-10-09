@@ -290,11 +290,14 @@ class TelegramChat(models.Model):
         record, and the PDF Odoo prints for each record created."""
         requester = self.env.user
         env = self.env(user=requester.id, su=True)
+        # the person's own company first: it is the default of anything
+        # the operations leave unset
+        companies = requester.company_id | env["res.company"].search([])
         env = env(
             context={
                 **env.context,
                 "lang": tr_env.lang,
-                "allowed_company_ids": env["res.company"].search([]).ids,
+                "allowed_company_ids": companies.ids,
             }
         )
         try:

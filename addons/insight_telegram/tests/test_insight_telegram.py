@@ -877,6 +877,18 @@ class TestWriteOperations(TransactionCase):
         with self.assertRaisesRegex(write_ops.OperationError, "draft"):
             write_ops.check(self.env, remove([2, order.line_ids.id]))
 
+    def test_an_order_names_its_company(self):
+        customer, _product = self._sale()
+        with self.assertRaisesRegex(write_ops.OperationError, "company_id"):
+            write_ops.check(
+                self.env,
+                {
+                    "op": "create",
+                    "model": "sale.order",
+                    "values": {"partner_id": customer.id},
+                },
+            )
+
     def test_a_proposal_reads_as_the_screen_shows_it(self):
         customer, product = self._sale()
         operations = [
@@ -885,6 +897,7 @@ class TestWriteOperations(TransactionCase):
                 "model": "sale.order",
                 "values": {
                     "partner_id": customer.id,
+                    "company_id": self.env.company.id,
                     "line_ids": [
                         [
                             0,
@@ -939,6 +952,7 @@ class TestWriteOperations(TransactionCase):
                 "model": "sale.order",
                 "values": {
                     "partner_id": customer.id,
+                    "company_id": self.env.company.id,
                     "line_ids": [[0, 0, {"product_id": product.id, "product_qty": 2}]],
                 },
                 "attach_files": True,
@@ -974,7 +988,10 @@ class TestWriteOperations(TransactionCase):
             {
                 "op": "create",
                 "model": "sale.order",
-                "values": {"partner_id": customer.id},
+                "values": {
+                    "partner_id": customer.id,
+                    "company_id": self.env.company.id,
+                },
             },
             {
                 "op": "action",
