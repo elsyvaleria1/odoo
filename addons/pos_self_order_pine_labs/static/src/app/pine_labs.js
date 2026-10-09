@@ -67,19 +67,20 @@ export class PineLabs {
                 },
             );
 
-            if (cancelResponse) {
-                // Successfully cancelled the transaction
-                if (cancelResponse.notification) {
-                    this.errorCallback(
-                        new PineLabsError(cancelResponse.notification, "warning"),
-                    );
-                    return true;
-                }
-                return this.handlePineLabsResponse(cancelResponse);
+            // "failed" is the only outcome that lets the customer pay again:
+            // the terminal cancelled. Any other answer was settled by the
+            // server (paid, or held for staff), and no answer means the
+            // terminal may still charge, so the kiosk asks again
+            if (cancelResponse?.outcome === "failed") {
+                this.errorCallback(
+                    new PineLabsError(cancelResponse.notification, "warning"),
+                );
+                return true;
             }
-        } catch (error) {
-            this.errorCallback(error);
             return false;
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, REQUEST_TIMEOUT));
+            return this.cancelPayment(order);
         }
     }
 
@@ -99,15 +100,15 @@ export class PineLabs {
         };
         this.stopInactivePayment().then(() => (this.paymentStopped = true));
         const fetchPaymentStatus = async (resolve, reject) => {
+            clearTimeout(this.pollingTimeout);
+            // This transaction will automatically cancel if inactive for more than 90 seconds.
+            if (this.paymentStopped) {
+                await this.cancelPayment(order);
+                return resolve(false);
+            }
+            let statusResponse = null;
             try {
-                clearTimeout(this.pollingTimeout);
-                // This transaction will automatically cancel if inactive for more than 90 seconds.
-                if (this.paymentStopped) {
-                    await this.cancelPayment(order);
-                    return resolve(false);
-                }
-
-                const statusResponse = await rpc(
+                statusResponse = await rpc(
                     "/pos-self-order/pine-labs-fetch-payment-status/",
                     {
                         access_token: this.access_token,
@@ -116,24 +117,23 @@ export class PineLabs {
                         payment_method_id: this.pineLabsPaymentMethod.id,
                     },
                 );
-                if (statusResponse?.status === "TXN APPROVED") {
-                    return resolve(true);
-                }
-                if (statusResponse?.error) {
-                    this.handlePineLabsResponse(statusResponse);
-                    return resolve(false);
-                }
-
-                this.pollingTimeout = setTimeout(
-                    fetchPaymentStatus,
-                    REQUEST_TIMEOUT,
-                    resolve,
-                    reject,
-                );
-            } catch (error) {
-                this.errorCallback(error);
+            } catch {
+                // no answer is no outcome: the terminal may still be charging
+            }
+            const outcome = statusResponse?.outcome;
+            if (outcome === "approved") {
+                return resolve(true);
+            }
+            if (outcome === "unverified") {
                 return resolve(false);
             }
+            // pending, unknown or unanswered: the terminal decides, not the kiosk
+            this.pollingTimeout = setTimeout(
+                fetchPaymentStatus,
+                REQUEST_TIMEOUT,
+                resolve,
+                reject,
+            );
         };
         return new Promise(fetchPaymentStatus);
     }
@@ -143,13 +143,15 @@ export class PineLabs {
             this.errorCallback(new PineLabsError(response.error));
             return false;
         }
-        response.plutusTransactionReferenceID &&
+        if (response.plutusTransactionReferenceID) {
             localStorage.setItem(
                 "plutusTransactionReferenceID",
                 response.plutusTransactionReferenceID,
             );
-        response.payment_ref_no &&
+        }
+        if (response.payment_ref_no) {
             localStorage.setItem("paymentRefNo", response.payment_ref_no);
+        }
         return true;
     }
 

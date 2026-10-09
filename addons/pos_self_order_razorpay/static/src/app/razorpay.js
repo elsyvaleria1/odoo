@@ -24,11 +24,13 @@ export class Razorpay {
 
     handleRazorpayResponse(response) {
         if (response?.error) {
-            this.payment_stopped
-                ? this.errorCallback(
-                      new RazorpayError("Transaction canceled due to inactivity"),
-                  )
-                : this.errorCallback(new RazorpayError(response.error));
+            this.errorCallback(
+                new RazorpayError(
+                    this.payment_stopped
+                        ? "Transaction canceled due to inactivity"
+                        : response.error,
+                ),
+            );
             this.removePaymentHandler(["p2pRequestId"]);
             return false;
         }
@@ -36,29 +38,30 @@ export class Razorpay {
         return true;
     }
 
+    // "failed" is the only outcome that lets the customer pay again: the
+    // device cancelled. Any other answer was settled by the server (paid, or
+    // held for staff), and no answer means the device may still charge, so
+    // the kiosk asks again instead of offering Retry
     async cancelPayment(order) {
-        const data = { p2pRequestId: localStorage.getItem("p2pRequestId") };
+        let response;
         try {
-            const cancel_response = await rpc(
-                "/pos-self-order/razorpay-cancel-transaction/",
-                {
-                    access_token: this.access_token,
-                    order_id: order.id,
-                    payment_data: data,
-                    payment_method_id: this.razorpayPaymentMethod.id,
-                },
-            );
-            if (cancel_response) {
-                if (cancel_response?.errorMessage) {
-                    this.errorCallback(cancel_response.errorMessage, "warning");
-                    return true;
-                }
-                return this.handleRazorpayResponse(cancel_response);
-            }
-        } catch (error) {
-            this.errorCallback(error);
-            return false;
+            response = await rpc("/pos-self-order/razorpay-cancel-transaction/", {
+                access_token: this.access_token,
+                order_id: order.id,
+                payment_data: {},
+                payment_method_id: this.razorpayPaymentMethod.id,
+            });
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, REQUEST_TIMEOUT));
+            return this.cancelPayment(order);
         }
+        if (response?.outcome === "failed") {
+            return !this.handleRazorpayResponse({
+                error: response.error || "Razorpay POS transaction canceled",
+            });
+        }
+        this.removePaymentHandler(["p2pRequestId"]);
+        return false;
     }
 
     async startPayment(order) {
@@ -94,47 +97,44 @@ export class Razorpay {
      * calls every 10 sec until payment status not found.
      */
     async paymentPolling(order) {
-        const data = { p2pRequestId: localStorage.getItem("p2pRequestId") };
         this.stopInactivePayment().then(() => (this.payment_stopped = true));
         const fetchPaymentStatus = async () => {
+            // Within 90 seconds, inactivity will result in transaction cancellation and payment termination.
+            if (this.payment_stopped) {
+                await this.cancelPayment(order);
+                return;
+            }
+            let response = null;
             try {
-                // Within 90 seconds, inactivity will result in transaction cancellation and payment termination.
-                if (this.payment_stopped) {
-                    await this.cancelPayment(order);
-                    return false;
-                }
-
-                const polling_response = await rpc(
-                    "/pos-self-order/razorpay-fetch-payment-status/",
-                    {
-                        access_token: this.access_token,
-                        order_id: order.id,
-                        payment_data: data,
-                        payment_method_id: this.razorpayPaymentMethod.id,
-                    },
-                );
-                if (polling_response?.error) {
-                    this.handleRazorpayResponse(polling_response);
-                    return false;
-                }
-
-                const result_code = polling_response?.status;
-
-                if (result_code === "QUEUED" && this.queued === false) {
-                    await this.cancelPayment(order);
+                response = await rpc("/pos-self-order/razorpay-fetch-payment-status/", {
+                    access_token: this.access_token,
+                    order_id: order.id,
+                    payment_data: {},
+                    payment_method_id: this.razorpayPaymentMethod.id,
+                });
+            } catch {
+                // no answer is no outcome: the device may still be charging
+            }
+            const outcome = response?.outcome;
+            if (outcome === "failed") {
+                this.handleRazorpayResponse({
+                    error: response.error || "Razorpay POS transaction failed",
+                });
+                return;
+            }
+            if (outcome === "approved" || outcome === "unverified") {
+                this.removePaymentHandler(["p2pRequestId"]);
+                return;
+            }
+            if (response?.status === "QUEUED" && !this.queued) {
+                this.queued = true;
+                if (await this.cancelPayment(order)) {
                     await this.startPayment(order);
                 }
-                if (result_code === "AUTHORIZED") {
-                    this.removePaymentHandler(["p2pRequestId"]);
-                    return true;
-                } else {
-                    // clearing previous timeout before setting a new one
-                    clearTimeout(this.pollTimeout);
-                    this.pollTimeout = setTimeout(fetchPaymentStatus, REQUEST_TIMEOUT);
-                }
-            } catch (error) {
-                this.errorCallback(error);
+                return;
             }
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = setTimeout(fetchPaymentStatus, REQUEST_TIMEOUT);
         };
         await fetchPaymentStatus();
     }

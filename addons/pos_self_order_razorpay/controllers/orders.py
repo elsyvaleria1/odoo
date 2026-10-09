@@ -5,6 +5,12 @@ from odoo.exceptions import UserError
 
 from odoo.addons.pos_self_order.controllers.orders import PosSelfOrderController
 
+# razorpay_fetch_payment_status's statuses: a failed or cancelled one carries
+# payment_messageCode, these say the money went back; the device's own
+# progress is the last word of its message code
+RAZORPAY_FAILED = frozenset({"VOIDED", "AUTHORIZED_REFUNDED"})
+RAZORPAY_PENDING = frozenset({"RECEIVED", "SENT", "QUEUED"})
+
 
 class PosSelfOrderControllerRazorpay(PosSelfOrderController):
     def _get_razorpay_kiosk_order(self, access_token, order_id, payment_method_id):
@@ -39,53 +45,99 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         order, payment_method = self._get_razorpay_kiosk_order(
             access_token, order_id, payment_method_id
         )
-        razorpay_status_response = payment_method.razorpay_fetch_payment_status(
+        response = self._fetch_razorpay_status(order, payment_method)
+        response["outcome"] = self._settle_razorpay(order, payment_method, response)
+        return response
+
+    @http.route(
+        "/pos-self-order/razorpay-cancel-transaction/",
+        auth="public",
+        type="jsonrpc",
+        website=True,
+    )
+    def razorpay_cancel_status(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+        self, access_token, order_id, payment_data, payment_method_id
+    ):
+        order, payment_method = self._get_razorpay_kiosk_order(
+            access_token, order_id, payment_method_id
+        )
+        response = payment_method.razorpay_cancel_payment_request(
             {"p2pRequestId": order.kiosk_terminal_request}
         )
-        payment_status = razorpay_status_response.get("status")
-        if payment_status == "AUTHORIZED":
-            try:
-                self._check_razorpay_transaction(order, razorpay_status_response)
-                with order.env.cr.savepoint():
-                    paid = order._add_kiosk_terminal_payment(
-                        payment_method,
-                        {
-                            "card_type": razorpay_status_response.get(
-                                "paymentCardType"
-                            ),
-                            "cardholder_name": razorpay_status_response.get(
-                                "nameOnCard"
-                            ),
-                            "transaction_id": razorpay_status_response.get("txnId"),
-                            "payment_status": payment_status,
-                            "payment_method_authcode": razorpay_status_response.get(
-                                "authCode"
-                            ),
-                            "card_brand": razorpay_status_response.get(
-                                "paymentCardBrand"
-                            ),
-                            "payment_method_issuer_bank": razorpay_status_response.get(
-                                "acquirerCode"
-                            ),
-                            "card_no": razorpay_status_response.get(
-                                "cardLastFourDigit"
-                            ),
-                            "payment_method_payment_mode": razorpay_status_response.get(
-                                "paymentMode"
-                            ),
-                            "payment_ref_no": order.kiosk_terminal_reference,
-                            "razorpay_reverse_ref_no": razorpay_status_response.get(
-                                "reverseReferenceNumber"
-                            ),
-                        },
-                    )
-            except UserError as error:
-                return {"error": error.args[0]}
-            if paid:
-                self.call_bus_service(order, payment_result="Success")
-        elif payment_status == "FAILED" or not payment_status:
-            self.call_bus_service(order, payment_result="fail")
-        return razorpay_status_response
+        # razorpay_cancel_payment_request reports a cancellation as "error"
+        # and a refused one as "errorMessage"
+        if "error" in response:
+            order._send_payment_result("fail")
+            response["outcome"] = "failed"
+            return response
+        # the device would not cancel: it may have taken the card
+        status = self._fetch_razorpay_status(order, payment_method)
+        response["outcome"] = self._settle_razorpay(
+            order, payment_method, status, final=True
+        )
+        return response
+
+    def _fetch_razorpay_status(self, order, payment_method) -> dict:
+        return payment_method.razorpay_fetch_payment_status(
+            {"p2pRequestId": order.kiosk_terminal_request}
+        )
+
+    def _settle_razorpay(self, order, payment_method, response, final=False) -> str:
+        # "approved"; "failed": the kiosk may pay again; "pending" or
+        # "unknown": it keeps polling; "unverified": staff check the terminal.
+        # An outcome still unknown when the kiosk gives up (final) holds the
+        # order: offering to pay again could charge twice
+        status = response.get("status")
+        if status == "AUTHORIZED":
+            return self._pay_razorpay(order, payment_method, response)
+        if response.get("payment_messageCode") or status in RAZORPAY_FAILED:
+            order._send_payment_result("fail")
+            return "failed"
+        if final:
+            order._hold_kiosk_payment_to_verify(
+                payment_method, order.amount_total, order.kiosk_terminal_reference
+            )
+            return "unverified"
+        return "pending" if status in RAZORPAY_PENDING else "unknown"
+
+    def _pay_razorpay(self, order, payment_method, response) -> str:
+        try:
+            self._check_razorpay_transaction(order, response)
+            with order.env.cr.savepoint():
+                paid = order._add_kiosk_terminal_payment(
+                    payment_method,
+                    {
+                        "card_type": response.get("paymentCardType"),
+                        "cardholder_name": response.get("nameOnCard"),
+                        "transaction_id": response.get("txnId"),
+                        "payment_status": response.get("status"),
+                        "payment_method_authcode": response.get("authCode"),
+                        "card_brand": response.get("paymentCardBrand"),
+                        "payment_method_issuer_bank": response.get("acquirerCode"),
+                        "card_no": response.get("cardLastFourDigit"),
+                        "payment_method_payment_mode": response.get("paymentMode"),
+                        "payment_ref_no": order.kiosk_terminal_reference,
+                        "razorpay_reverse_ref_no": response.get(
+                            "reverseReferenceNumber"
+                        ),
+                    },
+                )
+        except UserError as error:
+            # the terminal took a card, but not for this order as asked:
+            # staff decide, the customer is not asked to pay again
+            response["error"] = error.args[0]
+            order._hold_kiosk_payment_to_verify(
+                payment_method,
+                order.amount_total,
+                response.get("txnId") or order.kiosk_terminal_reference,
+            )
+            return "unverified"
+        if order.kiosk_payment_to_verify_method_id:
+            # the terminal settled what staff were asked to check
+            order._clear_kiosk_payment_to_verify()
+        if paid:
+            order._send_payment_result("Success")
+        return "approved"
 
     def _check_razorpay_transaction(self, order, response) -> None:
         if (
@@ -105,26 +157,3 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
             raise UserError(
                 order.env._("The terminal approved another amount than the order's.")
             )
-
-    @http.route(
-        "/pos-self-order/razorpay-cancel-transaction/",
-        auth="public",
-        type="jsonrpc",
-        website=True,
-    )
-    def razorpay_cancel_status(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
-        self, access_token, order_id, payment_data, payment_method_id
-    ):
-        order, payment_method = self._get_razorpay_kiosk_order(
-            access_token, order_id, payment_method_id
-        )
-        razorpay_cancel_response = payment_method.razorpay_cancel_payment_request(
-            {"p2pRequestId": order.kiosk_terminal_request}
-        )
-        cancel_status = razorpay_cancel_response.get("status")
-        if cancel_status:
-            self.call_bus_service(order, payment_result="fail")
-        return razorpay_cancel_response
-
-    def call_bus_service(self, order, payment_result):
-        order._send_payment_result(payment_result)

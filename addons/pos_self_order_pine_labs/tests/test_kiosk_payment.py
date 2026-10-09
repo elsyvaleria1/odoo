@@ -50,6 +50,18 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.cancel_answer = {"ResponseCode": 0, "ResponseMessage": "APPROVED"}
+        self.results = []
+        PosOrder = type(self.env["pos.order"])
+        send = PosOrder._send_payment_result
+
+        def record(order, payment_result):
+            self.results.append(payment_result)
+            return send(order, payment_result)
+
+        result_patcher = patch.object(PosOrder, "_send_payment_result", record)
+        result_patcher.start()
+        self.addCleanup(result_patcher.stop)
 
     def _terminal(self, payment_method, endpoint, payload):
         if endpoint == "UploadBilledTransaction":
@@ -68,7 +80,7 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
             }
         if endpoint == "GetCloudBasedTxnStatus":
             return dict(self.terminal[int(payload["PlutusTransactionReferenceID"])])
-        return {"ResponseCode": 0, "ResponseMessage": "APPROVED"}
+        return self.cancel_answer
 
     def _approve(self, plutus, log_id, amount=None):
         self.terminal[plutus].update(
@@ -114,6 +126,19 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
         return self.pine_labs._payment_request_from_kiosk(order)[
             "plutusTransactionReferenceID"
         ]
+
+    def _cancel(self, order):
+        result = self.call_jsonrpc(
+            "/pos-self-order/pine-labs-cancel-transaction/",
+            {
+                "access_token": self.pos_config.self_ordering_access_token,
+                "order_id": order.id,
+                "payment_data": {},
+                "payment_method_id": self.pine_labs.id,
+            },
+        )
+        self.env.invalidate_all()
+        return result
 
     def _poll(self, order, plutus):
         result = self.call_jsonrpc(
@@ -198,3 +223,34 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
 
         self.assertIn("error", result)
         self.assertEqual(target.state, "draft")
+
+    def test_an_error_status_is_no_failure(self):
+        order = self._order(500)
+        plutus = self._request(order)
+        self.terminal[plutus] = {"ResponseCode": 1, "ResponseMessage": "TXN NOT FOUND"}
+
+        result = self._poll(order, plutus)
+
+        self.assertEqual(result["outcome"], "unknown")
+        self.assertEqual(self.results, [])
+        self.assertFalse(order.kiosk_payment_to_verify_method_id)
+
+    def test_a_cancelled_transaction_lets_the_customer_pay_again(self):
+        order = self._order(500)
+        self._request(order)
+
+        result = self._cancel(order)
+
+        self.assertEqual(result["outcome"], "failed")
+        self.assertEqual(self.results, ["fail"])
+
+    def test_giving_up_on_an_unknown_outcome_holds_the_order(self):
+        order = self._order(500)
+        self._request(order)
+        self.cancel_answer = {"ResponseCode": 1, "ResponseMessage": "TXN IN PROGRESS"}
+
+        result = self._cancel(order)
+
+        self.assertEqual(result["outcome"], "unverified")
+        self.assertEqual(self.results, ["unverified"])
+        self.assertEqual(order.kiosk_payment_to_verify_method_id, self.pine_labs)

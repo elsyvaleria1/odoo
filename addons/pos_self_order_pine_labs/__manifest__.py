@@ -14,6 +14,9 @@
         "pos_self_order.assets": [
             "pos_self_order_pine_labs/static/src/**/*",
         ],
+        "web.assets_unit_tests": [
+            "pos_self_order_pine_labs/static/tests/unit/**/*",
+        ],
     },
     "auto_install": True,
 }

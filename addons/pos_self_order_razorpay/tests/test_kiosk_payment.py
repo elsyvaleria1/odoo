@@ -46,6 +46,18 @@ class TestKioskRazorpayPayment(SelfOrderCommonTest):
         patcher = patch.object(RazorpayPosRequest, "_call_razorpay", self._terminal)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.cancel_answer = {"success": True}
+        self.results = []
+        PosOrder = type(self.env["pos.order"])
+        send = PosOrder._send_payment_result
+
+        def record(order, payment_result):
+            self.results.append(payment_result)
+            return send(order, payment_result)
+
+        patcher = patch.object(PosOrder, "_send_payment_result", record)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def _terminal(self, endpoint, payload):
         if endpoint == "pay":
@@ -61,6 +73,8 @@ class TestKioskRazorpayPayment(SelfOrderCommonTest):
             return {"success": True, "p2pRequestId": p2p}
         if endpoint == "status":
             return self.terminal[payload["origP2pRequestId"]]
+        if endpoint == "cancel":
+            return self.cancel_answer
         return {"success": True}
 
     def _approve(self, p2p, txn_id, **changes):
@@ -98,6 +112,19 @@ class TestKioskRazorpayPayment(SelfOrderCommonTest):
 
     def _request(self, order):
         return self.razorpay._payment_request_from_kiosk(order)["p2pRequestId"]
+
+    def _cancel(self, order):
+        result = self.call_jsonrpc(
+            "/pos-self-order/razorpay-cancel-transaction/",
+            {
+                "access_token": self.pos_config.self_ordering_access_token,
+                "order_id": order.id,
+                "payment_data": {},
+                "payment_method_id": self.razorpay.id,
+            },
+        )
+        self.env.invalidate_all()
+        return result
 
     def _poll(self, order, p2p):
         result = self.call_jsonrpc(
@@ -170,3 +197,68 @@ class TestKioskRazorpayPayment(SelfOrderCommonTest):
         self.assertIn("error", result)
         self.assertEqual(target.state, "draft")
         self.assertFalse(target.payment_ids)
+
+    def test_a_lost_status_answer_is_no_failure(self):
+        order = self._order(500)
+        p2p = self._request(order)
+        self.terminal[p2p] = {
+            "success": False,
+            "errorCode": "EZETAP_0000000",
+            "errorMessage": "upstream timeout",
+        }
+
+        result = self._poll(order, p2p)
+
+        self.assertEqual(result["outcome"], "unknown")
+        self.assertEqual(self.results, [])
+        self.assertFalse(order.kiosk_payment_to_verify_method_id)
+
+    def test_a_declined_transaction_lets_the_customer_pay_again(self):
+        order = self._order(500)
+        p2p = self._request(order)
+        self.terminal[p2p].update(
+            status="FAILED", messageCode="P2P_DEVICE_TXN_DONE", message="Declined"
+        )
+
+        result = self._poll(order, p2p)
+
+        self.assertEqual(result["outcome"], "failed")
+        self.assertEqual(self.results, ["fail"])
+
+    def test_a_cancelled_transaction_lets_the_customer_pay_again(self):
+        order = self._order(500)
+        self._request(order)
+
+        result = self._cancel(order)
+
+        self.assertEqual(result["outcome"], "failed")
+        self.assertEqual(self.results, ["fail"])
+        self.assertFalse(order.kiosk_payment_to_verify_method_id)
+
+    def test_giving_up_on_an_unknown_outcome_holds_the_order(self):
+        order = self._order(500)
+        self._request(order)
+        self.cancel_answer = {
+            "success": False,
+            "errorCode": "EZETAP_0000999",
+            "errorMessage": "device busy",
+        }
+
+        result = self._cancel(order)
+
+        self.assertEqual(result["outcome"], "unverified")
+        self.assertEqual(self.results, ["unverified"])
+        self.assertEqual(order.kiosk_payment_to_verify_method_id, self.razorpay)
+        self.assertEqual(order.state, "draft")
+
+    def test_an_approval_the_device_reports_after_the_hold_pays_and_lifts_it(self):
+        order = self._order(500)
+        p2p = self._request(order)
+        self.cancel_answer = {"success": False, "errorMessage": "device busy"}
+        self._cancel(order)
+        self._approve(p2p, "TXN-1")
+
+        self._poll(order, p2p)
+
+        self.assertEqual(order.state, "paid")
+        self.assertFalse(order.kiosk_payment_to_verify_method_id)

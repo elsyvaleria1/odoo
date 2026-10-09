@@ -12,7 +12,10 @@
     ],
     "assets": {
         "pos_self_order.assets": [
-            "pos_self_order_razorpay/static/**/*",
+            "pos_self_order_razorpay/static/src/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "pos_self_order_razorpay/static/tests/unit/**/*",
         ],
     },
     "auto_install": True,
