@@ -131,7 +131,9 @@ class PosPaymentMethod(models.Model):
                 "value": f"{amount:.{currency.decimal_places}f}",
             },
             "locale": user_lang if user_lang in const.SUPPORTED_LOCALES else "en_US",
-            "description": f"pos_session_id={pos_session_id},payment_uuid={payment_uuid}",
+            "description": self._get_mollie_payment_description(
+                pos_session_id, payment_uuid
+            ),
             "redirectUrl": f"{self.get_base_url()}",  # Not used for POS payments but required by Mollie API
             "webhookUrl": f"{self.get_base_url()}/pos_mollie/webhook?payload={signed_payload}",
             "method": "pointofsale",
@@ -158,7 +160,9 @@ class PosPaymentMethod(models.Model):
                 "currency": currency.name,
                 "value": f"{amount:.{currency.decimal_places}f}",
             },
-            "description": f"pos_session_id={pos_session_id},payment_uuid={payment_uuid}",
+            "description": self._get_mollie_payment_description(
+                pos_session_id, payment_uuid
+            ),
         }
         return self.mollie_payment_provider_id._send_api_request(
             "POST", f"/payments/{original_payment_id}/refunds", json=payment_request
@@ -170,6 +174,10 @@ class PosPaymentMethod(models.Model):
         return self.mollie_payment_provider_id._send_api_request(
             "DELETE", f"/payments/{payment_id}"
         )
+
+    @api.model
+    def _get_mollie_payment_description(self, pos_session_id, payment_uuid) -> str:
+        return f"pos_session_id={pos_session_id},payment_uuid={payment_uuid}"
 
     def _mollie_get_payment(self, payment_id: str):
         self.check_singleton()
