@@ -493,7 +493,7 @@ class PosConfig(models.Model):
         msg = ""
         if not self.env.company.pos_urbanpiper_username:
             msg += self.env._("UrbanPiper Username is required.\n")
-        if not self.env.company.sudo().pos_urbanpiper_apikey:
+        if not UrbanPiperClient(self)._api_key():
             msg += self.env._("UrbanPiper API Key is required.\n")
         if not self.urbanpiper_store_identifier and store_required:
             msg += self.env._("UrbanPiper Store ID is required.\n")

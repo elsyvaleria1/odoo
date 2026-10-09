@@ -34,13 +34,19 @@ class UrbanPiperClient:
             self.config.env, "database.uuid", False
         )
 
+    def _api_key(self):
+        return self.config.env.company.with_privilege(
+            "point_of_sale.privilege_spend_terminal_credentials",
+            reason="a request of the point of sale to UrbanPiper",
+        ).pos_urbanpiper_apikey
+
     def _send_api_request(self, endpoint, method="POST", data=None, timeout=10):
         """
         Make an api call, return response for multiple api requests of urban piper.
         """
         headers = {
             "Authorization": f"apikey {self.config.env.company.pos_urbanpiper_username}:"
-            f"{self.config.env.company.sudo().pos_urbanpiper_apikey}",
+            f"{self._api_key()}",
             "Content-Type": "application/json",
         }
         urbanpiper_url = (

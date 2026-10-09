@@ -34,7 +34,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
         help="The Client Secret provided by DPO Pay for secure access. Keep it confidential.",
     )
     dpopay_mid = fields.Char(
@@ -63,7 +63,7 @@ class PosPaymentMethod(models.Model):
         inverse="_inverse_credential_doors",
         default="Token",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
         help="Bearer token used for authenticating requests. Automatically refreshed when expired.",
     )
 
@@ -84,7 +84,10 @@ class PosPaymentMethod(models.Model):
         self.check_singleton()
         if endpoint == "start-transaction":
             data["transactionType"] = self._get_transaction_type()
-        return self.sudo()._execute_dpopay_api_request(data, endpoint)
+        return self.with_privilege(
+            "point_of_sale.privilege_spend_terminal_credentials",
+            reason="a till's request to its DPO Pay terminal",
+        )._execute_dpopay_api_request(data, endpoint)
 
     def _get_dpopay_base_url(self, is_token=False) -> str:
         self.check_singleton()

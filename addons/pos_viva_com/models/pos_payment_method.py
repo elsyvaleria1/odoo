@@ -89,7 +89,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
         help="Log into Viva.com then navigate to Settings > API Access > Access credentials",
     )
     viva_com_client_id = fields.Char(
@@ -101,7 +101,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
         help="Log into Viva.com then navigate to Settings > API Access > POS APIs Credentials",
     )
     viva_com_terminal_id = fields.Char(
@@ -113,13 +113,13 @@ class PosPaymentMethod(models.Model):
         inverse="_inverse_credential_doors",
         default="Bearer Token",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
     )
     viva_com_webhook_verification_key = fields.Char(
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
     )
     viva_com_latest_response = fields.Json()  # not used anymore, to remove in master
     viva_com_test_mode = fields.Boolean(
@@ -129,7 +129,7 @@ class PosPaymentMethod(models.Model):
     viva_com_webhook_endpoint = fields.Char(
         compute="_compute_viva_com_webhook_endpoint",
         readonly=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
     )
 
     def _viva_com_account_get_endpoint(self) -> str:
@@ -186,7 +186,8 @@ class PosPaymentMethod(models.Model):
             _logger.exception("Failed to call viva_com_bearer_token endpoint")
             access_token = False
         if access_token:
-            self.viva_com_bearer_token = access_token
+            # sudo(): a cashier only reads payment methods
+            self.sudo().viva_com_bearer_token = access_token
             return {"Authorization": f"Bearer {access_token}"}
         else:
             raise UserError(
@@ -197,7 +198,10 @@ class PosPaymentMethod(models.Model):
             )
 
     def _call_viva_com(self, endpoint, action, data=None, should_retry=True):
-        method = self.sudo()
+        method = self.with_privilege(
+            "point_of_sale.privilege_spend_terminal_credentials",
+            reason="a till's request to its Viva.com terminal",
+        )
         with method._viva_com_session(should_retry) as session:
             return method._call_viva_com_with(session, endpoint, action, data)
 

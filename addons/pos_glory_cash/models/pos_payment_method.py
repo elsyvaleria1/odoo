@@ -14,7 +14,7 @@ class PosPaymentMethod(models.Model):
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
         copy=True,
-        groups="point_of_sale.group_pos_manager",
+        classification="point_of_sale.terminal_credential",
     )
 
     def _selection_payment_method_types(self):

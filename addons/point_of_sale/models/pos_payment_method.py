@@ -200,7 +200,11 @@ class PosPaymentMethod(models.Model):
             load=False,
         )
         held = {
-            method.id: method for method in (records & config.payment_method_ids).sudo()
+            method.id: method
+            for method in (records & config.payment_method_ids).with_privilege(
+                "point_of_sale.privilege_spend_terminal_credentials",
+                reason="the till drives these devices from the browser",
+            )
         }
         for row in rows:
             method = held.get(row["id"])

@@ -109,19 +109,15 @@ class PosOrder(models.Model):
         if not transaction_id:
             raise UserError(self.env._("The terminal approved no transaction."))
         self.lock_for_update(wait=True)
-        recorded = (
-            self.env["pos.payment"]
-            .sudo()
-            .search(
-                [
-                    ("transaction_id", "=", str(transaction_id)),
-                    (
-                        "payment_method_id.use_payment_terminal",
-                        "=",
-                        payment_method.use_payment_terminal,
-                    ),
-                ]
-            )
+        recorded = self.env["pos.payment"].search(
+            [
+                ("transaction_id", "=", str(transaction_id)),
+                (
+                    "payment_method_id.use_payment_terminal",
+                    "=",
+                    payment_method.use_payment_terminal,
+                ),
+            ]
         )
         if recorded.pos_order_id - self:
             raise UserError(self.env._("This transaction already paid another order."))
