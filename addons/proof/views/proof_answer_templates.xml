@@ -6,7 +6,8 @@
             <div class="container py-5" style="max-width: 640px;">
                 <h1 class="h3 mb-1">Please confirm</h1>
                 <p class="text-muted mb-4">
-                    <t t-out="challenge.user_id.company_id.name" />
+                    <t
+                        t-out="(challenge.company_id or challenge.user_id.company_id).name" />
                     asks <t t-out="challenge.partner_id.name" /> to confirm the following.
                 </p>
                 <div t-if="error" class="alert alert-warning" role="alert">

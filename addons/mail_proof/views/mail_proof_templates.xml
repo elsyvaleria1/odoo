@@ -4,7 +4,7 @@
     <template id="email_code_body">
         <div style="font-family: sans-serif; font-size: 14px;">
             <p>
-                Hello <t t-out="signer.name" />,
+                Hello,
             </p>
             <p>
                 <t t-out="asker.name" /> is asking you to confirm the following. If you agree, give them this code:

@@ -172,6 +172,9 @@ class ProofEvidence(models.Model):
                 sequence=sequence, prev_hash=prev_hash, hash_version=HASH_VERSION
             )
             vals["hash"] = prev_hash = self._get_chained_hash(vals)
+        # what is pending is written first: a conflict of its own is not this
+        # chain's, and must not read as a concurrent proof
+        self.env.flush_all()
         try:
             with self.env.cr.savepoint():
                 return super().create(vals_list)
@@ -250,6 +253,12 @@ class ProofEvidence(models.Model):
                 if (evidence.prev_hash or "") != prev_hash:
                     return self.env._(
                         "Proof %(position)s is not linked to the proof before it.",
+                        position=expected,
+                    )
+                if evidence.hash_version not in HASHED_FIELDS:
+                    return self.env._(
+                        "Proof %(position)s claims a hash version this database "
+                        "does not know.",
                         position=expected,
                     )
                 if self._get_chained_hash(evidence._get_hash_vals()) != evidence.hash:

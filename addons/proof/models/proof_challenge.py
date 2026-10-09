@@ -1,11 +1,15 @@
 import json
+import logging
 import secrets
+from contextlib import contextmanager
 from datetime import timedelta
 from hashlib import sha256
 from typing import Any
 
+import psycopg
+
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import ConcurrencyError, UserError
 from odoo.http import request
 from odoo.tools.security import hmac
 
@@ -13,8 +17,17 @@ from .proof_method import CODE_DIGITS, CODE_SCOPE, MODES, VERDICTS
 
 CHALLENGE_LIFETIME = timedelta(minutes=5)
 CONFIRMATION_LIFETIME = timedelta(days=3)
+# what a link to a question keeps working past its lifetime, to tell a late
+# contact it is no longer current rather than show them nothing
+LINK_GRACE = timedelta(days=30)
+# codes a contact can be sent for one act in a window: each is a fresh
+# challenge with its own tries, and a public page can ask for them
+CODE_ISSUE_BURST = 3
+CODE_ISSUE_WINDOW = timedelta(minutes=10)
 CHALLENGE_RETENTION = timedelta(days=1)
 GC_UNLINK_LIMIT = 10000
+
+_logger = logging.getLogger(__name__)
 
 
 class ProofChallenge(models.Model):
@@ -46,6 +59,12 @@ class ProofChallenge(models.Model):
         readonly=True,
         ondelete="cascade",
         help="The contact asked to prove it is them, when it is not the user.",
+    )
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        readonly=True,
+        help="The company the record belongs to, which its contact is asked in "
+        "the name of.",
     )
     purpose = fields.Char(
         readonly=True,
@@ -173,12 +192,15 @@ class ProofChallenge(models.Model):
                     "administrator which proof methods apply, and set one up."
                 )
             )
+        if partner:
+            self._check_code_burst(record, purpose, partner)
         token = secrets.token_urlsafe(32)
         challenge = self._with_proof_privilege().create(
             {
                 "token_hash": self._get_token_hash(token),
                 "user_id": user.id,
                 "partner_id": partner.id if partner else False,
+                "company_id": self._get_record_company(record).id,
                 "purpose": purpose,
                 "res_model": record._name,
                 "res_id": record.id,
@@ -257,6 +279,7 @@ class ProofChallenge(models.Model):
                 "token_hash": self._get_token_hash(secrets.token_urlsafe(32)),
                 "user_id": self.env.user.id,
                 "partner_id": partner.id,
+                "company_id": self._get_record_company(record).id,
                 "purpose": purpose,
                 "res_model": record._name,
                 "res_id": record.id,
@@ -270,6 +293,36 @@ class ProofChallenge(models.Model):
         )
         challenge._deliver()
         return self.browse(challenge.id)
+
+    @api.model
+    def _get_record_company(self, record: models.BaseModel) -> models.BaseModel:
+        field = record._fields.get("company_id")
+        if field and field.type == "many2one" and record.company_id:
+            return record.company_id
+        return self.env.company
+
+    @api.model
+    def _check_code_burst(
+        self, record: models.BaseModel, purpose: str, partner: models.BaseModel
+    ) -> None:
+        recent = self._with_proof_privilege().search_count(
+            [
+                ("res_model", "=", record._name),
+                ("res_id", "=", record.id),
+                ("purpose", "=", purpose),
+                ("partner_id", "=", partner.id),
+                ("kind", "=", "submit"),
+                ("create_date", ">", fields.Datetime.now() - CODE_ISSUE_WINDOW),
+            ]
+        )
+        if recent >= CODE_ISSUE_BURST:
+            raise UserError(
+                self.env._(
+                    "%(contact)s was just sent several codes. Use the last one, or "
+                    "wait a few minutes before asking for another.",
+                    contact=partner.display_name,
+                )
+            )
 
     def _deliver(self, reminder: bool = False) -> None:
         for challenge in self:
@@ -309,9 +362,11 @@ class ProofChallenge(models.Model):
         """The environment of the user who asked the contact, in their own
         companies: what the contact's answer, from outside, acts as."""
         self.check_singleton()
-        context = dict(self.env.context)
-        context.pop("allowed_company_ids", None)
-        return self.env(user=self.user_id.id, context=context)
+        # a fresh context: the request's language, website or companies are
+        # the contact's, not the asker's
+        asker_env = self.env(user=self.user_id.id, context={})
+        lang = asker_env.user.lang
+        return asker_env(context={"lang": lang}) if lang else asker_env
 
     def _reach_again(self) -> None:
         """Ask again, on the channels that reach the contact now and did not
@@ -322,9 +377,12 @@ class ProofChallenge(models.Model):
             .env["proof.method"]
             .search([("mode", "=", "confirm")])
         )
+        now = fields.Datetime.now()
         for challenge in self.filtered(
             lambda challenge: (
-                challenge.kind == "confirm" and challenge.state == "issued"
+                challenge.kind == "confirm"
+                and challenge.state == "issued"
+                and challenge.date_expire > now
             )
         ):
             challenge = (
@@ -332,17 +390,17 @@ class ProofChallenge(models.Model):
                 ._with_proof_privilege()
                 .browse(challenge.id)
             )
-            methods = confirm_methods.with_env(challenge.env).filtered(
-                lambda method, challenge=challenge: (
-                    method not in challenge.method_ids
-                    and method._is_enrolled_contact(challenge.partner_id)
+            with _guarded(challenge, "reach again"):
+                methods = confirm_methods.with_env(challenge.env).filtered(
+                    lambda method, challenge=challenge: (
+                        method not in challenge.method_ids
+                        and method._is_enrolled_contact(challenge.partner_id)
+                    )
                 )
-            )
-            if not methods:
-                continue
-            challenge.method_ids |= methods
-            for method in methods:
-                method._deliver_confirmation(challenge)
+                if methods:
+                    challenge.method_ids |= methods
+                    for method in methods:
+                        method._deliver_confirmation(challenge)
 
     def _get_record_links(self) -> list[tuple[str, str]]:
         """The links the record sends along with what its contact confirms, in
@@ -366,7 +424,10 @@ class ProofChallenge(models.Model):
         # a record outside the confirmation mixin asked its contact directly
         # and follows the answer from the challenge
         if record and hasattr(record, hook):
-            getattr(record, hook)(*args)
+            # what the record does with the answer is ours: when it fails, the
+            # contact's answer still stands, and the failure is logged
+            with _guarded(self, hook):
+                getattr(record, hook)(*args)
 
     @api.model
     def _cron_follow_up_confirmations(self) -> None:
@@ -380,18 +441,28 @@ class ProofChallenge(models.Model):
             ]
         )
         for challenge in expired:
+            reached = challenge._has_reached_contact()
             challenge.state = "expired"
             challenge._withdraw_deliveries()
-            challenge._notify_record("_on_confirmation_expired")
+            # a contact nobody reached did not fail to answer
+            if reached:
+                challenge._notify_record("_on_confirmation_expired")
         due = challenges.search(
             [
                 ("kind", "=", "confirm"),
                 ("state", "=", "issued"),
                 ("date_remind", "<=", now),
+                ("date_expire", ">", now),
             ]
         )
-        due.date_remind = False
-        due._deliver(reminder=True)
+        for challenge in due:
+            challenge.date_remind = False
+            with _guarded(challenge, "reminder"):
+                challenge._deliver(reminder=True)
+
+    def _has_reached_contact(self) -> bool:
+        self.check_singleton()
+        return any(delivery.state != "failed" for delivery in self.delivery_ids)
 
     def _get_client_params(self, token: str) -> dict[str, Any]:
         self.check_singleton()
@@ -540,13 +611,36 @@ class ProofChallenge(models.Model):
 
     @api.autovacuum
     def _gc_challenges(self) -> tuple[int, bool]:
-        # a confirmation stays: its record reads its answer from it
+        # a confirmation stays: its record reads its state from it
         stale = self.search(
             [
                 ("kind", "=", "submit"),
+                # a redeemed one stays: a record may read its answer from it
+                ("state", "!=", "redeemed"),
                 ("date_expire", "<", fields.Datetime.now() - CHALLENGE_RETENTION),
             ],
             limit=GC_UNLINK_LIMIT,
         )
         stale.unlink()
         return len(stale), len(stale) == GC_UNLINK_LIMIT
+
+
+@contextmanager
+def _guarded(challenge, step):
+    """Run what follows a proof's own work in a savepoint of its own: when it
+    fails, what the proof recorded stands and the failure is logged. A conflict
+    with a concurrent transaction is not the step's failure: it is raised, for
+    the request to be retried."""
+    try:
+        with challenge.env.cr.savepoint():
+            yield
+    except ConcurrencyError, psycopg.errors.OperationalError:
+        raise
+    except Exception:
+        _logger.exception(
+            "proof: the %s of challenge %s on %s,%s failed; the proof stands",
+            step,
+            challenge.id,
+            challenge.res_model,
+            challenge.res_id,
+        )

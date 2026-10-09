@@ -75,10 +75,14 @@ msgid "Email Confirmation"
 msgstr "Confirmación por correo"
 
 #. module: mail_proof
-#: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
 #: model_terms:ir.ui.view,arch_db:mail_proof.email_confirm_body
 msgid "Hello"
 msgstr "Hola"
+
+#. module: mail_proof
+#: model_terms:ir.ui.view,arch_db:mail_proof.email_code_body
+msgid "Hello,"
+msgstr "Hola,"
 
 #. module: mail_proof
 #: model:ir.model.fields,field_description:mail_proof.field_proof_method__id

@@ -5,7 +5,7 @@
         <field
             name="name">Privilege: a user proves who they are for an act they vouch for</field>
         <field
-            name="comment">A user asked to vouch for a record (an approval, a handover) receives a one-time challenge and, once their proof is accepted, the evidence row that records it. Nobody holds this privilege as a member: the proof module takes it for the one challenge and the one evidence row, and the user reads back only their own evidence.</field>
+            name="comment">A user asked to vouch for a record (an approval, a handover) receives a one-time challenge and, once their proof is accepted, the evidence row that records it. A contact asked to confirm a record receives its messages and answers them from outside, as no user of ours. Nobody holds this privilege as a member: the proof module takes it for the challenges, their messages and evidence it records, for the methods it reads, and for the follow-ups of its own cron, and a user reads back only their own evidence.</field>
         <field name="is_privilege" eval="True" />
     </record>
 

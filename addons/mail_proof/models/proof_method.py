@@ -2,6 +2,8 @@ from urllib.parse import urlencode
 
 from odoo import fields, models
 
+from odoo.addons.proof.models.proof_challenge import LINK_GRACE
+
 
 class ProofMethod(models.Model):
     _inherit = "proof.method"
@@ -46,7 +48,7 @@ class ProofMethod(models.Model):
             partner=signer,
             role="comment",
             cause="request",
-            date_to=challenge.date_expire,
+            date_to=challenge.date_expire + LINK_GRACE,
         )
         url = (
             f"{challenge.get_base_url()}/proof/answer/{delivery.id}"
@@ -61,7 +63,7 @@ class ProofMethod(models.Model):
                 {
                     "url": url,
                     "signer": signer,
-                    "company": challenge.user_id.company_id,
+                    "company": challenge.company_id or challenge.user_id.company_id,
                     "summary": challenge.summary or [],
                     "reminder": reminder,
                     "date_expire": challenge.date_expire,
@@ -129,7 +131,9 @@ class ProofMethod(models.Model):
                 {
                     "subject": subject,
                     "email_from": (
-                        challenge.user_id.company_id or self.env.company
+                        challenge.company_id
+                        or challenge.user_id.company_id
+                        or self.env.company
                     ).email_formatted
                     or challenge.user_id.email_formatted,
                     "email_to": signer.email_formatted,

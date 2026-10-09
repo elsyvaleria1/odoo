@@ -2,6 +2,7 @@ from datetime import timedelta
 from typing import Any
 
 from odoo import api, fields, models
+from odoo.db.schema import column_exists, create_column, table_exists
 from odoo.exceptions import UserError
 
 from .proof_challenge import CONFIRMATION_LIFETIME
@@ -61,6 +62,19 @@ class MixinProofConfirmation(models.AbstractModel):
         help="The channel the contact answered on, masked.",
     )
 
+    def _auto_init(self):
+        # an existing table gets the columns empty, every row as never asked:
+        # computing them at install would read the challenges of every row
+        if table_exists(self.env.cr, self._table):
+            for name, column_type in (
+                ("confirmation_state", "varchar"),
+                ("confirmation_date", "timestamp"),
+                ("confirmation_sent_to", "varchar"),
+            ):
+                if not column_exists(self.env.cr, self._table, name):
+                    create_column(self.env.cr, self._table, name, column_type)
+        return super()._auto_init()
+
     @api.depends(
         "confirmation_challenge_ids.state",
         "confirmation_challenge_ids.delivery_ids.state",
@@ -82,7 +96,8 @@ class MixinProofConfirmation(models.AbstractModel):
         if challenge.state == "redeemed":
             return challenge.verdict or "confirmed"
         if challenge.state == "expired":
-            return "expired"
+            # an unreachable contact did not fail to answer
+            return "expired" if challenge._has_reached_contact() else "unreachable"
         if any(delivery.state == "sent" for delivery in challenge.delivery_ids):
             return "pending"
         return "unreachable"
@@ -134,6 +149,12 @@ class MixinProofConfirmation(models.AbstractModel):
             for method in self.env["proof.method"].search([("mode", "=", "submit")])
         )
 
+    def _is_confirmation_askable(self) -> bool:
+        """Whether the record, as it stands, is one its contact confirms: a
+        cancelled or draft one is not."""
+        self.check_singleton()
+        return True
+
     def _get_confirmation_partner(self) -> models.BaseModel:
         """The contact who confirms the record; none, and nobody is asked."""
         return self.env["res.partner"]
@@ -163,14 +184,22 @@ class MixinProofConfirmation(models.AbstractModel):
     def _ask_confirmation(self) -> None:
         """Ask each record's contact to confirm it, taking back what they were
         asked before."""
-        self._withdraw_confirmation()
+        # a contact who already confirmed the record as it stands is not asked
+        # again: a code given before posting, a re-post of the same figures
+        records = self.filtered(
+            lambda record: (
+                record._is_confirmation_askable()
+                and not record._is_confirmation_current()
+            )
+        )
+        records._withdraw_confirmation()
         challenges = self.env["proof.challenge"]
-        for record in self:
+        for record in records:
             partner = record._get_confirmation_partner()
             if not partner:
                 continue
             record = record.with_context(lang=partner.lang or record.env.lang)
-            challenges._issue_confirmation(
+            challenge = challenges._issue_confirmation(
                 record,
                 record._get_confirmation_purpose(),
                 record._get_confirmation_facts(),
@@ -179,6 +208,7 @@ class MixinProofConfirmation(models.AbstractModel):
                 lifetime=record._get_confirmation_lifetime(),
                 remind_after=record._get_confirmation_reminder_delay(),
             )
+            record._on_confirmation_asked(challenge)
 
     def _withdraw_confirmation(self) -> None:
         if not self:
@@ -211,7 +241,13 @@ class MixinProofConfirmation(models.AbstractModel):
         dialog needs to take it."""
         self.check_singleton()
         partner = self._get_confirmation_partner()
-        if not partner or self.confirmation_state == "confirmed":
+        # a dispute is reviewed, not overridden by a code at the counter
+        if (
+            not partner
+            or not self._is_confirmation_askable()
+            or self.confirmation_state == "disputed"
+            or self._is_confirmation_current()
+        ):
             raise UserError(
                 self.env._(
                     "%s does not wait for its contact to confirm it.",
@@ -241,6 +277,10 @@ class MixinProofConfirmation(models.AbstractModel):
         )
         self._withdraw_confirmation()
         self._on_confirmation_answered(evidence)
+
+    def _on_confirmation_asked(self, challenge: models.BaseModel) -> None:
+        """The contact was just asked: ``self._get_confirmation_channels()``
+        says where, empty when no channel reached them."""
 
     def _on_confirmation_answered(self, evidence: models.BaseModel) -> None:
         """The contact answered: ``evidence.verdict`` says how."""

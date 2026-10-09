@@ -1,9 +1,10 @@
 import re
 from datetime import timedelta
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 from odoo import fields
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import HttpCase, TransactionCase, freeze_time, new_test_user, tagged
 
 from odoo.addons.mail.tests.common import MockEmail
@@ -132,6 +133,131 @@ class TestEmailConfirmProof(EmailConfirmCase, TransactionCase):
         self.assertEqual(
             challenge.delivery_ids.mapped("state"), ["withdrawn", "withdrawn"]
         )
+
+    def _hook(self, name, **kwargs):
+        return patch.object(type(self.env["res.partner"]), name, create=True, **kwargs)
+
+    def test_a_failing_follow_up_does_not_take_the_answer_back(self):
+        challenge, _mail = self._ask()
+
+        with self._hook(
+            "_on_confirmation_answered", side_effect=AccessError("no rights")
+        ) as hook:
+            challenge.delivery_ids._answer("disputed")
+
+        self.assertTrue(hook.called)
+        self.assertEqual((challenge.state, challenge.verdict), ("redeemed", "disputed"))
+
+    def test_one_failing_follow_up_does_not_stall_the_others(self):
+        first, _mail = self._ask()
+        other_subject = self.env["res.partner"].create({"name": "Collection 8"})
+        with self.mock_mail_gateway():
+            second = (
+                self.env["proof.challenge"]
+                .with_user(self.collector)
+                ._issue_confirmation(
+                    other_subject, "test.collection", self.facts, self.customer
+                )
+                .sudo()
+            )
+
+        with (
+            freeze_time(fields.Datetime.now() + timedelta(days=4)),
+            self._hook(
+                "_on_confirmation_expired", side_effect=AccessError("no rights")
+            ),
+        ):
+            self.env["proof.challenge"]._cron_follow_up_confirmations()
+
+        self.assertEqual((first.state, second.state), ("expired", "expired"))
+
+    def test_a_contact_nobody_reached_is_not_reported_as_silent(self):
+        challenge, _mails = self._ask(
+            partner=self.env["res.partner"].create({"name": "No Mail"})
+        )
+
+        with (
+            freeze_time(fields.Datetime.now() + timedelta(days=4)),
+            self._hook("_on_confirmation_expired") as hook,
+        ):
+            self.env["proof.challenge"]._cron_follow_up_confirmations()
+
+        self.assertEqual(challenge.state, "expired")
+        self.assertFalse(hook.called)
+
+    def test_a_code_given_at_the_counter_outlives_the_cleanup(self):
+        challenges = self.env["proof.challenge"].with_user(self.collector)
+        method = self.env.ref("mail_proof.proof_method_email_code")
+        with self.mock_mail_gateway():
+            params = challenges._issue(
+                self.subject,
+                "test.collection",
+                self.facts,
+                method,
+                partner=self.customer,
+            )
+            code = re.search(r">\s*(\d{6})\s*<", self._new_mails.body_html).group(1)
+        challenges._redeem(
+            params["token"],
+            "email_code",
+            {"code": code},
+            self.subject,
+            "test.collection",
+            self.facts,
+            verdict="confirmed",
+        )
+
+        with freeze_time(fields.Datetime.now() + timedelta(days=3)):
+            self.env["proof.challenge"]._gc_challenges()
+
+        kept = (
+            self.env["proof.challenge"]
+            .sudo()
+            .search([("res_id", "=", self.subject.id), ("kind", "=", "submit")])
+        )
+        self.assertEqual(kept.state, "redeemed")
+
+    def test_a_contact_is_sent_only_so_many_codes_in_a_row(self):
+        challenges = self.env["proof.challenge"].with_user(self.collector)
+        method = self.env.ref("mail_proof.proof_method_email_code")
+        with self.mock_mail_gateway():
+            for _code in range(3):
+                challenges._issue(
+                    self.subject,
+                    "test.collection",
+                    self.facts,
+                    method,
+                    partner=self.customer,
+                )
+            with self.assertRaisesRegex(UserError, "just sent several codes"):
+                challenges._issue(
+                    self.subject,
+                    "test.collection",
+                    self.facts,
+                    method,
+                    partner=self.customer,
+                )
+
+    def test_the_contact_is_asked_in_the_name_of_the_record_company(self):
+        other = self.env["res.company"].create({"name": "Agromarin Sur"})
+        record = self.env["res.partner"].create(
+            {"name": "Collection 9", "company_id": other.id}
+        )
+        self.collector.company_ids |= other
+
+        with self.mock_mail_gateway():
+            challenge = (
+                self.env["proof.challenge"]
+                .with_user(self.collector)
+                ._issue_confirmation(
+                    record, "test.collection", self.facts, self.customer
+                )
+                .sudo()
+            )
+            mail = self._new_mails
+
+        self.assertEqual(challenge.company_id, other)
+        self.assertIn("Agromarin Sur", mail.body_html)
 
 
 @tagged("post_install", "-at_install")

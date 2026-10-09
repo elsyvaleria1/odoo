@@ -14,6 +14,8 @@ CODE_SCOPE = register_signed_scope(
 )
 CODE_DIGITS = 6
 CODE_ATTEMPTS = 5
+# the advisory lock space of a challenge's code attempts
+CODE_LOCK = 20251009
 
 STRENGTHS = [
     ("cryptographic", "Signed by the user's own key"),
@@ -129,15 +131,15 @@ class ProofMethod(models.Model):
     def _check_code(
         self, challenge: models.BaseModel, payload: dict[str, Any]
     ) -> dict[str, Any]:
-        if challenge.code_attempts >= CODE_ATTEMPTS:
+        code = payload.get("code")
+        right = bool(challenge.code_hash) and is_hmac_valid(
+            self.env, CODE_SCOPE, (challenge.id, code), challenge.code_hash
+        )
+        if not self._take_code_attempt(challenge, wrong=not right):
             raise UserError(
                 self.env._("Too many wrong codes. Start again to send a new one.")
             )
-        code = payload.get("code")
-        if not challenge.code_hash or not is_hmac_valid(
-            self.env, CODE_SCOPE, (challenge.id, code), challenge.code_hash
-        ):
-            self._count_wrong_code(challenge)
+        if not right:
             raise UserError(self.env._("This code is not the one we sent."))
         signer = challenge.partner_id or challenge.user_id.partner_id
         return {
@@ -146,20 +148,41 @@ class ProofMethod(models.Model):
             "signer": signer.id,
         }
 
-    def _count_wrong_code(self, challenge: models.BaseModel) -> None:
-        # in its own transaction, since the refusal rolls this request back;
-        # only a wrong code counts, so the request that redeems the challenge
-        # is never the one that also moved its counter
+    def _take_code_attempt(self, challenge: models.BaseModel, wrong: bool) -> bool:
+        """Whether the challenge still takes a code, counting a wrong one.
+
+        In a transaction of its own, since the refusal rolls this request back,
+        and under a lock of the challenge's, so that parallel guesses take turns
+        instead of all reading the count before any of them raised it. A right
+        code is not counted: the request that redeems the challenge then never
+        conflicts with the counter it read."""
         with self.env.registry.cursor() as cr:
             cr.execute(
+                SQL("SELECT pg_advisory_xact_lock(%s, %s)", CODE_LOCK, challenge.id)
+            )
+            cr.execute(
                 SQL(
-                    "UPDATE proof_challenge "
-                    "SET code_attempts = COALESCE(code_attempts, 0) + 1 "
+                    "SELECT COALESCE(code_attempts, 0) FROM proof_challenge "
                     "WHERE id = %s",
                     challenge.id,
                 )
             )
+            row = cr.fetchone()
+            takes = bool(row) and row[0] < CODE_ATTEMPTS
+            if takes and wrong:
+                cr.execute(
+                    SQL(
+                        "UPDATE proof_challenge "
+                        "SET code_attempts = COALESCE(code_attempts, 0) + 1 "
+                        "WHERE id = %s",
+                        challenge.id,
+                    )
+                )
         challenge.invalidate_recordset(["code_attempts"])
+        return takes
+
+    def _count_wrong_code(self, challenge: models.BaseModel) -> None:
+        self._take_code_attempt(challenge, wrong=True)
 
     def _accept_proof(
         self, challenge: models.BaseModel, payload: dict[str, Any]

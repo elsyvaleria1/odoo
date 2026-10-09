@@ -25,6 +25,16 @@ msgstr ""
 
 #. module: proof
 #. odoo-python
+#: code:addons/proof/models/proof_challenge.py:0
+msgid ""
+"%(contact)s was just sent several codes. Use the last one, or wait a few "
+"minutes before asking for another."
+msgstr ""
+"A %(contact)s se le acaban de enviar varios códigos. Use el último, o espere"
+" unos minutos antes de pedir otro."
+
+#. module: proof
+#. odoo-python
 #: code:addons/proof/models/mixin_proof_confirmation.py:0
 msgid "%s does not wait for its contact to confirm it."
 msgstr "%s no espera la confirmación de su contacto."
@@ -44,15 +54,20 @@ msgstr "El token de un desafío de comprobación es único."
 msgid ""
 "A user asked to vouch for a record (an approval, a handover) receives a one-"
 "time challenge and, once their proof is accepted, the evidence row that "
-"records it. Nobody holds this privilege as a member: the proof module takes "
-"it for the one challenge and the one evidence row, and the user reads back "
-"only their own evidence."
+"records it. A contact asked to confirm a record receives its messages and "
+"answers them from outside, as no user of ours. Nobody holds this privilege "
+"as a member: the proof module takes it for the challenges, their messages "
+"and evidence it records, for the methods it reads, and for the follow-ups of"
+" its own cron, and a user reads back only their own evidence."
 msgstr ""
-"Un usuario al que se le pide responder por un registro (una aprobación, una "
-"entrega) recibe un desafío de un solo uso y, cuando se acepta su "
-"comprobación, la evidencia que la registra. Nadie tiene este privilegio como"
-" miembro: el módulo de comprobación lo toma solo para ese desafío y esa "
-"evidencia, y el usuario solo puede leer su propia evidencia."
+"Un usuario al que se le pide respaldar un registro (una aprobación, una "
+"entrega) recibe un desafío de un solo uso y, una vez aceptada su "
+"comprobación, la fila de evidencia que lo registra. Un contacto al que se le"
+" pide confirmar un registro recibe sus mensajes y los responde desde fuera, "
+"sin ser usuario nuestro. Nadie tiene este privilegio como miembro: el módulo"
+" de comprobación lo toma para los desafíos, sus mensajes y la evidencia que "
+"registra, para los métodos que lee y para los seguimientos de su propia "
+"tarea programada, y un usuario solo vuelve a leer su propia evidencia."
 
 #. module: proof
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
@@ -162,6 +177,11 @@ msgid "Code delivered to the signer's own channel"
 msgstr "Código entregado al canal propio del firmante"
 
 #. module: proof
+#: model:ir.model.fields,field_description:proof.field_proof_challenge__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: proof
 #. odoo-javascript
 #: code:addons/proof/static/src/password_proof/password_proof.xml:0
 msgid "Confirm"
@@ -194,6 +214,7 @@ msgstr "Solicitudes de confirmación"
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__confirmed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__confirmed
+#: model:ir.model.fields.selection,name:proof.selection__stock_picking__confirmation_state__confirmed
 msgid "Confirmed"
 msgstr "Confirmado"
 
@@ -212,6 +233,7 @@ msgstr "Confirmación del contacto"
 #. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__unreachable
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__unreachable
+#: model:ir.model.fields.selection,name:proof.selection__stock_picking__confirmation_state__unreachable
 msgid "Contact Unreachable"
 msgstr "Contacto ilocalizable"
 
@@ -266,6 +288,7 @@ msgstr "Nombre para mostrar"
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_challenge__verdict__disputed
 #: model:ir.model.fields.selection,name:proof.selection__proof_evidence__verdict__disputed
+#: model:ir.model.fields.selection,name:proof.selection__stock_picking__confirmation_state__disputed
 msgid "Disputed"
 msgstr "Disputado"
 
@@ -415,6 +438,7 @@ msgstr ""
 #. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__expired
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__expired
+#: model:ir.model.fields.selection,name:proof.selection__stock_picking__confirmation_state__expired
 msgid "Not Answered"
 msgstr "Sin respuesta"
 
@@ -459,6 +483,14 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:proof.view_proof_evidence_form
 msgid "Proof"
 msgstr "Comprobación"
+
+#. module: proof
+#. odoo-python
+#: code:addons/proof/models/proof_evidence.py:0
+msgid "Proof %(position)s claims a hash version this database does not know."
+msgstr ""
+"La comprobación %(position)s dice tener una versión de hash que esta base de"
+" datos no conoce."
 
 #. module: proof
 #. odoo-python
@@ -678,6 +710,15 @@ msgstr ""
 "registro que lo envía, al que responde una respuesta."
 
 #. module: proof
+#: model:ir.model.fields,help:proof.field_proof_challenge__company_id
+msgid ""
+"The company the record belongs to, which its contact is asked in the name "
+"of."
+msgstr ""
+"La empresa a la que pertenece el registro, en cuyo nombre se le pregunta a "
+"su contacto."
+
+#. module: proof
 #: model:ir.model.fields,help:proof.field_proof_challenge__partner_id
 #: model:ir.model.fields,help:proof.field_proof_delivery__partner_id
 msgid "The contact asked to prove it is them, when it is not the user."
@@ -827,6 +868,7 @@ msgstr "Respaldado"
 #. module: proof
 #: model:ir.model.fields.selection,name:proof.selection__account_payment__confirmation_state__pending
 #: model:ir.model.fields.selection,name:proof.selection__mixin_proof_confirmation__confirmation_state__pending
+#: model:ir.model.fields.selection,name:proof.selection__stock_picking__confirmation_state__pending
 msgid "Waiting for the Contact"
 msgstr "Esperando al contacto"
 
@@ -917,6 +959,19 @@ msgstr "comprueba que es quien dice ser, y usted captura su respuesta."
 #: model_terms:ir.ui.view,arch_db:proof.proof_answer_page
 msgid "to confirm the following."
 msgstr "confirmar lo siguiente."
+
+#~ msgid ""
+#~ "A user asked to vouch for a record (an approval, a handover) receives a one-"
+#~ "time challenge and, once their proof is accepted, the evidence row that "
+#~ "records it. Nobody holds this privilege as a member: the proof module takes "
+#~ "it for the one challenge and the one evidence row, and the user reads back "
+#~ "only their own evidence."
+#~ msgstr ""
+#~ "Un usuario al que se le pide responder por un registro (una aprobación, una "
+#~ "entrega) recibe un desafío de un solo uso y, cuando se acepta su "
+#~ "comprobación, la evidencia que la registra. Nadie tiene este privilegio como"
+#~ " miembro: el módulo de comprobación lo toma solo para ese desafío y esa "
+#~ "evidencia, y el usuario solo puede leer su propia evidencia."
 
 #~ msgid "The channel's own id of the message, which an answer replies to."
 #~ msgstr ""
