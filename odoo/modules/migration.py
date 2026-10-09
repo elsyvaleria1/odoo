@@ -14,7 +14,7 @@ from odoo.db import schema
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
 from odoo.libs.parse_version import parse_version
-from odoo.modules.module import Manifest, load_script
+from odoo.modules.module import Manifest, adapt_version, load_script
 from odoo.tools.files import file_path
 
 if typing.TYPE_CHECKING:
@@ -151,6 +151,17 @@ def _read_installed_versions(cr: Cursor) -> list[tuple[str, str | None]]:
             " WHERE state IN ('installed', 'to upgrade') ORDER BY name"
         )
     return cr.fetchall()
+
+
+def get_base_ahead_of_database(cr: Cursor) -> tuple[str, str] | None:
+    installed = dict(_read_installed_versions(cr)).get("base")
+    manifest = Manifest.for_addon("base", display_warning=False)
+    if not installed or not manifest or not manifest.get("version"):
+        return None
+    code = adapt_version(manifest["version"])
+    if parse_version(code) > parse_version(installed):
+        return installed, code
+    return None
 
 
 def get_modules_older_than_upgradable(cr: Cursor) -> list[ModuleOlderThanUpgradable]:

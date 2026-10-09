@@ -632,6 +632,20 @@ Refused: upgrade it with a checkout that still ships the deleted migrations
 (the archived refs in each repository, `refs/archive/pre-squash-*`), up to at
 least the versions named, then with this one.
 
+**An update run upgrades base when base's code is ahead of the database**
+(`_ModuleLoader.upgrade_base_ahead_of_database`, right after that refusal).
+Base's pre-migrations rename and fold modules (`rename_module`, `fold_module`)
+before the graph is built; a `-u point_of_sale` that skipped them installed the
+renamed module's new dependency beside the old module row, and loaded its views
+against parent views the run did not update (2026-10-08: base 1.148's
+`google_address_autocomplete` rename, `ParseError` in `address_autocomplete`).
+Upgrading base upgrades the installed modules as `-u base` does (those whose
+checksum is unchanged are skipped, `skip_unchanged_modules`), and the run says so
+with the two versions. Every update run takes this step: `-u`, `-i`, the Apps
+install, upgrade and uninstall buttons (which then upgrade inside the request),
+and a start resuming a partially updated database; with `--test-enable`, every
+module the cascade upgrades runs its tests unless `--test-tags` narrows them.
+
 Raising the declaration is part of deleting a migration: delete a directory,
 raise the module's `oldest_upgradable_version` to at least its version in the
 same change. `test_lint`'s manifest gate (`lint_manifest_value`, a hard zero)

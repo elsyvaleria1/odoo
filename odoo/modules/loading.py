@@ -29,6 +29,7 @@ from . import db as modules_db
 from .migration import (
     DatabaseOlderThanUpgradableError,
     MigrationManager,
+    get_base_ahead_of_database,
     get_modules_older_than_upgradable,
     read_pending_end_migrations,
 )
@@ -1567,6 +1568,7 @@ class _ModuleLoader:
                 modules_db.initialize(cr)
         else:
             self.refuse_database_older_than_upgradable()
+            self.upgrade_base_ahead_of_database()
             if "base" in self.reinit_modules:
                 self.registry.loading.reinit_modules.add("base")
 
@@ -1600,6 +1602,21 @@ class _ModuleLoader:
             return
         if too_old := get_modules_older_than_upgradable(self.cr):
             raise DatabaseOlderThanUpgradableError(self.cr.dbname, too_old)
+
+    def upgrade_base_ahead_of_database(self) -> None:
+        # base's pre-migrations rename and fold modules before the graph is
+        # built; a run without them installs a renamed module beside its old row
+        if not self.update_module or "base" in self.upgrade_modules:
+            return
+        if ahead := get_base_ahead_of_database(self.cr):
+            installed, code = ahead
+            _logger.warning(
+                "base's code is ahead of the database (%s < %s): upgrading base, "
+                "as -u base does, so that its migrations run first",
+                installed,
+                code,
+            )
+            self.upgrade_modules = {*self.upgrade_modules, "base"}
 
     def run_pre_upgrade_scripts(self) -> None:
         if not (self.update_module and self.upgrade_modules):
