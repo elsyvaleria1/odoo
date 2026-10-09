@@ -1046,8 +1046,7 @@ msgid "Archived"
 msgstr "보관됨"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "이 댓글을 정말 삭제하시겠습니까?"
 
@@ -3289,14 +3288,14 @@ msgid "Sorry, we could not find any results"
 msgstr "죄송합니다, 내용을 찾을 수 없습니다"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr "자신의 게시물은 베스트 글로 추천할 수 없습니다."
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr "죄송합니다. 자신의 게시물에 투표할 수 없습니다"
 

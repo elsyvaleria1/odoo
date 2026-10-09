@@ -560,6 +560,11 @@ msgstr ""
 "title=\"Warning\"/>"
 
 #. module: mass_mailing
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
+msgid "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Sent. Thanks you for your feedback!</span>"
+msgstr "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Trimis. Vă mulțumim pentru feedback!</span>"
+
+#. module: mass_mailing
 #: model_terms:ir.actions.act_window,help:mass_mailing.mailing_subscription_action_report_optout
 msgid "<i class=\"oi oi-arrow-right\"></i> Configure Opt-out Reasons"
 msgstr "<i class=\"oi oi-arrow-right\"></i> Configurează motivele de renunțare"
@@ -1335,20 +1340,6 @@ msgstr "Pagini uimitoare"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-msgid "An error occurred. Please retry later or contact us."
-msgstr ""
-"A apărut o eroare. Vă rugăm să încercați mai târziu sau să ne contactați."
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "An error occurred. Please retry later."
-msgstr "A apărut o eroare. Vă rugăm să încercați mai târziu."
-
-#. module: mass_mailing
-#. odoo-javascript
 #: code:addons/mass_mailing/static/src/builder/options/masonry_block_template_option.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_template
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_text_template
@@ -1875,7 +1866,6 @@ msgstr "Alegeți această <b>temă</b>."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Choose your mailing subscriptions"
 msgstr "Alegeți-vă abonamentele de corespondență"
@@ -2554,8 +2544,7 @@ msgid "Email Thread"
 msgstr "Fir E-mail"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email added to our blocklist"
 msgstr "E-mail adăugat pe lista noastră de blocare"
 
@@ -2565,8 +2554,7 @@ msgid "Email composition wizard"
 msgstr "Asistent de compunere email-uri"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email removed from our blocklist"
 msgstr "E-mail eliminat din lista noastră de blocare"
 
@@ -3799,8 +3787,7 @@ msgid "Meet our team"
 msgstr "Cunoaște echipa noastră"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Membership updated"
 msgstr "Abonament actualizat"
 
@@ -4090,7 +4077,6 @@ msgstr "Adresa de e-mail normalizată"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Not subscribed"
 msgstr "Neabonat"
@@ -4438,14 +4424,12 @@ msgstr "Text simplu"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Please let us know why you updated your subscription."
 msgstr "Vă rugăm să ne spuneți motivul pentru care ați actualizat abonamentul."
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Please let us know why you want to be in our block list."
 msgstr ""
 "Vă rugăm să ne spuneți motivul pentru care doriți să fiți pe lista noastră "
@@ -5039,12 +5023,6 @@ msgid "Sent on {{0}}"
 msgstr ""
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-msgid "Sent. Thanks you for your feedback!"
-msgstr "Trimis. Vă mulțumim pentru feedback!"
-
-#. module: mass_mailing
 #: model:ir.model.fields,help:mass_mailing.field_res_config_settings__mass_mailing_split_contact_name
 #: model_terms:ir.ui.view,arch_db:mass_mailing.res_config_settings_view_form
 msgid "Separate Mailing Contact Names into two fields"
@@ -5252,7 +5230,6 @@ msgstr ""
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Subscribed"
 msgstr "Abonat"
@@ -6002,7 +5979,6 @@ msgstr "Aveți prea multe e-mailuri, vă rugăm să încărcați un fișier."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "You may also be interested in"
 msgstr "Ați putea fi interesat și de"
@@ -6025,14 +6001,12 @@ msgstr ""
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "You will not hear from us anymore."
 msgstr "Nu veți mai primi mesaje de la noi."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid ""
 "You will not receive any news from those mailing lists you are a member of:"
@@ -6056,12 +6030,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_title
 msgid "Your Title"
 msgstr "Titlul dvs."
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "Your email is currently"
-msgstr "E-mailul dvs. este în prezent"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
@@ -6151,12 +6119,6 @@ msgstr "având"
 #: code:addons/mass_mailing/models/mailing_subscription.py:0
 msgid "id"
 msgstr "id"
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "in our block list"
-msgstr "pe lista noastră de blocare"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.ab_testing_description

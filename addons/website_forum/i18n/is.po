@@ -2976,8 +2976,8 @@ msgid "Sorry, we could not find any <b>%s</b> result <b>%s</b> %s%s%s."
 msgstr ""
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/js/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr ""
 

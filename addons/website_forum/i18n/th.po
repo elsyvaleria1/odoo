@@ -1025,8 +1025,7 @@ msgid "Archived"
 msgstr "เก็บถาวรแล้ว"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "คุณแน่ใจว่าต้องการลบความคิดเห็นนี้หรือไม่?"
 
@@ -3262,14 +3261,14 @@ msgid "Sorry, we could not find any results"
 msgstr "ขออภัย เราไม่พบผลลัพธ์ใดๆ"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr "ขออภัย คุณไม่สามารถเลือกโพสต์ของคุณเองเป็นคำตอบที่ดีที่สุดได้"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr "ขออภัย คุณไม่สามารถลงคะแนนสำหรับโพสต์ของคุณเองได้"
 

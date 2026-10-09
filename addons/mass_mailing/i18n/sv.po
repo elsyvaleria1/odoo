@@ -566,6 +566,11 @@ msgstr ""
 "title=\"Warning\"/>"
 
 #. module: mass_mailing
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
+msgid "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Sent. Thanks you for your feedback!</span>"
+msgstr "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Skickat. Tack för din feedback!</span>"
+
+#. module: mass_mailing
 #: model_terms:ir.actions.act_window,help:mass_mailing.mailing_subscription_action_report_optout
 msgid "<i class=\"oi oi-arrow-right\"></i> Configure Opt-out Reasons"
 msgstr "<i class=\"oi oi-arrow-right\"></i> Konfigurera skäl för borttagning"
@@ -1336,19 +1341,6 @@ msgstr "Fantastiska sidor"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-msgid "An error occurred. Please retry later or contact us."
-msgstr "Ett fel har uppstått. Vänligen försök igen senare eller kontakta oss."
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "An error occurred. Please retry later."
-msgstr "Ett fel har uppstått. Vänligen försök igen senare."
-
-#. module: mass_mailing
-#. odoo-javascript
 #: code:addons/mass_mailing/static/src/builder/options/masonry_block_template_option.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_template
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_text_template
@@ -1872,7 +1864,6 @@ msgstr "Välj detta <b>tema</b>."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Choose your mailing subscriptions"
 msgstr "Välj dina utskicksprenumerationer"
@@ -2550,8 +2541,7 @@ msgid "Email Thread"
 msgstr "E-posttråd"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email added to our blocklist"
 msgstr "E-post tillagd på vår blocklista"
 
@@ -2561,8 +2551,7 @@ msgid "Email composition wizard"
 msgstr "E-postredigeringsguide"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email removed from our blocklist"
 msgstr "E-post borttagen från vår blocklista"
 
@@ -3794,8 +3783,7 @@ msgid "Meet our team"
 msgstr "Träffa vårt team"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Membership updated"
 msgstr "Medlemskapet uppdaterat"
 
@@ -4084,7 +4072,6 @@ msgstr "Normaliserad e-postadress"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Not subscribed"
 msgstr "Ej prenumererad"
@@ -4430,14 +4417,12 @@ msgstr "Klartext"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Please let us know why you updated your subscription."
 msgstr "Vänligen meddela oss varför du avslutade din prenumeration."
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Please let us know why you want to be in our block list."
 msgstr "Vänligen meddela oss varför du vill vara med på vår blockeringslista."
 
@@ -5028,12 +5013,6 @@ msgid "Sent on {{0}}"
 msgstr ""
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-msgid "Sent. Thanks you for your feedback!"
-msgstr "Skickat. Tack för din feedback!"
-
-#. module: mass_mailing
 #: model:ir.model.fields,help:mass_mailing.field_res_config_settings__mass_mailing_split_contact_name
 #: model_terms:ir.ui.view,arch_db:mass_mailing.res_config_settings_view_form
 msgid "Separate Mailing Contact Names into two fields"
@@ -5241,7 +5220,6 @@ msgstr ""
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Subscribed"
 msgstr "Prenumerant"
@@ -5987,7 +5965,6 @@ msgstr "Du har för många e-postmeddelanden, vänligen ladda upp en fil."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "You may also be interested in"
 msgstr "Du kanske också är intresserad av"
@@ -6010,14 +5987,12 @@ msgstr ""
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "You will not hear from us anymore."
 msgstr "Du kommer inte att höra från oss längre."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid ""
 "You will not receive any news from those mailing lists you are a member of:"
@@ -6040,12 +6015,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_title
 msgid "Your Title"
 msgstr "Din titel"
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "Your email is currently"
-msgstr "Din e-post är för närvarande"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
@@ -6136,12 +6105,6 @@ msgstr "att ha"
 #: code:addons/mass_mailing/models/mailing_subscription.py:0
 msgid "id"
 msgstr "id"
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-msgid "in our block list"
-msgstr "i vår blocklista"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.ab_testing_description

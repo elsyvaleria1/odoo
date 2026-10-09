@@ -643,6 +643,11 @@ msgstr ""
 "label=\"Ogohlantirish\" title=\"Ogohlantirish\"/>"
 
 #. module: mass_mailing
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
+msgid "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Sent. Thanks you for your feedback!</span>"
+msgstr "<i class=\"fa-solid fa-check me-1\"/>\n                                            <span>Yuborildi. Fikr-mulohazangiz uchun tashakkur!</span>"
+
+#. module: mass_mailing
 #: model_terms:ir.actions.act_window,help:mass_mailing.mailing_subscription_action_report_optout
 #, fuzzy
 msgid "<i class=\"oi oi-arrow-right\"></i> Configure Opt-out Reasons"
@@ -1572,23 +1577,6 @@ msgstr "Ajoyib sahifalar"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-#, fuzzy
-msgid "An error occurred. Please retry later or contact us."
-msgstr ""
-"Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko‘ring yoki bizga "
-"murojaat qiling."
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-#, fuzzy
-msgid "An error occurred. Please retry later."
-msgstr "Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko‘ring."
-
-#. module: mass_mailing
-#. odoo-javascript
 #: code:addons/mass_mailing/static/src/builder/options/masonry_block_template_option.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_template
 #: model_terms:ir.ui.view,arch_db:mass_mailing.s_masonry_block_alternation_text_image_text_template
@@ -2198,7 +2186,6 @@ msgstr "Ushbu <b>mavzuni</b> tanlang."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "Choose your mailing subscriptions"
@@ -2988,9 +2975,7 @@ msgid "Email Thread"
 msgstr "Elektron pochta zanjiri"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email added to our blocklist"
 msgstr "Elektron pochta bloklash ro‘yxatiga qo‘shildi"
 
@@ -3001,9 +2986,7 @@ msgid "Email composition wizard"
 msgstr "Elektron pochta yaratish yordamchisi"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_blocklist.xml:0
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Email removed from our blocklist"
 msgstr "Elektron pochta bloklash ro‘yxatidan olib tashlandi"
 
@@ -4440,9 +4423,7 @@ msgid "Meet our team"
 msgstr "Jamoamiz bilan tanishing"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Membership updated"
 msgstr "A'zolik yangilandi"
 
@@ -4779,7 +4760,6 @@ msgstr "Standartlashtirilgan elektron pochta manzili"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "Not subscribed"
@@ -5182,16 +5162,13 @@ msgstr "Oddiy matn"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "Please let us know why you updated your subscription."
 msgstr "Iltimos, obunangizni nima uchun yangilaganingizni bizga bildiring."
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/interactions/subscribe.js:0
-#, fuzzy
+#: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 msgid "Please let us know why you want to be in our block list."
 msgstr ""
 "Bloklar ro‘yxatimizga kiritilishni istashingiz sababini bizga ma'lum qiling."
@@ -5885,13 +5862,6 @@ msgid "Sent on {{0}}"
 msgstr "{{0}} sanasida yuborildi"
 
 #. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_feedback.xml:0
-#, fuzzy
-msgid "Sent. Thanks you for your feedback!"
-msgstr "Yuborildi. Fikr-mulohazangiz uchun tashakkur!"
-
-#. module: mass_mailing
 #: model:ir.model.fields,help:mass_mailing.field_res_config_settings__mass_mailing_split_contact_name
 #: model_terms:ir.ui.view,arch_db:mass_mailing.res_config_settings_view_form
 #, fuzzy
@@ -6131,7 +6101,6 @@ msgstr "Yangiliklar ro‘yxatiga obuna bo‘ling"
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "Subscribed"
@@ -6987,7 +6956,6 @@ msgstr "Sizda juda ko‘p elektron xatlar mavjud, iltimos, faylni yuklang."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "You may also be interested in"
@@ -7012,7 +6980,6 @@ msgstr ""
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid "You will not hear from us anymore."
@@ -7020,7 +6987,6 @@ msgstr "Bundan buyon bizdan xabar olmaysiz."
 
 #. module: mass_mailing
 #. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
 #, fuzzy
 msgid ""
@@ -7047,13 +7013,6 @@ msgstr "Ajoyib maqola sarlavhangiz"
 #, fuzzy
 msgid "Your Title"
 msgstr "Sarlavhangiz"
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-#, fuzzy
-msgid "Your email is currently"
-msgstr "Elektron pochtangiz hozirda"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.unsubscribe_form
@@ -7157,13 +7116,6 @@ msgstr "ega bo‘lgan"
 #, fuzzy
 msgid "id"
 msgstr "id"
-
-#. module: mass_mailing
-#. odoo-javascript
-#: code:addons/mass_mailing/static/src/xml/mailing_portal_subscription_form.xml:0
-#, fuzzy
-msgid "in our block list"
-msgstr "bizning bloklash ro‘yxatimizda"
 
 #. module: mass_mailing
 #: model_terms:ir.ui.view,arch_db:mass_mailing.ab_testing_description

@@ -1076,8 +1076,7 @@ msgid "Archived"
 msgstr "Archiviert"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "Sind Sie sicher, dass Sie diesen Kommentar löschen möchten?"
 
@@ -3345,16 +3344,16 @@ msgid "Sorry, we could not find any results"
 msgstr "Es tut uns leid, wir konnten keine Ergebnisse finden"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr ""
 "Es tut uns leid, Sie können Ihre eigenen Beiträge nicht als beste Antwort "
 "auswählen"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr ""
 "Es tut uns leid, Sie dürfen nicht über Ihren eigenen Beiträge abstimmen"

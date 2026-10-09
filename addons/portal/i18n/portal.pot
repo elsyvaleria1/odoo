@@ -1243,12 +1243,6 @@ msgid "The %(field_name)s is managed on your main account address."
 msgstr ""
 
 #. module: portal
-#. odoo-javascript
-#: code:addons/portal/static/src/interactions/address_card.js:0
-msgid "The address could not be removed."
-msgstr ""
-
-#. module: portal
 #. odoo-python
 #: code:addons/portal/controllers/portal.py:0
 msgid "The attachment %s cannot be removed because it is linked to a message."

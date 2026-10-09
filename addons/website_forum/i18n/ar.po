@@ -1043,8 +1043,7 @@ msgid "Archived"
 msgstr "مؤرشف"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "هل أنت متأكد من أنك ترغب في حذف هذا التعليق؟"
 
@@ -3285,14 +3284,14 @@ msgid "Sorry, we could not find any results"
 msgstr "عذراً، لم نتمكن من العثور على أي نتائج"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr "عذراً، لا يمكنك تحديد منشورك الخاص كأفضل إجابة"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr "عذراً، لا يمكنك التصويت لمنشوراتك الخاصة"
 

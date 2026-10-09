@@ -1061,8 +1061,7 @@ msgid "Archived"
 msgstr "Diarsipkan"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "Apakah Anda yakin ingin menghapus komentar ini?"
 
@@ -3318,15 +3317,15 @@ msgid "Sorry, we could not find any results"
 msgstr "Maaf, kami tidak dapat menemukan hasil apapun"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr ""
 "Maaf, Anda tidak dapat memilih post Anda sendiri sebagai jawaban terbai"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr "Maaf, Anda tidak dapat voting untuk postingan Anda sendiri"
 

@@ -1050,8 +1050,7 @@ msgid "Archived"
 msgstr "بایگانی شده"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#: model_terms:ir.ui.view,arch_db:website_forum.post_comment
 msgid "Are you sure you want to delete this comment?"
 msgstr "آیا مطمئن هستید که می خواهید این نظر را حذف کنید؟"
 
@@ -3296,15 +3295,15 @@ msgid "Sorry, we could not find any results"
 msgstr "متأسفیم، نتوانستیم هیچ نتیجه‌ای پیدا کنیم"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot select your own posts as best answer"
 msgstr ""
 "متاسفیم، شما نمی‌توانید پست‌های خودتان را به عنوان بهترین پاسخ انتخاب کنید"
 
 #. module: website_forum
-#. odoo-javascript
-#: code:addons/website_forum/static/src/interactions/website_forum.js:0
+#. odoo-python
+#: code:addons/website_forum/controllers/website_forum.py:0
 msgid "Sorry, you cannot vote for your own posts"
 msgstr "با عرض پوزش، شما نمی توانید به پست های خود رای دهید"
 
