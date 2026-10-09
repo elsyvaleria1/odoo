@@ -1,5 +1,4 @@
 import time
-from collections import deque
 from unittest.mock import patch
 
 from odoo.libs.json import dumps as json_dumps
@@ -29,11 +28,10 @@ class TestRateLimiterUnit(BaseCase):
         ws = Websocket.__new__(Websocket)
         ws._clock = clock
         ws.RL_DELAY = self.DELAY
+        ws.RL_BURST = self.BURST
         ws.RL_CONTROL_FACTOR = Websocket.RL_CONTROL_FACTOR
-        ws._incoming_frame_timestamps = deque(maxlen=self.BURST)
-        ws._incoming_control_frame_timestamps = deque(
-            maxlen=self.BURST * Websocket.RL_CONTROL_FACTOR
-        )
+        ws._data_frames_due = 0.0
+        ws._control_frames_due = 0.0
         return ws
 
     def test_burst_is_allowed_then_blocks_within_the_window(self):
@@ -41,6 +39,16 @@ class TestRateLimiterUnit(BaseCase):
         ws = self._make_ws(lambda: now[0])
         for _ in range(self.BURST):
             ws._limit_rate(Opcode.TEXT)
+        with self.assertRaises(RateLimitExceededError):
+            ws._limit_rate(Opcode.TEXT)
+
+    def test_the_budget_refills_one_frame_per_interval(self):
+        now = [0.0]
+        ws = self._make_ws(lambda: now[0])
+        for _ in range(self.BURST):
+            ws._limit_rate(Opcode.TEXT)
+        now[0] += self.DELAY
+        ws._limit_rate(Opcode.TEXT)
         with self.assertRaises(RateLimitExceededError):
             ws._limit_rate(Opcode.TEXT)
 

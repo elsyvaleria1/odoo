@@ -362,10 +362,8 @@ class Websocket:
         self._close_sent = False
         self._close_received = False
         self._timeout_manager = TimeoutManager(clock=self._clock)
-        self._incoming_frame_timestamps = deque(maxlen=self.RL_BURST)
-        self._incoming_control_frame_timestamps = deque(
-            maxlen=self.RL_BURST * self.RL_CONTROL_FACTOR
-        )
+        self._data_frames_due = 0.0
+        self._control_frames_due = 0.0
         self._parser = FrameParser(self.MESSAGE_MAX_SIZE, self._limit_rate)
         self._fragments = None
         self._fragments_opcode = None
@@ -1002,19 +1000,24 @@ class Websocket:
             self._terminate()
 
     def _limit_rate(self, opcode) -> None:
-        if opcode in DATA_OP:
-            timestamps = self._incoming_frame_timestamps
-            delay = self.RL_DELAY
-        else:
-            timestamps = self._incoming_control_frame_timestamps
-            delay = self.RL_DELAY / self.RL_CONTROL_FACTOR
+        # GCRA: each frame is due one interval after the one before; a burst of
+        # RL_BURST may come early, and one more is refused. Two floats per
+        # connection where the last RL_BURST timestamps took two deques. The
+        # bound sits half an interval past the burst so that the sum of float
+        # intervals cannot refuse the burst's last frame.
         now = self._clock()
-        if (
-            len(timestamps) == timestamps.maxlen
-            and now - timestamps[0] < delay * timestamps.maxlen
-        ):
-            raise RateLimitExceededError
-        timestamps.append(now)
+        if opcode in DATA_OP:
+            interval = self.RL_DELAY
+            due = max(self._data_frames_due, now)
+            if due - now > (self.RL_BURST - 0.5) * interval:
+                raise RateLimitExceededError
+            self._data_frames_due = due + interval
+        else:
+            interval = self.RL_DELAY / self.RL_CONTROL_FACTOR
+            due = max(self._control_frames_due, now)
+            if due - now > (self.RL_BURST * self.RL_CONTROL_FACTOR - 0.5) * interval:
+                raise RateLimitExceededError
+            self._control_frames_due = due + interval
 
     def _trigger_lifecycle_event(self, event_type) -> None:
         if not self.__event_callbacks[event_type]:
