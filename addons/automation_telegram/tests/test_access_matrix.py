@@ -1,3 +1,4 @@
+from odoo import Command
 from odoo.tests import tagged
 
 from odoo.addons.base.tests.access_matrix import AccessMatrixCase, Cell, Persona
@@ -12,6 +13,7 @@ ANSWER = (
 class TestAutomationTelegramAccessMatrix(AccessMatrixCase):
     personas = {
         "employee_a": Persona(),
+        "employee_b": Persona(company="b"),
         "admin_a": Persona("base.group_system"),
         "public": Persona(public=True),
     }
@@ -76,6 +78,7 @@ class TestAutomationTelegramAccessMatrix(AccessMatrixCase):
                 "automation_id": rule.id,
                 "res_model": "res.partner",
                 "res_id": env.user.partner_id.id,
+                "company_ids": [Command.set(cls.companies["a"].ids)],
             }
         )
         line, next_line = env["automation.runtime.line"].create(

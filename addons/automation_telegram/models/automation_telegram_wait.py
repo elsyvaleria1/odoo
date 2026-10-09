@@ -8,6 +8,7 @@ import psycopg
 from odoo import api, fields, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import frozendict
 
 from odoo.addons.automation.models.workflow_edge import EVENT_CONDITIONS
 from odoo.addons.telegram.tools.authority import operating
@@ -61,6 +62,11 @@ class AutomationTelegramWait(models.Model):
     """
 
     _name = "automation.telegram.wait"
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("line_id.runtime_id.company_ids", shared=False),
+        }
+    )
     _description = "Workflow Question on Telegram"
     _order = "id desc"
 
