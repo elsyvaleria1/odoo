@@ -28,6 +28,12 @@ _logger = get_payment_logger(__name__)
 class PaymentTransaction(models.Model):
     _inherit = "payment.transaction"
 
+    razorpay_order_id = fields.Char(
+        string="Razorpay Order ID",
+        readonly=True,
+        copy=False,
+    )
+
     @api.model
     def _receiver_for_razorpay_return(self, **path_args) -> tuple:
         data = request.get_http_params()
@@ -178,7 +184,22 @@ class PaymentTransaction(models.Model):
             order_data = self._send_api_request("POST", "orders", json=payload)
         except ValidationError as e:
             self._set_error(str(e))
+        else:
+            self.razorpay_order_id = order_data.get("id")
         return order_data
+
+    def _is_razorpay_payment_of_own_order(self, payment_data) -> bool:
+        """Whether a payment entity was made on the order created for this transaction.
+
+        Its `description`, which the transaction is found by, is the customer's to set in the
+        checkout options; the order is created by Odoo, for the transaction's amount. A
+        transaction created before the order was kept has none to compare.
+        """
+        self.check_singleton()
+        return (
+            not self.razorpay_order_id
+            or payment_data.get("order_id") == self.razorpay_order_id
+        )
 
     def _razorpay_prepare_order_payload(self, customer_id=None):
         """Prepare the payload for the order request based on the transaction values.
@@ -403,6 +424,18 @@ class PaymentTransaction(models.Model):
             _logger.warning("Received data with missing reference.")
             return self
         tx = self._search_by_notified_value("razorpay", field_name, value)
+        if (
+            len(tx) == 1
+            and payment_data.get("entity_type", "payment") == "payment"
+            and not tx._is_razorpay_payment_of_own_order(payment_data)
+        ):
+            _logger.warning(
+                "Payment %s of order %s is not of the order of transaction %s.",
+                payment_data.get("id"),
+                payment_data.get("order_id"),
+                tx.reference,
+            )
+            return self.browse()
         if tx and field_name == "provider_reference":
             # The refund was initiated from Razorpay: its refund transaction, created by its first
             # webhook, is found by the refund id, else created with a new reference.

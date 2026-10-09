@@ -284,3 +284,70 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(tx.state, "draft")
+
+    def test_the_order_created_for_a_transaction_is_kept_on_it(self):
+        tx = self._create_transaction("redirect")
+        with patch(
+            "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
+            return_value={"id": "order_created"},
+        ):
+            tx._razorpay_create_order()
+        self.assertEqual(tx.razorpay_order_id, "order_created")
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_return_with_the_payment_of_another_order_is_refused(self):
+        tx = self._create_transaction("redirect")
+        tx.razorpay_order_id = "order_of_the_transaction"
+        # Signed by Razorpay and described as the transaction: the description
+        # is the customer's to set in the checkout options.
+        response = self._return_from_checkout(
+            tx, self._get_captured_payment_entity(tx, tx.reference)
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(tx.state, "draft")
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_return_with_the_payment_of_its_order_confirms_the_transaction(self):
+        tx = self._create_transaction("redirect")
+        tx.razorpay_order_id = self.order_id
+        response = self._return_from_checkout(
+            tx, self._get_captured_payment_entity(tx, tx.reference)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(tx.state, "done")
+
+    def _send_signed_webhook(self, payload):
+        body = json_dumps(payload)
+        return self.url_open(
+            self._build_url(RazorpayController._webhook_url),
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "X-Razorpay-Signature": self.provider._get_razorpay_signature(
+                    body.encode(), is_redirect=False
+                ),
+            },
+        )
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_webhook_payment_of_another_order_confirms_nothing(self):
+        tx = self._create_transaction("redirect")
+        tx.razorpay_order_id = "order_of_the_transaction"
+        entity = self._get_captured_payment_entity(tx, tx.reference)
+        response = self._send_signed_webhook(
+            {"event": "payment.captured", "payload": {"payment": {"entity": entity}}}
+        )
+        tx.invalidate_recordset()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(tx.state, "draft")
+
+    @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
+    def test_a_webhook_payment_of_its_order_confirms_the_transaction(self):
+        tx = self._create_transaction("redirect")
+        tx.razorpay_order_id = self.order_id
+        entity = self._get_captured_payment_entity(tx, tx.reference)
+        self._send_signed_webhook(
+            {"event": "payment.captured", "payload": {"payment": {"entity": entity}}}
+        )
+        tx.invalidate_recordset()
+        self.assertEqual(tx.state, "done")

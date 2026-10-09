@@ -36,7 +36,8 @@ class RazorpayController(http.Controller):
         retrieved and with it the transaction which will be immediately post-processed.
 
         The payment is fetched back from Razorpay: the signature covers the order and payment ids,
-        not the reference of the return URL nor the amount.
+        not the reference of the return URL nor the amount, and the order must be the one created
+        for the transaction.
 
         :param str reference: The transaction reference, a query parameter of the return URL.
         :param dict data: The payment data.
@@ -57,6 +58,7 @@ class RazorpayController(http.Controller):
             if (
                 payment.get("order_id") != return_data["razorpay_order_id"]
                 or payment.get("description") != tx_sudo.reference
+                or not tx_sudo._is_razorpay_payment_of_own_order(payment)
             ):
                 _logger.warning(
                     "Payment %s does not belong to transaction %s.",
