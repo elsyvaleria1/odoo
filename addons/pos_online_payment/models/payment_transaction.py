@@ -32,74 +32,81 @@ class PaymentTransaction(models.Model):
         self._process_pos_online_payment()
 
     def _process_pos_online_payment(self) -> None:
-        for tx in self:
-            if (
-                tx
-                and tx.pos_order_id
+        pending = self.filtered(
+            lambda tx: (
+                tx.pos_order_id
                 and tx.state in ("authorized", "done")
                 and not tx.payment_id.pos_order_id
-            ):
-                pos_order = tx.pos_order_id
-                if pos_order.currency_id.compare_amounts(tx.amount, 0.0) <= 0:
-                    raise ValidationError(
-                        self.env._(
-                            "The payment transaction (%d) has a negative amount.", tx.id
-                        )
+            )
+        )
+        # the provider's webhook and the customer's confirmation page both get
+        # here. The order is the row the first one writes, so the second waits
+        # on it, then fails to serialize and is retried on a fresh snapshot,
+        # instead of dying on account_payment_transaction_id_uniq
+        pending.pos_order_id.lock_for_update(allow_referencing=True, wait=True)
+        for tx in pending:
+            pos_order = tx.pos_order_id
+            if pos_order.currency_id.compare_amounts(tx.amount, 0.0) <= 0:
+                raise ValidationError(
+                    self.env._(
+                        "The payment transaction (%d) has a negative amount.", tx.id
                     )
+                )
 
-                if not tx.payment_id:  # the payment could already have been created by account_payment module
-                    tx._create_payment()
-                if not tx.payment_id:
+            # the payment could already have been created by account_payment module
+            if not tx.payment_id:
+                tx._create_payment()
+            if not tx.payment_id:
+                raise ValidationError(
+                    self.env._(
+                        "The POS online payment (tx.id=%d) could not be saved correctly",
+                        tx.id,
+                    )
+                )
+
+            payment_method = pos_order.online_payment_method_id
+            if not payment_method:
+                pos_config = pos_order.config_id
+                payment_method = (
+                    self.env["pos.payment.method"]
+                    .sudo()
+                    ._get_or_create_online_payment_method(
+                        pos_config.company_id.id, pos_config.id
+                    )
+                )
+                if not payment_method:
                     raise ValidationError(
                         self.env._(
-                            "The POS online payment (tx.id=%d) could not be saved correctly",
+                            "The POS online payment (tx.id=%d) could not be saved correctly because the online payment method could not be found",
                             tx.id,
                         )
                     )
 
-                payment_method = pos_order.online_payment_method_id
-                if not payment_method:
-                    pos_config = pos_order.config_id
-                    payment_method = (
-                        self.env["pos.payment.method"]
-                        .sudo()
-                        ._get_or_create_online_payment_method(
-                            pos_config.company_id.id, pos_config.id
-                        )
-                    )
-                    if not payment_method:
-                        raise ValidationError(
-                            self.env._(
-                                "The POS online payment (tx.id=%d) could not be saved correctly because the online payment method could not be found",
-                                tx.id,
-                            )
-                        )
-
-                pos_order.add_payment(
-                    {
-                        "amount": tx.amount,
-                        "payment_date": tx.last_state_change,
-                        "payment_method_id": payment_method.id,
-                        "online_account_payment_id": tx.payment_id.id,
-                        "pos_order_id": pos_order.id,
-                    }
-                )
-                tx.payment_id.update(
-                    {
-                        "pos_payment_method_id": payment_method.id,
-                        "pos_order_id": pos_order.id,
-                        "pos_session_id": pos_order.session_id.id,
-                    }
-                )
-                if pos_order.state == "draft" and pos_order._is_payment_amount_valid():
-                    pos_order._process_saved_order(False)
-                # The bus communication is only protected by the name of the channel.
-                # Therefore, no sensitive information is sent through it, only a
-                # notification to invite the local browser to do a safe RPC to
-                # the server to check the new state of the order.
-                pos_order.config_id._notify(
-                    "ONLINE_PAYMENTS_NOTIFICATION", {"id": pos_order.id}
-                )
+            pos_order.add_payment(
+                {
+                    "amount": tx.amount,
+                    "payment_date": tx.last_state_change,
+                    "payment_method_id": payment_method.id,
+                    "online_account_payment_id": tx.payment_id.id,
+                    "pos_order_id": pos_order.id,
+                }
+            )
+            tx.payment_id.update(
+                {
+                    "pos_payment_method_id": payment_method.id,
+                    "pos_order_id": pos_order.id,
+                    "pos_session_id": pos_order.session_id.id,
+                }
+            )
+            if pos_order.state == "draft" and pos_order._is_payment_amount_valid():
+                pos_order._process_saved_order(False)
+            # The bus communication is only protected by the name of the channel.
+            # Therefore, no sensitive information is sent through it, only a
+            # notification to invite the local browser to do a safe RPC to
+            # the server to check the new state of the order.
+            pos_order.config_id._notify(
+                "ONLINE_PAYMENTS_NOTIFICATION", {"id": pos_order.id}
+            )
 
     def action_view_pos_order(self):
         """Return the action for the view of the pos order linked to the transaction."""
