@@ -45,11 +45,11 @@ class IotCommonTest(HttpCase):
 
     def setUp(self):
         super().setUp()
-        original_send_message = IotChannel.send_message
+        original_send_message = IotChannel._send_message
 
         # A box answers an action by calling `/iot/box/send_websocket` back, and
         # that answer has to name the session, the box and the device it belongs
-        # to. `iot.channel.send_message` constrains no shape, so not every action
+        # to. `iot.channel._send_message` constrains no shape, so not every action
         # carries them: `pos_blackbox_be._send_order_to_blackbox` sends one with
         # no `session_id` at all. Answering on the device's behalf is only
         # possible for the ones that do, and the rest are recorded and passed
@@ -81,14 +81,11 @@ class IotCommonTest(HttpCase):
         def mock_get_iot_channel(_iot_channel_record):
             return "mock_iot_channel"
 
-        mock_get_iot_channel._api_model = True
-        mock_send_message._api_model = True
-
         send_message_patcher = patch.object(
-            IotChannel, "send_message", mock_send_message
+            IotChannel, "_send_message", mock_send_message
         )
         channel_patcher = patch.object(
-            IotChannel, "get_iot_channel", mock_get_iot_channel
+            IotChannel, "_get_iot_channel", mock_get_iot_channel
         )
         self.addCleanup(send_message_patcher.stop)
         self.addCleanup(channel_patcher.stop)

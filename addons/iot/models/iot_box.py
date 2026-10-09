@@ -177,7 +177,7 @@ class IotBox(models.Model):
 
     @api.ondelete(at_uninstall=True)
     def _unlink_iot_box(self) -> None:
-        self.env["iot.channel"].send_message(
+        self.env["iot.channel"]._send_message(
             {"iot_identifiers": self.mapped("identifier")}, "server_clear"
         )
 

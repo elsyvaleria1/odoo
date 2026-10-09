@@ -166,7 +166,7 @@ class IoTController(IoTBoxLookup, http.Controller):
             )
             return
 
-        request.env["iot.channel"].send_message(
+        request.env["iot.channel"]._send_message(
             {
                 "session_id": session_id
                 or kwargs.get(
@@ -193,7 +193,7 @@ class IoTController(IoTBoxLookup, http.Controller):
             )
             raise NotFound
 
-        request.env["iot.channel"].send_message(
+        request.env["iot.channel"]._send_message(
             {
                 "iot_box_identifier": iot_box_identifier,
                 "answer": answer,
@@ -218,7 +218,7 @@ class IoTController(IoTBoxLookup, http.Controller):
 
         _logger.info("IoT %s devices:\n%s", box, pprint.pformat(devices))
         self._upsert_devices(box, devices)
-        return request.env["iot.channel"].sudo().get_iot_channel()
+        return request.env["iot.channel"].sudo()._get_iot_channel()
 
     def _upsert_box(self, iot_box):
         """Create or update the ``iot.box`` record this payload describes.
@@ -238,7 +238,12 @@ class IoTController(IoTBoxLookup, http.Controller):
             "version": new_iot_version,
         }
         if box:
-            if not (box.token and consteq(iot_box.get("token") or "", box.token)):
+            if not (
+                box.token
+                and consteq(  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                    iot_box.get("token") or "", box.token
+                )
+            ):
                 _logger.warning(
                     "IoT %s offered a token that is not the one it was paired with",
                     iot_identifier,

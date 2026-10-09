@@ -5,3 +5,4 @@ from . import test_setup
 from . import test_boxes_are_devices
 from . import test_internal_user_reads_boxes
 from . import test_empty_report
+from . import test_channel_access

@@ -15,7 +15,7 @@ class TestUi(IotCommonTest):
             len(self.iot_websocket_messages),
             3,
             (
-                "`iot.channel.send_message` should be called exactly three times: "
+                "`iot.channel._send_message` should be called exactly three times: "
                 "webrtc offer, websocket action, then operation confirmation."
                 "This time, we received %s"
                 % [

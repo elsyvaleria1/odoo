@@ -36,7 +36,7 @@ class PosConfig(models.Model):
             if d.type == "display"
         ]
 
-        self.env["iot.channel"].send_message(
+        self.env["iot.channel"]._send_message(
             {
                 "iot_identifiers": [
                     iot_box.identifier

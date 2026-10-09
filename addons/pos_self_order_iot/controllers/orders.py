@@ -102,8 +102,8 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
                 or not targets <= allowed
             ):
                 raise Forbidden
-            pos_config.env["iot.channel"].send_message(message, message_type)
-        return pos_config.env["iot.channel"].get_iot_channel()
+            pos_config.env["iot.channel"]._send_message(message, message_type)
+        return pos_config.env["iot.channel"]._get_iot_channel()
 
     def _kiosk_iot_boxes(self, pos_config):
         if pos_config.self_ordering_mode != "kiosk":

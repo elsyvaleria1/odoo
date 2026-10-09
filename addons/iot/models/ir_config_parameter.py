@@ -8,7 +8,7 @@ class IrConfigParameter(models.Model):
     def set_param(self, key, value):
         if key == "web.base.url" and not value.startswith("http://localhost"):
             iot_box_identifiers = self.env["iot.box"].search([]).mapped("identifier")
-            self.env["iot.channel"].send_message(
+            self.env["iot.channel"]._send_message(
                 {
                     "iot_identifiers": iot_box_identifiers,
                     "server_url": value,
