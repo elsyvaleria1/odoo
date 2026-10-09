@@ -373,6 +373,17 @@ class TestCloudStorageS3Endpoint(TestCloudStorageS3Common):
         icp.set_param("cloud_storage_s3_storage_mode", "hybrid")
         self.assertTrue(attachment._is_s3_hybrid())
 
+    def test_switching_to_ovh_keeps_attachments_in_use(self):
+        self._cloud_attachment(f"https://{self.bucket_name}.{self.host}/t/1.txt")
+        self.env.flush_all()
+        settings = self.env["res.config.settings"].create(
+            {"cloud_storage_provider": "ovh"}
+        )
+        settings._check_cloud_storage_uninstallable()
+        settings.cloud_storage_provider = False
+        with self.assertRaises(UserError):
+            settings._check_cloud_storage_uninstallable()
+
     def test_ovh_without_endpoint_is_not_configured(self):
         icp = self.env["ir.config_parameter"]
         icp.set_param("cloud_storage_provider", "ovh")
