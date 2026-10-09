@@ -400,6 +400,7 @@ class MrpProduction(models.Model):
         copy=True,
         readonly=False,
     )
+    workorder_count = fields.Count(count_of="workorder_ids")
     move_dest_ids = fields.One2many(
         comodel_name="stock.move",
         inverse_name="created_production_id",

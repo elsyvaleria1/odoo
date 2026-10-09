@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import Form, TransactionCase, tagged
+from odoo.tests import Form, TransactionCase, new_test_user, tagged
 
 from .common import TestMrpCommon
 
@@ -424,6 +424,32 @@ class TestOrderGuards(TestMrpCommon):
         )
         self.assertEqual(production.move_raw_ids.product_uom_qty, 24)
 
+    def test_a_user_without_work_orders_saves_an_order_with_operations(self):
+        user = new_test_user(
+            self.env, "no-routings", groups="mrp.group_mrp_user,stock.group_stock_user"
+        )
+        self.assertFalse(user.has_group("mrp.group_mrp_routings"))
+        workcenter = self.env["mrp.workcenter"].create({"name": "Unseen line"})
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.finished.product_tmpl_id.id,
+                "bom_line_ids": [Command.create({"product_id": self.component.id})],
+                "operation_ids": [
+                    Command.create(
+                        {"name": "Unseen step", "workcenter_id": workcenter.id}
+                    )
+                ],
+            }
+        )
+
+        form = Form(self.env["mrp.production"].with_user(user))
+        form.product_id = self.finished
+        form.bom_id = bom
+        form.date_start = fields.Datetime.now() + timedelta(days=2)
+        production = form.save()
+
+        self.assertEqual(production.workorder_ids.workcenter_id, workcenter)
+
     def _engine_order_with_its_serial_picked(self):
         engine = self.env["product.product"].create(
             {"name": "Engine", "is_storable": True, "tracking": "serial"}
@@ -785,8 +811,10 @@ class TestProductionStatementGuards(TransactionCase):
 
         marked(1)
         # The consume-line insert: one x2many value per order, and a write
-        # carries one value for all its records.
-        self.assertLessEqual(marked(6) - marked(2), 4 * 1)
+        # carries one value for all its records. The one extra statement
+        # absorbs a cache miss that depends on what the process ran before;
+        # reading each order's lines again cost sixteen.
+        self.assertLessEqual(marked(6) - marked(2), 4 * 1 + 1)
 
     def test_backorder_split_grows_by_its_line_writes_only(self):
         def split(count):

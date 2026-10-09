@@ -265,6 +265,24 @@ class TestBomOverviewReport(TestMrpCommon):
         production = Form(self.env["mrp.production"].with_context(action["context"]))
         self.assertEqual(production.product_id, variant)
 
+    def test_the_forecast_opens_the_bom_on_the_variant_it_forecasts(self):
+        variant = self.product_7_2
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": self.product_7_template.id,
+                "bom_line_ids": [Command.create({"product_id": self.product_2.id})],
+            }
+        )
+        self.assertEqual(variant.get_forecast_bom_id(), bom.id)
+        # what the forecast's Manufacturing Forecast button sends
+        options = self.report.with_context(
+            active_model="mrp.bom", active_id=bom.id, active_product_id=variant.id
+        ).get_options({})
+
+        self.assertEqual(options["bom_overview_bom_id"], bom.id)
+        self.assertEqual(options["bom_overview_variant_id"], variant.id)
+        self.assertTrue(self.report._get_lines(options))
+
     def test_open_route_opens_what_the_route_names(self):
         sub_assembly, parent_bom = self._sub_assembly_chain()
         handler = self.env["mrp.bom.overview.report.handler"]
@@ -344,13 +362,34 @@ class TestBomReportWarehouse(TestMrpCommon):
 
     def test_a_bom_is_produced_in_its_operation_types_warehouse(self):
         self.assertEqual(self.bom._get_production_warehouse(), self.warehouse_2)
-        self.bom.picking_type_id = False
-        self.assertEqual(
-            self.bom._get_production_warehouse(),
-            self.env["stock.warehouse"].search(
-                [("company_id", "=", self.env.company.id)], limit=1
-            ),
+
+    def test_an_archived_warehouse_is_not_where_it_is_produced(self):
+        self.env["stock.quant"]._update_available_quantity(
+            self.component, self.warehouse_2.lot_stock_id, -5
         )
+        self.warehouse_2.active = False
+        warehouse = self.bom._get_production_warehouse()
+        self.assertTrue(warehouse.active)
+        options = (
+            self.env.ref("mrp.bom_overview_report")
+            .with_context(active_model="mrp.bom", active_id=self.bom.id)
+            .get_options({})
+        )
+        self.assertIn(
+            options["bom_overview_warehouse_id"],
+            [choice["id"] for choice in options["bom_overview_warehouses"]],
+        )
+
+    def test_without_one_it_is_produced_where_a_new_order_of_it_would_be(self):
+        # The first warehouse by sequence is warehouse_1; the first
+        # manufacturing operation type is the second plant's.
+        self.warehouse_2.manu_type_id.sequence = 1
+        self.bom.picking_type_id = False
+        production = self.env["mrp.production"].create(
+            {"product_id": self.finished.id, "bom_id": self.bom.id}
+        )
+        self.assertEqual(production.picking_type_id.warehouse_id, self.warehouse_2)
+        self.assertEqual(self.bom._get_production_warehouse(), self.warehouse_2)
 
     def test_without_a_warehouse_the_report_reads_where_the_bom_produces(self):
         self.assertEqual(

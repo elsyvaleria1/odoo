@@ -351,8 +351,10 @@ class StockMoveLine(models.Model):
         done_lines = mls.filtered(lambda ml: ml.state == "done")
         if _debug.pipeline.enabled and done_lines:
             _debug.pipeline("create_done_update_quants", move_lines=done_lines)
+        notes = defaultdict(list)
         for ml in done_lines.with_context(quants_cache=done_lines._get_quants_cache()):
-            ml._update_quants_and_reservations()
+            ml._update_quants_and_reservations(notes=notes)
+        done_lines._post_consumed_pick_notes(notes)
 
         if next_moves := done_lines._get_pending_dest_moves():
             _debug.pipeline("create_done_assign_dests", moves=next_moves)

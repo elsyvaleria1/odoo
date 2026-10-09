@@ -1576,30 +1576,40 @@ class MrpWorkorder(models.Model):
 
     def _prepare_operation_demand_vals(self, quantity) -> dict:
         self.check_singleton()
-        product, _unit, demand_quantity, _bom = self._get_operation_demand(quantity)
+        # Only a demand found in the order's explosion is frozen: a fallback to
+        # the finished product would fix a wrong history for good.
+        demand = self._find_operation_demand(quantity)
+        if demand is None:
+            _debug.logic("operation_demand_unfound", workorder=self.id)
+            return {}
+        product, _unit, demand_quantity, _bom = demand
         return {
             "operation_demand_qty": demand_quantity,
             "operation_demand_product_id": product.id,
         }
 
-    def _get_operation_demand(self, quantity=None) -> tuple:
+    def _find_operation_demand(self, quantity) -> tuple | None:
         self.check_singleton()
-        if quantity is None:
-            quantity = self.qty_producing or self.qty_production
         demand = self.production_id and self.production_id._get_operation_demands().get(
             self.operation_id
         )
         if not demand:
-            return (
-                self.product_id,
-                self.product_uom_id,
-                quantity,
-                self.production_bom_id,
-            )
+            return None
         bom, product, demand_quantity = demand
         if self.qty_production:
             demand_quantity *= quantity / self.qty_production
         return product, bom.product_uom_id, demand_quantity, bom
+
+    def _get_operation_demand(self, quantity=None) -> tuple:
+        self.check_singleton()
+        if quantity is None:
+            quantity = self.qty_producing or self.qty_production
+        return self._find_operation_demand(quantity) or (
+            self.product_id,
+            self.product_uom_id,
+            quantity,
+            self.production_bom_id,
+        )
 
     def _get_conflicted_workorder_ids(self):
         self.flush_model(["state", "date_start", "date_end", "workcenter_id"])

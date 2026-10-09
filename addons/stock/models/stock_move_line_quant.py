@@ -105,8 +105,12 @@ class StockMoveLineQuant(models.Model):
 
     def _update_quants_again(self, in_dates=None) -> None:
         in_dates = in_dates or {}
+        notes = defaultdict(list)
         for ml in self.with_context(quants_cache=self._get_quants_cache()):
-            ml._update_quants_and_reservations(in_date=in_dates.get(ml.id, False))
+            ml._update_quants_and_reservations(
+                in_date=in_dates.get(ml.id, False), notes=notes
+            )
+        self._post_consumed_pick_notes(notes)
 
     def _get_quantity_deltas(self, vals, updates) -> dict:
         return {
@@ -118,8 +122,10 @@ class StockMoveLineQuant(models.Model):
     def _update_quants_by_delta(self, deltas) -> None:
         if _debug.pipeline.enabled and self:
             _debug.pipeline("quants_by_delta", deltas=deltas)
+        notes = defaultdict(list)
         for ml in self.with_context(quants_cache=self._get_quants_cache()):
-            ml._update_quants_and_reservations(quantity=deltas[ml.id])
+            ml._update_quants_and_reservations(quantity=deltas[ml.id], notes=notes)
+        self._post_consumed_pick_notes(notes)
         if self.move_id:
             self.move_id._check_quantity()
 
@@ -156,6 +162,7 @@ class StockMoveLineQuant(models.Model):
         in_date=False,
         release_reserved=False,
         ml_ids_to_ignore=None,
+        notes=None,
     ) -> None:
         self.check_singleton()
         available_qty, _in_date = self._update_quants(
@@ -163,9 +170,14 @@ class StockMoveLineQuant(models.Model):
         )
         if self.product_id.uom_id._compare_aggregate(available_qty, 0) < 0:
             _debug.logic("source_negative", line=self.id, available=available_qty)
-            self._free_reservation(
+            freed_notes = self._free_reservation(
                 abs(available_qty), ml_ids_to_ignore=ml_ids_to_ignore
             )
+            if notes is None:
+                self._post_consumed_pick_notes(freed_notes)
+            else:
+                for document, lines in freed_notes.items():
+                    notes[document].extend(lines)
 
     def _get_reservation_key(self, overrides=None):
         self.check_singleton()
@@ -220,13 +232,13 @@ class StockMoveLineQuant(models.Model):
         return holding
 
     @_debug.perf.timed
-    def _free_reservation(self, quantity, ml_ids_to_ignore=None) -> None:
+    def _free_reservation(self, quantity, ml_ids_to_ignore=None) -> dict:
         self.check_singleton()
         product, location = self.product_id, self.location_id
         ml_ids_to_ignore = OrderedSet(ml_ids_to_ignore or ()) | OrderedSet(self.ids)
 
         if self._is_reservation_bypass_required(location):
-            return
+            return {}
         _debug.pipeline(
             "free_reservation",
             line=self.id,
@@ -284,10 +296,20 @@ class StockMoveLineQuant(models.Model):
         move_to_reassign[::-1].with_context(
             reserve_picked_move_ids=refill.ids
         )._action_assign()
+        return notes
+
+    @api.model
+    def _post_consumed_pick_notes(self, notes) -> None:
         for document, lines in notes.items():
             document.message_post(
                 body=Markup("<br/>").join(lines), subtype_xmlid="mail.mt_note"
             )
+
+    def _get_consumer_label(self) -> str:
+        self.check_singleton()
+        if self.move_id.is_inventory:
+            return self.env._("an inventory adjustment")
+        return self.reference or self.move_id.display_name
 
     def _prepare_consumed_pick_notes(self, consumed_picks) -> dict:
         self.check_singleton()
@@ -302,7 +324,7 @@ class StockMoveLineQuant(models.Model):
                     " had picked it is removed.",
                     trace=line.trace_id.display_name,
                     location=line.location_id.display_name,
-                    consumer=self.reference or self.move_id.display_name,
+                    consumer=self._get_consumer_label(),
                 )
             )
         _debug.logic(
@@ -500,10 +522,12 @@ class StockMoveLineQuant(models.Model):
         # Lines done together never free one another: a line freed mid-loop
         # would be unlinked before its turn.
         ml_ids_to_ignore = OrderedSet(self.ids)
+        notes = defaultdict(list)
         for ml in self.with_context(quants_cache=self._get_quants_cache()):
             ml.with_context(bypass_entire_pack=True)._update_quants_and_reservations(
-                release_reserved=True, ml_ids_to_ignore=ml_ids_to_ignore
+                release_reserved=True, ml_ids_to_ignore=ml_ids_to_ignore, notes=notes
             )
+        self._post_consumed_pick_notes(notes)
 
     def get_move_line_quant_match(
         self, move_id, dirty_move_line_ids, dirty_quant_ids

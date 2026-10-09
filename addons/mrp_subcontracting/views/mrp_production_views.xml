@@ -45,7 +45,7 @@
 
             <xpath expr="//field[@name='move_byproduct_ids']" position="replace" />
             <xpath expr="//field[@name='forecast_availability']" position="replace" />
-            <xpath expr="//field[@name='workorder_ids']" position="replace" />
+            <xpath expr="//field[@name='workorder_count']" position="replace" />
 
             <xpath expr="//field[@name='move_finished_ids']" position="replace" />
             <xpath expr="//chatter" position="replace" />

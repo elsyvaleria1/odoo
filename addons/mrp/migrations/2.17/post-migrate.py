@@ -20,6 +20,5 @@ def migrate(cr, version):
     for workorder in workorders.filtered(
         lambda wo: wo.operation_id.bom_id != wo.production_bom_id
     ):
-        workorder.write(
-            workorder._prepare_operation_demand_vals(workorder.qty_produced)
-        )
+        if vals := workorder._prepare_operation_demand_vals(workorder.qty_produced):
+            workorder.write(vals)

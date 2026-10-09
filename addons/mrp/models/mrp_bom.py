@@ -570,17 +570,30 @@ class MrpBom(models.Model):
         self.show_copy_operations_button = exist_operation
 
     def _get_production_warehouses(self) -> dict:
-        Warehouse = self.env["stock.warehouse"]
-        default_by_company = Warehouse._get_default_by_company(
-            self.company_id | self.env.company
-        )
-        return {
-            bom: bom.picking_type_id.warehouse_id
-            or default_by_company.get(
-                (bom.company_id or self.env.company).id, Warehouse
+        # Where an order of the BoM is made: its operation type, else the one a
+        # new manufacturing order defaults to, else the company's first
+        # warehouse.
+        companies = self.company_id | self.env.company
+        PickingType = self.env["stock.picking.type"]
+        default_type_by_company = self.env[
+            "mrp.production"
+        ]._get_default_picking_type_by_company(companies)
+        default_warehouse_by_company = self.env[
+            "stock.warehouse"
+        ]._get_default_by_company(companies)
+        warehouses = {}
+        for bom in self:
+            company_id = (bom.company_id or self.env.company).id
+            warehouses[bom] = (
+                bom.picking_type_id.filtered("active").warehouse_id.filtered("active")
+                or PickingType.browse(
+                    default_type_by_company.get(company_id)
+                ).warehouse_id
+                or default_warehouse_by_company.get(
+                    company_id, self.env["stock.warehouse"]
+                )
             )
-            for bom in self
-        }
+        return warehouses
 
     def _get_production_warehouse(self):
         self.check_singleton()

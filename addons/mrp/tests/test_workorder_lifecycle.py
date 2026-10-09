@@ -1,4 +1,6 @@
+import importlib.util
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from odoo import Command, fields
@@ -472,7 +474,7 @@ class TestWorkorderLifecycle(TestMrpCommon):
             self._confirmed_production(self.bom).workorder_ids.duration_expected, 120
         )
 
-    def test_a_kit_operation_learns_its_cycle_in_kit_units(self):
+    def _leg_kit_order(self):
         workcenter = self.env["mrp.workcenter"].create(
             {"name": "Leg line", "time_start": 0, "time_stop": 0}
         )
@@ -510,8 +512,11 @@ class TestWorkorderLifecycle(TestMrpCommon):
             }
         )
         production = self._confirmed_production(bom, qty=10)
+        self.assertEqual(production.workorder_ids.duration_expected, 40)
+        return kit, bom, production
+
+    def _work_forty_minutes_and_finish(self, production):
         workorder = production.workorder_ids
-        self.assertEqual(workorder.duration_expected, 40)
         workorder.button_start()
         started = fields.Datetime.now() - timedelta(hours=3)
         workorder.time_ids.write(
@@ -520,6 +525,11 @@ class TestWorkorderLifecycle(TestMrpCommon):
         production.qty_producing = 10
         production.move_raw_ids.picked = True
         production.button_mark_done()
+        return workorder
+
+    def test_a_kit_operation_learns_its_cycle_in_kit_units(self):
+        kit, bom, production = self._leg_kit_order()
+        self._work_forty_minutes_and_finish(production)
 
         kit.operation_ids.invalidate_recordset()
         self.assertEqual(kit.operation_ids.time_cycle, 1)
@@ -529,6 +539,26 @@ class TestWorkorderLifecycle(TestMrpCommon):
         )
 
         bom.bom_line_ids.product_qty = 2
+        kit.operation_ids._compute_operation_times()
+        self.assertEqual(kit.operation_ids.time_cycle, 1)
+
+    def test_the_back_fill_does_not_freeze_a_kit_it_cannot_place(self):
+        kit, _bom, production = self._leg_kit_order()
+        workorder = self._work_forty_minutes_and_finish(production)
+        # a work order finished before the freeze existed
+        workorder.write(
+            {"operation_demand_qty": 0, "operation_demand_product_id": False}
+        )
+        kit.active = False
+        path = Path(__file__).parents[1] / "migrations" / "2.17" / "post-migrate.py"
+        spec = importlib.util.spec_from_file_location("mrp_post_migrate_2_17", path)
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+
+        migration.migrate(self.env.cr, "2.16")
+
+        self.assertFalse(workorder.operation_demand_qty)
+        kit.active = True
         kit.operation_ids._compute_operation_times()
         self.assertEqual(kit.operation_ids.time_cycle, 1)
 

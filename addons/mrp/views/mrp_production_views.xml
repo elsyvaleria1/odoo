@@ -296,7 +296,7 @@
                         type="object"
                         string="Plan"
                         groups="mrp.group_mrp_user"
-                        invisible="state not in ('confirmed', 'progress', 'to_close') or not workorder_ids or is_planned"
+                        invisible="state not in ('confirmed', 'progress', 'to_close') or not workorder_count or is_planned"
                         class="oe_highlight"
                         data-hotkey="z" />
                     <button
@@ -358,7 +358,7 @@
                     <field name="consumption" invisible="1" />
                     <field name="is_planned" invisible="1" />
                     <field name="show_allocation" invisible="1" />
-                    <field name="workorder_ids" invisible="1" />
+                    <field name="workorder_count" invisible="1" />
                     <div class="oe_button_box" name="button_box">
                         <button
                             name="action_view_reception_report"

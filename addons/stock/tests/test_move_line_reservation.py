@@ -530,6 +530,50 @@ class TestPickedSerialFreedWhenConsumed(TestMoveLineCommon):
         self.assertEqual(len(notes), 1)
         self.assertIn(scrap.name, notes.body)
 
+    def test_one_transfer_consuming_two_picked_serials_leaves_one_note(self):
+        product, serials = self._serials("picked-sn-two-notes", 2)
+        delivery = self._delivery(product, 2, assign=True)
+        delivery.move_ids.picked = True
+        other = self._delivery(product, 2)
+        for serial in serials:
+            self.MoveLine.create(
+                {
+                    "move_id": other.move_ids.id,
+                    "picking_id": other.id,
+                    "product_id": product.id,
+                    "trace_id": serial.id,
+                    "quantity": 1,
+                    "picked": True,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": self.customer_location.id,
+                }
+            )
+        other.button_validate()
+
+        notes = delivery.message_ids.filtered(
+            lambda message: other.name in (message.body or "")
+        )
+        self.assertEqual(len(notes), 1)
+        for serial in serials:
+            self.assertIn(serial.name, notes.body)
+
+    def test_an_inventory_adjustment_is_named_as_such(self):
+        product, delivery, reserved, _spare, _scrap = self._picked_pair_losing_one(
+            "picked-sn-inventory"
+        )
+        quant = self.Quant._gather(product, self.stock_location, trace_id=reserved[1])
+        quant.with_context(inventory_mode=True).inventory_quantity = 0
+        quant.action_apply_inventory()
+
+        self.assertTrue(
+            delivery.message_ids.filtered(
+                lambda message: (
+                    reserved[1].name in (message.body or "")
+                    and "inventory adjustment" in message.body
+                )
+            )
+        )
+
     def test_an_unconfirmed_proposal_is_not_delivered(self):
         product, delivery, reserved, spare, _scrap = self._picked_pair_losing_one(
             "picked-sn-ignored"

@@ -35,10 +35,11 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
             if not bom.product_id
             else self.env["product.product"]
         )
+        variant_id = kept.get("bom_overview_variant_id") or context.get(
+            "active_product_id"
+        )
         options["bom_overview_variant_id"] = (
-            kept.get("bom_overview_variant_id")
-            if kept.get("bom_overview_variant_id") in variants.ids
-            else None
+            variant_id if variant_id in variants.ids else None
         )
         options["bom_overview_variants"] = [
             {"id": variant.id, "name": variant.display_name} for variant in variants

@@ -17,9 +17,10 @@ patch(ForecastedButtons.prototype, {
         return this.actionService.doAction("mrp.action_report_mrp_bom", {
             additionalContext: {
                 active_id: this.bomId,
-                active_product_id: this.productId,
-                active_model: this.resModel,
-                mode: "forecast",
+                active_model: "mrp.bom",
+                ...(this.resModel === "product.product" && {
+                    active_product_id: this.productId,
+                }),
             },
         });
     },
