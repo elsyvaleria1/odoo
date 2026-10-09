@@ -120,6 +120,27 @@ class TestBoxEnrolment(HttpCase):
         self.env.invalidate_all()
         self.assertEqual(box.ip, "10.6.6.6")
 
+    def test_a_known_box_paired_again_takes_the_fresh_pairing_token(self):
+        """A box disconnected and paired again holds the token the wizard just
+        handed out, not the one the database paired it with first."""
+        first = self._hand_out_token()
+        self._setup(self._payload(first), {})
+        box = self._box()
+        fresh = "fedcba9876543210"
+        self.env["ir.config_parameter"].sudo().set_param("iot.iot_token", fresh)
+
+        self.assertTrue(self._setup({**self._payload(fresh), "ip": "10.0.0.10"}, {}))
+        self.env.invalidate_all()
+        self.assertEqual((box.token, box.ip), (fresh, "10.0.0.10"))
+        self.assertFalse(
+            self.env["ir.config_parameter"].sudo().get_param("iot.iot_token"),
+            "the pairing token must be spent by the box that used it",
+        )
+        self.assertIsNone(
+            self._setup(self._payload(first), {}),
+            "the token the box held before pairing again still rewrites it",
+        )
+
     def test_a_box_is_answered_a_channel_of_its_own(self):
         token = self._hand_out_token()
 

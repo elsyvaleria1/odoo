@@ -207,6 +207,12 @@ class IotBox(models.Model):
             return False
         return iot_token_param.value
 
+    @api.model
+    def _spend_pairing_token(self) -> None:
+        """The box that used the pairing token spent it: the next box needs
+        a new one."""
+        self.env["ir.config_parameter"].sudo().set_param("iot.iot_token", "")
+
     token = fields.Char(
         default=lambda self: self._default_token(),
         readonly=True,

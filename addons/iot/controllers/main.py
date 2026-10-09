@@ -256,23 +256,30 @@ class IoTController(IoTBoxLookup, http.Controller):
             "version": new_iot_version,
         }
         if box:
-            if not (
-                box.token
-                and consteq(  # noqa: E8537  device: a device's or a service's credential, presented by a program
-                    iot_box.get("token") or "", box.token
+            offered = iot_box.get("token") or ""
+            if not (box.token and consteq(offered, box.token)):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                pairing_token = request.env["iot.box"]._get_pairing_token()
+                if not (pairing_token and consteq(offered, pairing_token)):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                    _logger.warning(
+                        "IoT %s offered neither the token it was paired with nor "
+                        "one this database handed out in the last 15 minutes",
+                        iot_identifier,
+                    )
+                    return request.env["iot.box"]
+                # paired again: the box now holds the token it was just handed
+                _logger.info("IoT %s paired again", iot_identifier)
+                create_update_value["token"] = offered
+                request.env["iot.box"]._spend_pairing_token()
+            if "token" in create_update_value or (
+                box.identifier,
+                box.ip,
+                box.version,
+            ) != (iot_identifier, new_iot_ip, new_iot_version):
+                _logger.info(
+                    "Updating IoT %s with data: %s",
+                    box,
+                    {k: v for k, v in create_update_value.items() if k != "token"},
                 )
-            ):
-                _logger.warning(
-                    "IoT %s offered a token that is not the one it was paired with",
-                    iot_identifier,
-                )
-                return request.env["iot.box"]
-            if (box.identifier, box.ip, box.version) != (
-                iot_identifier,
-                new_iot_ip,
-                new_iot_version,
-            ):
-                _logger.info("Updating IoT %s with data: %s", box, create_update_value)
                 box.write(create_update_value)
             return box
 
@@ -289,8 +296,7 @@ class IoTController(IoTBoxLookup, http.Controller):
         create_update_value["name"] = get_unique_name(name)
         _logger.info("Creating IoT with data: %s", create_update_value)
         box = request.env["iot.box"].sudo().create(create_update_value)
-        # Clear the used token to force creating a new one for next IoT Box
-        request.env["ir.config_parameter"].sudo().set_param("iot.iot_token", "")
+        request.env["iot.box"]._spend_pairing_token()
         return box
 
     def _find_moved_device(self, known, device_identifier, data_device):
