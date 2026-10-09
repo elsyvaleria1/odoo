@@ -743,3 +743,37 @@ msgstr ""
 #: code:addons/wallet/static/src/home_tile/wallet_low_tile.xml:0
 msgid "below their threshold"
 msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__count_card_unread
+msgid ""
+"Active cards with no balance reading yet: their balance is unknown, "
+"not zero."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__date_balance
+msgid "Balance As Of"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card_unread
+msgid "Cards Never Read"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__date_balance
+msgid "The newest of the active cards' latest readings."
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card_stale
+msgid "Cards Behind"
+msgstr ""
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__count_card_stale
+msgid ""
+"Active cards last read more than a day before the newest reading: the "
+"issuer may no longer report them, and their balance is that old."
+msgstr ""

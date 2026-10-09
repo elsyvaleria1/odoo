@@ -1,6 +1,6 @@
 {
     "name": "Electronic Wallet Records",
-    "version": "19.0.1.0.4",
+    "version": "19.0.1.0.5",
     "oldest_upgradable_version": "19.0.1.0.4",
     "category": "Accounting/Accounting",
     "sequence": 90,

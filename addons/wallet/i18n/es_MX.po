@@ -160,3 +160,42 @@ msgstr "Cuentas de monedero"
 #: model:ir.ui.menu,name:wallet.menu_wallet_root
 msgid "Wallets"
 msgstr "Monederos"
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__count_card_unread
+msgid ""
+"Active cards with no balance reading yet: their balance is unknown, "
+"not zero."
+msgstr ""
+"Tarjetas activas sin ninguna lectura de saldo: su saldo se desconoce, "
+"no es cero."
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__date_balance
+msgid "Balance As Of"
+msgstr "Saldo al"
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card_unread
+msgid "Cards Never Read"
+msgstr "Tarjetas sin leer"
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__date_balance
+msgid "The newest of the active cards' latest readings."
+msgstr "La más reciente de las últimas lecturas de las tarjetas activas."
+
+#. module: wallet
+#: model:ir.model.fields,field_description:wallet.field_wallet_account__count_card_stale
+msgid "Cards Behind"
+msgstr "Tarjetas atrasadas"
+
+#. module: wallet
+#: model:ir.model.fields,help:wallet.field_wallet_account__count_card_stale
+msgid ""
+"Active cards last read more than a day before the newest reading: the "
+"issuer may no longer report them, and their balance is that old."
+msgstr ""
+"Tarjetas activas cuya última lectura es de más de un día antes de la "
+"más reciente: puede que el emisor ya no las reporte, y su saldo es "
+"así de viejo."

@@ -6,6 +6,7 @@ from psycopg.errors import CheckViolation, UniqueViolation
 from odoo import fields
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests.common import TransactionCase, tagged
+from odoo.tools import SQL
 
 
 @tagged("post_install", "-at_install")
@@ -79,6 +80,78 @@ class TestWallet(TransactionCase):
         self.account.invalidate_recordset()
         self.assertEqual(self.account.amount_balance, 1100.0)
         self.assertEqual(self.account.count_card_low, 1)
+
+    def test_the_account_dates_its_newest_reading_and_flags_cards_behind(self):
+        now = fields.Datetime.now()
+        behind = self.env["wallet.card"].create(
+            {"number": "5678", "account_id": self.account.id}
+        )
+        self.env["wallet.card"].create(
+            {"number": "9012", "account_id": self.account.id}
+        )
+        archived = self.env["wallet.card"].create(
+            {"number": "3456", "account_id": self.account.id, "active": False}
+        )
+        self._snapshot(800.0, now - timedelta(hours=1))
+        # a card the issuer stopped reporting keeps its old reading
+        self._snapshot(200.0, now - timedelta(days=3), card=behind)
+        self._snapshot(50.0, now, card=archived)
+        self.account.invalidate_recordset()
+        self.assertEqual(self.account.date_balance, now - timedelta(hours=1))
+        self.assertEqual(self.account.count_card_unread, 1)
+        self.assertEqual(self.account.count_card_stale, 1)
+
+    def test_a_card_read_within_the_margin_is_not_behind(self):
+        now = fields.Datetime.now()
+        other = self.env["wallet.card"].create(
+            {"number": "5678", "account_id": self.account.id}
+        )
+        self._snapshot(800.0, now)
+        self._snapshot(200.0, now - timedelta(hours=20), card=other)
+        self.account.invalidate_recordset()
+        self.assertEqual(self.account.count_card_stale, 0)
+
+    def test_a_balance_summary_adds_only_the_cards_it_read(self):
+        now = fields.Datetime.now()
+        never_read = self.env["wallet.card"].create(
+            {"number": "5678", "account_id": self.account.id}
+        )
+        behind = self.env["wallet.card"].create(
+            {"number": "9012", "account_id": self.account.id}
+        )
+        # an old import left this card an amount with no reading behind it
+        self.env.flush_all()
+        self.env.cr.execute(
+            SQL(
+                "UPDATE wallet_card SET amount_balance = %s WHERE id = %s",
+                3588.0,
+                never_read.id,
+            )
+        )
+        never_read.invalidate_recordset(["amount_balance"])
+        self.assertEqual(never_read.amount_balance, 3588.0)
+        self._snapshot(900.0, now - timedelta(hours=2))
+        self._snapshot(1500.0, now - timedelta(days=5), card=behind)
+        [row] = self.account._get_balance_summary(with_cards=True)
+        self.assertEqual(row["account"], self.account)
+        self.assertEqual(row["amount_balance"], 2400.0)
+        self.assertEqual(row["date_balance"], now - timedelta(hours=2))
+        self.assertEqual((row["count_card"], row["count_card_low"]), (3, 0))
+        self.assertEqual(row["cards_unread"], never_read)
+        self.assertEqual(row["cards_stale"], behind)
+        self.assertEqual(row["cards"].ids, [behind.id, self.card.id, never_read.id])
+
+    def test_a_balance_summary_of_an_account_never_read_has_no_date(self):
+        tags = self.env["wallet.account"].create(
+            {"name": "Toll tags", "kind": "toll", "issuer_id": self.issuer.id}
+        )
+        tag = self.env["wallet.card"].create({"number": "TAG-1", "account_id": tags.id})
+        [row] = tags._get_balance_summary()
+        self.assertIsNone(row["date_balance"])
+        self.assertEqual(row["amount_balance"], 0.0)
+        self.assertEqual(row["cards_unread"], tag)
+        self.assertFalse(row["cards_stale"])
+        self.assertNotIn("cards", row)
 
     def test_a_card_number_is_unique_per_account(self):
         with self.assertRaises(UniqueViolation), self.env.cr.savepoint():

@@ -40,6 +40,9 @@
                             <field name="account_id" />
                             <field name="amount_threshold_low" widget="monetary" />
                             <field name="amount_balance" widget="monetary" />
+                            <field name="date_balance" />
+                            <field name="count_card_unread" />
+                            <field name="count_card_stale" />
                             <field name="count_card_low" />
                         </group>
                     </group>
@@ -78,6 +81,9 @@
                 <field name="count_card" />
                 <field name="count_card_low" />
                 <field name="amount_balance" widget="monetary" sum="Total" />
+                <field name="date_balance" optional="show" />
+                <field name="count_card_unread" optional="show" />
+                <field name="count_card_stale" optional="show" />
                 <field name="currency_id" column_invisible="True" />
                 <field
                     name="company_id"

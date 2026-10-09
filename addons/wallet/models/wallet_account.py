@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools import frozendict
@@ -10,6 +12,9 @@ WALLET_KINDS = [
     ("other", "Other"),
 ]
 PREPAID_ACCOUNT_TYPES = ("asset_prepayments", "asset_current", "asset_cash")
+# a card read this long before its account's newest reading is behind: the
+# issuer may have stopped reporting it (cancelled, replaced)
+STALE_MARGIN = timedelta(days=1)
 
 
 class WalletAccount(models.Model):
@@ -85,6 +90,23 @@ class WalletAccount(models.Model):
         aggregator="sum",
         help="Sum of the cards' latest balances.",
     )
+    date_balance = fields.Datetime(
+        string="Balance As Of",
+        compute="_compute_balance_freshness",
+        help="The newest of the active cards' latest readings.",
+    )
+    count_card_unread = fields.Integer(
+        string="Cards Never Read",
+        compute="_compute_balance_freshness",
+        help="Active cards with no balance reading yet: their balance is unknown, "
+        "not zero.",
+    )
+    count_card_stale = fields.Integer(
+        string="Cards Behind",
+        compute="_compute_balance_freshness",
+        help="Active cards last read more than a day before the newest reading: "
+        "the issuer may no longer report them, and their balance is that old.",
+    )
     # Card block
     card_ids = fields.One2many(
         comodel_name="wallet.card",
@@ -139,6 +161,14 @@ class WalletAccount(models.Model):
         for account in self:
             account.amount_balance = totals.get(account.id, 0.0)
 
+    @api.depends("card_ids.date_balance", "card_ids.active")
+    def _compute_balance_freshness(self) -> None:
+        for account in self:
+            newest, _read, unread, stale = account._split_cards_by_reading()
+            account.date_balance = newest or False
+            account.count_card_unread = len(unread)
+            account.count_card_stale = len(stale)
+
     @api.depends("card_ids.is_low_balance", "card_ids.active")
     def _compute_count_card_low(self) -> None:
         groups = self.env["wallet.card"]._read_group(
@@ -162,7 +192,52 @@ class WalletAccount(models.Model):
             "context": {"default_account_id": self.id},
         }
 
+    # BUSINESS METHODS
+    def _get_balance_summary(self, with_cards=False) -> list[dict]:
+        """Each account's balance as far as its readings support it, for a
+        caller that words it (a bot, a digest).
+
+        :param bool with_cards: also list the active cards, the read ones by
+            balance, highest first, then those never read
+        :return: per account, in the order of ``self``: ``account``,
+            ``amount_balance`` (of the cards read), ``date_balance`` (the newest
+            reading, UTC, None when no card was read), ``count_card``,
+            ``count_card_low``, ``cards_unread`` and ``cards_stale``
+            (wallet.card recordsets) and, with ``with_cards``, ``cards``
+        :rtype: list[dict]
+        """
+        summary = []
+        for account in self:
+            newest, read, unread, stale = account._split_cards_by_reading()
+            # only read cards add up: one never read is counted apart, not as
+            # zero, even when an old import left it an amount with no reading
+            row = {
+                "account": account,
+                "amount_balance": account.currency_id.round(
+                    sum(read.mapped("amount_balance"))
+                ),
+                "date_balance": newest,
+                "count_card": len(account.card_ids),
+                "count_card_low": account.count_card_low,
+                "cards_unread": unread,
+                "cards_stale": stale,
+            }
+            if with_cards:
+                row["cards"] = read.sorted("amount_balance", reverse=True) + unread
+            summary.append(row)
+        return summary
+
     # HELPER METHODS
+    def _split_cards_by_reading(self) -> tuple:
+        """The account's active cards by reading: the newest reading (None if
+        none), the cards read, those never read and those read more than
+        ``STALE_MARGIN`` before the newest."""
+        self.check_singleton()
+        read = self.card_ids.filtered("date_balance")
+        newest = max(read.mapped("date_balance"), default=None)
+        stale = read.filtered(lambda card: card.date_balance < newest - STALE_MARGIN)
+        return newest, read, self.card_ids - read, stale
+
     def _default_tz(self):
         return self.env.company.partner_id.tz or self.env.user.tz or "UTC"
 
