@@ -3,6 +3,7 @@ from odoo.http import SessionExpiredException
 from odoo.service import security
 from odoo.tools.misc import OrderedSet
 
+from ..tools.channel_capability import resolve_capability
 from ..websocket import wsrequest
 from .bus import dispatch
 
@@ -42,7 +43,11 @@ class IrWebsocket(models.AbstractModel):
         last = max(0, last)
         if last:
             last = 0 if last > self.env["bus.bus"].sudo()._bus_last_id() else last
-        channels = [c for c in channels if self._is_subscribable_channel(c)]
+        channels = [
+            resolve_capability(self.env, c) or c
+            for c in channels
+            if self._is_subscribable_channel(c)
+        ]
         return {
             "channels": OrderedSet(self._get_bus_channels(list(channels))),
             "last": last,
