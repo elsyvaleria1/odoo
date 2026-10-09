@@ -28,7 +28,8 @@ its Diagram page, read-only and drawn from the run's snapshot.
 | `models/automation_runtime.py` | Per-execution instance: state, progress, line orchestration |
 | `models/automation_runtime_line.py` | Per-step execution state within a runtime instance |
 | `models/ir_cron.py` | Thin bridge: cron → `action_view_automation()` |
-| `models/mail_activity.py` | The Approval node's back-link: an activity finishing releases its step |
+| `models/mail_activity.py` | Records approval decisions and wakes the dispatcher without moving the run |
+| `models/automation_approval.py` | Durable per-approver decisions, retained independently of activities and grouped by approval round |
 | `models/ir_websocket.py` | Turns the canvas's requested string channel into a record channel the user may read |
 | `models/_canvas.py` | The canvas geometry contract both of those read; not a model |
 | `models/_input.py` | Fills an input dialog's fields, and its form, from the step that waits; not a model |

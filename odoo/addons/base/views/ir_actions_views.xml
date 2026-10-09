@@ -624,6 +624,8 @@
                                     name="webhook_url"
                                     string="URL"
                                     placeholder="e.g. https://maker.ifttt.com/use/..." />
+                                <field name="webhook_delivery" />
+                                <field name="webhook_timeout" />
                                 <field
                                     name="webhook_field_ids"
                                     string="Fields"

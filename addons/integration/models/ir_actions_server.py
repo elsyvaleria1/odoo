@@ -2,12 +2,12 @@ import logging
 
 from odoo import api, fields, models
 from odoo.api import Environment
-from odoo.exceptions import ValidationError
+from odoo.exceptions import RetryableJobError, TerminalJobError, ValidationError
 from odoo.libs import guarded_http, netguard, webhook
 from odoo.modules.registry import Registry
 
 from ..tools.api_client import get_api_client
-from ..tools.exceptions import CommError
+from ..tools.exceptions import AuthenticationError, CommError, HostNotAllowedError
 
 _logger = logging.getLogger(__name__)
 
@@ -45,13 +45,63 @@ class IrActionsServer(models.Model):
                 raise ValidationError(
                     self.env._(
                         "Endpoint '%(endpoint)s' has retry enabled, which would "
-                        "hold a worker through the backoff after the transaction "
-                        "has already committed. Turn retry off on the endpoint, "
+                        "hold a worker through HTTP backoff. Queued webhook "
+                        "delivery owns its retries. Turn retry off on the endpoint, "
                         "or point '%(name)s' at one that does not retry.",
                         endpoint=action.webhook_endpoint_id.display_name,
                         name=action.name,
                     )
                 )
+
+    def _get_webhook_job_options(self) -> dict:
+        return {
+            **super()._get_webhook_job_options(),
+            "endpoint_id": self.webhook_endpoint_id.id,
+        }
+
+    def _send_webhook_request(
+        self, url, timeout, payload, idempotency_key, options
+    ) -> int:
+        if not options.get("endpoint_id"):
+            return super()._send_webhook_request(
+                url, timeout, payload, idempotency_key, options
+            )
+        endpoint = (
+            self.env["integration.service"].browse(options["endpoint_id"]).exists()
+        )
+        if not endpoint or not endpoint.active or endpoint.retry_enabled:
+            raise TerminalJobError(
+                self.env._(
+                    "Webhook endpoint is unavailable or has in-request retries enabled."
+                )
+            )
+        try:
+            client = get_api_client(
+                self.env, endpoint.code, self.env.company.id, egress_policy="public"
+            )
+            with client.session:
+                response = client.post(
+                    url,
+                    data=payload,
+                    timeout=timeout,
+                    raw=True,
+                    raise_for_status=False,
+                    allow_redirects=False,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Idempotency-Key": idempotency_key,
+                    },
+                )
+                return response.status_code
+        except AuthenticationError, HostNotAllowedError:
+            raise TerminalJobError(
+                self.env._("Webhook endpoint credentials or destination are refused.")
+            ) from None
+        except CommError:
+            raise RetryableJobError(
+                self.env._("Webhook endpoint did not confirm delivery."),
+                seconds=60,
+            ) from None
 
     def _prepare_webhook_delivery(self, url, timeout, action_label, target):
         self.check_singleton()

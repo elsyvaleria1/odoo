@@ -71,6 +71,17 @@ class AutomationRuntimeLine(models.Model):
         string="Approval Activities",
         readonly=True,
     )
+    approval_ids = fields.One2many(
+        comodel_name="automation.approval",
+        inverse_name="line_id",
+        readonly=True,
+    )
+    approval_round = fields.Integer(copy=False, readonly=True)
+    approval_mode = fields.Selection(
+        selection=[("all", "All"), ("any", "Any")],
+        copy=False,
+        readonly=True,
+    )
     date_resume = fields.Datetime(
         string="Resumes At",
         copy=False,
@@ -579,9 +590,18 @@ class AutomationRuntimeLine(models.Model):
             self.runtime_id.action_error()
             return
 
+        self.activity_ids.filtered("active").unlink()
+        self.approval_ids.filtered(lambda vote: vote.state == "pending").write(
+            {
+                "state": "withdrawn",
+                "decided_at": self.env.cr.now(),
+                "decided_by_id": self.env.uid,
+            }
+        )
+        self.approval_ids.filtered("needs_settlement").needs_settlement = False
         activity_type = self.env.ref("mail.mail_activity_data_todo", False)
         summary = self.action_id._render_approval_note(record)
-        self.env["mail.activity"].create(
+        activities = self.env["mail.activity"].create(
             [
                 {
                     "res_model_id": self.env["ir.model"]._get_id(record._name),
@@ -592,6 +612,23 @@ class AutomationRuntimeLine(models.Model):
                     "automation_runtime_line_id": self.id,
                 }
                 for approver in self.action_id.approval_user_ids
+            ]
+        )
+        self.write(
+            {
+                "approval_round": self.approval_round + 1,
+                "approval_mode": self.action_id.approval_mode,
+            }
+        )
+        self.env["automation.approval"].create(
+            [
+                {
+                    "line_id": self.id,
+                    "round": self.approval_round,
+                    "user_id": activity.user_id.id,
+                    "activity_id": activity.id,
+                }
+                for activity in activities
             ]
         )
         self.write({"state": "paused", "date_resume": False, "error_message": False})
@@ -640,11 +677,24 @@ class AutomationRuntimeLine(models.Model):
     @api.model
     def _settle_approvals(self, rules=None) -> None:
         """Release the approval steps their approvers answered, and fail those
-        whose every activity was removed unanswered. An approver only closes
+        whose required decisions were withdrawn or are missing. An approver only closes
         their own activity; the dispatcher moves the run, as the rule runs it.
         """
         paused = self.search(
             [
+                "|",
+                ("approval_ids", "=", False),
+                (
+                    "approval_ids",
+                    "any",
+                    [
+                        "|",
+                        ("needs_settlement", "=", True),
+                        "&",
+                        ("state", "=", "pending"),
+                        ("activity_id", "=", False),
+                    ],
+                ),
                 ("state", "=", "paused"),
                 ("action_id.node_type", "=", "approval"),
                 ("runtime_id.state", "in", ("in_progress", "waiting_resume")),
@@ -657,15 +707,27 @@ class AutomationRuntimeLine(models.Model):
             order="id",
         )
         for line in paused:
-            activities = line.with_context(active_test=False).activity_ids
-            pending = activities.filtered("active")
-            if activities == pending:
-                if not pending:
-                    line._fail_missing_approval()
-                continue
-            if pending and line.action_id.approval_mode == "all":
-                continue
-            line._release_approval(pending)
+            line.approval_ids.filtered("needs_settlement").needs_settlement = False
+            decisions = line.approval_ids.filtered(
+                lambda decision, line=line: decision.round == line.approval_round
+            )
+            approved = decisions.filtered(lambda decision: decision.state == "approved")
+            pending = decisions.filtered(lambda decision: decision.state == "pending")
+            missing = pending.filtered(lambda decision: not decision.activity_id)
+            if not decisions or (
+                line.approval_mode == "all"
+                and (
+                    missing
+                    or decisions.filtered(
+                        lambda decision: decision.state == "withdrawn"
+                    )
+                )
+            ):
+                line._fail_missing_approval()
+            elif approved and (line.approval_mode == "any" or approved == decisions):
+                line._release_approval(line.activity_ids.filtered("active"))
+            elif not (pending - missing):
+                line._fail_missing_approval()
 
     def _fail_missing_approval(self) -> None:
         self.check_singleton()
@@ -673,7 +735,10 @@ class AutomationRuntimeLine(models.Model):
         if runtime.state == "waiting_resume":
             runtime.state = "in_progress"
         self.action_mark_error(
-            self.env._("The approval activity was removed before anyone acted on it."),
+            self.env._(
+                "Required approval evidence is missing or was withdrawn. "
+                "Retry this step to request a fresh approval round."
+            ),
         )
         if self._contains_its_error():
             runtime._advance()

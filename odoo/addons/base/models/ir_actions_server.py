@@ -3,10 +3,19 @@ import logging
 from collections.abc import Callable
 from functools import partial
 from typing import Any, Literal, Self
+from uuid import uuid4
+
+import requests
 
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import (
+    AccessError,
+    RetryableJobError,
+    TerminalJobError,
+    UserError,
+    ValidationError,
+)
 from odoo.fields import Command, Domain
 from odoo.libs import guarded_http, netguard, webhook
 from odoo.libs.debug_log import DebugLog
@@ -295,33 +304,27 @@ class IrActionsServer(models.Model):
     )
     webhook_url = fields.Char(
         string="Webhook URL",
-        help="URL to send the POST request to.\n\n"
-        "The request is UNAUTHENTICATED: no credential, no signature, no "
-        "retry, and no record of the exchange beyond the server log. That is "
-        "the right shape for notifying a receiver that accepts an open URL.\n\n"
-        "For anything that needs a credential, a retry policy, a rate limit, "
-        "secret redaction or an auditable record of what was sent, use an "
-        "'Execute Code' action against a configured outbound endpoint "
-        "instead. With the API Transport application installed:\n"
-        "    endpoint = env['integration.service'].search(\n"
-        "        [('code', '=', 'my_service')], limit=1)\n"
-        "    endpoint._get_api_client().post('/path', json={'id': record.id})\n"
-        "That endpoint owns the credential, the retry policy and the "
-        "integration.exchange row.",
+        help="URL to receive the JSON POST. Direct delivery is unauthenticated. "
+        "Use a configured endpoint from Integration Transport for credentials. "
+        "Queued delivery retries with a stable Idempotency-Key; the receiver "
+        "must deduplicate that key before applying an effect.",
+    )
+    webhook_delivery = fields.Selection(
+        selection=[("once", "Once after commit"), ("queued", "Queued with retries")],
+        default="once",
+        required=True,
+        help="Once sends after commit without retry or durable delivery tracking. "
+        "Queued saves a background job in the action's transaction and retries "
+        "transient failures. Enable it only when the receiver honors "
+        "Idempotency-Key. The workflow continues when the job is queued; "
+        "delivery status is available in Background Jobs.",
     )
     webhook_timeout = fields.Integer(
         string="Webhook Timeout (s)",
         default=1,
-        help="Seconds to wait for the receiver before giving up.\n\n"
-        "The default of 1 second is deliberately short, and the cost of "
-        "raising it is paid by a worker: the call is made after the "
-        "transaction commits, so the request thread is held for however long "
-        "this allows.\n\n"
-        "It is also short enough that a receiver which merely thinks for a "
-        "moment times out, and a timeout here is genuinely ambiguous — the "
-        "receiver may well have processed the payload. Raise it for a slow "
-        "but trusted receiver; if delivery has to be certain, this action is "
-        "the wrong tool (see Webhook URL).",
+        help="Maximum wait per delivery attempt. Once holds the request worker "
+        "after commit; queued delivery holds a job worker. A timeout does not "
+        "prove the receiver rejected the request.",
     )
     webhook_field_ids = fields.Many2many(
         comodel_name="ir.model.fields",
@@ -358,10 +361,9 @@ class IrActionsServer(models.Model):
                 raise ValidationError(
                     self.env._(
                         "Webhook timeout must be between 1 and %(ceiling)s "
-                        "seconds. The call is made after the transaction "
-                        "commits, so this is time a worker spends waiting; a "
-                        "receiver that needs longer should be given a queue "
-                        "rather than a synchronous webhook.",
+                        "seconds. Each attempt occupies a worker. A receiver "
+                        "that needs longer should acknowledge the request "
+                        "and process it asynchronously.",
                         ceiling=self._WEBHOOK_TIMEOUT_CEILING,
                     )
                 )
@@ -912,7 +914,10 @@ class IrActionsServer(models.Model):
                 )
             )
         try:
-            self.env["ir.egress"].check_url(url, schemes=guarded_http.SCHEMES)
+            if self.webhook_delivery == "queued":
+                netguard.check_url_syntax(url, schemes=guarded_http.SCHEMES)
+            else:
+                self.env["ir.egress"].check_url(url, schemes=guarded_http.SCHEMES)
             refusal = None
         except netguard.DestinationRefused as error:
             refusal = error
@@ -965,6 +970,12 @@ class IrActionsServer(models.Model):
             payload_bytes=len(json_values),
             timeout=timeout,
         )
+        if self.webhook_delivery == "queued":
+            self.delayed()._deliver_webhook_job(
+                url, timeout, json_values, str(uuid4()), self._get_webhook_job_options()
+            )
+            return
+
         deliver = self._prepare_webhook_delivery(url, timeout, action_label, target)
 
         @self.env.cr.postrollback.add
@@ -979,6 +990,64 @@ class IrActionsServer(models.Model):
         @self.env.cr.postcommit.add
         def _deliver_webhook_after_commit():
             deliver(json_values)
+
+    def _get_webhook_job_options(self) -> dict:
+        return {}
+
+    @api.job(channel="base.webhook", max_retries=5, idle_timeout=120)
+    def _deliver_webhook_job(
+        self, url, timeout, payload, idempotency_key, options
+    ) -> None:
+        self.check_singleton()
+        try:
+            self.env["ir.egress"].check_url(url, schemes=guarded_http.SCHEMES)
+            status = self._send_webhook_request(
+                url, timeout, payload, idempotency_key, options
+            )
+        except netguard.DestinationRefused as refusal:
+            if refusal.kind == "unresolvable":
+                raise RetryableJobError(
+                    self.env._("Webhook host could not be resolved."),
+                    seconds=60,
+                ) from None
+            raise TerminalJobError(
+                self.env._(
+                    "Webhook destination is refused by the current outbound policy."
+                )
+            ) from None
+        except requests.exceptions.RequestException:
+            raise RetryableJobError(
+                self.env._("Webhook delivery failed before a confirmed response."),
+                seconds=60,
+            ) from None
+        if 200 <= status < 300:
+            return
+        if status in (408, 425, 429) or status >= 500:
+            raise RetryableJobError(
+                self.env._("Webhook receiver returned HTTP %s.", status),
+                seconds=60,
+            )
+        raise TerminalJobError(
+            self.env._("Webhook receiver rejected delivery with HTTP %s.", status)
+        )
+
+    def _send_webhook_request(
+        self, url, timeout, payload, idempotency_key, options
+    ) -> int:
+        with self.env["ir.egress"].session(
+            purpose="webhook", max_bytes=webhook.RESPONSE_MAX_BYTES, max_seconds=timeout
+        ) as session:
+            response = session.post(
+                url,
+                data=payload,
+                timeout=timeout,
+                allow_redirects=False,
+                headers={
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": idempotency_key,
+                },
+            )
+            return response.status_code
 
     def _link_to_active_record(
         self, new_id: int, eval_context: dict[str, Any] | None = None

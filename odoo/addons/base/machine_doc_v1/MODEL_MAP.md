@@ -174,8 +174,33 @@ renders. The PDF path (WeasyPrint engine, layouts, attachments) is `web`'s
 
 Automated server actions — execute code, CRUD operations, or webhooks. The
 webhook HTTP delivery, target scrubbing and log target live in
-`odoo/libs/webhook.py` (Odoo-agnostic); the model schedules the delivery on
-commit and logs the scheduling and the rollback.
+`odoo/libs/webhook.py` (Odoo-agnostic) serves the default once-after-commit
+mode, which logs scheduling and rollback. The explicit queued mode saves an
+`ir.job` in the action's transaction and sends through guarded HTTP in the job.
+It freezes the payload, URL, timeout, endpoint options and a UUID
+`Idempotency-Key` in the job arguments. A rolled-back enqueue sends nothing;
+a committed intent survives loss of the request process. Job recovery and retry
+reuse that key and payload. Receivers must persist and enforce deduplication;
+this is at-least-once delivery, not exactly-once HTTP.
+
+Queued actions validate URL syntax without DNS or HTTP; transient DNS failure
+cannot prevent storing the outgoing intent. The worker resolves the host and
+enforces current egress policy before each attempt, including the first. A
+forbidden destination therefore fails the queued job without sending a request.
+Once-after-commit actions retain their synchronous destination validation.
+
+The base.webhook channel has capacity two by default. Attempts recheck current
+egress policy, refuse redirects, retry network failures and HTTP 408/425/429/5xx,
+and fail other non-success responses terminally. Jobs allow five retries and
+report delivery state in Background Jobs. The workflow continues once its job
+is queued, not when the receiver acknowledges it. A job retains its enqueueing
+authority under the existing queue contract. Integration Transport snapshots the
+selected endpoint id and uses its current credentials and public-egress policy;
+in-request endpoint retries must remain disabled.
+
+Custom Execute Code actions that send HTTP synchronously do not acquire these
+guarantees. Choosing queued webhook delivery does not retrofit arbitrary Python
+side effects or make a receiver honor the key.
 
 **Fields:**
 - `state` (Selection, required) — `object_write`, `object_create`, `object_copy`, `code`, `webhook`, `multi`
@@ -189,6 +214,7 @@ commit and logs the scheduling and the rollback.
 - `value` (Text) — Expression or literal value
 - `evaluation_type` (Selection) — `value`, `sequence`, `equation`
 - `webhook_url` (Char), `webhook_field_ids` (Many2many → ir.model.fields)
+- `webhook_delivery` (Selection: `once` default, `queued`), `webhook_timeout` (Integer)
 
 **Key Methods:**
 - `run()` — Main entry point, dispatches to runner
@@ -196,7 +222,9 @@ commit and logs the scheduling and the rollback.
 - `_run_action_object_write(eval_context)` — Update records
 - `_run_action_object_create(eval_context)` — Create record
 - `_run_action_object_copy(eval_context)` — Duplicate record
-- `_run_action_webhook(eval_context)` — Send POST request
+- `_run_action_webhook(eval_context)` — Schedule once-after-commit delivery or enqueue a durable job
+- `_deliver_webhook_job(...)` — Retryable delivery with the frozen payload and idempotency key
+- `_send_webhook_request(...)` — Direct guarded HTTP, extended by Integration Transport for configured endpoints
 - `_run_action_multi(eval_context)` — Run child actions sequentially
 - `_prepare_eval_context(action)` — Prepare safe evaluation context
 - `create_action()`, `unlink_action()` — Manage action bindings

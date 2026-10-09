@@ -88,7 +88,7 @@ server action model AND the workflow node definition.
 | ~~`predecessor_ids`~~ | ~~Many2many self~~ | **REMOVED in Phase 2** — replaced by `workflow.edge` |
 | ~~`successor_ids`~~ | ~~Many2many self~~ | **REMOVED in Phase 2** — replaced by `workflow.edge` |
 | `node_type` | Selection | `action` (default), `wait`, `approval`, `input` or `subflow`. No `parallel`/`join`/`branch` — the edge model is already all three — and no `http_request`, because `state="webhook"` already is one. See vision.md Phase 3 |
-| `approval_user_ids` / `approval_mode` / `approval_note` | Many2many `res.users` / Selection / Char | Who receives an activity; whether `all` of them (default) or `any` one must mark it done — under `any` the first release removes the others' activities, after the step is released, so `_fail_missing_approval` does not read the removal as a lost approval; and what the activity asks, an inline template over the run's record (`_render_approval_note`: `{{ object.name }}`) |
+| `approval_user_ids` / `approval_mode` / `approval_note` | Many2many `res.users` / Selection / Char | Who receives an activity; whether `all` of them (default) or `any` one must approve; voters and mode are snapshotted for each round, and under `any` release removes the remaining activities; and what the activity asks, an inline template over the run's record (`_render_approval_note`: `{{ object.name }}`) |
 | `subflow_automation_id` | Many2one `automation.rule` | What a Sub-workflow step runs; a cycle is refused |
 | `line_input_field_ids` | Many2many `ir.model.fields` | Fields of the step's own run step (`automation.runtime.line`) that must be filled before it runs; `_get_line_input_fields()` is the hook a module extends with what its step types need. A step reached with one empty pauses and asks, and Continue runs that step only |
 | `input_field_ids` | Many2many `ir.model.fields` | The stored, writable fields of `automation.runtime` an Input step asks someone to fill in. An Input step asks these **or** its form, never both |
@@ -670,3 +670,20 @@ run's own dialog.
 `automation.runtime.line.action_run()` runs one ready line of a live run through
 `automation.runtime._run_line`, as Next Step does for the first ready line; the
 run form's step list and the step's form both offer it.
+
+## Durable approval decisions
+
+`automation.approval` stores the step, round, required user, optional activity,
+state (`pending`, `approved`, `withdrawn`), decision timestamp and actor. Unique
+constraints cover (step, round, user) and the activity link. Deleting the activity
+sets only that link to null; it never deletes the decision. Runtime deletion
+cascades through the step to its decisions. Company access follows the run.
+
+`automation.runtime.line` carries `approval_ids`, `approval_round`, and a snapshot
+`approval_mode`. Settlement considers only its current round. Retry increments
+the round and requests fresh activities, so older approvals cannot satisfy it.
+Settlement selects eligible paused steps whose decisions need settlement, whose
+pending vote lost its activity, or whose evidence is missing. A partial index on
+the decision table covers changed and missing-activity selection. Consuming a
+wakeup flag leaves the durable decision intact. External-effect idempotency
+remains a separate outstanding improvement.

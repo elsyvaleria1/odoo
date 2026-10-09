@@ -7,3 +7,4 @@ from . import automation_runtime
 from . import automation_runtime_line
 from . import automation_runtime_edge
 from . import workflow_edge
+from . import automation_approval

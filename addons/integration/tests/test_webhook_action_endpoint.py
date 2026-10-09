@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import RetryableJobError, TerminalJobError, ValidationError
 from odoo.libs import netguard
 from odoo.tests import TransactionCase, tagged
 from odoo.tools import mute_logger
@@ -196,3 +196,75 @@ class TestWebhookActionEndpoint(TransactionCase):
         self.assertIn("was NOT sent", logs.output[0])
         self.assertIn("correct the action's URL", logs.output[0])
         self.assertNotIn("resolves elsewhere", logs.output[0])
+
+    def test_queued_delivery_keeps_the_selected_endpoint(self):
+        action = self._action(
+            webhook_endpoint_id=self.endpoint.id, webhook_delivery="queued"
+        )
+        options = action._get_webhook_job_options()
+        action.webhook_endpoint_id = False
+        with patch(f"{_MODULE}.get_api_client") as factory:
+            client = factory.return_value
+            client.post.return_value.status_code = 202
+            status = action._send_webhook_request(
+                "https://example.com/hook", 3, '{"a": 1}', "stable-key", options
+            )
+        self.assertEqual(status, 202)
+        self.assertEqual(factory.call_args.args[1], self.endpoint.code)
+        self.assertEqual(factory.call_args.kwargs["egress_policy"], "public")
+        self.assertEqual(
+            client.post.call_args.kwargs["headers"]["Idempotency-Key"], "stable-key"
+        )
+        self.assertFalse(client.post.call_args.kwargs["allow_redirects"])
+        self.assertFalse(client.post.call_args.kwargs["raise_for_status"])
+        self.assertTrue(client.post.call_args.kwargs["raw"])
+
+    def test_queued_endpoint_status_is_classified_by_the_job(self):
+        action = self._action(
+            webhook_endpoint_id=self.endpoint.id, webhook_delivery="queued"
+        )
+        options = action._get_webhook_job_options()
+        for status, exception in [
+            (503, RetryableJobError),
+            (429, RetryableJobError),
+            (403, TerminalJobError),
+        ]:
+            with (
+                self.subTest(status=status),
+                patch(f"{_MODULE}.get_api_client") as factory,
+            ):
+                factory.return_value.post.return_value.status_code = status
+                with self.assertRaises(exception):
+                    action._deliver_webhook_job(
+                        "https://example.com/hook", 3, "{}", "stable-key", options
+                    )
+
+    def test_queued_delivery_rejects_a_disabled_endpoint(self):
+        action = self._action(
+            webhook_endpoint_id=self.endpoint.id, webhook_delivery="queued"
+        )
+        options = action._get_webhook_job_options()
+        self.endpoint.active = False
+        with (
+            patch(f"{_MODULE}.get_api_client") as factory,
+            self.assertRaises(TerminalJobError),
+        ):
+            action._send_webhook_request(
+                "https://example.com/hook", 3, "{}", "stable-key", options
+            )
+        factory.assert_not_called()
+
+    def test_queued_delivery_refuses_in_request_retries_enabled_later(self):
+        action = self._action(
+            webhook_endpoint_id=self.endpoint.id, webhook_delivery="queued"
+        )
+        options = action._get_webhook_job_options()
+        self.endpoint.retry_enabled = True
+        with (
+            patch(f"{_MODULE}.get_api_client") as factory,
+            self.assertRaises(TerminalJobError),
+        ):
+            action._send_webhook_request(
+                "https://example.com/hook", 3, "{}", "stable-key", options
+            )
+        factory.assert_not_called()

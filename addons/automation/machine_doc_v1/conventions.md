@@ -227,13 +227,30 @@ writes `automation.runtime` and its lines, which `ir.access.csv` gives to
 `base.group_system` alone, and continuing it runs the next steps, which only the
 rule's authority may. Until 2026-10-07 an approver who was only an internal user
 got an `AccessError` from their own to-do; the first fix ran the release, and the
-inline run after it, under `sudo()` in the approver's request. Since 2026-10-08
-`mail.activity._action_done` and `unlink` only wake the dispatcher
-(`_request_dispatch`), and `_dispatch_due_steps` settles the paused approval
-steps by their activities' state (`_settle_approvals`): one done activity, or
-every one in `all` mode, releases the step; none left, done or open, fails it.
-The person's act is recorded on their activity; the run moves in the
-dispatcher's transaction, as `automation.rule._process` starts it.
+inline run after it, under `sudo()` in the approver's request. Since 2026-10-09
+`mail.activity._action_done` records a durable decision under the narrow
+`privilege_record_approval` permission and wakes the dispatcher. The privilege
+permits only reading and updating approval records linked to activities the
+actor may write or unlink; it grants no runtime or step mutation rights. Ordinary
+users cannot relink an activity to another workflow step. Completion additionally
+requires the assigned approver, unless server code explicitly runs elevated;
+permission to edit the underlying document does not grant another person's vote.
+Approval activity completion, reassignment and deletion use savepoints so a
+caught failure cannot leave a partially changed activity or decision.
+
+`automation.approval` snapshots each required approver in a numbered round.
+The step snapshots `all` or `any` when requesting that round. Completed decisions
+survive activity deletion; deleting, reassigning, or moving an unanswered activity
+to another document withdraws its vote. Under `all`, any withdrawn or missing required vote fails the
+step. Under `any`, another pending approver can still approve. Archiving an
+activity is not an approval. Retry creates a new round and retains old decisions.
+
+The dispatcher still enforces the active-runtime and rule-selection boundaries.
+It alone transitions the step and runs successors. An upgraded, paused legacy
+approval without durable decisions fails safely with an instruction to retry;
+missing historical votes cannot be reconstructed from surviving activities.
+Settled legacy runs remain unchanged. No backfill guesses at historical consent.
+
 
 The common shape: **three of the four were invisible because the tests asserted
 on `line.state` and never on `runtime.state`**, and the fourth because every

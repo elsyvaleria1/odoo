@@ -15,4 +15,11 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_record_approval" model="res.groups">
+        <field name="name">Record Workflow Approval</field>
+        <field
+            name="comment">Record an activity decision without granting workflow transition rights.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

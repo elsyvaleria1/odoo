@@ -15,3 +15,7 @@ access_ir_actions_server_draw_run,ir.actions.server: a run's diagram reads its s
 access_automation_rule_draw_run,automation.rule: a run's diagram reads its automation,model_automation_rule,privilege_draw_run,permission,r,,,
 access_ir_actions_server_start_run,ir.actions.server: starting a run checks its steps,base.model_ir_actions_server,privilege_start_run,permission,r,,,"[('automation_rule_id', '!=', False)]"
 access_automation_rule_start_run,automation.rule: starting a run checks its automation,model_automation_rule,privilege_start_run,permission,r,,,
+access_automation_approval_system,automation.approval.system,model_automation_approval,base.group_system,permission,crud,,,
+access_automation_approval_user,automation.approval.user,model_automation_approval,base.group_user,permission,r,,,"[('line_id', 'access', 'read')]"
+automation_approval_company_rule,Workflow Approval: multi-company,model_automation_approval,base.group_everyone,guard,crud,company,,
+access_automation_approval_record,automation.approval: record activity decision,model_automation_approval,privilege_record_approval,permission,ru,,,"['|', ('activity_id', 'access', 'write'), ('activity_id', 'access', 'unlink')]"

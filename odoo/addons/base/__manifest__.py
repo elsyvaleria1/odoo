@@ -1,6 +1,6 @@
 {
     "name": "Framework Base",
-    "version": "1.148",
+    "version": "1.149",
     "oldest_upgradable_version": "1.140",
     "category": "Hidden",
     "summary": "Provide the core registry, users, companies and module-management models",
@@ -32,6 +32,7 @@
         "views/ir_cron_views.xml",
         "views/ir_cron_trigger_views.xml",
         "views/ir_job_views.xml",
+        "data/ir_job_data.xml",
         "views/ir_filters_views.xml",
         "views/ir_model_views.xml",
         "views/ir_attachment_views.xml",

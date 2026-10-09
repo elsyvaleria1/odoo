@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="job_channel_webhook" model="ir.job.channel">
+        <field name="name">base.webhook</field>
+        <field name="capacity">2</field>
+    </record>
+
+</odoo>

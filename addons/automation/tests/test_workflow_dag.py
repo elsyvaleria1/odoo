@@ -1,12 +1,16 @@
 import logging
+import unittest
+from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from psycopg.errors import UniqueViolation
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools import mute_logger
+
+from odoo.addons.mail.models.mail_activity import MailActivity as BaseMailActivity
 
 _logger = logging.getLogger(__name__)
 
@@ -1290,6 +1294,244 @@ class TestApprovalNode(TransactionCase):
         )
         self.partner.invalidate_recordset(["ref"])
         self.assertEqual(self.partner.ref, "approved")
+
+    def _two_approver_run(self, mode="all"):
+        second = self.env["res.users"].create(
+            {
+                "name": "Second",
+                "login": "approval_ledger_second",
+                "group_ids": [(6, 0, self.env.ref("base.group_user").ids)],
+            }
+        )
+        gate = self._approval()
+        gate.write({"approval_user_ids": [(4, second.id)], "approval_mode": mode})
+        after = self._action("after", "record.write({'ref': 'approved'})")
+        link(self.env, gate, after)
+        runtime = self._run()
+        return runtime, self._line(runtime, gate)
+
+    def test_deleting_an_unanswered_vote_cannot_complete_all_approval(self):
+        runtime, line = self._two_approver_run()
+        line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(line.state, "paused")
+        line.activity_ids.unlink()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(line.state, "error")
+        self.assertEqual(runtime.state, "error")
+        self.assertFalse(self.partner.ref)
+
+    def test_deleting_completed_activity_preserves_approval(self):
+        gate = self._approval()
+        after = self._action("after", "record.write({'ref': 'approved'})")
+        link(self.env, gate, after)
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        activity = line.activity_ids
+        activity.with_user(self.approver)._action_done()
+        activity.with_user(self.approver).unlink()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "done")
+        self.assertEqual(self.partner.ref, "approved")
+        self.assertEqual(line.approval_ids.state, "approved")
+        self.assertEqual(line.approval_ids.decided_by_id, self.approver)
+        self.assertFalse(line.approval_ids.activity_id)
+
+    def test_any_approval_can_wait_after_another_vote_is_withdrawn(self):
+        runtime, line = self._two_approver_run("any")
+        line.activity_ids.filtered(lambda a: a.user_id != self.approver).unlink()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+        line.activity_ids.with_user(self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "done")
+        self.assertEqual(self.partner.ref, "approved")
+
+    def test_a_partial_round_is_settled_again_when_the_next_vote_arrives(self):
+        runtime, line = self._two_approver_run()
+        line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+        self.assertFalse(any(line.approval_ids.mapped("needs_settlement")))
+        line.activity_ids._action_done()
+        self.assertTrue(any(line.approval_ids.mapped("needs_settlement")))
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "done")
+        self.assertEqual(self.partner.ref, "approved")
+
+    def test_missing_activity_is_reconciled_without_a_wakeup_flag(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        line.approval_ids.write({"activity_id": False, "needs_settlement": False})
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "error")
+        self.assertEqual(line.state, "error")
+
+    def test_editing_the_definition_does_not_weaken_an_open_round(self):
+        runtime, line = self._two_approver_run()
+        line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        line.action_id.write(
+            {"approval_mode": "any", "approval_user_ids": [(6, 0, self.approver.ids)]}
+        )
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+        self.assertEqual(line.approval_mode, "all")
+        self.assertEqual(len(line.approval_ids), 2)
+        self.assertFalse(self.partner.ref)
+
+    def test_retry_requires_a_new_round_and_keeps_old_decisions(self):
+        runtime, line = self._two_approver_run()
+        line.activity_ids.filtered(lambda a: a.user_id == self.approver)._action_done()
+        line.activity_ids.unlink()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        old = line.approval_ids
+        runtime.action_retry()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+        self.assertEqual(line.approval_round, 2)
+        self.assertEqual(len(line.approval_ids), 4)
+        self.assertEqual(set(old.mapped("state")), {"approved", "withdrawn"})
+        self.assertFalse(self.partner.ref)
+        line.activity_ids._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "done")
+        self.assertEqual(self.partner.ref, "approved")
+
+    def test_archiving_an_activity_is_not_a_decision(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        activity = line.activity_ids
+        activity.with_user(self.approver).write({"active": False})
+        activity.with_user(self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+        self.assertEqual(line.approval_ids.state, "pending")
+
+    def test_approver_cannot_write_decisions_or_relink_activities(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        with self.assertRaises(AccessError), self.cr.savepoint():
+            line.approval_ids.with_user(self.approver).write({"state": "approved"})
+        with self.assertRaises(AccessError), self.cr.savepoint():
+            line.activity_ids.with_user(self.approver).write(
+                {"automation_runtime_line_id": False}
+            )
+        self.assertEqual(line.approval_ids.state, "pending")
+
+    def test_moving_activity_cannot_approve_the_original_document(self):
+        gate = self._approval()
+        after = self._action("after", "record.write({'ref': 'approved'})")
+        link(self.env, gate, after)
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        other = self.env["res.partner"].create({"name": "Different document"})
+        activity = line.activity_ids.with_user(self.approver)
+        activity.write({"res_id": other.id})
+        activity._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(line.approval_ids.state, "withdrawn")
+        self.assertEqual(runtime.state, "error")
+        self.assertFalse(self.partner.ref)
+
+    def test_rejected_reassignment_preserves_the_pending_vote(self):
+        runtime, line = self._two_approver_run()
+        activity = line.activity_ids.filtered(lambda a: a.user_id == self.approver)
+        other_user = (line.activity_ids - activity).user_id
+        try:
+            activity.with_user(self.approver).write(
+                {"user_id": other_user.id, "automation_runtime_line_id": False}
+            )
+        except AccessError:
+            pass
+        else:
+            self.fail("The protected workflow link accepted an ordinary user's write")
+        decision = line.approval_ids.filtered(lambda d: d.user_id == self.approver)
+        self.assertEqual(decision.state, "pending")
+        self.assertFalse(decision.needs_settlement)
+        self.assertEqual(activity.user_id, self.approver)
+        self.assertEqual(runtime.state, "waiting_resume")
+
+    def test_writing_the_same_activity_identity_keeps_the_vote(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        activity = line.activity_ids.with_user(self.approver)
+        activity.write(
+            {
+                "res_id": activity.res_id,
+                "res_model_id": activity.res_model_id.id,
+                "user_id": activity.user_id.id,
+            }
+        )
+        self.assertEqual(line.approval_ids.state, "pending")
+        activity._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "done")
+
+    def test_one_approver_cannot_complete_another_approvers_vote(self):
+        self.approver.group_ids |= self.env.ref("base.group_partner_manager")
+        runtime, line = self._two_approver_run()
+        other = line.activity_ids.filtered(lambda a: a.user_id != self.approver)
+        with unittest.TestCase.assertRaises(self, AccessError):
+            other.with_user(self.approver)._action_done()
+        self.assertTrue(other.active)
+        self.assertEqual(set(line.approval_ids.mapped("state")), {"pending"})
+        self.assertEqual(runtime.state, "waiting_resume")
+
+    def test_rejected_activity_deletion_preserves_the_pending_vote(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        activity = line.activity_ids.with_user(self.approver)
+        with (
+            patch.object(
+                BaseMailActivity, "unlink", side_effect=ValidationError("Denied")
+            ),
+            unittest.TestCase.assertRaises(self, ValidationError),
+        ):
+            activity.unlink()
+        self.assertEqual(line.approval_ids.state, "pending")
+        self.assertFalse(line.approval_ids.needs_settlement)
+        self.assertTrue(activity.exists())
+
+    def test_reassignment_withdraws_the_original_vote(self):
+        runtime, line = self._two_approver_run()
+        other = line.activity_ids.filtered(lambda a: a.user_id != self.approver)
+        other.write({"user_id": self.approver.id})
+        line.activity_ids.with_user(self.approver)._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "error")
+        self.assertFalse(self.partner.ref)
+
+    def test_legacy_round_without_durable_decisions_requires_retry(self):
+        gate = self._approval()
+        runtime = self._run()
+        line = self._line(runtime, gate)
+        line.approval_ids.unlink()
+        line.write({"approval_round": 0, "approval_mode": False})
+        line.activity_ids._action_done()
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "error")
+        self.assertIn("fresh approval round", line.error_message)
+
+    def test_disabled_rule_does_not_settle_a_recorded_approval(self):
+        gate = self._approval()
+        runtime = self._run()
+        self._line(runtime, gate).activity_ids._action_done()
+        self.automation.active = False
+        self.env["automation.runtime"]._dispatch_due_steps()
+        self.assertEqual(runtime.state, "waiting_resume")
+
+    def test_scoped_dispatch_does_not_settle_another_rules_approval(self):
+        gate = self._approval()
+        runtime = self._run()
+        self._line(runtime, gate).activity_ids._action_done()
+        other = self.automation.copy({"name": "Other rule"})
+        self.env["automation.runtime"]._dispatch_due_steps(rules=other)
+        self.assertEqual(runtime.state, "waiting_resume")
 
     def test_the_note_reads_the_record(self):
         gate = self._action(
