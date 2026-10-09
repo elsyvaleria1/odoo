@@ -63,6 +63,7 @@ export class PosOrderLine extends models.ServerModel {
             "combo_qty_per_parent",
             "refund_orderline_ids",
             "extra_tax_data",
+            "discount_barcode",
             "write_date",
         ];
     }

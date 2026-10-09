@@ -1,7 +1,11 @@
 import * as Dialog from "@point_of_sale/../tests/generic_helpers/dialog_util";
+import * as Order from "@point_of_sale/../tests/generic_helpers/order_widget_util";
 import { scan_barcode } from "@point_of_sale/../tests/generic_helpers/utils";
 import * as Chrome from "@point_of_sale/../tests/pos/tours/utils/chrome_util";
+import { inLeftSide } from "@point_of_sale/../tests/pos/tours/utils/common";
+import * as PaymentScreen from "@point_of_sale/../tests/pos/tours/utils/payment_screen_util";
 import * as ProductScreen from "@point_of_sale/../tests/pos/tours/utils/product_screen_util";
+import * as ReceiptScreen from "@point_of_sale/../tests/pos/tours/utils/receipt_screen_util";
 import { registry } from "@web/core/registry";
 
 registry.category("web_tour.tours").add("BarcodeScanningTour", {
@@ -96,5 +100,26 @@ registry.category("web_tour.tours").add("test_quantity_package_of_non_basic_unit
             scan_barcode("555555"),
             ProductScreen.selectedOrderlineHas("Cord", 12),
             Chrome.endTour(),
+        ].flat(),
+});
+
+registry.category("web_tour.tours").add("ScannedDiscountWithoutLineDiscountsTour", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            Dialog.confirm("Open Register"),
+            scan_barcode("8888888"),
+            ProductScreen.selectedOrderlineHas("Scanned Discount Product", 1, "100.00"),
+            scan_barcode("2215"),
+            inLeftSide(
+                Order.hasLine({
+                    productName: "Scanned Discount Product",
+                    price: "85.00",
+                }),
+            ),
+            ProductScreen.clickPayButton(),
+            PaymentScreen.clickPaymentMethod("Bank", true, { remaining: "0.00" }),
+            PaymentScreen.clickValidate(),
+            ReceiptScreen.receiptIsThere(),
         ].flat(),
 });

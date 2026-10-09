@@ -274,6 +274,87 @@ class TestPosOrderPricingTrust(TestPoSCommon):
         self.assertEqual(order.state, "paid")
         self.assertFalse(order.has_pricing_breach)
 
+    def test_a_scanned_discount_is_the_tills_not_the_cashiers(self):
+        self.config.manual_discount = False
+        for barcode, flagged in (("2215", False), ("2210", True), ("0123", True)):
+            with self.subTest(barcode=barcode):
+                order = self._sync(
+                    [self._line(discount=15, discount_barcode=barcode)], paid=97.75
+                )
+
+                self.assertEqual(order.state, "paid")
+                self.assertEqual(order.has_pricing_breach, flagged)
+
+    def test_a_price_a_manager_set_stays_approved_when_a_cashier_pays(self):
+        manager = self.cashier.copy(
+            {
+                "login": "pos_pricing_trust_floor_manager",
+                "group_ids": [
+                    Command.set(self.env.ref("point_of_sale.group_pos_manager").ids)
+                ],
+            }
+        )
+        self.config.restrict_price_control = True
+        draft = self.create_ui_order_data(
+            [self._line(price_unit=90, uuid=self.create_random_uid())],
+            pos_order_ui_args={"state": "draft"},
+            payments=[],
+        )
+        self.env["pos.order"].with_user(manager).sync_from_ui([draft])
+
+        paid = dict(draft, state="paid")
+        paid["payment_ids"] = [
+            Command.create(
+                {"amount": 103.5, "payment_method_id": self.cash_pm1.id, "name": "x"}
+            )
+        ]
+        result = self.env["pos.order"].with_user(self.cashier).sync_from_ui([paid])
+        order = self.env["pos.order"].browse(result["pos.order"][0]["id"])
+
+        self.assertEqual(order.state, "paid")
+        self.assertFalse(
+            order.has_pricing_breach,
+            "the manager's device synced the price before the cashier's paid it",
+        )
+
+    def test_a_price_a_cashier_set_is_not_approved_by_the_manager_who_pays(self):
+        manager = self.cashier.copy(
+            {
+                "login": "pos_pricing_trust_paying_manager",
+                "group_ids": [
+                    Command.set(self.env.ref("point_of_sale.group_pos_manager").ids)
+                ],
+            }
+        )
+        self.config.restrict_price_control = True
+        draft = self.create_ui_order_data(
+            [self._line(price_unit=90, uuid=self.create_random_uid())],
+            pos_order_ui_args={"state": "draft"},
+            payments=[],
+        )
+        self.env["pos.order"].with_user(self.cashier).sync_from_ui([draft])
+
+        paid = dict(draft, state="paid")
+        paid["payment_ids"] = [
+            Command.create(
+                {"amount": 103.5, "payment_method_id": self.cash_pm1.id, "name": "x"}
+            )
+        ]
+        result = self.env["pos.order"].with_user(manager).sync_from_ui([paid])
+        order = self.env["pos.order"].browse(result["pos.order"][0]["id"])
+
+        self.assertTrue(order.has_pricing_breach)
+
+    def test_the_till_cannot_send_its_own_approval(self):
+        self.config.restrict_price_control = True
+        order = self._sync(
+            [self._line(price_unit=90, approved_pricing={"price_unit": 90})],
+            paid=103.5,
+        )
+
+        self.assertTrue(order.has_pricing_breach)
+        self.assertNotIn("price_unit", order.lines.approved_pricing or {})
+
     def test_the_till_loads_every_pricelist_its_rules_price_from(self):
         def pricelist(name, base=None):
             item = (

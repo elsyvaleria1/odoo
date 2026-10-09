@@ -1771,6 +1771,26 @@ class TestUi(TestPointOfSaleHttpCommon):
             login="pos_user",
         )
 
+    def test_a_scanned_discount_is_not_a_line_discount(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "Scanned Discount Product",
+                "barcode": "8888888",
+                "list_price": 100,
+                "taxes_id": False,
+                "available_in_pos": True,
+            }
+        )
+        self.main_pos_config.manual_discount = False
+        self.main_pos_config.with_user(self.pos_user).open_ui()
+        self.start_pos_tour("ScannedDiscountWithoutLineDiscountsTour")
+
+        line = self.env["pos.order.line"].search([("product_id", "=", product.id)])
+        self.assertEqual(line.discount, 15)
+        self.assertEqual(line.discount_barcode, "2215")
+        self.assertEqual(line.order_id.state, "paid")
+        self.assertFalse(line.order_id.has_pricing_breach)
+
     def test_08_show_tax_excluded(self):
         tax = self.env["account.tax"].create(
             {

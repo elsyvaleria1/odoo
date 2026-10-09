@@ -481,6 +481,15 @@ class PosOrder(models.Model):
         """Persist a UI payload without consuming commands needed by extensions."""
         order = deepcopy(order)
         till_combo_shares = self._pop_till_combo_shares(order)
+        synced_lines = self._pop_server_owned_values(order)
+        previous_pricing = (
+            {
+                line.uuid: {"price_unit": line.price_unit, "discount": line.discount}
+                for line in existing_order.lines
+            }
+            if existing_order
+            else {}
+        )
         draft = order.get("state") == "draft"
         pos_session = self.env["pos.session"].browse(order.get("session_id"))
         _debug.pipeline(
@@ -610,6 +619,13 @@ class PosOrder(models.Model):
 
         pos_order._link_uuid_relations(record_uuid_mapping)
         pos_order.lines._keep_till_combo_shares(till_combo_shares)
+        pos_order.lines.filtered(
+            lambda line: (
+                line.uuid not in previous_pricing
+                or line.uuid in synced_lines
+                or line.id in synced_lines
+            )
+        )._approve_pricing(previous_pricing)
         self._check_single_refund_origin(pos_order.lines.refunded_orderline_id.order_id)
 
         pos_order = pos_order.with_company(pos_order.company_id)
@@ -619,6 +635,19 @@ class PosOrder(models.Model):
             pos_order._flag_over_refund()
             pos_order._flag_pricing_breaches()
         return result
+
+    @api.model
+    def _pop_server_owned_values(self, order) -> set:
+        """Drop what only the server sets; return the synced lines' uuids and ids."""
+        for name in ("is_over_refund", "has_pricing_breach"):
+            order.pop(name, None)
+        synced = set()
+        for command in order.get("lines") or ():
+            if len(command) < 3 or not isinstance(command[2], dict):
+                continue
+            command[2].pop("approved_pricing", None)
+            synced.add(command[2].get("uuid") or command[1])
+        return synced - {None, 0}
 
     @api.model
     def _pop_till_combo_shares(self, order) -> dict:

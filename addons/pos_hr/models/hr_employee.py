@@ -24,45 +24,33 @@ class HrEmployee(models.Model):
 
     @api.model
     def _load_pos_data_read(self, records, config):
-        # NOTE:
         fields = self._load_pos_data_fields(config)
         read_records = records.read(fields, load=False)
-        manager_ids = records.filtered(
-            lambda emp: config.group_pos_manager_id.id in emp.user_id.all_group_ids.ids
-        ).ids
-
         employees_barcode_pin = records.get_barcodes_and_pin_hashed()
         bp_per_employee_id = {bp_e["id"]: bp_e for bp_e in employees_barcode_pin}
+        roles = {employee.id: employee._get_pos_role(config) for employee in records}
+        admin_ids = records.filtered(
+            lambda employee: (
+                config.group_pos_manager_id in employee.user_id.all_group_ids
+            )
+        ).ids
 
         _debug.perf.count(
             "pos_employees_loaded",
             config=config,
             employees=len(read_records),
-            managers=len(manager_ids),
+            managers=sum(role == "manager" for role in roles.values()),
             with_credentials=len(bp_per_employee_id),
         )
         for employee in read_records:
-            if employee["id"] in manager_ids:
-                role = "manager"
+            role = roles[employee["id"]]
+            if employee["id"] in admin_ids:
                 employee["_user_role"] = "admin"
-            elif employee["id"] in config.advanced_employee_ids.ids:
-                role = "manager"
-            elif employee["id"] in config.minimal_employee_ids.ids:
-                role = "minimal"
-            else:
-                role = "cashier"
             _debug.logic(
                 "pos_employee_role",
                 config=config,
                 employee_id=employee["id"],
                 role=role,
-                by="pos_manager_group"
-                if employee["id"] in manager_ids
-                else "advanced_list"
-                if employee["id"] in config.advanced_employee_ids.ids
-                else "minimal_list"
-                if employee["id"] in config.minimal_employee_ids.ids
-                else "default",
             )
 
             employee_barcode_pin = bp_per_employee_id.get(employee["id"], {})
@@ -71,6 +59,18 @@ class HrEmployee(models.Model):
             employee["_pin"] = employee_barcode_pin.get("pin", False)
 
         return read_records
+
+    def _get_pos_role(self, config) -> str:
+        """The role the till gives this employee: manager, cashier or minimal."""
+        self.check_singleton()
+        if (
+            config.group_pos_manager_id in self.user_id.all_group_ids
+            or self in config.advanced_employee_ids
+        ):
+            return "manager"
+        if self in config.minimal_employee_ids:
+            return "minimal"
+        return "cashier"
 
     def _is_pos_manager(self) -> bool:
         self.check_singleton()

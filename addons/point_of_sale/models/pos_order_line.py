@@ -114,6 +114,16 @@ class PosOrderLine(models.Model):
         digits=0,
         default=0.0,
     )
+    discount_barcode = fields.Char(
+        copy=False,
+        help="The discount barcode the till scanned for this line's discount.",
+    )
+    approved_pricing = fields.Json(
+        copy=False,
+        readonly=True,
+        help="The price and discount a sync whose cashier could set them last "
+        "set on this line.",
+    )
     order_id = fields.Many2one(
         comodel_name="pos.order",
         string="Order Ref",
@@ -235,6 +245,7 @@ class PosOrderLine(models.Model):
             "combo_qty_per_parent",
             "refund_orderline_ids",
             "extra_tax_data",
+            "discount_barcode",
             "write_date",
         ]
 
@@ -367,17 +378,12 @@ class PosOrderLine(models.Model):
     def _get_pricing_breaches(self) -> dict[str, Self]:
         if not self:
             return {}
-        order = self.order_id
-        order.check_singleton()
+        self.order_id.check_singleton()
         checks = {
-            "discount": (
-                not order._may_cashier_set_discounts(),
-                "_has_allowed_discount",
-            ),
-            "price_unit": (not order._may_cashier_set_prices(), "_has_allowed_price"),
-            "tax_ids": (True, "_has_allowed_taxes"),
+            "discount": "_has_allowed_discount",
+            "price_unit": "_has_allowed_price",
+            "tax_ids": "_has_allowed_taxes",
         }
-        checks = {name: check for name, (applies, check) in checks.items() if applies}
         exemptions = self._get_pricing_exemptions()
         breaches = defaultdict(self.browse)
         for line in self:
@@ -386,16 +392,87 @@ class PosOrderLine(models.Model):
                     breaches[name] |= line
         return {name: breaches[name] for name in checks if name in breaches}
 
+    def _approve_pricing(self, previous) -> None:
+        """Approve what this sync changed, as far as its cashier may set it.
+
+        `previous` maps a line's uuid to its price and discount before the sync.
+        """
+        if not self:
+            return
+        order = self.order_id
+        order.check_singleton()
+        names = [
+            name
+            for name, may in (
+                ("price_unit", order._may_cashier_set_prices()),
+                ("discount", order._may_cashier_set_discounts()),
+            )
+            if may
+        ]
+        for line in self if names else ():
+            before = previous.get(line.uuid, {})
+            approved = dict(line.approved_pricing or {})
+            for name in names:
+                if before.get(name) != line[name] and (
+                    name != "discount" or line.discount
+                ):
+                    approved[name] = line[name]
+            if approved != (line.approved_pricing or {}):
+                _debug.logic(
+                    "line_pricing_approved",
+                    order=order.uuid,
+                    line=line.uuid,
+                    approved=approved,
+                )
+                line.approved_pricing = approved
+
+    def _is_approved(self, field_name, digits) -> bool:
+        self.check_singleton()
+        approved = self.approved_pricing or {}
+        return field_name in approved and not float_compare(
+            self[field_name], approved[field_name], precision_digits=digits
+        )
+
     def _has_allowed_discount(self) -> bool:
         self.check_singleton()
-        # a refund gives back the discount it was sold with
-        allowed = self.refunded_orderline_id.discount
         digits = self.env["decimal.precision"].get_precision("Discount")
-        return not float_compare(self.discount, allowed, precision_digits=digits)
+        # a refund gives back the discount it was sold with
+        return (
+            not float_compare(
+                self.discount,
+                self.refunded_orderline_id.discount,
+                precision_digits=digits,
+            )
+            or self._is_approved("discount", digits)
+            or self._is_discount_from_barcode(digits)
+        )
+
+    def _is_discount_from_barcode(self, digits) -> bool:
+        self.check_singleton()
+        if not self.discount_barcode:
+            return False
+        # the till reads a scan with the company's nomenclature, and with its
+        # fallback one only when the company's is GS1
+        nomenclature = self.company_id.barcodes_config_id.nomenclature_id
+        fallback = self.order_id.config_id.fallback_nomenclature_id
+        if nomenclature.is_gs1_nomenclature and fallback:
+            nomenclature = fallback
+        parsed = (
+            nomenclature.parse_barcode(self.discount_barcode) if nomenclature else {}
+        )
+        return (
+            isinstance(parsed, dict)
+            and parsed.get("type") == "discount"
+            and not float_compare(
+                self.discount, parsed["value"], precision_digits=digits
+            )
+        )
 
     def _has_allowed_price(self) -> bool:
         self.check_singleton()
         digits = self.env["decimal.precision"].get_precision("Product Price")
+        if self._is_approved("price_unit", digits):
+            return True
         allowed = (
             [self.refunded_orderline_id.price_unit]
             if self.refunded_orderline_id

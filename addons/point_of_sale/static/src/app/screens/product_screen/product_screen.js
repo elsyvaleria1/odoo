@@ -335,14 +335,18 @@ export class ProductScreen extends Component {
         this.sound.play("scan-error");
         this.barcodeReader.showNotFoundNotification(code);
     }
-    _barcodeDiscountAction(code) {
+    async _barcodeDiscountAction(code) {
         const last_orderline = this.currentOrder.getLastOrderline();
         log.logic("[barcode] discount", () => ({
             value: code.value,
             line: last_orderline?.uuid,
         }));
         if (last_orderline) {
-            this.pos.setDiscountFromUI(last_orderline, code.value);
+            // a till without line discounts still takes scanned ones: the server checks the scan
+            for (const line of [last_orderline, ...last_orderline.combo_line_ids]) {
+                line.discount_barcode = code.code;
+            }
+            await this.pos.setDiscountFromUI(last_orderline, code.value);
         }
     }
     async _barcodeGS1Action(parsed_results) {
