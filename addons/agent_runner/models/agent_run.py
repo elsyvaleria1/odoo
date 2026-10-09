@@ -8,7 +8,7 @@ from typing import Any
 import psycopg
 
 from odoo import api, fields, models
-from odoo.exceptions import ConcurrencyError, UserError
+from odoo.exceptions import AccessError, ConcurrencyError, UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.redact import dump_masked, mask_data, mask_text
 from odoo.tools import SQL
@@ -610,10 +610,27 @@ class AgentRun(models.Model):
 
     def _notify_owner(self) -> None:
         """Tell the record the run works for that it ended: a note in its
-        chatter, and `_agent_run_ended(run)` when it defines one."""
+        chatter, and `_agent_run_ended(run)` when it defines one. The run ends
+        either way: an owner whose module grants whoever ends the run no right
+        to it is not told, and the run says so."""
         owner = self._owner()
         if owner is None:
             return
+        try:
+            with self.env.cr.savepoint():
+                self._tell_owner(owner)
+        except AccessError as error:
+            _logger.warning("Agent run %s could not tell %s: %s", self.id, owner, error)
+            self._log_event(
+                "system",
+                self.env._(
+                    "%(owner)s was not told how this run ended: %(error)s",
+                    owner=f"{owner._name},{owner.id}",
+                    error=error,
+                ),
+            )
+
+    def _tell_owner(self, owner) -> None:
         if hasattr(owner, "_agent_run_ended"):
             owner._agent_run_ended(self)
         if hasattr(owner, "message_post"):

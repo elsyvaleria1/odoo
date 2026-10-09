@@ -111,6 +111,21 @@ class TestRunnerAuthority(RunnerFixtures, HttpCase):
             run.message_ids.sorted("id")[-1].author_id, self.principal.partner_id
         )
 
+    def test_a_run_ends_even_when_its_owner_cannot_be_told(self):
+        # no module grants the runner anything on a contact
+        owner = self.env["res.partner"].create({"name": "Hand-made run's owner"})
+        run = self._run(res_model="res.partner", res_id=owner.id)
+        token = self._lease_token(run)
+
+        status, _body = self._post("complete", {"run": run.id, "lease_token": token})
+
+        self.assertEqual(status, 200)
+        self.assertEqual(run.run_state, "succeeded")
+        self.assertIn(
+            f"res.partner,{owner.id} was not told how this run ended",
+            " ".join(run.event_ids.mapped("message")),
+        )
+
     def test_an_archived_principal_is_refused(self):
         run = self._run()
         self.principal.active = False
