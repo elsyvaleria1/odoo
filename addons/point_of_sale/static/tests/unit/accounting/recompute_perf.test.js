@@ -88,3 +88,54 @@ test("combo parent setQuantity coalesces child updates into one recompute", asyn
     expect(parent.qty).toBe(3);
     expect(total).toBeGreaterThan(0);
 });
+
+function loadOrder(store, lineCount, { id = 6000, discounted = true } = {}) {
+    const lineIds = Array.from({ length: lineCount }, (_, i) => id * 1000 + i);
+    return store.models.loadConnectedData({
+        "pos.order": [{ id, name: `Order ${id}`, lines: lineIds }],
+        "pos.order.line": lineIds.map((lineId, i) => ({
+            id: lineId,
+            order_id: id,
+            product_id: 5,
+            qty: 1,
+            price_unit: 10 + i,
+            tax_ids: [1],
+            discount: discounted && i % 2 ? 5 : 0,
+        })),
+    })["pos.order"][0];
+}
+
+test("setOrderPrices runs one price computation whatever the line count", async () => {
+    const store = await setupPosEnv();
+    const counter = countComputes();
+    for (const [lineCount, id] of [
+        [10, 6010],
+        [40, 6040],
+    ]) {
+        const order = loadOrder(store, lineCount, { id });
+        counter.n = 0;
+        order.setOrderPrices();
+        expect(counter.n).toBe(2);
+
+        counter.n = 0;
+        void order.prices;
+        expect(counter.n).toBe(0);
+    }
+});
+
+test("writing a line field the taxes do not read keeps the order prices", async () => {
+    const store = await setupPosEnv();
+    const order = loadOrder(store, 5);
+    const line = order.lines[0];
+    void order.prices;
+    const counter = countComputes();
+
+    line.customer_note = "no onions";
+    line.price_subtotal = 1;
+    void order.prices;
+    expect(counter.n).toBe(0);
+
+    line.qty = 2;
+    void order.prices;
+    expect(counter.n).toBe(2);
+});

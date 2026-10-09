@@ -12,6 +12,11 @@ function group_by_tax(base_line, tax_data) {
     return tax_data ? tax_data.tax.id.toString() : null;
 }
 
+function isPlainObject(value) {
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+}
+
 export const accountTaxHelpers = {
     // -------------------------------------------------------------------------
     // HELPERS IN BOTH PYTHON/JAVASCRIPT (account_tax.js / account_tax.py)
@@ -753,8 +758,9 @@ export const accountTaxHelpers = {
             base_line.price_unit = extra_tax_data.price_unit;
         }
 
-        // Propagate custom values.
-        if (record && typeof record === "object") {
+        // Propagate custom values. Only from a plain object, as Python does from a dict:
+        // enumerating a reactive record would subscribe to all of its own keys.
+        if (record && isPlainObject(record)) {
             for (const [k, v] of Object.entries(record)) {
                 if (
                     k &&

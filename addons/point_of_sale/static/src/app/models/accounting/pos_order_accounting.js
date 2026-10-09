@@ -160,14 +160,22 @@ export class PosOrderAccounting extends Base {
             order: this.uuid,
             lines: this.lines.length,
         }));
-        this.amount_paid = this.amountPaid;
-        this.amount_tax = this.amountTaxes;
-        this.amount_total = this.currency.round(this.totalDue);
-        this.amount_return = this.change;
-        this.lines.forEach((line) => {
-            line.price_subtotal = line.currency.round(line.prices.total_excluded);
-            line.price_subtotal_incl = line.currency.round(line.prices.total_included);
-        });
+        // Every value is read before any is written: a write may invalidate `prices`.
+        const { baseLineByLineUuids } = this.prices;
+        const orderValues = {
+            amount_paid: this.amountPaid,
+            amount_tax: this.amountTaxes,
+            amount_total: this.currency.round(this.totalDue),
+            amount_return: this.change,
+        };
+        const lineValues = this.lines.map((line) => [
+            line,
+            this._getLineSubtotals(line, baseLineByLineUuids[line.uuid]),
+        ]);
+        this.update(orderValues);
+        for (const [line, values] of lineValues) {
+            line.update(values);
+        }
         log.lifecycle("setOrderPrices: stored", () => ({
             order: this.uuid,
             amount_total: this.amount_total,
@@ -176,6 +184,16 @@ export class PosOrderAccounting extends Base {
             amount_return: this.amount_return,
         }));
     }
+
+    _getLineSubtotals(line, baseLine) {
+        return {
+            price_subtotal: line.currency.round(baseLine.tax_details.total_excluded),
+            price_subtotal_incl: line.currency.round(
+                baseLine.tax_details.total_included,
+            ),
+        };
+    }
+
     getPriceWithOptions(opts = {}) {
         return this._constructPriceData(opts);
     }
