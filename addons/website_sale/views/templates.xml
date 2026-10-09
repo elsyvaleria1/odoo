@@ -3935,7 +3935,8 @@
             <t t-set="body_classname" t-value="'o_website_sale_checkout'" />
             <div id="wrap" class="d-flex flex-column flex-grow-1">
                 <div
-                    class="oe_website_sale o_website_sale_checkout_container container d-flex flex-column flex-grow-1 py-lg-2">
+                    class="oe_website_sale o_website_sale_checkout_container container d-flex flex-column flex-grow-1 py-lg-2"
+                    t-att-data-add-to-cart-tracking="json.dumps(add_to_cart_tracking) if add_to_cart_tracking else None">
                     <div t-attf-class="row #{not show_wizard_checkout and 'mt32'} mb32">
                         <div t-if="show_wizard_checkout" class="col-12">
                             <t t-call="website_sale.wizard_checkout" />

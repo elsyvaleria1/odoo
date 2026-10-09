@@ -1,8 +1,13 @@
+from lxml import html
+
+from odoo import http
 from odoo.fields import Command
-from odoo.tests import JsonRpcException, tagged
+from odoo.libs.json import loads as json_loads
+from odoo.tests import tagged
 
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 from odoo.addons.http_routing.tests.common import MockRequest
+from odoo.addons.web.controllers.utils import PARTIAL_NAVIGATION_HEADER
 
 
 @tagged("post_install", "-at_install")
@@ -198,13 +203,65 @@ class TestWebsiteSaleReorderFromPortal(HttpCaseWithUserPortal):
                 "Reordering a zero-priced product should be allowed when enabled",
             )
 
+    def _reorder(self, order, access_token=None):
+        return self.url_open(
+            "/my/orders/reorder",
+            data={
+                "csrf_token": http.Request.csrf_token(self),
+                "order_id": order.id,
+                "access_token": access_token or "",
+            },
+            allow_redirects=False,
+        )
+
     def test_an_order_out_of_reach_is_not_found(self):
         self.authenticate(None, None)
 
-        with self.assertRaises(JsonRpcException) as refused:
-            self.call_jsonrpc(
-                "/my/orders/reorder",
-                {"order_id": self.empty_cart.id, "access_token": "not-the-token"},
-            )
+        refused = self._reorder(self.empty_cart, access_token="not-the-token")
 
-        self.assertEqual(refused.exception.code, 404)
+        self.assertEqual(refused.status_code, 404)
+
+    def test_a_visitor_with_the_order_s_link_reorders_it(self):
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_portal.id,
+                "line_ids": [Command.create({"product_id": self.product_2.id})],
+            }
+        )
+        self.authenticate(None, None)
+
+        response = self._reorder(
+            order, access_token=order._portal_get_or_create_token()
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/shop/cart"))
+
+    def test_a_reorder_goes_to_the_cart_which_reports_it_once(self):
+        order = self.env["sale.order"].create(
+            {
+                "partner_id": self.partner_portal.id,
+                "line_ids": [Command.create({"product_id": self.product_1.id})],
+            }
+        )
+        self.authenticate("portal", "portal")
+
+        response = self._reorder(order)
+        refreshed = self.url_open(
+            "/shop/cart", headers={PARTIAL_NAVIGATION_HEADER: "1"}
+        )
+        visited = self.url_open("/shop/cart")
+        revisited = self.url_open("/shop/cart")
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/shop/cart"))
+        # another tab refreshing its cart in place does not take the report
+        self.assertNotIn("data-add-to-cart-tracking", refreshed.text)
+        reported = html.fromstring(visited.content).xpath(
+            "//*[@data-add-to-cart-tracking]/@data-add-to-cart-tracking"
+        )
+        self.assertEqual(
+            [item["item_name"] for item in json_loads(reported[0])],
+            ["Reorder Product 1"],
+        )
+        self.assertNotIn("data-add-to-cart-tracking", revisited.text)

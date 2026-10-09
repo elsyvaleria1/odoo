@@ -2,22 +2,23 @@ from odoo.exceptions import AccessError, MissingError, ValidationError
 from odoo.http import request, route
 
 from odoo.addons.sale.controllers import portal as sale_portal
-from odoo.addons.website_sale.controllers.cart import Cart
+from odoo.addons.website_sale.controllers.cart import ADD_TO_CART_TRACKING_KEY, Cart
 
 
 class CustomerPortal(sale_portal.CustomerPortal):
     @route(
         "/my/orders/reorder",
-        type="jsonrpc",
+        type="http",
         auth="public",
+        methods=["POST"],
         website=True,
     )
-    def my_orders_reorder(self, order_id, access_token=None):
+    def my_orders_reorder(self, order_id, access_token=None, **kwargs):
         try:
             sale_order = request.env["access.link"]._open_record(
-                "sale.order", order_id, access_token=access_token
+                "sale.order", int(order_id), access_token=access_token
             )
-        except AccessError, MissingError:
+        except AccessError, MissingError, ValueError:
             raise request.prepare_not_found_error() from None
 
         lines_to_reorder = sale_order.line_ids.filtered(
@@ -84,5 +85,8 @@ class CustomerPortal(sale_portal.CustomerPortal):
         if warnings_to_aggregate:
             order_sudo.shop_warning = "\n".join(warnings_to_aggregate)
 
-        values["cart_quantity"] = order_sudo.cart_quantity
-        return values
+        # reported by the cart page this redirects to (@website_sale/interactions/tracking)
+        request.session[ADD_TO_CART_TRACKING_KEY] = (
+            request.session.get(ADD_TO_CART_TRACKING_KEY, []) + values["tracking_info"]
+        )
+        return request.redirect("/shop/cart")

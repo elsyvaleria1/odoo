@@ -13,6 +13,7 @@ from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.controllers.portal import PaymentPortal
 from odoo.addons.sale.controllers.portal import CustomerPortal
 from odoo.addons.web.controllers.utils import (
+    PARTIAL_NAVIGATION_HEADER,
     Fragment,
     FragmentResponse,
     fragments_or_redirect,
@@ -21,6 +22,10 @@ from odoo.addons.web.controllers.utils import (
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 _debug = DebugLog(__name__)
+
+# the products a route put in the cart before redirecting to it, for the cart
+# page to report as added (@website_sale/interactions/tracking)
+ADD_TO_CART_TRACKING_KEY = "website_sale_add_to_cart_tracking"
 
 
 def get_order_total_fragment(
@@ -106,6 +111,13 @@ class Cart(PaymentPortal):
                 "website_sale_order": order_sudo,
                 "date": fields.Date.today(),
                 "suggested_products": [],
+                # a refresh in place (another tab following the cart) leaves
+                # it to the visit it was put there for
+                "add_to_cart_tracking": (
+                    None
+                    if request.httprequest.headers.get(PARTIAL_NAVIGATION_HEADER)
+                    else request.session.pop(ADD_TO_CART_TRACKING_KEY, None)
+                ),
             }
         )
         if order_sudo:

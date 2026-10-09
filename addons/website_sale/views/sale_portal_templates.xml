@@ -32,13 +32,25 @@
         <div id="print_invoice_sidebar_button" position="after">
             <t
                 t-if="sale_order.with_user(request.env.user).sudo()._is_reorder_allowed()">
-                <button
-                    id="reorder_sidebar_button"
-                    class="btn btn-secondary o_wsale_reorder_button oe_website_sale"
-                    t-att-data-sale-order-id="sale_order.id">
-                    <i class="fa-solid fa-arrow-rotate-right me-1" />
-                    Order Again
-                </button>
+                <form method="post" action="/my/orders/reorder">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()" />
+                    <input type="hidden" name="order_id" t-att-value="sale_order.id" />
+                    <input
+                        t-if="access_token"
+                        type="hidden"
+                        name="access_token"
+                        t-att-value="access_token" />
+                    <button
+                        type="submit"
+                        id="reorder_sidebar_button"
+                        class="btn btn-secondary o_wsale_reorder_button w-100">
+                        <i class="fa-solid fa-arrow-rotate-right me-1" />
+                        Order Again
+                    </button>
+                </form>
             </t>
         </div>
     </template>

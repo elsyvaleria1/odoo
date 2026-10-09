@@ -19,6 +19,11 @@ export class Tracking extends Interaction {
     };
 
     setup() {
+        // what a route added before redirecting here (website_sale/controllers/reorder.py)
+        const added = this.el.dataset.addToCartTracking;
+        if (added) {
+            this.onAddToCart({ detail: JSON.parse(added) });
+        }
         const confirmation = this.el.querySelector('div[name="order_confirmation"]');
         if (confirmation) {
             this._vpv("/stats/ecom/order_confirmed/" + confirmation.dataset.orderId);
