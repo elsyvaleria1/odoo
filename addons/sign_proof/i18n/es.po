@@ -85,6 +85,12 @@ msgstr "ID"
 
 #. module: sign_proof
 #. odoo-python
+#: code:addons/sign_proof/controllers/main.py:0
+msgid "No code could be sent to the signer."
+msgstr "No se pudo enviar ningún código al firmante."
+
+#. module: sign_proof
+#. odoo-python
 #: code:addons/sign_proof/models/sign_request_item.py:0
 msgid "Requested by"
 msgstr "Solicitado por"
@@ -108,6 +114,16 @@ msgid "Sent to"
 msgstr "Enviado a"
 
 #. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/controllers/main.py:0
+msgid ""
+"Several codes were just sent. Use the last one, or wait a few minutes before"
+" asking for another."
+msgstr ""
+"Se acaban de enviar varios códigos. Use el último, o espere unos minutos "
+"antes de pedir otro."
+
+#. module: sign_proof
 #. odoo-javascript
 #: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
 msgid "Sign"
@@ -122,12 +138,6 @@ msgstr "Función del elemento de firma"
 #: model:ir.model,name:sign_proof.model_sign_request_item
 msgid "Signature Request Item"
 msgstr "Elemento de solicitud de firma"
-
-#. module: sign_proof
-#. odoo-python
-#: code:addons/sign_proof/models/sign_request_item.py:0
-msgid "Signer"
-msgstr "Firmante"
 
 #. module: sign_proof
 #: model:ir.model.fields,field_description:sign_proof.field_sign_request_item__proof_evidence_id
@@ -162,3 +172,6 @@ msgstr ""
 #: code:addons/sign_proof/static/src/document_signable.js:0
 msgid "Your signature was not submitted: confirm it is you with a code."
 msgstr "Su firma no se envió: confirme que es usted con un código."
+
+#~ msgid "Signer"
+#~ msgstr "Firmante"

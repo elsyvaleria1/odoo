@@ -41,15 +41,16 @@ class SignRequestItem(models.Model):
         return [
             [env._("Document"), sign_request.reference],
             [env._("Requested by"), sign_request.create_uid.name],
-            [env._("Signer"), self.partner_id.name],
         ]
 
     def _with_requester(self) -> SignRequestItem:
         # the signer proves through whoever sent the request, as a contact
-        # proves through the user who asks them: the challenge is theirs
-        return self.with_env(
-            self.env(user=self.sign_request_id.create_uid.id, su=False)
-        )
+        # proves through the user who asks them: the challenge is theirs. A
+        # request no internal user sent proves through the system
+        requester = self.sign_request_id.create_uid
+        if not requester._is_internal():
+            requester = self.env.ref("base.user_root")
+        return self.with_env(self.env(user=requester.id, su=False))
 
     def _issue_signer_proof(self) -> dict[str, Any]:
         self.check_singleton()

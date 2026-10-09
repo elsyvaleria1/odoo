@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 21:34+0000\n"
-"PO-Revision-Date: 2026-10-09 21:34+0000\n"
+"POT-Creation-Date: 2026-10-09 22:46+0000\n"
+"PO-Revision-Date: 2026-10-09 22:46+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -80,6 +80,12 @@ msgstr ""
 
 #. module: sign_proof
 #. odoo-python
+#: code:addons/sign_proof/controllers/main.py:0
+msgid "No code could be sent to the signer."
+msgstr ""
+
+#. module: sign_proof
+#. odoo-python
 #: code:addons/sign_proof/models/sign_request_item.py:0
 msgid "Requested by"
 msgstr ""
@@ -103,6 +109,14 @@ msgid "Sent to"
 msgstr ""
 
 #. module: sign_proof
+#. odoo-python
+#: code:addons/sign_proof/controllers/main.py:0
+msgid ""
+"Several codes were just sent. Use the last one, or wait a few minutes before"
+" asking for another."
+msgstr ""
+
+#. module: sign_proof
 #. odoo-javascript
 #: code:addons/sign_proof/static/src/dialogs/proof_signer_dialog.xml:0
 msgid "Sign"
@@ -116,12 +130,6 @@ msgstr ""
 #. module: sign_proof
 #: model:ir.model,name:sign_proof.model_sign_request_item
 msgid "Signature Request Item"
-msgstr ""
-
-#. module: sign_proof
-#. odoo-python
-#: code:addons/sign_proof/models/sign_request_item.py:0
-msgid "Signer"
 msgstr ""
 
 #. module: sign_proof
