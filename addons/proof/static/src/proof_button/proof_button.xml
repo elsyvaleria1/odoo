@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="proof.ProofButton">
+        <button type="button" class="btn o_proof_button" t-att-class="this.props.highlight ? 'btn-primary' : 'btn-secondary'"
+            t-att-disabled="this.props.readonly and !this.props.record.resId" t-on-click="this.onClick">
+            <i class="fa fa-shield me-1" aria-hidden="true"/>
+            <t t-out="this.props.string"/>
+        </button>
+    </t>
+
+</templates>
