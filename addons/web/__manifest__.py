@@ -201,6 +201,10 @@
             "web/static/src/public/**/*.xml",
             (
                 "remove",
+                "web/static/src/public/fragment_shell.js",
+            ),
+            (
+                "remove",
                 "web/static/src/public/database_manager.js",
             ),
             (
@@ -504,6 +508,10 @@
         ],
         "web.assets_clickbot": [
             "web/static/src/webclient/clickbot/clickbot.js",
+        ],
+        "web.assets_fragment_shell": [
+            "web/static/src/core/utils/dom/morph.js",
+            "web/static/src/public/fragment_shell.js",
         ],
     },
     "esm": {

@@ -20,13 +20,12 @@ from odoo.tools.urls import keep_query
 from odoo.addons.base.models import ir_http
 from odoo.addons.base.models.ir_http import RequestUID
 from odoo.addons.base.models.res_lang import LangData
-from odoo.addons.web.controllers.utils import FRAGMENTS_HEADER
+from odoo.addons.web.controllers.utils import (
+    FRAGMENTS_HEADER,
+    PARTIAL_NAVIGATION_HEADER,
+)
 
 _logger = logging.getLogger(__name__)
-
-# sent by @web/public/partial_navigation: the page is wanted without the parts
-# a navigation in place keeps (header, footer)
-PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation"
 _debug = DebugLog(__name__)
 
 _SLUG_NAME = r"\w{1,2}|\w[\w-]+?\w"

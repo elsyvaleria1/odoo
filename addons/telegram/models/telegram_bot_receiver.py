@@ -18,6 +18,9 @@ from odoo.addons.integration.tools.admission import Resolution
 
 _logger = logging.getLogger(__name__)
 
+# where a Mini App page sends Telegram's initData (project_telegram's shell)
+MINI_APP_INIT_DATA_HEADER = "X-Telegram-Init-Data"
+
 SECRET_TOKEN_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 MINI_APP_SESSION_SCOPE = register_signed_scope(
     "telegram.miniapp_session",
@@ -305,12 +308,18 @@ class TelegramBot(models.Model):
     @api.model
     def _mini_app_call(self, path_args):
         """What a Mini App call carries, wherever the transport put it: the
-        path (`bot_id`), the form or query, or the JSON-RPC params."""
+        path (`bot_id`), the form or query, the JSON-RPC params, or for
+        `init_data` the `X-Telegram-Init-Data` header, which keeps it out of
+        a page's URL."""
         params = dict(request.get_http_params())
         if request.httprequest.mimetype in ("application/json", "application/json-rpc"):
             with contextlib.suppress(ValueError, AttributeError):
                 params.update(request.get_json_data().get("params") or {})
         params.update(path_args)
+        if not params.get("init_data"):
+            params["init_data"] = request.httprequest.headers.get(
+                MINI_APP_INIT_DATA_HEADER, ""
+            )
         return params
 
     @api.model

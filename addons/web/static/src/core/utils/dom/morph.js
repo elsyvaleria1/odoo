@@ -1,9 +1,9 @@
 // @ts-check
 /** @odoo-module native */
 
-import { isMarkup } from "@web/core/utils/dom/html";
-
-/** @typedef {import("@odoo/owl").Markup} Markup */
+// owl's Markup, structurally: naming owl here, even in a type, would bundle it
+// into the standalone builds the morph is part of (@web/public/fragment_shell)
+/** @typedef {InstanceType<typeof String>} Markup */
 
 // Ported from htmx 4.0.0's built-in morph (bigskysoftware/htmx, branch `four`,
 // src/htmx.js `__morph`), itself derived from idiomorph; both are 0BSD.
@@ -78,7 +78,7 @@ export function morph(target, content, options = {}) {
  * @returns {DocumentFragment}
  */
 export function toFragment(content) {
-    if (isMarkup(content)) {
+    if (content instanceof String) {
         const template = document.createElement("template");
         template.innerHTML = content.toString();
         return template.content;

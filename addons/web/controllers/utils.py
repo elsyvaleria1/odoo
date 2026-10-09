@@ -358,6 +358,10 @@ def render_fragments(
 # fragments, not as the page a browser would be redirected to
 FRAGMENTS_HEADER = "X-Odoo-Fragments"
 
+# sent by @web/public/partial_navigation and @web/public/fragment_shell: the
+# page is wanted without the parts a navigation in place keeps (header, footer)
+PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation"
+
 
 def fragments_or_redirect(
     env: Any,
