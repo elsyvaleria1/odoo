@@ -152,3 +152,64 @@ describe("a synced refund line edited on this till", () => {
         expect(originalLine.refundedQty).toBe(2);
     });
 });
+
+test("a refund detail's maxQty is what is left to refund on the line", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const line = order.getOrderlines()[0];
+    expect(line.qty).toBeGreaterThan(0);
+
+    const refund = new PosOrderLineRefund(
+        { line_uuid: line.uuid, qty: 0 },
+        store.models,
+    );
+    expect(Number.isNaN(refund.maxQty)).toBe(false);
+    expect(refund.maxQty).toBe(line.qty - line.refundedQty);
+});
+
+test("refundedQty counts refunds made elsewhere and those not yet synced", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const line = order.getOrderlines()[0];
+    line.qty = 5;
+    line.refunded_qty = 3;
+    expect(line.refundedQty).toBe(3);
+
+    const refundOrder = store.addNewOrder();
+    store.models["pos.order.line"].create({
+        order_id: refundOrder,
+        product_id: line.product_id,
+        qty: -1,
+        price_unit: line.price_unit,
+        refunded_orderline_id: line,
+    });
+
+    expect(line.refundedQty).toBe(4);
+    line.refunded_qty = 0;
+    expect(line.refundedQty).toBe(1);
+});
+
+test("refundedQty never undercounts a synced refund edited since", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    const line = order.getOrderlines()[0];
+    line.qty = 10;
+    const refundOrder = store.addNewOrder();
+    const refund = store.models["pos.order.line"].create({
+        id: 9001,
+        order_id: refundOrder,
+        product_id: line.product_id,
+        qty: -2,
+        price_unit: line.price_unit,
+        refunded_orderline_id: line,
+    });
+    // the server counts the synced -2 and 3 refunded in another session
+    line.refunded_qty = 5;
+    expect(refund.isSynced).toBe(true);
+    expect(line.refundedQty).toBe(5);
+
+    refund.update({ qty: -4 });
+
+    expect(refund._dirtyFields.has("qty")).toBe(true);
+    expect(line.refundedQty).toBeGreaterThan(6);
+});

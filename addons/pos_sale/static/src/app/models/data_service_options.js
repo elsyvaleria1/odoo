@@ -3,6 +3,7 @@ import { DataServiceOptions } from "@point_of_sale/app/models/data_service_optio
 import { patch } from "@web/core/utils/patch";
 patch(DataServiceOptions.prototype, {
     get databaseTable() {
+        const tables = super.databaseTable;
         // Built lazily from the first record seen and cached for the rest of
         // this sync pass, so both conditions below are an O(1) Set lookup
         // instead of an O(n) scan of pos.order.line per record.
@@ -15,6 +16,9 @@ patch(DataServiceOptions.prototype, {
             linkedSaleOrderIds = new Set();
             linkedSaleOrderLineIds = new Set();
             for (const line of record.models["pos.order.line"].getAll()) {
+                if (tables["pos.order.line"].condition(line) === true) {
+                    continue;
+                }
                 if (line.sale_order_origin_id) {
                     linkedSaleOrderIds.add(line.sale_order_origin_id.id);
                 }
@@ -24,19 +28,19 @@ patch(DataServiceOptions.prototype, {
             }
         };
         return {
-            ...super.databaseTable,
+            ...tables,
             "sale.order": {
                 key: "id",
                 condition: (record) => {
                     ensureLinkedIdsIndexed(record);
-                    return linkedSaleOrderIds.has(record.id);
+                    return !linkedSaleOrderIds.has(record.id);
                 },
             },
             "sale.order.line": {
                 key: "id",
                 condition: (record) => {
                     ensureLinkedIdsIndexed(record);
-                    return linkedSaleOrderLineIds.has(record.id);
+                    return !linkedSaleOrderLineIds.has(record.id);
                 },
             },
         };

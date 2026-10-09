@@ -393,3 +393,23 @@ test("combo children keep their share when the combo passes through zero", async
     );
     expect(order.priceIncl).toBe(direct.priceIncl);
 });
+
+test("floatingOrderName is empty, not a throw, without a tracking number", async () => {
+    const store = await setupPosEnv();
+    const order = store.addNewOrder();
+    order.floating_order_name = false;
+    order.tracking_number = undefined;
+    expect(() => order.floatingOrderName).not.toThrow();
+    expect(order.floatingOrderName).toBe("");
+});
+
+test("getScreenData keeps an explicitly saved screen while payment lines exist", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    order.addPaymentline(store.models["pos.payment.method"].get(1));
+    expect(order.payment_ids.length).toBeGreaterThan(0);
+    expect(order.finalized).toBe(false);
+
+    order.setScreenData({ name: "TipScreen" });
+    expect(order.getScreenData().name).toBe("TipScreen");
+});

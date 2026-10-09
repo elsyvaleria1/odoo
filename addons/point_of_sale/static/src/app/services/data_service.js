@@ -57,6 +57,19 @@ export class QueuedOperation {
 
 export const isQueued = (result) => result instanceof QueuedOperation;
 
+function holdsWrittenValues(record, values = {}) {
+    if (!record) {
+        return false;
+    }
+    const raw = record.raw;
+    return Object.entries(values)
+        .filter(([field]) => record.model.fields[field])
+        .every(
+            ([field, value]) =>
+                JSON.stringify(raw[field] ?? false) === JSON.stringify(value ?? false),
+        );
+}
+
 export class PosData extends SignalStore {
     static modelToLoad = [];
     static serviceDependencies = ["orm", "bus_service", "dialog"];
@@ -955,10 +968,12 @@ export class PosData extends SignalStore {
             offline: this.network.offline,
         }));
 
+        let sent = false;
         try {
             if (this.network.offline) {
                 throw new ConnectionLostError();
             }
+            sent = true;
 
             let result = true;
             if (fields.length === 0) {
@@ -1060,15 +1075,20 @@ export class PosData extends SignalStore {
             return result;
         } catch (error) {
             endExecute({ inFlight: this._inFlight, error: error?.constructor?.name });
-            const alreadyQueued = this.network.unsyncData.some(
+            const queued = this.network.unsyncData.find(
                 (d) => d.uuid === operationUuid,
             );
+            const alreadyQueued = Boolean(queued);
+            if (queued && sent) {
+                queued.sent = true;
+            }
             log.logic("execute: error", () => ({
                 type,
                 model,
                 method,
                 queueable,
                 alreadyQueued,
+                sent,
                 connectionLost: error instanceof ConnectionLostError,
                 error: error?.constructor?.name,
             }));
@@ -1083,6 +1103,7 @@ export class PosData extends SignalStore {
                 args: [queuedArgs],
                 appliedLocally: optimistic,
                 date: toISO(now()),
+                sent,
                 try: 1,
                 uuid: operationUuid,
             };
@@ -1363,8 +1384,10 @@ export class PosData extends SignalStore {
                     this.network.unsyncData.shift();
                     this._unpersistQueueEntry(data.uuid);
                     const params = data.args[0];
-                    if (data.restored && params?.type === "write") {
-                        await this.readBackReplayedWrite(params);
+                    if ((data.restored || data.sent) && params?.type === "write") {
+                        await this.readBackReplayedWrite(params, {
+                            keepLocalEdits: !data.restored,
+                        });
                     }
                     if (params?.type === "write" && this.deviceSync?.dispatch) {
                         Promise.resolve(
@@ -1419,20 +1442,31 @@ export class PosData extends SignalStore {
         endSync({ replayed, pending: this.network.unsyncData.length });
     }
 
-    // a restored write may have committed before the reload and been overwritten
-    // since (its replay is then answered without being applied), or not: only the
-    // server knows. databaseTable rows are the till's own and are left alone
-    async readBackReplayedWrite({ model, ids }) {
+    // a write sent before (restored, or sent in this session with its answer lost)
+    // may have committed and been overwritten since (its replay is then answered
+    // without being applied), or not: only the server knows. databaseTable rows
+    // are the till's own and are left alone, and so is a record edited on this
+    // till since the write: that edit is newer than anything the server holds
+    async readBackReplayedWrite(
+        { model, ids, values },
+        { keepLocalEdits = false } = {},
+    ) {
         if (!this.models[model] || this.opts.databaseTable[model] || !ids?.length) {
             return;
         }
+        const readIds = keepLocalEdits
+            ? ids.filter((id) => holdsWrittenValues(this.models[model].get(id), values))
+            : ids;
+        if (!readIds.length) {
+            return;
+        }
         try {
-            await this.read(model, ids);
+            await this.read(model, readIds);
         } catch (error) {
             logPosMessage(
                 "DataService",
                 "readBackReplayedWrite",
-                `Could not re-read ${model} after replaying a restored write`,
+                `Could not re-read ${model} after replaying a write`,
                 CONSOLE_COLOR,
                 [error],
             );

@@ -261,6 +261,53 @@ test("a restored write the server had already committed does not bring back its 
     expect(store.data.network.unsyncData).toHaveLength(0);
 });
 
+test("an in-session replay of a write that had committed shows what the server holds", async () => {
+    const store = await setupPosEnv();
+    const record = store.models["pos.category"].get(1);
+    patchWithCleanup(store.data.indexedDB, {
+        createOrdered: async (_store, row) => ({ ...row, sequence: 1 }),
+    });
+    const write = store.data.orm.write;
+    store.data.orm.write = async (...args) => {
+        await write.call(store.data.orm, ...args);
+        throw new ConnectionLostError();
+    };
+    await store.data.write("pos.category", [record.id], { name: "Queued" });
+    store.data.orm.write = write;
+    // another till renamed it since; the replay is answered from the stored result
+    await store.data.orm.write("pos.category", [record.id], { name: "Other till" });
+    patchWithCleanup(store.data.orm, { write: async () => true });
+
+    await store.data.syncData();
+
+    expect(record.name).toBe("Other till");
+    expect(store.data.network.unsyncData).toHaveLength(0);
+});
+
+test("a replayed write that never left the till reads nothing back", async () => {
+    const store = await setupPosEnv();
+    const record = store.models["pos.category"].get(1);
+    patchWithCleanup(store.data.indexedDB, {
+        createOrdered: async (_store, row) => ({ ...row, sequence: 1 }),
+    });
+    store.data.network.offline = true;
+    await store.data.write("pos.category", [record.id], { name: "Queued" });
+    const reads = [];
+    patchWithCleanup(store.data.orm, {
+        read(model) {
+            reads.push(model);
+            return super.read(...arguments);
+        },
+    });
+    store.data.network.offline = false;
+
+    await store.data.syncData();
+
+    expect(reads).toEqual([]);
+    expect(record.name).toBe("Queued");
+    expect(store.data.network.unsyncData).toHaveLength(0);
+});
+
 test("replaying a live optimistic write preserves edits made while offline", async () => {
     const store = await setupPosEnv();
     const record = store.models["pos.category"].get(1);

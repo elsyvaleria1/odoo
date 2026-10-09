@@ -5,6 +5,7 @@ import { dateTime } from "@web/core/l10n/dates";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
 import { getRelatedModelsInstance } from "../data/get_model_definitions.js";
+import { getFilledOrder, setupPosEnv } from "../utils.js";
 
 definePosModels();
 
@@ -246,4 +247,26 @@ test("restored __dirty marker marks the record dirty (isolated)", async () => {
         "pos.order": [{ id: 13, uuid: sampleUUID, __dirty: true }],
     });
     expect(models["pos.order"].getBy("uuid", sampleUUID).isDirty()).toBe(true);
+});
+
+test("serializeForORM with deferClear keeps the record dirty until commit", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    expect(order.isDirty()).toBe(true);
+
+    const clearActions = [];
+    store.models.serializeForORM(order, { deferClear: true, clearActions });
+    expect(order.isDirty()).toBe(true);
+    expect(clearActions.length).toBeGreaterThan(0);
+
+    clearActions.forEach((fn) => fn());
+    expect(order.isDirty()).toBe(false);
+});
+
+test("serializeForORM without deferClear clears the dirty flag at once", async () => {
+    const store = await setupPosEnv();
+    const order = await getFilledOrder(store);
+    expect(order.isDirty()).toBe(true);
+    store.models.serializeForORM(order);
+    expect(order.isDirty()).toBe(false);
 });

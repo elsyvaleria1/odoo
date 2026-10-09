@@ -1184,3 +1184,25 @@ describe("Related Model", () => {
         expect(calls).toEqual(["setup", "initState"]);
     });
 });
+
+test("connectNewData moving a line to another order takes it out of the old order's lines", async () => {
+    await makeMockServer();
+    const models = getRelatedModelsInstance(false);
+    const orderA = models["pos.order"].create({ id: 101 });
+    const orderB = models["pos.order"].create({ id: 102 });
+    const line = models["pos.order.line"].create({ id: 201, order_id: orderA });
+
+    const lineIds = (o) => o.lines.map((l) => l.id);
+    expect(lineIds(orderA)).toEqual([201]);
+    expect(lineIds(orderB)).toEqual([]);
+
+    models.connectNewData({
+        "pos.order.line": [{ id: 201, uuid: line.uuid, order_id: 102 }],
+    });
+
+    expect({
+        lineOrderId: line.order_id?.id,
+        orderA: lineIds(orderA),
+        orderB: lineIds(orderB),
+    }).toEqual({ lineOrderId: 102, orderA: [], orderB: [201] });
+});

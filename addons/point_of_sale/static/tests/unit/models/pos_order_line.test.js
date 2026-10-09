@@ -1,6 +1,7 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { ProductTemplateAccounting } from "@point_of_sale/app/models/accounting/product_template_accounting";
 import { PosOrderline } from "@point_of_sale/app/models/pos_order_line";
+import { computeComboItems } from "@point_of_sale/app/models/utils/compute_combo_items";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 
 import { definePosModels } from "../data/generate_model_definitions.js";
@@ -381,4 +382,30 @@ test("a combo this device first sees at zero scales by the share the server stor
     parent.setQuantity(3);
 
     expect(parent.combo_line_ids.map((line) => line.qty)).toEqual([6, 3]);
+});
+
+test("combo items of an all-zero base price split the parent price without NaN", () => {
+    const ProductPrice = { round: (x) => x };
+    const parentProduct = { getPrice: () => 100 };
+    const mkConf = () => ({
+        combo_item_id: { combo_id: { base_price: 0 }, extra_price: 0 },
+        qty: 1,
+        parentQty: 1,
+        configuration: {},
+    });
+    const comboItems = computeComboItems(
+        parentProduct,
+        [mkConf(), mkConf()],
+        null,
+        [],
+        {},
+        [],
+        ProductPrice,
+    );
+    expect(comboItems.length).toBe(2);
+    for (const item of comboItems) {
+        expect(Number.isFinite(item.price_unit)).toBe(true);
+    }
+    const total = comboItems.reduce((s, i) => s + i.price_unit * i.qty, 0);
+    expect(total).toBe(100);
 });

@@ -1,11 +1,19 @@
 /** @odoo-module native */
 export class DataServiceOptions {
     get databaseTable() {
+        // a pending refund keeps the order it refunds: purging its lines would
+        // disconnect refunded_orderline_id, and the refund would sync unlinked
         const orderIsPurgeable = (order) =>
             Boolean(
                 order?.finalized &&
                 order.isSynced &&
-                order.session_id?.id !== parseInt(odoo.pos_session_id),
+                !order._dirty &&
+                order.session_id?.id !== parseInt(odoo.pos_session_id) &&
+                !order.lines?.some((line) =>
+                    line.refund_orderline_ids?.some(
+                        (refund) => !orderIsPurgeable(refund.order_id),
+                    ),
+                ),
             );
         return {
             "pos.order": {

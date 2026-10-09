@@ -395,4 +395,103 @@ describe("data_service", () => {
             undefined,
         );
     });
+
+    test("a past-session order a pending refund points at stays, in memory and in IndexedDB", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const sessionId = parseInt(odoo.pos_session_id);
+        const product = store.models["product.product"].getFirst();
+        const results = store.models.loadConnectedData(
+            {
+                "pos.order": [
+                    {
+                        id: 7001,
+                        uuid: "refunded",
+                        state: "paid",
+                        session_id: sessionId + 100,
+                        config_id: 1,
+                        lines: [8001],
+                        payment_ids: [],
+                    },
+                    {
+                        id: "refund",
+                        uuid: "refund",
+                        state: "draft",
+                        session_id: sessionId + 100,
+                        config_id: 1,
+                        lines: ["refund-line"],
+                        payment_ids: [],
+                    },
+                ],
+                "pos.order.line": [
+                    {
+                        id: 8001,
+                        uuid: "refunded-line",
+                        order_id: 7001,
+                        product_id: product.id,
+                        qty: 2,
+                        price_unit: 10,
+                        refund_orderline_ids: ["refund-line"],
+                    },
+                    {
+                        id: "refund-line",
+                        uuid: "refund-line",
+                        order_id: "refund",
+                        product_id: product.id,
+                        qty: -1,
+                        price_unit: 10,
+                        refunded_orderline_id: 8001,
+                    },
+                ],
+            },
+            [],
+        );
+        const removed = [];
+        const recordRemoval = async (model, keys) => {
+            removed.push(...keys.map((key) => `${model}:${key}`));
+        };
+        patchWithCleanup(data, { deleteRecordsInIndexedDB: recordRemoval });
+        patchWithCleanup(data.indexedDB, {
+            create: async (_model, rows) => rows.map(() => ({ status: "fulfilled" })),
+            delete: recordRemoval,
+        });
+
+        data.purgeRestoredOrders(results);
+        await data._synchronizeLocalDataInIndexedDB();
+
+        const refundLine = store.models["pos.order.line"].getBy("uuid", "refund-line");
+        expect(refundLine.refunded_orderline_id?.id).toBe(8001);
+        expect(refundLine.serializeForORM().refunded_orderline_id).toBe(8001);
+        expect(removed).not.toInclude("pos.order:refunded");
+        expect(removed).not.toInclude("pos.order.line:refunded-line");
+    });
+
+    test("a past-session paid order with an unsynced edit is not purged at boot", async () => {
+        const store = await setupPosEnv();
+        const data = store.data;
+        const results = store.models.loadConnectedData(
+            {
+                "pos.order": [
+                    {
+                        id: 7009,
+                        uuid: "edited",
+                        state: "paid",
+                        session_id: parseInt(odoo.pos_session_id) + 100,
+                        config_id: 1,
+                        lines: [],
+                        payment_ids: [],
+                        __dirty: true,
+                    },
+                ],
+            },
+            [],
+        );
+        patchWithCleanup(data, { async deleteRecordsInIndexedDB() {} });
+
+        data.purgeRestoredOrders(results);
+
+        const order = store.models["pos.order"].getBy("uuid", "edited");
+        expect(order?.isDirty()).toBe(true);
+        expect(results["pos.order"]).toInclude(order);
+    });
 });
