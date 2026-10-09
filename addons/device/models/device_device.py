@@ -41,6 +41,7 @@ class DeviceDevice(models.Model):
             "company": models.Anchor("company_id", shared=False),
         }
     )
+    _receiver_privileges = ("device.privilege_receive_device_data",)
 
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -278,6 +279,7 @@ class DeviceDevice(models.Model):
         devices = super().create(vals_list)
         devices._sync_stream()
         devices._sync_connection()
+        devices._place_receiver()
         return devices
 
     def write(self, vals):
@@ -286,7 +288,17 @@ class DeviceDevice(models.Model):
             self._sync_stream()
         if vals.keys() & self._connection_fields():
             self._sync_connection()
+        if vals.keys() & {"company_id", "service_user_id", "active"}:
+            self._place_receiver()
         return result
+
+    def _place_receiver(self) -> None:
+        Gate = self.env["mixin.inbound.gate"]
+        live = self.filtered("active")
+        for principal, devices in live.grouped(
+            lambda device: device._inbound_service_user()
+        ).items():
+            Gate._place_principal_in_companies(principal, devices.company_id)
 
     def unlink(self):
         if not self:
@@ -947,7 +959,10 @@ class DeviceDevice(models.Model):
         vals = {"connection_state": state, "connection_state_message": message}
         if when:
             vals["date_last_data_received"] = when
-        stale.sudo().write(vals)
+        stale.with_privilege(
+            "device.privilege_record_device_contact",
+            reason="its connection state is what whoever reached it observed",
+        ).write(vals)
 
     def _touch_last_seen(self, when=None) -> None:
         self.check_singleton()
@@ -1185,7 +1200,10 @@ class DeviceDevice(models.Model):
             # would raise InFailedSqlTransaction and lose the payload anyway.
             with self.env.cr.savepoint():
                 point = data_point_model.create(values)
-            self.sudo().log_last_id = point.id
+            self.with_privilege(
+                "device.privilege_record_device_contact",
+                reason="its latest reading is the one just filed",
+            ).log_last_id = point.id
 
             _logger.info(
                 "Stored complete payload for device %s from %s",

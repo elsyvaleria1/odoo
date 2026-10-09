@@ -11,3 +11,6 @@ access_device_data_log_report_user,device.data.log.report user,model_device_data
 device_device_company_rule,Remote Device: multi-company,model_device_device,base.group_everyone,guard,crud,company,,
 device_data_log_company_rule,Remote Data Point: multi-company,model_device_data_log,base.group_everyone,guard,crud,company,,
 device_data_log_report_company_rule,Remote Data Log Report: multi-company,model_device_data_log_report,base.group_everyone,guard,crud,company,,
+privilege_record_device_contact_device,Record a device's contact: the device,model_device_device,privilege_record_device_contact,permission,u,,,
+privilege_receive_device_data_log,Receive device data: the reading filed,model_device_data_log,privilege_receive_device_data,permission,c,,,
+privilege_receive_device_data_device,Receive device data: the device's activity,model_device_device,privilege_receive_device_data,permission,u,,,

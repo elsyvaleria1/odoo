@@ -27,4 +27,16 @@
         <field name="user_ids" eval="[Command.link(ref('base.user_admin'))]" />
     </record>
 
+    <record id="privilege_record_device_contact" model="res.groups">
+        <field
+            name="name">Privilege: whoever observes a device records its connection state and latest reading</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_receive_device_data" model="res.groups">
+        <field
+            name="name">Privilege: a device's receiver files the readings it pushes</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

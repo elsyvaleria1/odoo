@@ -1,6 +1,6 @@
 {
     "name": "Device Registry",
-    "version": "19.0.2.3.2",
+    "version": "19.0.2.3.3",
     "oldest_upgradable_version": "19.0.2.2.0",
     "category": "Supply Chain/IoT",
     "sequence": 10,
