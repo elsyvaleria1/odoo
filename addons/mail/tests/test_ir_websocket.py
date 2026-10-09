@@ -131,3 +131,70 @@ class TestIrWebsocket(WebsocketCase):
         self.wait_remaining_websocket_connections()
         presence.invalidate_recordset(["status"])
         self.assertEqual(presence.status, "offline")
+
+    def test_a_backend_page_hears_its_user_and_its_channels_over_the_bus(self):
+        john = new_test_user(self.env, login="bus_live_john", groups="base.group_user")
+        channel = (
+            self.env["discuss.channel"]
+            .with_user(john)
+            ._create_group(partners_to=john.partner_id.ids)
+        )
+        code = """
+            (async () => {
+                const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+                const until = async (predicate) => {
+                    for (let i = 0; i < 100 && !predicate(); i++) {
+                        await wait(100);
+                    }
+                    return predicate();
+                };
+                const appContext = () =>
+                    odoo.__WOWL_DEBUG__?.root &&
+                    odoo.loader.modules
+                        .get("@web/core/app_context")
+                        .appContextOf(odoo.__WOWL_DEBUG__.root);
+                await until(() => appContext()?.services?.bus_service);
+                const { bus_service: bus, orm } = appContext().services;
+                if (!(await until(() => bus.workerState === "CONNECTED"))) {
+                    console.error(`the bus never connected: ${bus.workerState}`);
+                    return;
+                }
+                const heard = new Set();
+                bus.subscribe("discuss.channel/new_message", (payload) => {
+                    if (JSON.stringify(payload).includes("Live bus probe")) {
+                        heard.add("channel");
+                    }
+                });
+                bus.subscribe("res.users.settings", (payload) => {
+                    if (JSON.stringify(payload).includes("Live bus probe")) {
+                        heard.add("user");
+                    }
+                });
+                await orm.call("res.users.settings", "set_res_users_settings", [
+                    [%(settings)s],
+                    { push_to_talk_key: "Live bus probe" },
+                ]);
+                await fetch("/mail/message/post", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "call",
+                        params: {
+                            thread_model: "discuss.channel",
+                            thread_id: %(channel)s,
+                            post_data: { body: "Live bus probe", message_type: "comment" },
+                        },
+                    }),
+                });
+                if (await until(() => heard.size === 2)) {
+                    console.log("test successful");
+                } else {
+                    console.error(`heard only ${[...heard]} over the bus`);
+                }
+            })();
+        """ % {
+            "settings": self.env["res.users.settings"]._get_or_create_for_user(john).id,
+            "channel": channel.id,
+        }
+        self.browser_js("/odoo", code, login="bus_live_john", timeout=60)
