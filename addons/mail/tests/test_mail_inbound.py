@@ -293,6 +293,33 @@ class TestMailInbound(HttpCase):
             "a claimed Message-Id would drop the same message once an alias exists",
         )
 
+    @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
+    def test_a_message_no_document_can_take_is_refused_for_good(self):
+        self.server.object_id = self.env.ref("base.model_res_country")
+        response = self._post(
+            _envelope(
+                _message("unusable@x", to="nobody@inbound.example.com"),
+                ["nobody@inbound.example.com"],
+            )
+        )
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["error"], "no_route")
+
+    @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
+    def test_a_bounce_of_an_unknown_message_is_taken_not_retried(self):
+        bounce = (
+            b"From: MAILER-DAEMON@relay.example.org\r\n"
+            b"To: bounce-inbound@inbound.example.com\r\n"
+            b"Subject: Undelivered Mail Returned to Sender\r\n"
+            b"Message-Id: <bounce-unknown@x>\r\n"
+            b"In-Reply-To: <never-sent@inbound.example.com>\r\n"
+            b"Content-Type: text/plain\r\n"
+            b"\r\n"
+            b"gone\r\n"
+        )
+        response = self._post(_envelope(bounce, ["bounce-inbound@inbound.example.com"]))
+        self.assertLess(response.status_code, 500, response.text)
+
     def test_the_message_content_is_not_logged(self):
         self._post(
             _envelope(
