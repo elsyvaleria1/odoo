@@ -305,8 +305,13 @@ class ProductProduct(models.Model):
                     )
                 )
             )
+            # A variant holds no value of a no-variant line; the complete
+            # combination its creation is checked against needs one.
+            combination = new_template._get_first_possible_combination(
+                necessary_values=combination
+            )
             new_products |= (
-                new_template._create_product_variant(combination)
+                (combination and new_template._create_product_variant(combination))
                 or new_template.product_variant_id
                 or new_template._create_first_product_variant()
             )
@@ -464,9 +469,9 @@ class ProductProduct(models.Model):
         "seller_ids.product_id",
     )
     def _compute_code(self) -> None:
-        partner_id = self.env.context.get("partner_id")
+        seller_partners = self._get_context_seller_partners()
         for product in self:
-            seller = product._get_contextual_partner_seller(partner_id)
+            seller = product._get_contextual_partner_seller(seller_partners)
             product.code = seller.product_code or product.default_code
 
     @api.depends(
@@ -480,9 +485,9 @@ class ProductProduct(models.Model):
     )
     @api.depends_context("partner_id")
     def _compute_partner_ref(self) -> None:
-        partner_id = self.env.context.get("partner_id")
+        seller_partners = self._get_context_seller_partners()
         for product in self:
-            matched_seller = product._get_contextual_partner_seller(partner_id)
+            matched_seller = product._get_contextual_partner_seller(seller_partners)
             if matched_seller:
                 product_name = (
                     matched_seller.product_name or product.default_code or product.name
@@ -518,12 +523,8 @@ class ProductProduct(models.Model):
                 return f"[{code}] {name}"
             return name
 
-        partner_id = self.env.context.get("partner_id")
-        partner_ids = (
-            self.env["res.partner"].browse(partner_id)._get_seller_partners().ids
-            if partner_id
-            else []
-        )
+        seller_partners = self._get_context_seller_partners()
+        partner_ids = seller_partners.ids
         company_id = self.env.context.get("company_id")
 
         self.check_access("read")
@@ -572,14 +573,19 @@ class ProductProduct(models.Model):
                 sellers = [
                     x
                     for x in product_supplier_info
-                    if x.product_id and x.product_id == product
+                    if not x.product_id or x.product_id == product
                 ]
-                if not sellers:
-                    sellers = [x for x in product_supplier_info if not x.product_id]
                 if company_id:
+                    company_chain = (
+                        self.env["res.company"].browse(company_id).parent_ids
+                    )
                     sellers = [
-                        x for x in sellers if x.company_id.id in [company_id, False]
+                        x
+                        for x in sellers
+                        if not x.company_id or x.company_id in company_chain
                     ]
+                sellers = self._keep_nearest_partner_sellers(sellers, seller_partners)
+                sellers = [x for x in sellers if x.product_id] or sellers
             if sellers:
                 temp = []
                 for s in sellers:
@@ -636,16 +642,9 @@ class ProductProduct(models.Model):
             product_domains.append([("barcode", "in", [value])])
 
         supplier_domain = []
-        if partner_id := self.env.context.get("partner_id"):
+        if seller_partners := self._get_context_seller_partners():
             supplier_domain = [
-                (
-                    "partner_id",
-                    "in",
-                    self.env["res.partner"]
-                    .browse(partner_id)
-                    ._get_seller_partners()
-                    .ids,
-                ),
+                ("partner_id", "in", seller_partners.ids),
                 "|",
                 ("product_code", operator, value),
                 ("product_name", operator, value),
@@ -752,17 +751,10 @@ class ProductProduct(models.Model):
                 ["display_name"],
                 limit=limit,
             )
-        if not products and (partner_id := self.env.context.get("partner_id")):
+        if not products and (seller_partners := self._get_context_seller_partners()):
             supplier_domain = Domain(
                 [
-                    (
-                        "partner_id",
-                        "in",
-                        self.env["res.partner"]
-                        .browse(partner_id)
-                        ._get_seller_partners()
-                        .ids,
-                    ),
+                    ("partner_id", "in", seller_partners.ids),
                     "|",
                     ("product_code", operator, name),
                     ("product_name", operator, name),
@@ -992,21 +984,41 @@ class ProductProduct(models.Model):
             domain.append(("company_id", "in", (False, company_id)))
         return domain
 
-    def _get_contextual_partner_seller(self, partner_id):
+    @api.model
+    def _get_context_seller_partners(self):
+        # The context may name a partner deleted since: it matches no seller.
+        # One already read in this transaction is cached, and unlink evicts
+        # it, so only an unread one costs the existence query.
+        partners = self.env["res.partner"].browse(self.env.context.get("partner_id"))
+        commercial = partners._fields["commercial_partner_id"]
+        if not all(
+            self.env.cache.contains(partner, commercial) for partner in partners
+        ):
+            partners = partners.exists()
+        return partners._get_seller_partners()
+
+    def _get_contextual_partner_seller(self, partners):
         self.check_singleton()
         SupplierInfo = self.env["product.supplierinfo"]
-        if not partner_id or not SupplierInfo.has_access("read"):
+        if not partners or not SupplierInfo.has_access("read"):
             return SupplierInfo
-        partners = self.env["res.partner"].browse(partner_id)._get_seller_partners()
         sellers = self.seller_ids.filtered(
-            lambda seller: (
-                seller.partner_id in partners
-                and (not seller.product_id or seller.product_id == self)
-            )
+            lambda seller: not seller.product_id or seller.product_id == self
         )
-        return sellers.sorted(
-            lambda seller: (not seller.product_id, seller.partner_id.id != partner_id)
-        )[:1]
+        nearest = SupplierInfo.concat(
+            *self._keep_nearest_partner_sellers(sellers, partners)
+        )
+        return nearest.sorted(lambda seller: not seller.product_id)[:1]
+
+    @api.model
+    def _keep_nearest_partner_sellers(self, sellers, partners) -> list:
+        # partners is nearest first (_get_seller_partners): a contact's own
+        # lines win over its parent's, which win over its commercial entity's.
+        for partner in partners:
+            nearest = [seller for seller in sellers if seller.partner_id == partner]
+            if nearest:
+                return nearest
+        return []
 
     def _get_filtered_sellers(
         self,
@@ -1495,6 +1507,12 @@ class ProductProduct(models.Model):
             uom_id=uom_id,
             params=params,
         )
+        if partner_id:
+            sellers = self.env["product.supplierinfo"].concat(
+                *self._keep_nearest_partner_sellers(
+                    sellers, partner_id._get_seller_partners()
+                )
+            )
         res_ids = []
         res_partner = None
         for seller in sellers:

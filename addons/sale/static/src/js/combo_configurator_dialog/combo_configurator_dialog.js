@@ -112,8 +112,8 @@ export class ComboConfiguratorDialog extends Component {
 
     /**
      * @param {Number} quantity
-     * @return {Boolean} whether the quantity changed; when it did not (a value
-     *   clamped back to the current one), QuantityButtons resets its input
+     * @return {Boolean} whether the quantity changed; a value clamped back to
+     *   the current one asks for no new price
      */
     async setQuantity(quantity) {
         if (quantity <= 0) {

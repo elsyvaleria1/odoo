@@ -88,8 +88,15 @@ class ProductTemplateAttributeLine(models.Model):
         create_positions = []
         record_ids = [None] * len(vals_list)
         archived_ptal_pool = self._pool_of_reusable_archived_lines(vals_list)
+        default_purpose = self.default_get(["purpose"]).get("purpose", "variant")
         for index, value in enumerate(vals_list):
-            vals = dict(value, active=value.get("active", True))
+            # A reused archived line keeps whatever is not written: its old
+            # purpose must not carry over to the line asked for.
+            vals = dict(
+                value,
+                active=value.get("active", True),
+                purpose=value.get("purpose", default_purpose),
+            )
             pool_key = (vals.pop("product_tmpl_id", 0), vals.pop("attribute_id", 0))
             candidates = archived_ptal_pool.get(pool_key)
             archived_ptal = candidates.pop(0) if candidates else self.browse()

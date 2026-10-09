@@ -73,17 +73,13 @@ test("a section dropped onto or from No Section moves nothing", () => {
     expect(moves).toEqual([[7, 4]]);
 });
 
-test("an unreadable catalog quantity changes nothing", () => {
+test("an emptied catalog quantity is a quantity of zero", () => {
     const updates = [];
-    const record = {
-        productCatalogData: { quantity: 3 },
-        updateQuantity: (quantity) => updates.push(quantity),
-    };
-    const input = { value: "" };
-    ProductCatalogKanbanRecord.prototype.setQuantity.call(record, { target: input });
-    expect(updates).toEqual([]);
-    expect(input.value).toBe(3);
-    input.value = "5";
-    ProductCatalogKanbanRecord.prototype.setQuantity.call(record, { target: input });
-    expect(updates).toEqual([5]);
+    const record = { updateQuantity: (quantity) => updates.push(quantity) };
+    for (const value of ["", "5"]) {
+        ProductCatalogKanbanRecord.prototype.setQuantity.call(record, {
+            target: { value },
+        });
+    }
+    expect(updates).toEqual([0, 5]);
 });

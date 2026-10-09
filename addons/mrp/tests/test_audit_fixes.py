@@ -3512,3 +3512,93 @@ class TestMrpAuditFixes(TestMrpCommon):
             traced,
             "posting the rest of the order rewrote what the first batch consumed",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestBomConditionOnSpecification(TestMrpCommon):
+    def test_a_condition_on_a_specification_value_holds_for_every_variant(self):
+        color, finish = self.env["product.attribute"].create(
+            [
+                {
+                    "name": "Chair color",
+                    "value_ids": [
+                        Command.create({"name": "Red"}),
+                        Command.create({"name": "Blue"}),
+                    ],
+                },
+                {
+                    "name": "Chair finish",
+                    "value_ids": [Command.create({"name": "Matte"})],
+                },
+            ]
+        )
+        chair = self.env["product.template"].create(
+            {
+                "name": "Chair",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": attribute.id,
+                            "value_ids": [Command.set(attribute.value_ids.ids)],
+                        }
+                    )
+                    for attribute in (color, finish)
+                ],
+            }
+        )
+        red, matte = (
+            line.product_template_value_ids[0] for line in chair.attribute_line_ids
+        )
+        plain, varnish, paint = self.env["product.product"].create(
+            [{"name": name} for name in ("Plain", "Varnish", "Red paint")]
+        )
+        bom = self.env["mrp.bom"].create(
+            {
+                "product_tmpl_id": chair.id,
+                "bom_line_ids": [
+                    Command.create({"product_id": plain.id}),
+                    Command.create(
+                        {
+                            "product_id": varnish.id,
+                            "bom_product_template_attribute_value_ids": [
+                                Command.set(matte.ids)
+                            ],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "product_id": paint.id,
+                            "bom_product_template_attribute_value_ids": [
+                                Command.set(red.ids)
+                            ],
+                        }
+                    ),
+                ],
+            }
+        )
+
+        chair.attribute_line_ids.filtered(
+            lambda line: line.attribute_id == finish
+        ).purpose = "specification"
+
+        self.assertEqual(len(chair.product_variant_ids), 2)
+        for variant in chair.product_variant_ids:
+            expected = (
+                plain
+                | varnish
+                | (
+                    paint
+                    if red in variant.product_template_attribute_value_ids
+                    else paint.browse()
+                )
+            )
+            self.assertEqual(
+                bom.bom_line_ids._filtered_applicable_to(variant).product_id, expected
+            )
+            _boms, lines = bom._explode(variant, 1.0)
+            self.assertEqual(
+                self.env["product.product"].concat(
+                    *(line.product_id for line, _data in lines)
+                ),
+                expected,
+            )

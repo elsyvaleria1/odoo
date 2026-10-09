@@ -492,16 +492,88 @@ class TestSpecificationLines(ProductVariantsCommon):
 
 @tagged("post_install", "-at_install")
 class TestSpecificationMigration(ProductVariantsCommon):
-    def _migrate(self):
-        spec = importlib.util.spec_from_file_location(
-            "product_pre_migrate_1_12",
-            file_path("product/migrations/1.12/pre-migrate.py"),
+    def _migrate(self, stages=("pre",)):
+        for stage in stages:
+            spec = importlib.util.spec_from_file_location(
+                f"product_{stage}_migrate_1_12",
+                file_path(f"product/migrations/1.12/{stage}-migrate.py"),
+            )
+            migration = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(migration)
+            self.env.flush_all()
+            migration.migrate(self.env.cr, "1.11")
+            self.env.invalidate_all()
+
+    def test_a_repeated_value_with_an_extra_price_stops_the_upgrade(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Priced",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [Command.set(self.size_attribute_s.ids)],
+                        }
+                    )
+                ],
+            }
         )
-        migration = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(migration)
-        self.env.flush_all()
-        migration.migrate(self.env.cr, "1.11")
-        self.env.invalidate_all()
+        template.attribute_line_ids.product_template_value_ids.price_extra = 5.0
+        self._repeat_line(template, self.size_attribute_m)
+        with self.assertRaisesRegex(UserError, "product.template %s" % template.id):
+            self._migrate()
+
+    def test_repeated_custom_values_stop_the_upgrade(self):
+        engraving = self.env["product.attribute"].create(
+            {
+                "name": "Engraving",
+                "create_variant": "no_variant",
+                "value_ids": [Command.create({"name": "Text", "is_custom": True})],
+            }
+        )
+        template = self.env["product.template"].create(
+            {
+                "name": "Ring",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": engraving.id,
+                            "value_ids": [Command.set(engraving.value_ids.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        self._repeat_line(template, engraving.value_ids)
+        with self.assertRaisesRegex(UserError, "product.template %s" % template.id):
+            self._migrate()
+
+    def test_a_folded_dynamic_attribute_leaves_the_product_unconfigurable(self):
+        dynamic = self.dynamic_attribute
+        template = self.env["product.template"].create(
+            {
+                "name": "Folded",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": dynamic.id,
+                            "value_ids": [Command.set(dynamic.value_ids[:1].ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        self.assertTrue(template.has_configurable_attributes)
+        self._repeat_line(template, dynamic.value_ids[1:])
+
+        self._migrate(stages=("pre", "post"))
+
+        self.assertTrue(template.specification_line_ids)
+        self.env.cr.execute(
+            "SELECT has_configurable_attributes FROM product_template WHERE id = %s",
+            [template.id],
+        )
+        self.assertFalse(self.env.cr.fetchone()[0])
 
     def _repeat_line(self, template, values):
         self.env.cr.execute(
@@ -559,3 +631,146 @@ class TestSpecificationMigration(ProductVariantsCommon):
             UserError, "product.template %s" % self.product_template_sofa.id
         ):
             self._migrate()
+
+
+@tagged("post_install", "-at_install")
+class TestAuditRegressions(ProductVariantsCommon):
+    def test_variant_fields_saved_with_a_new_line_reach_the_variant(self):
+        template = self.env["product.template"].create({"name": "Lamp"})
+        variant = template.product_variant_id
+        template.write(
+            {
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [Command.set(self.size_attribute_s.ids)],
+                        }
+                    )
+                ],
+                "default_code": "LAMP-S",
+                "weight": 3.5,
+            }
+        )
+        self.assertEqual(template.product_variant_id, variant)
+        self.assertEqual(variant.default_code, "LAMP-S")
+        self.assertEqual(variant.weight, 3.5)
+
+    def test_variant_fields_saved_with_a_split_have_no_single_variant(self):
+        template = self.env["product.template"].create({"name": "Lamp"})
+        template.write(
+            {
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [
+                                Command.set(self.size_attribute.value_ids[:2].ids)
+                            ],
+                        }
+                    )
+                ],
+                "weight": 3.5,
+            }
+        )
+        self.assertEqual(len(template.product_variant_ids), 2)
+        self.assertEqual(template.product_variant_ids.mapped("weight"), [0.0, 0.0])
+        self.env.invalidate_all()
+        self.assertEqual(template.weight, 0.0)
+
+    def test_variant_fields_created_with_a_split_have_no_single_variant(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Lamp",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.size_attribute.id,
+                            "value_ids": [
+                                Command.set(self.size_attribute.value_ids[:2].ids)
+                            ],
+                        }
+                    )
+                ],
+                "default_code": "LAMP",
+                "weight": 3.5,
+            }
+        )
+        self.env.invalidate_all()
+        self.assertEqual(
+            template.product_variant_ids.mapped("default_code"), [False, False]
+        )
+        self.assertFalse(template.default_code)
+        self.assertEqual(template.weight, 0.0)
+
+    def test_a_reused_archived_line_takes_the_purpose_asked_for(self):
+        template = self.product_template_sofa
+        self.env["product.combo"].create(
+            {
+                "name": "Keeps the red sofa",
+                "combo_item_ids": [
+                    Command.create({"product_id": self.product_sofa_red.id})
+                ],
+            }
+        )
+        line = template.attribute_line_ids
+        line.purpose = "specification"
+        line.unlink()
+        self.assertFalse(line.active, "its archived values keep it, archived")
+
+        template.write(
+            {
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.color_attribute.id,
+                            "value_ids": [
+                                Command.set(self.color_attribute.value_ids.ids)
+                            ],
+                        }
+                    )
+                ]
+            }
+        )
+        self.assertEqual(template.attribute_line_ids.purpose, "variant")
+        self.assertFalse(template.specification_line_ids)
+        self.assertEqual(len(template.product_variant_ids), 3)
+
+    def test_copying_a_variant_of_a_dynamic_product_with_a_choice(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Desk",
+                "attribute_line_ids": [
+                    Command.create(
+                        {
+                            "attribute_id": self.dynamic_attribute.id,
+                            "value_ids": [
+                                Command.set(self.dynamic_attribute.value_ids.ids)
+                            ],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "attribute_id": self.no_variant_attribute.id,
+                            "value_ids": [
+                                Command.set(self.no_variant_attribute.value_ids.ids)
+                            ],
+                        }
+                    ),
+                ],
+            }
+        )
+        second = template.attribute_line_ids.filtered(
+            lambda line: line.attribute_id == self.dynamic_attribute
+        ).product_template_value_ids[1]
+        variant = template._create_product_variant(
+            second
+            + template.attribute_line_ids.filtered(
+                lambda line: line.attribute_id == self.no_variant_attribute
+            ).product_template_value_ids[0]
+        )
+        copy = variant.copy()
+        self.assertEqual(
+            copy.product_template_attribute_value_ids.product_attribute_value_id,
+            second.product_attribute_value_id,
+        )

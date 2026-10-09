@@ -32,8 +32,7 @@ class ResPartner(models.Model):
     )
 
     def _get_seller_partners(self):
-        partners = self.exists()
-        return partners | partners.parent_id | partners.commercial_partner_id
+        return self | self.parent_id | self.commercial_partner_id
 
     @api.depends_context("company", "country_code")
     @api.depends("country_id", "specific_property_product_pricelist")

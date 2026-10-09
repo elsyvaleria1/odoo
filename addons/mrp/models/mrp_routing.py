@@ -430,7 +430,7 @@ class MrpRoutingWorkcenter(models.Model):
         variants = (
             self.bom_id.product_id or self.bom_id.product_tmpl_id.product_variant_ids
         )
-        values = self.bom_product_template_attribute_value_ids
+        values = self._get_variant_conditions()
         if not values:
             return variants
         no_variant_values = self._get_no_variant_values()

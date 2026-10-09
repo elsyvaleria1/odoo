@@ -409,24 +409,18 @@ class ProductTemplate(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        templates = super().create(
-            [self._with_specification_purpose(vals) for vals in vals_list]
-        )
-        if self.env.context.get("create_product_product", True):
-            to_build = templates
-            if self.env.context.get("update_product_template_attribute_values", True):
-                # the lines just created rebuilt their own template's variants
-                to_build = templates.filtered(lambda t: not t.attribute_line_ids)
-            to_build._create_variant_ids()
-
-        for template, vals in zip(templates, vals_list, strict=True):
-            related_vals = {}
-            for field_name in self._get_related_fields_variant_template():
-                if vals.get(field_name) and not template[field_name]:
-                    related_vals[field_name] = vals[field_name]
-            if related_vals:
-                template.write(related_vals)
-
+        vals_list = [self._with_specification_purpose(vals) for vals in vals_list]
+        if not self.env.context.get("create_product_product", True):
+            return super().create(vals_list)
+        split = [self._split_variant_vals(vals) for vals in vals_list]
+        templates = super().create([template_vals for template_vals, _variant in split])
+        to_build = templates
+        if self.env.context.get("update_product_template_attribute_values", True):
+            # the lines just created rebuilt their own template's variants
+            to_build = templates.filtered(lambda t: not t.attribute_line_ids)
+        to_build._create_variant_ids()
+        for template, (_vals, variant_vals) in zip(templates, split, strict=True):
+            template._write_single_variant_vals(variant_vals)
         return templates
 
     def write(self, vals):
@@ -438,16 +432,21 @@ class ProductTemplate(models.Model):
             )
             products.with_context(skip_uom_conversion=True)._update_uom(vals["uom_id"])
         vals = self._with_specification_purpose(vals)
-        lines_rebuild_once = (
-            self.with_context(variant_rebuild_deferred=tuple(self.ids))
-            if "attribute_line_ids" in vals or "specification_line_ids" in vals
-            else self
+        create_variants = self.env.context.get("create_product_product", True)
+        rebuilds = create_variants and (
+            "attribute_line_ids" in vals or "specification_line_ids" in vals
         )
-        res = super(ProductTemplate, lines_rebuild_once).write(vals)
-        if self.env.context.get("create_product_product", True):
-            if "attribute_line_ids" in vals or "specification_line_ids" in vals:
-                self._create_variant_ids()
-            elif vals.get("active"):
+        if rebuilds:
+            vals, variant_vals = self._split_variant_vals(vals)
+            res = super(
+                ProductTemplate,
+                self.with_context(variant_rebuild_deferred=tuple(self.ids)),
+            ).write(vals)
+            self._create_variant_ids()
+            self._write_single_variant_vals(variant_vals)
+        else:
+            res = super().write(vals)
+            if create_variants and vals.get("active"):
                 self.filtered(lambda t: not t.product_variant_ids)._create_variant_ids()
         if "active" in vals and not vals.get("active"):
             self.with_context(active_test=False).product_variant_ids.write(
@@ -1468,6 +1467,23 @@ class ProductTemplate(models.Model):
         return self.valid_product_template_attribute_line_ids | (
             self.specification_line_ids.filtered("value_ids")
         )
+
+    def _split_variant_vals(self, vals) -> tuple[dict, dict]:
+        # These are written through to the single variant: they wait for the
+        # variants to be built, or they land on none, or on one the rebuild
+        # then removes.
+        variant_fnames = set(self._get_related_fields_variant_template())
+        return (
+            {key: value for key, value in vals.items() if key not in variant_fnames},
+            {key: value for key, value in vals.items() if key in variant_fnames},
+        )
+
+    def _write_single_variant_vals(self, variant_vals) -> None:
+        # A template with several variants has no single one to hold them;
+        # stored on it they would contradict their compute.
+        single = self.filtered(lambda template: len(template.product_variant_ids) <= 1)
+        if variant_vals and single:
+            super(ProductTemplate, single).write(variant_vals)
 
     def _get_related_fields_variant_template(self):
         return [

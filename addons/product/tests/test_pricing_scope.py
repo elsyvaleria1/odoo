@@ -231,6 +231,74 @@ class TestSellerPartnerMatching(ProductVariantsCommon):
             self.product_sofa_red._select_seller(partner_id=self.clerk), self.seller
         )
 
+    def test_the_nearest_vendor_level_wins(self):
+        parent_line = self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.office.id,
+                "product_tmpl_id": self.product_template_sofa.id,
+                "product_code": "OFFICE",
+                "price": 20.0,
+                "sequence": 2,
+            }
+        )
+        self.seller.write({"price": 10.0, "sequence": 1})
+        self.assertEqual(
+            self.product_sofa_red._select_seller(partner_id=self.clerk), parent_line
+        )
+        self.assertEqual(
+            self.product_sofa_red.with_context(partner_id=self.clerk.id).code, "OFFICE"
+        )
+
+    def test_the_nearest_vendor_level_wins_over_a_variant_line_further_up(self):
+        self.seller.product_id = self.product_sofa_red
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.clerk.id,
+                "product_tmpl_id": self.product_template_sofa.id,
+                "product_code": "CLERK",
+            }
+        )
+        sofa = self.product_sofa_red.with_context(partner_id=self.clerk.id)
+        self.assertEqual(sofa.code, "CLERK")
+        self.assertIn("[CLERK]", sofa.display_name)
+        self.assertNotIn("VSOFA", sofa.display_name)
+
+    def test_another_companys_variant_line_leaves_the_shared_line(self):
+        other = self.env["res.company"].create({"name": "Other"})
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.vendor.id,
+                "product_tmpl_id": self.product_template_sofa.id,
+                "product_id": self.product_sofa_red.id,
+                "product_code": "ELSEWHERE",
+                "company_id": other.id,
+            }
+        )
+        sofa = self.product_sofa_red.with_context(
+            partner_id=self.vendor.id, company_id=self.env.company.id
+        )
+        self.assertIn("[VSOFA]", sofa.display_name)
+
+    def test_a_parent_companys_vendor_name_shows_in_a_branch(self):
+        branch = self.env["res.company"].create(
+            {"name": "Branch", "parent_id": self.env.company.id}
+        )
+        self.seller.company_id = self.env.company
+        sofa = self.product_sofa_red.with_context(
+            partner_id=self.vendor.id, company_id=branch.id
+        )
+        self.assertIn("Vendor sofa", sofa.display_name)
+
+    def test_a_partner_deleted_after_it_was_read_matches_no_seller(self):
+        clerk = self.env["res.partner"].create(
+            {"name": "Gone", "parent_id": self.office.id}
+        )
+        self.assertEqual(clerk.commercial_partner_id, self.vendor)
+        clerk.unlink()
+        sofa = self.product_sofa_red.with_context(partner_id=clerk.id)
+        self.assertEqual(sofa.code, sofa.default_code)
+        self.assertNotIn("VSOFA", sofa.display_name)
+
     def test_the_partners_own_line_wins_over_its_companys(self):
         own = self.env["product.supplierinfo"].create(
             {
@@ -240,7 +308,10 @@ class TestSellerPartnerMatching(ProductVariantsCommon):
             }
         )
         self.assertEqual(
-            self.product_sofa_red._get_contextual_partner_seller(self.clerk.id), own
+            self.product_sofa_red._get_contextual_partner_seller(
+                self.clerk._get_seller_partners()
+            ),
+            own,
         )
 
 

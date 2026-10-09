@@ -17,16 +17,37 @@ def migrate(cr, version):
             SELECT line.id, line.product_tmpl_id, line.attribute_id,
                    (SELECT count(*)
                       FROM product_attribute_value_product_template_attribute_line_rel rel
-                     WHERE rel.product_template_attribute_line_id = line.id) AS value_count
+                     WHERE rel.product_template_attribute_line_id = line.id) AS value_count,
+                   EXISTS (
+                       SELECT 1
+                         FROM product_attribute_value_product_template_attribute_line_rel rel
+                         JOIN product_attribute_value value
+                           ON value.id = rel.product_attribute_value_id
+                        WHERE rel.product_template_attribute_line_id = line.id
+                          AND value.is_custom
+                   ) AS has_custom_value,
+                   EXISTS (
+                       SELECT 1
+                         FROM product_template_attribute_value ptav
+                        WHERE ptav.attribute_line_id = line.id
+                          AND ptav.ptav_active
+                          AND COALESCE(ptav.price_extra, 0) != 0
+                   ) AS has_price_extra
               FROM product_template_attribute_line line
              WHERE line.active
         )
-        SELECT product_tmpl_id, attribute_id, array_agg(id ORDER BY id),
-               bool_and(value_count = 1)
+        SELECT line.product_tmpl_id, line.attribute_id, array_agg(line.id ORDER BY line.id),
+               bool_and(
+                   line.value_count = 1
+                   AND NOT line.has_custom_value
+                   AND NOT line.has_price_extra
+               )
+               AND attribute.display_type IS DISTINCT FROM 'multi'
           FROM line
-      GROUP BY product_tmpl_id, attribute_id
+          JOIN product_attribute attribute ON attribute.id = line.attribute_id
+      GROUP BY line.product_tmpl_id, line.attribute_id, attribute.display_type
         HAVING count(*) > 1
-      ORDER BY product_tmpl_id, attribute_id
+      ORDER BY line.product_tmpl_id, line.attribute_id
         """
     )
     groups = cr.fetchall()
@@ -34,10 +55,13 @@ def migrate(cr, version):
     if refused:
         raise UserError(
             "product 1.12 keeps each attribute on one line per product. An attribute"
-            " repeated on lines of one value each becomes a specification on its own;"
-            " these products repeat an attribute on a line of several values, which"
-            " has no single meaning. Merge each group into one line (or use a second"
-            " attribute), then upgrade again:\n"
+            " repeated on lines of one ordinary value each becomes a specification on"
+            " its own; these products repeat an attribute on a line of several values,"
+            " of a custom value, or of a multi-choice attribute, where each line may be"
+            " a separate input a customer gives, or on a line whose value adds an extra"
+            " price, which a specification does not charge. Merge each group into one"
+            " line (or use a second attribute; move an extra price into the sales"
+            " price), then upgrade again:\n"
             + "\n".join(
                 f"- product.template {template_id}, product.attribute {attribute_id}:"
                 f" lines {line_ids}"

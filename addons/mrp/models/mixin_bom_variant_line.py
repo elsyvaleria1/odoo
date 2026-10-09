@@ -38,8 +38,18 @@ class MixinBomVariantLine(models.AbstractModel):
         return bool(
             self._is_skipped_for_no_variant(
                 product,
-                self.bom_product_template_attribute_value_ids,
+                self._get_variant_conditions(),
                 never_attribute_values,
+            )
+        )
+
+    def _get_variant_conditions(self):
+        # A specification holds for every variant of its product: a condition
+        # on one of its values is met by all of them, though none carries it.
+        return self.bom_product_template_attribute_value_ids.filtered(
+            lambda value: (
+                value.product_attribute_value_id
+                not in value.product_tmpl_id.specification_line_ids.value_ids
             )
         )
 
@@ -70,7 +80,7 @@ class MixinBomVariantLine(models.AbstractModel):
         )
 
     def _get_no_variant_values(self):
-        return self.bom_product_template_attribute_value_ids.filtered(
+        return self._get_variant_conditions().filtered(
             lambda value: value.attribute_id.create_variant == "no_variant"
         )
 
