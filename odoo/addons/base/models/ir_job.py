@@ -686,6 +686,38 @@ class IrJob(models.Model):
         )
         return self.env.cr.fetchone()
 
+    def _widen_deduplicated_company_scope(
+        self, job_id: int, companies: list[int]
+    ) -> None:
+        # one job serves every caller of its identity: it works in every
+        # company one of them named, the first caller's first still current;
+        # a job queued with no scope keeps its user's own and is not narrowed
+        cr = self.env.cr
+        cr.execute(
+            SQL(
+                "SELECT context -> 'allowed_company_ids' FROM ir_job"
+                f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                job_id,
+            )
+        )
+        row = cr.fetchone()
+        scope = row[0] if row else None
+        if not scope:
+            return
+        widened = [*scope, *(company for company in companies if company not in scope)]
+        if widened == scope:
+            return
+        _debug.logic("enqueue.company_scope_widened", job=job_id, companies=widened)
+        cr.execute(
+            SQL(
+                "UPDATE ir_job SET context = context || jsonb_build_object("
+                "'allowed_company_ids', %s::jsonb)"
+                f" WHERE id = %s AND state IN {QUEUED_STATES_SQL}",
+                json_dumps(widened),
+                job_id,
+            )
+        )
+
     def _reuse_deduplicated_job(
         self,
         records: models.BaseModel,
@@ -723,6 +755,8 @@ class IrJob(models.Model):
                     row[0],
                 )
             )
+        if row and (companies := env.context.get("allowed_company_ids")):
+            self._widen_deduplicated_company_scope(row[0], companies)
         if dep_ids:
             _logger.warning(
                 "ir.job %s.%s deduplicated on identity key %r: the job it "

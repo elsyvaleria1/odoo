@@ -6,7 +6,7 @@ from unittest.mock import patch
 import psycopg.errors
 
 import odoo
-from odoo import api, fields
+from odoo import Command, api, fields
 from odoo.exceptions import (
     RetryableJobError,
     TerminalJobError,
@@ -345,6 +345,33 @@ class TestIrJob(TransactionCase):
         env = self._claimed_env()
         self.assertTrue(env.su)
         self.assertEqual(env.privileges, frozenset(privilege.ids))
+
+    def test_a_deduplicated_job_works_in_every_company_its_callers_named(self):
+        other = self.env["res.company"].create({"name": "Job dedup company"})
+        home = self.env.company
+        user = new_test_user(
+            self.env,
+            login="job_dedup_companies",
+            groups="base.group_user",
+            company_id=home.id,
+            company_ids=[Command.set((home | other).ids)],
+        )
+        plain = self.partner.with_user(user)
+        job = (
+            plain.with_context(allowed_company_ids=home.ids)
+            .delayed(identity_key="companies")
+            ._ir_job_test_append()
+        )
+
+        plain.with_context(allowed_company_ids=[other.id, home.id]).delayed(
+            identity_key="companies"
+        )._ir_job_test_append()
+
+        job.invalidate_recordset()
+        self.assertEqual(job.sudo().context["allowed_company_ids"], [home.id, other.id])
+        env = self._claimed_env()
+        self.assertEqual(env.company, home)
+        self.assertEqual(env.companies, home | other)
 
     def test_a_privilege_gone_since_is_not_held(self):
         self.partner.delayed()._ir_job_test_append()

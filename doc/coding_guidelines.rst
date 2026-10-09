@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.68
+:Version: 7.69
 :Date: 2026-10-09
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -3561,7 +3561,9 @@ line** ``[review]``:
   environment whose authority the work needs. The allowlisted context keeps the
   acting partner and the privilege's reason with them. A job deduplicated on its
   ``identity_key`` serves every caller with the widest authority among them:
-  an elevated or privileged caller widens the queued job it joins. A job whose
+  an elevated or privileged caller widens the queued job it joins, and a caller
+  in companies the job does not yet name adds them to its scope, the first
+  caller's current company staying current. A job whose
   user has been archived still fails terminally; the public user, archived so
   that nobody logs in as it, is not: what an anonymous caller queued runs as it.
 * Arguments are **JSON-serialisable**: pass ids, not recordsets or datetimes.
@@ -6190,6 +6192,9 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.69
+     - 2026-10-09
+     - §2.9.14: a deduplicated job works in every company its callers named.
    * - 7.68
      - 2026-10-09
      - §2.9.14: a job the public user queued is claimed, not failed as an
