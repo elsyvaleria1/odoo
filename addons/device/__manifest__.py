@@ -67,7 +67,6 @@ MQTT client nor a PLC library.
         "views/device_device_views.xml",
         "views/device_dashboard_views.xml",
         "wizards/res_config_settings_views.xml",
-        "wizards/device_token_show_views.xml",
         "reports/device_data_log_report_views.xml",
         "views/device_menu.xml",
     ],

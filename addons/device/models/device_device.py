@@ -962,9 +962,8 @@ class DeviceDevice(models.Model):
     def action_generate_inbound_token(self):
         """Store a new token on the device's credential and show it once.
 
-        The token is kept encrypted in the credential and handed to the dialog
-        through its context only, the way an API key is: it cannot be read
-        back afterwards, only replaced.
+        The token is kept encrypted in the credential and handed to the user in
+        a notification only: it cannot be read back afterwards, only replaced.
         """
         self.check_singleton()
         self.check_access("write")
@@ -1006,14 +1005,18 @@ class DeviceDevice(models.Model):
                 label, company_id, token=token
             )
         _logger.info("Device %s: a new inbound token was issued", self.id)
-        return {
-            "type": "ir.actions.act_window",
-            "res_model": "device.token.show",
-            "name": self.env._("Device Token"),
-            "views": [(False, "form")],
-            "target": "new",
-            "context": {"default_token": token, "default_identifier": self.identifier},
-        }
+        return self._notify(
+            self.env._("Token for %(device)s", device=self.display_name),
+            self.env._(
+                "%(token)s\n\nIt is shown once: enter it in the device now, with "
+                "its identifier %(identifier)s. Whoever holds it can send data in "
+                "this device's name. Any token issued before no longer works.",
+                token=token,
+                identifier=self.identifier,
+            ),
+            kind="warning",
+            sticky=True,
+        )
 
     _INBOUND_UNLOGGED_EVENTS = frozenset({"device_status"})
 

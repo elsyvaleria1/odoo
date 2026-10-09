@@ -19,19 +19,23 @@ class TestInboundTokenAction(DeviceTransactionCase):
         action = type(device).action_generate_inbound_token.__wrapped__
         return action(device.with_user(self.manager))
 
+    def _generated_token(self, device):
+        return self._generate(device)["params"]["message"].split("\n", 1)[0]
+
     def test_the_token_shown_once_is_the_one_the_device_must_send(self):
         device = self._create_device_device(identifier="TOKEN-1", auth_type="bearer")
         action = self._generate(device)
-        token = action["context"]["default_token"]
-        self.assertEqual(action["res_model"], "device.token.show")
-        self.assertEqual(action["context"]["default_identifier"], "TOKEN-1")
+        token = action["params"]["message"].split("\n", 1)[0]
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertTrue(action["params"]["sticky"])
+        self.assertIn("TOKEN-1", action["params"]["message"])
         self.assertEqual(len(token), 64)
         self.assertTrue(device.is_valid_token(token))
 
     def test_a_new_token_replaces_the_one_before_it(self):
         device = self._create_device_device(identifier="TOKEN-2", auth_type="bearer")
         before = self._device_token(device)
-        token = self._generate(device)["context"]["default_token"]
+        token = self._generated_token(device)
         self.assertNotEqual(token, before)
         self.assertTrue(device.is_valid_token(token))
         self.assertFalse(device.is_valid_token(before))
@@ -39,7 +43,7 @@ class TestInboundTokenAction(DeviceTransactionCase):
     def test_a_device_without_a_credential_is_given_one(self):
         device = self._create_device_device(identifier="TOKEN-3", auth_type="bearer")
         device.sudo().credential_id = False
-        token = self._generate(device)["context"]["default_token"]
+        token = self._generated_token(device)
         self.assertTrue(device.credential_id)
         self.assertTrue(device.inbound_token_set)
         self.assertTrue(device.is_valid_token(token))
