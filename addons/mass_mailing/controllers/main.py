@@ -147,6 +147,13 @@ class MassMailController(http.Controller):
         except NotFound as e:  # avoid leaking ID existence
             raise Unauthorized from e
 
+        return self._render_mailing_confirm_unsubscribe(
+            mailing, document_id, email, hash_token
+        )
+
+    def _render_mailing_confirm_unsubscribe(
+        self, mailing, document_id, email, hash_token, form_action=None
+    ):
         unsubscribed_lists = ""
         # Display list name if list is public
         if mailing.mailing_model_real == "mailing.contact":
@@ -159,11 +166,12 @@ class MassMailController(http.Controller):
         return request.render(
             "mass_mailing.page_mailing_confirm_unsubscribe",
             {
-                "mailing_id": mailing_id,
+                "mailing_id": mailing.id,
                 "document_id": document_id,
                 "email": email,
                 "hash_token": hash_token,
                 "unsubscribed_lists": unsubscribed_lists,
+                "form_action": form_action,
             },
         )
 
@@ -221,6 +229,7 @@ class MassMailController(http.Controller):
         type="http",
         website=True,
         auth="public",
+        methods=["GET", "POST"],
     )
     def mailing_unsubscribe(
         self, mailing_id, document_id=None, email=None, hash_token=None
@@ -236,6 +245,16 @@ class MassMailController(http.Controller):
             )
         except NotFound as e:  # avoid leaking ID existence
             raise Unauthorized from e
+        if request.httprequest.method != "POST":
+            # opened from a mail: a scanner or a preview must not unsubscribe
+            # anyone, so the page asks and its form posts back here
+            return self._render_mailing_confirm_unsubscribe(
+                mailing_sudo,
+                document_id,
+                email,
+                hash_token,
+                form_action=request.httprequest.full_path,
+            )
 
         if mailing_sudo.mailing_on_mailing_list:
             return self._mailing_unsubscribe_from_list(
@@ -560,7 +579,13 @@ class MassMailController(http.Controller):
     # MAILING MANAGEMENT
     # ------------------------------------------------------------
 
-    @http.route("/mailing/report/unsubscribe", type="http", website=True, auth="public")
+    @http.route(
+        "/mailing/report/unsubscribe",
+        type="http",
+        website=True,
+        auth="public",
+        methods=["GET", "POST"],
+    )
     def mailing_report_deactivate(self, token, user_id):
         if not token or not user_id:
             raise BadRequest
@@ -573,6 +598,10 @@ class MassMailController(http.Controller):
             )
         ):
             raise Unauthorized
+        if request.httprequest.method != "POST":
+            # the link in the report mail: a scanner or a preview opening it
+            # must not turn the reports off, so the page asks and posts it
+            return request.render("mass_mailing.mailing_report_deactivate_confirm")
 
         request.env["ir.config_parameter"].sudo().set_param(
             "mass_mailing.mass_mailing_reports", False

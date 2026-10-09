@@ -7,6 +7,12 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_list", {
     steps: () => [
         {
+            content: "Opening the link asks; confirm the unsubscription",
+            trigger: "form#o_mailing_confirm_unsubscribe button[type=submit]",
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
             content: "Confirmation unsubscribe is done",
             trigger:
                 "div#o_mailing_subscription_info span:contains('You are no longer part of the List1, List2 mailing list')",
@@ -61,6 +67,12 @@ registry
     .category("web_tour.tours")
     .add("mailing_portal_unsubscribe_from_list_with_update", {
         steps: () => [
+            {
+                content: "Opening the link asks; confirm the unsubscription",
+                trigger: "form#o_mailing_confirm_unsubscribe button[type=submit]",
+                run: "click",
+                expectUnloadPage: true,
+            },
             {
                 content: "Confirmation unsubscribe is done",
                 trigger:

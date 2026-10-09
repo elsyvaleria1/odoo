@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from freezegun import freeze_time
 from markupsafe import Markup
@@ -10,6 +11,10 @@ from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.mass_mailing.tests.common import MassMailCommon
+
+
+def _csrf_token(page):
+    return re.search(r'name="csrf_token"\s+value="([^"]+)"', page).group(1)
 
 
 class TestMailingControllersCommon(MassMailCommon, HttpCase):
@@ -189,12 +194,21 @@ class TestMailingControllers(TestMailingControllersCommon):
                 ],
             }
         )
-        res = self.url_open(
-            tools.urls.urljoin(
-                test_mailing.get_base_url(),
-                f"mailing/report/unsubscribe?user_id={self.user_marketing.id}&token={hash_token}",
-            )
+        link = tools.urls.urljoin(
+            test_mailing.get_base_url(),
+            f"mailing/report/unsubscribe?user_id={self.user_marketing.id}&token={hash_token}",
         )
+        # opening the link asks: a scanner fetching it turns nothing off
+        res = self.url_open(link)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("o_mailing_report_deactivate", res.text)
+        self.assertTrue(
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("mass_mailing.mass_mailing_reports"),
+            "opening the link turned the reports off",
+        )
+        res = self.url_open(link, data={"csrf_token": _csrf_token(res.text)})
         self.assertEqual(res.status_code, 200)
         self.assertFalse(
             self.env["ir.config_parameter"]
@@ -305,6 +319,39 @@ class TestMailingControllers(TestMailingControllersCommon):
                 self.assertEqual(
                     msg_create.body, Markup("<p>Mail Blacklist created</p>")
                 )
+
+    def test_opening_an_unsubscribe_link_unsubscribes_nobody(self):
+        """A scanner or a preview fetches every link of a mail it inspects:
+        the link's page asks, and only the confirmation it posts acts."""
+        test_mailing = self.test_mailing_on_documents.with_env(self.env)
+        partner = self.env["res.partner"].create(
+            {"email": "opened@example.com", "name": "Opened"}
+        )
+        hash_token = test_mailing._generate_mailing_recipient_token(
+            partner.id, partner.email_normalized
+        )
+        link = (
+            f"/mailing/{test_mailing.id}/unsubscribe?email={partner.email_normalized}"
+            f"&document_id={partner.id}&hash_token={hash_token}"
+        )
+        legacy = (
+            f"/mail/mailing/{test_mailing.id}/unsubscribe?email={partner.email_normalized}"
+            f"&res_id={partner.id}&token={hash_token}"
+        )
+        for opened_link in (link, legacy):
+            with self.subTest(link=opened_link):
+                opened = self.url_open(opened_link)
+                self.assertEqual(opened.status_code, 200)
+                self.assertIn("o_mailing_confirm_unsubscribe", opened.text)
+                partner.invalidate_recordset(["is_blacklisted"])
+                self.assertFalse(
+                    partner.is_blacklisted, "opening the link unsubscribed"
+                )
+
+        confirmed = self.url_open(link, data={"csrf_token": _csrf_token(opened.text)})
+        self.assertEqual(confirmed.status_code, 200)
+        partner.invalidate_recordset(["is_blacklisted"])
+        self.assertTrue(partner.is_blacklisted)
 
     def test_mailing_unsubscribe_from_document_tour_mailing_user(self):
         """Test portal unsubscribe on mailings performed on documents (not
