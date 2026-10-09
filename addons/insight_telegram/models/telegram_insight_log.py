@@ -9,19 +9,20 @@ class TelegramInsightLog(models.Model):
     _order = "create_date desc, id desc"
 
     bot_id = fields.Many2one(
-        comodel_name="telegram.bot", required=True, index=True, ondelete="cascade"
+        comodel_name="telegram.bot",
+        index=True,
+        required=True,
+        ondelete="cascade",
     )
     company_id = fields.Many2one(
         related="bot_id.company_id",
-        store=True,
-        index=True,
         help="The company the bot speaks for: where the question belongs.",
     )
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Asked By",
-        required=True,
         index=True,
+        required=True,
         ondelete="cascade",
     )
     question = fields.Text(required=True)

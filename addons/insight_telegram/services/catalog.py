@@ -36,9 +36,6 @@ class Ask:
     params: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
 
-    def _(self, source, *args, **kwargs):
-        return self.env._(source, *args, **kwargs)
-
     # -- parameters ------------------------------------------------------------
 
     @property
@@ -105,12 +102,12 @@ class Ask:
         domain += ["|"] * (len(terms) - 1) + terms
         found = self.env[model].search(domain, limit=MAX_MATCHES)
         if not found:
-            raise NotFound(self._("I could not find «%(value)s».", value=value))
+            raise NotFound(self.env._("I could not find «%(value)s».", value=value))
         if len(found) > 1:
             names = ", ".join(found[:5].mapped("display_name"))
             more = "…" if len(found) > 5 else ""
             self.notes.append(
-                self._(
+                self.env._(
                     "«%(value)s» matched: %(names)s%(more)s",
                     value=value,
                     names=names,
@@ -161,8 +158,8 @@ def _label(ask, value):
     if isinstance(value, date):
         return ask.format_month(value)
     if hasattr(value, "display_name"):
-        return value.display_name or ask._("(none)")
-    return str(value) if value not in (None, False) else ask._("(none)")
+        return value.display_name or ask.env._("(none)")
+    return str(value) if value not in (None, False) else ask.env._("(none)")
 
 
 def money_report(ask, title, model, domain, amount, currency_path, groups):
@@ -172,7 +169,7 @@ def money_report(ask, title, model, domain, amount, currency_path, groups):
     rows = ask.env[model]._read_group(domain, by, [f"{amount}:sum", "__count"])
     lines = [f"**{title}**", ask.period_label()] if title else []
     if not rows:
-        lines.append(ask._("No records in that period."))
+        lines.append(ask.env._("No records in that period."))
         return lines
     per_currency = defaultdict(list)
     for row in rows:
@@ -181,7 +178,7 @@ def money_report(ask, title, model, domain, amount, currency_path, groups):
         total = sum(row[-2] for row in currency_rows)
         count = sum(row[-1] for row in currency_rows)
         lines.append(
-            ask._(
+            ask.env._(
                 "Total: **%(amount)s** (%(count)s documents)",
                 amount=money(total, currency),
                 count=count,
@@ -205,7 +202,7 @@ def _ranked(ask, items, show, by_date=False):
     shown = items if by_date else items[: ask.top]
     lines = [f"• {label}: {show(value)} ({count})" for label, value, count in shown]
     if len(items) > len(shown):
-        lines.append(ask._("… and %(count)s more", count=len(items) - len(shown)))
+        lines.append(ask.env._("… and %(count)s more", count=len(items) - len(shown)))
     return lines
 
 
@@ -221,7 +218,7 @@ def run_sales(ask):
             "salesperson": ("user_id", "res.users", ("name",), None),
         }
     )
-    title = ask._("Confirmed sales orders, before taxes (counter sales excluded)")
+    title = ask.env._("Confirmed sales orders, before taxes (counter sales excluded)")
     if ask.group == "product" or ask.params.get("product"):
         domain = [("order_id.state", "=", "done")] + [
             (f"order_id.{path}", operator, value) for path, operator, value in filters
@@ -278,7 +275,7 @@ def run_pos_sales(ask):
             "salesperson": ("user_id", "res.users", ("name",), None),
         }
     )
-    title = ask._("Counter (point of sale) sales, taxes included")
+    title = ask.env._("Counter (point of sale) sales, taxes included")
     states = ("paid", "done")
     if ask.group == "product" or ask.params.get("product"):
         domain = [("order_id.state", "in", states)] + [
@@ -337,7 +334,7 @@ def run_invoicing(ask):
     domain += ask.date_range("invoice_date")
     return money_report(
         ask,
-        ask._("Customer invoicing, before taxes, net of credit notes"),
+        ask.env._("Customer invoicing, before taxes, net of credit notes"),
         "account.move",
         domain,
         "amount_untaxed_signed",
@@ -368,40 +365,45 @@ def _balance_report(ask, title, move_types, sign):
         domain += overdue
     group_path = {"company": "company_id"}.get(ask.group, "partner_id")
     Move = ask.env["account.move"]
-    lines = [f"**{title}**", ask._("As of %(day)s", day=ask.format_day(ask.today))]
+    lines = [f"**{title}**", ask.env._("As of %(day)s", day=ask.format_day(ask.today))]
     totals = Move._read_group(
         domain, ["company_id.currency_id"], ["amount_residual_signed:sum", "__count"]
     )
     if not totals:
-        lines.append(ask._("Nothing pending."))
+        lines.append(ask.env._("Nothing pending."))
         return lines
     late = dict(
         Move._read_group(
             domain + overdue, ["company_id.currency_id"], ["amount_residual_signed:sum"]
         )
     )
+    ranked = defaultdict(list)
+    for currency, key, amount, count in Move._read_group(
+        domain,
+        ["company_id.currency_id", group_path],
+        ["amount_residual_signed:sum", "__count"],
+    ):
+        ranked[currency].append((key, amount, count))
     for currency, amount, count in totals:
         lines.append(
-            ask._(
+            ask.env._(
                 "Pending: **%(amount)s** (%(count)s documents)",
                 amount=money(sign * amount, currency),
                 count=count,
             )
         )
         lines.append(
-            ask._(
+            ask.env._(
                 "Overdue: **%(amount)s**",
                 amount=money(sign * late.get(currency, 0.0), currency),
             )
         )
-        rows = Move._read_group(
-            domain + [("company_id.currency_id", "=", currency.id)],
-            [group_path],
-            ["amount_residual_signed:sum", "__count"],
-        )
         lines += _ranked(
             ask,
-            [(_label(ask, key), sign * amount, count) for key, amount, count in rows],
+            [
+                (_label(ask, key), sign * amount, count)
+                for key, amount, count in ranked.get(currency, ())
+            ],
             lambda value, currency=currency: money(value, currency),
         )
     return lines
@@ -410,7 +412,7 @@ def _balance_report(ask, title, move_types, sign):
 def run_receivables(ask):
     return _balance_report(
         ask,
-        ask._("Accounts receivable from customers"),
+        ask.env._("Accounts receivable from customers"),
         ("out_invoice", "out_refund"),
         1,
     )
@@ -419,7 +421,7 @@ def run_receivables(ask):
 def run_payables(ask):
     return _balance_report(
         ask,
-        ask._("Accounts payable to suppliers"),
+        ask.env._("Accounts payable to suppliers"),
         ("in_invoice", "in_refund"),
         -1,
     )
@@ -439,7 +441,7 @@ def run_purchases(ask):
             "salesperson": ("user_id", "res.users", ("name",), None),
         }
     )
-    title = ask._("Confirmed purchase orders, before taxes")
+    title = ask.env._("Confirmed purchase orders, before taxes")
     if ask.group == "product" or ask.params.get("product"):
         domain = [("order_id.state", "=", "done")] + [
             (f"order_id.{path}", operator, value) for path, operator, value in filters
@@ -513,11 +515,11 @@ def run_stock(ask):
         ["quantity:sum", "reserved_quantity:sum"],
     )
     lines = [
-        "**" + ask._("Stock on hand") + "**",
-        ask._("As of %(day)s", day=ask.format_day(ask.today)),
+        "**" + ask.env._("Stock on hand") + "**",
+        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
     ]
     if not rows:
-        lines.append(ask._("No stock found."))
+        lines.append(ask.env._("No stock found."))
         return lines
     # quantities of different products are in different units: they are
     # listed per product, never added up
@@ -531,7 +533,7 @@ def run_stock(ask):
             (
                 f"{product.display_name}{place}",
                 on_hand,
-                ask._("%(free)s free", free=quantity(on_hand - reserved)),
+                ask.env._("%(free)s free", free=quantity(on_hand - reserved)),
                 unit,
             )
         )
@@ -541,7 +543,7 @@ def run_stock(ask):
         for label, on_hand, free, unit in items[: ask.top]
     ]
     if len(items) > ask.top:
-        lines.append(ask._("… and %(count)s more", count=len(items) - ask.top))
+        lines.append(ask.env._("… and %(count)s more", count=len(items) - ask.top))
     return lines
 
 
@@ -554,11 +556,11 @@ def run_cash(ask):
         + company_domain
     )
     lines = [
-        "**" + ask._("Bank and cash balances") + "**",
-        ask._("As of %(day)s", day=ask.format_day(ask.today)),
+        "**" + ask.env._("Bank and cash balances") + "**",
+        ask.env._("As of %(day)s", day=ask.format_day(ask.today)),
     ]
     if not journals:
-        lines.append(ask._("No bank or cash journal found."))
+        lines.append(ask.env._("No bank or cash journal found."))
         return lines
     rows = ask.env["account.move.line"]._read_group(
         [
@@ -577,7 +579,7 @@ def run_cash(ask):
         totals[currency] += amount
         lines.append(f"• {journal.name}: {money(amount, currency)}")
     lines += [
-        ask._(
+        ask.env._(
             "Total %(currency)s: **%(amount)s**",
             currency=currency.name,
             amount=money(amount, currency),
@@ -612,8 +614,8 @@ def run_deliveries(ask):
     pending = Picking.search_count(domain)
     late = Picking.search_count(late_domain)
     lines = [
-        "**" + ask._("Pending customer deliveries") + "**",
-        ask._(
+        "**" + ask.env._("Pending customer deliveries") + "**",
+        ask.env._(
             "Pending: **%(count)s**, of which late: **%(late)s**",
             count=pending,
             late=late,
@@ -627,10 +629,10 @@ def run_deliveries(ask):
     lines += _ranked(
         ask,
         [(_label(ask, key), count, late_rows.get(key, 0)) for key, count in rows],
-        lambda value: ask._("%(count)s pending", count=value),
+        lambda value: ask.env._("%(count)s pending", count=value),
     )
     if rows:
-        lines.append(ask._("(the number in brackets is the late ones)"))
+        lines.append(ask.env._("(the number in brackets is the late ones)"))
     return lines
 
 
@@ -657,13 +659,13 @@ def run_production(ask):
     rows = ask.env["stock.move"]._read_group(
         domain, ["product_id"], ["quantity:sum", "production_id:count_distinct"]
     )
-    lines = ["**" + ask._("Finished production") + "**", ask.period_label()]
+    lines = ["**" + ask.env._("Finished production") + "**", ask.period_label()]
     if not rows:
-        lines.append(ask._("Nothing was produced in that period."))
+        lines.append(ask.env._("Nothing was produced in that period."))
         return lines
     rows = sorted(rows, key=lambda row: row[1], reverse=True)
     lines.append(
-        ask._(
+        ask.env._(
             "%(products)s products, %(orders)s manufacturing orders",
             products=len(rows),
             orders=sum(row[2] for row in rows),
@@ -675,7 +677,7 @@ def run_production(ask):
         for product, qty, orders in rows[: ask.top]
     ]
     if len(rows) > ask.top:
-        lines.append(ask._("… and %(count)s more", count=len(rows) - ask.top))
+        lines.append(ask.env._("… and %(count)s more", count=len(rows) - ask.top))
     return lines
 
 
@@ -685,13 +687,15 @@ def run_headcount(ask):
     )
     employees = ask.env["hr.employee"].search(domain)
     lines = [
-        "**" + ask._("Active employees") + "**",
-        ask._("Total: **%(count)s**", count=len(employees)),
+        "**" + ask.env._("Active employees") + "**",
+        ask.env._("Total: **%(count)s**", count=len(employees)),
     ]
     key = (
         (lambda employee: employee.company_id.display_name)
         if ask.group == "company"
-        else (lambda employee: employee.department_id.display_name or ask._("(none)"))
+        else (
+            lambda employee: employee.department_id.display_name or ask.env._("(none)")
+        )
     )
     counts = defaultdict(int)
     for employee in employees:
