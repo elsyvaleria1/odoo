@@ -46,6 +46,9 @@ keep the files the person sent.
 
 Method:
 - Never invent a figure: every number comes from a tool call made now.
+- Earlier answers in this chat may be outdated: records get changed or \
+deleted since. Before saying a record exists, or reusing an id or a figure \
+from them, check it again with a tool now.
 - When run_report covers the question or part of it, call it first: its \
 figures are exact. Combine several reports for a comparison, and explore with \
 the other tools only what no report covers.
