@@ -6,7 +6,7 @@ from markupsafe import Markup
 
 from odoo import Command
 from odoo.exceptions import RedirectWarning, UserError
-from odoo.tests import TransactionCase, tagged, warmup
+from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.account.models.chart_template import (
     TEMPLATE_MODELS,
@@ -2084,12 +2084,83 @@ class TestChartTemplate(AccountTestInvoicingCommon):
                 )
 
 
+def _with_scaling_records(count):
+    prepare = AccountChartTemplate._prepare_chart_template_data
+
+    def prepare_with_scaling_records(self, template_code):
+        data = prepare(self, template_code)
+        for i in range(count):
+            data["account.group"][f"scaling_group_{i}"] = {
+                "name": f"Scaling group {i}",
+                "code_prefix_start": f"9{i:02d}",
+                "code_prefix_end": f"9{i:02d}",
+            }
+            data["account.group"][f"scaling_subgroup_{i}"] = {
+                "name": f"Scaling subgroup {i}",
+                "code_prefix_start": f"9{i:02d}1",
+                "code_prefix_end": f"9{i:02d}1",
+            }
+            data["account.account"][f"scaling_account_{i}"] = {
+                "name": f"Scaling account {i}",
+                "code": f"9{i:02d}100",
+                "account_type": "income",
+                "tag_ids": "account.account_tag_operating",
+                "tax_ids": f"scaling_tax_{i}",
+            }
+            data["account.tax"][f"scaling_tax_{i}"] = {
+                "name": f"Scaling tax {i}",
+                "amount": i + 1,
+                "type_tax_use": "sale",
+                "tax_group_id": "tax_group_15",
+                "fiscal_position_ids": "template_generic_export_fiscal_position",
+                "original_tax_ids": "sale_tax_template",
+                "repartition_line_ids": [
+                    Command.create(
+                        {"document_type": document_type, "repartition_type": "base"}
+                    )
+                    if repartition_type == "base"
+                    else Command.create(
+                        {
+                            "document_type": document_type,
+                            "repartition_type": "tax",
+                            "factor_percent": 100,
+                            "account_id": f"scaling_account_{i}",
+                        }
+                    )
+                    for document_type in ("invoice", "refund")
+                    for repartition_type in ("base", "tax")
+                ],
+            }
+        return data
+
+    return patch.object(
+        AccountChartTemplate,
+        "_prepare_chart_template_data",
+        prepare_with_scaling_records,
+    )
+
+
 @tagged("post_install", "-at_install")
 class TestChartTemplateLoadStatements(TransactionCase):
-    @warmup
-    def test_generic_coa_load_on_a_new_company(self):
-        company = self.env["res.company"].create({"name": "Statement count"})
-        with self.assertQueryCount(459):
-            self.env["account.chart.template"].try_loading(
-                "generic_coa", company, install_demo=False
+    def test_a_load_costs_no_statement_per_record(self):
+        # accounts, groups, taxes, their repartition lines, the accounts' tags
+        # and taxes and the taxes' fiscal positions and alternatives: what the
+        # chart adds must not add statements, whatever modules extend the load.
+        # Both sizes keep every batch past the ORM's COPY threshold (50 rows),
+        # whose insert path costs a different, constant, number of statements
+        def load(count):
+            company = self.env["res.company"].create({"name": f"Scaling {count}"})
+            with _with_scaling_records(count):
+                self.env["account.chart.template"].try_loading(
+                    "generic_coa", company, install_demo=False
+                )
+            loaded = (
+                self.env["account.account"]
+                .with_company(company)
+                .search([("company_ids", "=", company.id), ("code", "=like", "9__100")])
             )
+            self.assertEqual(len(loaded), count)
+            self.assertEqual(len(loaded.tax_ids.fiscal_position_ids), 1)
+            self.assertEqual(len(loaded.group_id.parent_id), count)
+
+        self.assertQueriesConstant(load, small=50, large=60)
