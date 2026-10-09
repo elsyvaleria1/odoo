@@ -17,6 +17,7 @@ const log = makeLogger("pos.screen.partner_list");
 export class PartnerList extends Component {
     static components = { PartnerLine, Dialog, Input };
     static template = "point_of_sale.PartnerList";
+    static listedPartnerLimit = 1000;
     static props = {
         partner: t.or([t.literal(null), t.object()]).optional(),
         getPayload: t.function(),
@@ -190,7 +191,7 @@ export class PartnerList extends Component {
         const availablePartners = searchWord
             ? partners.filter((p) => regex.test(normalize(p.searchString))).slice(0, 50)
             : partners
-                  .slice(0, 1000)
+                  .slice(0, this.constructor.listedPartnerLimit)
                   .toSorted((a, b) =>
                       this.props.partner?.id === a.id
                           ? -1
@@ -276,6 +277,12 @@ export class PartnerList extends Component {
         return partners;
     }
     async getRankedPartnerPage() {
+        if (this.state.loadedPartners.length >= this.constructor.listedPartnerLimit) {
+            log.logic("getNewPartners: listed partner limit reached", () => ({
+                loaded: this.state.loadedPartners.length,
+            }));
+            return [];
+        }
         const ids = await this.nextRankedPartnerIds();
         log.logic("getNewPartners: ranked", () => ({
             ids: ids.length,

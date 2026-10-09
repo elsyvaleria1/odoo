@@ -256,3 +256,19 @@ test("one ranking serves several scroll pages and skips loaded partners", async 
     expect(requests).toHaveLength(2);
     expect(list.state.loading).toBe(false);
 });
+
+test("scrolling past the listed partner limit requests nothing", async () => {
+    const { list, requests, rankings } = await setupPartnerList();
+    patchWithCleanup(PartnerList, { listedPartnerLimit: 2 });
+    const partners = list.pos.models["res.partner"];
+    list.state.loadedPartners.push(
+        partners.create({ id: 990001, name: "Listed A" }),
+        partners.create({ id: 990002, name: "Listed B" }),
+    );
+    list.modalContent.dispatchEvent(new Event("scroll"));
+    await advanceTime(300);
+    expect(await list.getNewPartners()).toEqual([]);
+    expect(rankings).toHaveLength(0);
+    expect(requests).toHaveLength(0);
+    expect(list.state.loading).toBe(false);
+});
