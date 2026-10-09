@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-30 18:46+0000\n"
-"PO-Revision-Date: 2026-01-30 18:46+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -46,52 +46,47 @@ msgid "/ month"
 msgstr ""
 
 #. module: hr_contract_salary
-#: model:hr.contract.salary.personal.info,placeholder:hr_contract_salary.hr_contract_salary_personal_info_identification_id
-msgid "00.00.00-000.00"
-msgstr ""
-
-#. module: hr_contract_salary
 #: model:mail.template,body_html:hr_contract_salary.mail_template_send_offer
 msgid ""
 "<div style=\"margin: 0px; padding: 0px;\">\n"
-"                <h2>Congratulations!</h2>\n"
-"                You can configure your salary package by clicking on the link below.<br/>\n"
-"                <t t-if=\"ctx.get('validity_end')\">\n"
-"                    The link will expire on <t t-out=\"ctx.get('validity_end')\"/>.\n"
-"                </t>\n"
-"                <div style=\"padding: 16px 0px 16px 0px;\">\n"
-"                    <a t-att-href=\"'/salary_package/simulation/offer/%s%s' % (                             ctx.get('offer_id'),                             ('?token=' + ctx.get('access_token')) if ctx.get('access_token') else ''                         )\" target=\"_blank\" t-attf-style=\"background-color: {{object.company_id.email_secondary_color or '#875A7B'}}; text-decoration: none; color: {{object.company_id.email_primary_color or '#FFFFFF'}}; padding: 8px 16px 8px 16px; border-radius: 5px;\">\n"
-"                        Configure your package\n"
-"                    </a>\n"
+"                    <h2>Congratulations!</h2>\n"
+"                    You can configure your salary package by clicking on the link below.<br/>\n"
+"                    <t t-if=\"ctx.get('validity_end')\">\n"
+"                        The link will expire on <t t-out=\"ctx.get('validity_end')\"/>.\n"
+"                    </t>\n"
+"                    <div style=\"padding: 16px 0px 16px 0px;\">\n"
+"                        <a t-att-href=\"'/salary_package/simulation/offer/%s%s' % (                             ctx.get('offer_id'),                             ('?token=' + ctx.get('access_token')) if ctx.get('access_token') else ''                         )\" target=\"_blank\" t-attf-style=\"background-color: {{object.company_id.email_secondary_color or '#875A7B'}}; text-decoration: none; color: {{object.company_id.email_primary_color or '#FFFFFF'}}; padding: 8px 16px 8px 16px; border-radius: 5px;\">\n"
+"                            Configure your package\n"
+"                        </a>\n"
+"                    </div>\n"
 "                </div>\n"
-"            </div>\n"
-"        "
+"            "
 msgstr ""
 
 #. module: hr_contract_salary
 #: model:mail.template,body_html:hr_contract_salary.mail_template_send_offer_applicant
 msgid ""
 "<div style=\"margin: 0px; padding: 0px;\">\n"
-"                <h2>Congratulations!</h2>\n"
-"                You can configure your salary package by clicking on the link below.<br/>\n"
-"                <t t-if=\"ctx.get('validity_end')\">\n"
-"                    The link will expire on <t t-out=\"ctx.get('validity_end')\"/>.\n"
-"                </t>\n"
-"                <div style=\"padding: 16px 0px 16px 0px;\">\n"
-"                    <a t-attf-href=\"/salary_package/simulation/offer/{{ctx.get('offer_id')}}?token={{ctx.get('access_token')}}\" target=\"_blank\" t-attf-style=\"background-color: {{object.company_id.email_secondary_color or '#875A7B'}}; text-decoration: none; color: {{object.company_id.email_primary_color or '#FFFFFF'}}; padding: 8px 16px 8px 16px; border-radius: 5px;\">Configure your package</a>\n"
+"                    <h2>Congratulations!</h2>\n"
+"                    You can configure your salary package by clicking on the link below.<br/>\n"
+"                    <t t-if=\"ctx.get('validity_end')\">\n"
+"                        The link will expire on <t t-out=\"ctx.get('validity_end')\"/>.\n"
+"                    </t>\n"
+"                    <div style=\"padding: 16px 0px 16px 0px;\">\n"
+"                        <a t-attf-href=\"/salary_package/simulation/offer/{{ctx.get('offer_id')}}?token={{ctx.get('access_token')}}\" target=\"_blank\" t-attf-style=\"background-color: {{object.company_id.email_secondary_color or '#875A7B'}}; text-decoration: none; color: {{object.company_id.email_primary_color or '#FFFFFF'}}; padding: 8px 16px 8px 16px; border-radius: 5px;\">Configure your package</a>\n"
+"                    </div>\n"
 "                </div>\n"
-"            </div>\n"
-"        "
-msgstr ""
-
-#. module: hr_contract_salary
-#: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_sidebar
-msgid "<i class=\"fa-solid fa-check\"/> Your message was successfully sent!"
+"            "
 msgstr ""
 
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_thank_you
 msgid "<i class=\"fa-regular fa-circle-check mr8\"/>Congratulations"
+msgstr ""
+
+#. module: hr_contract_salary
+#: model_terms:ir.ui.view,arch_db:hr_contract_salary.salary_package_sidebar
+msgid "<i class=\"fa-solid fa-check\"/> Your message was successfully sent!"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -189,6 +184,14 @@ msgid "<span>/ year</span>"
 msgstr ""
 
 #. module: hr_contract_salary
+#: model:ir.model.fields,help:hr_contract_salary.field_hr_employee__contract_reviews_count
+#: model:ir.model.fields,help:hr_contract_salary.field_hr_version__contract_reviews_count
+msgid ""
+"A count of proposed contracts is what an HR user sees; the versions it "
+"counts are theirs to read."
+msgstr ""
+
+#. module: hr_contract_salary
 #: model:ir.model.constraint,message:hr_contract_salary.constraint_hr_contract_salary_benefit_required_fold_res_field_id
 msgid "A folded field is required"
 msgstr ""
@@ -211,11 +214,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/hr_contract_salary/controllers/main.py:0
 msgid "Access Denied: Missing Token"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__access_token
-msgid "Access Token"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -355,7 +353,7 @@ msgstr ""
 
 #. module: hr_contract_salary
 #. odoo-python
-#: code:addons/hr_contract_salary/report/hr_contract_recruitment_report.py:0
+#: code:addons/hr_contract_salary/reports/hr_contract_recruitment_report.py:0
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_offer_view_search
 msgid "Applicants"
 msgstr ""
@@ -379,12 +377,6 @@ msgstr ""
 #. module: hr_contract_salary
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_resume_view_search
 msgid "Archived"
-msgstr ""
-
-#. module: hr_contract_salary
-#. odoo-javascript
-#: code:addons/hr_contract_salary/static/src/js/binary_field_contract.js:0
-msgid "Are you sure you want to delete this file permanently ?"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -518,6 +510,7 @@ msgid "Code"
 msgstr ""
 
 #. module: hr_contract_salary
+#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_recruitment_report__company_id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__company_id
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_offer_view_search
 msgid "Company"
@@ -572,11 +565,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/hr_contract_salary/controllers/main.py:0
 msgid "Contract Information:"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee_public__contract_reviews_count
-msgid "Contract Reviews Count"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -852,17 +840,16 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_personal_info_value__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_resume__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_resume_category__display_name
-#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_employee_send_sign_request__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_signatory__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__display_name
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee_public__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_job__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_payroll_structure_type__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__display_name
-#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_contract_salary_offer_refuse__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_sign_item__display_name
 #: model:ir.model.fields,field_description:hr_contract_salary.field_sign_request__display_name
+#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_contract_salary_offer_refuse__display_name
+#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_employee_send_sign_request__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -1045,6 +1032,12 @@ msgid "Extra Time Off"
 msgstr ""
 
 #. module: hr_contract_salary
+#. odoo-python
+#: code:addons/hr_contract_salary/models/hr_version.py:0
+msgid "Extra Time Off must be lower than 231 days."
+msgstr ""
+
+#. module: hr_contract_salary
 #: model:hr.contract.salary.personal.info.value,name:hr_contract_salary.hr_contract_salary_personal_info_sex_female
 msgid "Female"
 msgstr ""
@@ -1104,11 +1097,6 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__message_partner_ids
 msgid "Followers (Partners)"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_offer__activity_type_icon
-msgid "Font awesome icon e.g. fa-tasks"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -1194,17 +1182,16 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_personal_info_value__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_resume__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_resume_category__id
-#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_employee_send_sign_request__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_signatory__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__id
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee_public__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_job__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_payroll_structure_type__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__id
-#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_contract_salary_offer_refuse__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_res_config_settings__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_sign_item__id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_sign_request__id
+#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_contract_salary_offer_refuse__id
+#: model:ir.model.fields,field_description:hr_contract_salary.field_wizard_hr_employee_send_sign_request__id
 msgid "ID"
 msgstr ""
 
@@ -1603,7 +1590,7 @@ msgstr ""
 
 #. module: hr_contract_salary
 #. odoo-python
-#: code:addons/hr_contract_salary/wizard/refuse_offer_wizard.py:0
+#: code:addons/hr_contract_salary/wizards/wizard_hr_contract_salary_offer_refuse.py:0
 msgid "No offer selected"
 msgstr ""
 
@@ -1841,16 +1828,6 @@ msgid "Personal Information"
 msgstr ""
 
 #. module: hr_contract_salary
-#: model:hr.contract.salary.personal.info,name:hr_contract_salary.hr_contract_salary_personal_info_phone
-msgid "Phone Number"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:hr.contract.salary.personal.info,name:hr_contract_salary.hr_contract_salary_personal_info_emergency_phone
-msgid "Phone number"
-msgstr ""
-
-#. module: hr_contract_salary
 #: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_resume__category_id
 msgid "Pick a category to display this information"
 msgstr ""
@@ -1884,6 +1861,16 @@ msgid ""
 msgstr ""
 
 #. module: hr_contract_salary
+#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: hr_contract_salary
+#: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_offer__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: hr_contract_salary
 #: model:hr.contract.salary.personal.info,name:hr_contract_salary.hr_contract_salary_personal_info_private_license_plate
 msgid "Private License Plate"
 msgstr ""
@@ -1901,11 +1888,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__contract_reviews_count
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__contract_reviews_count
 msgid "Proposed Contracts Count"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model,name:hr_contract_salary.model_hr_employee_public
-msgid "Public Employee"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -1951,11 +1933,6 @@ msgid "Refusal Reason"
 msgstr ""
 
 #. module: hr_contract_salary
-#: model:ir.actions.server,name:hr_contract_salary.action_refuse_salary_offer
-msgid "Refuse…"
-msgstr ""
-
-#. module: hr_contract_salary
 #: model:ir.actions.act_window,name:hr_contract_salary.open_refuse_wizard
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.refuse_offer_wizard_view_form
 msgid "Refuse Offer"
@@ -1979,6 +1956,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_offer_view_form
 #: model_terms:ir.ui.view,arch_db:hr_contract_salary.hr_contract_salary_offer_view_search
 msgid "Refused"
+msgstr ""
+
+#. module: hr_contract_salary
+#: model:ir.actions.server,name:hr_contract_salary.action_refuse_salary_offer
+msgid "Refuse…"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -2074,7 +2056,6 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_applicant__salary_offers_count
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__salary_offers_count
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee_public__salary_offers_count
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__salary_offers_count
 msgid "Salary Offers Count"
 msgstr ""
@@ -2144,6 +2125,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_benefit__structure_type_id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_personal_info__structure_type_id
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_resume__structure_type_id
+#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_employee__structure_type_id
+#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_version__structure_type_id
 msgid "Salary Structure Type"
 msgstr ""
 
@@ -2160,6 +2143,11 @@ msgstr ""
 #. module: hr_contract_salary
 #: model:ir.model.fields.selection,name:hr_contract_salary.selection__hr_contract_salary_benefit_value__display_type__section
 msgid "Section"
+msgstr ""
+
+#. module: hr_contract_salary
+#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__access_token
+msgid "Security Token"
 msgstr ""
 
 #. module: hr_contract_salary
@@ -2336,6 +2324,13 @@ msgid "Signatories"
 msgstr ""
 
 #. module: hr_contract_salary
+#: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_signatory__order
+msgid ""
+"Signatories sharing an order are asked to sign at the same time; a higher "
+"order is only asked once every lower one has signed."
+msgstr ""
+
+#. module: hr_contract_salary
 #: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_signatory__signatory
 msgid "Signatory"
 msgstr ""
@@ -2380,6 +2375,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/hr_contract_salary/static/src/interactions/hr_contract_salary.js:0
 msgid "Some required fields are not filled"
+msgstr ""
+
+#. module: hr_contract_salary
+#. odoo-javascript
+#: code:addons/hr_contract_salary/static/src/interactions/hr_contract_salary.js:0
+msgid "Something went wrong. Please check your connection and try again."
 msgstr ""
 
 #. module: hr_contract_salary
@@ -2518,6 +2519,13 @@ msgstr ""
 #: model:ir.model.fields,help:hr_contract_salary.field_hr_employee__originated_offer_id
 #: model:ir.model.fields,help:hr_contract_salary.field_hr_version__originated_offer_id
 msgid "The original offer"
+msgstr ""
+
+#. module: hr_contract_salary
+#: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_offer__access_token
+msgid ""
+"The token of the link the offer is opened with by whoever does not sign in "
+"to it; the link is an access.link row holding its hash."
 msgstr ""
 
 #. module: hr_contract_salary
@@ -2665,16 +2673,6 @@ msgid "Wage with Holidays"
 msgstr ""
 
 #. module: hr_contract_salary
-#: model:ir.model.fields,field_description:hr_contract_salary.field_hr_contract_salary_offer__website_message_ids
-msgid "Website Messages"
-msgstr ""
-
-#. module: hr_contract_salary
-#: model:ir.model.fields,help:hr_contract_salary.field_hr_contract_salary_offer__website_message_ids
-msgid "Website communication history"
-msgstr ""
-
-#. module: hr_contract_salary
 #: model:ir.model.fields.selection,name:hr_contract_salary.selection__hr_contract_salary_benefit__activity_creation_type__onchange
 #: model:ir.model.fields.selection,name:hr_contract_salary.selection__hr_contract_salary_benefit__sign_frenquency__always
 msgid "When the benefit is modified"
@@ -2794,12 +2792,6 @@ msgstr ""
 #. module: hr_contract_salary
 #: model_terms:ir.actions.act_window,help:hr_contract_salary.hr_contract_salary_offer_recruitment_action
 msgid "here"
-msgstr ""
-
-#. module: hr_contract_salary
-#. odoo-python
-#: code:addons/hr_contract_salary/models/hr_contract_salary_offer.py:0
-msgid "id"
 msgstr ""
 
 #. module: hr_contract_salary

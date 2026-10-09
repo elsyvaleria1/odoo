@@ -6,14 +6,31 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 02:54+0000\n"
-"PO-Revision-Date: 2026-09-27 02:54+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: device
+#. odoo-python
+#: code:addons/device/tools/fdw.py:0
+msgid ""
+"%(model)s is backed by foreign table %(table)s but the dblink extension is not installed, so its schema cannot be synchronised. Install dblink or run this on the remote database:\n"
+"%(ddl)s"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid ""
+"%(token)s\n"
+"\n"
+"It is shown once: enter it in the device now, with its identifier %(identifier)s. Whoever holds it can send data in this device's name. Any token issued before no longer works."
+msgstr ""
 
 #. module: device
 #: model_terms:ir.ui.view,arch_db:device.view_device_device_form
@@ -1248,6 +1265,11 @@ msgid "General Settings"
 msgstr ""
 
 #. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Generate Token"
+msgstr ""
+
+#. module: device
 #: model:device.kind,name:device.device_category_generic
 msgid "Generic Remote Device"
 msgstr ""
@@ -1481,7 +1503,6 @@ msgstr ""
 
 #. module: device
 #: model:ir.model.fields,help:device.field_device_device__message_has_error
-#: model:ir.model.fields,help:device.field_device_device__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
@@ -1869,11 +1890,6 @@ msgid "Never reported"
 msgstr ""
 
 #. module: device
-#: model:ir.model.fields,field_description:device.field_device_device__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr ""
-
-#. module: device
 #: model:ir.model.fields,field_description:device.field_device_device__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
@@ -1922,6 +1938,13 @@ msgid "No device activity to display"
 msgstr ""
 
 #. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid ""
+"No token can be stored: ODOO_API_ENCRYPTION_KEY is not set on this server."
+msgstr ""
+
+#. module: device
 #: model:ir.model.fields,field_description:device.field_device_device__message_needaction_counter
 msgid "Number of Actions"
 msgstr ""
@@ -1966,7 +1989,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:device.selection__device_data_log_report__data_type__numeric
 #: model:ir.model.fields.selection,name:device.selection__mixin_device_data_log__data_type__numeric
 #: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
-#: model:ir.model.fields.selection,name:device.selection__device_data_log_gps__data_type__numeric
 msgid "Numeric"
 msgstr ""
 
@@ -1996,6 +2018,18 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/device/static/src/home_tile/devices_tile.xml:0
 msgid "Online"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Only a device that sends a token can be given one."
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Only administrators can inspect device integrity."
 msgstr ""
 
 #. module: device
@@ -2099,16 +2133,6 @@ msgid "Port"
 msgstr ""
 
 #. module: device
-#: model:ir.model.fields,field_description:device.field_device_device__website_message_ids
-msgid "Portal Messages"
-msgstr ""
-
-#. module: device
-#: model:ir.model.fields,help:device.field_device_device__website_message_ids
-msgid "Portal communication history for this record."
-msgstr ""
-
-#. module: device
 #: model:ir.model.fields,help:device.field_device_device__signature_prefix
 msgid "Prefix before signature value (e.g., 'sha256=')"
 msgstr ""
@@ -2124,6 +2148,18 @@ msgid ""
 "Primary communication protocol for devices using this config. A protocol "
 "module adds its own value here alongside the one it adds to "
 "device.device.comm_protocol."
+msgstr ""
+
+#. module: device
+#: model:res.groups,name:device.privilege_receive_device_data
+msgid "Privilege: a device's receiver files the readings it pushes"
+msgstr ""
+
+#. module: device
+#: model:res.groups,name:device.privilege_record_device_contact
+msgid ""
+"Privilege: whoever observes a device records its connection state and latest"
+" reading"
 msgstr ""
 
 #. module: device
@@ -2208,6 +2244,11 @@ msgstr ""
 #. module: device
 #: model_terms:ir.ui.view,arch_db:device.view_device_device_form
 msgid "Recent Data Points"
+msgstr ""
+
+#. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid "Regenerate Token"
 msgstr ""
 
 #. module: device
@@ -2305,11 +2346,6 @@ msgstr ""
 msgid ""
 "SHA-256 of the credential's secret. Lets a presented token be verified, and "
 "its channel found, without decrypting anything."
-msgstr ""
-
-#. module: device
-#: model:ir.model.fields,field_description:device.field_device_device__message_has_sms_error
-msgid "SMS Delivery error"
 msgstr ""
 
 #. module: device
@@ -2576,6 +2612,13 @@ msgid ""
 msgstr ""
 
 #. module: device
+#: model_terms:ir.ui.view,arch_db:device.view_device_device_form
+msgid ""
+"The device stops reporting until the new token is entered in it. Generate a "
+"new token?"
+msgstr ""
+
+#. module: device
 #: model:ir.model.fields,help:device.field_device_device__parent_id
 msgid ""
 "The device this one is a part of: a peripheral belongs to the box that "
@@ -2658,6 +2701,17 @@ msgstr ""
 #. module: device
 #: model_terms:ir.ui.view,arch_db:device.view_device_data_log_search
 msgid "Today"
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,field_description:device.field_device_device__inbound_token_set
+msgid "Token Set"
+msgstr ""
+
+#. module: device
+#. odoo-python
+#: code:addons/device/models/device_device.py:0
+msgid "Token for %(device)s"
 msgstr ""
 
 #. module: device
@@ -2781,6 +2835,11 @@ msgstr ""
 msgid ""
 "When the data was recorded (device time or receipt time) Note that this may "
 "differ from the record creation time."
+msgstr ""
+
+#. module: device
+#: model:ir.model.fields,help:device.field_device_device__inbound_token_set
+msgid "Whether the device's credential holds the token it must send."
 msgstr ""
 
 #. module: device

@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-06 18:42+0000\n"
-"PO-Revision-Date: 2026-02-06 18:42+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -82,323 +82,323 @@ msgstr ""
 #: model:mail.template,body_html:hr_expense_stripe.email_template_hr_expense_stripe_card_assigned
 msgid ""
 "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;\"><tr><td align=\"center\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
-"            <tbody>\n"
-"            <!-- HEADER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\">\n"
-"                    <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
-"                    <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
-"                    <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Assigned</span>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
-"                    <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
-"                    </td></tr>\n"
-"                    <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
+"                <tbody>\n"
+"                <!-- HEADER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\">\n"
+"                        <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
+"                        <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
+"                        <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Assigned</span>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
+"                        <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
+"                        </td></tr>\n"
+"                        <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- CONTENT -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
+"                        Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Recipient Name]</t>,<br/><br/>\n"
+"                        We have assigned a company expense card to you.\n"
+"                        You can view and manage it anytime by going to My Profile and selecting the Cards section.<br/><br/>\n"
+"                        If you have any questions, feel free to reach out.<br/><br/>\n"
+"                        Best regards,<br/>\n"
+"                        <t t-out=\"object.ordered_by.name or ''\">[Expense Administrator]</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- FOOTER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\" align=\"left\">\n"
+"                            <t t-out=\"company.name or ''\">YourCompany</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
+"                        <t t-if=\"company.phone_ids\">\n"
+"                            <t t-out=\"company.phone_ids._primary().number or ''\">+1 650-123-4567</t> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.email\">\n"
+"                            <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.website\">\n"
+"                            <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
+"                        </t>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                </tbody>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- CONTENT -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
-"                    Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Recipient Name]</t>,<br/><br/>\n"
-"                    We have assigned a company expense card to you.\n"
-"                    You can view and manage it anytime by going to My Profile and selecting the Cards section.<br/><br/>\n"
-"                    If you have any questions, feel free to reach out.<br/><br/>\n"
-"                    Best regards,<br/>\n"
-"                    <t t-out=\"object.ordered_by.name or ''\">[Expense Administrator]</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
+"                <!-- POWERED BY -->\n"
+"                <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
+"                <tr><td style=\"text-align: center; font-size: 13px;\">\n"
+"                    Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- FOOTER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\" align=\"left\">\n"
-"                        <t t-out=\"company.name or ''\">YourCompany</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
-"                    <t t-if=\"company.phone\">\n"
-"                        <t t-out=\"company.phone or ''\">+1 650-123-4567</t> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.email\">\n"
-"                        <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.website\">\n"
-"                        <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
-"                    </t>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            </tbody>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            <!-- POWERED BY -->\n"
-"            <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
-"            <tr><td style=\"text-align: center; font-size: 13px;\">\n"
-"                Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"        "
+"            "
 msgstr ""
 
 #. module: hr_expense_stripe
 #: model:mail.template,body_html:hr_expense_stripe.email_template_hr_expense_stripe_card_canceled
 msgid ""
 "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;\"><tr><td align=\"center\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
-"            <tbody>\n"
-"            <!-- HEADER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\">\n"
-"                    <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
-"                    <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
-"                    <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Canceled</span>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
-"                    <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
-"                    </td></tr>\n"
-"                    <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
+"                <tbody>\n"
+"                <!-- HEADER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\">\n"
+"                        <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
+"                        <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
+"                        <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Canceled</span>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
+"                        <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
+"                        </td></tr>\n"
+"                        <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- CONTENT -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
+"                        Hello <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Cardholder]</t>,<br/><br/>\n"
+"                        We’d like to inform you that your shipment has been cancelled.<br/>\n"
+"                        If you still wish to receive the card, please place a new order at your convenience.<br/><br/>\n"
+"                        If you have any questions or need assistance, our team will be happy to help.<br/><br/>\n"
+"                        Best,<br/>\n"
+"                        <t t-out=\"company.name or ''\">[Company Name]</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- FOOTER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\" align=\"left\">\n"
+"                            <t t-out=\"company.name or ''\">YourCompany</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
+"                        <t t-if=\"company.phone_ids\">\n"
+"                            <t t-out=\"company.phone_ids._primary().number or ''\">+1 650-123-4567</t> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.email\">\n"
+"                            <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.website\">\n"
+"                            <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
+"                        </t>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                </tbody>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- CONTENT -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
-"                    Hello <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Cardholder]</t>,<br/><br/>\n"
-"                    We’d like to inform you that your shipment has been cancelled.<br/>\n"
-"                    If you still wish to receive the card, please place a new order at your convenience.<br/><br/>\n"
-"                    If you have any questions or need assistance, our team will be happy to help.<br/><br/>\n"
-"                    Best,<br/>\n"
-"                    <t t-out=\"company.name or ''\">[Company Name]</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
+"                <!-- POWERED BY -->\n"
+"                <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
+"                <tr><td style=\"text-align: center; font-size: 13px;\">\n"
+"                    Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- FOOTER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\" align=\"left\">\n"
-"                        <t t-out=\"company.name or ''\">YourCompany</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
-"                    <t t-if=\"company.phone\">\n"
-"                        <t t-out=\"company.phone or ''\">+1 650-123-4567</t> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.email\">\n"
-"                        <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.website\">\n"
-"                        <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
-"                    </t>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            </tbody>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            <!-- POWERED BY -->\n"
-"            <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
-"            <tr><td style=\"text-align: center; font-size: 13px;\">\n"
-"                Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"        "
+"            "
 msgstr ""
 
 #. module: hr_expense_stripe
 #: model:mail.template,body_html:hr_expense_stripe.email_template_hr_expense_stripe_card_ordered
 msgid ""
 "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;\"><tr><td align=\"center\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
-"            <tbody>\n"
-"            <!-- HEADER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\">\n"
-"                    <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
-"                    <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
-"                    <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Ordered</span>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
-"                    <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
-"                    </td></tr>\n"
-"                    <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
+"                <tbody>\n"
+"                <!-- HEADER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\">\n"
+"                        <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
+"                        <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
+"                        <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Ordered</span>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
+"                        <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
+"                        </td></tr>\n"
+"                        <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- CONTENT -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
+"                        Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Recipient Name]</t>,<br/><br/>\n"
+"                        Your company expense card has been ordered.\n"
+"                        We'll notify you as soon as it ships.<br/><br/>\n"
+"                        Best regards,<br/>\n"
+"                        <t t-out=\"company.name or ''\">[Company Name]</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- FOOTER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\" align=\"left\">\n"
+"                            <t t-out=\"company.name or ''\">YourCompany</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
+"                        <t t-if=\"company.phone_ids\">\n"
+"                            <t t-out=\"company.phone_ids._primary().number or ''\">+1 650-123-4567</t> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.email\">\n"
+"                            <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.website\">\n"
+"                            <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
+"                        </t>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                </tbody>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- CONTENT -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
-"                    Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Recipient Name]</t>,<br/><br/>\n"
-"                    Your company expense card has been ordered.\n"
-"                    We'll notify you as soon as it ships.<br/><br/>\n"
-"                    Best regards,<br/>\n"
-"                    <t t-out=\"company.name or ''\">[Company Name]</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
+"                <!-- POWERED BY -->\n"
+"                <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
+"                <tr><td style=\"text-align: center; font-size: 13px;\">\n"
+"                    Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- FOOTER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\" align=\"left\">\n"
-"                        <t t-out=\"company.name or ''\">YourCompany</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
-"                    <t t-if=\"company.phone\">\n"
-"                        <t t-out=\"company.phone or ''\">+1 650-123-4567</t> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.email\">\n"
-"                        <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.website\">\n"
-"                        <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
-"                    </t>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            </tbody>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            <!-- POWERED BY -->\n"
-"            <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
-"            <tr><td style=\"text-align: center; font-size: 13px;\">\n"
-"                Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"        "
+"            "
 msgstr ""
 
 #. module: hr_expense_stripe
 #: model:mail.template,body_html:hr_expense_stripe.email_template_hr_expense_stripe_card_shipped
 msgid ""
 "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;\"><tr><td align=\"center\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
-"            <tbody>\n"
-"            <!-- HEADER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\">\n"
-"                    <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
-"                    <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
-"                    <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Shipped</span>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
-"                    <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
-"                    </td></tr>\n"
-"                    <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
+"                <tbody>\n"
+"                <!-- HEADER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\">\n"
+"                        <t t-set=\"company\" t-value=\"object.company_id\"/>\n"
+"                        <span style=\"font-size: 10px;\">Card Shipment Notification</span><br/>\n"
+"                        <span style=\"font-size: 20px; font-weight: bold;\">Your Card Has Been Shipped</span>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"right\" t-if=\"not company.uses_default_logo\">\n"
+"                        <img t-attf-src=\"/logo.png?company={{ company.id }}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"company.name\"/>\n"
+"                        </td></tr>\n"
+"                        <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- CONTENT -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
+"                        Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Cardholder]</t>,<br/><br/>\n"
+"                        Your expense card is on the way!<br/><br/>\n"
+"                        <t t-if=\"object.tracking_number\">\n"
+"                            <strong>Tracking Code:</strong> <t t-out=\"object.tracking_number\">TRACK123</t><br/>\n"
+"                        </t>\n"
+"                        <t t-if=\"object.tracking_url\">\n"
+"                            <strong>Track Shipment:</strong>\n"
+"                            <a t-att-href=\"object.tracking_url\" style=\"color: #875A7B; text-decoration: underline;\"><t t-out=\"object.tracking_url\">[Link]</t></a><br/>\n"
+"                        </t>\n"
+"                        <t t-if=\"ctx.get('shipping_estimated_delivery', '')\">\n"
+"                            <strong>ETA:</strong>\n"
+"                            <t t-out=\"ctx.get('shipping_estimated_delivery', '')\">[2025-12-24]</t><br/><br/>\n"
+"                        </t>\n"
+"                        To activate once received:<br/><br/>\n"
+"                        1) Go to <a t-attf-href=\"{{ website_url }}/odoo/cards\">see your cards</a><br/>\n"
+"                        2) Click on the card and follow the instructions<br/><br/>\n"
+"                        Best,<br/>\n"
+"                        <t t-out=\"company.name or ''\">[Company Name]</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <!-- FOOTER -->\n"
+"                <tr>\n"
+"                    <td align=\"center\" style=\"min-width: 590px;\">\n"
+"                    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                        <tr><td valign=\"middle\" align=\"left\">\n"
+"                            <t t-out=\"company.name or ''\">YourCompany</t>\n"
+"                        </td></tr>\n"
+"                        <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
+"                        <t t-if=\"company.phone_ids\">\n"
+"                            <t t-out=\"company.phone_ids._primary().number or ''\">+1 650-123-4567</t> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.email\">\n"
+"                            <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
+"                        </t>\n"
+"                        <t t-if=\"company.website\">\n"
+"                            <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
+"                        </t>\n"
+"                        </td></tr>\n"
+"                    </table>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                </tbody>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- CONTENT -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"top\" style=\"font-size: 13px;\">\n"
-"                    Hi <t t-out=\"ctx.get('recipient_name', object.user_id.name)\">[Cardholder]</t>,<br/><br/>\n"
-"                    Your expense card is on the way!<br/><br/>\n"
-"                    <t t-if=\"object.tracking_number\">\n"
-"                        <strong>Tracking Code:</strong> <t t-out=\"object.tracking_number\">TRACK123</t><br/>\n"
-"                    </t>\n"
-"                    <t t-if=\"object.tracking_url\">\n"
-"                        <strong>Track Shipment:</strong>\n"
-"                        <a t-att-href=\"object.tracking_url\" style=\"color: #875A7B; text-decoration: underline;\"><t t-out=\"object.tracking_url\">[Link]</t></a><br/>\n"
-"                    </t>\n"
-"                    <t t-if=\"ctx.get('shipping_estimated_delivery', '')\">\n"
-"                        <strong>ETA:</strong>\n"
-"                        <t t-out=\"ctx.get('shipping_estimated_delivery', '')\">[2025-12-24]</t><br/><br/>\n"
-"                    </t>\n"
-"                    To activate once received:<br/><br/>\n"
-"                    1) Go to <a t-attf-href=\"{{ website_url }}/odoo/cards\">see your cards</a><br/>\n"
-"                    2) Click on the card and follow the instructions<br/><br/>\n"
-"                    Best,<br/>\n"
-"                    <t t-out=\"company.name or ''\">[Company Name]</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td style=\"text-align:center;\">\n"
-"                    <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
+"                <!-- POWERED BY -->\n"
+"                <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
+"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
+"                <tr><td style=\"text-align: center; font-size: 13px;\">\n"
+"                    Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            <!-- FOOTER -->\n"
-"            <tr>\n"
-"                <td align=\"center\" style=\"min-width: 590px;\">\n"
-"                <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
-"                    <tr><td valign=\"middle\" align=\"left\">\n"
-"                        <t t-out=\"company.name or ''\">YourCompany</t>\n"
-"                    </td></tr>\n"
-"                    <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
-"                    <t t-if=\"company.phone\">\n"
-"                        <t t-out=\"company.phone or ''\">+1 650-123-4567</t> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.email\">\n"
-"                        <a t-attf-href=\"'mailto:%s' % {{ company.email }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.email or ''\">info@yourcompany.com</a> |\n"
-"                    </t>\n"
-"                    <t t-if=\"company.website\">\n"
-"                        <a t-attf-href=\"'%s' % {{ company.website }}\" style=\"text-decoration:none; color: #454748;\" t-out=\"company.website or ''\">http://www.example.com</a>\n"
-"                    </t>\n"
-"                    </td></tr>\n"
+"                </td></tr>\n"
 "                </table>\n"
-"                </td>\n"
-"            </tr>\n"
-"            </tbody>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            <!-- POWERED BY -->\n"
-"            <tr><td align=\"center\" style=\"min-width: 590px;\">\n"
-"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
-"            <tr><td style=\"text-align: center; font-size: 13px;\">\n"
-"                Powered by <a target=\"_blank\" href=\"https://www.odoo.com?utm_source=db&amp;utm_medium=mail\" t-attf-style=\"color: {{company.email_secondary_color or '#875A7B'}};\">Odoo</a>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"            </td></tr>\n"
-"            </table>\n"
-"        "
+"            "
 msgstr ""
 
 #. module: hr_expense_stripe
@@ -878,7 +878,7 @@ msgstr ""
 #. module: hr_expense_stripe
 #. odoo-python
 #: code:addons/hr_expense_stripe/models/hr_expense_stripe_card.py:0
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_method_line__employee_id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_channel__employee_id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__employee_id
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.hr_expense_stripe_card_view_search
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.view_hr_expense_stripe_card_form
@@ -1068,8 +1068,8 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__company_id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__company_id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__company_id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__company_id
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.hr_expense_stripe_card_view_search
 msgid "Company"
 msgstr ""
@@ -1187,6 +1187,11 @@ msgid "Country Clubs"
 msgstr ""
 
 #. module: hr_expense_stripe
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__company_country_code
+msgid "Country Code"
+msgstr ""
+
+#. module: hr_expense_stripe
 #. odoo-python
 #: code:addons/hr_expense_stripe/models/hr_expense_stripe_card.py:0
 msgid "Country not allowed"
@@ -1218,21 +1223,21 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__create_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__create_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__create_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__create_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__create_uid
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__create_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__create_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__create_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__create_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__create_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__create_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__create_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__create_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__create_date
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__create_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__create_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__create_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__create_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__create_date
 msgid "Created on"
 msgstr ""
 
@@ -1253,7 +1258,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Currency %(name)s is not available in the system. Please activate it"
 msgstr ""
 
@@ -1394,21 +1399,21 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_chart_template__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_journal__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_method_line__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_move_line_pay__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_channel__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_employee__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_split_line__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__display_name
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_product__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_company__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_users__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_move_line_pay__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_split_line__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__display_name
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -1576,7 +1581,7 @@ msgid "Expense"
 msgstr ""
 
 #. module: hr_expense_stripe
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_method_line__card_id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_channel__card_id
 #: model_terms:ir.ui.view,arch_db:hr_expense_stripe.res_config_settings_view_form
 msgid "Expense Card"
 msgstr ""
@@ -1933,21 +1938,21 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_chart_template__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_journal__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_method_line__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_move_line_pay__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_account_payment_channel__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_employee__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_split_line__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__id
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_product__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_company__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_config_settings__id
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_res_users__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_move_line_pay__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_split_line__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__id
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__id
 msgid "ID"
 msgstr ""
 
@@ -2106,21 +2111,21 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__write_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__write_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__write_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__write_uid
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__write_uid
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__write_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__write_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__write_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__write_uid
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__write_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__write_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__write_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__write_date
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__write_date
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_product_mcc_stripe_tag__write_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_account_journal_topup__write_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_activate__write_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_block__write_date
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -2466,7 +2471,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_card_block_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_block.py:0
 msgid "No reason provided"
 msgstr ""
 
@@ -2548,14 +2553,14 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid ""
 "Only IBAN is supported for Stripe Issuing funding instructions right now"
 msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid ""
 "Only SEPA is supported for Stripe Issuing funding instructions right now"
 msgstr ""
@@ -2691,13 +2696,13 @@ msgid "Pay"
 msgstr ""
 
 #. module: hr_expense_stripe
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__payment_method_line_id
-msgid "Payment Method Line"
+#: model:ir.model,name:hr_expense_stripe.model_account_payment_channel
+msgid "Payment Channel"
 msgstr ""
 
 #. module: hr_expense_stripe
-#: model:ir.model,name:hr_expense_stripe.model_account_payment_method_line
-msgid "Payment Methods"
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__payment_channel_id
+msgid "Payment Method Line"
 msgstr ""
 
 #. module: hr_expense_stripe
@@ -2779,6 +2784,18 @@ msgstr ""
 #. module: hr_expense_stripe
 #: model:product.mcc.stripe.tag,name:hr_expense_stripe.political_organizations
 msgid "Political Organizations"
+msgstr ""
+
+#. module: hr_expense_stripe
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__website_message_ids
+#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: hr_expense_stripe
+#: model:ir.model.fields,help:hr_expense_stripe.field_hr_expense_stripe_card__website_message_ids
+#: model:ir.model.fields,help:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__website_message_ids
+msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: hr_expense_stripe
@@ -2879,11 +2896,6 @@ msgid "Refresh"
 msgstr ""
 
 #. module: hr_expense_stripe
-#: model:ir.model.fields,help:hr_expense_stripe.field_hr_expense_stripe_card__user_id
-msgid "Related user name for the resource to manage its access."
-msgstr ""
-
-#. module: hr_expense_stripe
 #: model:product.mcc.stripe.tag,name:hr_expense_stripe.religious_goods_stores
 msgid "Religious Goods Stores"
 msgstr ""
@@ -2954,7 +2966,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Scan me with your banking app."
 msgstr ""
 
@@ -3262,7 +3274,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Stripe Partner Bank"
 msgstr ""
 
@@ -3273,7 +3285,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Stripe Top-Up"
 msgstr ""
 
@@ -3394,14 +3406,21 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_cardholder_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_update_cardholder.py:0
 msgid "The Cardholder had been successfully created."
 msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_cardholder_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_update_cardholder.py:0
 msgid "The Cardholder had been successfully updated."
+msgstr ""
+
+#. module: hr_expense_stripe
+#: model:ir.model.fields,help:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__company_country_code
+msgid ""
+"The ISO country code in two chars. \n"
+"You can use this field for quick search."
 msgstr ""
 
 #. module: hr_expense_stripe
@@ -3495,7 +3514,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_card_block_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_block.py:0
 msgid ""
 "The card was blocked for the following reason:\n"
 "%(reason)s"
@@ -3584,7 +3603,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "The direct top-up isn't available outside of the US."
 msgstr ""
 
@@ -3603,10 +3622,17 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_card_receive_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_activate.py:0
 msgid ""
 "The last 4 digits you entered do not match the card you received. Please "
 "check and try again."
+msgstr ""
+
+#. module: hr_expense_stripe
+#: model:ir.model.fields,help:hr_expense_stripe.field_hr_expense_stripe_card__user_id
+msgid ""
+"The login of the person this resource is: their party's internal user. "
+"Choosing another user makes the resource that user's person."
 msgstr ""
 
 #. module: hr_expense_stripe
@@ -3624,7 +3650,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_cardholder_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_update_cardholder.py:0
 msgid "The phone number is invalid."
 msgstr ""
 
@@ -3653,7 +3679,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "The statement description can only contain 15 ASCII characters"
 msgstr ""
 
@@ -3721,7 +3747,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Top up payment"
 msgstr ""
 
@@ -3734,7 +3760,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid ""
 "Top-up request failed with the following error sent by Stripe:\n"
 "%(stripe_error)s"
@@ -3742,7 +3768,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid ""
 "Top-up request successfully sent to Stripe, this can take a few days before "
 "being available"
@@ -3885,7 +3911,7 @@ msgstr ""
 #. module: hr_expense_stripe
 #. odoo-python
 #: code:addons/hr_expense_stripe/controllers/main.py:0
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_topup_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_account_journal_topup.py:0
 msgid "Unknown"
 msgstr ""
 
@@ -4033,18 +4059,6 @@ msgid "We were unable to reach Odoo IAP proxy server"
 msgstr ""
 
 #. module: hr_expense_stripe
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_hr_expense_stripe_card__website_message_ids
-#: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__website_message_ids
-msgid "Website Messages"
-msgstr ""
-
-#. module: hr_expense_stripe
-#: model:ir.model.fields,help:hr_expense_stripe.field_hr_expense_stripe_card__website_message_ids
-#: model:ir.model.fields,help:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__website_message_ids
-msgid "Website communication history"
-msgstr ""
-
-#. module: hr_expense_stripe
 #: model:ir.model.fields.selection,name:hr_expense_stripe.selection__hr_expense_stripe_card__spending_policy_interval__weekly
 msgid "Week"
 msgstr ""
@@ -4172,7 +4186,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/models/account_payment_method_line.py:0
+#: code:addons/hr_expense_stripe/models/account_payment_channel.py:0
 msgid ""
 "You cannot delete a payment method line that is used by an active/paused "
 "card."
@@ -4255,7 +4269,7 @@ msgstr ""
 
 #. module: hr_expense_stripe
 #. odoo-python
-#: code:addons/hr_expense_stripe/wizard/hr_expense_stripe_card_receive_wizard.py:0
+#: code:addons/hr_expense_stripe/wizards/wizard_hr_expense_stripe_card_activate.py:0
 msgid "You must confirm that you have received the card before activating it."
 msgstr ""
 
@@ -4324,13 +4338,6 @@ msgstr ""
 #. module: hr_expense_stripe
 #: model:ir.model.fields,field_description:hr_expense_stripe.field_wizard_hr_expense_stripe_card_update_cardholder__billing_zip
 msgid "Zip"
-msgstr ""
-
-#. module: hr_expense_stripe
-#. odoo-python
-#: code:addons/hr_expense_stripe/models/hr_expense.py:0
-#: code:addons/hr_expense_stripe/models/hr_expense_stripe_card.py:0
-msgid "id"
 msgstr ""
 
 #. module: hr_expense_stripe

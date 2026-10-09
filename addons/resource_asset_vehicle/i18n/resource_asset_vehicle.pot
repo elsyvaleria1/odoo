@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-10 17:11+0000\n"
-"PO-Revision-Date: 2026-09-10 17:11+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,158 +16,63 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_odometer.py:0
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__booking_exclusive
 msgid ""
-"%(vehicle)s: a reading of %(value)s on %(date)s would make the odometer run "
-"backwards."
+"A booking takes the whole resource, whatever capacity it asked for. Clear it"
+" to let several bookings share one time slot up to the capacity, as a bar "
+"counter does."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
-msgid "<i class=\"fa-solid fa-location-dot\" title=\"Location\"/>"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
+#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_action
 msgid ""
-"<span class=\"o_stat_value\">New</span>\n"
-"                                <span class=\"o_stat_text\">Vehicle</span>"
+"A model is a product whose units are vehicles: it carries the manufacturer "
+"and the specifications every vehicle of the model shares."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "<span class=\"text-muted me-1\">every</span>"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__nationality_ids
+msgid "A thing's nationalities. A person's are their party's."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.res_config_settings_view_form
-msgid "<span> days before the end date</span>"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.res_config_settings_view_form
-msgid "<span>Send an alert </span>"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "<span>cm</span>"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__trailer_hook
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__trailer_hook
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__trailer_hook
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__trailer_hook
 msgid ""
 "A trailer hitch is a device attached to a vehicle's chassis for towing "
-"purposes,             such as pulling trailers, boats, or other vehicles."
+"trailers, boats or other vehicles."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__trailer_hook
-msgid ""
-"A trailer hitch is a device attached to a vehicle's chassis for towing "
-"purposes,            such as pulling trailers, boats, or other vehicles."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_1
-msgid "A/C Compressor Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_2
-msgid "A/C Condenser Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_3
-msgid "A/C Diagnosis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_4
-msgid "A/C Evaporator Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_5
-msgid "A/C Recharge"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_needaction
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_needaction
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_needaction
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_needaction
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_needaction
 msgid "Action Needed"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "Activation Cost"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__active
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__active
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__active
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__active
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__active
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__active
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__active
 msgid "Active"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_ids
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_ids
 msgid "Activities"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-msgid "Activities of"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_exception_decoration
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_exception_decoration
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_exception_decoration
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_exception_decoration
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_exception_decoration
 msgid "Activity Exception Decoration"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_state
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_state
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_state
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_state
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_state
 msgid "Activity State"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_mail_activity_type
-msgid "Activity Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_type_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_type_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_type_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_type_icon
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_type_icon
 msgid "Activity Type Icon"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.mail_activity_type_action_config_fleet
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_menu_config_activity_type
-msgid "Activity Types"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-msgid "Activity type"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -181,23 +86,8 @@ msgid "Administrator"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_6
-msgid "Air Filter Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "All vehicles"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__drive_type__awd
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__drive_type__awd
 msgid "All-Wheel Drive (AWD)"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.constraint,message:resource_asset_vehicle.constraint_fleet_vehicle_odometer_value_positive
-msgid "An odometer reading cannot be negative."
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -206,48 +96,22 @@ msgid "Apply New Driver"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_kanban
-msgid "Archive"
-msgstr ""
-
-#. module: resource_asset_vehicle
 #: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_tag__active
 msgid "Archive a tag to hide it without deleting it."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Archived"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__next_assignation_date
 msgid "Assignment Date"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__log_drivers
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_assignation_log_view_list
-msgid "Assignment Logs"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__assignment_ids
+msgid "Assignments"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_8
-msgid "Assistance"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_attachment_count
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_attachment_count
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_attachment_count
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_attachment_count
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_attachment_count
 msgid "Attachment Count"
 msgstr ""
 
@@ -257,18 +121,12 @@ msgid "Attachments"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
-msgid "Attention: renewal overdue"
-msgstr ""
-
-#. module: resource_asset_vehicle
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__author_id
 msgid "Author"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__transmission__automatic
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__transmission__automatic
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__transmission__automatic
 msgid "Automatic"
 msgstr ""
 
@@ -278,64 +136,16 @@ msgid "Available"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__avatar_1920
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__avatar_1920
-msgid "Avatar"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__appointment_type_ids
+msgid "Available in"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__avatar_1024
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__avatar_1024
-msgid "Avatar 1024"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__avatar_128
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__avatar_128
-msgid "Avatar 128"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__avatar_256
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__avatar_256
-msgid "Avatar 256"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__avatar_512
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__avatar_512
-msgid "Avatar 512"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_7
-msgid "Ball Joint Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_9
-msgid "Battery Inspection"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_10
-msgid "Battery Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_cost_report__vehicle_type__bike
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__vehicle_type__bike
-msgid "Bike"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__frame_type
-msgid "Bike Frame Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Bikes"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__fuel_efficiency_max
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__fuel_efficiency_max
+msgid ""
+"Best-case fuel efficiency (e.g., highway driving). Unit (km/L or MPG) is "
+"configurable in system settings."
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -344,57 +154,40 @@ msgid "Body content is the same as the template"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_11
-msgid "Brake Caliper Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__booking_limit_percentage
+msgid "Booking Ceiling %"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_12
-msgid "Brake Inspection"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__booking_exclusive
+msgid "Booking Exclusive"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_13
-msgid "Brake Pad(s) Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__booking_sequence
+msgid "Booking Sequence"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__brand_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__brand_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Brand"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__brand_new
+msgid "Brand New"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_model_brand
-msgid "Brand of the vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__cng
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__cng
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__cng
 msgid "CNG"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_tree
-msgid "CO2 Emissions"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__co2
-msgid "CO2 emissions of the vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__co2
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__default_co2
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__co2
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__co2
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__co2
 msgid "CO₂ Emissions"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_1
-msgid "Calculation Benefit In Kind"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__cadastral_id
+msgid "Cadastral ID"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -409,129 +202,47 @@ msgid "Cancel"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__write_off_date
-msgid "Cancellation Date"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__capacity
+msgid "Capacity"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__state__closed
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_services__state__cancelled
-msgid "Cancelled"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_cost_report__vehicle_type__car
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__vehicle_type__car
-msgid "Car"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_14
-msgid "Car Wash"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Cars"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__car_value
-msgid "Catalog Value (VAT Incl.)"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_15
-msgid "Catalytic Converter Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_model_category_action
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_model_category_menu
-msgid "Categories"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_category_action
-msgid ""
-"Categories will help you manage your fleet more efficiently and arrange your"
-" vehicles."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__category
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__category_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__category_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__category_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 msgid "Category"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.constraint,message:resource_asset_vehicle.constraint_fleet_vehicle_model_category_name_uniq
-msgid "Category name must be unique"
+#: model:product.template,name:resource_asset_vehicle.model_clio_product_template
+msgid "Clio"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_model_category
-msgid "Category of the model"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:mail.message.subtype,description:resource_asset_vehicle.mt_fleet_driver_updated
-#: model:mail.message.subtype,name:resource_asset_vehicle.mt_fleet_driver_updated
-msgid "Changed Driver"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_16
-msgid "Charging System Diagnosis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__vin_sn
-msgid "Chassis Number"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__state
-msgid "Choose whether the contract is still valid or not"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_service_type__category
-msgid ""
-"Choose whether the service refer to contracts, vehicle services or both"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__contract_state__closed
-msgid "Closed"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__co2_emission_unit
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__co2_emission_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__co2_emission_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__co2_emission_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__co2_emission_unit
 msgid "Co2 Emission Unit"
 msgstr ""
 
 #. module: resource_asset_vehicle
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__code
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__asset_kind_code
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__asset_kind_code
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__kind_code
 msgid "Code"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__color
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__color
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__vehicle_color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__vehicle_color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__color
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vehicle_color
 msgid "Color"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__color
-msgid "Color of the vehicle"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__combinable_resource_ids
+msgid "Combinable Resource"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -540,28 +251,19 @@ msgid "Communication about your vehicle."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__company_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__company_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__company_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__company_id
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__company_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
 msgid "Company"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_res_config_settings
-msgid "Config Settings"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__child_ids
+msgid "Components"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_kanban
-msgid "Configuration"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
-msgid "Contains Vehicle"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_next_failure
+msgid "Computed as Last Failure + MTBF"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -570,119 +272,26 @@ msgid "Contents"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_service_type__category__contract
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_cost_report__cost_type__contract
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Contract"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_graph
-msgid "Contract Costs Per Month"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__contract_count
-msgid "Contract Count"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__expiration_date
-msgid "Contract Expiration Date"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__start_date
-msgid "Contract Start Date"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_tree
-msgid "Contract logs"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:mail.activity.type,name:resource_asset_vehicle.mail_act_fleet_contract_to_renew
-#: model:mail.activity.type,summary:resource_asset_vehicle.mail_act_fleet_contract_to_renew
-msgid "Contract to Renew"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
-msgid "Contract(s)"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_log_contract_action
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__log_contracts
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_log_contract_menu
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Contracts"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__cost
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__amount
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__amount
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "Cost"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__cost_type
-msgid "Cost Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "Cost that is paid only once at the creation of the contract"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__cost_subtype_id
-msgid "Cost type purchased with this cost"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.ui.menu,name:resource_asset_vehicle.menu_fleet_reporting_costs
-msgid "Costs"
+#: model:product.template,name:resource_asset_vehicle.model_corolla_ts_product_template
+msgid "Corolla TS"
 msgstr ""
 
 #. module: resource_asset_vehicle
 #: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_costs_reporting_action
-msgid "Costs Analysis"
+#: model:ir.ui.menu,name:resource_asset_vehicle.menu_fleet_reporting_costs
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_cost_view_graph
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_cost_view_pivot
+msgid "Costs"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__country_id
-msgid "Country"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__country_built_id
+msgid "Country Built"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__country_code
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__company_country_code
 msgid "Country Code"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_category_action
-msgid "Create a new category"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_log_contract_action
-msgid "Create a new contract"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_brand_action
-msgid "Create a new manufacturer"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_action
-msgid "Create a new model"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -691,674 +300,459 @@ msgid "Create a new odometer log"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_log_services_action
+#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_service_action
 msgid "Create a new service entry"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_service_types_action
-msgid "Create a new type of service"
+#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_action
+msgid "Create a new vehicle model"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_state_action
-msgid "Create a new vehicle status"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__create_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__create_uid
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__create_uid
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__create_uid
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__create_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__create_date
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__create_date
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__create_date
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__create_date
 msgid "Created on"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__currency_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__currency_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__currency_id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__currency_id
 msgid "Currency"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_assignation_log_view_list
-msgid "Current Driver"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__holder_id
+msgid "Current Holder"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__state_id
-msgid "Current state of the vehicle"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_open_count
+msgid "Current Maintenance"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__date_start
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__recorded_date
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_search
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__parent_id
+msgid "Current physical parent from the resource membership timeline."
+msgstr ""
+
+#. module: resource_asset_vehicle
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 msgid "Date"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__acquisition_date
-msgid "Date of vehicle registration"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_acquisition
+msgid "Date Acquisition"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__date
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__date
-msgid "Date when the cost has been executed"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_built
+msgid "Date Built"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__start_date
-msgid "Date when the coverage of the contract begins"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_disposal
+msgid "Date Disposal"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__expiration_date
-msgid ""
-"Date when the coverage of the contract expirates (by default, one year after"
-" begin date)"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_origin
+msgid "Date Origin"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__write_off_date
-msgid "Date when the vehicle's license plate has been cancelled/removed."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__default_role_id
+msgid "Default Role"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__repeat_unit__day
-msgid "Days"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__department_id
+msgid "Department"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_res_config_settings__delay_alert_contract
-msgid "Delay alert contract outdated"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_kanban
-msgid "Delete"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_2
-msgid "Depreciation and Interests"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__description
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__description
 msgid "Description"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__frame_type__diamant
-msgid "Diamant"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__destination_resource_ids
+msgid "Destination combination"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__diesel
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__diesel
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__diesel
 msgid "Diesel"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__display_name
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_mail_activity_type__display_name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__display_name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__display_name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_resource__display_name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_services__state__done
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 msgid "Done"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_17
-msgid "Door Window Motor/Regulator Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_downgraded
-msgid "Downgraded"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__drive_type
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__drive_type
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__drive_type
 msgid "Drive Type"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__driver_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__driver_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__driver_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__purchaser_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__purchaser_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__driver_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_tree
 msgid "Driver"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__driver_id
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__purchaser_id
-msgid "Driver address of the vehicle"
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+msgid "Driver Change Planned"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
 msgid "Drivers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Drivers History"
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
+msgid "Edit"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__history_count
-msgid "Drivers History Count"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__time_efficiency
+msgid "Efficiency Factor"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_assignation_log
-msgid "Drivers history on a vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_log_contract_action
-msgid ""
-"Each contract (e.g.: leasing) may include several services\n"
-"                (reparation, insurances, periodic maintenance)."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_service_types_action
-msgid "Each service can used in contracts, as a standalone service or both."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__electric
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__electric
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__electric
 msgid "Electric"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__electric_assistance
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__electric_assistance
-msgid "Electric Assistance"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__email
+msgid "Email"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__co2_standard
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__co2_standard
-msgid "Emission Standard"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__employee_id
+msgid "Employee"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__co2_standard
-msgid ""
-"Emission Standard specifies the regulatory test procedure             or "
-"guideline under which a vehicle's emissions are measured."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__co2_standard
-msgid ""
-"Emission Standard specifies the regulatory test procedure or             "
-"guideline under which a vehicle's emissions are measured."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_16
-msgid "Emissions"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_leasing
+#: model:fleet.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_leasing
 msgid "Employee Car"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_log_services.py:0
-msgid "Emptying the odometer value of a vehicle is not allowed."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__device_ids
+msgid "Endpoints"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__date_end
-msgid "End Date"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__enforce_booking_limit
+msgid "Enforce Booking Ceiling"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.res_config_settings_view_form
-msgid "End Date Contract Alert"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.product_template_form_view_fleet
 msgid "Engine"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_18
-msgid "Engine Belt Inspection"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__engine_sn
+msgid "Engine Sn"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_19
-msgid "Engine Coolant Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_next_failure
+msgid "Estimated Next Failure"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_20
-msgid "Engine/Drive Belt(s) Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__expected_mtbf
+msgid "Expected MTBF"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_12
-msgid "Entry into service tax"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#. odoo-javascript
-#: code:addons/resource_asset_vehicle/static/src/js/fleet_form.js:0
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__share
 msgid ""
-"Every service and contract of this vehicle will be considered as archived. "
-"Are you sure that you want to archive this record?"
+"External user with limited access, created only for the purpose of sharing "
+"data."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_21
-msgid "Exhaust Manifold Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__part_flagged_count
+msgid "Flagged Parts"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__contract_state__expired
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__state__expired
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-msgid "Expired"
+#: model:product.template,name:resource_asset_vehicle.model_focus_product_template
+msgid "Focus"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__expires_today
-msgid "Expires Today"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__contract_date_start
-msgid "First Contract Date"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Fiscality"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.res_config_settings_view_form
-msgid "Fleet"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_cost_report
-msgid "Fleet Analysis Report"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_graph
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vechicle_costs_report_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vechicle_costs_report_view_tree
-msgid "Fleet Costs Analysis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.res_config_settings_view_form
-msgid "Fleet Management"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__manager_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__manager_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
-msgid "Fleet Manager"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_odometer_report
-msgid "Fleet Odometer Analysis Report"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_service_type
-msgid "Fleet Service Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.actions.server,name:resource_asset_vehicle.ir_cron_contract_costs_generator_ir_actions_server
-msgid "Fleet: Generate contracts costs based on costs frequency"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__fold
-msgid "Folded in Kanban"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_follower_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_follower_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_follower_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_follower_ids
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_follower_ids
 msgid "Followers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_partner_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_partner_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_partner_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_partner_ids
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_partner_ids
 msgid "Followers (Partners)"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__drive_type__4wd
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__drive_type__4wd
 msgid "Four-Wheel Drive (4WD)"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__frame_size
-msgid "Frame Size"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__drive_type__fwd
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__drive_type__fwd
 msgid "Front-Wheel Drive (FWD)"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__fuel_type
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.product_template_form_view_fleet
 msgid "Fuel"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_22
-msgid "Fuel Injector Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_efficiency_max
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_efficiency_max
+msgid "Fuel Efficiency Max"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_23
-msgid "Fuel Pump Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_efficiency_min
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_efficiency_min
+msgid "Fuel Efficiency Min"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__fuel_type
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__default_fuel_type
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__fuel_type
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_efficiency_theoretical
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_efficiency_theoretical
+msgid "Fuel Efficiency Theoretical"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_efficiency_uom_name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_efficiency_uom_name
+msgid "Fuel Efficiency Unit"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_tank_capacity
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_tank_capacity
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__fuel_tank_capacity
+msgid "Fuel Tank Capacity"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__fuel_type
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__fuel_type
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__fuel_type
 msgid "Fuel Type"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__full_hybrid
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__full_hybrid
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__full_hybrid
 msgid "Full Hybrid"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Future Activities"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__future_driver_id
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_tree
 msgid "Future Driver"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
-msgid "Future Driver :"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__future_operator_id
+msgid "Future Operator"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__gasoline
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__gasoline
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__gasoline
 msgid "Gasoline"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__contract_renewal_overdue
-msgid "Has Contracts Overdue"
+#: model:product.template,name:resource_asset_vehicle.model_golf_8_product_template
+msgid "Golf 8"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__contract_renewal_due_soon
-msgid "Has Contracts to renew"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__cadastral_id
+msgid "Government-assigned parcel identifier for real estate assets."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__has_message
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__has_message
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__has_message
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__has_message
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_future_operator
+msgid "Hand-over Date"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__has_message
 msgid "Has Message"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__has_open_contract
-msgid "Has Open Contract"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_24
-msgid "Head Gasket(s) Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_25
-msgid "Heater Blower Motor Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_26
-msgid "Heater Control Valve Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_27
-msgid "Heater Core Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_28
-msgid "Heater Hose Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__horsepower
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__horsepower
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__power_unit__horsepower
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__horsepower
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__horsepower
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__horsepower
 msgid "Horsepower"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__power_unit__horsepower
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__power_unit__horsepower
 msgid "Horsepower (hp)"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__horsepower_tax
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__horsepower_tax
-msgid "Horsepower Taxation"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__capacity
+msgid ""
+"How many claims the resource can hold at once: seats at a table, concurrent "
+"users of a machine. A reservation's allocated percentage is a share of this."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__hydrogen
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__hydrogen
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__time_efficiency
+msgid ""
+"How quickly this resource performs work compared with the reference "
+"duration. At 100%, one reference hour requires one hour; at 200%, it "
+"requires 30 minutes."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__hr_icon_display
+msgid "Hr Icon Display"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__type
+msgid ""
+"Human: a person, who has a party. Material: a physical thing, such as a "
+"machine, a vehicle or a room. Intangible: a capacity with no body, such as "
+"electricity, sunlight or time."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__hydrogen
 msgid "Hydrogen"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__id
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_mail_activity_type__id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_res_config_settings__id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_resource__id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__id
 msgid "ID"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_exception_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_exception_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_exception_icon
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_exception_icon
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__im_status
+msgid "IM Status"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__imei
+msgid "IMEI"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_exception_icon
 msgid "Icon"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__activity_exception_icon
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_exception_icon
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_exception_icon
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__activity_exception_icon
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__activity_exception_icon
 msgid "Icon to indicate an exception activity."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__message_needaction
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_needaction
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__message_needaction
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__message_needaction
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__identifier_ids
+msgid "Identifiers"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__message_needaction
 msgid "If checked, new messages require your attention."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__message_has_error
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_has_error
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__message_has_error
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__message_has_error
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__message_has_error
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_29
-msgid "Ignition Coil Replacement"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__image_1920
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__image_1920
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__image_1920
 msgid "Image"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__image_1024
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__image_1024
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__image_1024
 msgid "Image 1024"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__image_128
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__image_128
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__image_128
 msgid "Image 128"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__image_256
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__image_256
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__image_256
 msgid "Image 256"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__image_512
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__image_512
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__image_512
 msgid "Image 512"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__contract_state__open
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-msgid "In Progress"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_in_service
+msgid "In Service Since"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__service_ids
-msgid "Included Services"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__imei
+msgid "International Mobile Equipment Identity of a cellular-capable asset."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__contract_state__futur
-msgid "Incoming"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__inventory_tag
+msgid "Inventory Tag"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-msgid "Information"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_30
-msgid "Intake Manifold Gasket Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__is_bookable
+msgid "Is Bookable"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -1367,21 +761,27 @@ msgid "Is Editor"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_is_follower
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_is_follower
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_is_follower
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_is_follower
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_is_follower
 msgid "Is Follower"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_junior
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__job_title
+msgid "Job Title"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:fleet.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_junior
 msgid "Junior"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__lpg
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__lpg
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__kind_id
+msgid "Kind"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__lpg
 msgid "LPG"
 msgstr ""
 
@@ -1391,61 +791,27 @@ msgid "Language"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__contract_state
-msgid "Last Contract State"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__date_last_failure
+msgid "Last Failure"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__odometer
-msgid "Last Odometer"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__write_uid
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__write_uid
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__write_uid
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__write_uid
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__write_date
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__write_date
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__write_date
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__write_date
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__write_date
 msgid "Last Updated on"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Late Activities"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_contract_leasing
-msgid "Leasing"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__repeat_unit
-msgid "Leave empty for a contract that generates no recurring cost."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__log_count
+msgid "Ledger Entries"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -1454,14 +820,8 @@ msgid "Let's create your first vehicle."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__license_plate
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__license_plate
 msgid "License Plate"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__license_plate
-msgid "License plate number of the vehicle (i = plate number for a car)"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -1470,23 +830,30 @@ msgid "Load template"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__location
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__address_id
 msgid "Location"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__location
-msgid "Location of the vehicle (garage, ...)"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__log_ids
+msgid "Log"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__image_128
-msgid "Logo"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__log_count
+msgid ""
+"Logs booked against this asset, whatever their state. An archived log is not"
+" counted."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_kanban
-msgid "MODELS"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__mtbf
+msgid "MTBF"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__mttr
+msgid "MTTR"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -1500,352 +867,266 @@ msgid "Mail to Driver…"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Make Vehicle Available"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_ids
+msgid "Maintenance"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_log_contract_action
-msgid ""
-"Manage all your contracts (leasing, insurances, etc.) with\n"
-"                their related services, costs. Odoo will automatically warn\n"
-"                you when some contracts have to be renewed."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_count
+msgid "Maintenance Count"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_costs_reporting_action
-msgid "Manage efficiently your different effective vehicles Costs with Odoo."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_plan_ids
+msgid "Maintenance Plan"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_odometer_reporting_action
-msgid "Manage efficiently your vehicle Odometers with Odoo."
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_plan_count
+msgid "Maintenance Plan Count"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_10
-msgid "Management Fee"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_profile_id
+msgid "Maintenance Profile"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__transmission__manual
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__transmission__manual
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__maintenance_team_id
+msgid "Maintenance Team"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__manager_id
+msgid "Manager"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__transmission__manual
 msgid "Manual"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_model_brand.py:0
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__brand_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__manufacturer_id
 msgid "Manufacturer"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_model_brand_action
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__fuel_efficiency_theoretical
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__fuel_efficiency_theoretical
+msgid ""
+"Manufacturer-rated fuel efficiency. Unit (km/L or MPG) is configurable in "
+"system settings."
+msgstr ""
+
+#. module: resource_asset_vehicle
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_model_brand_menu
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
 msgid "Manufacturers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_has_error
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_has_error
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_has_error
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_has_error
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__booking_limit_percentage
+msgid ""
+"Maximum simultaneous allocation for enforced bookings. 100% permits full "
+"booking; 120% permits 20% overbooking. Warning-only reservations can exceed "
+"this ceiling when resource enforcement is disabled."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__mtbf
+msgid ""
+"Mean Time Between Failure, computed based on done corrective maintenances."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__mttr
+msgid "Mean Time To Repair"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__relation_ids
+msgid "Members and Dependencies"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__membership_ids
+msgid "Memberships"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_has_error
 msgid "Message Delivery error"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_ids
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_ids
 msgid "Messages"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__mileage_delta
-msgid "Mileage Delta"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__meter_ids
+msgid "Meters"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__model_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__model_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__model_ids
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__model_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_search
+#: model:product.template,name:resource_asset_vehicle.model_micra_product_template
+msgid "Micra"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__missing_identifier_type_ids
+msgid "Missing Identifier Type"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__product_id
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_tree
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.product_template_form_view_fleet
 msgid "Model"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_category_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_category_view_tree
-msgid "Model Category"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__model
+msgid "Model Name"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__model_count
-msgid "Model Count"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_tree
-msgid "Model Make"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__model_year
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__model_year
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__vehicle_model_year
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__vehicle_model_year
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__model_year
 msgid "Model Year"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__name
-msgid "Model name"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_model
-msgid "Model of a vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_model_brand.py:0
 #: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_model_action
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_model_menu
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_tree
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_kanban
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_tree
 msgid "Models"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__repeat_unit__month
-msgid "Months"
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
+msgid "Month"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "My Activities"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__my_activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__my_activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__my_activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__my_activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__my_activity_date_deadline
 msgid "My Activity Deadline"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_service_type__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_brand__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__name
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__name
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__name
 msgid "Name"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Need Action"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__nationality_ids
+msgid "Nationalities"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__state__futur
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_services__state__new
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__nationality_country_ids
+msgid "Nationality Country"
+msgstr ""
+
+#. module: resource_asset_vehicle
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 msgid "New"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_new_request
-msgid "New Request"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_date_deadline
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_date_deadline
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_summary
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_summary
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_summary
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_summary
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_summary
 msgid "Next Activity Summary"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_type_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_type_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_type_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_type_id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_type_id
 msgid "Next Activity Type"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__future_driver_id
-msgid "Next Driver Address of the vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
 #. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle.py:0
+#: code:addons/resource_asset_vehicle/models/resource_resource.py:0
 msgid "No Plate"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_costs_reporting_action
-msgid "No data for analysis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_odometer_reporting_action
-msgid "No data for odometer analysis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle.py:0
-msgid "No plate"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__service_activity__none
-msgid "None"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Note"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__notes
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
 msgid "Notes"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_needaction_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_needaction_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_needaction_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_needaction_counter
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_needaction_counter
 msgid "Number of Actions"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__doors
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__doors
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__doors
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__doors
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__doors
 msgid "Number of Doors"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__doors
-msgid "Number of doors of the vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__message_has_error_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_has_error_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__message_has_error_counter
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__message_has_error_counter
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_has_error_counter
 msgid "Number of errors"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__message_needaction_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_needaction_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__message_needaction_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__message_needaction_counter
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__message_needaction_counter
 msgid "Number of messages requiring action"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__message_has_error_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__message_has_error_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__message_has_error_counter
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__message_has_error_counter
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__seats
-msgid "Number of seats of the vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__odometer_count
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__odometer_id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__odometer
+#: model:resource.meter,name:resource_asset_vehicle.odometer_meter_1
+#: model:resource.meter,name:resource_asset_vehicle.odometer_meter_2
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_graph
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
 msgid "Odometer"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_odometer_reporting_action
-msgid "Odometer Analysis"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_form
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_tree
 msgid "Odometer Logs"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Odometer Report"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__odometer_meter_id
+msgid "Odometer Meter"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__odometer_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__odometer_uom_name
 msgid "Odometer Unit"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__odometer
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__value
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__odometer_value
-msgid "Odometer Value"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_graph
-msgid "Odometer Values Per Vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_odometer
-msgid "Odometer log for a vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__odometer
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__odometer
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__odometer_id
-msgid "Odometer measure of the vehicle at the moment of this log"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__odometer_uom_id
+msgid "Odometer Uom"
 msgstr ""
 
 #. module: resource_asset_vehicle
 #: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_odometer_action
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_odometer_menu
-#: model:ir.ui.menu,name:resource_asset_vehicle.menu_fleet_odometer_reporting_odometer
 msgid "Odometers"
 msgstr ""
 
@@ -1855,18 +1136,18 @@ msgid "Officer: Manage all vehicles"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_31
+#: model:product.template,name:resource_asset_vehicle.type_service_service_2_product_template
 msgid "Oil Change"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_32
-msgid "Oil Pump Replacement"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__operator_id
+msgid "Operator"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_contract_omnium
-msgid "Omnium"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__operator_history_count
+msgid "Operator History Count"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -1879,120 +1160,135 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_15
-msgid "Options"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__origin_country_id
+msgid "Origin Country"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__order_date
-msgid "Order Date"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__value_original
+msgid "Original Value"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_ordered
-msgid "Ordered"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__parent_id
+msgid "Part Of"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_33
-msgid "Other Maintenance"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__part_ids
+msgid "Parts"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__service_activity__overdue
-msgid "Overdue"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__partner_id
+msgid "Party"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_34
-msgid "Oxygen Sensor Replacement"
+#: model:product.template,name:resource_asset_vehicle.type_service_service_7_product_template
+msgid "Periodic Maintenance"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__plan_to_change_bike
-msgid "Plan To Change Bike"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__phone_ids
+msgid "Phone Numbers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__plan_to_change_car
-msgid "Plan To Change Car"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__booking_sequence
+msgid ""
+"Picked first when several resources fit the asked capacity (of two tables of"
+" 4, the lowest sequence goes first)."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Planned for Change"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__place_built
+msgid "Place Built"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__plug_in_hybrid_diesel
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__plug_in_hybrid_diesel
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__place_origin
+msgid "Place Origin"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__plug_in_hybrid_diesel
 msgid "Plug-in Hybrid Diesel"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__fuel_type__plug_in_hybrid_gasoline
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__default_fuel_type__plug_in_hybrid_gasoline
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__fuel_type__plug_in_hybrid_gasoline
 msgid "Plug-in Hybrid Gasoline"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__power
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__power
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__power
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__power
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__power
 msgid "Power"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_35
-msgid "Power Steering Hose Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_36
-msgid "Power Steering Pump Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__power_unit
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__power_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__power_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__power_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__power_unit
 msgid "Power Unit"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__power
-msgid "Power in kW of the vehicle"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__power
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__power
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__power
+msgid "Power of the vehicle, in the power unit."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__vehicle_properties
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+#: model:ir.model,name:resource_asset_vehicle.model_product_template
+msgid "Product"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__product_tmpl_id
+msgid "Product Template"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__properties
 msgid "Properties"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__net_car_value
-msgid "Purchase Value"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_purchased
+#: model:fleet.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_purchased
 msgid "Purchased"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_37
-msgid "Radiator Repair"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__vehicle_range
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__vehicle_range
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__vehicle_range
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__vehicle_range
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vehicle_range
 msgid "Range"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__range_unit
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__range_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__range_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__range_unit
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__range_unit
 msgid "Range Unit"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__rating_ids
+msgid "Ratings"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2001,43 +1297,16 @@ msgid "Ready to manage your fleet more efficiently?"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__drive_type__rwd
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__drive_type__rwd
 msgid "Rear-Wheel Drive (RWD)"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__cost_generated
-msgid "Recurring Cost"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__repeat_interval
-msgid "Recurring Cost Every"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__repeat_unit
-msgid "Recurring Cost Frequency"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__ins_ref
-msgid "Reference"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_refueling
-msgid "Refueling"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_registered
-msgid "Registered"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__acquisition_date
-msgid "Registration Date"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__enforce_booking_limit
+msgid ""
+"Reject any reservation that exceeds this resource's booking ceiling, "
+"including manual meetings and shifts. Individual bookings may enforce the "
+"ceiling even when this option is disabled."
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2046,83 +1315,53 @@ msgid "Rendering Model"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_11
-msgid "Rent (Excluding VAT)"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__reservation_ids
+msgid "Reservations"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_7
-msgid "Repair and maintenance"
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
+msgid "Reset"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_contract_repairing
-msgid "Repairing"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__resource_id
+msgid "Resource"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_9
-msgid "Replacement Vehicle"
+#: model:ir.model,name:resource_asset_vehicle.model_resource_resource
+msgid "Resources"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_reserve
-msgid "Reserve"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__combinable_resource_ids
+msgid "Resources that combine with this one to serve a bigger demand."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__residual_value
-msgid "Residual Value"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_14
-msgid "Residual value (Excluding VAT)"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_18
-msgid "Residual value in %"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__user_id
-msgid "Responsible"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__activity_user_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_user_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_user_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__activity_user_id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__activity_user_id
 msgid "Responsible User"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_kanban
-msgid "Restore"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__default_role_id
+msgid "Role selected by default when creating a shift for this resource."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_38
-msgid "Resurface Rotors"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__role_ids
+msgid "Roles"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_39
-msgid "Rotate Tires"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_40
-msgid "Rotor Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__state__open
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_services__state__running
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 msgid "Running"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__message_has_sms_error
+msgid "SMS Delivery error"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2131,8 +1370,9 @@ msgid "Save as new template"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__seats
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__seats
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__seats
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__seats
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__seats
 msgid "Seating Capacity"
 msgstr ""
 
@@ -2143,7 +1383,7 @@ msgstr ""
 
 #. module: resource_asset_vehicle
 #. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle.py:0
+#: code:addons/resource_asset_vehicle/models/resource_asset_vehicle.py:0
 msgid "Send Email"
 msgstr ""
 
@@ -2153,20 +1393,16 @@ msgid "Send mails to Drivers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_senior
+#: model:fleet.vehicle.tag,name:resource_asset_vehicle.vehicle_tag_senior
 msgid "Senior"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model_category__sequence
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_state__sequence
-msgid "Sequence"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__serial_number
+msgid "Serial Number"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_service_type__category__service
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_cost_report__cost_type__service
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_list
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
@@ -2174,82 +1410,41 @@ msgid "Service"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__service_activity
-msgid "Service Activity"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__service_count
+msgid "Service Count"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__service_type_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
-msgid "Service Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_types_view_tree
-msgid "Service Types"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_log_services_action
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__service_count
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_services_configuration
+#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_service_action
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_log_services_menu
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_activity
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_list
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
 msgid "Services"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_graph
-msgid "Services Costs Per Month"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__share
+msgid "Share User"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__log_services
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_tree
-msgid "Services Logs"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__show_hr_icon_display
+msgid "Show Hr Icon Display"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_log_services
-msgid "Services for vehicles"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__source_resource_ids
+msgid "Source combination"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_config_settings_action
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_config_settings_menu
-msgid "Settings"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Show all records whose next activity date is past"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_6
-msgid "Snow tires"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_41
-msgid "Spark Plug Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__doors
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__doors
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__doors
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__doors
 msgid ""
-"Specifies the total number of doors, including the truck and hatch doors, if"
+"Specifies the total number of doors, including the trunk and hatch doors, if"
 " applicable."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle.py:0
-msgid "Specify the End date of %s"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2260,44 +1455,17 @@ msgid ""
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__state
-msgid "Stage"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__date_start
-msgid "Start Date"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_42
-msgid "Starter Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__state_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_state_view_tree
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__state
 msgid "State"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.constraint,message:resource_asset_vehicle.constraint_fleet_vehicle_state_name_src_uniq
-msgid "State name already exists"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__state_before_maintenance
+msgid "State Before Maintenance"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_state_action
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__state
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_state_menu
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Status"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__activity_state
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_state
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_state
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__activity_state
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__activity_state
 msgid ""
 "Status based on activities\n"
 "Overdue: Due date is already passed\n"
@@ -2311,245 +1479,180 @@ msgid "Subject"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vechicle_costs_report_view_tree
-msgid "Sum of Cost"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_5
-msgid "Summer tires"
-msgstr ""
-
-#. module: resource_asset_vehicle
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_tag__name
 msgid "Tag Name"
 msgstr ""
 
 #. module: resource_asset_vehicle
 #: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_tag_action
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__tag_ids
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__tag_ids
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_tag_menu
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
 msgid "Tags"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Tax Info"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__technician_user_id
+msgid "Technician"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_3
-msgid "Tax roll"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__notes
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "Terms and Conditions"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__country_code
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__company_country_code
 msgid ""
 "The ISO country code in two chars. \n"
 "You can use this field for quick search."
 msgstr ""
 
 #. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__model_year
+msgid ""
+"The commercial model year, which may differ from the year it was built."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__nationality_country_ids
+msgid ""
+"The countries it holds a nationality of now, a person's from their party."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__country_built_id
+msgid "The country a thing was produced in."
+msgstr ""
+
+#. module: resource_asset_vehicle
 #. odoo-python
-#: code:addons/resource_asset_vehicle/wizard/fleet_vehicle_send_mail.py:0
+#: code:addons/resource_asset_vehicle/wizards/wizard_resource_asset_vehicle_send_mail_driver.py:0
 msgid "The following vehicle drivers are missing an email address: %s."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle.py:0
-msgid "The odometer value cannot be lower than the previous one."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_43
-msgid "Thermostat Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__next_assignation_date
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__user_id
 msgid ""
-"This is the date at which the car will be available, if not set it means "
-"available instantly"
+"The login of the person this resource is: their party's internal user. "
+"Choosing another user makes the resource that user's person."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__product_id
 msgid ""
-"This will allow this vehicle to be selectable for the Salary Configurator"
+"The model this unit is an instance of. Its template carries the spec sheet."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_44
-msgid "Tie Rod End Replacement"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__partner_id
+msgid "The person this resource is. A material resource has none."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_45
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__place_origin
+msgid "The place within that country: a city of birth, a plant."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__place_built
+msgid "The place within that country: a plant, a workshop."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__state_before_maintenance
+msgid "The state the resource returns to when its maintenance ends."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__tz
+msgid ""
+"The time zone where this resource works. Its working schedule is read in "
+"this zone: an 08:00-17:00 schedule means 08:00-17:00 here, whatever zone the"
+" schedule names. For an employee deployed away from the corporate office, "
+"set the zone of the place of work."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__calendar_id
+msgid ""
+"The working schedule of the resource. A Fully Flexible schedule lets it work"
+" any hour."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__is_bookable
+msgid "This resource is offered by at least one appointment type."
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__tz
+msgid "Timezone"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:product.template,name:resource_asset_vehicle.type_service_service_3_product_template
 msgid "Tire Replacement"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_46
-msgid "Tire Service"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_to_order
-msgid "To Order"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__service_activity__today
-msgid "Today"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Today Activities"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_tree
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_list
 msgid "Total"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_13
-msgid "Total expenses (Excluding VAT)"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__fuel_tank_capacity
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__fuel_tank_capacity
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__fuel_tank_capacity
+msgid "Total fuel tank capacity in liters"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_service_17
-msgid "Touring Assistance"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_log_services_action
+#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_service_action
 msgid ""
-"Track all the services done on your vehicle.\n"
-"                Services can be of many types: occasional repair, fixed maintenance, etc."
+"Track the services done on your vehicles: each one is a line of the "
+"vehicle's ledger, typed by its service product."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__trailer_hook
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__trailer_hook
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__trailer_hook
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__trailer_hook
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__trailer_hook
 msgid "Trailer Hitch"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Trailer Hook"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__transmission
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__transmission
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_product__transmission
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_product_template__transmission
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__transmission
 msgid "Transmission"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_47
-msgid "Transmission Filter Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_48
-msgid "Transmission Fluid Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_49
-msgid "Transmission Replacement"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__frame_type__trapez
-msgid "Trapez"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__cost_subtype_id
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__type
 msgid "Type"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__activity_exception_decoration
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_contract__activity_exception_decoration
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_log_services__activity_exception_decoration
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle_model__activity_exception_decoration
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__activity_exception_decoration
 msgid "Type of the exception activity on record."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_service_types_action
-#: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_service_types_menu
-msgid "Types"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__odometer_uom_id
+msgid "Unit of measurement for the odometer readings"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__vin_sn
-msgid "Unique number written on the vehicle motor (VIN/SN number)"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__user_id
+msgid "User"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__odometer_unit
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__unit
-msgid "Unit"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_model.py:0
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_assignation_log__vehicle_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__vehicle_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__vehicle_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__vehicle_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer__vehicle_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_odometer_report__vehicle_id
+#: model:ir.model,name:resource_asset_vehicle.model_resource_asset_vehicle
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicles_configuration
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_costs_report_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_tree
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_tree
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_list
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.product_template_form_view_fleet
 msgid "Vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_log_contract
-msgid "Vehicle Contract"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__vehicle_count
-msgid "Vehicle Count"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__description
-msgid "Vehicle Description"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-msgid "Vehicle Information"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2563,23 +1666,8 @@ msgid "Vehicle Models"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__name
-msgid "Vehicle Name"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_report_view_graph
-msgid "Vehicle Odometer Timeline"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__vehicle_properties_definition
-msgid "Vehicle Properties"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model,name:resource_asset_vehicle.model_fleet_vehicle_state
-msgid "Vehicle Status"
+#: model:product.template,name:resource_asset_vehicle.product_product_vehicle_service_product_template
+msgid "Vehicle Service"
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2594,27 +1682,14 @@ msgid "Vehicle Tags"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle__vehicle_type
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_cost_report__vehicle_type
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__vehicle_type
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
-msgid "Vehicle Type"
-msgstr ""
-
-#. module: resource_asset_vehicle
 #. odoo-python
-#: code:addons/resource_asset_vehicle/wizard/fleet_vehicle_send_mail.py:0
+#: code:addons/resource_asset_vehicle/wizards/wizard_resource_asset_vehicle_send_mail_driver.py:0
 msgid "Vehicle: Mass mail drivers"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#. odoo-python
-#: code:addons/resource_asset_vehicle/models/fleet_vehicle_model.py:0
 #: model:ir.actions.act_window,name:resource_asset_vehicle.fleet_vehicle_action
 #: model:ir.model.fields,field_description:resource_asset_vehicle.field_wizard_resource_asset_vehicle_send_mail_driver__vehicle_ids
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_tree
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_activity
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicle_menu
 #: model:ir.ui.menu,name:resource_asset_vehicle.fleet_vehicles
 #: model:res.groups.privilege,name:resource_asset_vehicle.res_groups_privilege_fleet
@@ -2623,109 +1698,120 @@ msgid "Vehicles"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_activity
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
-msgid "Vehicles Contracts"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_search
-msgid "Vehicles costs"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
-msgid "Vehicles odometers"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__insurer_id
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__vendor_id
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_search
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vendor_id
 msgid "Vendor"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_services__inv_ref
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vendor_ref
 msgid "Vendor Reference"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_model__vendors
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-msgid "Vendors"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__vin_sn
+msgid "Vin Sn"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vechicle_costs_report_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Visible to all"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__warranty_date
+msgid "Warranty Expiration Date"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.vehicle.state,name:resource_asset_vehicle.fleet_vehicle_state_waiting_list
-msgid "Waiting List"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_built
+msgid ""
+"When a thing was made or commissioned. A person's birth is their party's."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,field_description:resource_asset_vehicle.field_fleet_vehicle_log_contract__days_left
-msgid "Warning Date"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_future_operator
+msgid ""
+"When the next operator takes over. A hand-over without a date takes effect "
+"in a week unless accepted before."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_kanban
-msgid "Warning: renewal due soon"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_origin
+msgid ""
+"When the resource came to be: a person's birth, a thing's manufacture or "
+"commissioning."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_50
-msgid "Water Pump Replacement"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_acquisition
+msgid "When the resource was acquired."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__frame_type__wave
-msgid "Wave"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__date_disposal
+msgid "When the resource was disposed of."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__repeat_unit__week
-msgid "Weeks"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__origin_country_id
+msgid ""
+"Where it came to be: a person's country of birth, a thing's country of "
+"production."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_51
-msgid "Wheel Alignment"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__state
+msgid ""
+"Where the resource is in its life: draft, available (ready, idle), in "
+"service, under maintenance, out of service or disposed."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_52
-msgid "Wheel Bearing Replacement"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__address_id
+msgid "Where the resource normally is, when no inventory location tracks it."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:resource_asset_vehicle.service.type,name:resource_asset_vehicle.type_service_53
-msgid "Windshield Wiper(s) Replacement"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__manager_id
+msgid "Who answers for the resource: the live manager assignment."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_brand_view_search
-msgid "With Models"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__holder_id
+msgid "Who has it now: the live operator, else the live custodian."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_contract_view_form
-msgid "Write here all other information relative to this contract"
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__operator_id
+msgid "Who operates the resource now: the live operator assignment."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_log_services_view_form
-msgid "Write here any other information related to the service completed."
+#: model:ir.model.fields,help:resource_asset_vehicle.field_resource_asset_vehicle__future_operator_id
+msgid "Who takes the resource over next: the planned operator assignment."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "Write here any other information related to this vehicle"
+#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
+msgid "With a Driver"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__work_email
+msgid "Work Email"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__work_location_id
+msgid "Work Location"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__calendar_id
+msgid "Working Time"
+msgstr ""
+
+#. module: resource_asset_vehicle
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_product__fuel_efficiency_min
+#: model:ir.model.fields,help:resource_asset_vehicle.field_product_template__fuel_efficiency_min
+msgid ""
+"Worst-case fuel efficiency (e.g., city driving). Unit (km/L or MPG) is "
+"configurable in system settings."
 msgstr ""
 
 #. module: resource_asset_vehicle
@@ -2734,120 +1820,36 @@ msgid "Write your message here..."
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields,help:resource_asset_vehicle.field_fleet_vehicle__model_year
-msgid "Year of the model"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_log_contract__repeat_unit__year
-msgid "Years"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_odometer_action
-msgid "You can add various odometer entries for all vehicles."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_state_action
-msgid ""
-"You can customize available status to track the evolution of\n"
-"                each vehicle. Example: active, being repaired, sold."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.actions.act_window,help:resource_asset_vehicle.fleet_vehicle_model_action
-msgid "You can define several models (e.g. A3, A4) for each make (Audi)."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form_quick_create
-msgid "e.g. Model S"
+#: model:ir.model.fields,field_description:resource_asset_vehicle.field_resource_asset_vehicle__year_origin
+msgid "Year Origin"
 msgstr ""
 
 #. module: resource_asset_vehicle
 #: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form_quick_create
 msgid "e.g. PAE 326"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-msgid "e.g. Tesla"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_model_view_form
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "eg. WLTP, Euro 6, or EPA, ..."
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__co2_emission_unit__g/km
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__co2_emission_unit__g/km
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__co2_emission_unit__g/km
 msgid "g/km"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__co2_emission_unit__g/mi
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__co2_emission_unit__g/mi
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__co2_emission_unit__g/mi
 msgid "g/mi"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__power_unit__power
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__power_unit__power
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__power_unit__power
 msgid "kW"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__odometer_unit__kilometers
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__range_unit__km
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__range_unit__km
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__range_unit__km
 msgid "km"
 msgstr ""
 
 #. module: resource_asset_vehicle
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__odometer_unit__miles
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle__range_unit__mi
-#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__fleet_vehicle_model__range_unit__mi
+#: model:ir.model.fields.selection,name:resource_asset_vehicle.selection__product_template__range_unit__mi
 msgid "mi"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "show the contract for this vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "show the odometer logs for this vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_form
-msgid "show the services logs for this vehicle"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "Driver Change Planned"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_odometer_view_search
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_search
-msgid "Month"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_service_view_form
-msgid "Reset"
-msgstr ""
-
-#. module: resource_asset_vehicle
-#: model_terms:ir.ui.view,arch_db:resource_asset_vehicle.fleet_vehicle_view_search
-msgid "With a Driver"
 msgstr ""

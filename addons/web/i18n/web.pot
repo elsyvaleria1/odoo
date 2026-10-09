@@ -6,86 +6,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 04:20+0000\n"
-"PO-Revision-Date: 2026-09-27 04:20+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
-msgid "Displays how long the range lasts next to its end."
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
-msgid "Duration"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
-msgid "Ends before it starts"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "Next week"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "Not set"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/views/graph/graph_renderer.js:0
-msgid "Not stackable: a record can be in several of these groups"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
-msgid "Quick select"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "Select a date"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
-msgid "Show duration"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "This month"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "This week"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
-msgid "Tomorrow"
-msgstr ""
 
 #. module: web
 #. odoo-python
@@ -152,12 +80,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/home_menu/home_tiles/home_tiles.js:0
 msgid "%s added"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "%s days"
 msgstr ""
 
 #. module: web
@@ -346,18 +268,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/views/calendar/calendar_common/calendar_common_popover.js:0
 msgid "0 minutes"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "1 day"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "1 month"
 msgstr ""
 
 #. module: web
@@ -1131,12 +1041,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/quick_launcher.xml:0
-msgid "All apps"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/views/calendar/calendar_common/calendar_common_popover.js:0
 msgid "All day"
 msgstr ""
@@ -1230,7 +1134,6 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Amber"
 msgstr ""
 
@@ -1285,8 +1188,8 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/quick_launcher.xml:0
-msgid "App launcher"
+#: code:addons/web/static/src/webclient/user_menu/appearance_controls.xml:0
+msgid "Appearance"
 msgstr ""
 
 #. module: web
@@ -1489,6 +1392,12 @@ msgid "Autocomplete partner addresses with Google Places"
 msgstr ""
 
 #. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
+msgid "Automatic"
+msgstr ""
+
+#. module: web
 #: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
 msgid "Automatically enrich your contact base with company data"
 msgstr ""
@@ -1687,7 +1596,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Blue"
 msgstr ""
 
@@ -2526,14 +2434,6 @@ msgid "Contact Statistics"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"Contact your sales representative to help you to unlink your previous "
-"database"
-msgstr ""
-
-#. module: web
 #: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
 msgid "Contacts"
 msgstr ""
@@ -2672,12 +2572,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/fields/specialized/google_slide_viewer/google_slide_viewer.js:0
-msgid "Could not display the selected slide"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/views/kanban/kanban_record.js:0
 msgid ""
 "Could not set the cover image: incorrect field (\"%s\") is provided in the "
@@ -2734,6 +2628,11 @@ msgstr ""
 #: code:addons/web/static/src/fields/relational/many2x_autocomplete.js:0
 #: code:addons/web/static/src/fields/relational/x2many_dialog.js:0
 msgid "Create %s"
+msgstr ""
+
+#. module: web
+#: model:ir.model,website_form_label:web.model_res_partner
+msgid "Create a Customer"
 msgstr ""
 
 #. module: web
@@ -2958,12 +2857,6 @@ msgstr ""
 #. module: web
 #: model_terms:ir.ui.view,arch_db:web.login
 msgid "Database"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/settings_form_view/res_config_edition.xml:0
-msgid "Database expiration:"
 msgstr ""
 
 #. module: web
@@ -3198,6 +3091,12 @@ msgid "Demo logo"
 msgstr ""
 
 #. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/webclient/user_menu/appearance_controls.xml:0
+msgid "Density"
+msgstr ""
+
+#. module: web
 #: model_terms:ir.ui.view,arch_db:web.report_irmodulereference_document
 msgid "Dependencies"
 msgstr ""
@@ -3401,6 +3300,12 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
+msgid "Displays how long the range lasts next to its end."
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
 msgid ""
 "Displays or hides the seconds in the datetime value. Affect only the "
 "readable datetime format."
@@ -3558,6 +3463,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/views/view_utils.js:0
 msgid "Duplicate"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
+msgid "Duration"
 msgstr ""
 
 #. module: web
@@ -3732,6 +3643,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
+msgid "Ends before it starts"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/fields/dynamic_placeholder_popover.xml:0
 msgid "Enter a default value"
 msgstr ""
@@ -3762,12 +3679,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/debug/profiling/profiling_item.xml:0
 msgid "Entry Count"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Error reason:"
 msgstr ""
 
 #. module: web
@@ -4421,7 +4332,6 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Graphite"
 msgstr ""
 
@@ -4430,7 +4340,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Green"
 msgstr ""
 
@@ -4660,12 +4569,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "I paid, please recheck!"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/views/view_dialogs/export_data_dialog.xml:0
 msgid "I want to update data (import-compatible export)"
 msgstr ""
@@ -4738,6 +4641,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/fields/basic/boolean_icon/boolean_icon_field.js:0
 msgid "Icon"
+msgstr ""
+
+#. module: web
+#: model:ir.model.fields,field_description:web.field_wizard_report_config_update_layout__vat
+msgid "Identification Number"
+msgstr ""
+
+#. module: web
+#: model:ir.model.fields,help:web.field_wizard_report_config_update_layout__vat
+msgid "Identification Number for selected type"
 msgstr ""
 
 #. module: web
@@ -5787,12 +5700,6 @@ msgid "Log in"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Log in as an administrator to correct the issue."
-msgstr ""
-
-#. module: web
 #: model_terms:ir.ui.view,arch_db:web.login
 msgid "Log in as superuser"
 msgstr ""
@@ -6530,6 +6437,12 @@ msgstr ""
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "Next week"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
 msgid "Next year"
 msgstr ""
 
@@ -6790,6 +6703,18 @@ msgid ""
 msgstr ""
 
 #. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "Not set"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/views/graph/graph_renderer.js:0
+msgid "Not stackable: a record can be in several of these groups"
+msgstr ""
+
+#. module: web
 #: model:ir.model.fields,field_description:web.field_res_config_settings__active_user_count
 msgid "Number of Active Users"
 msgstr ""
@@ -7000,12 +6925,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Odoo Support"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/components/errors/error_dialogs.js:0
 msgid "Odoo Warning"
 msgstr ""
@@ -7191,7 +7110,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 #: code:addons/web/static/src/webclient/home_menu/home_menu_grid.js:0
 msgid "Open app"
 msgstr ""
@@ -7383,12 +7301,6 @@ msgstr ""
 #: code:addons/web/static/src/fields/basic/char/char_field.js:0
 #: model_terms:ir.ui.view,arch_db:web.login
 msgid "Password"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Paste code here"
 msgstr ""
 
 #. module: web
@@ -7804,16 +7716,6 @@ msgid "Protect your forms from spam and abuse with Google reCAPTCHA."
 msgstr ""
 
 #. module: web
-#: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
-msgid "Protect your forms from spam and abuse."
-msgstr ""
-
-#. module: web
-#: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
-msgid "Protect your forms with CF Turnstile."
-msgstr ""
-
-#. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "Puck"
@@ -7892,6 +7794,12 @@ msgstr ""
 #: code:addons/web/static/src/components/autocomplete/name_search.js:0
 #: code:addons/web/static/src/views/calendar/calendar_filter_section/calendar_filter_section.js:0
 msgid "Quick search: %s"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.xml:0
+msgid "Quick select"
 msgstr ""
 
 #. module: web
@@ -8067,18 +7975,6 @@ msgid "Regenerate Assets"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "Register"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Register your subscription"
-msgstr ""
-
-#. module: web
 #: model:ir.model.fields,field_description:web.field_web_recent_record__res_id
 msgid "Related Document ID"
 msgstr ""
@@ -8204,12 +8100,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/fields/basic/boolean_favorite/boolean_favorite_field.js:0
 msgid "Render the star without the field label beside it."
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Renew now"
 msgstr ""
 
 #. module: web
@@ -8350,7 +8240,6 @@ msgstr ""
 #. module: web
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Rose"
 msgstr ""
 
@@ -8758,6 +8647,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "Select a date"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/components/model_field_selector/model_field_selector_popover.js:0
 msgid "Select a field"
 msgstr ""
@@ -8885,20 +8780,8 @@ msgid "Send SMS"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Send an email"
-msgstr ""
-
-#. module: web
 #: model_terms:ir.ui.view,arch_db:web.res_config_settings_view_form
 msgid "Send texts to your contacts"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Sending the instructions by email ..."
 msgstr ""
 
 #. module: web
@@ -9065,6 +8948,12 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
+#: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
+msgid "Show duration"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
 #: code:addons/web/static/src/fields/specialized/domain/domain_field.xml:0
 msgid "Show matching records"
 msgstr ""
@@ -9171,14 +9060,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/controllers/binary.py:0
 msgid "Something horrible happened"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"Something went wrong while registering your database. You can try again or "
-"contact"
 msgstr ""
 
 #. module: web
@@ -9334,12 +9215,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/ui/scss_error_display.js:0
 msgid "Style error"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Subscription Code:"
 msgstr ""
 
 #. module: web
@@ -9503,7 +9378,6 @@ msgid "Taurus"
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,field_description:web.field_wizard_report_config_update_layout__vat
 #: model_terms:ir.ui.view,arch_db:web.company_address_block
 msgid "Tax ID"
 msgstr ""
@@ -9513,7 +9387,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Teal"
 msgstr ""
 
@@ -9554,21 +9427,6 @@ msgid "Text of the row/card creation button, replacing \"Add a line\"."
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"Thank you, your registration was successful! Your database is valid until"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/enterprise_subscription_service.js:0
-msgid ""
-"Thank you, your registration was successful! Your database is valid until "
-"%s."
-msgstr ""
-
-#. module: web
 #: model:ir.model.fields,help:web.field_res_config_settings__company_country_code
 msgid ""
 "The ISO country code in two chars. \n"
@@ -9576,23 +9434,9 @@ msgid ""
 msgstr ""
 
 #. module: web
-#: model:ir.model.fields,help:web.field_wizard_report_config_update_layout__vat
-msgid ""
-"The Tax Identification Number. Values here will be validated based on the "
-"country format. You can use '/' to indicate that the partner is not subject "
-"to tax."
-msgstr ""
-
-#. module: web
 #. odoo-python
 #: code:addons/web/controllers/action.py:0
 msgid "The action '%s' does not exist"
-msgstr ""
-
-#. module: web
-#. odoo-python
-#: code:addons/web/controllers/action.py:0
-msgid "The action '%s' does not exist."
 msgstr ""
 
 #. module: web
@@ -9698,14 +9542,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/controllers/utils.py:0
 msgid "The model '%s' does not exist"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"The instructions to unlink your subscription from the previous database(s) "
-"have been sent"
 msgstr ""
 
 #. module: web
@@ -9852,26 +9688,14 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "This database has expired. "
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "This database will expire in %s. "
+#: code:addons/web/static/src/public/fragment_form.js:0
+msgid "This could not be done"
 msgstr ""
 
 #. module: web
 #. odoo-javascript
 #: code:addons/web/static/src/fields/temporal/datetime/datetime_field.js:0
 msgid "This date is in the future"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "This demo database will expire in %s. "
 msgstr ""
 
 #. module: web
@@ -9946,6 +9770,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/core/network/slow_rpc_service.js:0
 msgid "This is taking longer than usual…"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "This month"
 msgstr ""
 
 #. module: web
@@ -10031,6 +9861,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/webclient/debug/debug_menu_items.xml:0
 msgid "This view is combined the XML way and carries no provenance."
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "This week"
 msgstr ""
 
 #. module: web
@@ -10140,6 +9976,12 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "Tokyo tower"
+msgstr ""
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/static/src/components/datetime/datetime_picker.js:0
+msgid "Tomorrow"
 msgstr ""
 
 #. module: web
@@ -10332,12 +10174,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Unable to send the instructions by email, please contact the"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/views/view_utils.js:0
 msgid "Unarchive"
 msgstr ""
@@ -10509,12 +10345,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/views/settings/fields/upgrade_dialog.xml:0
 msgid "Upgrade to future versions"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Upgrade your subscription"
 msgstr ""
 
 #. module: web
@@ -10893,7 +10723,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/web/models/res_users_settings.py:0
 #: code:addons/web/static/src/core/colors/colors.js:0
-#: code:addons/web/static/src/webclient/home_menu/home_menu.js:0
 msgid "Violet"
 msgstr ""
 
@@ -11223,13 +11052,6 @@ msgid "You don't have access to this record"
 msgstr ""
 
 #. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"You have more users or more apps installed than your subscription allows."
-msgstr ""
-
-#. module: web
 #. odoo-python
 #: code:addons/web/models/res_users.py:0
 msgid "You have to install the Discuss application to use this feature."
@@ -11256,14 +11078,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid ""
-"You will be able to register your database once you have installed your "
-"first app."
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/components/errors/error_dialogs.xml:0
 #: code:addons/web/static/src/public/error_notifications_registry.js:0
 msgid "Your Odoo session expired. The current page is about to be refreshed."
@@ -11279,36 +11093,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/core/file_upload/file_upload_service.js:0
 msgid "Your session expired. Please log in again."
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Your subscription code"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "Your subscription expired %s ago. This database will be blocked soon. "
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.js:0
-msgid "Your subscription expires in %s. "
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Your subscription is already linked to a database."
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "Your subscription was updated and is valid until"
 msgstr ""
 
 #. module: web
@@ -13372,18 +13156,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "button"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "buy a subscription"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "buy a subscription."
 msgstr ""
 
 #. module: web
@@ -27920,12 +27692,6 @@ msgstr ""
 
 #. module: web
 #. odoo-javascript
-#: code:addons/web/static/src/webclient/home_menu/expiration_panel.xml:0
-msgid "to the subscription owner to confirm the change, enter a new code or"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
 #: code:addons/web/static/src/webclient/user_menu/user_menu_items.xml:0
 msgid "to trigger a shortcut."
 msgstr ""
@@ -30418,22 +30184,4 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/web/static/src/components/emoji_picker/emoji_data.js:0
 msgid "空"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/user_menu/appearance_controls.xml:0
-msgid "Appearance"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/user_menu/appearance_controls.js:0
-msgid "Automatic"
-msgstr ""
-
-#. module: web
-#. odoo-javascript
-#: code:addons/web/static/src/webclient/user_menu/appearance_controls.xml:0
-msgid "Density"
 msgstr ""

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 19:55+0000\n"
-"PO-Revision-Date: 2026-09-07 19:55+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -1485,13 +1485,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__create_uid
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__create_uid
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__create_uid
@@ -1508,6 +1506,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__create_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__create_uid
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__create_uid
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__create_uid
 msgid "Created by"
 msgstr ""
 
@@ -1517,13 +1517,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__create_date
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__create_date
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__create_date
@@ -1540,6 +1538,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__create_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__create_date
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__create_date
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__create_date
 msgid "Created on"
 msgstr ""
 
@@ -1726,13 +1726,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__display_name
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__display_name
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__display_name
@@ -1750,6 +1748,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__display_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__display_name
 #: model:ir.model.fields,field_description:gamification.field_res_users__display_name
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__display_name
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -2376,13 +2376,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__id
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__id
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__id
@@ -2400,6 +2398,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__id
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__id
 #: model:ir.model.fields,field_description:gamification.field_res_users__id
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__id
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__id
 msgid "ID"
 msgstr ""
 
@@ -2806,13 +2806,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__write_uid
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__write_uid
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__write_uid
@@ -2829,6 +2827,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__write_uid
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__write_uid
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__write_uid
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__write_uid
 msgid "Last Updated by"
 msgstr ""
 
@@ -2838,13 +2838,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__write_date
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_challenge_line__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_engagement_snapshot__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__write_date
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_rank__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_kudos__write_date
@@ -2861,6 +2859,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__write_date
 #: model:ir.model.fields,field_description:gamification.field_gamification_team__write_date
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__write_date
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_goal_update_current__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -3059,7 +3059,9 @@ msgid "Mode"
 msgstr ""
 
 #. module: gamification
+#: model:ir.model.fields,field_description:gamification.field_gamification_achievement__model_name
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal_definition__model_id
+#: model:ir.model.fields,field_description:gamification.field_gamification_streak_type__model_name
 #: model_terms:ir.ui.view,arch_db:gamification.achievement_search_view
 #: model_terms:ir.ui.view,arch_db:gamification.goal_definition_search_view
 msgid "Model"
@@ -3746,6 +3748,26 @@ msgstr ""
 #. module: gamification
 #: model_terms:gamification.karma.rank,description_motivational:gamification.rank_doctor
 msgid "Reach the next rank and become a powerful user!"
+msgstr ""
+
+#. module: gamification
+#: model_terms:gamification.karma.rank,description_motivational:gamification.rank_bachelor
+msgid "Reach the next rank and gain a very magic wand!"
+msgstr ""
+
+#. module: gamification
+#: model_terms:gamification.karma.rank,description_motivational:gamification.rank_master
+msgid "Reach the next rank and gain a very nice hat!"
+msgstr ""
+
+#. module: gamification
+#: model_terms:gamification.karma.rank,description_motivational:gamification.rank_student
+msgid "Reach the next rank and gain a very nice mug!"
+msgstr ""
+
+#. module: gamification
+#: model_terms:gamification.karma.rank,description_motivational:gamification.rank_doctor
+msgid "Reach the next rank and gain a very nice unicorn!"
 msgstr ""
 
 #. module: gamification
@@ -5143,12 +5165,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:gamification.field_gamification_achievement_unlock__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_activity__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_badge_user__user_id
-#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_goal__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_karma_tracking__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_quest_enrollment__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_skill_node_unlock__user_id
 #: model:ir.model.fields,field_description:gamification.field_gamification_streak__user_id
+#: model:ir.model.fields,field_description:gamification.field_wizard_gamification_badge_grant__user_id
 #: model:res.groups,name:gamification.group_gamification_user
 #: model_terms:ir.ui.view,arch_db:gamification.achievement_unlock_search_view
 #: model_terms:ir.ui.view,arch_db:gamification.activity_feed_search_view
@@ -5330,7 +5352,7 @@ msgstr ""
 #. module: gamification
 #. odoo-python
 #: code:addons/gamification/models/gamification_badge_user.py:0
-#: code:addons/gamification/wizard/grant_badge.py:0
+#: code:addons/gamification/wizards/wizard_gamification_badge_grant.py:0
 msgid "You can not grant a badge to yourself."
 msgstr ""
 

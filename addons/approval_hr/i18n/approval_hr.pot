@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 05:12+0000\n"
-"PO-Revision-Date: 2026-09-27 05:12+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -41,13 +41,33 @@ msgid "Approval Categories"
 msgstr ""
 
 #. module: approval_hr
+#: model:ir.model,name:approval_hr.model_approval_category
+msgid "Approval Category"
+msgstr ""
+
+#. module: approval_hr
 #: model:ir.model.fields,field_description:approval_hr.field_hr_department__approval_category_count
 msgid "Approval Category Count"
 msgstr ""
 
 #. module: approval_hr
+#: model:ir.model,name:approval_hr.model_approval_request
+msgid "Approval Request"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_category__approval_type
+msgid "Approval Type"
+msgstr ""
+
+#. module: approval_hr
 #: model:ir.model.fields,help:approval_hr.field_hr_department__approval_category_ids
 msgid "Approval categories whose scope includes this department."
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model,name:approval_hr.model_approval_approver
+msgid "Approver"
 msgstr ""
 
 #. module: approval_hr
@@ -68,8 +88,20 @@ msgid "Aún no hay departamentos con categorías de aprobación"
 msgstr ""
 
 #. module: approval_hr
+#: model:ir.model.fields,help:approval_hr.field_approval_category__approval_type
+msgid ""
+"Category of approval for filtering and grouping purposes (e.g., 'purchase', "
+"'expense', 'vacation'). Used to organize and filter approval requests."
+msgstr ""
+
+#. module: approval_hr
 #: model:ir.actions.act_window,name:approval_hr.action_approval_department_dashboard
 msgid "Dashboard"
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model,name:approval_hr.model_hr_department
+msgid "Department"
 msgstr ""
 
 #. module: approval_hr
@@ -83,6 +115,14 @@ msgstr ""
 msgid ""
 "Departments where this category appears on the Approvals dashboard.\n"
 "Leave empty to hide it from the dashboard (still reachable via Configuration > Approval Categories)."
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_approver__display_name
+#: model:ir.model.fields,field_description:approval_hr.field_approval_category__display_name
+#: model:ir.model.fields,field_description:approval_hr.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_hr.field_hr_department__display_name
+msgid "Display Name"
 msgstr ""
 
 #. module: approval_hr
@@ -113,6 +153,14 @@ msgid ""
 "        A step that takes its approvers from a security group never asks the\n"
 "        manager; the manager joins the steps that count approvers added to the\n"
 "        request, or waits in a step of their own when required."
+msgstr ""
+
+#. module: approval_hr
+#: model:ir.model.fields,field_description:approval_hr.field_approval_approver__id
+#: model:ir.model.fields,field_description:approval_hr.field_approval_category__id
+#: model:ir.model.fields,field_description:approval_hr.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_hr.field_hr_department__id
+msgid "ID"
 msgstr ""
 
 #. module: approval_hr

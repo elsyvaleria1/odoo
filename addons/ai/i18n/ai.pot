@@ -4,231 +4,16 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 18:42+0000\n"
-"PO-Revision-Date: 2026-02-13 18:42+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_read_group
-msgid ""
-"\n"
-"            **Tool Name: Read group**\n"
-"\n"
-"            Searches a particular model using a domain. The provided domain must be in valid JSON format.\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_search
-msgid ""
-"\n"
-"            **Tool Name: search**\n"
-"\n"
-"            Searches a particular model using a domain. The provided domain must be in valid JSON format.\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_get_fields
-msgid ""
-"\n"
-"            Lists ONLY searchable fields for a single model that can be used in domain filters and grouping.\n"
-"            Essential for building valid domains - if a field isn't listed here, it CANNOT be used.\n"
-"\n"
-"            Returns format:\n"
-"            ```\n"
-"            field_name|display_name|type|sortable|groupable|description\n"
-"            partner_id|Customer|many2one(res.partner)|true|true|Customer for this order\n"
-"            date_order|Order Date|datetime|true|true|Date when order was placed\n"
-"            order_line|Order Lines|one2many(sale.order.line)|false|false|Lines in this order\n"
-"            state|Status|selection|true|true|Order status\n"
-"            ```\n"
-"\n"
-"            Key points:\n"
-"            - ⚠️ Only returns SEARCHABLE fields - others cannot be used in domains\n"
-"            - For relationships: Shows related model in parentheses (many2one, one2many, many2many)\n"
-"            - Only relationship fields can be used to traverse to other models\n"
-"            - Literal fields such as char/text/float CANNOT be used for traversal\n"
-"            - 'sortable' indicates if field can be used in order_by parameter\n"
-"            - 'groupable' indicates if field can be used for grouping when not available in search view\n"
-"\n"
-"            💡 Performance tip: When exploring multiple models, call this tool multiple times in ONE message\n"
-"            Example: Exploring sale.order, product.product, and res.partner? Make 3 parallel calls.\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_compute_report_measures
-msgid ""
-"\n"
-"            Lists numeric fields (measures) available for aggregation in pivot/graph views.\n"
-"            MUST be called before using measures in open_menu_pivot() or open_menu_graph().\n"
-"\n"
-"            Returns CSV with pipe (|) delimiter:\n"
-"            ```\n"
-"            field_name|display_name|type|aggregator|sortable\n"
-"            __count|Count|integer||true\n"
-"            amount_total|Total|monetary|sum|true\n"
-"            margin|Margin|float|sum|true\n"
-"            quantity|Quantity|float|sum|true\n"
-"            ```\n"
-"\n"
-"            Key points:\n"
-"            - __count is always available (counts records)\n"
-"            - Only numeric fields with aggregators are returned\n"
-"            - Use field_name in measures parameter\n"
-"            - For rankings in pivot: Add ordering (e.g., \"amount_total desc\")\n"
-"            - Call multiple times in parallel if comparing different menus\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_graph
-msgid ""
-"\n"
-"            Opens a graph/chart view using search view elements.\n"
-"            Best for: Trends, comparisons, distributions, visual KPIs.\n"
-"\n"
-"            Supported chart types:\n"
-"            - 'bar': Compare values across categories\n"
-"            - 'line': Show trends over time\n"
-"            - 'pie': Display proportions of a whole\n"
-"\n"
-"            Features:\n"
-"            - Apply filters from menu's available options\n"
-"            - Visualize a single measure\n"
-"            - Group by one field for the chart axis\n"
-"            - Search within specific fields\n"
-"            - Stacking and cumulation options\n"
-"            - Order control (ASC/DESC)\n"
-"\n"
-"            💡 Call compute_report_measures() first to find valid measures\n"
-"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
-"            ⚠️ Mode must be exactly 'bar', 'line', or 'pie'\n"
-"            ⚠️ Order must be exactly 'ASC' or 'DESC'\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_kanban
-msgid ""
-"\n"
-"            Opens a kanban (card-based) view using search view elements.\n"
-"            Best for: Stage/status visualization, pipeline views, workflow management.\n"
-"\n"
-"            Key features:\n"
-"            - Display records as cards in columns\n"
-"            - Apply filters from menu's available options\n"
-"            - Group by workflow stages or other fields\n"
-"            - Search within specific fields\n"
-"            - Ideal for CRM pipelines, task boards, project workflows\n"
-"\n"
-"            ⚠️ Use only filter names and groupby fields from menu data\n"
-"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_list
-msgid ""
-"\n"
-"            Opens a list (table) view using search view elements.\n"
-"            Best for: \"Show me\", \"List all\", detailed record viewing, sorting data.\n"
-"\n"
-"            Key features:\n"
-"            - Apply multiple filters by name (from menu's search view)\n"
-"            - Group records by available fields\n"
-"            - Search within specific fields for text\n"
-"            - Displays records in sortable table format\n"
-"            - Ideal for reviewing, filtering, and exporting data\n"
-"\n"
-"            💡 Use search parameter to filter by any searchable field BEFORE considering custom domains\n"
-"            ⚠️ Use only filter names and groupby fields from menu data\n"
-"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_pivot
-msgid ""
-"\n"
-"            Opens a pivot table with advanced search and filtering.\n"
-"            Best for: \"Top N\" queries, rankings, cross-tabulation, performance metrics.\n"
-"\n"
-"            Key features:\n"
-"            - Supports filters from search view\n"
-"            - Groups data by rows AND columns simultaneously\n"
-"            - Aggregates measures (sum, avg, count)\n"
-"            - Supports text search across searchable fields\n"
-"            - Excel-like pivot table functionality\n"
-"\n"
-"            💡 ALWAYS call compute_report_measures() first to get valid measures\n"
-"            💡 For rankings: Include ordering in measures (e.g., [\"amount_total desc\"])\n"
-"            💡 Use search parameter to filter by any searchable field BEFORE considering custom domains\n"
-"            ⚠️ Prefer \"Reporting\" app menus for best pivot experience\n"
-"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
-"            ⚠️ Note: Uses row_groupbys/col_groupbys (arrays) instead of selected_groupbys\n"
-"\n"
-"            Example: For \"top salespeople selling office products\":\n"
-"            - Use search=[\"categ_id\", \"office\"] if categ_id is searchable\n"
-"            - Only use custom_domain if no searchable field matches your needs\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_get_menu_details
-msgid ""
-"\n"
-"            Retrieves detailed information (context, domain, search_view) for specific menus.\n"
-"            MUST be called before using any open_menu_* tool to get menu-specific details.\n"
-"\n"
-"            Returns CSV with pipe (|) delimiter:\n"
-"            ```\n"
-"            menu_id|model_name|context|domain|search_view\n"
-"            389|sale.order|{\"search_default_my_quotation\": 1}|[]|<search><fields>...</fields></search>\n"
-"            172|account.move|{\"search_default_draft\": 1}|[[\"type\", \"=\", \"out_invoice\"]]|<search>...</search>\n"
-"            ```\n"
-"\n"
-"            Key information:\n"
-"            - Context: Default filters/groupings applied when menu opens\n"
-"            - Domain: Permanent filters that cannot be removed by users\n"
-"            - Search_view: Full XML structure with available filters, groupbys, and searchable fields\n"
-"\n"
-"            💡 Performance tip: Request multiple menu details in one call when comparing options\n"
-"            ⚠️ Always validate the returned model matches your expectations\n"
-"        "
-msgstr ""
-
-#. module: ai
-#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_adjust_search
-msgid ""
-"\n"
-"            The user can continue on asking questions and if you think that the current search can just be adjusted without opening a different menu, you can use this tool.\n"
-"\n"
-"            Provided in the prompt's <session_info_context> is a current view info which contains the active search facets.\n"
-"            A facet can be a group of `OR`ed filters, a group of groupbys, or a group of `OR`ed search terms.\n"
-"\n"
-"            **Understanding the parameters**:\n"
-"            - `remove_facets` - Removing a facet removes the whole group of filters/groupbys/search terms. Removing a filter or a search facet reduces the constraints.\n"
-"            - `toggle_filters` - Toggling a filter will add/remove a filter from an active filter facet.\n"
-"            - `toggle_groupbys` - Toggling a groupby will add/remove a groupby from the active groupbys facet.\n"
-"            - `apply_searches` - Applying a search will `OR` the search term on an active search facet containing the same field. E.g., if there is a field facet of \"name=John\" and you provide search \"name=Jane\", the resulting search will be \"name=John OR name=Jane\".\n"
-"            - `measures` - Specifying measures will activate the selected measures in the current view if it's a pivot or a graph view.\n"
-"            - `mode` - Graph view only: This is the chart type. Choose from \"line\", \"bar\", or \"pie\" to change the chart type in the current graph view.\n"
-"            - `order` - Graph view only: Specifying the order will change the sorting of the results in the current graph view.\n"
-"            - `stacked` - Graph view only: Specifying stacked will change the stacking of the results in the current graph view.\n"
-"            - `cumulated` - Graph view only: Specifying cumulated will change the accumulation of the results in the current graph view.\n"
-"            - `custom_domain` - The search view elements may not be sufficient to express the needed domain. In that case, you can provide a custom domain as a JSON string.\n"
-"            - `switch_view_type` - Switching the view type will change the current view to the specified type. Select from the available view types in the current view info.\n"
-"        "
-msgstr ""
 
 #. module: ai
 #. odoo-python
@@ -243,18 +28,26 @@ msgid "%s is no longer available. Please select a newer model."
 msgstr ""
 
 #. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_read_group
+msgid ""
+"**Tool Name: Read group**\n"
+"\n"
+"            Searches a particular model using a domain. The provided domain must be in valid JSON format."
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_search
+msgid ""
+"**Tool Name: search**\n"
+"\n"
+"            Searches a particular model using a domain. The provided domain must be in valid JSON format."
+msgstr ""
+
+#. module: ai
 #: model_terms:ir.ui.view,arch_db:ai.ai_log_action
 msgid ""
 "<br/>\n"
 "            It used the following tools:"
-msgstr ""
-
-#. module: ai
-#: model_terms:ir.ui.view,arch_db:ai.ir_actions_server_view_form
-msgid ""
-"<i class=\"fa fa-warning text-warning me-2\" invisible=\"not "
-"ai_tool_show_warning\" aria-hidden=\"true\" title=\"The AI will not be "
-"limited by the groups defined on tools\"/>"
 msgstr ""
 
 #. module: ai
@@ -318,6 +111,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/ai/static/src/ai_prompt/ai_field_selector_plugin.js:0
 msgid "AI Prompt Tools"
+msgstr ""
+
+#. module: ai
+#: model:ir.model,name:ai.model_ai_llm_credential
+msgid "AI Provider Credentials"
+msgstr ""
+
+#. module: ai
+#: model:ir.model,name:ai.model_ai_llm_transport
+msgid "AI Provider Transport"
 msgstr ""
 
 #. module: ai
@@ -499,6 +302,8 @@ msgstr ""
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__agent_id
 #: model:ir.model.fields,field_description:ai.field_ai_composer__ai_agent
+#: model:ir.model.fields,field_description:ai.field_res_bank__agent_ids
+#: model:ir.model.fields,field_description:ai.field_res_company__agent_ids
 #: model:ir.model.fields,field_description:ai.field_res_partner__agent_ids
 #: model:ir.model.fields,field_description:ai.field_res_users__agent_ids
 msgid "Agent"
@@ -524,12 +329,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:ai.field_ir_actions_server__ai_tool_is_candidate
 #: model:ir.model.fields,field_description:ai.field_ir_cron__ai_tool_is_candidate
 msgid "Ai Tool Is Candidate"
-msgstr ""
-
-#. module: ai
-#: model:ir.model.fields,field_description:ai.field_ir_actions_server__ai_tool_show_warning
-#: model:ir.model.fields,field_description:ai.field_ir_cron__ai_tool_show_warning
-msgid "Ai Tool Show Warning"
 msgstr ""
 
 #. module: ai
@@ -614,7 +413,7 @@ msgstr ""
 
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_embedding__checksum
-msgid "Checksum/SHA1"
+msgid "Checksum"
 msgstr ""
 
 #. module: ai
@@ -645,8 +444,8 @@ msgid "Contact"
 msgstr ""
 
 #. module: ai
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_composer__body
 #: model:ir.model.fields,field_description:ai.field_wizard_mail_message_send__body
-#: model:ir.model.fields,field_description:ai.field_mail_composer_mixin__body
 msgid "Contents"
 msgstr ""
 
@@ -743,17 +542,18 @@ msgstr ""
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__display_name
 #: model:ir.model.fields,field_description:ai.field_ai_composer__display_name
 #: model:ir.model.fields,field_description:ai.field_ai_embedding__display_name
+#: model:ir.model.fields,field_description:ai.field_ai_llm_credential__display_name
+#: model:ir.model.fields,field_description:ai.field_ai_llm_transport__display_name
 #: model:ir.model.fields,field_description:ai.field_ai_prompt_button__display_name
 #: model:ir.model.fields,field_description:ai.field_ai_topic__display_name
 #: model:ir.model.fields,field_description:ai.field_discuss_channel__display_name
 #: model:ir.model.fields,field_description:ai.field_ir_actions_server__display_name
 #: model:ir.model.fields,field_description:ai.field_ir_attachment__display_name
 #: model:ir.model.fields,field_description:ai.field_ir_http__display_name
-#: model:ir.model.fields,field_description:ai.field_ir_model_fields__display_name
-#: model:ir.model.fields,field_description:ai.field_mail_composer_mixin__display_name
-#: model:ir.model.fields,field_description:ai.field_mail_render_mixin__display_name
 #: model:ir.model.fields,field_description:ai.field_mail_template__display_name
-#: model:ir.model.fields,field_description:ai.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_composer__display_name
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_render__display_name
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_thread__display_name
 #: model:ir.model.fields,field_description:ai.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:ai.field_res_partner__display_name
 msgid "Display Name"
@@ -783,7 +583,7 @@ msgid "Email Templates"
 msgstr ""
 
 #. module: ai
-#: model:ir.model,name:ai.model_mail_thread
+#: model:ir.model,name:ai.model_mixin_mail_thread
 msgid "Email Thread"
 msgstr ""
 
@@ -848,16 +648,6 @@ msgid "Field Selector"
 msgstr ""
 
 #. module: ai
-#: model:ir.model.fields,field_description:ai.field_ir_model_fields__ttype
-msgid "Field Type"
-msgstr ""
-
-#. module: ai
-#: model:ir.model,name:ai.model_ir_model_fields
-msgid "Fields"
-msgstr ""
-
-#. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent_source__type__binary
 msgid "File"
 msgstr ""
@@ -899,6 +689,15 @@ msgid "Has Embedding Generation Failed"
 msgstr ""
 
 #. module: ai
+#: model:res.groups,comment:ai.privilege_answer_in_channel
+msgid ""
+"Held by whoever asks an agent for an answer -- a visitor through the AI "
+"route, the livechat reply job -- for that answer only: it reads which agent "
+"serves the channel, the agent, the channel's history, and posts the agent's "
+"reply. An agent's tools still run with the caller's own rights."
+msgstr ""
+
+#. module: ai
 #. odoo-javascript
 #: code:addons/ai/static/src/discuss/thread_patch.js:0
 msgid "Hello, what can I help you with?"
@@ -909,17 +708,18 @@ msgstr ""
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__id
 #: model:ir.model.fields,field_description:ai.field_ai_composer__id
 #: model:ir.model.fields,field_description:ai.field_ai_embedding__id
+#: model:ir.model.fields,field_description:ai.field_ai_llm_credential__id
+#: model:ir.model.fields,field_description:ai.field_ai_llm_transport__id
 #: model:ir.model.fields,field_description:ai.field_ai_prompt_button__id
 #: model:ir.model.fields,field_description:ai.field_ai_topic__id
 #: model:ir.model.fields,field_description:ai.field_discuss_channel__id
 #: model:ir.model.fields,field_description:ai.field_ir_actions_server__id
 #: model:ir.model.fields,field_description:ai.field_ir_attachment__id
 #: model:ir.model.fields,field_description:ai.field_ir_http__id
-#: model:ir.model.fields,field_description:ai.field_ir_model_fields__id
-#: model:ir.model.fields,field_description:ai.field_mail_composer_mixin__id
-#: model:ir.model.fields,field_description:ai.field_mail_render_mixin__id
 #: model:ir.model.fields,field_description:ai.field_mail_template__id
-#: model:ir.model.fields,field_description:ai.field_mail_thread__id
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_composer__id
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_render__id
+#: model:ir.model.fields,field_description:ai.field_mixin_mail_thread__id
 #: model:ir.model.fields,field_description:ai.field_res_config_settings__id
 #: model:ir.model.fields,field_description:ai.field_res_partner__id
 msgid "ID"
@@ -1062,6 +862,56 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_get_fields
+msgid ""
+"Lists ONLY searchable fields for a single model that can be used in domain filters and grouping.\n"
+"            Essential for building valid domains - if a field isn't listed here, it CANNOT be used.\n"
+"\n"
+"            Returns format:\n"
+"            ```\n"
+"            field_name|display_name|type|sortable|groupable|description\n"
+"            partner_id|Customer|many2one(res.partner)|true|true|Customer for this order\n"
+"            date_order|Order Date|datetime|true|true|Date when order was placed\n"
+"            order_line|Order Lines|one2many(sale.order.line)|false|false|Lines in this order\n"
+"            state|Status|selection|true|true|Order status\n"
+"            ```\n"
+"\n"
+"            Key points:\n"
+"            - ⚠️ Only returns SEARCHABLE fields - others cannot be used in domains\n"
+"            - For relationships: Shows related model in parentheses (many2one, one2many, many2many)\n"
+"            - Only relationship fields can be used to traverse to other models\n"
+"            - Literal fields such as char/text/float CANNOT be used for traversal\n"
+"            - 'sortable' indicates if field can be used in order_by parameter\n"
+"            - 'groupable' indicates if field can be used for grouping when not available in search view\n"
+"\n"
+"            💡 Performance tip: When exploring multiple models, call this tool multiple times in ONE message\n"
+"            Example: Exploring sale.order, product.product, and res.partner? Make 3 parallel calls."
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_compute_report_measures
+msgid ""
+"Lists numeric fields (measures) available for aggregation in pivot/graph views.\n"
+"            MUST be called before using measures in open_menu_pivot() or open_menu_graph().\n"
+"\n"
+"            Returns CSV with pipe (|) delimiter:\n"
+"            ```\n"
+"            field_name|display_name|type|aggregator|sortable\n"
+"            __count|Count|integer||true\n"
+"            amount_total|Total|monetary|sum|true\n"
+"            margin|Margin|float|sum|true\n"
+"            quantity|Quantity|float|sum|true\n"
+"            ```\n"
+"\n"
+"            Key points:\n"
+"            - __count is always available (counts records)\n"
+"            - Only numeric fields with aggregators are returned\n"
+"            - Use field_name in measures parameter\n"
+"            - For rankings in pivot: Add ordering (e.g., \"amount_total desc\")\n"
+"            - Call multiple times in parallel if comparing different menus"
+msgstr ""
+
+#. module: ai
 #. odoo-javascript
 #: code:addons/ai/static/src/ai_chat_launcher_service.js:0
 msgid "Log Note"
@@ -1074,12 +924,12 @@ msgid "Log as Note"
 msgstr ""
 
 #. module: ai
-#: model:ir.model,name:ai.model_mail_composer_mixin
+#: model:ir.model,name:ai.model_mixin_mail_composer
 msgid "Mail Composer Mixin"
 msgstr ""
 
 #. module: ai
-#: model:ir.model,name:ai.model_mail_render_mixin
+#: model:ir.model,name:ai.model_mixin_mail_render
 msgid "Mail Render Mixin"
 msgstr ""
 
@@ -1114,7 +964,7 @@ msgstr ""
 
 #. module: ai
 #. odoo-python
-#: code:addons/ai/utils/llm_api_service.py:0
+#: code:addons/ai/models/ai_llm_credential.py:0
 msgid "No API key set for provider '%s'"
 msgstr ""
 
@@ -1203,6 +1053,91 @@ msgid "OpenAI API key"
 msgstr ""
 
 #. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_graph
+msgid ""
+"Opens a graph/chart view using search view elements.\n"
+"            Best for: Trends, comparisons, distributions, visual KPIs.\n"
+"\n"
+"            Supported chart types:\n"
+"            - 'bar': Compare values across categories\n"
+"            - 'line': Show trends over time\n"
+"            - 'pie': Display proportions of a whole\n"
+"\n"
+"            Features:\n"
+"            - Apply filters from menu's available options\n"
+"            - Visualize a single measure\n"
+"            - Group by one field for the chart axis\n"
+"            - Search within specific fields\n"
+"            - Stacking and cumulation options\n"
+"            - Order control (ASC/DESC)\n"
+"\n"
+"            💡 Call compute_report_measures() first to find valid measures\n"
+"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
+"            ⚠️ Mode must be exactly 'bar', 'line', or 'pie'\n"
+"            ⚠️ Order must be exactly 'ASC' or 'DESC'"
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_kanban
+msgid ""
+"Opens a kanban (card-based) view using search view elements.\n"
+"            Best for: Stage/status visualization, pipeline views, workflow management.\n"
+"\n"
+"            Key features:\n"
+"            - Display records as cards in columns\n"
+"            - Apply filters from menu's available options\n"
+"            - Group by workflow stages or other fields\n"
+"            - Search within specific fields\n"
+"            - Ideal for CRM pipelines, task boards, project workflows\n"
+"\n"
+"            ⚠️ Use only filter names and groupby fields from menu data\n"
+"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []"
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_list
+msgid ""
+"Opens a list (table) view using search view elements.\n"
+"            Best for: \"Show me\", \"List all\", detailed record viewing, sorting data.\n"
+"\n"
+"            Key features:\n"
+"            - Apply multiple filters by name (from menu's search view)\n"
+"            - Group records by available fields\n"
+"            - Search within specific fields for text\n"
+"            - Displays records in sortable table format\n"
+"            - Ideal for reviewing, filtering, and exporting data\n"
+"\n"
+"            💡 Use search parameter to filter by any searchable field BEFORE considering custom domains\n"
+"            ⚠️ Use only filter names and groupby fields from menu data\n"
+"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []"
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_open_menu_pivot
+msgid ""
+"Opens a pivot table with advanced search and filtering.\n"
+"            Best for: \"Top N\" queries, rankings, cross-tabulation, performance metrics.\n"
+"\n"
+"            Key features:\n"
+"            - Supports filters from search view\n"
+"            - Groups data by rows AND columns simultaneously\n"
+"            - Aggregates measures (sum, avg, count)\n"
+"            - Supports text search across searchable fields\n"
+"            - Excel-like pivot table functionality\n"
+"\n"
+"            💡 ALWAYS call compute_report_measures() first to get valid measures\n"
+"            💡 For rankings: Include ordering in measures (e.g., [\"amount_total desc\"])\n"
+"            💡 Use search parameter to filter by any searchable field BEFORE considering custom domains\n"
+"            ⚠️ Prefer \"Reporting\" app menus for best pivot experience\n"
+"            ⚠️ Each search string must use format 'field=text'. Array can contain multiple search strings or be empty []\n"
+"            ⚠️ Note: Uses row_groupbys/col_groupbys (arrays) instead of selected_groupbys\n"
+"\n"
+"            Example: For \"top salespeople selling office products\":\n"
+"            - Use search=[\"categ_id\", \"office\"] if categ_id is searchable\n"
+"            - Only use custom_domain if no searchable field matches your needs"
+msgstr ""
+
+#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent__partner_id
 msgid "Partner"
 msgstr ""
@@ -1217,6 +1152,11 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/ai/static/src/ai_json_schema/ai_json_schema.xml:0
 msgid "Pretty Edit"
+msgstr ""
+
+#. module: ai
+#: model:res.groups,name:ai.privilege_answer_in_channel
+msgid "Privilege: an AI agent answers in its channel"
 msgstr ""
 
 #. module: ai
@@ -1281,6 +1221,28 @@ msgstr ""
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent__restrict_to_sources
 msgid "Restrict to Sources"
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_get_menu_details
+msgid ""
+"Retrieves detailed information (context, domain, search_view) for specific menus.\n"
+"            MUST be called before using any open_menu_* tool to get menu-specific details.\n"
+"\n"
+"            Returns CSV with pipe (|) delimiter:\n"
+"            ```\n"
+"            menu_id|model_name|context|domain|search_view\n"
+"            389|sale.order|{\"search_default_my_quotation\": 1}|[]|<search><fields>...</fields></search>\n"
+"            172|account.move|{\"search_default_draft\": 1}|[[\"type\", \"=\", \"out_invoice\"]]|<search>...</search>\n"
+"            ```\n"
+"\n"
+"            Key information:\n"
+"            - Context: Default filters/groupings applied when menu opens\n"
+"            - Domain: Permanent filters that cannot be removed by users\n"
+"            - Search_view: Full XML structure with available filters, groupbys, and searchable fields\n"
+"\n"
+"            💡 Performance tip: Request multiple menu details in one call when comparing options\n"
+"            ⚠️ Always validate the returned model matches your expectations"
 msgstr ""
 
 #. module: ai
@@ -1448,6 +1410,12 @@ msgstr ""
 
 #. module: ai
 #. odoo-python
+#: code:addons/ai/models/ai_llm_transport.py:0
+msgid "The AI provider rejected the request."
+msgstr ""
+
+#. module: ai
+#. odoo-python
 #: code:addons/ai/models/ir_actions_server.py:0
 msgid "The action '%s' cannot be used as an AI tool."
 msgstr ""
@@ -1486,6 +1454,28 @@ msgstr ""
 msgid ""
 "The type of the parameter '%(name)s' is incorrect. It should be "
 "'%(expected_param_type)s'."
+msgstr ""
+
+#. module: ai
+#: model:ir.actions.server,ai_tool_description:ai.ir_actions_server_adjust_search
+msgid ""
+"The user can continue on asking questions and if you think that the current search can just be adjusted without opening a different menu, you can use this tool.\n"
+"\n"
+"            Provided in the prompt's <session_info_context> is a current view info which contains the active search facets.\n"
+"            A facet can be a group of `OR`ed filters, a group of groupbys, or a group of `OR`ed search terms.\n"
+"\n"
+"            **Understanding the parameters**:\n"
+"            - `remove_facets` - Removing a facet removes the whole group of filters/groupbys/search terms. Removing a filter or a search facet reduces the constraints.\n"
+"            - `toggle_filters` - Toggling a filter will add/remove a filter from an active filter facet.\n"
+"            - `toggle_groupbys` - Toggling a groupby will add/remove a groupby from the active groupbys facet.\n"
+"            - `apply_searches` - Applying a search will `OR` the search term on an active search facet containing the same field. E.g., if there is a field facet of \"name=John\" and you provide search \"name=Jane\", the resulting search will be \"name=John OR name=Jane\".\n"
+"            - `measures` - Specifying measures will activate the selected measures in the current view if it's a pivot or a graph view.\n"
+"            - `mode` - Graph view only: This is the chart type. Choose from \"line\", \"bar\", or \"pie\" to change the chart type in the current graph view.\n"
+"            - `order` - Graph view only: Specifying the order will change the sorting of the results in the current graph view.\n"
+"            - `stacked` - Graph view only: Specifying stacked will change the stacking of the results in the current graph view.\n"
+"            - `cumulated` - Graph view only: Specifying cumulated will change the accumulation of the results in the current graph view.\n"
+"            - `custom_domain` - The search view elements may not be sufficient to express the needed domain. In that case, you can provide a custom domain as a JSON string.\n"
+"            - `switch_view_type` - Switching the view type will change the current view to the specified type. Select from the available view types in the current view info."
 msgstr ""
 
 #. module: ai
@@ -1552,6 +1542,12 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
+#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Transcribing"
+msgstr ""
+
+#. module: ai
+#. odoo-javascript
 #: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
 #: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
 msgid "Transcript"
@@ -1577,14 +1573,14 @@ msgstr ""
 #: model:ir.model.fields,help:ai.field_ir_cron__state
 msgid ""
 "Type of server action. The following values are available:\n"
-"- 'Update a Record': update the values of a record\n"
-"- 'Create Activity': create an activity (Discuss)\n"
-"- 'Send Email': post a message, a note or send an email (Discuss)\n"
-"- 'Send SMS': send SMS, log them on documents (SMS)- 'Add/Remove Followers': add or remove followers to a record (Discuss)\n"
+"- 'Update Record': update the values of a record\n"
 "- 'Create Record': create a new record with new values\n"
+"- 'Duplicate Record': copy an existing record\n"
 "- 'Execute Code': a block of Python code that will be executed\n"
-"- 'Send Webhook Notification': send a POST request to an external system, also known as a Webhook\n"
+"- 'Send Webhook Notification': send a POST request to an external system\n"
 "- 'Multi Actions': define an action that triggers several other server actions\n"
+"\n"
+"Additional types may be added by other modules (e.g. Discuss, SMS)."
 msgstr ""
 
 #. module: ai
@@ -1608,7 +1604,7 @@ msgstr ""
 #. module: ai
 #. odoo-javascript
 #: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Unable to start the recording."
+msgid "Unable to record."
 msgstr ""
 
 #. module: ai
@@ -1619,7 +1615,8 @@ msgstr ""
 
 #. module: ai
 #. odoo-python
-#: code:addons/ai/utils/llm_api_service.py:0
+#: code:addons/ai/models/ai_llm_credential.py:0
+#: code:addons/ai/utils/llm_provider_handlers.py:0
 msgid "Unsupported provider '%s'"
 msgstr ""
 
@@ -1682,6 +1679,14 @@ msgid "Voice Transcript"
 msgstr ""
 
 #. module: ai
+#: model:ir.access.class,description:ai.access_class_channel_agent
+msgid ""
+"Which AI agent serves a channel. Read by an agent's answer only; written by "
+"the flows that open an AI chat or hand a session to an agent, never by a "
+"client."
+msgstr ""
+
+#. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__mail_composer
 msgid "Write an email"
 msgstr ""
@@ -1738,9 +1743,4 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/ai/static/src/ai_prompt/ai_field_selector_plugin.js:0
 msgid "fa-hashtag"
-msgstr ""
-
-#. module: ai
-#: model:ir.model.fields.selection,name:ai.selection__ir_model_fields__ttype__vector
-msgid "vector"
 msgstr ""

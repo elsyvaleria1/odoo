@@ -1,24 +1,19 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
-# 	* documents_hr
+# 	* document_hr
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:44+0000\n"
-"PO-Revision-Date: 2025-12-30 18:44+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
-
-#. module: document_hr
-#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
-msgid "<i class=\"fa fa-download fa-fw\"/> Download file"
-msgstr ""
 
 #. module: document_hr
 #: model_terms:ir.ui.view,arch_db:document_hr.res_config_settings_view_form
@@ -79,10 +74,8 @@ msgstr ""
 
 #. module: document_hr
 #: model:ir.model.fields,field_description:document_hr.field_document_document__display_name
-#: model:ir.model.fields,field_description:document_hr.field_document_redirect__display_name
 #: model:ir.model.fields,field_description:document_hr.field_document_tag__display_name
 #: model:ir.model.fields,field_description:document_hr.field_hr_employee__display_name
-#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__display_name
 #: model:ir.model.fields,field_description:document_hr.field_hr_version__display_name
 #: model:ir.model.fields,field_description:document_hr.field_res_company__display_name
 #: model:ir.model.fields,field_description:document_hr.field_res_config_settings__display_name
@@ -96,17 +89,11 @@ msgstr ""
 
 #. module: document_hr
 #: model:ir.model.fields,field_description:document_hr.field_hr_employee__document_count
-#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__document_count
+#: model:ir.model.fields,field_description:document_hr.field_hr_employee__partner_document_count
 msgid "Document Count"
 msgstr ""
 
 #. module: document_hr
-#: model:ir.model,name:document_hr.model_document_redirect
-msgid "Document Redirect"
-msgstr ""
-
-#. module: document_hr
-#: model_terms:ir.ui.view,arch_db:document_hr.hr_employee_public_view_form
 #: model_terms:ir.ui.view,arch_db:document_hr.hr_employee_view_form
 msgid "Documents"
 msgstr ""
@@ -122,13 +109,7 @@ msgid "Documents Hr Settings"
 msgstr ""
 
 #. module: document_hr
-#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
-msgid "Download file"
-msgstr ""
-
-#. module: document_hr
 #: model:ir.model,name:document_hr.model_hr_employee
-#: model:ir.model.fields,field_description:document_hr.field_document_redirect__employee_id
 msgid "Employee"
 msgstr ""
 
@@ -183,10 +164,8 @@ msgstr ""
 
 #. module: document_hr
 #: model:ir.model.fields,field_description:document_hr.field_document_document__id
-#: model:ir.model.fields,field_description:document_hr.field_document_redirect__id
 #: model:ir.model.fields,field_description:document_hr.field_document_tag__id
 #: model:ir.model.fields,field_description:document_hr.field_hr_employee__id
-#: model:ir.model.fields,field_description:document_hr.field_hr_employee_public__id
 #: model:ir.model.fields,field_description:document_hr.field_hr_version__id
 #: model:ir.model.fields,field_description:document_hr.field_res_company__id
 #: model:ir.model.fields,field_description:document_hr.field_res_config_settings__id
@@ -200,13 +179,8 @@ msgid "Impossible to delete employee folder or employee 'Contract' folder"
 msgstr ""
 
 #. module: document_hr
-#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
-msgid "My documents"
-msgstr ""
-
-#. module: document_hr
-#: model:ir.model,name:document_hr.model_hr_employee_public
-msgid "Public Employee"
+#: model_terms:ir.ui.view,arch_db:document_hr.hr_employee_view_form
+msgid "My Documents"
 msgstr ""
 
 #. module: document_hr
@@ -215,13 +189,16 @@ msgid "Signature Request"
 msgstr ""
 
 #. module: document_hr
-#: model_terms:ir.ui.view,arch_db:document_hr.documents_hr_portal_view
-msgid "Size:"
+#: model:ir.model,name:document_hr.model_document_tag
+msgid "Tag"
 msgstr ""
 
 #. module: document_hr
-#: model:ir.model,name:document_hr.model_document_tag
-msgid "Tag"
+#. odoo-python
+#: code:addons/document_hr/models/document_document.py:0
+msgid ""
+"The employees folder “%s” stays closed: share the employee folders or "
+"documents inside it instead."
 msgstr ""
 
 #. module: document_hr
@@ -244,12 +221,4 @@ msgstr ""
 msgid ""
 "You must configure the HR Employee folder in document settings to use "
 "Document's features."
-msgstr ""
-
-#. module: document_hr
-#. odoo-python
-#: code:addons/document_hr/models/hr_employee.py:0
-msgid ""
-"You must have a contact linked to the employee in order to use Document's "
-"features."
 msgstr ""

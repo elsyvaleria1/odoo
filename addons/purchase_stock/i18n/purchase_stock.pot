@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-13 18:35+0000\n"
-"PO-Revision-Date: 2026-02-13 18:35+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -158,7 +158,6 @@ msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__date_effective
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__effective_date
 msgid "Arrival"
 msgstr ""
 
@@ -199,8 +198,13 @@ msgid "Buy to Resupply"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__company_id
+#: model:ir.model.fields,field_description:purchase_stock.field_vendor_delay_report__company_id
+msgid "Company"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,help:purchase_stock.field_purchase_order__date_effective
-#: model:ir.model.fields,help:purchase_stock.field_purchase_order__effective_date
 msgid "Completion date of the first receipt order."
 msgstr ""
 
@@ -241,13 +245,17 @@ msgid "Daily"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__date_expected
+msgid "Date Expected"
+msgstr ""
+
+#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.res_config_settings_view_form_stock
 msgid "Days needed to confirm a PO"
 msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,help:purchase_stock.field_purchase_config__days_to_purchase
-#: model:ir.model.fields,help:purchase_stock.field_res_company__days_to_purchase
 #: model:ir.model.fields,help:purchase_stock.field_res_config_settings__days_to_purchase
 msgid "Days needed to confirm a PO, define when a PO should be validated"
 msgstr ""
@@ -256,9 +264,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/purchase_stock/models/stock_rule.py:0
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_config__days_to_purchase
-#: model:ir.model.fields,field_description:purchase_stock.field_res_company__days_to_purchase
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__days_to_purchase
 msgid "Days to Purchase"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,help:purchase_stock.field_purchase_receipt_line_match__product_uom_id
+msgid "Default unit of measure used for all stock operations."
 msgstr ""
 
 #. module: purchase_stock
@@ -273,11 +285,6 @@ msgid ""
 "         Daily: Replenishment needs will be grouped if the expected arrival is the same day\n"
 "         Weekly: Replenishment needs will be grouped if the expected arrival is the same week or week day\n"
 "         Always: Replenishment needs will always be grouped."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_stock_picking__delay_pass
-msgid "Delay Pass"
 msgstr ""
 
 #. module: purchase_stock
@@ -309,7 +316,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_report_stock_report_stock_rule__display_name
-#: model:ir.model.fields,field_description:purchase_stock.field_res_company__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_res_partner__display_name
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_forecasted_product_product__display_name
@@ -347,7 +353,6 @@ msgstr ""
 
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__date_effective
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__effective_date
 #: model:ir.model.fields,field_description:purchase_stock.field_vendor_delay_report__date
 msgid "Effective Date"
 msgstr ""
@@ -390,6 +395,11 @@ msgid "Expected Date"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__force_fully_delivered
+msgid "Force Fully Delivered"
+msgstr ""
+
+#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_order_view_form_inherit
 msgid "Forecast Report"
 msgstr ""
@@ -411,6 +421,11 @@ msgid "Friday"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__done
+msgid "Fully received"
+msgstr ""
+
+#. module: purchase_stock
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
 msgid "Generate the draft vendor bill."
@@ -429,12 +444,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
 msgid "Go back to the purchase order to generate the vendor bill."
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-javascript
-#: code:addons/purchase_stock/static/src/stock_valuation/stock_valuation_report.js:0
-msgid "Goods Received Not Invoiced"
 msgstr ""
 
 #. module: purchase_stock
@@ -460,7 +469,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__id
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__id
 #: model:ir.model.fields,field_description:purchase_stock.field_report_stock_report_stock_rule__id
-#: model:ir.model.fields,field_description:purchase_stock.field_res_company__id
 #: model:ir.model.fields,field_description:purchase_stock.field_res_config_settings__id
 #: model:ir.model.fields,field_description:purchase_stock.field_res_partner__id
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_forecasted_product_product__id
@@ -492,8 +500,20 @@ msgid "Incoming Shipments"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__incoterm_id
+msgid "Incoterm"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__incoterm_location
 msgid "Incoterm Location"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,help:purchase_stock.field_purchase_order__incoterm_id
+msgid ""
+"International Commercial Terms are a series of predefined commercial terms "
+"used in international transactions."
 msgstr ""
 
 #. module: purchase_stock
@@ -557,6 +577,16 @@ msgid "Last year quarter"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__line_qty
+msgid "Line Qty"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__line_uom_id
+msgid "Line Uom"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__location_final_id
 msgid "Location from procurement"
 msgstr ""
@@ -577,6 +607,21 @@ msgid "Manual actions may be needed."
 msgstr ""
 
 #. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Match"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.view_stock_picking_form
+msgid "Match Purchase"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_order_view_form_inherit
+msgid "Match Receipts"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_stock_warehouse_orderpoint
 msgid "Minimum Inventory Rule"
 msgstr ""
@@ -592,6 +637,11 @@ msgid "Monthly Demand"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__move_id
+msgid "Move"
+msgstr ""
+
+#. module: purchase_stock
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/product_catalog/search/search_panel.js:0
 msgid "Next month last year"
@@ -600,6 +650,14 @@ msgstr ""
 #. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.exception_on_po
 msgid "Next transfer(s) impacted:"
+msgstr ""
+
+#. module: purchase_stock
+#. odoo-python
+#: code:addons/purchase_stock/models/stock_warehouse_orderpoint.py:0
+msgid ""
+"No Buy route is available, so a vendor cannot be set on %(orderpoint)s. "
+"Enable \"Buy to Resupply\" on a warehouse first."
 msgstr ""
 
 #. module: purchase_stock
@@ -617,6 +675,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/purchase_stock/models/stock_rule.py:0
 msgid "No supplier has been found to replenish"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__no
+msgid "Nothing to receive"
 msgstr ""
 
 #. module: purchase_stock
@@ -674,8 +737,23 @@ msgid "Order Deadline"
 msgstr ""
 
 #. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Ordered"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__ordered_qty
+msgid "Ordered Qty"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__orderpoint_id
 msgid "Orderpoint"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__over_done
+msgid "Over received"
 msgstr ""
 
 #. module: purchase_stock
@@ -697,9 +775,18 @@ msgid "PO Lines"
 msgstr ""
 
 #. module: purchase_stock
-#. odoo-javascript
-#: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
-msgid "Process all the receipt quantities."
+#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__partial
+msgid "Partially received"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__picking_id
+msgid "Picking"
 msgstr ""
 
 #. module: purchase_stock
@@ -716,6 +803,16 @@ msgid "Product Category"
 msgstr ""
 
 #. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Product Description"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model,name:purchase_stock.model_stock_move_line
+msgid "Product Moves (Stock Move Line)"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_wizard_product_product_replenish
 msgid "Product Replenish"
 msgstr ""
@@ -723,6 +820,11 @@ msgstr ""
 #. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_mixin_stock_replenish
 msgid "Product Replenish Mixin"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__product_uom_qty
+msgid "Product Uom Qty"
 msgstr ""
 
 #. module: purchase_stock
@@ -745,6 +847,12 @@ msgid "Purchase Lines"
 msgstr ""
 
 #. module: purchase_stock
+#. odoo-python
+#: code:addons/purchase_stock/models/stock_picking.py:0
+msgid "Purchase Matching"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_purchase_order
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__order_id
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_report__order_id
@@ -760,10 +868,20 @@ msgid "Purchase Order Line"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model,name:purchase_stock.model_purchase_receipt_line_match
+msgid "Purchase Order Line & Receipt Move Matching"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_product_trace__purchase_order_ids
 #: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_help_message_template
 #: model_terms:ir.ui.view,arch_db:purchase_stock.stock_production_lot_view_form
 msgid "Purchase Orders"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Purchase Receipt Lines"
 msgstr ""
 
 #. module: purchase_stock
@@ -789,6 +907,26 @@ msgid ""
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__qty_to_transfer
+msgid "Qty To Transfer"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__qty_transferred
+msgid "Qty Transferred"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__qty_to_transfer
+msgid "Qty to transfer"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Quantity"
+msgstr ""
+
+#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_order_view_form_inherit
 msgid "Receipt"
 msgstr ""
@@ -800,20 +938,26 @@ msgid "Receipt Date"
 msgstr ""
 
 #. module: purchase_stock
+#. odoo-python
+#: code:addons/purchase_stock/models/purchase_order.py:0
+msgid "Receipt Matching"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__transfer_state
 #: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__transfer_state
 msgid "Receipt Status"
 msgstr ""
 
 #. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_order_view_form_inherit
-msgid "Receive"
-msgstr ""
-
-#. module: purchase_stock
 #. odoo-javascript
 #: code:addons/purchase_stock/static/src/js/tours/purchase_stock.js:0
 msgid "Receive the ordered products."
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Received"
 msgstr ""
 
 #. module: purchase_stock
@@ -827,6 +971,11 @@ msgid ""
 "Red: Late\n"
 "            Orange: To process today\n"
 "            Green: On time"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__reference
+msgid "Reference"
 msgstr ""
 
 #. module: purchase_stock
@@ -846,6 +995,11 @@ msgid "Replenish for"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,help:purchase_stock.field_purchase_order__force_fully_delivered
+msgid "Report this order as fully transferred regardless of its lines."
+msgstr ""
+
+#. module: purchase_stock
 #: model_terms:ir.ui.view,arch_db:purchase_stock.res_config_settings_view_form_purchase
 msgid "Request your vendors to deliver to your customers"
 msgstr ""
@@ -859,6 +1013,11 @@ msgstr ""
 #. module: purchase_stock
 #: model:ir.model,name:purchase_stock.model_wizard_stock_picking_return
 msgid "Return Picking"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model,name:purchase_stock.model_wizard_stock_picking_return_line
+msgid "Return Picking Line"
 msgstr ""
 
 #. module: purchase_stock
@@ -896,6 +1055,16 @@ msgstr ""
 #. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_stock_warehouse_orderpoint__show_supplier
 msgid "Show supplier column"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__state
+msgid "State"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model,name:purchase_stock.model_stock_move
+msgid "Stock Move"
 msgstr ""
 
 #. module: purchase_stock
@@ -968,7 +1137,6 @@ msgid "Suggest Percent"
 msgstr ""
 
 #. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_search_catalog
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_search_catalog
 msgid "Suggested"
 msgstr ""
@@ -1098,14 +1266,33 @@ msgid "Time Perdiod Selection"
 msgstr ""
 
 #. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.product_view_search_catalog
 #: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_search_catalog
 msgid "To Order"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__to_do
+msgid "To receive"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Total Ordered"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields,field_description:purchase_stock.field_vendor_delay_report__qty_total
 msgid "Total Quantity"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
+msgid "Total Received"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__trace_ids
+msgid "Trace"
 msgstr ""
 
 #. module: purchase_stock
@@ -1119,8 +1306,28 @@ msgid "Transfer"
 msgstr ""
 
 #. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__transfer_state
+msgid "Transfer State"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__transferred_qty
+msgid "Transferred Qty"
+msgstr ""
+
+#. module: purchase_stock
 #: model:ir.model.fields.selection,name:purchase_stock.selection__res_partner__group_on__2
 msgid "Tuesday"
+msgstr ""
+
+#. module: purchase_stock
+#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__product_uom_id
+msgid "Unit"
+msgstr ""
+
+#. module: purchase_stock
+#: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_kanban_catalog_purchase_only
+msgid "Units"
 msgstr ""
 
 #. module: purchase_stock
@@ -1214,6 +1421,18 @@ msgstr ""
 
 #. module: purchase_stock
 #. odoo-python
+#: code:addons/purchase_stock/reports/purchase_receipt_line_match.py:0
+msgid "You must select at least one Purchase Order line to match or receive."
+msgstr ""
+
+#. module: purchase_stock
+#. odoo-python
+#: code:addons/purchase_stock/reports/purchase_receipt_line_match.py:0
+msgid "You must select at least one receipt move to match."
+msgstr ""
+
+#. module: purchase_stock
+#. odoo-python
 #: code:addons/purchase_stock/models/purchase_order.py:0
 msgid "You must set a Vendor Location for this partner %s"
 msgstr ""
@@ -1238,261 +1457,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/purchase_stock/models/stock_rule.py:0
 msgid "this product should be manually replenished."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__company_id
-#: model:ir.model.fields,field_description:purchase_stock.field_vendor_delay_report__company_id
-msgid "Company"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__date_expected
-msgid "Date Expected"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_res_users__property_warehouse_id
-msgid "Default Warehouse"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,help:purchase_stock.field_purchase_receipt_line_match__product_uom_id
-msgid "Default unit of measure used for all stock operations."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__force_fully_delivered
-msgid "Force Fully Delivered"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__done
-msgid "Fully received"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order__incoterm_id
-msgid "Incoterm"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,help:purchase_stock.field_purchase_order__incoterm_id
-msgid ""
-"International Commercial Terms are a series of predefined commercial terms "
-"used in international transactions."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__line_qty
-msgid "Line Qty"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__line_uom_id
-msgid "Line Uom"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Match"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.view_stock_picking_form
-msgid "Match Purchase"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_order_view_form_inherit
-msgid "Match Receipts"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__move_id
-msgid "Move"
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-python
-#: code:addons/purchase_stock/models/stock_warehouse_orderpoint.py:0
-msgid ""
-"No Buy route is available, so a vendor cannot be set on %(orderpoint)s. "
-"Enable \"Buy to Resupply\" on a warehouse first."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__no
-msgid "Nothing to receive"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Ordered"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__ordered_qty
-msgid "Ordered Qty"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__over_done
-msgid "Over received"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__partial
-msgid "Partially received"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__partner_id
-msgid "Partner"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__picking_id
-msgid "Picking"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Product Description"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_stock_move_line
-msgid "Product Moves (Stock Move Line)"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__product_uom_qty
-msgid "Product Uom Qty"
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-python
-#: code:addons/purchase_stock/models/stock_picking.py:0
-msgid "Purchase Matching"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_purchase_receipt_line_match
-msgid "Purchase Order Line & Receipt Move Matching"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Purchase Receipt Lines"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_order_line__qty_to_transfer
-msgid "Qty To Transfer"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__qty_transferred
-msgid "Qty Transferred"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__qty_to_transfer
-msgid "Qty to transfer"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Quantity"
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-python
-#: code:addons/purchase_stock/models/purchase_order.py:0
-msgid "Receipt Matching"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Received"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__reference
-msgid "Reference"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,help:purchase_stock.field_purchase_order__force_fully_delivered
-msgid "Report this order as fully transferred regardless of its lines."
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_wizard_stock_picking_return_line
-msgid "Return Picking Line"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__state
-msgid "State"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model,name:purchase_stock.model_stock_move
-msgid "Stock Move"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields.selection,name:purchase_stock.selection__purchase_order_line__transfer_state__to_do
-msgid "To receive"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Total Ordered"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.purchase_receipt_line_match_list
-msgid "Total Received"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__trace_ids
-msgid "Trace"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__transfer_state
-msgid "Transfer State"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__transferred_qty
-msgid "Transferred Qty"
-msgstr ""
-
-#. module: purchase_stock
-#: model:ir.model.fields,field_description:purchase_stock.field_purchase_receipt_line_match__product_uom_id
-msgid "Unit"
-msgstr ""
-
-#. module: purchase_stock
-#: model_terms:ir.ui.view,arch_db:purchase_stock.view_product_product_kanban_catalog_purchase_only
-msgid "Units"
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-python
-#: code:addons/purchase_stock/reports/purchase_receipt_line_match.py:0
-msgid "You must select at least one Purchase Order line to match or receive."
-msgstr ""
-
-#. module: purchase_stock
-#. odoo-python
-#: code:addons/purchase_stock/reports/purchase_receipt_line_match.py:0
-msgid "You must select at least one receipt move to match."
 msgstr ""
 
 #. module: purchase_stock

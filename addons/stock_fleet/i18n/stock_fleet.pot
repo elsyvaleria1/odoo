@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 00:18+0000\n"
-"PO-Revision-Date: 2026-10-06 00:18+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -1155,7 +1155,6 @@ msgstr ""
 #. module: stock_fleet
 #: model:ir.model.fields,field_description:stock_fleet.field_resource_log__picking_batch_id
 #: model:ir.model.fields,field_description:stock_fleet.field_wizard_stock_picking_unbatch_correction__batch_id
-#: model:ir.model.fields.selection,name:stock_fleet.selection__resource_asset_log__source__delivery
 #: model:ir.model.fields.selection,name:stock_fleet.selection__resource_log__source__delivery
 #: model_terms:ir.ui.view,arch_db:stock_fleet.stock_picking_batch_form_trip
 msgid "Trip"

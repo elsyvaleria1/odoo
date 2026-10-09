@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:42+0000\n"
-"PO-Revision-Date: 2025-12-30 18:42+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -26,11 +26,6 @@ msgstr ""
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_recruitment_report__referral_hired
 msgid "# Hired by Referral"
-msgstr ""
-
-#. module: hr_referral
-#: model_terms:ir.ui.view,arch_db:hr_referral.hr_referral_send_sms_view_form
-msgid "+1 123 456 789"
 msgstr ""
 
 #. module: hr_referral
@@ -75,6 +70,11 @@ msgid ""
 msgstr ""
 
 #. module: hr_referral
+#: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
+msgid "<i class=\"fa-regular fa-square\" title=\"Open\"/>"
+msgstr ""
+
+#. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
 "<i class=\"fa-solid fa-earth-americas fa-2x\" role=\"img\" aria-label=\"Job Page\"/>\n"
@@ -92,17 +92,12 @@ msgstr ""
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
-msgid "<i class=\"fa-regular fa-square\" title=\"Open\"/>"
+msgid "<i class=\"text-danger fa-solid fa-xmark\" title=\"Closed\"/>"
 msgstr ""
 
 #. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
-msgid "<i class=\"text-danger fa fa-times\" title=\"Closed\"/>"
-msgstr ""
-
-#. module: hr_referral
-#: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_applicant_employee_referral_kanban
-msgid "<i class=\"text-success fa fa-check\" title=\"Done\"/>"
+msgid "<i class=\"text-success fa-solid fa-check\" title=\"Done\"/>"
 msgstr ""
 
 #. module: hr_referral
@@ -146,13 +141,13 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_job_employee_referral_kanban
 msgid ""
 "<span title=\"Share on Twitter\">\n"
-"                                            <i class=\"fa fa-2x fa-twitter\" role=\"img\" aria-label=\"Share on twitter\"/>\n"
+"                                            <i class=\"fa-brands fa-twitter fa-2x\" role=\"img\" aria-label=\"Share on twitter\"/>\n"
 "                                        </span>"
 msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_alert_mail_wizard.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_referral_alert_send.py:0
 msgid ""
 "A new alert has been added to the Referrals app! Check your <a "
 "href=%(url)s>dashboard</a> now!"
@@ -294,10 +289,10 @@ msgid "Background Image"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__body
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__mail_body
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__body_html
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__mail_body
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__body_plaintext
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__body
 msgid "Body"
 msgstr ""
 
@@ -323,7 +318,7 @@ msgid "Cancel"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__channel
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__channel
 msgid "Channel"
 msgstr ""
 
@@ -437,31 +432,31 @@ msgstr ""
 
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__create_uid
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__create_uid
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__create_uid
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__create_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__create_uid
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__create_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__create_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__create_date
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__create_date
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__create_date
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__create_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__create_date
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__create_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__create_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__create_date
 msgid "Created on"
 msgstr ""
 
@@ -520,12 +515,6 @@ msgid "Direct Clicks"
 msgstr ""
 
 #. module: hr_referral
-#. odoo-python
-#: code:addons/hr_referral/report/hr_referral_report.py:0
-msgid "Direct Referral"
-msgstr ""
-
-#. module: hr_referral
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_referral_onboarding_tree
 msgid "Discard"
 msgstr ""
@@ -536,35 +525,35 @@ msgid "Dismissed User"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_applicant_refuse__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_applicant__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_job__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_recruitment_report__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_recruitment_stage__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__display_name
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__display_name
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__display_name
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_report__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward_report__display_name
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__display_name
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_res_company__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_res_users__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_utm_campaign__display_name
 #: model:ir.model.fields,field_description:hr_referral.field_utm_source__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_applicant_refuse__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__display_name
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_send_mail.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_send_referral_mail.py:0
 msgid "Do not have access"
 msgstr ""
 
@@ -664,7 +653,7 @@ msgid ""
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields.selection,name:hr_referral.selection__hr_referral_link__channel__facebook
+#: model:ir.model.fields.selection,name:hr_referral.selection__wizard_hr_job_share_referral_link__channel__facebook
 msgid "Facebook"
 msgstr ""
 
@@ -681,11 +670,6 @@ msgstr ""
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__message_partner_ids
 msgid "Followers (Partners)"
-msgstr ""
-
-#. module: hr_referral
-#: model:ir.model.fields,help:hr_referral.field_hr_referral_reward__activity_type_icon
-msgid "Font awesome icon e.g. fa-tasks"
 msgstr ""
 
 #. module: hr_referral
@@ -774,7 +758,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_send_sms.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_send_referral_sms.py:0
 msgid ""
 "Hello! There is an amazing job offer for %(job_name)s in my company! It will"
 " be a fit for you %(referral_url)s"
@@ -813,29 +797,29 @@ msgid "Hr Referral Onboarding Page"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_applicant_refuse__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_applicant__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_job__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_recruitment_report__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_recruitment_stage__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__id
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__id
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__id
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_report__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward_report__id
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__id
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__id
 #: model:ir.model.fields,field_description:hr_referral.field_res_company__id
 #: model:ir.model.fields,field_description:hr_referral.field_res_config_settings__id
 #: model:ir.model.fields,field_description:hr_referral.field_res_users__id
 #: model:ir.model.fields,field_description:hr_referral.field_utm_campaign__id
 #: model:ir.model.fields,field_description:hr_referral.field_utm_source__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_applicant_refuse__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__id
 msgid "ID"
 msgstr ""
 
@@ -890,17 +874,17 @@ msgid "Is Gift Manager"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__job_id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_report__job_id
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__job_id
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__job_id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__job_id
 #: model_terms:ir.ui.view,arch_db:hr_referral.employee_referral_report_view_search
 msgid "Job"
 msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_campaign_wizard.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_send_referral_request.py:0
 msgid "Job Offer for a %(job_title)s at %(company_name)s"
 msgstr ""
 
@@ -923,11 +907,6 @@ msgid "Job Referral Program"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_job__job_open_date
-msgid "Job Start Recruitment Date"
-msgstr ""
-
-#. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_report__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward_report__write_date
 msgid "Last Update Date"
@@ -935,31 +914,31 @@ msgstr ""
 
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__write_uid
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__write_uid
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__write_uid
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__write_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__write_uid
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__write_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__write_uid
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_alert__write_date
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__write_date
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_level__write_date
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_onboarding__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__write_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__write_date
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__write_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__write_date
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -1007,7 +986,7 @@ msgid "Levels"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields.selection,name:hr_referral.selection__hr_referral_link__channel__direct
+#: model:ir.model.fields.selection,name:hr_referral.selection__wizard_hr_job_share_referral_link__channel__direct
 msgid "Link"
 msgstr ""
 
@@ -1024,7 +1003,7 @@ msgid "Link to share"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields.selection,name:hr_referral.selection__hr_referral_link__channel__linkedin
+#: model:ir.model.fields.selection,name:hr_referral.selection__wizard_hr_job_share_referral_link__channel__linkedin
 msgid "Linkedin"
 msgstr ""
 
@@ -1067,7 +1046,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_alert_mail_wizard.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_referral_alert_send.py:0
 msgid "New Alert In Referrals App"
 msgstr ""
 
@@ -1116,7 +1095,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_campaign_wizard.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_send_referral_request.py:0
 msgid "No users to send the campaign to. Please adapt your target."
 msgstr ""
 
@@ -1259,8 +1238,23 @@ msgid "Points to spend"
 msgstr ""
 
 #. module: hr_referral
+#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: hr_referral
+#: model:ir.model.fields,help:hr_referral.field_hr_referral_reward__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: hr_referral
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_friend__position
 msgid "Position"
+msgstr ""
+
+#. module: hr_referral
+#: model:res.groups,name:hr_referral.privilege_grant_reward_responsible
+msgid "Privilege: keep the reward responsibles in step with the gift managers"
 msgstr ""
 
 #. module: hr_referral
@@ -1349,7 +1343,7 @@ msgid "Referral Campaign for %(job)s"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model,name:hr_referral.model_hr_referral_link
+#: model:ir.model,name:hr_referral.model_wizard_hr_job_share_referral_link
 msgid "Referral Link To Share"
 msgstr ""
 
@@ -1392,7 +1386,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_link_to_share.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_share_referral_link.py:0
 msgid "Referral: %(name)s"
 msgstr ""
 
@@ -1404,7 +1398,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_link_to_share.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_share_referral_link.py:0
 msgid "Referral: %(url)s"
 msgstr ""
 
@@ -1478,12 +1472,6 @@ msgstr ""
 #. module: hr_referral
 #: model:ir.actions.act_window,name:hr_referral.employee_referral_reward_report_action
 msgid "Reward Analysis"
-msgstr ""
-
-#. module: hr_referral
-#. odoo-python
-#: code:addons/hr_referral/report/hr_referral_reward_report.py:0
-msgid "Reward Referral"
 msgstr ""
 
 #. module: hr_referral
@@ -1628,7 +1616,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/applicant_refuse_reason.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_applicant_refuse.py:0
 msgid "Sorry, your referral %s has been refused in the recruitment process."
 msgstr ""
 
@@ -1670,9 +1658,9 @@ msgid ""
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__subject
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__mail_subject
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__subject
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_request__mail_subject
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__subject
 msgid "Subject"
 msgstr ""
 
@@ -1795,17 +1783,17 @@ msgid "Unit Cost"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_link__url
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_mail__url
 #: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_send_referral_sms__url
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_job_share_referral_link__url
 msgid "Url"
 msgstr ""
 
 #. module: hr_referral
 #: model:ir.model,name:hr_referral.model_res_users
-#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__user_ids
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_points__ref_user_id
 #: model:ir.model.fields,field_description:hr_referral.field_hr_referral_report__ref_user_id
+#: model:ir.model.fields,field_description:hr_referral.field_wizard_hr_referral_alert_send__user_ids
 #: model_terms:ir.ui.view,arch_db:hr_referral.view_hr_referral_points_filter
 msgid "User"
 msgstr ""
@@ -1840,29 +1828,18 @@ msgid "Visit Webpage"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_referral_reward__website_message_ids
-msgid "Website Messages"
-msgstr ""
-
-#. module: hr_referral
-#: model:ir.model.fields,help:hr_referral.field_hr_referral_reward__website_message_ids
-msgid "Website communication history"
-msgstr ""
-
-#. module: hr_referral
 #: model:ir.model,name:hr_referral.model_hr_referral_onboarding
 msgid "Welcome Onboarding in Referral App"
 msgstr ""
 
 #. module: hr_referral
-#: model:ir.model.fields,field_description:hr_referral.field_hr_job__twitter_clicks
-msgid "X Clicks"
+#: model:ir.model.fields.selection,name:hr_referral.selection__wizard_hr_job_share_referral_link__channel__twitter
+msgid "X"
 msgstr ""
 
 #. module: hr_referral
-#. odoo-python
-#: code:addons/hr_referral/models/hr_applicant.py:0
-msgid "You are not allowed to access applicant records."
+#: model:ir.model.fields,field_description:hr_referral.field_hr_job__twitter_clicks
+msgid "X Clicks"
 msgstr ""
 
 #. module: hr_referral
@@ -1900,7 +1877,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_send_sms.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_send_referral_sms.py:0
 msgid "You do not have the required access rights to send SMS."
 msgstr ""
 
@@ -1976,7 +1953,7 @@ msgstr ""
 
 #. module: hr_referral
 #. odoo-python
-#: code:addons/hr_referral/wizard/hr_referral_link_to_share.py:0
+#: code:addons/hr_referral/wizards/wizard_hr_job_share_referral_link.py:0
 msgid ""
 "🚀 An exciting opportunity for a %(job_name)s at my company. If you're "
 "looking for a new challenge, check it "

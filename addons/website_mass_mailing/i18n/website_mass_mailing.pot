@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-25 18:37+0000\n"
-"PO-Revision-Date: 2026-01-25 18:37+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,8 +16,9 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: website_mass_mailing
-#: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_mail_block_footer_social
-msgid "<font class=\"text-white\">|</font>"
+#: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
+#: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
+msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
 
 #. module: website_mass_mailing
@@ -39,12 +40,6 @@ msgstr ""
 msgid ""
 "<i class=\"fa-solid fa-check text-o-color-1\" role=\"img\"/>  Guides &amp; "
 "Resources"
-msgstr ""
-
-#. module: website_mass_mailing
-#: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_grid
-#: model_terms:ir.ui.view,arch_db:website_mass_mailing.s_newsletter_subscribe_form
-msgid "<i class=\"fa-regular fa-circle-check\" role=\"img\"/> Thanks for registering!"
 msgstr ""
 
 #. module: website_mass_mailing
@@ -249,8 +244,8 @@ msgstr ""
 
 #. module: website_mass_mailing
 #. odoo-javascript
-#: code:addons/website_mass_mailing/static/src/website_builder/recaptcha_subscribe_option.xml:0
-msgid "Show reCaptcha Policy"
+#: code:addons/website_mass_mailing/static/src/website_builder/captcha_subscribe_option.xml:0
+msgid "Show Captcha Policy"
 msgstr ""
 
 #. module: website_mass_mailing

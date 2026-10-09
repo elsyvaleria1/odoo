@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-30 18:36+0000\n"
-"PO-Revision-Date: 2026-01-30 18:36+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -36,11 +36,24 @@ msgid "%s work entries"
 msgstr ""
 
 #. module: hr_work_entry
+#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
+msgid ""
+"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
+"title=\"Warning\"/>Employees in red will be skipped because they have at "
+"least one validated work entry."
+msgstr ""
+
+#. module: hr_work_entry
+#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
+msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
+msgstr ""
+
+#. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form
 msgid ""
 "<span class=\"o_stat_text\">\n"
-"                            Work Entries\n"
-"                            </span>"
+"                        Work Entries\n"
+"                        </span>"
 msgstr ""
 
 #. module: hr_work_entry
@@ -56,7 +69,16 @@ msgid "<span>Hours</span>"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__active
+#: model:hr.work.entry.type,display_code:hr_work_entry.work_entry_type_attendance
+msgid "A"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__active
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__active
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_search
@@ -100,6 +122,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_type_view_search
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_search
 msgid "Archived"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_attachment_count
+msgid "Attachment Count"
 msgstr ""
 
 #. module: hr_work_entry
@@ -184,11 +211,6 @@ msgid "Conflicting"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__conflict
-msgid "Conflicts"
-msgstr ""
-
-#. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_corona
 msgid "Corona Unemployment"
 msgstr ""
@@ -210,18 +232,16 @@ msgid "Create a new work entry type"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__create_uid
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__create_uid
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__create_uid
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__create_uid
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__create_date
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__create_date
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__create_date
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__create_date
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__create_date
 msgid "Created on"
 msgstr ""
 
@@ -273,14 +293,13 @@ msgstr ""
 
 #. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_employee__display_name
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_version__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__display_name
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_calendar__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_calendar_attendance__display_name
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_schedule_exception__display_name
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -332,10 +351,14 @@ msgstr ""
 
 #. module: hr_work_entry
 #: model:ir.model,name:hr_work_entry.model_hr_employee
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__employee_id
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__employee_id
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_search
 msgid "Employee"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model,name:hr_work_entry.model_hr_version
+msgid "Employee Contract"
 msgstr ""
 
 #. module: hr_work_entry
@@ -377,6 +400,16 @@ msgstr ""
 #. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_flemish_training_time_off
 msgid "Flemish Educational Time Off"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_partner_ids
+msgid "Followers (Partners)"
 msgstr ""
 
 #. module: hr_work_entry
@@ -427,6 +460,11 @@ msgid "HW"
 msgstr ""
 
 #. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_employee__has_work_entries
 msgid "Has Work Entries"
 msgstr ""
@@ -463,15 +501,25 @@ msgstr ""
 
 #. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_employee__id
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_version__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__id
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_calendar__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_calendar_attendance__id
 #: model:ir.model.fields,field_description:hr_work_entry.field_resource_schedule_exception__id
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__id
 msgid "ID"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__message_has_error
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
 msgstr ""
 
 #. module: hr_work_entry
@@ -504,7 +552,7 @@ msgstr ""
 
 #. module: hr_work_entry
 #. odoo-python
-#: code:addons/hr_work_entry/wizard/hr_work_entry_regeneration_wizard.py:0
+#: code:addons/hr_work_entry/wizards/wizard_hr_work_entry_regenerate.py:0
 msgid ""
 "In order to regenerate the work entries, you need to provide the wizard with"
 " an employee_id, a date_from and a date_to."
@@ -516,16 +564,8 @@ msgid "Interruption of Work"
 msgstr ""
 
 #. module: hr_work_entry
-#. odoo-javascript
-#: code:addons/hr_work_entry/static/src/components/work_entry_source_field/work_entry_source_field.js:0
-msgid ""
-"Invalid option: For fully flexible calendars, the work entry source cannot "
-"be 'Working Hours'."
-msgstr ""
-
-#. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__is_checked
-msgid "Is Checked"
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_is_follower
+msgid "Is Follower"
 msgstr ""
 
 #. module: hr_work_entry
@@ -535,18 +575,16 @@ msgid "Last Generation Date"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__write_uid
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__write_uid
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__write_uid
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__write_uid
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__write_date
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__write_date
-#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__write_date
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__write_date
+#: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__write_date
 msgid "Last Updated on"
 msgstr ""
 
@@ -614,11 +652,6 @@ msgid "Maternity Time Off (Paid at 75%)"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_user_work_entry_employee__user_id
-msgid "Me"
-msgstr ""
-
-#. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_medical_assistance
 msgid "Medical Assistance"
 msgstr ""
@@ -629,15 +662,19 @@ msgid "Medical Leave for Care of Children Diagnosed with Cancer (IMSS)"
 msgstr ""
 
 #. module: hr_work_entry
-#. odoo-python
-#: code:addons/hr_work_entry/models/hr_version.py:0
-msgid "Missing date or duration on work entry"
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_ids
+msgid "Messages"
 msgstr ""
 
 #. module: hr_work_entry
 #. odoo-python
 #: code:addons/hr_work_entry/models/hr_version.py:0
-msgid "Missing timezone for work entries generation."
+msgid "Missing date or duration on work entry"
 msgstr ""
 
 #. module: hr_work_entry
@@ -663,7 +700,7 @@ msgstr ""
 
 #. module: hr_work_entry
 #. odoo-python
-#: code:addons/hr_work_entry/wizard/hr_work_entry_regeneration_wizard.py:0
+#: code:addons/hr_work_entry/wizards/wizard_hr_work_entry_regenerate.py:0
 msgid ""
 "No work entry can be regenerated in this range of dates and these employees."
 msgstr ""
@@ -676,6 +713,26 @@ msgstr ""
 #. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_notice
 msgid "Notice (Unprovided)"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__message_has_error_counter
+msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: hr_work_entry
@@ -823,6 +880,16 @@ msgid "Personal Leave"
 msgstr ""
 
 #. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,help:hr_work_entry.field_hr_work_entry_type__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_bank_holiday
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_ch_work_entry_type_bank_holiday
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_hk_work_entry_type_public_holiday
@@ -839,6 +906,11 @@ msgstr ""
 #. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__amount_rate
 msgid "Rate"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__rating_ids
+msgid "Ratings"
 msgstr ""
 
 #. module: hr_work_entry
@@ -881,8 +953,8 @@ msgid "Reset Selected Work Entries"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model,name:hr_work_entry.model_resource_schedule_exception
-msgid "Resource Time Off Detail"
+#: model:ir.actions.server,name:hr_work_entry.action_hr_work_entry_set_to_draft
+msgid "Reset to Draft"
 msgstr ""
 
 #. module: hr_work_entry
@@ -898,6 +970,11 @@ msgstr ""
 #. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_us_work_entry_type_retro_regular
 msgid "Retro Regular Pay Hours"
+msgstr ""
+
+#. module: hr_work_entry
+#: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry_type__message_has_sms_error
+msgid "SMS Delivery error"
 msgstr ""
 
 #. module: hr_work_entry
@@ -926,6 +1003,11 @@ msgid "Salary in case of Military Leave"
 msgstr ""
 
 #. module: hr_work_entry
+#: model:ir.model,name:hr_work_entry.model_resource_schedule_exception
+msgid "Schedule Exception"
+msgstr ""
+
+#. module: hr_work_entry
 #: model:ir.model.fields,field_description:hr_work_entry.field_wizard_hr_work_entry_regenerate__search_criteria_completed
 msgid "Search Criteria Completed"
 msgstr ""
@@ -949,11 +1031,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/hr_work_entry/static/src/views/work_entry_calendar/work_entry_multi_selection_buttons.xml:0
 msgid "Set"
-msgstr ""
-
-#. module: hr_work_entry
-#: model:ir.actions.server,name:hr_work_entry.action_hr_work_entry_set_to_draft
-msgid "Reset to Draft"
 msgstr ""
 
 #. module: hr_work_entry
@@ -1049,12 +1126,6 @@ msgstr ""
 
 #. module: hr_work_entry
 #. odoo-javascript
-#: code:addons/hr_work_entry/static/src/xml/work_entry_templates.xml:0
-msgid "Solve conflicts first"
-msgstr ""
-
-#. module: hr_work_entry
-#. odoo-javascript
 #: code:addons/hr_work_entry/static/src/views/work_entry_calendar/calendar_common/work_entry_calendar_common_popover.xml:0
 msgid "Split"
 msgstr ""
@@ -1096,17 +1167,24 @@ msgid ""
 msgstr ""
 
 #. module: hr_work_entry
-#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_form
-msgid "The amount of work on the day should not exceed 24 hours."
+#. odoo-python
+#: code:addons/hr_work_entry/wizards/wizard_hr_work_entry_regenerate.py:0
+msgid "The earliest available date is %s"
 msgstr ""
 
 #. module: hr_work_entry
 #. odoo-python
-#: code:addons/hr_work_entry/wizard/hr_work_entry_regeneration_wizard.py:0
+#: code:addons/hr_work_entry/wizards/wizard_hr_work_entry_regenerate.py:0
 msgid ""
 "The from date must be >= '%(earliest_available_date)s' and the to date must "
 "be <= '%(latest_available_date)s', which correspond to the generated work "
 "entries time interval."
+msgstr ""
+
+#. module: hr_work_entry
+#. odoo-python
+#: code:addons/hr_work_entry/wizards/wizard_hr_work_entry_regenerate.py:0
+msgid "The latest available date is %s"
 msgstr ""
 
 #. module: hr_work_entry
@@ -1125,6 +1203,11 @@ msgstr ""
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_form
 msgid "This work entry cannot be validated. The work entry type is undefined."
+msgstr ""
+
+#. module: hr_work_entry
+#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_form
+msgid "This work entry cannot be validated: the day exceeds 24 hours, already has a validated work entry, or this time off falls outside the working schedule."
 msgstr ""
 
 #. module: hr_work_entry
@@ -1168,12 +1251,6 @@ msgstr ""
 #. module: hr_work_entry
 #: model:hr.work.entry.type,display_code:hr_work_entry.work_entry_type_unpaid_leave
 msgid "UN"
-msgstr ""
-
-#. module: hr_work_entry
-#. odoo-python
-#: code:addons/hr_work_entry/models/hr_work_entry.py:0
-msgid "Undefined"
 msgstr ""
 
 #. module: hr_work_entry
@@ -1244,11 +1321,6 @@ msgid "Work Entries"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model,name:hr_work_entry.model_hr_user_work_entry_employee
-msgid "Work Entries Employees"
-msgstr ""
-
-#. module: hr_work_entry
 #: model:ir.actions.act_window,name:hr_work_entry.hr_work_entry_action
 #: model:ir.actions.act_window,name:hr_work_entry.hr_work_entry_action_conflict
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_calendar
@@ -1266,12 +1338,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_version__work_entry_source
 #: model:ir.model.fields,field_description:hr_work_entry.field_hr_work_entry__work_entry_source
 msgid "Work Entry Source"
-msgstr ""
-
-#. module: hr_work_entry
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_employee__work_entry_source_calendar_invalid
-#: model:ir.model.fields,field_description:hr_work_entry.field_hr_version__work_entry_source_calendar_invalid
-msgid "Work Entry Source Calendar Invalid"
 msgstr ""
 
 #. module: hr_work_entry
@@ -1330,6 +1396,12 @@ msgstr ""
 #. module: hr_work_entry
 #. odoo-python
 #: code:addons/hr_work_entry/models/hr_work_entry.py:0
+msgid "You can't split a validated work entry."
+msgstr ""
+
+#. module: hr_work_entry
+#. odoo-python
+#: code:addons/hr_work_entry/models/hr_work_entry.py:0
 msgid "You can't split a work entry with less than 1 hour."
 msgstr ""
 
@@ -1340,11 +1412,6 @@ msgid "You cannot edit a validated work entry"
 msgstr ""
 
 #. module: hr_work_entry
-#: model:ir.model.constraint,message:hr_work_entry.constraint_hr_user_work_entry_employee_user_id_employee_id_unique
-msgid "You cannot have the same employee twice."
-msgstr ""
-
-#. module: hr_work_entry
 #: model:hr.work.entry.type,name:hr_work_entry.l10n_be_work_entry_type_youth_time_off
 msgid "Youth Time Off"
 msgstr ""
@@ -1352,58 +1419,4 @@ msgstr ""
 #. module: hr_work_entry
 #: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_calendar_multi_create_form
 msgid "hours"
-msgstr ""
-
-#. module: hr_work_entry
-#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
-msgid ""
-"<i class=\"fa-solid fa-exclamation-triangle me-1\" "
-"title=\"Warning\"/>Employees in red will be skipped because they have at "
-"least one validated work entry."
-msgstr ""
-
-#. module: hr_work_entry
-#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_regeneration_wizard
-msgid "<i class=\"fa-solid fa-info-circle me-1\" title=\"Hint\"/>"
-msgstr ""
-
-#. module: hr_work_entry
-#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_employee_view_form
-msgid ""
-"<span class=\"o_stat_text\">\n"
-"                        Work Entries\n"
-"                        </span>"
-msgstr ""
-
-#. module: hr_work_entry
-#: model:hr.work.entry.type,display_code:hr_work_entry.work_entry_type_attendance
-msgid "A"
-msgstr ""
-
-#. module: hr_work_entry
-#: model:ir.model,name:hr_work_entry.model_hr_version
-msgid "Version"
-msgstr ""
-
-#. module: hr_work_entry
-#. odoo-python
-#: code:addons/hr_work_entry/models/hr_work_entry.py:0
-msgid "You can't split a validated work entry."
-msgstr ""
-
-#. module: hr_work_entry
-#. odoo-python
-#: code:addons/hr_work_entry/wizard/hr_work_entry_regeneration_wizard.py:0
-msgid "The earliest available date is %s"
-msgstr ""
-
-#. module: hr_work_entry
-#. odoo-python
-#: code:addons/hr_work_entry/wizard/hr_work_entry_regeneration_wizard.py:0
-msgid "The latest available date is %s"
-msgstr ""
-
-#. module: hr_work_entry
-#: model_terms:ir.ui.view,arch_db:hr_work_entry.hr_work_entry_view_form
-msgid "This work entry cannot be validated: the day exceeds 24 hours, already has a validated work entry, or this time off falls outside the working schedule."
 msgstr ""

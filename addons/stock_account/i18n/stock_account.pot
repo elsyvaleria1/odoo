@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-25 18:36+0000\n"
-"PO-Revision-Date: 2026-01-25 18:36+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -30,12 +30,19 @@ msgstr ""
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/models/stock_move.py:0
+msgid "%(quantity)s %(uom)s at each lot's cost"
+msgstr ""
+
+#. module: stock_account
+#. odoo-python
+#: code:addons/stock_account/models/stock_move.py:0
 msgid "%(quantity)s %(uom)s at product's cost"
 msgstr ""
 
 #. module: stock_account
-#: model_terms:ir.ui.view,arch_db:stock_account.stock_account_report_invoice_document
-msgid "6.00"
+#. odoo-python
+#: code:addons/stock_account/models/stock_move.py:0
+msgid "%(quantity)s %(uom)s off the FIFO stack"
 msgstr ""
 
 #. module: stock_account
@@ -54,6 +61,19 @@ msgid "<span>SN/LN</span>"
 msgstr ""
 
 #. module: stock_account
+#: model:ir.model,name:stock_account.model_stock_config
+msgid "A company's stock configuration"
+msgstr ""
+
+#. module: stock_account
+#. odoo-python
+#: code:addons/stock_account/models/stock_move.py:0
+msgid ""
+"A lot/serial number is required for product '%s' as it has lot valuation "
+"enabled."
+msgstr ""
+
+#. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__avco_value
 msgid "AVCO Value"
 msgstr ""
@@ -69,21 +89,14 @@ msgid "Account Chart Template"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__accounting_date
 #: model:ir.model.fields,field_description:stock_account.field_stock_quant__accounting_date
+#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__accounting_date
 msgid "Accounting Date"
 msgstr ""
 
 #. module: stock_account
-#: model_terms:ir.ui.view,arch_db:stock_account.view_location_form_inherit
+#: model_terms:ir.ui.view,arch_db:stock_account.view_stock_location_form_inherit
 msgid "Accounting Information"
-msgstr ""
-
-#. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.js:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
-msgid "Accrual"
 msgstr ""
 
 #. module: stock_account
@@ -130,30 +143,14 @@ msgid ""
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/filters/filter_warehouses.xml:0
-msgid "All Warehouses"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model,name:stock_account.model_account_analytic_account
-msgid "Analytic Account"
+#. odoo-python
+#: code:addons/stock_account/models/res_company.py:0
+msgid "An inventory valuation closing is already running for %s."
 msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_stock_move__analytic_account_line_ids
 msgid "Analytic Account Line"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model,name:stock_account.model_account_analytic_plan
-msgid "Analytic Plans"
-msgstr ""
-
-#. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/filters/filter_date.xml:0
-msgid "As of"
 msgstr ""
 
 #. module: stock_account
@@ -165,12 +162,6 @@ msgid ""
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/filters/filter_date.xml:0
-msgid "At the date of"
-msgstr ""
-
-#. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_product__avg_cost
 #: model:ir.model.fields,field_description:stock_account.field_product_trace__avg_cost
 msgid "Average Cost"
@@ -179,7 +170,7 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model.fields.selection,name:stock_account.selection__product_category__property_cost_method__average
 #: model:ir.model.fields.selection,name:stock_account.selection__product_template__cost_method__average
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__cost_method__average
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__cost_method__average
 #: model:ir.model.fields.selection,name:stock_account.selection__stock_quant__cost_method__average
 msgid "Average Cost (AVCO)"
 msgstr ""
@@ -260,13 +251,13 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_product__cost_method
 #: model:ir.model.fields,field_description:stock_account.field_product_template__cost_method
-#: model:ir.model.fields,field_description:stock_account.field_res_company__cost_method
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__cost_method
 #: model:ir.model.fields,field_description:stock_account.field_stock_quant__cost_method
 msgid "Cost Method"
 msgstr ""
 
 #. module: stock_account
-#: model_terms:ir.ui.view,arch_db:stock_account.view_location_form_inherit
+#: model_terms:ir.ui.view,arch_db:stock_account.view_stock_location_form_inherit
 msgid "Cost of Production"
 msgstr ""
 
@@ -299,8 +290,7 @@ msgid "Created on"
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/line/line.xml:0
+#: model:report.formula.column,name:stock_account.stock_valuation_report_column_credit
 msgid "Credit"
 msgstr ""
 
@@ -327,7 +317,7 @@ msgid "Current Value Details"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__inventory_period__daily
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__inventory_period__daily
 msgid "Daily"
 msgstr ""
 
@@ -338,16 +328,15 @@ msgid "Date"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,help:stock_account.field_wizard_stock_quant_apply_inventory__accounting_date
 #: model:ir.model.fields,help:stock_account.field_stock_quant__accounting_date
+#: model:ir.model.fields,help:stock_account.field_wizard_stock_quant_apply_inventory__accounting_date
 msgid ""
 "Date at which the accounting entries will be created in case of automated "
 "inventory valuation. If empty, the inventory date will be used."
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/line/line.xml:0
+#: model:report.formula.column,name:stock_account.stock_valuation_report_column_debit
 msgid "Debit"
 msgstr ""
 
@@ -364,29 +353,29 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_account_account__display_name
-#: model:ir.model.fields,field_description:stock_account.field_account_analytic_account__display_name
-#: model:ir.model.fields,field_description:stock_account.field_account_analytic_plan__display_name
 #: model:ir.model.fields,field_description:stock_account.field_account_chart_template__display_name
 #: model:ir.model.fields,field_description:stock_account.field_account_move__display_name
 #: model:ir.model.fields,field_description:stock_account.field_account_move_line__display_name
 #: model:ir.model.fields,field_description:stock_account.field_product_category__display_name
 #: model:ir.model.fields,field_description:stock_account.field_product_product__display_name
 #: model:ir.model.fields,field_description:stock_account.field_product_template__display_name
+#: model:ir.model.fields,field_description:stock_account.field_product_trace__display_name
 #: model:ir.model.fields,field_description:stock_account.field_product_value__display_name
 #: model:ir.model.fields,field_description:stock_account.field_res_company__display_name
 #: model:ir.model.fields,field_description:stock_account.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_account_stock_valuation_report__display_name
+#: model:ir.model.fields,field_description:stock_account.field_stock_account_stock_valuation_report_handler__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__display_name
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_forecasted_product_product__display_name
-#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_location__display_name
-#: model:ir.model.fields,field_description:stock_account.field_product_trace__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_move__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_move_line__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_picking__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_picking_type__display_name
 #: model:ir.model.fields,field_description:stock_account.field_stock_quant__display_name
 #: model:ir.model.fields,field_description:stock_account.field_wizard_stock_picking_return_line__display_name
+#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -398,12 +387,14 @@ msgstr ""
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/reports/stock_valuation_report.py:0
+#: model:report.formula.line,name:stock_account.stock_valuation_report_line_ending_stock
 msgid "Ending Stock"
 msgstr ""
 
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/models/res_company.py:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
 msgid "Everything is correctly closed"
 msgstr ""
 
@@ -422,7 +413,7 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model.fields.selection,name:stock_account.selection__product_category__property_cost_method__fifo
 #: model:ir.model.fields.selection,name:stock_account.selection__product_template__cost_method__fifo
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__cost_method__fifo
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__cost_method__fifo
 #: model:ir.model.fields.selection,name:stock_account.selection__stock_quant__cost_method__fifo
 msgid "First In First Out (FIFO)"
 msgstr ""
@@ -446,29 +437,29 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_account_account__id
-#: model:ir.model.fields,field_description:stock_account.field_account_analytic_account__id
-#: model:ir.model.fields,field_description:stock_account.field_account_analytic_plan__id
 #: model:ir.model.fields,field_description:stock_account.field_account_chart_template__id
 #: model:ir.model.fields,field_description:stock_account.field_account_move__id
 #: model:ir.model.fields,field_description:stock_account.field_account_move_line__id
 #: model:ir.model.fields,field_description:stock_account.field_product_category__id
 #: model:ir.model.fields,field_description:stock_account.field_product_product__id
 #: model:ir.model.fields,field_description:stock_account.field_product_template__id
+#: model:ir.model.fields,field_description:stock_account.field_product_trace__id
 #: model:ir.model.fields,field_description:stock_account.field_product_value__id
 #: model:ir.model.fields,field_description:stock_account.field_res_company__id
 #: model:ir.model.fields,field_description:stock_account.field_res_config_settings__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_account_stock_valuation_report__id
+#: model:ir.model.fields,field_description:stock_account.field_stock_account_stock_valuation_report_handler__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__id
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_forecasted_product_product__id
-#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_location__id
-#: model:ir.model.fields,field_description:stock_account.field_product_trace__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_move__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_move_line__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_picking__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_picking_type__id
 #: model:ir.model.fields,field_description:stock_account.field_stock_quant__id
 #: model:ir.model.fields,field_description:stock_account.field_wizard_stock_picking_return_line__id
+#: model:ir.model.fields,field_description:stock_account.field_wizard_stock_quant_apply_inventory__id
 msgid "ID"
 msgstr ""
 
@@ -489,13 +480,8 @@ msgstr ""
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/reports/stock_valuation_report.py:0
+#: model:report.formula.line,name:stock_account.stock_valuation_report_line_initial_balance
 msgid "Initial Balance"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_location.py:0
-msgid "Invalid search operator or value"
 msgstr ""
 
 #. module: stock_account
@@ -511,11 +497,12 @@ msgstr ""
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/reports/stock_valuation_report.py:0
+#: model:report.formula.line,name:stock_account.stock_valuation_report_line_inventory_loss
 msgid "Inventory Loss"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_res_company__inventory_period
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__inventory_period
 msgid "Inventory Period"
 msgstr ""
 
@@ -524,8 +511,15 @@ msgstr ""
 #: code:addons/stock_account/models/account_chart_template.py:0
 #: model:ir.actions.client,name:stock_account.action_report_stock_valuation
 #: model:ir.model.fields,field_description:stock_account.field_product_category__property_valuation
+#: model:report.formula,name:stock_account.stock_valuation_report
 #: model_terms:ir.ui.view,arch_db:stock_account.view_category_property_form_stock
 msgid "Inventory Valuation"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__is_stock_valuation_closing
+#: model:ir.model.fields,field_description:stock_account.field_account_move__is_stock_valuation_closing
+msgid "Inventory Valuation Closing"
 msgstr ""
 
 #. module: stock_account
@@ -551,11 +545,6 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_stock_location__is_valued_internal
 msgid "Is valued inside the company"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_stock_location__is_valued_external
-msgid "Is valued outside the company"
 msgstr ""
 
 #. module: stock_account
@@ -603,18 +592,13 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: stock_account
-#: model_terms:ir.ui.view,arch_db:stock_account.view_location_form_inherit
+#: model_terms:ir.ui.view,arch_db:stock_account.view_stock_location_form_inherit
 msgid "Loss Account"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_product_value__trace_id
-msgid "Lot"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model,name:stock_account.model_stock_lot
-msgid "Lot/Serial"
+#: model:ir.model,name:stock_account.model_product_trace
+msgid "Lot/Serial Number"
 msgstr ""
 
 #. module: stock_account
@@ -623,7 +607,7 @@ msgid "Lots & Serial numbers will appear on the invoice"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__inventory_period__manual
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__inventory_period__manual
 msgid "Manual"
 msgstr ""
 
@@ -633,7 +617,7 @@ msgid "Manual Value"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__inventory_period__monthly
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__inventory_period__monthly
 msgid "Monthly"
 msgstr ""
 
@@ -645,6 +629,22 @@ msgstr ""
 #. module: stock_account
 #: model_terms:ir.ui.view,arch_db:stock_account.product_value_form_view
 msgid "New Value"
+msgstr ""
+
+#. module: stock_account
+#. odoo-python
+#: code:addons/stock_account/models/stock_move.py:0
+msgid ""
+"No inventory valuation journal is set for company %(company)s. Set one in "
+"the inventory settings, or on the product category."
+msgstr ""
+
+#. module: stock_account
+#. odoo-python
+#: code:addons/stock_account/models/stock_move.py:0
+msgid ""
+"No stock valuation account is configured for product %(product)s. Set one on"
+" its product category, or in the company's inventory settings."
 msgstr ""
 
 #. module: stock_account
@@ -662,15 +662,9 @@ msgid ""
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
-#: code:addons/stock_account/static/src/stock_valuation/filters/filter_options.xml:0
-msgid "Options"
-msgstr ""
-
-#. module: stock_account
 #: model:ir.model.fields.selection,name:stock_account.selection__product_category__property_valuation__periodic
 #: model:ir.model.fields.selection,name:stock_account.selection__product_template__valuation__periodic
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__inventory_valuation__periodic
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__inventory_valuation__periodic
 msgid "Periodic (at closing)"
 msgstr ""
 
@@ -685,7 +679,7 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model.fields.selection,name:stock_account.selection__product_category__property_valuation__real_time
 #: model:ir.model.fields.selection,name:stock_account.selection__product_template__valuation__real_time
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__inventory_valuation__real_time
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__inventory_valuation__real_time
 msgid "Perpetual (at invoicing)"
 msgstr ""
 
@@ -709,8 +703,6 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_category__property_price_difference_account_id
-#: model:ir.model.fields,field_description:stock_account.field_product_product__property_price_difference_account_id
-#: model:ir.model.fields,field_description:stock_account.field_product_template__property_price_difference_account_id
 msgid "Price Difference Account"
 msgstr ""
 
@@ -766,12 +758,12 @@ msgid "Product Variant"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_res_company__account_production_wip_account_id
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__account_production_wip_account_id
 msgid "Production WIP Account"
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_res_company__account_production_wip_overhead_account_id
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__account_production_wip_overhead_account_id
 msgid "Production WIP Overhead Account"
 msgstr ""
 
@@ -786,7 +778,6 @@ msgid "Reference"
 msgstr ""
 
 #. module: stock_account
-#: model_terms:ir.ui.view,arch_db:stock_account.view_move_search
 #: model_terms:ir.ui.view,arch_db:stock_account.view_stock_move_search
 msgid "Remaining"
 msgstr ""
@@ -802,6 +793,16 @@ msgid "Remaining Value"
 msgstr ""
 
 #. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__replay_rank
+msgid "Replay Rank"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__res_id
+msgid "Resource ID"
+msgstr ""
+
+#. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__res_model_name
 msgid "Resource Model Name"
 msgstr ""
@@ -809,6 +810,14 @@ msgstr ""
 #. module: stock_account
 #: model:ir.model,name:stock_account.model_wizard_stock_picking_return_line
 msgid "Return Picking Line"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,help:stock_account.field_account_bank_statement_line__is_stock_valuation_closing
+#: model:ir.model.fields,help:stock_account.field_account_move__is_stock_valuation_closing
+msgid ""
+"Set on the entries generated by the inventory valuation closing. The latest "
+"posted one is the cursor the next closing starts from."
 msgstr ""
 
 #. module: stock_account
@@ -820,7 +829,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:stock_account.field_stock_move__standard_price
 #: model:ir.model.fields.selection,name:stock_account.selection__product_category__property_cost_method__standard
 #: model:ir.model.fields.selection,name:stock_account.selection__product_template__cost_method__standard
-#: model:ir.model.fields.selection,name:stock_account.selection__res_company__cost_method__standard
+#: model:ir.model.fields.selection,name:stock_account.selection__stock_config__cost_method__standard
 #: model:ir.model.fields.selection,name:stock_account.selection__stock_quant__cost_method__standard
 msgid "Standard Price"
 msgstr ""
@@ -857,13 +866,20 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_category__property_stock_journal
-#: model:ir.model.fields,field_description:stock_account.field_res_company__account_stock_journal_id
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__account_stock_journal_id
 msgid "Stock Journal"
 msgstr ""
 
 #. module: stock_account
+#: model:ir.model,name:stock_account.model_stock_move
 #: model:ir.model.fields.selection,name:stock_account.selection__stock_avco_report__res_model_name__stock_move
 msgid "Stock Move"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__stock_move_ids
+#: model:ir.model.fields,field_description:stock_account.field_account_move__stock_move_ids
+msgid "Stock Moves"
 msgstr ""
 
 #. module: stock_account
@@ -880,16 +896,20 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_category__property_stock_valuation_account_id
-#: model:ir.model.fields,field_description:stock_account.field_res_company__account_stock_valuation_id
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__account_stock_valuation_id
 #: model:ir.model.fields,field_description:stock_account.field_stock_location__valuation_account_id
 msgid "Stock Valuation Account"
 msgstr ""
 
 #. module: stock_account
-#. odoo-javascript
+#: model:ir.model,name:stock_account.model_stock_account_stock_valuation_report_handler
+msgid "Stock Valuation Report Custom Handler"
+msgstr ""
+
+#. module: stock_account
 #. odoo-python
-#: code:addons/stock_account/report/stock_valuation_report.py:0
-#: code:addons/stock_account/static/src/stock_valuation/stock_valuation_report.xml:0
+#: code:addons/stock_account/reports/stock_valuation_report.py:0
+#: model:report.formula.line,name:stock_account.stock_valuation_report_line_stock_variation
 #: model_terms:ir.ui.view,arch_db:stock_account.view_category_property_form
 msgid "Stock Variation"
 msgstr ""
@@ -921,6 +941,21 @@ msgid "The current value of the move. It's zero if the move is not valued."
 msgstr ""
 
 #. module: stock_account
+#: model:ir.model.fields,help:stock_account.field_account_bank_statement_line__stock_valuation_closing_cutoff
+#: model:ir.model.fields,help:stock_account.field_account_move__stock_valuation_closing_cutoff
+msgid ""
+"The instant this closing entry covered stock moves up to. The next closing "
+"starts from here."
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,help:stock_account.field_stock_move__valued_qty
+msgid ""
+"The quantity `value` was computed over, in the product's unit of measure: "
+"the picked, company-owned lines crossing a valuation boundary."
+msgstr ""
+
+#. module: stock_account
 #. odoo-javascript
 #: code:addons/stock_account/static/src/fields/boolean_confirm.js:0
 msgid ""
@@ -945,12 +980,17 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_product__total_value
-#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__total_value
 #: model:ir.model.fields,field_description:stock_account.field_product_trace__total_value
+#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__total_value
 #: model_terms:ir.ui.view,arch_db:stock_account.product_product_stock_tree_inherit_stock_account
 #: model_terms:ir.ui.view,arch_db:stock_account.product_product_view_list_at_date
-#: model_terms:ir.ui.view,arch_db:stock_account.view_stock_quant_tree_editable_inherit
+#: model_terms:ir.ui.view,arch_db:stock_account.view_stock_quant_list_editable_inherit
 msgid "Total Value"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_product_value__trace_id
+msgid "Trace"
 msgstr ""
 
 #. module: stock_account
@@ -1000,15 +1040,26 @@ msgstr ""
 #: model:ir.actions.act_window,name:stock_account.stock_move_valuation_action
 #: model:ir.model.fields,field_description:stock_account.field_product_product__valuation
 #: model:ir.model.fields,field_description:stock_account.field_product_template__valuation
-#: model:ir.model.fields,field_description:stock_account.field_res_company__inventory_valuation
+#: model:ir.model.fields,field_description:stock_account.field_stock_config__inventory_valuation
 #: model_terms:ir.ui.view,arch_db:stock_account.res_config_settings_view_form
 msgid "Valuation"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__stock_valuation_closing_cutoff
+#: model:ir.model.fields,field_description:stock_account.field_account_move__stock_valuation_closing_cutoff
+msgid "Valuation Closing Cutoff"
 msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,field_description:stock_account.field_product_product__company_currency_id
 #: model:ir.model.fields,field_description:stock_account.field_product_trace__company_currency_id
 msgid "Valuation Currency"
+msgstr ""
+
+#. module: stock_account
+#: model:ir.model.fields,field_description:stock_account.field_stock_move__account_move_id
+msgid "Valuation Entry"
 msgstr ""
 
 #. module: stock_account
@@ -1023,6 +1074,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__value
 #: model:ir.model.fields,field_description:stock_account.field_stock_move__value
 #: model:ir.model.fields,field_description:stock_account.field_stock_quant__value
+#: model:report.formula.column,name:stock_account.stock_valuation_report_column_value
 msgid "Value"
 msgstr ""
 
@@ -1052,11 +1104,8 @@ msgid ""
 msgstr ""
 
 #. module: stock_account
-#: model:ir.model.fields,help:stock_account.field_stock_move__standard_price
-msgid ""
-"Value of the product (automatically computed in AVCO).\n"
-"        Used to value the product when the purchase cost is not known (e.g. inventory adjustment).\n"
-"        Used to compute margins on sale orders."
+#: model:ir.model.fields,field_description:stock_account.field_stock_move__valued_qty
+msgid "Valued Quantity"
 msgstr ""
 
 #. module: stock_account
@@ -1080,8 +1129,6 @@ msgstr ""
 
 #. module: stock_account
 #: model:ir.model.fields,help:stock_account.field_product_category__property_price_difference_account_id
-#: model:ir.model.fields,help:stock_account.field_product_product__property_price_difference_account_id
-#: model:ir.model.fields,help:stock_account.field_product_template__property_price_difference_account_id
 msgid ""
 "With perpetual valuation, this account will hold the price difference "
 "between the standard price and the bill price."
@@ -1104,7 +1151,16 @@ msgstr ""
 #. module: stock_account
 #. odoo-python
 #: code:addons/stock_account/models/product.py:0
-msgid "You can only use the '=' operator to search on valuation field."
+msgid ""
+"You can only use the '=' and '!=' operators to search on valuation field."
+msgstr ""
+
+#. module: stock_account
+#. odoo-python
+#: code:addons/stock_account/models/product.py:0
+msgid ""
+"You cannot enable lot valuation because the following products have on-hand quantities without a lot/serial number:\n"
+"%s"
 msgstr ""
 
 #. module: stock_account
@@ -1118,127 +1174,4 @@ msgstr ""
 #. module: stock_account
 #: model_terms:ir.ui.view,arch_db:stock_account.stock_account_report_invoice_document
 msgid "units"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_move.py:0
-msgid "%(quantity)s %(uom)s at each lot's cost"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_move.py:0
-msgid "%(quantity)s %(uom)s off the FIFO stack"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_move.py:0
-msgid ""
-"A lot/serial number is required for product '%s' as it has lot valuation "
-"enabled."
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/res_company.py:0
-msgid "An inventory valuation closing is already running for %s."
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__is_stock_valuation_closing
-#: model:ir.model.fields,field_description:stock_account.field_account_move__is_stock_valuation_closing
-msgid "Inventory Valuation Closing"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_move.py:0
-msgid ""
-"No inventory valuation journal is set for company %(company)s. Set one in "
-"the inventory settings, or on the product category."
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/stock_move.py:0
-msgid ""
-"No stock valuation account is configured for product %(product)s. Set one on"
-" its product category, or in the company's inventory settings."
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__replay_rank
-msgid "Replay Rank"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_stock_avco_report__res_id
-msgid "Resource ID"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,help:stock_account.field_account_bank_statement_line__is_stock_valuation_closing
-#: model:ir.model.fields,help:stock_account.field_account_move__is_stock_valuation_closing
-msgid ""
-"Set on the entries generated by the inventory valuation closing. The latest "
-"posted one is the cursor the next closing starts from."
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model,name:stock_account.model_stock_move
-msgid "Stock Move Ewaybill"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__stock_move_ids
-#: model:ir.model.fields,field_description:stock_account.field_account_move__stock_move_ids
-msgid "Stock Moves"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,help:stock_account.field_account_bank_statement_line__stock_valuation_closing_cutoff
-#: model:ir.model.fields,help:stock_account.field_account_move__stock_valuation_closing_cutoff
-msgid ""
-"The instant this closing entry covered stock moves up to. The next closing "
-"starts from here."
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,help:stock_account.field_stock_move__valued_qty
-msgid ""
-"The quantity `value` was computed over, in the product's unit of measure: "
-"the picked, company-owned lines crossing a valuation boundary."
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_account_bank_statement_line__stock_valuation_closing_cutoff
-#: model:ir.model.fields,field_description:stock_account.field_account_move__stock_valuation_closing_cutoff
-msgid "Valuation Closing Cutoff"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_stock_move__account_move_id
-msgid "Valuation Entry"
-msgstr ""
-
-#. module: stock_account
-#: model:ir.model.fields,field_description:stock_account.field_stock_move__valued_qty
-msgid "Valued Quantity"
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/product.py:0
-msgid ""
-"You can only use the '=' and '!=' operators to search on valuation field."
-msgstr ""
-
-#. module: stock_account
-#. odoo-python
-#: code:addons/stock_account/models/product.py:0
-msgid ""
-"You cannot enable lot valuation because the following products have on-hand quantities without a lot/serial number:\n"
-"%s"
 msgstr ""

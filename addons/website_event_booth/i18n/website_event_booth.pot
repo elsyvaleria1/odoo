@@ -6,14 +6,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-25 18:37+0000\n"
-"PO-Revision-Date: 2026-01-25 18:37+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: website_event_booth
+#: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
+msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
+msgstr ""
 
 #. module: website_event_booth
 #: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration_details
@@ -27,11 +32,6 @@ msgstr ""
 msgid ""
 "<i class=\"fa-solid fa-exclamation-triangle\"/>\n"
 "                                            <span>Sorry, several booths are now sold out. Please change your choices before validating again.</span>"
-msgstr ""
-
-#. module: website_event_booth
-#: model_terms:ir.ui.view,arch_db:website_event_booth.event_booth_registration
-msgid "<i class=\"fa-regular fa-map me-1\"/>View Plan"
 msgstr ""
 
 #. module: website_event_booth

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-25 18:35+0000\n"
-"PO-Revision-Date: 2026-01-25 18:35+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -78,6 +78,65 @@ msgid ""
 msgstr ""
 
 #. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-discord text-discord\" aria-label=\"Discord\" "
+"title=\"Discord\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-facebook-f text-facebook\" aria-label=\"Facebook\" "
+"title=\"Facebook\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-github text-github\" aria-label=\"Github\" "
+"title=\"Github\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-instagram text-instagram\" aria-label=\"Instagram\" "
+"title=\"Instagram\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-linkedin-in text-linkedin\" aria-label=\"LinkedIn\" "
+"title=\"LinkedIn\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-tiktok text-tiktok\" aria-label=\"TikTok\" "
+"title=\"TikTok\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid "<i class=\"fa-brands fa-twitter text-twitter\" aria-label=\"X\" title=\"X\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
+msgid ""
+"<i class=\"fa-brands fa-youtube text-youtube\" aria-label=\"Youtube\" "
+"title=\"Youtube\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_card_preview_data
+msgid "<i class=\"fa-regular fa-clock me-2\" role=\"presentation\"/>8:15 PM"
+msgstr ""
+
+#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.modal_ticket_registration
 msgid "<i class=\"fa-solid fa-ban me-2\"/>Sold Out"
 msgstr ""
@@ -110,20 +169,8 @@ msgid "<i class=\"fa-solid fa-check me-2\"/>Registered"
 msgstr ""
 
 #. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_card_preview_data
-msgid "<i class=\"fa-regular fa-clock me-2\" role=\"presentation\"/>8:15 PM"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid "<i class=\"fa fa-discord text-discord\" aria-label=\"Discord\" title=\"Discord\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid ""
-"<i class=\"fa-brands fa-facebook-f text-facebook\" aria-label=\"Facebook\" "
-"title=\"Facebook\"/>"
+#: model_terms:ir.ui.view,arch_db:website_event.event_pages_kanban_view
+msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_event
@@ -131,30 +178,6 @@ msgstr ""
 msgid ""
 "<i class=\"fa-solid fa-gear me-1\" role=\"img\" aria-label=\"Configure\" "
 "title=\"Configure event tickets\"/><em>Configure Tickets</em>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid "<i class=\"fa fa-github text-github\" aria-label=\"Github\" title=\"Github\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.event_pages_kanban_view
-msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid ""
-"<i class=\"fa fa-instagram text-instagram\" aria-label=\"Instagram\" "
-"title=\"Instagram\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid ""
-"<i class=\"fa-brands fa-linkedin-in text-linkedin\" aria-label=\"LinkedIn\" "
-"title=\"LinkedIn\"/>"
 msgstr ""
 
 #. module: website_event
@@ -172,23 +195,6 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_description_full
 msgid "<i class=\"fa-solid fa-location-dot\" title=\"Location\"/> Online event"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid "<i class=\"fa fa-tiktok text-tiktok\" aria-label=\"TikTok\" title=\"TikTok\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid "<i class=\"fa fa-twitter text-twitter\" aria-label=\"X\" title=\"X\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.index_sidebar_follow_us
-msgid ""
-"<i class=\"fa-brands fa-youtube text-youtube\" aria-label=\"Youtube\" "
-"title=\"Youtube\"/>"
 msgstr ""
 
 #. module: website_event
@@ -216,13 +222,6 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.modal_slot_registration
 msgid "<small>Next</small><i class=\"fa-solid fa-caret-right ms-2\"/>"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_speaker_bio
-msgid ""
-"<span class=\"badge text-bg-secondary text-uppercase "
-"o_wevent_badge\">Speaker</span>"
 msgstr ""
 
 #. module: website_event
@@ -299,17 +298,17 @@ msgid ""
 msgstr ""
 
 #. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_aside_preview_data
-msgid ""
-"<span><i class=\"fa-solid fa-calendar-days me-2\" "
-"role=\"presentation\"/>August 23, 2025 at 8:15 PM</span>"
-msgstr ""
-
-#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_offset_preview_data
 msgid ""
 "<span><i class=\"fa-regular fa-clock me-2\" role=\"presentation\"/>8:15 "
 "PM</span>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.s_dynamic_snippet_events_single_aside_preview_data
+msgid ""
+"<span><i class=\"fa-solid fa-calendar-days me-2\" "
+"role=\"presentation\"/>August 23, 2025 at 8:15 PM</span>"
 msgstr ""
 
 #. module: website_event
@@ -485,15 +484,6 @@ msgid "Allows to display and manage event-specific menus on website."
 msgstr ""
 
 #. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_speaker_bio
-msgid ""
-"At just 13 years old, John DOE was already starting to develop his first "
-"business applications for customers. After mastering civil engineering, he "
-"founded TinyERP. This was the first phase of OpenERP which would later "
-"became Odoo, the most installed open-source business software worldwide."
-msgstr ""
-
-#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_attendee_details
 msgid "Attendees"
 msgstr ""
@@ -590,11 +580,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:website_event.field_event_type__community_menu
 #: model:ir.model.fields.selection,name:website_event.selection__website_event_menu__menu_type__community
 msgid "Community Menu"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_speaker_bio
-msgid "Company"
 msgstr ""
 
 #. module: website_event
@@ -1084,16 +1069,6 @@ msgid "Is Published"
 msgstr ""
 
 #. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_speaker_bio
-msgid "John DOE"
-msgstr ""
-
-#. module: website_event
-#: model_terms:ir.ui.view,arch_db:website_event.s_speaker_bio
-msgid "John Doe's avatar"
-msgstr ""
-
-#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_ticket_access
 msgid "Join online"
 msgstr ""
@@ -1414,7 +1389,7 @@ msgstr ""
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_template
-msgid "Registration failed! Suspicious activity detected by Google reCaptcha."
+msgid "Registration failed! The captcha check refused it."
 msgstr ""
 
 #. module: website_event
@@ -1930,12 +1905,6 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.modal_ticket_registration
 msgid "available)"
-msgstr ""
-
-#. module: website_event
-#. odoo-python
-#: code:addons/website_event/models/event_event.py:0
-msgid "date_end"
 msgstr ""
 
 #. module: website_event

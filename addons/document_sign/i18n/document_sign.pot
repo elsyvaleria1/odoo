@@ -1,19 +1,25 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
-# 	* documents_sign
+# 	* document_sign
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-30 18:46+0000\n"
-"PO-Revision-Date: 2026-01-30 18:46+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: document_sign
+#. odoo-python
+#: code:addons/document_sign/models/document_document.py:0
+msgid "%s is used by a signature request and cannot be deleted."
+msgstr ""
 
 #. module: document_sign
 #: model_terms:ir.ui.view,arch_db:document_sign.sign_import_from_documents_view_form
@@ -33,10 +39,10 @@ msgstr ""
 #. module: document_sign
 #: model:ir.model.fields,field_description:document_sign.field_document_document__display_name
 #: model:ir.model.fields,field_description:document_sign.field_sign_document__display_name
-#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__display_name
 #: model:ir.model.fields,field_description:document_sign.field_sign_request__display_name
 #: model:ir.model.fields,field_description:document_sign.field_sign_request_item__display_name
 #: model:ir.model.fields,field_description:document_sign.field_sign_template__display_name
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -68,10 +74,10 @@ msgstr ""
 #. module: document_sign
 #: model:ir.model.fields,field_description:document_sign.field_document_document__id
 #: model:ir.model.fields,field_description:document_sign.field_sign_document__id
-#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__id
 #: model:ir.model.fields,field_description:document_sign.field_sign_request__id
 #: model:ir.model.fields,field_description:document_sign.field_sign_request_item__id
 #: model:ir.model.fields,field_description:document_sign.field_sign_template__id
+#: model:ir.model.fields,field_description:document_sign.field_wizard_sign_template_import_document__id
 msgid "ID"
 msgstr ""
 
@@ -82,8 +88,7 @@ msgstr ""
 
 #. module: document_sign
 #. odoo-javascript
-#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.js:0
-#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_documents_cog_menu.xml:0
+#: code:addons/document_sign/static/src/backend_components/cog_menu/sign_import_document_cog_menu.js:0
 msgid "Import from Documents"
 msgstr ""
 
@@ -110,7 +115,7 @@ msgstr ""
 
 #. module: document_sign
 #. odoo-python
-#: code:addons/document_sign/wizard/sign_import_documents.py:0
+#: code:addons/document_sign/wizards/wizard_sign_template_import_document.py:0
 msgid "No document selected to import and sign."
 msgstr ""
 

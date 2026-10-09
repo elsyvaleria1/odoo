@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-11 11:35+0000\n"
-"PO-Revision-Date: 2026-09-11 11:35+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -72,6 +72,11 @@ msgstr ""
 msgid ""
 "A Python dictionary that will be evaluated to provide default values when "
 "creating new records for this alias."
+msgstr ""
+
+#. module: mrp_plm
+#: model:ir.model,name:mrp_plm.model_mixin_bom_component
+msgid "A quantity of a product on a BoM"
 msgstr ""
 
 #. module: mrp_plm
@@ -220,6 +225,11 @@ msgid "Apply on"
 msgstr ""
 
 #. module: mrp_plm
+#: model:ir.model,name:mrp_plm.model_approval_category
+msgid "Approval Category"
+msgstr ""
+
+#. module: mrp_plm
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__approval_request_ids
 msgid "Approval Requests"
 msgstr ""
@@ -346,8 +356,8 @@ msgstr ""
 #: model_terms:ir.actions.act_window,help:mrp_plm.mrp_bom_action_kanban
 msgid ""
 "Bills of materials allow you to define the list of required components\n"
-"              used to make a finished product; through a manufacturing\n"
-"              order or a pack of products."
+"                used to make a finished product; through a manufacturing\n"
+"                order or a pack of products."
 msgstr ""
 
 #. module: mrp_plm
@@ -377,6 +387,11 @@ msgid "BoM Line"
 msgstr ""
 
 #. module: mrp_plm
+#: model:ir.model,name:mrp_plm.model_mrp_bom_overview_report_handler
+msgid "BoM Overview Custom Handler"
+msgstr ""
+
+#. module: mrp_plm
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__bom_rebase_ids
 msgid "BoM Rebase"
 msgstr ""
@@ -393,13 +408,6 @@ msgid "BoM Suggestions from %(mo_name)s"
 msgstr ""
 
 #. module: mrp_plm
-#. odoo-javascript
-#: code:addons/mrp_plm/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
-#: model_terms:ir.ui.view,arch_db:mrp_plm.report_mrp_bom_inherit_mrp_plm
-msgid "BoM Version"
-msgstr ""
-
-#. module: mrp_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.mrp_eco_kanban
 msgid "BoM:"
 msgstr ""
@@ -407,11 +415,6 @@ msgstr ""
 #. module: mrp_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.mrp_eco_view_form
 msgid "By-Product Changes"
-msgstr ""
-
-#. module: mrp_plm
-#: model:ir.model,name:mrp_plm.model_mrp_bom_byproduct
-msgid "Byproduct"
 msgstr ""
 
 #. module: mrp_plm
@@ -600,10 +603,12 @@ msgid "Difference between old operation and new operation revision"
 msgstr ""
 
 #. module: mrp_plm
+#: model:ir.model.fields,field_description:mrp_plm.field_approval_category__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_document_document__display_name
+#: model:ir.model.fields,field_description:mrp_plm.field_mixin_bom_component__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom__display_name
-#: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_byproduct__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_line__display_name
+#: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_overview_report_handler__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_approval_template__display_name
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_bom_change__display_name
@@ -726,21 +731,18 @@ msgid "ECO(s)"
 msgstr ""
 
 #. module: mrp_plm
-#. odoo-javascript
 #. odoo-python
-#: code:addons/mrp_plm/static/src/components/bom_overview_line/mrp_bom_overview_line.js:0
-#: code:addons/mrp_plm/static/src/components/bom_overview_table/mrp_bom_overview_table.xml:0
+#: code:addons/mrp_plm/reports/mrp_bom_overview_handler.py:0
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_type__nb_ecos
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_production__eco_ids
 #: model:ir.model.fields,field_description:mrp_plm.field_product_product__eco_ids
 #: model:ir.model.fields,field_description:mrp_plm.field_product_template__eco_ids
 #: model:ir.ui.menu,name:mrp_plm.menu_mrp_plm_eco_report
+#: model:report.formula.column,name:mrp_plm.bom_overview_report_column_ecos
 #: model_terms:ir.ui.view,arch_db:mrp_plm.mrp_eco_search
 #: model_terms:ir.ui.view,arch_db:mrp_plm.mrp_eco_view_calendar
 #: model_terms:ir.ui.view,arch_db:mrp_plm.product_product_view_form_inherit_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.product_template_view_form_inherit_plm
-#: model_terms:ir.ui.view,arch_db:mrp_plm.report_mrp_bom_inherit_mrp_plm
-#: code:addons/mrp_plm/reports/mrp_bom_overview_handler.py:0
 msgid "ECOs"
 msgstr ""
 
@@ -901,10 +903,12 @@ msgid "High"
 msgstr ""
 
 #. module: mrp_plm
+#: model:ir.model.fields,field_description:mrp_plm.field_approval_category__id
 #: model:ir.model.fields,field_description:mrp_plm.field_document_document__id
+#: model:ir.model.fields,field_description:mrp_plm.field_mixin_bom_component__id
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom__id
-#: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_byproduct__id
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_line__id
+#: model:ir.model.fields,field_description:mrp_plm.field_mrp_bom_overview_report_handler__id
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__id
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_approval_template__id
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_bom_change__id
@@ -1074,8 +1078,8 @@ msgstr ""
 #: model_terms:ir.actions.act_window,help:mrp_plm.mrp_eco_action_report
 msgid ""
 "Manage your products and bills of materials changes with the ECO's.\n"
-"              Gather the related documentation and receive the necessary approvals\n"
-"              before applying your changes."
+"                Gather the related documentation and receive the necessary approvals\n"
+"                before applying your changes."
 msgstr ""
 
 #. module: mrp_plm
@@ -1184,6 +1188,11 @@ msgid "New revision quantity"
 msgstr ""
 
 #. module: mrp_plm
+#: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: mrp_plm
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__activity_date_deadline
 msgid "Next Activity Deadline"
 msgstr ""
@@ -1257,6 +1266,12 @@ msgstr ""
 #. module: mrp_plm
 #: model_terms:ir.ui.view,arch_db:mrp_plm.mrp_eco_view_form
 msgid "Open Component"
+msgstr ""
+
+#. module: mrp_plm
+#. odoo-python
+#: code:addons/mrp_plm/reports/mrp_bom_overview_handler.py:0
+msgid "Open ECOs"
 msgstr ""
 
 #. module: mrp_plm
@@ -1458,6 +1473,12 @@ msgstr ""
 #. module: mrp_plm
 #: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_bom_change__upd_product_qty
 msgid "Quantity"
+msgstr ""
+
+#. module: mrp_plm
+#: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco__rating_ids
+#: model:ir.model.fields,field_description:mrp_plm.field_mrp_eco_type__rating_ids
+msgid "Ratings"
 msgstr ""
 
 #. module: mrp_plm

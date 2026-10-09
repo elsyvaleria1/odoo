@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:47+0000\n"
-"PO-Revision-Date: 2025-12-30 18:47+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -34,14 +34,14 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
 "<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
-"                    At least one image is required when posting on Instagram."
+"                        You can only post up to 10 images at once."
 msgstr ""
 
 #. module: social_instagram
 #: model_terms:ir.ui.view,arch_db:social_instagram.instagram_preview
 msgid ""
 "<i class=\"fa-solid fa-exclamation-triangle me-1\"/>\n"
-"                        You can only post up to 10 images at once."
+"                    At least one image is required when posting on Instagram."
 msgstr ""
 
 #. module: social_instagram
@@ -391,12 +391,6 @@ msgid ""
 "The following images do not meet the required aspect ratio (between 1.91:1 and 4:5).\n"
 "\n"
 "%(images)s"
-msgstr ""
-
-#. module: social_instagram
-#. odoo-python
-#: code:addons/social_instagram/controllers/main.py:0
-msgid "There was a authentication issue during your request."
 msgstr ""
 
 #. module: social_instagram

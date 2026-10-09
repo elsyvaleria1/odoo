@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:42+0000\n"
-"PO-Revision-Date: 2025-12-30 18:42+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -1490,6 +1490,13 @@ msgid "A day or less"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article_member__company_id
+msgid ""
+"A group's grant limited to one company reaches only who holds the group in "
+"it."
+msgstr ""
+
+#. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_company_newsletter
 msgid ""
 "A must listen for all developers out there and anyone interested in "
@@ -1526,6 +1533,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/permission_panel/permission_panel.xml:0
 msgid "Access Restricted."
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__access_role
+msgid "Access Role"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__access_scope_path
+msgid "Access Scope Path"
 msgstr ""
 
 #. module: knowledge
@@ -1662,8 +1679,8 @@ msgstr ""
 #. module: knowledge
 #: model_terms:ir.actions.act_window,help:knowledge.knowledge_article_favorite_action
 msgid ""
-"Add articles in your list of favorites by clicking on the <i class=\"fa fa-"
-"star-o\"></i> next to the article name."
+"Add articles in your list of favorites by clicking on the <i class=\"fa-"
+"regular fa-star\"></i> next to the article name."
 msgstr ""
 
 #. module: knowledge
@@ -1715,47 +1732,53 @@ msgid "Advertising that would appear online or on TV"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
-msgid ""
-"After-Sales Service <span class=\"o_stars o_five_stars\" id=\"checkId-5\"><i"
-" class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
-msgid ""
-"After-Sales Service <span class=\"o_stars o_five_stars\" id=\"checkId-5\"><i"
-" class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+#: model:ir.model.fields,help:knowledge.field_knowledge_article_member__date_to
+msgid "After this moment the grant grants nothing."
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
 msgid ""
 "After-Sales Service <span class=\"o_stars o_five_stars\" id=\"checkId-5\"><i"
-" class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+" class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
 msgid ""
-"After-Sales Service​ <span class=\"o_stars o_five_stars\" "
-"id=\"checkId-5\"><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"After-Sales Service <span class=\"o_stars o_five_stars\" id=\"checkId-5\"><i"
+" class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
+msgid ""
+"After-Sales Service <span class=\"o_stars o_five_stars\" id=\"checkId-5\"><i"
+" class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
 msgid ""
 "After-Sales Service​ <span class=\"o_stars o_five_stars\" "
-"id=\"checkId-5\"><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i "
-"class=\"fa fa-star-o\"></i></span>"
+"id=\"checkId-5\"><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular "
+"fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+msgid ""
+"After-Sales Service​ <span class=\"o_stars o_five_stars\" "
+"id=\"checkId-5\"><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
@@ -1996,6 +2019,11 @@ msgid "Article Discussion Thread"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model,name:knowledge.model_knowledge_article_member
+msgid "Article Grant"
+msgstr ""
+
+#. module: knowledge
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article__article_properties_definition
 msgid "Article Item Properties"
 msgstr ""
@@ -2008,11 +2036,6 @@ msgstr ""
 #: model:ir.actions.act_window,name:knowledge.knowledge_article_item_action_stages
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_search
 msgid "Article Items"
-msgstr ""
-
-#. module: knowledge
-#: model:ir.model,name:knowledge.model_knowledge_article_member
-msgid "Article Member"
 msgstr ""
 
 #. module: knowledge
@@ -2183,39 +2206,40 @@ msgid "Brand Assets"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
 msgid ""
 "Brand Attraction <span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star-o\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
-msgid ""
-"Brand Attraction <span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
 msgid ""
 "Brand Attraction <span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
 msgid ""
 "Brand Attraction <span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+msgid ""
+"Brand Attraction <span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
@@ -2377,6 +2401,16 @@ msgid "Category Sequence"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__cause
+msgid "Cause"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__cause_ref
+msgid "Cause Reference"
+msgstr ""
+
+#. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_post_mortem
 msgid "Causes"
 msgstr ""
@@ -2481,9 +2515,22 @@ msgid "Close comments panel"
 msgstr ""
 
 #. module: knowledge
+#: model:res.groups,comment:knowledge.privilege_share_articles
+msgid ""
+"Code that changes who reaches an article for an editor of it (the employees'"
+" permission, an article that stops inheriting, a partner taken off it) "
+"writes the grant rows the editor has no rights on of their own."
+msgstr ""
+
+#. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/editor/plugins/comments_plugin/comments_plugin.js:0
 msgid "Comment"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__company_id
+msgid "Company"
 msgstr ""
 
 #. module: knowledge
@@ -2794,8 +2841,9 @@ msgstr ""
 #. module: knowledge
 #: model:ir.model.fields,help:knowledge.field_knowledge_article__internal_permission
 msgid ""
-"Default permission for all internal users. (External users can still have "
-"access to this article if they are added to its members)"
+"Default permission for all internal users, set on this article: a grant to "
+"the employees. (External users can still have access to this article if they"
+" are added to its members)"
 msgstr ""
 
 #. module: knowledge
@@ -2837,11 +2885,6 @@ msgid "Deletion Date"
 msgstr ""
 
 #. module: knowledge
-#: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_check_permission_on_desync
-msgid "Desynchronized articles must have internal permission."
-msgstr ""
-
-#. module: knowledge
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article__is_desynchronized
 msgid "Desyncronized with parents"
 msgstr ""
@@ -2880,9 +2923,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_template_category__display_name
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_thread__display_name
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_cover__display_name
-#: model:ir.model.fields,field_description:knowledge.field_wizard_knowledge_article_invite_member__display_name
 #: model:ir.model.fields,field_description:knowledge.field_res_partner__display_name
 #: model:ir.model.fields,field_description:knowledge.field_res_users__display_name
+#: model:ir.model.fields,field_description:knowledge.field_wizard_knowledge_article_invite_member__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -2931,20 +2974,8 @@ msgid "Drop here to delete this article"
 msgstr ""
 
 #. module: knowledge
-#. odoo-javascript
-#: code:addons/knowledge/static/src/views/list_view.js:0
-msgid "Duplicate"
-msgstr ""
-
-#. module: knowledge
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_mail_invite
 msgid "EDIT"
-msgstr ""
-
-#. module: knowledge
-#. odoo-javascript
-#: code:addons/knowledge/static/src/components/embedded_view_actions_menu/embedded_view_actions_menu.xml:0
-msgid "Edit…"
 msgstr ""
 
 #. module: knowledge
@@ -2952,6 +2983,12 @@ msgstr ""
 #: code:addons/knowledge/static/src/editor/embedded_components/backend/embedded_view_link/embedded_view_link_edit_dialog.xml:0
 #: code:addons/knowledge/static/src/editor/embedded_components/backend/embedded_view_link/embedded_view_link_popover.xml:0
 msgid "Edit Link"
+msgstr ""
+
+#. module: knowledge
+#. odoo-javascript
+#: code:addons/knowledge/static/src/components/embedded_view_actions_menu/embedded_view_actions_menu.xml:0
+msgid "Edit…"
 msgstr ""
 
 #. module: knowledge
@@ -2977,6 +3014,11 @@ msgstr ""
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
 msgid "Education: Student"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__access_inherited_label_id
+msgid "Effective Sensitivity Label"
 msgstr ""
 
 #. module: knowledge
@@ -3042,6 +3084,11 @@ msgid "Expense Policy"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__date_to
+msgid "Expiration"
+msgstr ""
+
+#. module: knowledge
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_invite_view_form
 msgid "Extra Comment"
 msgstr ""
@@ -3068,8 +3115,6 @@ msgid "Favorite Articles"
 msgstr ""
 
 #. module: knowledge
-#. odoo-javascript
-#: code:addons/knowledge/static/src/components/sidebar/sidebar_section.xml:0
 #: model:ir.actions.act_window,name:knowledge.knowledge_article_favorite_action
 #: model:ir.ui.menu,name:knowledge.knowledge_article_favorite_menu
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_favorite_view_tree
@@ -3108,11 +3153,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article__message_partner_ids
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_thread__message_partner_ids
 msgid "Followers (Partners)"
-msgstr ""
-
-#. module: knowledge
-#: model:ir.model.fields,help:knowledge.field_knowledge_article__activity_type_icon
-msgid "Font awesome icon e.g. fa-tasks"
 msgstr ""
 
 #. module: knowledge
@@ -3159,6 +3199,21 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/permission_panel/permission_panel.xml:0
 msgid "General Access"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__granted_by_id
+msgid "Granted By"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__access_grant_ids
+msgid "Grants"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_member__group_id
+msgid "Group"
 msgstr ""
 
 #. module: knowledge
@@ -3383,9 +3438,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_template_category__id
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_thread__id
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_cover__id
-#: model:ir.model.fields,field_description:knowledge.field_wizard_knowledge_article_invite_member__id
 #: model:ir.model.fields,field_description:knowledge.field_res_partner__id
 #: model:ir.model.fields,field_description:knowledge.field_res_users__id
+#: model:ir.model.fields,field_description:knowledge.field_wizard_knowledge_article_invite_member__id
 msgid "ID"
 msgstr ""
 
@@ -3534,6 +3589,18 @@ msgstr ""
 
 #. module: knowledge
 #. odoo-javascript
+#: code:addons/knowledge/static/src/components/external_embedded_view_favorite_menu/insert_embedded_view.xml:0
+msgid "Insert Link in Article…"
+msgstr ""
+
+#. module: knowledge
+#. odoo-javascript
+#: code:addons/knowledge/static/src/components/external_embedded_view_favorite_menu/insert_embedded_view.xml:0
+msgid "Insert View in Article…"
+msgstr ""
+
+#. module: knowledge
+#. odoo-javascript
 #: code:addons/knowledge/static/src/components/item_calendar_props_dialog/item_calendar_props_dialog.xml:0
 msgid "Insert a Calendar View"
 msgstr ""
@@ -3578,18 +3645,6 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/knowledge/static/src/editor/plugins/article_plugin/article_plugin.js:0
 msgid "Insert an Article shortcut"
-msgstr ""
-
-#. module: knowledge
-#. odoo-javascript
-#: code:addons/knowledge/static/src/components/external_embedded_view_favorite_menu/insert_embedded_view.xml:0
-msgid "Insert Link in Article…"
-msgstr ""
-
-#. module: knowledge
-#. odoo-javascript
-#: code:addons/knowledge/static/src/components/external_embedded_view_favorite_menu/insert_embedded_view.xml:0
-msgid "Insert View in Article…"
 msgstr ""
 
 #. module: knowledge
@@ -4347,7 +4402,6 @@ msgid "No Members yet!"
 msgstr ""
 
 #. module: knowledge
-#: model:ir.model.fields.selection,name:knowledge.selection__knowledge_article_member__permission__none
 #: model:ir.model.fields.selection,name:knowledge.selection__wizard_knowledge_article_invite_member__permission__none
 msgid "No access"
 msgstr ""
@@ -4488,6 +4542,13 @@ msgstr ""
 msgid ""
 "Only internal users are allowed to restore the original article access "
 "information."
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article__access_label_id
+msgid ""
+"Only the principals this field class grants reach the record and the records"
+" below it that carry no label of their own."
 msgstr ""
 
 #. module: knowledge
@@ -4670,6 +4731,18 @@ msgid "Podcast updates 📻"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__website_message_ids
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_thread__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article__website_message_ids
+#: model:ir.model.fields,help:knowledge.field_knowledge_article_thread__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/mail/composer/composer_patch.js:0
 msgid "Post"
@@ -4703,44 +4776,48 @@ msgid "Preview"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
 msgid ""
-"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa "
-"fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
-msgid ""
-"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa "
-"fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star-o\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
-msgid ""
-"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa "
-"fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i></span>"
+"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-"
+"regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-"
+"regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-"
+"regular fa-star\"></i></span>​"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
 msgid ""
-"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa "
-"fa-star\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i"
-" class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i></span>"
+"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-"
+"solid fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-"
+"regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-"
+"regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
 msgid ""
-"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa "
-"fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>​"
+"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-"
+"solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid "
+"fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
+msgid ""
+"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-"
+"solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid "
+"fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
+msgid ""
+"Price <span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-"
+"solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid "
+"fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-"
+"star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
@@ -4752,7 +4829,6 @@ msgstr ""
 #. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/move_article_dialog/move_article_dialog.js:0
-#: code:addons/knowledge/static/src/components/sidebar/sidebar_section.xml:0
 #: model:ir.model.fields.selection,name:knowledge.selection__knowledge_article__category__private
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_search
 msgid "Private"
@@ -5011,11 +5087,6 @@ msgid "Root articles cannot be desynchronized."
 msgstr ""
 
 #. module: knowledge
-#: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_check_permission_on_root
-msgid "Root articles must have internal permission."
-msgstr ""
-
-#. module: knowledge
 #: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_check_template_category_on_root
 msgid "Root templates must have a category."
 msgstr ""
@@ -5172,6 +5243,11 @@ msgid "Send to trash"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__access_label_id
+msgid "Sensitivity Label"
+msgstr ""
+
+#. module: knowledge
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article__sequence
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_favorite__sequence
 #: model:ir.model.fields,field_description:knowledge.field_knowledge_article_stage__sequence
@@ -5185,6 +5261,11 @@ msgid "Share"
 msgstr ""
 
 #. module: knowledge
+#: model:res.groups,name:knowledge.privilege_share_articles
+msgid "Share Articles on a User's Behalf"
+msgstr ""
+
+#. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/permission_panel_dialog/permission_panel_dialog.xml:0
 msgid "Share settings"
@@ -5193,7 +5274,6 @@ msgstr ""
 #. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/move_article_dialog/move_article_dialog.js:0
-#: code:addons/knowledge/static/src/components/sidebar/sidebar_section.xml:0
 #: model:ir.model.fields.selection,name:knowledge.selection__knowledge_article__category__shared
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_search
 msgid "Shared"
@@ -5279,43 +5359,46 @@ msgstr ""
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
 msgid ""
-"Social <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i class=\"fa "
-"fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
-msgid ""
-"Social Status <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star-o\"></i></span>"
-msgstr ""
-
-#. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
-msgid ""
-"Social Status <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"Social <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i class=\"fa-"
+"solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid "
+"fa-star\"></i><i class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-"
+"star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
 msgid ""
 "Social Status <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+msgid ""
+"Social Status <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
+msgstr ""
+
+#. module: knowledge
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
+msgid ""
+"Social Status <span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
 msgid ""
 "Social Status ​<span class=\"o_stars o_five_stars\" id=\"checkId-4\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
@@ -5347,39 +5430,40 @@ msgid "Source Feedback"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
 msgid ""
 "Speed of Service <span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_4
 msgid ""
 "Speed of Service <span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_1
-#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_2
+#: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_persona_3
 msgid ""
 "Speed of Service <span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i "
-"class=\"fa fa-star\"></i><i class=\"fa fa-star\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-solid fa-star\"></i><i class=\"fa-solid fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_marketing_customer_personas
 msgid ""
 "Speed of Service ​<span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-"
-"star-o\"></i></span>"
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-star\"></i><i "
+"class=\"fa-regular fa-star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
@@ -5610,6 +5694,13 @@ msgid "The membership you are trying to edit has been deleted"
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article__access_scope_path
+msgid ""
+"The nodes whose grants reach this one: its ancestors up to the nearest "
+"boundary, and itself."
+msgstr ""
+
+#. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/macros/abstract_macro.js:0
 msgid "The operation could not be completed."
@@ -5631,9 +5722,26 @@ msgid ""
 msgstr ""
 
 #. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article_member__cause_ref
+msgid "The record that caused the grant, as model,id."
+msgstr ""
+
+#. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/macros/abstract_macro.js:0
 msgid "The record that this macro is targeting could not be found."
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article__access_inherited_label_id
+msgid ""
+"The record's own label, else its nearest labelled ancestor's within its "
+"scope."
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.fields,help:knowledge.field_knowledge_article__access_role
+msgid "The role the current user holds on the record."
 msgstr ""
 
 #. module: knowledge
@@ -5717,6 +5825,11 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/knowledge/static/src/search/search_bar_menu/search_bar_menu.js:0
 msgid "This filter is global and will be removed for everyone."
+msgstr ""
+
+#. module: knowledge
+#: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_member_unique_article_group
+msgid "This group is already set on this article."
 msgstr ""
 
 #. module: knowledge
@@ -5963,18 +6076,6 @@ msgid "We already cannot wait for the next one🏃"
 msgstr ""
 
 #. module: knowledge
-#: model:ir.model.fields,field_description:knowledge.field_knowledge_article__website_message_ids
-#: model:ir.model.fields,field_description:knowledge.field_knowledge_article_thread__website_message_ids
-msgid "Website Messages"
-msgstr ""
-
-#. module: knowledge
-#: model:ir.model.fields,help:knowledge.field_knowledge_article__website_message_ids
-#: model:ir.model.fields,help:knowledge.field_knowledge_article_thread__website_message_ids
-msgid "Website communication history"
-msgstr ""
-
-#. module: knowledge
 #. odoo-python
 #: code:addons/knowledge/models/res_users.py:0
 msgid "Welcome %s"
@@ -6015,8 +6116,8 @@ msgstr ""
 #: model:ir.model.fields,help:knowledge.field_knowledge_article__to_delete
 msgid ""
 "When sent to trash, articles are flagged to be deleted\n"
-"                days after last edit. knowledge_article_trash_limit_days config\n"
-"                parameter can be used to modify the number of days. \n"
+"                days after last edit. knowledge.knowledge_article_trash_limit_days config\n"
+"                parameter can be used to modify the number of days.\n"
 "                (default is 30)"
 msgstr ""
 
@@ -6095,7 +6196,6 @@ msgstr ""
 #. module: knowledge
 #. odoo-javascript
 #: code:addons/knowledge/static/src/components/move_article_dialog/move_article_dialog.js:0
-#: code:addons/knowledge/static/src/components/sidebar/sidebar_section.xml:0
 #: model:ir.model.fields.selection,name:knowledge.selection__knowledge_article__category__workspace
 #: model_terms:ir.ui.view,arch_db:knowledge.knowledge_article_view_search
 msgid "Workspace"
@@ -6121,7 +6221,7 @@ msgid "Write the next Newsletter"
 msgstr ""
 
 #. module: knowledge
-#: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_member_unique_article_partner
+#: model:ir.model.constraint,message:knowledge.constraint_knowledge_article_member_unique_article_member
 msgid "You already added this partner on this article."
 msgstr ""
 
@@ -6435,25 +6535,28 @@ msgstr ""
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_software_specification
 msgid ""
-"​<span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i></span>"
+"​<span class=\"o_stars o_five_stars\" id=\"checkId-1\"><i class=\"fa-regular"
+" fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_software_specification
 msgid ""
-"​<span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i></span>"
+"​<span class=\"o_stars o_five_stars\" id=\"checkId-2\"><i class=\"fa-regular"
+" fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i></span>"
 msgstr ""
 
 #. module: knowledge
 #: model_terms:knowledge.article,template_body:knowledge.knowledge_article_template_software_specification
 msgid ""
-"​<span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i class=\"fa fa-"
-"star-o\"></i><i class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i><i "
-"class=\"fa fa-star-o\"></i><i class=\"fa fa-star-o\"></i></span>"
+"​<span class=\"o_stars o_five_stars\" id=\"checkId-3\"><i class=\"fa-regular"
+" fa-star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i><i class=\"fa-regular fa-star\"></i><i class=\"fa-regular fa-"
+"star\"></i></span>"
 msgstr ""
 
 #. module: knowledge

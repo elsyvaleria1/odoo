@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-30 18:42+0000\n"
-"PO-Revision-Date: 2025-12-30 18:42+0000\n"
+"POT-Creation-Date: 2026-10-09 23:37+0000\n"
+"PO-Revision-Date: 2026-10-09 23:37+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -34,54 +34,69 @@ msgid "30 min"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_kanban
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_kanban_room
 msgid "<i class=\"fa-solid fa-right-long mx-1\" title=\"Until\"/>"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_gantt
-msgid "<i class=\"fa fa-long-arrow-right\" title=\"Until\"/>"
-msgstr ""
-
-#. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "<span class=\"o_stat_text\">Next Meeting</span>"
-msgstr ""
-
-#. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "<span invisible=\"next_booking_start\">No Upcoming Meetings</span>"
-msgstr ""
-
-#. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_kanban
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_kanban_room
 msgid "<strong>Date: </strong>"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_gantt
-msgid "<strong>Organizer: </strong>"
-msgstr ""
-
-#. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_kanban
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_kanban_room
 msgid "<strong>Room: </strong>"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__access_token
+#: model:ir.model.fields,help:room.field_resource_asset_room__booking_exclusive
+msgid ""
+"A booking takes the whole resource, whatever capacity it asked for. Clear it"
+" to let several bookings share one time slot up to the capacity, as a bar "
+"counter does."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__nationality_ids
+msgid "A thing's nationalities. A person's are their party's."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__access_token
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__access_token
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__access_token
+#: model:ir.model.fields,field_description:room.field_resource_resource__access_token
 msgid "Access Token"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_needaction
-#: model:ir.model.fields,field_description:room.field_room_room__message_needaction
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_needaction
 msgid "Action Needed"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__active
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__active
 msgid "Active"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_type_icon
+msgid "Activity Type Icon"
 msgstr ""
 
 #. module: room
@@ -97,19 +112,21 @@ msgid "Add a Booking"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__description
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "Amenities"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__analytic_distribution
+msgid "Analytic Distribution"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "Appearance"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__analytic_precision
+msgid "Analytic Precision"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_search
+#: model:ir.model,name:room.model_appointment_booking_line
+msgid "Appointment Booking Line"
+msgstr ""
+
+#. module: room
 #: model_terms:ir.ui.view,arch_db:room.resource_asset_view_search_room
 msgid "Archived"
 msgstr ""
@@ -127,27 +144,51 @@ msgid "Are you sure you want to end the current booking ?"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_attachment_count
-#: model:ir.model.fields,field_description:room.field_room_room__message_attachment_count
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__assignment_ids
+msgid "Assignments"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_attachment_count
 msgid "Attachment Count"
 msgstr ""
 
 #. module: room
 #. odoo-javascript
 #: code:addons/room/static/src/room_booking/room_booking_view/room_booking_view.xml:0
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_kanban
+#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_kanban_room
 msgid "Available"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__bookable_background_color
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__bookable_background_color
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__bookable_background_color
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__bookable_background_color
+#: model:ir.model.fields,field_description:room.field_resource_resource__bookable_background_color
 msgid "Available Background Color"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__room_background_image
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__appointment_type_ids
+msgid "Available in"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__room_background_image
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__room_background_image
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__room_background_image
+#: model:ir.model.fields,field_description:room.field_resource_resource__room_background_image
 msgid "Background Image"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__account_move_ids
+msgid "Bills"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__count_bill
+msgid "Bills Count"
 msgstr ""
 
 #. module: room
@@ -157,20 +198,32 @@ msgid "Booked"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__booked_background_color
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__booked_background_color
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__booked_background_color
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__booked_background_color
+#: model:ir.model.fields,field_description:room.field_resource_resource__booked_background_color
 msgid "Booked Background Color"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_search
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_search_room
 msgid "Booking"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__booking_limit_percentage
+msgid "Booking Ceiling %"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__booking_exclusive
+msgid "Booking Exclusive"
 msgstr ""
 
 #. module: room
 #. odoo-javascript
 #: code:addons/room/static/src/room_booking/room_booking_form/room_booking_form.xml:0
 #: code:addons/room/static/src/room_booking/room_booking_view/room_booking_view.xml:0
-#: model:ir.model.fields,field_description:room.field_room_booking__name
 msgid "Booking Name"
 msgstr ""
 
@@ -181,31 +234,83 @@ msgid "Booking Now"
 msgstr ""
 
 #. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__booking_sequence
+msgid "Booking Sequence"
+msgstr ""
+
+#. module: room
 #. odoo-python
-#: code:addons/room/models/room_room.py:0
+#: code:addons/room/models/resource_resource.py:0
 #: model:ir.actions.act_window,name:room.room_booking_action
-#: model:ir.model.fields,field_description:room.field_room_room__room_booking_ids
 #: model:ir.ui.menu,name:room.room_booking_menu
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_gantt
 msgid "Bookings"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_kanban
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__brand_new
+msgid "Brand New"
+msgstr ""
+
+#. module: room
+#. odoo-python
+#: code:addons/room/models/calendar_event.py:0
+#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_kanban_room
 msgid "Busy"
 msgstr ""
 
 #. module: room
-#: model_terms:room.room,description:room.room_room_main_office_room_3
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__cadastral_id
+msgid "Cadastral ID"
+msgstr ""
+
+#. module: room
+#: model:ir.model,name:room.model_calendar_event
+msgid "Calendar Event"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__capacity
+msgid "Capacity"
+msgstr ""
+
+#. module: room
+#: model_terms:resource.resource,description:room.room_room_main_office_room_3_resource_resource
 msgid "Capacity: 6 people"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__company_id
-#: model:ir.model.fields,field_description:room.field_room_office__company_id
-#: model:ir.model.fields,field_description:room.field_room_room__company_id
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__kind_code
+msgid "Code"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__color
+msgid "Color"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__combinable_resource_ids
+msgid "Combinable Resource"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__company_id
 msgid "Company"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__child_ids
+msgid "Components"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_next_failure
+msgid "Computed as Last Failure + MTBF"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__country_built_id
+msgid "Country Built"
 msgstr ""
 
 #. module: room
@@ -214,34 +319,99 @@ msgid "Create Rooms"
 msgstr ""
 
 #. module: room
-#. odoo-python
-#: code:addons/room/models/room_booking.py:0
-msgid "Create a Room"
-msgstr ""
-
-#. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__create_uid
-#: model:ir.model.fields,field_description:room.field_room_office__create_uid
-#: model:ir.model.fields,field_description:room.field_room_room__create_uid
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__create_date
-#: model:ir.model.fields,field_description:room.field_room_office__create_date
-#: model:ir.model.fields,field_description:room.field_room_room__create_date
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__create_date
 msgid "Created on"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_form
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__current_employee_skill_ids
+msgid "Current Employee Skill"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__holder_id
+msgid "Current Holder"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_open_count
+msgid "Current Maintenance"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__parent_id
+msgid "Current physical parent from the resource membership timeline."
+msgstr ""
+
+#. module: room
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_form_room
 msgid "Date"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_acquisition
+msgid "Date Acquisition"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_built
+msgid "Date Built"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_disposal
+msgid "Date Disposal"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_origin
+msgid "Date Origin"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__default_role_id
+msgid "Default Role"
 msgstr ""
 
 #. module: room
 #. odoo-javascript
 #: code:addons/room/static/src/room_booking/room_booking_view/room_booking_view.js:0
 msgid "Delete"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__department_id
+msgid "Department"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__board_id
+msgid "Depreciation Board"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__depreciation_state
+msgid "Depreciation Status"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__description
+msgid "Description"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__destination_resource_ids
+msgid "Destination combination"
 msgstr ""
 
 #. module: room
@@ -252,11 +422,43 @@ msgid "Discard"
 msgstr ""
 
 #. module: room
+#: model:ir.model.fields,field_description:room.field_appointment_booking_line__display_name
+#: model:ir.model.fields,field_description:room.field_calendar_event__display_name
 #: model:ir.model.fields,field_description:room.field_ir_http__display_name
-#: model:ir.model.fields,field_description:room.field_room_booking__display_name
-#: model:ir.model.fields,field_description:room.field_room_office__display_name
-#: model:ir.model.fields,field_description:room.field_room_room__display_name
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__display_name
+#: model:ir.model.fields,field_description:room.field_resource_resource__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__distribution_analytic_account_ids
+msgid "Distribution Analytic Account"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__document_centralized
+msgid "Document Centralized"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__count_document
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__document_ids
+msgid "Documents"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__time_efficiency
+msgid "Efficiency Factor"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__email
+msgid "Email"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__employee_id
+msgid "Employee"
 msgstr ""
 
 #. module: room
@@ -272,20 +474,65 @@ msgid "End Booking"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__stop_datetime
-msgid "End Datetime"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__device_ids
+msgid "Endpoints"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_follower_ids
-#: model:ir.model.fields,field_description:room.field_room_room__message_follower_ids
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__enforce_booking_limit
+msgid "Enforce Booking Ceiling"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__engine_sn
+msgid "Engine Serial Number"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_next_failure
+msgid "Estimated Next Failure"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__expected_mtbf
+msgid "Expected MTBF"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__share
+msgid ""
+"External user with limited access, created only for the purpose of sharing "
+"data."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__part_flagged_count
+msgid "Flagged Parts"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_follower_ids
 msgid "Followers"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_partner_ids
-#: model:ir.model.fields,field_description:room.field_room_room__message_partner_ids
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_partner_ids
 msgid "Followers (Partners)"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__future_operator_id
+msgid "Future Operator"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__future_operator_employee_id
+msgid "Future Operator (Employee)"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__cadastral_id
+msgid "Government-assigned parcel identifier for real estate assets."
 msgstr ""
 
 #. module: room
@@ -294,34 +541,123 @@ msgid "HTTP Routing"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__has_message
-#: model:ir.model.fields,field_description:room.field_room_room__has_message
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_future_operator
+msgid "Hand-over Date"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__has_message
 msgid "Has Message"
 msgstr ""
 
 #. module: room
-#: model:room.office,name:room.room_office_head_office
-msgid "Head Office"
+#: model:ir.model.fields,help:room.field_resource_asset_room__capacity
+msgid ""
+"How many claims the resource can hold at once: seats at a table, concurrent "
+"users of a machine. A reservation's allocated percentage is a share of this."
 msgstr ""
 
 #. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__time_efficiency
+msgid ""
+"How quickly this resource performs work compared with the reference "
+"duration. At 100%, one reference hour requires one hour; at 200%, it "
+"requires 30 minutes."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__hr_icon_display
+msgid "Hr Icon Display"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__type
+msgid ""
+"Human: a person, who has a party. Material: a physical thing, such as a "
+"machine, a vehicle or a room. Intangible: a capacity with no body, such as "
+"electricity, sunlight or time."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_appointment_booking_line__id
+#: model:ir.model.fields,field_description:room.field_calendar_event__id
 #: model:ir.model.fields,field_description:room.field_ir_http__id
-#: model:ir.model.fields,field_description:room.field_room_booking__id
-#: model:ir.model.fields,field_description:room.field_room_office__id
-#: model:ir.model.fields,field_description:room.field_room_room__id
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__id
+#: model:ir.model.fields,field_description:room.field_resource_resource__id
 msgid "ID"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,help:room.field_room_booking__message_needaction
-#: model:ir.model.fields,help:room.field_room_room__message_needaction
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__im_status
+msgid "IM Status"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__imei
+msgid "IMEI"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__identifier_ids
+msgid "Identifiers"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__message_needaction
 msgid "If checked, new messages require your attention."
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,help:room.field_room_booking__message_has_error
-#: model:ir.model.fields,help:room.field_room_room__message_has_error
+#: model:ir.model.fields,help:room.field_resource_asset_room__message_has_error
+#: model:ir.model.fields,help:room.field_resource_asset_room__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__active
+msgid ""
+"If the active field is set to False, it will allow you to hide the resource "
+"record without removing it."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__image_1920
+msgid "Image"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__image_1024
+msgid "Image 1024"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__image_128
+msgid "Image 128"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__image_256
+msgid "Image 256"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__image_512
+msgid "Image 512"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_in_service
+msgid "In Service Since"
 msgstr ""
 
 #. module: room
@@ -331,44 +667,135 @@ msgid "Install Application"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_list
+#: model:ir.model.fields,help:room.field_resource_asset_room__imei
+msgid "International Mobile Equipment Identity of a cellular-capable asset."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__inventory_tag
+msgid "Inventory Tag"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__is_bookable
+msgid "Is Bookable"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__is_available
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__is_available
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__is_available
+#: model:ir.model.fields,field_description:room.field_resource_resource__is_available
+#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_list_room
 msgid "Is Currently Available"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_is_follower
-#: model:ir.model.fields,field_description:room.field_room_room__message_is_follower
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_is_follower
 msgid "Is Follower"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__is_available
-msgid "Is Room Currently Available"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__job_title
+msgid "Job Title"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__write_uid
-#: model:ir.model.fields,field_description:room.field_room_office__write_uid
-#: model:ir.model.fields,field_description:room.field_room_room__write_uid
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__kind_id
+msgid "Kind"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__date_last_failure
+msgid "Last Failure"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__write_date
-#: model:ir.model.fields,field_description:room.field_room_office__write_date
-#: model:ir.model.fields,field_description:room.field_room_room__write_date
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__write_date
 msgid "Last Updated on"
 msgstr ""
 
 #. module: room
-#: model:room.office,name:room.room_office_main_office
-msgid "Main Office"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__log_count
+msgid "Ledger Entries"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__license_plate
+msgid "License Plate"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__license_plate
+msgid "License plate number of the asset (eg plate number for a car)"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__address_id
+msgid "Location"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__log_ids
+msgid "Log"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__log_count
+msgid ""
+"Logs booked against this asset, whatever their state. An archived log is not"
+" counted."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__mtbf
+msgid "MTBF"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__mttr
+msgid "MTTR"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_ids
+msgid "Maintenance"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_count
+msgid "Maintenance Count"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_plan_ids
+msgid "Maintenance Plan"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_plan_count
+msgid "Maintenance Plan Count"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_profile_id
+msgid "Maintenance Profile"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__maintenance_team_id
+msgid "Maintenance Team"
 msgstr ""
 
 #. module: room
 #: model_terms:ir.actions.act_window,help:room.room_booking_action
 msgid ""
-"Make meeting room sharing easy by centralizing all meetings in this App"
+"Make meeting room sharing easy by centralizing all meetings in this App"
 msgstr ""
 
 #. module: room
@@ -377,40 +804,145 @@ msgid "Manage Rooms"
 msgstr ""
 
 #. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__manager_id
+msgid "Manager"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__manager_employee_id
+msgid "Manager (Employee)"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__booking_limit_percentage
+msgid ""
+"Maximum simultaneous allocation for enforced bookings. 100% permits full "
+"booking; 120% permits 20% overbooking. Warning-only reservations can exceed "
+"this ceiling when resource enforcement is disabled."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__mtbf
+msgid ""
+"Mean Time Between Failure, computed based on done corrective maintenances."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__mttr
+msgid "Mean Time To Repair"
+msgstr ""
+
+#. module: room
+#: model:resource.kind,name:room.kind_room
+msgid "Meeting Room"
+msgstr ""
+
+#. module: room
+#: model:appointment.type,name:room.appointment_type_room
 #: model:ir.ui.menu,name:room.room_menu_root
 msgid "Meeting Rooms"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_search
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_search_room
 msgid "Meeting name"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_has_error
-#: model:ir.model.fields,field_description:room.field_room_room__message_has_error
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__relation_ids
+msgid "Members and Dependencies"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__membership_ids
+msgid "Memberships"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_has_error
 msgid "Message Delivery error"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_ids
-#: model:ir.model.fields,field_description:room.field_room_room__message_ids
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_ids
 msgid "Messages"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_search
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__meter_ids
+msgid "Meters"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__missing_identifier_type_ids
+msgid "Missing Identifier Type"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__product_id
+msgid "Model"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__model
+msgid "Model Name"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__model_year
+msgid "Model Year"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: room
 #: model_terms:ir.ui.view,arch_db:room.calendar_event_view_search_room
 msgid "My Meetings"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_list
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__name
 msgid "Name"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__next_booking_start
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__nationality_ids
+msgid "Nationalities"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__nationality_country_ids
+msgid "Nationality Country"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__next_booking_start
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__next_booking_start
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__next_booking_start
+#: model:ir.model.fields,field_description:room.field_resource_resource__next_booking_start
 msgid "Next Booking Start"
 msgstr ""
 
@@ -438,46 +970,74 @@ msgid "No Bookings found. Let’s schedule one!"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_needaction_counter
-#: model:ir.model.fields,field_description:room.field_room_room__message_needaction_counter
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_needaction_counter
 msgid "Number of Actions"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__message_has_error_counter
-#: model:ir.model.fields,field_description:room.field_room_room__message_has_error_counter
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_has_error_counter
 msgid "Number of errors"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,help:room.field_room_booking__message_needaction_counter
-#: model:ir.model.fields,help:room.field_room_room__message_needaction_counter
+#: model:ir.model.fields,help:room.field_resource_asset_room__message_needaction_counter
 msgid "Number of messages requiring action"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,help:room.field_room_booking__message_has_error_counter
-#: model:ir.model.fields,help:room.field_room_room__message_has_error_counter
+#: model:ir.model.fields,help:room.field_resource_asset_room__message_has_error_counter
 msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__office_id
-#: model:ir.model.fields,field_description:room.field_room_room__office_id
+#: model:ir.model.fields,help:room.field_resource_asset_room__count_bill
+msgid "Number of vendor bills referencing this asset"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__odometer
+msgid "Odometer"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__odometer_meter_id
+msgid "Odometer Meter"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__odometer_uom_name
+msgid "Odometer Unit"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__odometer_uom_id
+msgid "Odometer Uom"
+msgstr ""
+
+#. module: room
 #: model_terms:ir.ui.view,arch_db:room.resource_asset_view_list_room
 #: model_terms:ir.ui.view,arch_db:room.resource_asset_view_search_room
 msgid "Office"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_office__name
-#: model_terms:ir.ui.view,arch_db:room.room_office_view_form
-msgid "Office Name"
+#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_form_room
+msgid "Open Room Display"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "Open"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__operator_id
+msgid "Operator"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__operator_employee_id
+msgid "Operator (Employee)"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__operator_history_count
+msgid "Operator History Count"
 msgstr ""
 
 #. module: room
@@ -487,8 +1047,67 @@ msgid "Or"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__organizer_id
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_form_room
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_list_room
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_search_room
 msgid "Organizer"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__origin_country_id
+msgid "Origin Country"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__value_original
+msgid "Original Value"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__parent_id
+msgid "Part Of"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__part_ids
+msgid "Parts"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__partner_id
+msgid "Party"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__phone_ids
+msgid "Phone Numbers"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__booking_sequence
+msgid ""
+"Picked first when several resources fit the asked capacity (of two tables of"
+" 4, the lowest sequence goes first)."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__place_built
+msgid "Place Built"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__place_origin
+msgid "Place Origin"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__website_message_ids
+msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: room
@@ -498,18 +1117,22 @@ msgid "Previous Week"
 msgstr ""
 
 #. module: room
-#: model_terms:room.room,description:room.room_room_main_office_room_2
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__product_tmpl_id
+msgid "Product Template"
+msgstr ""
+
+#. module: room
+#: model_terms:resource.resource,description:room.room_room_main_office_room_2_resource_resource
 msgid "Projector"
 msgstr ""
 
 #. module: room
-#: model_terms:room.room,description:room.room_room_main_office_room_1
+#: model_terms:resource.resource,description:room.room_room_main_office_room_1_resource_resource
 msgid "Projector, whiteboard"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__room_properties
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_search
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__properties
 msgid "Properties"
 msgstr ""
 
@@ -520,18 +1143,56 @@ msgid "Public Booking"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__rating_ids
-#: model:ir.model.fields,field_description:room.field_room_room__rating_ids
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__rating_ids
 msgid "Ratings"
 msgstr ""
 
 #. module: room
-#: model:ir.actions.act_window,name:room.room_room_action
-#: model:ir.model,name:room.model_room_room
-#: model:ir.model.fields,field_description:room.field_room_booking__room_id
-#: model:res.groups.privilege,name:room.res_groups_privilege_room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_search
+#: model:ir.model.fields,help:room.field_resource_asset_room__enforce_booking_limit
+msgid ""
+"Reject any reservation that exceeds this resource's booking ceiling, "
+"including manual meetings and shifts. Individual bookings may enforce the "
+"ceiling even when this option is disabled."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__reservation_ids
+msgid "Reservations"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__resource_id
+msgid "Resource"
+msgstr ""
+
+#. module: room
+#: model:ir.model,name:room.model_resource_resource
+msgid "Resources"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__combinable_resource_ids
+msgid "Resources that combine with this one to serve a bigger demand."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__default_role_id
+msgid "Role selected by default when creating a shift for this resource."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__role_ids
+msgid "Roles"
+msgstr ""
+
+#. module: room
 #: model:ir.model,name:room.model_resource_asset_room
+#: model:res.groups.privilege,name:room.res_groups_privilege_room
 #: model_terms:ir.ui.view,arch_db:room.calendar_event_view_calendar_room
 #: model_terms:ir.ui.view,arch_db:room.calendar_event_view_form_room
 #: model_terms:ir.ui.view,arch_db:room.calendar_event_view_list_room
@@ -542,54 +1203,70 @@ msgid "Room"
 msgstr ""
 
 #. module: room
-#. odoo-python
-#: code:addons/room/models/room_booking.py:0
-msgid "Room %(room_name)s is already booked during the selected time slot."
-msgstr ""
-
-#. module: room
-#: model:ir.model,name:room.model_room_booking
-msgid "Room Booking"
-msgstr ""
-
-#. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__room_booking_url
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__room_booking_url
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__room_booking_url
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__room_booking_url
+#: model:ir.model.fields,field_description:room.field_resource_resource__room_booking_url
 msgid "Room Link"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__name
-msgid "Room Name"
-msgstr ""
-
-#. module: room
-#: model:ir.model,name:room.model_room_office
-msgid "Room Office"
-msgstr ""
-
-#. module: room
-#: model:ir.model.fields,field_description:room.field_room_office__room_properties_definition
-msgid "Room Properties"
-msgstr ""
-
-#. module: room
+#: model:ir.actions.act_window,name:room.room_room_action
 #: model:ir.ui.menu,name:room.room_room_menu
 msgid "Rooms"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_form
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: room
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_form_room
 msgid "Select a Room..."
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_room__short_code
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__trace_id
+msgid "Serial"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__serial_number
+msgid "Serial Number"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__vin_sn
+msgid "Serial Number / VIN"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__share
+msgid "Share User"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_account_depreciation_board__short_code
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__short_code
+#: model:ir.model.fields,field_description:room.field_resource_asset_vehicle__short_code
+#: model:ir.model.fields,field_description:room.field_resource_resource__short_code
 msgid "Short Code"
 msgstr ""
 
 #. module: room
-#: model:ir.model.fields,field_description:room.field_room_booking__start_datetime
-msgid "Start Datetime"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__show_hr_icon_display
+msgid "Show Hr Icon Display"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__employee_skill_ids
+msgid "Skills"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__source_resource_ids
+msgid "Source combination"
 msgstr ""
 
 #. module: room
@@ -599,7 +1276,43 @@ msgid "Start now"
 msgstr ""
 
 #. module: room
-#: model:ir.model.constraint,message:room.constraint_room_room_uniq_access_token
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__state
+msgid "State"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__state_before_maintenance
+msgid "State Before Maintenance"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__location_id
+msgid "Stock Location"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__value_book
+msgid ""
+"Sum of the depreciable value, the salvage value and the book value of all "
+"value increase items"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__technician_user_id
+msgid "Technician"
+msgstr ""
+
+#. module: room
+#: model:ir.model.constraint,message:room.constraint_resource_resource_uniq_access_token
 msgid "The access token must be unique"
 msgstr ""
 
@@ -610,25 +1323,97 @@ msgid "The booking you were editing has been updated or deleted."
 msgstr ""
 
 #. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__model_year
+msgid ""
+"The commercial model year, which may differ from the year it was built."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__nationality_country_ids
+msgid ""
+"The countries it holds a nationality of now, a person's from their party."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__country_built_id
+msgid "The country a thing was produced in."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__trace_id
+msgid ""
+"The inventory identity of this unit, when it entered through a receipt or a "
+"manufacturing order."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__user_id
+msgid ""
+"The login of the person this resource is: their party's internal user. "
+"Choosing another user makes the resource that user's person."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__product_id
+msgid ""
+"The model this unit is an instance of. Its template carries the spec sheet."
+msgstr ""
+
+#. module: room
 #. odoo-javascript
 #: code:addons/room/static/src/room_booking/room_booking_view/room_booking_view.xml:0
 msgid "The next booking is starting soon."
 msgstr ""
 
 #. module: room
-#: model:ir.model.constraint,message:room.constraint_room_room_uniq_short_code
+#: model:ir.model.fields,help:room.field_resource_asset_room__partner_id
+msgid "The person this resource is. A material resource has none."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__place_origin
+msgid "The place within that country: a city of birth, a plant."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__place_built
+msgid "The place within that country: a plant, a workshop."
+msgstr ""
+
+#. module: room
+#: model:ir.model.constraint,message:room.constraint_resource_resource_uniq_short_code
 msgid "The short code must be unique."
 msgstr ""
 
 #. module: room
-#. odoo-python
-#: code:addons/room/models/room_booking.py:0
-msgid "The start date of %(booking_name)s must be earlier than the end date."
+#: model:ir.model.fields,help:room.field_resource_asset_room__state_before_maintenance
+msgid "The state the resource returns to when its maintenance ends."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__tz
+msgid ""
+"The time zone where this resource works. Its working schedule is read in "
+"this zone: an 08:00-17:00 schedule means 08:00-17:00 here, whatever zone the"
+" schedule names. For an employee deployed away from the corporate office, "
+"set the zone of the place of work."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__calendar_id
+msgid ""
+"The working schedule of the resource. A Fully Flexible schedule lets it work"
+" any hour."
 msgstr ""
 
 #. module: room
 #: model_terms:ir.actions.act_window,help:room.room_room_action
 msgid "They can then be booked for meetings from a Tablet or the back-end."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__is_bookable
+msgid "This resource is offered by at least one appointment type."
 msgstr ""
 
 #. module: room
@@ -638,7 +1423,48 @@ msgid "This room is as free as a fish in a sea of endless possibilities"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_kanban
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__tz
+msgid "Timezone"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__leave_date_to
+msgid "To Date"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__type
+msgid "Type"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: room
+#. odoo-python
+#: code:addons/room/controllers/main.py:0
+msgid "Unavailable"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__vin_sn
+msgid "Unique number written on an asset's chassis (VIN/SN number)."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__engine_sn
+msgid "Unique number written on the asset's engine."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__odometer_uom_id
+msgid "Unit of measurement for the odometer readings"
+msgstr ""
+
+#. module: room
+#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_kanban_room
 msgid "Until"
 msgstr ""
 
@@ -649,37 +1475,147 @@ msgid "Update Meeting"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "e.g. Blue Meeting Room"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__user_id
+msgid "User"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "e.g. Headquarters"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__value_book
+msgid "Value Book"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_booking_view_form
-msgid "e.g. Team Meeting"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__vendor_id
+msgid "Vendor"
 msgstr ""
 
 #. module: room
-#: model_terms:ir.ui.view,arch_db:room.room_room_view_form
-msgid "e.g. projector, capacity 6 people"
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__vendor_ref
+msgid "Vendor Reference"
 msgstr ""
 
 #. module: room
-#. odoo-python
-#: code:addons/room/models/room_room.py:0
-msgid "room_id"
-msgstr ""
-
-#. module: room
-#: model_terms:ir.ui.view,arch_db:room.resource_asset_view_form_room
-msgid "Open Room Display"
+#: model:ir.model.fields,help:room.field_resource_asset_room__account_move_ids
+msgid "Vendor bills containing line items related to this asset"
 msgstr ""
 
 #. module: room
 #: model_terms:ir.ui.view,arch_db:room.resource_asset_view_form_room
 msgid "View Bookings"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__warranty_date
+msgid "Warranty Expiration Date"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_built
+msgid ""
+"When a thing was made or commissioned. A person's birth is their party's."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__depreciation_state
+msgid ""
+"When an asset is created, the status is 'Draft'.\n"
+"If the asset is confirmed, the status goes in 'Running' and the depreciation lines can be posted in the accounting.\n"
+"The 'On Hold' status can be set manually when you want to pause the depreciation of an asset for some time.\n"
+"You can manually close an asset when the depreciation is over.\n"
+"By cancelling an asset, all depreciation entries will be reversed"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_future_operator
+msgid ""
+"When the next operator takes over. A hand-over without a date takes effect "
+"in a week unless accepted before."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_origin
+msgid ""
+"When the resource came to be: a person's birth, a thing's manufacture or "
+"commissioning."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_acquisition
+msgid "When the resource was acquired."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__date_disposal
+msgid "When the resource was disposed of."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__origin_country_id
+msgid ""
+"Where it came to be: a person's country of birth, a thing's country of "
+"production."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__state
+msgid ""
+"Where the resource is in its life: draft, available (ready, idle), in "
+"service, under maintenance, out of service or disposed."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__address_id
+msgid "Where the resource normally is, when no inventory location tracks it."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__location_id
+msgid ""
+"Where the thing is kept: its serial's location when it has one, set by hand "
+"otherwise."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__manager_id
+msgid "Who answers for the resource: the live manager assignment."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__holder_id
+msgid "Who has it now: the live operator, else the live custodian."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__operator_id
+msgid "Who operates the resource now: the live operator assignment."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,help:room.field_resource_asset_room__future_operator_id
+msgid "Who takes the resource over next: the planned operator assignment."
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__work_email
+msgid "Work Email"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__work_location_id
+msgid "Work Location"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__calendar_id
+msgid "Working Time"
+msgstr ""
+
+#. module: room
+#: model:ir.model.fields,field_description:room.field_resource_asset_room__year_origin
+msgid "Year Origin"
+msgstr ""
+
+#. module: room
+#: model_terms:ir.ui.view,arch_db:room.calendar_event_view_form_room
+msgid "e.g. Team Meeting"
 msgstr ""
