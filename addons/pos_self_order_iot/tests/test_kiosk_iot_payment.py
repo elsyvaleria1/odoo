@@ -114,3 +114,73 @@ class TestKioskIoTPayment(IotCommonTest, SelfOrderCommonTest):
         self.assertIn("error", result or {})
         self.assertEqual(target.state, "draft")
         self.assertFalse(target.payment_ids)
+
+
+@odoo.tests.tagged("post_install", "-at_install")
+class TestKioskIoTRelay(TestKioskIoTPayment):
+    """The IoT channel is the whole database's: only a kiosk reaches it, and
+    only for the boxes of the devices its point of sale uses."""
+
+    def setUp(self):
+        super().setUp()
+        self.iot_websocket_messages = []
+        self.other_box = (
+            self.env["iot.box"]
+            .sudo()
+            .create(
+                {
+                    "name": "Back office",
+                    "identifier": "other_iot_box",
+                    "ip": "10.10.10.11",
+                    "version": "25.07",
+                }
+            )
+        )
+
+    def _relay(self, identifier):
+        return self.call_jsonrpc(
+            "/pos-self-order/iot-box-websocket-channel",
+            {
+                "access_token": self.pos_config.self_ordering_access_token,
+                "message": {
+                    "iot_identifiers": [identifier],
+                    "iot_identifier": identifier,
+                    "action": "probe",
+                },
+                "message_type": "iot_action",
+            },
+        )
+
+    def _box_data(self, box):
+        return self.call_jsonrpc(
+            "/pos-self-order/get-iot-box-data/",
+            {
+                "access_token": self.pos_config.self_ordering_access_token,
+                "iot_box_id": box.id,
+            },
+        )
+
+    def test_a_mobile_qr_code_reaches_no_iot_box(self):
+        self.pos_config.self_ordering_mode = "mobile"
+
+        channel = self._relay(self.shop_iot_box.identifier)
+
+        self.assertFalse(channel)
+        self.assertEqual(self.iot_websocket_messages, [])
+
+    def test_a_kiosk_reaches_only_its_own_boxes(self):
+        with self.assertRaises(JsonRpcException):
+            self._relay(self.other_box.identifier)
+        self.assertEqual(self.iot_websocket_messages, [])
+
+        channel = self._relay(self.shop_iot_box.identifier)
+
+        self.assertEqual(channel, "mock_iot_channel")
+        self.assertEqual(len(self.iot_websocket_messages), 1)
+
+    def test_a_kiosk_reads_only_its_own_boxes(self):
+        self.assertIn("error", self._box_data(self.other_box))
+        self.assertEqual(
+            self._box_data(self.shop_iot_box)[0]["identifier"],
+            self.shop_iot_box.identifier,
+        )

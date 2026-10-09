@@ -1,9 +1,12 @@
-from werkzeug.exceptions import Unauthorized
+from werkzeug.exceptions import Forbidden, Unauthorized
 
 from odoo import fields, http
 from odoo.exceptions import UserError
 
 from odoo.addons.pos_self_order.controllers.orders import PosSelfOrderController
+
+# what a kiosk sends a box: an action on a device, and a WebRTC offer
+KIOSK_IOT_MESSAGE_TYPES = frozenset({"iot_action", "webrtc_offer"})
 
 
 class PosSelfOrderControllerIot(PosSelfOrderController):
@@ -64,10 +67,12 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     )
     def get_iot_box_data(self, access_token, iot_box_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
-        iot_data = pos_config.env["iot.box"].sudo().browse(iot_box_id)
-        if not iot_data:
+        iot_box = self._kiosk_iot_boxes(pos_config).filtered(
+            lambda box: box.id == iot_box_id
+        )
+        if not iot_box:
             return {"error": "Self Order: No IoT Box found"}
-        return iot_data.read(["ip", "identifier", "version"])
+        return iot_box.read(["ip", "identifier", "version"])
 
     @http.route(
         "/pos-self-order/iot-box-websocket-channel/", auth="public", type="jsonrpc"
@@ -75,14 +80,32 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     def iot_box_websocket_channel(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
         self, access_token, message=None, message_type="iot_action"
     ):
+        # the IoT channel is the database's, every box's traffic on it: it is
+        # a kiosk's, which drives its point of sale's boxes from the browser,
+        # never a phone's, whose token every QR code prints
         try:
             pos_config = self._get_pos_config(access_token)
         except Unauthorized:
             # If pos is closed, we don't want a traceback, and we don't care
             # about sending messages to the iot box: we return an empty ws channel
             return ""
-        iot_channel = pos_config.env["iot.channel"]
+        if pos_config.self_ordering_mode != "kiosk":
+            return ""
         if message:
-            iot_channel.send_message(message, message_type)
+            targets = set(message.get("iot_identifiers") or [])
+            if message.get("iot_identifier"):
+                targets.add(message["iot_identifier"])
+            allowed = set(self._kiosk_iot_boxes(pos_config).mapped("identifier"))
+            if (
+                message_type not in KIOSK_IOT_MESSAGE_TYPES
+                or not targets
+                or not targets <= allowed
+            ):
+                raise Forbidden
+            pos_config.env["iot.channel"].send_message(message, message_type)
+        return pos_config.env["iot.channel"].get_iot_channel()
 
-        return iot_channel.get_iot_channel()
+    def _kiosk_iot_boxes(self, pos_config):
+        if pos_config.self_ordering_mode != "kiosk":
+            return pos_config.env["iot.box"]
+        return pos_config.iot_device_ids.iot_id
