@@ -9,6 +9,7 @@
     "author": "Odoo S.A.",
     "license": "OEEL-1",
     "depends": [
+        "resource",
         "sale",
         "sale_team",
     ],

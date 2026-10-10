@@ -9,6 +9,7 @@
     "depends": [
         "geocoding",
         "payment_custom",
+        "resource",
         "website_sale_stock",
     ],
     "data": [

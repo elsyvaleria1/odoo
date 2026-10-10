@@ -1,6 +1,6 @@
 {
     "name": "KPI Digests",
-    "version": "1.2",
+    "version": "1.3",
     "oldest_upgradable_version": "1.2",
     "category": "Marketing",
     "summary": "Email scheduled business-metric digests to subscribers",
@@ -9,7 +9,6 @@
     "license": "LGPL-3",
     "depends": [
         "portal",
-        "resource",
     ],
     "data": [
         "security/ir.access.csv",

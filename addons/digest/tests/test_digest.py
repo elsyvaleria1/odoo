@@ -599,8 +599,8 @@ class TestDigestDefects(TestDigestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.calendar_tz = "America/Mexico_City"  # UTC-6, never UTC, never +0 in DST
-        cls.company_1.resource_calendar_id.tz = cls.calendar_tz
+        cls.company_tz = "America/Mexico_City"  # UTC-6, never UTC, never +0 in DST
+        cls.company_1.partner_id.tz = cls.company_tz
         cls.env["mail.message"].search(
             [
                 ("subtype_id", "=", cls.env.ref("mail.mt_comment").id),
@@ -617,7 +617,7 @@ class TestDigestDefects(TestDigestCommon):
     def test_timeframes_are_naive_utc(self):
         """The window bounds land in a domain against naive-UTC columns.
 
-        They used to be returned in the company calendar's timezone and
+        They used to be returned in the company's timezone and
         serialized with ``strftime``, which does not convert: a UTC-6 company
         asked for everything up to six hours ago and called it "last 24 hours".
         """
@@ -635,7 +635,7 @@ class TestDigestDefects(TestDigestCommon):
             self.assertLess(
                 abs((current[1] - now).total_seconds()),
                 60,
-                f"{label}: the current window must end now, not {self.calendar_tz} now",
+                f"{label}: the current window must end now, not {self.company_tz} now",
             )
             self.assertEqual(
                 current[0],
@@ -645,7 +645,7 @@ class TestDigestDefects(TestDigestCommon):
 
     @users("admin")
     def test_timeframe_bounds_reach_the_domain_unshifted(self):
-        """End-to-end: the tz of the company calendar must not move a KPI count.
+        """End-to-end: the tz of the company must not move a KPI count.
 
         Posted at a fixed offset rather than relying on the random spread
         `_setup_messages` lays down: a six-hour shift that happens to keep the
@@ -967,8 +967,15 @@ class TestDigestDefects(TestDigestCommon):
         `env.execute_query` flushes it, `cr.execute` would read the old row.
         """
         digest = self.env["digest.digest"].browse(self.digest_1.ids)
-        calendar = self.company_1.resource_calendar_id
-        self.assertTrue(self.env["resource.calendar"]._fields["hours_per_day"].store)
+        rate = self.env["res.currency.rate"].create(
+            {
+                "name": "2001-01-01",
+                "rate": 2.0,
+                "currency_id": self.env.ref("base.EUR").id,
+                "company_id": self.company_1.id,
+            }
+        )
+        self.assertTrue(self.env["res.currency.rate"]._fields["rate"].store)
         window = ("2000-01-01 00:00:00", "2100-01-01 00:00:00")
 
         def summed():
@@ -978,10 +985,10 @@ class TestDigestDefects(TestDigestCommon):
                     digest_windows=(window,)
                 )._read_kpi_over_windows(
                     "kpi_flush_probe",
-                    "resource.calendar",
+                    "res.currency.rate",
                     "create_date",
-                    Domain([("id", "=", calendar.id)]),
-                    "hours_per_day",
+                    Domain([("id", "=", rate.id)]),
+                    "rate",
                     self.company_1,
                 )
             finally:
@@ -989,12 +996,10 @@ class TestDigestDefects(TestDigestCommon):
             return out.get(self.company_1.id, {}).get(window, 0)
 
         self.env.flush_all()
-        self.assertEqual(summed(), calendar.hours_per_day)
+        self.assertEqual(summed(), rate.rate)
 
-        calendar.hours_per_day = 99.0  # deliberately NOT flushed
-        self.cr.execute(
-            "SELECT hours_per_day FROM resource_calendar WHERE id = %s", (calendar.id,)
-        )
+        rate.rate = 99.0  # deliberately NOT flushed
+        self.cr.execute("SELECT rate FROM res_currency_rate WHERE id = %s", (rate.id,))
         self.assertNotEqual(self.cr.fetchone()[0], 99.0, "the row is still stale")
         self.assertEqual(summed(), 99.0, "the scan must flush before it reads")
 

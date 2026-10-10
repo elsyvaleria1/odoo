@@ -694,14 +694,14 @@ class DigestDigest(models.Model):
         The bounds are handed straight to ``Datetime.to_string`` by
         ``_get_kpi_compute_parameters`` and land in a domain against naive-UTC
         columns, so they have to *be* naive UTC. Doing the arithmetic in the
-        company's calendar timezone keeps a window that spans a DST change the
-        right length; returning it in that timezone would shift every bound by
-        the offset, which is what used to happen -- a Brussels company read a
+        company's timezone keeps a window that spans a DST change the right
+        length; returning it in that timezone would shift every bound by the
+        offset, which is what used to happen -- a Brussels company read a
         "last 24 hours" that ended two hours in the future and lost the first
         two hours of the day it was reporting on.
         """
         start_datetime = datetime.now(UTC)
-        tz_name = company.resource_calendar_id.tz
+        tz_name = company.partner_id.tz
         if tz_name:
             start_datetime = start_datetime.astimezone(timezone(tz_name))
 
