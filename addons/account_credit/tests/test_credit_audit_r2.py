@@ -361,7 +361,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         )
         self.assertEqual(partner.credit_status, "review", "precondition")
         refund = self._sale_move(partner, "out_refund")
-        refund._post_check_business_rules()
+        refund._check_posting_advisories()
 
     def test_a_credit_note_is_still_blocked_by_legal_process(self):
         partner = self.env["res.partner"].create({"name": "Audit R2 Refund Legal"})
@@ -369,7 +369,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         self.assertEqual(partner.credit_status, "legal", "precondition")
         refund = self._sale_move(partner, "out_refund")
         with self.assertRaises(ValidationError):
-            refund._post_check_business_rules()
+            refund._check_posting_advisories()
 
     def test_an_invoice_is_still_blocked_under_review(self):
         partner = self.env["res.partner"].create(
@@ -377,7 +377,25 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         )
         invoice = self._sale_move(partner, "out_invoice")
         with self.assertRaises(ValidationError):
-            invoice._post_check_business_rules()
+            invoice._check_posting_advisories()
+
+    def test_the_credit_gate_asks_the_poster_and_not_the_system(self):
+        partner = self.env["res.partner"].create(
+            {"name": "Audit R2 System Post", "credit_grade_id": self.rule_type.id}
+        )
+        by_hand = self._sale_move(partner, "out_invoice")
+        with self.assertRaises(ValidationError):
+            by_hand.action_post()
+        self.assertEqual(by_hand.state, "draft")
+
+        by_system = self._sale_move(partner, "out_invoice")
+        by_system._post(soft=False)
+        self.assertEqual(
+            by_system.state,
+            "posted",
+            "a credit policy is an advisory to the person posting, and a "
+            "system posting (POS, subscription, payment) has none to ask",
+        )
 
     def _sale_move(self, partner, move_type):
         return self.env["account.move"].create(

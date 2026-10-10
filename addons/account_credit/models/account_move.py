@@ -54,7 +54,7 @@ class AccountMove(models.Model):
             profile.exposure_uninvoiced,
         )
 
-    def _post_check_business_rules(self):
+    def _check_posting_advisories(self) -> None:
         for move in self.filtered(lambda m: m.is_sale_document()):
             if move.env.context.get("install_module"):
                 continue
@@ -71,4 +71,4 @@ class AccountMove(models.Model):
                 immediate=move._is_immediate_payment(),
                 term_days=move._credit_term_days(),
             )
-        return super()._post_check_business_rules()
+        return super()._check_posting_advisories()

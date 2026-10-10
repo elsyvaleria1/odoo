@@ -132,8 +132,7 @@ class WizardAccountMovePost(models.TransientModel):
             force_hash=self.force_hash,
             force_post=self.force_post,
         )
-        moves_to_post._post_check_business_rules()
-        moves_to_post._post(not self.force_post)
+        moves_to_post._post_with_advisories(soft=not self.force_post)
 
         if autopost_bills_wizard := moves_to_post._show_autopost_bills_wizard():
             return autopost_bills_wizard

@@ -95,67 +95,118 @@ class TestPostContract(AccountTestInvoicingCommon):
         self.assertEqual(clean.state, "posted")
         self.assertEqual(flagged.state, "draft")
 
-    def test_business_rules_run_on_every_document_posting_path(self):
+    def _record_posting_rules(self):
         calls = []
         AccountMove = type(self.env["account.move"])
-        original = AccountMove._post_check_business_rules
 
-        def recording_rules(records):
-            calls.append(len(records))
-            return original(records)
+        def recorder(kind):
+            original = getattr(AccountMove, kind)
 
+            def record(records):
+                calls.append((kind, records))
+                return original(records)
+
+            return patch.object(AccountMove, kind, record)
+
+        return (
+            calls,
+            recorder("_check_posting_integrity"),
+            recorder("_check_posting_advisories"),
+        )
+
+    def _autopost(self, move):
+        move.auto_post = "at_date"
+        with patch.object(
+            type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: None
+        ):
+            self.env["account.move"]._autopost_draft_entries()
+
+    def test_a_person_decided_posting_runs_advisories_then_integrity(self):
         today = fields.Date.context_today(self.env.user)
-        AccountMove._post_check_business_rules = recording_rules
-        try:
-            self._invoice(today).action_post()
-            self.assertEqual(len(calls), 1, "the Post button skipped the rules")
+        calls, integrity, advisories = self._record_posting_rules()
+        paths = {
+            "the Post button": lambda move: move.action_post(),
+            "the list-view action": lambda move: (
+                move.action_post_moves_with_confirmation()
+            ),
+            "the confirmation wizard": lambda move: (
+                self.env["wizard.account.move.post"]
+                .create({"move_ids": [Command.set(move.ids)]})
+                .action_post_moves()
+            ),
+            "the auto-post cron": self._autopost,
+        }
+        with integrity, advisories:
+            for path, post in paths.items():
+                calls.clear()
+                move = self._invoice(today)
+                post(move)
+                self.assertEqual(move.state, "posted", path)
+                self.assertEqual(
+                    [kind for kind, records in calls if move in records],
+                    ["_check_posting_advisories", "_check_posting_integrity"],
+                    f"{path} did not run both rule classes, advisories first",
+                )
 
-            self._invoice(today).action_post_moves_with_confirmation()
-            self.assertEqual(len(calls), 2, "the list-view action skipped the rules")
-
-            wizard = self.env["wizard.account.move.post"].create(
-                {"move_ids": [Command.set(self._invoice(today).ids)]}
-            )
-            wizard.action_post_moves()
-            self.assertEqual(len(calls), 3, "the confirmation wizard skipped the rules")
-
-            auto = self._invoice(today)
-            auto.auto_post = "at_date"
-            with patch.object(
-                type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: None
-            ):
-                self.env["account.move"]._autopost_draft_entries()
-            self.assertEqual(len(calls), 4, "the auto-post cron skipped the rules")
-        finally:
-            AccountMove._post_check_business_rules = original
-
-    def test_business_rules_do_not_run_on_system_generated_postings(self):
-        calls = []
-        AccountMove = type(self.env["account.move"])
-        original = AccountMove._post_check_business_rules
-
-        def recording_rules(records):
-            calls.append(len(records))
-            return original(records)
-
+    def test_a_system_posting_runs_integrity_but_no_advisory(self):
         today = fields.Date.context_today(self.env.user)
         invoice = self._invoice(today)
         invoice.action_post()
-
-        AccountMove._post_check_business_rules = recording_rules
-        try:
+        calls, integrity, advisories = self._record_posting_rules()
+        with integrity, advisories:
             reversal = invoice._reverse_moves(
                 [{"invoice_date": today, "date": today}], cancel=True
             )
             self.assertEqual(reversal.state, "posted")
-            self.assertFalse(
-                calls, "a cancellation reversal must not be gated by business rules"
-            )
+            direct = self._invoice(today)
+            direct._post(soft=False)
+            scheduled = self._invoice(today + timedelta(days=30))
+            scheduled._post(soft=True)
 
-            self._invoice(today)._post(soft=False)
-            self.assertFalse(calls, "_post itself must not be gated")
-        finally:
-            AccountMove._post_check_business_rules = original
+        self.assertEqual(
+            [records for kind, records in calls if kind == "_check_posting_integrity"],
+            [reversal, direct, scheduled],
+            "a posting that skipped the integrity rules, or a move scheduled "
+            "without them",
+        )
+        self.assertFalse(
+            [kind for kind, _records in calls if kind == "_check_posting_advisories"],
+            "an advisory asks a person, and no person decided these postings",
+        )
+
+    def test_an_integrity_rule_stops_a_direct_post(self):
+        today = fields.Date.context_today(self.env.user)
+        AccountMove = type(self.env["account.move"])
+        refused = self._invoice(today)
+        scheduled = self._invoice(today + timedelta(days=30))
+
+        def refuse(records):
+            if records & (refused | scheduled):
+                raise UserError("integrity")
+
+        with patch.object(AccountMove, "_check_posting_integrity", refuse):
+            with self.assertRaisesRegex(UserError, "integrity"):
+                refused._post(soft=False)
+            with self.assertRaisesRegex(UserError, "integrity"):
+                scheduled._post(soft=True)
+
+        self.assertEqual(refused.state, "draft")
+        self.assertEqual(scheduled.auto_post, "no", "a refused move was scheduled")
+
+    def test_an_advisory_does_not_stop_a_system_posting(self):
+        today = fields.Date.context_today(self.env.user)
+        AccountMove = type(self.env["account.move"])
+
+        def refuse(records):
+            raise UserError("advisory")
+
+        invoice = self._invoice(today)
+        with patch.object(AccountMove, "_check_posting_advisories", refuse):
+            with self.assertRaisesRegex(UserError, "advisory"):
+                self._invoice(today).action_post()
+            invoice._post(soft=False)
+
+        self.assertEqual(invoice.state, "posted")
 
     def test_non_deductible_names_are_built_after_the_sequence_is_assigned(self):
         today = fields.Date.context_today(self.env.user)

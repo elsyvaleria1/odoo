@@ -126,7 +126,7 @@ class AccountMove(models.Model):
         ]
 
     def _is_approval_invalidated_by_changes(self, fields_changed) -> bool:
-        """Amount-bearing changes keep the approval: `_post_check_business_rules`
+        """Amount-bearing changes keep the approval: `_check_posting_integrity`
         compares the move's total with the approved amount at posting, even once
         the change has taken the move out of every category's range. Anything
         else -- another partner, another journal -- is not what was approved."""

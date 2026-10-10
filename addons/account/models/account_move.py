@@ -340,7 +340,7 @@ class AccountMove(models.Model):
     _access_verbs = {
         "post": models.Verb(
             methods=("action_post",),
-            checkpoints=("_post_check_business_rules",),
+            checkpoints=("_check_posting_integrity",),
             amount="amount_total",
         ),
     }
@@ -6126,8 +6126,11 @@ class AccountMove(models.Model):
         if not self.env.su:
             self.check_access("post")
 
-    def _post_check_business_rules(self):
-        return
+    def _check_posting_integrity(self) -> None:
+        _debug.logic("posting_integrity_held", moves=self)
+
+    def _check_posting_advisories(self) -> None:
+        _debug.logic("posting_advisories_held", moves=self)
 
     @_debug.perf.timed
     def _check_post_partner_bank(self, invoice, validation_msgs) -> None:
@@ -6385,6 +6388,8 @@ class AccountMove(models.Model):
                 )
             )
 
+        self._check_posting_integrity()
+
     @_debug.perf.timed
     def _post_get_draft_reverse_moves(self) -> Self:
         _debug.lifecycle("_post_get_draft_reverse_moves", records=self)
@@ -6575,6 +6580,12 @@ class AccountMove(models.Model):
             ].append(line.id)
         for name, line_ids in line_ids_per_name.items():
             self.env["account.move.line"].browse(line_ids).name = name
+
+    @_debug.perf.timed
+    def _post_with_advisories(self, soft=True):
+        _debug.lifecycle("_post_with_advisories", records=self)
+        self._check_posting_advisories()
+        return self._post(soft=soft)
 
     @_debug.perf.timed
     def _post(self, soft=True):
@@ -7199,8 +7210,7 @@ class AccountMove(models.Model):
         _debug.lifecycle("_post_needing_confirmation", records=self)
         to_post = self - need_confirmation
         if to_post:
-            to_post._post_check_business_rules()
-            to_post._post(soft=False)
+            to_post._post_with_advisories(soft=False)
         if need_confirmation:
             return need_confirmation._create_confirm_entries_action(view_id=view_id)
         if autopost_bills_wizard := to_post._show_autopost_bills_wizard():
@@ -7610,8 +7620,7 @@ class AccountMove(models.Model):
         _debug.lifecycle("cron_autopost_batch", moves=moves, remaining=remaining)
 
         try:
-            moves._post_check_business_rules()
-            moves._post()
+            moves._post_with_advisories()
             self.env["ir.cron"]._commit_progress(len(moves))
             return
         except PG_RETRY_EXCEPTIONS:
@@ -7630,8 +7639,7 @@ class AccountMove(models.Model):
         for move in moves:
             try:
                 if move := move.try_lock_for_update().filtered_domain(domain):
-                    move._post_check_business_rules()
-                    move._post()
+                    move._post_with_advisories()
             except PG_RETRY_EXCEPTIONS:
                 raise
             except (LockError, ConcurrencyError, psycopg.OperationalError) as e:

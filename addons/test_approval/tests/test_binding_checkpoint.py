@@ -11,7 +11,7 @@ class TestBindingCheckpoint(ApprovalCommon):
     `approval.test.document` declares the verb `record_operation`: its door is
     `action_record_operation`, and `action_record_operation_from_list` crosses its
     checkpoint `_check_record_operation`, the way `account.move` declares that
-    every posting path crosses `_post_check_business_rules`.
+    every posting path crosses `_check_posting_integrity`.
     """
 
     def setUp(self):
