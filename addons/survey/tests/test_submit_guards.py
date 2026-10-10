@@ -59,26 +59,26 @@ class TestSubmitGuards(common.TestSurveyCommon, HttpCase):
     def test_missing_mandatory_answer_is_refused(self):
         answer = self._answer()
         result = self._submit(answer, self._payload(""))
-        self.assertEqual(result[1]["error"], "validation")
-        self.assertIn(str(self.question.id), result[1]["fields"])
+        self.assertEqual(result[1]["data"]["error"], "validation")
+        self.assertIn(str(self.question.id), result[1]["data"]["fields"])
 
     def test_finished_answer_cannot_be_submitted_again(self):
         answer = self._answer()
         answer.state = "done"
         result = self._submit(answer, self._payload())
-        self.assertEqual(result[1]["error"], "unauthorized")
+        self.assertEqual(result[1]["data"]["error"], "unauthorized")
 
     def test_unknown_answer_token_is_refused(self):
         response = self._access_submit(self.form, "not-a-real-token", self._payload())
         result = response.json().get("result")
-        self.assertIn("error", result[1])
+        self.assertIn("error", result[1]["data"])
 
     def test_submission_after_the_time_limit_is_refused(self):
         self.form.write({"is_time_limited": True, "time_limit": 1})
         answer = self._answer()
         answer.start_datetime = fields.Datetime.now() - timedelta(minutes=30)
         result = self._submit(answer, self._payload())
-        self.assertEqual(result[1]["error"], "unauthorized")
+        self.assertEqual(result[1]["data"]["error"], "unauthorized")
 
     def test_submission_inside_the_grace_period_is_accepted(self):
         self.form.write({"is_time_limited": True, "time_limit": 30})
@@ -95,3 +95,21 @@ class TestSubmitGuards(common.TestSurveyCommon, HttpCase):
 
         answer = self._answer()
         self.assertFalse(Survey()._is_time_limit_exceeded(self.form, answer))
+
+    def test_the_next_screen_is_the_form_s_content_progress_and_navigation(self):
+        answer = self._answer()
+        result = self._submit(answer, self._payload())
+        self.assertEqual(
+            [
+                (fragment["key"], fragment["swap"])
+                for fragment in result[1]["fragments"]
+            ],
+            [
+                ("survey.form_content", "outer"),
+                ("survey.form_progress", "outer"),
+                ("survey.form_navigation", "outer"),
+            ],
+        )
+        self.assertEqual(
+            set(result[1]["data"]), {"has_skipped_questions", "background_image_url"}
+        )

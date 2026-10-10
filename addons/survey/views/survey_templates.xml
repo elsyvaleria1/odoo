@@ -46,7 +46,9 @@
         </xpath>
         <xpath expr="//footer" position="after">
             <div class="py-3 m-0 p-0 text-end">
-                <div class="o_survey_progress_wrapper d-inline-block pe-1 text-start">
+                <div
+                    class="o_survey_progress_wrapper d-inline-block pe-1 text-start"
+                    data-fragment="survey.form_progress">
                     <t
                         t-if="survey and survey.questions_layout != 'one_page' and answer and answer.state == 'in_progress' and (not question or not question.is_page) and not survey_form_readonly">
                         <t t-if="survey.questions_layout == 'page_per_section'">
@@ -80,7 +82,8 @@
                     </div>
                     <div
                         t-if="not no_survey_navigation"
-                        class="o_survey_navigation_wrapper d-inline-block d-print-none">
+                        class="o_survey_navigation_wrapper d-inline-block d-print-none"
+                        data-fragment="survey.form_navigation">
                         <t t-call="survey.survey_navigation" />
                     </div>
                 </div>
@@ -175,7 +178,9 @@
                 <p>There was an error during the validation of the survey.</p>
             </div>
 
-            <div class="o_survey_form_content w-100">
+            <div
+                class="o_survey_form_content w-100"
+                data-fragment="survey.form_content">
                 <t
                     t-if="answer.state == 'new'"
                     t-call="survey.survey_fill_form_start" />
@@ -185,6 +190,39 @@
                 <t t-else="" t-call="survey.survey_fill_form_done" />
             </div>
         </form>
+    </template>
+
+    <template
+        id="survey_form_content_region"
+        name="Survey: next screen, the form's content">
+        <div
+            class="o_survey_form_content w-100"
+            data-fragment="survey.form_content"
+            style="opacity: 0;">
+            <t t-if="answer.state == 'done'" t-call="survey.survey_fill_form_done" />
+            <t t-else="" t-call="survey.survey_fill_form_in_progress" />
+        </div>
+    </template>
+
+    <template id="survey_form_progress_region" name="Survey: next screen, the progress">
+        <div
+            class="o_survey_progress_wrapper d-inline-block pe-1 text-start"
+            data-fragment="survey.form_progress">
+            <t t-if="progress" t-call="survey.survey_progression">
+                <t t-set="page_ids" t-value="progress['page_ids']" />
+                <t t-set="page_number" t-value="progress['page_number']" />
+            </t>
+        </div>
+    </template>
+
+    <template
+        id="survey_form_navigation_region"
+        name="Survey: next screen, the navigation">
+        <div
+            class="o_survey_navigation_wrapper d-inline-block d-print-none"
+            data-fragment="survey.form_navigation">
+            <t t-call="survey.survey_navigation" />
+        </div>
     </template>
 
     <template id="survey_fill_form_start" name="Survey: start form content">

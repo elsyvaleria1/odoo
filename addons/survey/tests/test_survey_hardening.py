@@ -328,7 +328,7 @@ class TestConcurrentSubmit(common.TestSurveyCommon, HttpCase):
         first = submit()
         second = submit()
         self.assertNotIn("error", first)
-        self.assertEqual(second["result"][1].get("error"), "unauthorized")
+        self.assertEqual(second["result"][1]["data"].get("error"), "unauthorized")
         answer.invalidate_recordset()
         self.assertEqual(answer.state, "done")
         self.assertEqual(

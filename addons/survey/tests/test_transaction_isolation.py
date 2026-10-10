@@ -62,7 +62,10 @@ class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
             payload,
             "an out-of-range prefill must be skipped, not abort the transaction",
         )
-        self.assertIn("survey_content", payload["result"][1])
+        self.assertIn(
+            "survey.form_content",
+            [fragment["key"] for fragment in payload["result"][1]["fragments"]],
+        )
 
     def test_valid_prefill_still_applies(self):
         answer, response = self._begin({f"Q{self.scale_question.id}": "5"})

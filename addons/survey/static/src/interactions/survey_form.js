@@ -483,15 +483,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    replaceContent(content, locationEl) {
-        const parser = new DOMParser();
-        const contentEls = parser.parseFromString(content, "text/html").body.children;
-        locationEl.replaceChildren();
-        while (contentEls.length > 0) {
-            this.insert(contentEls.item(0), locationEl);
-        }
-    }
-
     /**
      * @param {Event} ev
      * @param {HTMLInputElement} sliderEl
@@ -769,7 +760,7 @@ export class SurveyForm extends Interaction {
      */
     async nextScreen(nextScreenPromise, options) {
         const selectorsToFadeout = [".o_survey_form_content"];
-        if (options.isFinish && !this.nextScreenResult?.has_skipped_questions) {
+        if (options.isFinish && !this.nextScreenResult?.data?.has_skipped_questions) {
             // Fade out the top title
             document
                 .querySelector(".o_survey_main_title_fade")
@@ -791,8 +782,8 @@ export class SurveyForm extends Interaction {
         const nextScreenWithBackgroundPromise = (async () => {
             const [, result] = await nextScreenPromise;
             this.nextScreenResult = result;
-            if (this.options.refreshBackground && result.background_image_url) {
-                return preloadBackground(result.background_image_url);
+            if (this.options.refreshBackground && result.data?.background_image_url) {
+                return preloadBackground(result.data.background_image_url);
             } else {
                 return Promise.resolve();
             }
@@ -811,18 +802,19 @@ export class SurveyForm extends Interaction {
      */
     onNextScreenDone(options) {
         const result = this.nextScreenResult;
+        const data = result?.data || {};
         if (
-            (!(options && options.isFinish) || result.has_skipped_questions) &&
+            (!(options && options.isFinish) || data.has_skipped_questions) &&
             !this.options.sessionInProgress
         ) {
             this.preventEnterSubmit = false;
         }
-        if (result && result.fields && result.error === "validation") {
+        if (data.fields && data.error === "validation") {
             fadeIn(this.el.querySelector(".o_survey_form_content"), 0);
-            this.showErrors(result.fields);
+            this.showErrors(data.fields);
             return;
         }
-        if (!result || result.error) {
+        if (!result || data.error) {
             this.notificationDestructors.push(
                 this.services.notification.add(
                     _t("There was an error during the validation of the survey."),
@@ -832,21 +824,19 @@ export class SurveyForm extends Interaction {
             return;
         }
         // Handle skip action redirect
-        if (result.redirect_url) {
-            redirect(result.redirect_url);
+        if (data.redirect_url) {
+            redirect(data.redirect_url);
             return;
         }
+        // the content, the progress and the navigation are each replaced by
+        // the server's next screen
+        this.swapFragments(result);
         const formContentEl = this.el.querySelector(".o_survey_form_content");
-        this.replaceContent(result.survey_content, formContentEl);
-
-        if (result.survey_progress && this.surveyProgressEl) {
-            this.replaceContent(result.survey_progress, this.surveyProgressEl);
-        } else if (options.isFinish && this.surveyProgressEl) {
-            this.surveyProgressEl.remove();
-        }
-
-        if (result.survey_navigation && this.surveyNavigationEl) {
-            this.replaceContent(result.survey_navigation, this.surveyNavigationEl);
+        this.surveyProgressEl = document.querySelector(".o_survey_progress_wrapper");
+        this.surveyNavigationEl = document.querySelector(
+            ".o_survey_navigation_wrapper",
+        );
+        if (this.surveyNavigationEl) {
             this.updateNavigationListeners();
         }
 
@@ -876,7 +866,7 @@ export class SurveyForm extends Interaction {
                 this.removeTimer();
             }
         }
-        if (options && options.isFinish && !result.has_skipped_questions) {
+        if (options && options.isFinish && !data.has_skipped_questions) {
             if (this.breadcrumbEl) {
                 this.showBreadcrumb = false;
                 this.breadcrumbEl.replaceChildren();
@@ -895,7 +885,7 @@ export class SurveyForm extends Interaction {
         // Background management - reset background overlay opacity to 0.7 to discover next background.
         if (this.options.refreshBackground) {
             this.background.transition = false;
-            this.background.image = result.background_image_url;
+            this.background.image = data.background_image_url;
             this.background.shouldUpdate = true;
         }
         fadeIn(formContentEl, this.fadeInOutDelay);

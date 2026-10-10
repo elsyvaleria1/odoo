@@ -21,6 +21,11 @@ from odoo.tools import format_date, format_datetime, is_html_empty
 from odoo.tools.urls import keep_query
 
 from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    render_fragments,
+)
 
 if TYPE_CHECKING:
     from odoo.addons.survey.models.survey_survey import SurveySurvey
@@ -562,7 +567,7 @@ class Survey(http.Controller):
 
     def _prepare_question_html(
         self, survey_sudo: Any, answer_sudo: Any, **post: Any
-    ) -> dict[str, Any]:
+    ) -> FragmentResponse:
         lang_code = (
             self.env["res.lang"]._get_data(id=answer_sudo.lang_id.id).code
             or self._get_lang_with_fallback(answer_sudo.sudo(False)).code
@@ -571,30 +576,18 @@ class Survey(http.Controller):
         answer_sudo = answer_sudo.with_context(lang=lang_code)
         survey_data = self._prepare_survey_data(survey_sudo, answer_sudo, **post)
 
-        IrQweb = request.env["ir.qweb"].with_context(lang=lang_code)
-        if answer_sudo.state == "done":
-            survey_content = IrQweb._render("survey.survey_fill_form_done", survey_data)
-        else:
-            survey_content = IrQweb._render(
-                "survey.survey_fill_form_in_progress", survey_data
-            )
-
-        survey_progress = False
+        progress = None
         if (
             answer_sudo.state == "in_progress"
             and not survey_data.get("question", request.env["survey.question"]).is_page
         ):
             if survey_sudo.questions_layout_effective == "page_per_section":
                 page_ids = survey_sudo.page_ids.ids
-                survey_progress = IrQweb._render(
-                    "survey.survey_progression",
-                    {
-                        "survey": survey_sudo,
-                        "page_ids": page_ids,
-                        "page_number": page_ids.index(survey_data["page"].id)
-                        + (1 if survey_sudo.progression_mode == "number" else 0),
-                    },
-                )
+                progress = {
+                    "page_ids": page_ids,
+                    "page_number": page_ids.index(survey_data["page"].id)
+                    + (1 if survey_sudo.progression_mode == "number" else 0),
+                }
             elif survey_sudo.questions_layout_effective == "page_per_question":
                 page_ids = (
                     answer_sudo.predefined_question_ids.ids
@@ -602,14 +595,10 @@ class Survey(http.Controller):
                     and survey_sudo.questions_selection == "random"
                     else survey_sudo.question_ids.ids
                 )
-                survey_progress = IrQweb._render(
-                    "survey.survey_progression",
-                    {
-                        "survey": survey_sudo,
-                        "page_ids": page_ids,
-                        "page_number": page_ids.index(survey_data["question"].id),
-                    },
-                )
+                progress = {
+                    "page_ids": page_ids,
+                    "page_number": page_ids.index(survey_data["question"].id),
+                }
 
         background_image_url = survey_sudo.background_image_url
         if "question" in survey_data:
@@ -617,15 +606,37 @@ class Survey(http.Controller):
         elif "page" in survey_data:
             background_image_url = survey_data["page"].background_image_url
 
-        return {
-            "has_skipped_questions": any(answer_sudo._get_skipped_questions()),
-            "survey_content": survey_content,
-            "survey_progress": survey_progress,
-            "survey_navigation": IrQweb._render(
-                "survey.survey_navigation", survey_data
+        # the next screen replaces the form's content, the progress and the
+        # navigation, each rendered as the page renders it
+        return render_fragments(
+            request.env["ir.qweb"].with_context(lang=lang_code).env,
+            Fragment(
+                "survey.survey_form_content_region",
+                survey_data,
+                key="survey.form_content",
+                swap="outer",
             ),
-            "background_image_url": background_image_url,
-        }
+            Fragment(
+                "survey.survey_form_progress_region",
+                {"survey": survey_sudo, "progress": progress},
+                key="survey.form_progress",
+                swap="outer",
+            ),
+            Fragment(
+                "survey.survey_form_navigation_region",
+                survey_data,
+                key="survey.form_navigation",
+                swap="outer",
+            ),
+            data={
+                "has_skipped_questions": any(answer_sudo._get_skipped_questions()),
+                "background_image_url": background_image_url,
+            },
+        )
+
+    @staticmethod
+    def _survey_answer(**data: Any) -> FragmentResponse:
+        return render_fragments(request.env, data=data)
 
     def _apply_url_prefill(
         self, survey_sudo: Any, answer_sudo: Any, post: dict[str, Any]
@@ -966,14 +977,16 @@ class Survey(http.Controller):
             survey_token, answer_token, ensure_token=True
         )
         if access_data["validity_code"] is not True:
-            return {}, {"error": access_data["validity_code"]}
+            return {}, self._survey_answer(error=access_data["validity_code"])
         survey_sudo, answer_sudo = (
             access_data["survey_sudo"],
             access_data["answer_sudo"],
         )
 
         if answer_sudo.state != "new":
-            return {}, {"error": request.env._("The survey has already started.")}
+            return {}, self._survey_answer(
+                error=request.env._("The survey has already started.")
+            )
 
         if "lang_code" in post:
             lang = request.env["res.lang"]._get_lang_cached(post["lang_code"])
@@ -998,7 +1011,7 @@ class Survey(http.Controller):
             survey_token, answer_token, ensure_token=True
         )
         if access_data["validity_code"] is not True:
-            return {}, {"error": access_data["validity_code"]}
+            return {}, self._survey_answer(error=access_data["validity_code"])
         survey_sudo, answer_sudo = (
             access_data["survey_sudo"],
             access_data["answer_sudo"],
@@ -1095,7 +1108,7 @@ class Survey(http.Controller):
             survey_token, answer_token, ensure_token=True
         )
         if access_data["validity_code"] is not True:
-            return {}, {"error": access_data["validity_code"]}
+            return {}, self._survey_answer(error=access_data["validity_code"])
         survey_sudo, answer_sudo = (
             access_data["survey_sudo"],
             access_data["answer_sudo"],
@@ -1106,7 +1119,7 @@ class Survey(http.Controller):
         answer_sudo._lock()
         answer_sudo.invalidate_recordset(["state"])
         if answer_sudo.state == "done":
-            return {}, {"error": "unauthorized"}
+            return {}, self._survey_answer(error="unauthorized")
 
         questions, page_or_question_id = survey_sudo._get_survey_questions(
             answer=answer_sudo,
@@ -1117,10 +1130,10 @@ class Survey(http.Controller):
         if not answer_sudo.test_entry and not survey_sudo._has_attempts_left(
             answer_sudo.partner_id, answer_sudo.email, answer_sudo.invite_token
         ):
-            return {}, {"error": "unauthorized"}
+            return {}, self._survey_answer(error="unauthorized")
 
         if self._is_time_limit_exceeded(survey_sudo, answer_sudo):
-            return {}, {"error": "unauthorized"}
+            return {}, self._survey_answer(error="unauthorized")
 
         errors = self._save_page_answers(survey_sudo, answer_sudo, questions, post)
 
@@ -1128,7 +1141,7 @@ class Survey(http.Controller):
             answer_sudo.survey_time_limit_reached
             or answer_sudo.question_time_limit_reached
         ):
-            return {}, {"error": "validation", "fields": errors}
+            return {}, self._survey_answer(error="validation", fields=errors)
 
         if not answer_sudo.is_session_answer:
             answer_sudo._clear_inactive_conditional_answers()
@@ -1251,9 +1264,9 @@ class Survey(http.Controller):
                 )
             elif answer.skip_action == "redirect" and answer.skip_redirect_url:
                 answer_sudo._mark_done()
-                return correct_answers, {
-                    "redirect_url": answer.skip_redirect_url,
-                }
+                return correct_answers, self._survey_answer(
+                    redirect_url=answer.skip_redirect_url
+                )
             elif answer.skip_action == "skip_to" and answer.skip_target_id:
                 target = answer.skip_target_id
                 if target.id in survey_sudo.question_and_page_ids.ids:
