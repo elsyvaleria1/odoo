@@ -1,18 +1,10 @@
 /** @odoo-module native */
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
 export class TicketDetails extends Interaction {
     static selector = ".o_wevent_js_ticket_details";
-    dynamicSelectors = {
-        ...this.dynamicSelectors,
-        _envBus: () => this.env.bus,
-    };
     dynamicContent = {
-        _envBus: {
-            "t-on-websiteEvent.enableSubmit": () => (this.buttonDisabled = false),
-        },
         "button[data-increment-type='minus']": {
             "t-on-click": (ev) => this.onClick(ev, -1),
         },
@@ -23,11 +15,8 @@ export class TicketDetails extends Interaction {
             "t-on-input": this.onInput,
         },
         ".a-submit": {
-            "t-on-click.prevent.stop": this.onSubmitClick,
             "t-att-disabled": () =>
-                this.moreTicketsOrderedThanExpected ||
-                this.noTicketsOrdered ||
-                this.buttonDisabled
+                this.moreTicketsOrderedThanExpected || this.noTicketsOrdered
                     ? "disabled"
                     : false,
         },
@@ -95,21 +84,6 @@ export class TicketDetails extends Interaction {
         }
 
         inputComponent.dispatchEvent(new Event("input"));
-    }
-
-    /**
-     * @param {MouseEvent} ev
-     */
-    async onSubmitClick(ev) {
-        const formEl = ev.currentTarget.closest("form");
-        this.buttonDisabled = true;
-        const modal = await this.waitFor(
-            rpc(formEl.action, Object.fromEntries(new FormData(formEl))),
-        );
-
-        const modalEl = new DOMParser().parseFromString(modal, "text/html").body
-            .firstElementChild;
-        this.insert(modalEl, document.body);
     }
 }
 

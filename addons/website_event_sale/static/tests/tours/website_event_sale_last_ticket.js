@@ -12,7 +12,7 @@ registry.category("web_tour.tours").add("event_buy_last_ticket", {
         },
         {
             content: "Open Registration Modal",
-            trigger: ".btn-primary:contains(Register)",
+            trigger: ".o_wevent_registration_cta:contains(Register)",
             run: "click",
         },
         {

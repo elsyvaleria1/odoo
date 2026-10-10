@@ -10,7 +10,7 @@ registry.category("web_tour.tours").add("test_tickets_questions", {
         },
         {
             content: "Click on Register modal tickets button",
-            trigger: 'button:contains("Register")',
+            trigger: '.o_wevent_registration_cta:contains("Register")',
             run: "click",
         },
         {

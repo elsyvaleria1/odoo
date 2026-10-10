@@ -5,7 +5,7 @@ import * as wsTourUtils from "@website_sale/js/tours/tour_utils";
 const registerSteps = [
     {
         content: "Open ticket modal",
-        trigger: 'button.btn-primary:contains("Register")',
+        trigger: '.o_wevent_registration_cta:contains("Register")',
         run: "click",
     },
     {

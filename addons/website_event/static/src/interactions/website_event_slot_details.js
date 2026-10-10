@@ -5,7 +5,6 @@ import {
     TIME_SIMPLE,
     toLocaleString,
 } from "@web/core/l10n/dates";
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { Interaction } from "@web/public/interaction";
@@ -14,26 +13,20 @@ const MAX_DATES_PER_PAGE = 6;
 
 export class SlotDetails extends Interaction {
     static selector = ".o_wevent_js_slot_details";
-    dynamicSelectors = {
-        ...this.dynamicSelectors,
-        _envBus: () => this.env.bus,
-    };
     dynamicContent = {
-        _envBus: {
-            "t-on-websiteEvent.enableSubmit": () => (this.buttonDisabled = false),
-        },
         ".a-submit": {
-            "t-on-click.prevent.stop": this._onSubmitClick,
-            "t-att-disabled": () => !this.selectedSlotId || this.buttonDisabled,
+            "t-att-disabled": () => !this.selectedSlotId,
         },
         "li.page-item": {
             "t-on-click.prevent.stop": this._onChangePageClick,
         },
+        ".o_wevent_slot_input": {
+            "t-on-change": this._onSlotSelected,
+        },
         ".o_wevent_slot_btn": {
-            "t-on-click.prevent.stop": this._onSlotSelected,
             "t-att-class": (el) => ({
-                "btn-light": el.dataset.slotId !== this.selectedSlotId,
-                "btn-primary": el.dataset.slotId === this.selectedSlotId,
+                "btn-light": el.htmlFor !== this.selectedInputId,
+                "btn-primary": el.htmlFor === this.selectedInputId,
             }),
         },
         ".o_wevent_slot_btn_cancel, .btn-close": {
@@ -58,7 +51,16 @@ export class SlotDetails extends Interaction {
     }
 
     get selectedSlotId() {
-        return this.form.getAttribute("data-selected-slot-id");
+        return this._selectedInput()?.value;
+    }
+
+    get selectedInputId() {
+        return this._selectedInput()?.id;
+    }
+
+    /** @returns {HTMLInputElement | null} */
+    _selectedInput() {
+        return this.form.querySelector(".o_wevent_slot_input:checked");
     }
 
     /**
@@ -83,7 +85,10 @@ export class SlotDetails extends Interaction {
      * @param {MouseEvent} ev
      */
     _onClose() {
-        this.form.removeAttribute("data-selected-slot-id");
+        const selected = this._selectedInput();
+        if (selected) {
+            selected.checked = false;
+        }
         this.selectedSlotDatetime = "";
         this._changePage(0);
     }
@@ -92,7 +97,7 @@ export class SlotDetails extends Interaction {
      * @param {MouseEvent} ev
      */
     _onSlotSelected(ev) {
-        const dataset = ev.currentTarget.dataset;
+        const dataset = /** @type {HTMLInputElement} */ (ev.currentTarget).dataset;
         this.selectedSlotDatetime =
             toLocaleString(
                 deserializeDateTime(dataset.slotStart, { tz: dataset.eventTz }),
@@ -103,24 +108,6 @@ export class SlotDetails extends Interaction {
                 deserializeDateTime(dataset.slotEnd, { tz: dataset.eventTz }),
                 TIME_SIMPLE,
             );
-        this.form.setAttribute(
-            "data-selected-slot-id",
-            parseInt(ev.currentTarget.dataset.slotId),
-        );
-    }
-
-    /**
-     * @param {MouseEvent} ev
-     */
-    async _onSubmitClick(ev) {
-        const formEl = ev.currentTarget.closest("form");
-        this.buttonDisabled = true;
-        const modal = await this.waitFor(
-            rpc(formEl.action.replace("slot_id", this.selectedSlotId)),
-        );
-        const modalEl = new DOMParser().parseFromString(modal, "text/html").body
-            .firstElementChild;
-        this.insert(modalEl, document.body);
     }
 
     /**

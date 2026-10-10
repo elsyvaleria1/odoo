@@ -101,7 +101,7 @@ const discoverTalkSteps = function (
 const registerSteps = [
     {
         content: "Open ticket modal",
-        trigger: "button.btn-primary:contains(Register):enabled",
+        trigger: ".o_wevent_registration_cta:contains(Register)",
         run: "click",
     },
     {
@@ -160,7 +160,7 @@ const registerSteps = [
     },
     {
         content: "Validate attendees details",
-        trigger: ".modal button[type=submit]:enabled",
+        trigger: ".modal #attendee_registration button[type=submit]:enabled",
         run: "click",
         expectUnloadPage: true,
     },

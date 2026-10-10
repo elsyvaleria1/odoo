@@ -46,7 +46,7 @@ function checkPriceEvent(eventName, price, close = true) {
         },
         {
             content: "Open the ticket picking modal",
-            trigger: `button:contains("Register")`,
+            trigger: `.o_wevent_registration_cta:contains("Register")`,
             run: "click",
         },
         {

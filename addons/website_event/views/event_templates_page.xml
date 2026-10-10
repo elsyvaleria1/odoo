@@ -17,10 +17,18 @@
                     data-editor-sub-message.translate="Following content will appear on all events." />
             </div>
 
-            <t
-                t-if="event.is_multi_slots"
-                t-call="website_event.modal_slot_registration" />
-            <t t-else="" t-call="website_event.modal_ticket_registration" />
+            <t t-if="not hide_registration_modals">
+                <t
+                    t-if="event.is_multi_slots"
+                    t-call="website_event.modal_slot_registration" />
+                <t t-else="" t-call="website_event.modal_ticket_registration" />
+                <div
+                    class="d-contents"
+                    data-fragment="website_event.registration_tickets" />
+                <div
+                    class="d-contents"
+                    data-fragment="website_event.registration_attendees" />
+            </t>
         </t>
     </template>
 

@@ -12,7 +12,7 @@ registry.category("web_tour.tours").add("event_sale_pricelists_different_currenc
         },
         {
             content: "Open the register modal",
-            trigger: 'button:contains("Register")',
+            trigger: '.o_wevent_registration_cta:contains("Register")',
             run: "click",
         },
         {

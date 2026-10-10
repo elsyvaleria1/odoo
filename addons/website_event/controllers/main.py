@@ -14,6 +14,11 @@ from odoo.tools import lazy
 from odoo.tools.misc import get_lang
 from odoo.tools.translate import LazyTranslate
 
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    render_fragments,
+    wants_fragments,
+)
 from odoo.addons.website.controllers.main import QueryURL
 
 _debug = DebugLog(__name__)
@@ -337,17 +342,63 @@ class WebsiteEventController(http.Controller):
         ]
 
     @http.route(
-        ['/event/<model("event.event"):event>/registration/slot/<int:slot_id>/tickets'],
-        type="jsonrpc",
+        ['/event/<model("event.event"):event>/registration'],
+        type="http",
+        auth="public",
+        website=True,
+        sitemap=False,
+    )
+    def registration_page(self, event, **post):
+        if not event.event_registrations_open:
+            return request.redirect(
+                f"/event/{request.env['ir.http']._slug(event)}/register"
+            )
+        return request.render(
+            "website_event.registration_page",
+            {
+                **self._prepare_event_register_values(event, **post),
+                "step": "slots" if event.is_multi_slots else "tickets",
+            },
+        )
+
+    def _get_registration_slot(self, event, slot_id):
+        if not slot_id:
+            return request.env["event.slot"]
+        try:
+            slot = event.event_slot_ids.filtered(lambda slot: slot.id == int(slot_id))
+        except ValueError:
+            raise NotFound from None
+        if not slot:
+            raise NotFound
+        return slot
+
+    def _registration_step(self, event, template, key, step, values):
+        if wants_fragments():
+            return request.prepare_json_response(
+                render_fragments(request.env, Fragment(template, values, key=key))
+            )
+        return request.render(
+            "website_event.registration_page",
+            {**values, "main_object": event, "step": step},
+        )
+
+    @http.route(
+        ['/event/<model("event.event"):event>/registration/slot/tickets'],
+        type="http",
         auth="public",
         methods=["POST"],
         website=True,
     )
-    def registration_tickets(self, event, slot_id):
-        slot = request.env["event.slot"].browse(slot_id)
+    def registration_tickets(self, event, event_slot_id=None, **post):
+        slot = self._get_registration_slot(event, event_slot_id)
+        if not slot:
+            raise UserError(request.env._("Choose a date first."))
         slot_tickets = [(slot, ticket) for ticket in event.event_ticket_ids]
-        return request.env["ir.ui.view"]._render_template(
-            "website_event.modal_ticket_registration",
+        return self._registration_step(
+            event,
+            "website_event.registration_tickets_step",
+            "website_event.registration_tickets",
+            "tickets",
             {
                 "event": event,
                 "event_slot": slot,
@@ -364,14 +415,16 @@ class WebsiteEventController(http.Controller):
 
     @http.route(
         ['/event/<model("event.event"):event>/registration/new'],
-        type="jsonrpc",
+        type="http",
         auth="public",
         methods=["POST"],
         website=True,
     )
     def registration_new(self, event, **post):
+        slot = self._get_registration_slot(event, post.get("event_slot_id"))
         tickets = self._process_tickets_form(event, post)
-        slot_id = post.get("event_slot_id", False)
+        if not tickets:
+            raise UserError(request.env._("Choose at least one ticket."))
         availability_check = True
         limit_check = not any(
             ticket["quantity"] > ticket["current_limit_per_order"] for ticket in tickets
@@ -381,10 +434,8 @@ class WebsiteEventController(http.Controller):
             for ticket in tickets:
                 ordered_seats += ticket["quantity"]
             seats_available = event.seats_available
-            if slot_id:
-                seats_available = (
-                    request.env["event.slot"].browse(int(slot_id)).seats_available or 0
-                )
+            if slot:
+                seats_available = slot.seats_available or 0
             if seats_available < ordered_seats:
                 _debug.logic(
                     "registration_unavailable",
@@ -393,8 +444,6 @@ class WebsiteEventController(http.Controller):
                     available=seats_available,
                 )
                 availability_check = False
-        if not tickets:
-            return False
         default_first_attendee = {}
         if not request.env.user._is_public():
             default_first_attendee = {
@@ -410,11 +459,14 @@ class WebsiteEventController(http.Controller):
                     "email": visitor.email,
                     "phone": visitor.mobile,
                 }
-        return request.env["ir.ui.view"]._render_template(
-            "website_event.registration_attendee_details",
+        return self._registration_step(
+            event,
+            "website_event.registration_attendees_step",
+            "website_event.registration_attendees",
+            "attendees",
             {
                 "tickets": tickets,
-                "event_slot_id": slot_id,
+                "event_slot_id": slot.id,
                 "event": event,
                 "availability_check": availability_check,
                 "default_first_attendee": default_first_attendee,

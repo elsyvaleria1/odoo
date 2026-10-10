@@ -277,14 +277,15 @@
             t-att-href="'/event/%s/register' % (slug(event))">
             Register
         </a>
-        <button
+        <a
             t-elif="event.event_registrations_open"
-            type="button"
+            role="button"
             data-bs-toggle="modal"
-            t-attf-class="btn btn-primary {{cta_additional_classes}}"
+            t-attf-class="btn btn-primary o_wevent_registration_cta {{cta_additional_classes}}"
+            t-attf-href="/event/{{slug(event)}}/registration"
             t-attf-data-bs-target="#modal_{{'slot' if event.is_multi_slots else 'ticket'}}_registration">
             Register
-        </button>
+        </a>
         <div
             t-if="registration_error_code == 'insufficient_seats'"
             class="alert alert-danger my-3"
@@ -548,10 +549,10 @@
 
     <template id="registration_attendee_details" name="Registration Attendee Details">
         <div
-            id="modal_attendees_registration"
-            class="modal fade"
-            tabindex="-1"
-            role="dialog">
+            t-att-id="None if as_page else 'modal_attendees_registration'"
+            t-att-class="'o_wevent_registration_page' if as_page else 'modal fade'"
+            t-att-tabindex="None if as_page else '-1'"
+            t-att-role="None if as_page else 'dialog'">
             <div class="modal-dialog modal-lg" role="document">
                 <form
                     id="attendee_registration"
@@ -566,6 +567,7 @@
                         <div class="modal-header align-items-center">
                             <h4 class="modal-title">Attendees</h4>
                             <button
+                                t-if="not as_page"
                                 type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -644,7 +646,8 @@
                             </div>
                         </t>
                         <div class="modal-footer border-top">
-                            <button type="button" class="btn btn-secondary js_goto_event" data-bs-dismiss="modal">Cancel</button>
+                            <a t-if="as_page" class="btn btn-secondary" t-attf-href="/event/#{slug(event)}/register">Cancel</a>
+                            <button t-else="" type="button" class="btn btn-secondary js_goto_event" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary" t-if="availability_check and limit_check">Confirm Registration</button>
                         </div>
                     </div>
@@ -788,15 +791,48 @@
         </a>
     </template>
 
+    <template id="registration_tickets_step" name="Registration: Tickets of a Slot">
+        <div class="d-contents" data-fragment="website_event.registration_tickets">
+            <t t-call="website_event.modal_ticket_registration" />
+        </div>
+    </template>
+
+    <template id="registration_attendees_step" name="Registration: Attendees">
+        <div class="d-contents" data-fragment="website_event.registration_attendees">
+            <t t-call="website_event.registration_attendee_details" />
+        </div>
+    </template>
+
+    <template id="registration_page" name="Registration Page">
+        <t t-set="hide_registration_modals" t-value="True" />
+        <t t-call="website_event.layout">
+            <div class="container my-4">
+                <t
+                    t-if="step == 'slots'"
+                    t-call="website_event.modal_slot_registration">
+                    <t t-set="as_page" t-value="True" />
+                </t>
+                <t
+                    t-elif="step == 'tickets'"
+                    t-call="website_event.modal_ticket_registration">
+                    <t t-set="as_page" t-value="True" />
+                </t>
+                <t t-else="" t-call="website_event.registration_attendee_details">
+                    <t t-set="as_page" t-value="True" />
+                </t>
+            </div>
+        </t>
+    </template>
+
     <template id="modal_ticket_registration" name="Modal for tickets registration">
         <div
-            id="modal_ticket_registration"
-            t-attf-class="modal fade {{'o_wevent_modal_slot_ticket_registration' if event.is_multi_slots else ''}}"
-            data-bs-backdrop="static"
-            data-bs-keyboard="false"
-            tabindex="-1"
+            t-att-id="None if as_page else 'modal_ticket_registration'"
+            t-att-class="'o_wevent_registration_page' if as_page else 'modal fade %s' % ('o_wevent_modal_slot_ticket_registration' if event.is_multi_slots else '')"
+            t-att-data-bs-backdrop="None if as_page else 'static'"
+            t-att-data-bs-keyboard="None if as_page else 'false'"
+            t-att-tabindex="None if as_page else '-1'"
             aria-labelledby="staticBackdropLabelTicket"
-            aria-hidden="true">
+            t-att-aria-hidden="None if as_page else 'true'">
             <div class="modal-dialog">
                 <div class="modal-content">
                 <div class="modal-header">
@@ -805,6 +841,7 @@
                         t-if="len(event.event_ticket_ids) &gt; 2"
                         class="o_wevent_price_range ms-2" />
                     <button
+                        t-if="not as_page"
                         type="button"
                         class="btn-close"
                         data-bs-dismiss="modal"
@@ -816,6 +853,7 @@
                     id="registration_form"
                     t-attf-action="/event/#{slug(event)}/registration/new"
                     method="post"
+                    t-att-data-fragment-form="None if as_page else 'website_event.registration_attendees'"
                     itemscope="itemscope"
                     itemprop="offers"
                     itemtype="http://schema.org/AggregateOffer">
@@ -970,7 +1008,15 @@
                                 </div>
                             </div>
                             <div class="modal-footer flex-lg-row border-top">
+                                <a
+                                    t-if="as_page"
+                                    class="btn btn-light"
+                                    t-attf-href="/event/#{slug(event)}/register">
+                                    <t t-if="event.is_multi_slots">Cancel</t>
+                                    <t t-else="">Close</t>
+                                </a>
                                 <button
+                                    t-else=""
                                     type="button"
                                     class="btn btn-light js_goto_event"
                                     data-bs-dismiss="modal">
@@ -980,7 +1026,6 @@
                                 <button
                                     type="submit"
                                     class="btn btn-primary a-submit"
-                                    disabled=""
                                     t-attf-id="#{event.id}">
                                     Register
                                     <t
@@ -1110,7 +1155,15 @@
                                 </div>
                             </div>
                             <div class="modal-footer flex-lg-row border-top">
+                                <a
+                                    t-if="as_page"
+                                    class="btn btn-light"
+                                    t-attf-href="/event/#{slug(event)}/register">
+                                    <t t-if="event.is_multi_slots">Cancel</t>
+                                    <t t-else="">Close</t>
+                                </a>
                                 <button
+                                    t-else=""
                                     type="button"
                                     class="btn btn-light js_goto_event"
                                     data-bs-dismiss="modal">
@@ -1120,8 +1173,7 @@
                                 <button
                                     type="submit"
                                     class="btn btn-primary a-submit"
-                                    t-attf-id="#{event.id}"
-                                    disabled="disabled">
+                                    t-attf-id="#{event.id}">
                                     Register
                                     <t
                                         t-if="event.seats_limited and event.seats_max and event.seats_available &lt;= (event.seats_max * 0.2)">
@@ -1139,18 +1191,19 @@
 
     <template id="modal_slot_registration" name="Modal for slots registration">
         <div
-            class="modal fade"
-            id="modal_slot_registration"
-            data-bs-backdrop="static"
-            data-bs-keyboard="false"
-            tabindex="-1"
+            t-att-class="'o_wevent_registration_page' if as_page else 'modal fade'"
+            t-att-id="None if as_page else 'modal_slot_registration'"
+            t-att-data-bs-backdrop="None if as_page else 'static'"
+            t-att-data-bs-keyboard="None if as_page else 'false'"
+            t-att-tabindex="None if as_page else '-1'"
             aria-labelledby="staticBackdropLabelSlot"
-            aria-hidden="true">
+            t-att-aria-hidden="None if as_page else 'true'">
             <div class="modal-dialog modal-lg o_wevent_js_slot_details">
                 <form
                     id="slot_registration_form"
-                    t-attf-action="/event/#{slug(event)}/registration/slot/slot_id/tickets"
-                    method="post">
+                    t-attf-action="/event/#{slug(event)}/registration/slot/tickets"
+                    method="post"
+                    t-att-data-fragment-form="None if as_page else 'website_event.registration_tickets'">
                     <input
                         type="hidden"
                         name="csrf_token"
@@ -1159,6 +1212,7 @@
                     <div class="modal-header">
                         <div class="o_wevent_registration_title modal-title fs-5" id="staticBackdropLabelSlot">Slots</div>
                         <button
+                            t-if="not as_page"
                             type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -1174,12 +1228,14 @@
                                 class="pagination d-flex flex-nowrap gap-3 user-select-none">
                                 <li class="o_wevent_slot_previous page-item">
                                     <button
+                                        type="button"
                                         class="btn btn-link text-decoration-none p-1">
                                         <i class="fa-solid fa-caret-left me-2" /><small>Previous</small>
                                     </button>
                                 </li>
                                 <li class="o_wevent_slot_next page-item">
                                     <button
+                                        type="button"
                                         class="btn btn-link text-decoration-none p-1">
                                         <small>Next</small><i class="fa-solid fa-caret-right ms-2" />
                                     </button>
@@ -1196,30 +1252,36 @@
                                     class="text-nowrap pe-5 me-5"
                                     t-options="{'widget': 'date', 'format': 'full'}" />
                                 <div class="d-flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        t-foreach="slots[date]"
-                                        t-as="slot"
-                                        class="o_wevent_slot_btn btn btn-sm btn-light"
-                                        t-att-data-slot-id="slot.id"
-                                        t-att-data-event-tz="event.date_tz"
-                                        t-att-data-slot-start="slot.start_datetime"
-                                        t-att-data-slot-end="slot.end_datetime">
-                                        <time
-                                            t-out="slot.start_datetime"
-                                            class="lh-1"
-                                            t-options="{'widget': 'datetime', 'tz_name': event.date_tz, 'time_only': 'true', 'format': 'short'}" />
-                                    </button>
+                                    <t t-foreach="slots[date]" t-as="slot">
+                                        <input
+                                            type="radio"
+                                            class="btn-check o_wevent_slot_input"
+                                            name="event_slot_id"
+                                            required="required"
+                                            t-att-id="'o_wevent_slot_%s' % slot.id"
+                                            t-att-value="slot.id"
+                                            t-att-data-event-tz="event.date_tz"
+                                            t-att-data-slot-start="slot.start_datetime"
+                                            t-att-data-slot-end="slot.end_datetime" />
+                                        <label
+                                            class="o_wevent_slot_btn btn btn-sm btn-light"
+                                            t-att-for="'o_wevent_slot_%s' % slot.id">
+                                            <time
+                                                t-out="slot.start_datetime"
+                                                class="lh-1"
+                                                t-options="{'widget': 'datetime', 'tz_name': event.date_tz, 'time_only': 'true', 'format': 'short'}" />
+                                        </label>
+                                    </t>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer flex-lg-row border-top">
-                        <button type="button" class="btn btn-light o_wevent_slot_btn_cancel" data-bs-dismiss="modal">Close</button>
+                        <a t-if="as_page" class="btn btn-light" t-attf-href="/event/#{slug(event)}/register">Close</a>
+                        <button t-else="" type="button" class="btn btn-light o_wevent_slot_btn_cancel" data-bs-dismiss="modal">Close</button>
                         <button
                             type="submit"
                             class="btn btn-primary a-submit"
-                            disabled=""
                             t-attf-id="#{event.id}">
                             Next
                         </button>
