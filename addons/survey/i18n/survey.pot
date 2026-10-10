@@ -4136,11 +4136,13 @@ msgstr ""
 
 #. module: survey
 #: model_terms:ir.ui.view,arch_db:survey.survey_page_statistics_inner
+#: model_terms:ir.ui.view,arch_db:survey.survey_comparison_result
 msgid "Period A"
 msgstr ""
 
 #. module: survey
 #: model_terms:ir.ui.view,arch_db:survey.survey_page_statistics_inner
+#: model_terms:ir.ui.view,arch_db:survey.survey_comparison_result
 msgid "Period B"
 msgstr ""
 
@@ -4228,6 +4230,7 @@ msgstr ""
 
 #. module: survey
 #: model_terms:ir.ui.view,arch_db:survey.survey_page_cross_tab
+#: model_terms:ir.ui.view,arch_db:survey.survey_cross_tab_table
 msgid "Please select two different questions."
 msgstr ""
 
@@ -6098,6 +6101,7 @@ msgstr ""
 
 #. module: survey
 #: model_terms:ir.ui.view,arch_db:survey.survey_page_cross_tab
+#: model_terms:ir.ui.view,arch_db:survey.survey_cross_tab_table
 msgid "Total"
 msgstr ""
 

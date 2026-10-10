@@ -218,18 +218,26 @@
                 </a>
             </h3>
             <div class="collapse" id="comparisonSection">
-                <div
+                <form
                     class="row g-2 align-items-end mb-3 o_survey_comparison_form"
-                    t-att-data-survey-id="survey.id">
+                    method="post"
+                    t-attf-action="/survey/results/#{survey.id}/compare"
+                    data-fragment-form="survey.comparison_result">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()" />
                     <div class="col-auto">
                         <label class="form-label small mb-0 fw-bold">Period A</label>
                         <div class="d-flex gap-1">
                             <input
                                 type="date"
+                                name="period_a_from"
                                 class="form-control form-control-sm o_compare_a_from"
                                 placeholder="From" />
                             <input
                                 type="date"
+                                name="period_a_to"
                                 class="form-control form-control-sm o_compare_a_to"
                                 placeholder="To" />
                         </div>
@@ -239,20 +247,26 @@
                         <div class="d-flex gap-1">
                             <input
                                 type="date"
+                                name="period_b_from"
                                 class="form-control form-control-sm o_compare_b_from"
                                 placeholder="From" />
                             <input
                                 type="date"
+                                name="period_b_to"
                                 class="form-control form-control-sm o_compare_b_to"
                                 placeholder="To" />
                         </div>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-sm btn-primary o_survey_compare_btn">
+                        <button
+                            type="submit"
+                            class="btn btn-sm btn-primary o_survey_compare_btn">
                             <i class="fa-solid fa-code-compare" /> Compare </button>
                     </div>
-                </div>
-                <div class="o_survey_comparison_results" />
+                </form>
+                <div
+                    class="o_survey_comparison_results"
+                    data-fragment="survey.comparison_result" />
             </div>
         </div>
 
@@ -275,10 +289,21 @@
             <div class="collapse" id="crossTabSection">
                 <p class="text-muted">Select two questions to see how their answers relate to each
                     other.</p>
-                <div class="row mb-3">
+                <form
+                    class="row mb-3"
+                    method="post"
+                    t-attf-action="/survey/results/#{survey.id}/cross_tabulation"
+                    data-fragment-form="survey.cross_tabulation_result">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        t-att-value="request.csrf_token()" />
                     <div class="col-md-5">
                         <label class="form-label fw-bold">Row question</label>
-                        <select id="crossTabRowQuestion" class="form-select">
+                        <select
+                            id="crossTabRowQuestion"
+                            name="q_row"
+                            class="form-select">
                             <option value="">-- Select question --</option>
                             <t t-foreach="question_and_page_data" t-as="qd">
                                 <t t-if="not qd['is_page']">
@@ -291,7 +316,10 @@
                     </div>
                     <div class="col-md-5">
                         <label class="form-label fw-bold">Column question</label>
-                        <select id="crossTabColQuestion" class="form-select">
+                        <select
+                            id="crossTabColQuestion"
+                            name="q_col"
+                            class="form-select">
                             <option value="">-- Select question --</option>
                             <t t-foreach="question_and_page_data" t-as="qd">
                                 <t t-if="not qd['is_page']">
@@ -304,14 +332,16 @@
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button
-                            type="button"
-                            class="btn btn-primary o_survey_cross_tab_btn"
-                            t-att-data-survey-id="survey.id">
+                            type="submit"
+                            class="btn btn-primary o_survey_cross_tab_btn">
                             Generate
                         </button>
                     </div>
-                </div>
-                <div id="crossTabResult" class="mb-3" />
+                </form>
+                <div
+                    id="crossTabResult"
+                    class="mb-3"
+                    data-fragment="survey.cross_tabulation_result" />
             </div>
         </div>
     </template>
@@ -1088,6 +1118,127 @@
     </template>
 
     <!-- Cross-Tabulation Page -->
+    <template id="survey_cross_tab_table" name="Survey: cross-tabulation table">
+        <t
+            t-if="cross_tab_data and cross_tab_data['row_labels'] and cross_tab_data['col_labels']">
+            <t t-set="grand_total" t-value="cross_tab_data['grand_total']" />
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered table-sm">
+                    <caption class="caption-top text-muted">
+                        <div>
+                            <span>Rows:</span>
+                            <strong t-out="cross_tab_data['question_row']['title']" />
+                        </div>
+                        <div>
+                            <span>Columns:</span>
+                            <strong t-out="cross_tab_data['question_col']['title']" />
+                        </div>
+                        <div>
+                            <t t-out="grand_total" />
+                            <span>responses</span>
+                        </div>
+                    </caption>
+                    <thead class="table-light">
+                        <tr>
+                            <th />
+                            <th
+                                t-foreach="cross_tab_data['col_labels']"
+                                t-as="col_label"
+                                class="text-center"
+                                t-out="col_label" />
+                            <th class="text-center table-secondary">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="cross_tab_data['row_labels']" t-as="row_label">
+                            <th t-out="row_label" />
+                            <t
+                                t-foreach="cross_tab_data['matrix'][row_label_index]"
+                                t-as="cell">
+                                <td
+                                    class="text-center"
+                                    t-attf-style="background-color: rgba(113, 75, 234, {{ min(cell / grand_total * 3, 0.6) if grand_total else 0 }});">
+                                    <t t-out="cell" />
+                                    <small class="text-muted">
+                                        (<t t-out="'%.1f' % (cell / grand_total * 100 if grand_total else 0)" />%)
+                                    </small>
+                                </td>
+                            </t>
+                            <td
+                                class="text-center table-secondary fw-bold"
+                                t-out="cross_tab_data['row_totals'][row_label_index]" />
+                        </tr>
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th class="table-secondary">Total</th>
+                            <th
+                                t-foreach="cross_tab_data['col_totals']"
+                                t-as="col_total"
+                                class="text-center"
+                                t-out="col_total" />
+                            <th
+                                class="text-center table-secondary fw-bold"
+                                t-out="grand_total" />
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </t>
+        <div t-elif="cross_tab_data" class="alert alert-info mt-3">
+            No overlapping responses found for these questions.
+        </div>
+        <div t-elif="selected_row and selected_col" class="alert alert-warning mt-3">
+            Please select two different questions.
+        </div>
+    </template>
+
+    <template
+        id="survey_cross_tab_result"
+        name="Survey: cross-tabulation result region">
+        <div
+            id="crossTabResult"
+            class="mb-3"
+            data-fragment="survey.cross_tabulation_result">
+            <t t-call="survey.survey_cross_tab_table" />
+        </div>
+    </template>
+
+    <template
+        id="survey_comparison_result"
+        name="Survey: period comparison result region">
+        <div
+            class="o_survey_comparison_results"
+            data-fragment="survey.comparison_result">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Period A</th>
+                        <th>Period B</th>
+                        <th>Delta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="metrics" t-as="metric">
+                        <td t-out="metric['label']" />
+                        <td t-out="comparison['period_a'][metric['key']]" />
+                        <td t-out="comparison['period_b'][metric['key']]" />
+                        <td>
+                            <t
+                                t-set="delta"
+                                t-value="comparison['deltas'][metric['key']]" />
+                            <span
+                                t-if="delta is not None"
+                                t-att-class="'fw-bold %s' % ('text-success' if delta &gt; 0 else 'text-danger' if delta &lt; 0 else 'text-muted')"
+                                t-out="('+%s' % delta) if delta &gt; 0 else delta" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
     <template id="survey_page_cross_tab" name="Survey: cross-tabulation page">
         <t t-set="no_livechat" t-value="True" />
         <t t-set="no_survey_navigation" t-value="True" />
@@ -1131,61 +1282,7 @@
                     </div>
                 </form>
 
-                <!-- Contingency table -->
-                <t t-if="cross_tab_data">
-                    <div class="table-responsive mt-4">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>
-                                        <t t-out="cross_tab_data['question_row']['title']" /> \ <t t-out="cross_tab_data['question_col']['title']" />
-                                    </th>
-                                    <t
-                                        t-foreach="cross_tab_data['col_labels']"
-                                        t-as="col_label">
-                                        <th class="text-center" t-out="col_label" />
-                                    </t>
-                                    <th class="text-center table-secondary">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <t
-                                    t-foreach="cross_tab_data['row_labels']"
-                                    t-as="row_label">
-                                    <tr>
-                                        <th t-out="row_label" />
-                                        <t
-                                            t-foreach="cross_tab_data['matrix'][row_label_index]"
-                                            t-as="cell">
-                                            <td class="text-center" t-out="cell" />
-                                        </t>
-                                        <td
-                                            class="text-center table-secondary fw-bold"
-                                            t-out="cross_tab_data['row_totals'][row_label_index]" />
-                                    </tr>
-                                </t>
-                            </tbody>
-                            <tfoot class="table-secondary">
-                                <tr>
-                                    <th>Total</th>
-                                    <t
-                                        t-foreach="cross_tab_data['col_totals']"
-                                        t-as="col_total">
-                                        <td
-                                            class="text-center fw-bold"
-                                            t-out="col_total" />
-                                    </t>
-                                    <td
-                                        class="text-center fw-bold"
-                                        t-out="cross_tab_data['grand_total']" />
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </t>
-                <t t-elif="selected_row and selected_col">
-                    <div class="alert alert-warning mt-3">Please select two different questions.</div>
-                </t>
+                <t t-call="survey.survey_cross_tab_table" />
             </div>
         </t>
     </template>

@@ -25,6 +25,7 @@ from odoo.addons.web.controllers.utils import (
     Fragment,
     FragmentResponse,
     render_fragments,
+    wants_fragments,
 )
 
 if TYPE_CHECKING:
@@ -1489,13 +1490,38 @@ class Survey(http.Controller):
 
     @http.route(
         '/survey/results/<model("survey.survey"):survey>/cross_tabulation',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
+        website=True,
     )
-    def survey_cross_tabulation(
-        self, survey: Any, question_row_id: int, question_col_id: int
-    ) -> dict[str, Any]:
-        return survey._prepare_cross_tabulation(question_row_id, question_col_id)
+    def survey_cross_tabulation(self, survey: Any, q_row=None, q_col=None, **post: Any):
+        try:
+            q_row, q_col = int(q_row or 0), int(q_col or 0)
+        except ValueError:
+            q_row = q_col = 0
+        if not wants_fragments():
+            # the cross-tabulation page draws the same table
+            return request.redirect(
+                f"/survey/results/{survey.id}/cross-tab?q_row={q_row}&q_col={q_col}"
+            )
+        cross_tab_data = {}
+        if q_row and q_col and q_row != q_col:
+            cross_tab_data = survey._prepare_cross_tabulation(q_row, q_col)
+        return request.prepare_json_response(
+            render_fragments(
+                request.env,
+                Fragment(
+                    "survey.survey_cross_tab_result",
+                    {
+                        "cross_tab_data": cross_tab_data,
+                        "selected_row": q_row,
+                        "selected_col": q_col,
+                    },
+                    key="survey.cross_tabulation_result",
+                ),
+            )
+        )
 
     def _generate_report(self, user_input: Any, download: bool = True) -> Response:
         report = (
@@ -1956,23 +1982,33 @@ class Survey(http.Controller):
         auth="user",
     )
     def survey_segments(self, survey: Any, **post: Any) -> dict[str, Any]:
+        request.env["survey.user_input"].flush_model(
+            [
+                "survey_id",
+                "state",
+                "test_entry",
+                "scoring_percentage",
+                "start_datetime",
+                "end_datetime",
+            ]
+        )
         request.env.cr.execute(
             """
             SELECT
+                id,
                 scoring_percentage,
-                quality_score,
                 EXTRACT(EPOCH FROM (end_datetime - start_datetime)) / 60.0 AS duration_min
             FROM survey_user_input
             WHERE survey_id = %s
               AND state = 'done'
-              AND test_entry = FALSE
+              AND test_entry IS NOT TRUE
               AND end_datetime IS NOT NULL
               AND start_datetime IS NOT NULL
         """,
             [survey.id],
         )
-        rows = request.env.cr.fetchall()
-        if not rows:
+        scored = request.env.cr.fetchall()
+        if not scored:
             return {
                 "score_bands": [],
                 "quality_tiers": [],
@@ -1980,6 +2016,15 @@ class Survey(http.Controller):
                 "total": 0,
             }
 
+        user_inputs = request.env["survey.user_input"].browse(
+            [row[0] for row in scored]
+        )
+        rows = [
+            (score, user_input.quality_score, duration)
+            for user_input, (_id, score, duration) in zip(
+                user_inputs, scored, strict=True
+            )
+        ]
         bands = dict.fromkeys(("0-25%", "25-50%", "50-75%", "75-100%"), 0)
         for score, _quality, _dur in rows:
             if score < 25:
@@ -2038,8 +2083,10 @@ class Survey(http.Controller):
 
     @http.route(
         '/survey/results/<model("survey.survey"):survey>/compare',
-        type="jsonrpc",
+        type="http",
         auth="user",
+        methods=["POST"],
+        website=True,
     )
     def survey_compare(
         self,
@@ -2049,7 +2096,10 @@ class Survey(http.Controller):
         period_b_from: str = "",
         period_b_to: str = "",
         **post: Any,
-    ) -> dict[str, Any]:
+    ):
+        if not wants_fragments():
+            return request.redirect(f"/survey/results/{survey.id}")
+
         def _get_lines_for_period(date_from, date_to):
             domain = [
                 ("survey_id", "=", survey.id),
@@ -2094,11 +2144,26 @@ class Survey(http.Controller):
             else:
                 deltas[key] = None
 
-        return {
-            "period_a": period_a,
-            "period_b": period_b,
-            "deltas": deltas,
-        }
+        comparison = {"period_a": period_a, "period_b": period_b, "deltas": deltas}
+        metrics = [
+            {"key": "count", "label": request.env._("Responses")},
+            {"key": "avg_score", "label": request.env._("Avg Score (%)")},
+            {"key": "avg_quality", "label": request.env._("Avg Quality")},
+        ]
+        if period_a["success_rate"] is not None:
+            metrics.append(
+                {"key": "success_rate", "label": request.env._("Success Rate (%)")}
+            )
+        return request.prepare_json_response(
+            render_fragments(
+                request.env,
+                Fragment(
+                    "survey.survey_comparison_result",
+                    {"comparison": comparison, "metrics": metrics},
+                    key="survey.comparison_result",
+                ),
+            )
+        )
 
     @http.route(
         '/survey/results/<model("survey.survey"):survey>/trends',
@@ -2113,6 +2178,9 @@ class Survey(http.Controller):
 
         trunc = {"day": "day", "week": "week", "month": "month"}[granularity]
 
+        request.env["survey.user_input"].flush_model(
+            ["survey_id", "state", "test_entry", "scoring_percentage", "end_datetime"]
+        )
         request.env.cr.execute(
             """
             SELECT
@@ -2122,7 +2190,7 @@ class Survey(http.Controller):
             FROM survey_user_input
             WHERE survey_id = %s
               AND state = 'done'
-              AND test_entry = FALSE
+              AND test_entry IS NOT TRUE
               AND end_datetime IS NOT NULL
             GROUP BY period
             ORDER BY period

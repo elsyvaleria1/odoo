@@ -37,3 +37,4 @@ from . import test_embedded_phone
 from . import test_invitation_links
 from . import test_sealed_tokens
 from . import test_survey_result_charts
+from . import test_results_widgets
