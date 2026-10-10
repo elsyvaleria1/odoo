@@ -313,12 +313,12 @@
                     </t>
 
                     <t t-name="JournalChecks">
-                        <div class="row" t-if="dashboard.has_unhashed_entries">
+                        <div class="row" t-if="dashboard.number_to_secure &gt; 0">
                             <a
                                 name="show_unhashed_entries"
                                 type="object"
-                                class="text-warning">
-                                Unhashed entries
+                                title="Posted entries of this hash-restricted journal not secured yet">
+                                <t t-out="dashboard.number_to_secure" /> To Secure
                             </a>
                         </div>
                         <div class="row" t-if="dashboard.has_sequence_holes">

@@ -1125,23 +1125,18 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
 
     def test_account_move_unhashed_entries(self):
         sales_journal = self.company_data["default_journal_sale"]
-        self._init_and_post(
+        first_move = self._init_and_post(
             [{"partner": self.partner_a, "date": "2023-01-01", "amounts": [1000]}]
         )
         sales_journal.restrict_mode_hash_table = True
-        self.assertTrue(
-            sales_journal._get_moves_to_hash(
-                include_pre_last_hash=False, early_stop=True
-            )
+        self.assertEqual(
+            sales_journal._get_entry_to_secure_counts(), {sales_journal.id: 1}
         )
+        self.assertEqual(sales_journal.show_unhashed_entries()["res_id"], first_move.id)
         self._init_and_post(
             [{"partner": self.partner_a, "date": "2023-01-01", "amounts": [1000]}]
         )
-        self.assertFalse(
-            sales_journal._get_moves_to_hash(
-                include_pre_last_hash=False, early_stop=True
-            )
-        )
+        self.assertEqual(sales_journal._get_entry_to_secure_counts(), {})
 
     def test_account_group_account_secured(self):
         group_account_secured = self.env.ref("account.group_account_secured")
@@ -1442,3 +1437,159 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
             ["BNK1/2022/", "BNK1/2023/", "BNK1/2024/"],
         )
         self.assertEqual(max_hash_date, fields.Date.from_string("2022-03-14"))
+
+    def test_entries_before_the_last_secured_one_are_not_pending(self):
+        sales_journal = self.company_data["default_journal_sale"]
+        orphan, secured = self._init_and_post(
+            [
+                {"partner": self.partner_a, "date": "2023-01-01", "amounts": [100]},
+                {"partner": self.partner_a, "date": "2023-01-02", "amounts": [200]},
+            ]
+        )
+        sales_journal.restrict_mode_hash_table = True
+        secured.inalterable_hash = secured._get_hashes("")[secured]
+        pending = self.init_invoice(
+            "out_invoice", self.partner_a, "2023-01-03", amounts=[300], post=False
+        )
+        with self._skip_hash_moves():
+            pending.action_post()
+
+        self.assertEqual(
+            sales_journal._get_entry_to_secure_counts(), {sales_journal.id: 1}
+        )
+        self.assertEqual(sales_journal.show_unhashed_entries()["res_id"], pending.id)
+
+        self._trigger_secure_cron()
+
+        self.assertFalse(orphan.inalterable_hash)
+        self.assertTrue(pending.inalterable_hash)
+        self.assertEqual(sales_journal._get_entry_to_secure_counts(), {})
+
+    def _create_statement_lines(self, journal, specs):
+        return self.env["account.bank.statement.line"].create(
+            [
+                {
+                    "journal_id": journal.id,
+                    "date": day,
+                    "payment_ref": f"{day} {amount}",
+                    "amount": amount,
+                }
+                for day, amount in specs
+            ]
+        )
+
+    def _trigger_secure_cron(self):
+        self.assertIs(
+            self.env.ref(
+                "account.ir_cron_secure_reconciled_chains"
+            ).method_direct_trigger(),
+            True,
+        )
+        self.env.invalidate_all()
+
+    def test_cron_secures_chains_up_to_their_first_unreconciled_line(self):
+        bank_journal = self.company_data["default_journal_bank"]
+        reconciled_1, reconciled_2, unreconciled, after_unreconciled = (
+            self._create_statement_lines(
+                bank_journal,
+                [
+                    ("2024-01-01", 0.0),
+                    ("2024-01-02", 0.0),
+                    ("2024-01-03", 10.0),
+                    ("2024-01-04", 0.0),
+                ],
+            )
+        )
+        reconciled_2025, future = self._create_statement_lines(
+            bank_journal, [("2025-03-01", 0.0), ("2999-01-01", 0.0)]
+        )
+        bank_journal.restrict_mode_hash_table = True
+        self.assertEqual(
+            bank_journal._get_journal_dashboard_data_batched()[bank_journal.id][
+                "number_to_secure"
+            ],
+            6,
+        )
+
+        self._trigger_secure_cron()
+
+        secured = (reconciled_1 | reconciled_2 | reconciled_2025).move_id
+        pending = (unreconciled | after_unreconciled | future).move_id
+        self.assertTrue(all(secured.mapped("inalterable_hash")))
+        self.assertFalse(any(pending.mapped("inalterable_hash")))
+        self.assertEqual(
+            bank_journal._get_journal_dashboard_data_batched()[bank_journal.id][
+                "number_to_secure"
+            ],
+            3,
+        )
+        self._verify_integrity(
+            (reconciled_1 | reconciled_2).move_id,
+            "Entries are correctly hashed",
+            reconciled_1.move_id,
+            reconciled_2.move_id,
+        )
+
+        hashes = secured.mapped("inalterable_hash")
+        message_count = len(secured.message_ids)
+        self._trigger_secure_cron()
+        self.assertEqual(secured.mapped("inalterable_hash"), hashes)
+        self.assertEqual(len(secured.message_ids), message_count)
+        self.assertFalse(any(pending.mapped("inalterable_hash")))
+
+    def test_cron_secures_every_company_and_only_restricted_journals(self):
+        company_data_2 = self.setup_other_company()
+        bank_journal = self.company_data["default_journal_bank"]
+        bank_journal_2 = company_data_2["default_journal_bank"]
+        line = self._create_statement_lines(bank_journal, [("2024-01-01", 0.0)])
+        line_2 = self._create_statement_lines(bank_journal_2, [("2024-01-01", 0.0)])
+        unrestricted_line = self._create_statement_lines(
+            self.company_data["default_journal_cash"], [("2024-01-01", 0.0)]
+        )
+        (bank_journal | bank_journal_2).restrict_mode_hash_table = True
+
+        self._trigger_secure_cron()
+
+        self.assertTrue(line.move_id.inalterable_hash)
+        self.assertTrue(line_2.move_id.inalterable_hash)
+        self.assertFalse(unrestricted_line.move_id.inalterable_hash)
+
+    def test_cron_skips_and_logs_a_chain_with_a_gap(self):
+        bank_journal = self.company_data["default_journal_bank"]
+        lines = self._create_statement_lines(
+            bank_journal,
+            [("2024-01-01", 0.0), ("2024-01-02", 0.0), ("2024-01-03", 0.0)],
+        )
+        clean_line = self._create_statement_lines(bank_journal, [("2025-01-01", 0.0)])
+        lines[1].move_id.action_draft()
+        bank_journal.restrict_mode_hash_table = True
+
+        with self.assertLogs(
+            "odoo.addons.account.models.account_move_hash", "WARNING"
+        ) as logs:
+            self._trigger_secure_cron()
+
+        self.assertIn("gap", logs.output[0])
+        self.assertFalse(any(lines.move_id.mapped("inalterable_hash")))
+        self.assertTrue(clean_line.move_id.inalterable_hash)
+
+    def test_entry_to_secure_counts_take_one_query_whatever_the_journal_count(self):
+        journals = self.env["account.journal"].create(
+            [
+                {"name": f"Secured bank {index}", "code": f"SB{index}", "type": "bank"}
+                for index in range(6)
+            ]
+        )
+        for journal in journals:
+            self._create_statement_lines(journal, [("2024-01-01", 10.0)])
+        journals.restrict_mode_hash_table = True
+
+        for subset in (journals[:1], journals):
+            with self.subTest(journals=len(subset)):
+                self.env.flush_all()
+                self.env.invalidate_all()
+                subset = subset.browse(subset.ids)
+                subset.mapped("restrict_mode_hash_table")
+                with self.assertQueryCount(1):
+                    counts = subset._get_entry_to_secure_counts()
+                self.assertEqual(counts, dict.fromkeys(subset.ids, 1))

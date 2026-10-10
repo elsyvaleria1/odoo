@@ -1,7 +1,9 @@
+import logging
 from hashlib import sha256
+from itertools import batched
 from json import dumps
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -10,6 +12,7 @@ from odoo.tools import SQL, TransactionMemo, float_repr
 from .account_move import MAX_HASH_VERSION
 
 _debug = DebugLog(__name__)
+_logger = logging.getLogger(__name__)
 
 LAST_UNPREFIXED_HASH_VERSION = 3
 
@@ -104,6 +107,133 @@ class AccountMove(models.Model):
             "_hash_moves", records=self, chains_to_hash_count=len(chains_to_hash)
         )
         self._hash_chains(chains_to_hash)
+
+    @api.model
+    def _get_pending_securing_query(self, journal_ids=None) -> SQL:
+        return SQL(
+            """
+            SELECT move.id,
+                   move.journal_id,
+                   move.sequence_prefix,
+                   move.sequence_number,
+                   move.date
+              FROM account_move move
+              JOIN account_journal journal ON journal.id = move.journal_id
+             WHERE journal.restrict_mode_hash_table IS TRUE
+               AND move.state = 'posted'
+               AND move.inalterable_hash IS NULL
+               AND %(journal_filter)s
+               AND NOT EXISTS (
+                       SELECT 1
+                         FROM account_move hashed
+                        WHERE hashed.journal_id = move.journal_id
+                          AND hashed.sequence_prefix = move.sequence_prefix
+                          AND hashed.sequence_number > move.sequence_number
+                          AND hashed.inalterable_hash IS NOT NULL
+                   )
+            """,
+            journal_filter=SQL("TRUE")
+            if journal_ids is None
+            else SQL("move.journal_id = ANY(%s)", list(journal_ids)),
+            to_flush=[
+                self._fields[fname]
+                for fname in (
+                    "state",
+                    "inalterable_hash",
+                    "journal_id",
+                    "sequence_prefix",
+                    "sequence_number",
+                    "date",
+                )
+            ]
+            + [self.env["account.journal"]._fields["restrict_mode_hash_table"]],
+        )
+
+    @api.model
+    def _get_securable_chain_heads(self, cutoff_date):
+        # A chain is secured up to the entry before its first unreconciled
+        # statement line, in both sequence and date order, since hashing a
+        # statement line forbids reconciling it afterwards.
+        rows = self.env.execute_query(
+            SQL(
+                """
+                WITH pending AS (%(pending)s),
+                     blocked AS (
+                         SELECT pending.journal_id,
+                                pending.sequence_prefix,
+                                MIN(pending.sequence_number) AS sequence_number,
+                                MIN(pending.date) AS date
+                           FROM pending
+                           JOIN account_bank_statement_line st_line
+                             ON st_line.move_id = pending.id
+                          WHERE st_line.is_reconciled IS NOT TRUE
+                       GROUP BY pending.journal_id, pending.sequence_prefix
+                     )
+                SELECT (ARRAY_AGG(pending.id ORDER BY pending.sequence_number DESC))[1]
+                  FROM pending
+             LEFT JOIN blocked
+                    ON blocked.journal_id = pending.journal_id
+                   AND blocked.sequence_prefix = pending.sequence_prefix
+                 WHERE pending.date <= %(cutoff_date)s
+                   AND (
+                           blocked.journal_id IS NULL
+                           OR (
+                               pending.sequence_number < blocked.sequence_number
+                               AND pending.date < blocked.date
+                           )
+                       )
+              GROUP BY pending.journal_id, pending.sequence_prefix
+              ORDER BY pending.journal_id, pending.sequence_prefix
+                """,
+                pending=self._get_pending_securing_query(),
+                cutoff_date=cutoff_date,
+                to_flush=[
+                    self.env["account.bank.statement.line"]._fields[fname]
+                    for fname in ("move_id", "is_reconciled")
+                ],
+            )
+        )
+        return self.browse(head_id for (head_id,) in rows)
+
+    @api.model
+    @_debug.perf.timed
+    def _cron_secure_reconciled_chains(self, batch_size=50) -> None:
+        heads = self._get_securable_chain_heads(fields.Date.context_today(self))
+        _debug.pipeline("cron_secure_chains", heads=heads)
+        cron = self.env["ir.cron"]
+        cron._commit_progress(remaining=len(heads))
+        for batch_ids in batched(heads.ids, batch_size, strict=False):
+            batch = self.browse(batch_ids)
+            batch._secure_reconciled_chains()
+            if not cron._commit_progress(len(batch)):
+                break
+
+    def _secure_reconciled_chains(self) -> None:
+        chains = []
+        for chain in self._get_chains_to_hash(
+            raise_if_gap=False,
+            raise_if_no_document=False,
+            raise_if_unreconciled=False,
+        ):
+            if "gap" in chain["warnings"] or "no_document" in chain["warnings"]:
+                _debug.logic(
+                    "cron_secure_chain_skipped",
+                    journal=chain["journal"],
+                    moves=chain["moves"],
+                    warnings=chain["warnings"],
+                )
+                _logger.warning(
+                    "Securing cron: chain %s of journal %s skipped (%s); "
+                    "secure it from the Secure Entries wizard once resolved.",
+                    chain["moves"][:1].sequence_prefix,
+                    chain["journal"].display_name,
+                    ", ".join(sorted(chain["warnings"])),
+                )
+                continue
+            chains.append(chain)
+        _debug.logic("cron_secure_chains_batch", heads=self, chains=len(chains))
+        self._serialize_hash_chains(chains)
+        self._hash_chains(chains)
 
     def _get_domain_chain_hash(
         self, last_move_in_chain, last_move_hashed, common_domain, include_pre_last_hash

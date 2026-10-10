@@ -53,10 +53,6 @@ class AccountJournal(models.Model):
     has_posted_entries = fields.Boolean(compute="_compute_entry_presence")
     has_entries = fields.Boolean(compute="_compute_entry_presence")
     has_sequence_holes = fields.Boolean(compute="_compute_has_sequence_holes")
-    has_unhashed_entries = fields.Boolean(
-        string="Unhashed Entries",
-        compute="_compute_has_unhashed_entries",
-    )
     last_statement_id = fields.Many2one(
         comodel_name="account.bank.statement",
         compute="_compute_bank_position",
@@ -170,35 +166,23 @@ class AccountJournal(models.Model):
         self.env.cr.execute(SQL(" UNION ALL ".join(["%s"] * len(queries)), *queries))
         return self.env.cr.fetchall()
 
-    def _get_unhashed_candidate_moves(self):
-        if not self:
-            return self.env["account.move"]
-        by_lock_date = self.grouped(
-            lambda journal: journal.company_id._get_user_fiscal_lock_date(journal)
-        )
-        return self.env["account.move"].search(
-            Domain("restrict_mode_hash_table", "=", True)
-            & Domain("inalterable_hash", "=", False)
-            & Domain.OR(
-                Domain("journal_id", "in", journals.ids)
-                & Domain("date", ">", lock_date)
-                for lock_date, journals in by_lock_date.items()
+    def _get_entry_to_secure_counts(self) -> dict[int, int]:
+        hashing_journals = self.filtered("restrict_mode_hash_table")
+        if not hashing_journals:
+            return {}
+        return dict(
+            self.env.execute_query(
+                SQL(
+                    """
+                    SELECT pending.journal_id, COUNT(*)
+                    FROM (%s) pending
+                    GROUP BY pending.journal_id
+                    """,
+                    self.env["account.move"]._get_pending_securing_query(
+                        hashing_journals.ids
+                    ),
+                )
             )
-        )
-
-    def _chains_to_hash(self, moves, include_pre_last_hash, early_stop):
-        return moves._get_chains_to_hash(
-            force_hash=True,
-            raise_if_gap=False,
-            raise_if_no_document=False,
-            raise_if_unreconciled=False,
-            early_stop=early_stop,
-            include_pre_last_hash=include_pre_last_hash,
-        )
-
-    def _get_moves_to_hash(self, include_pre_last_hash, early_stop):
-        return self._chains_to_hash(
-            self._get_unhashed_candidate_moves(), include_pre_last_hash, early_stop
         )
 
     @api.depends_context("allowed_company_ids", "uid")
@@ -208,23 +192,6 @@ class AccountJournal(models.Model):
         }
         for journal in self:
             journal.has_sequence_holes = journal.id in has_sequence_holes
-
-    @api.depends_context("allowed_company_ids", "uid")
-    def _compute_has_unhashed_entries(self) -> None:
-        hashing_journals = self.filtered("restrict_mode_hash_table")
-        (self - hashing_journals).has_unhashed_entries = False
-        candidates = hashing_journals._get_unhashed_candidate_moves().grouped(
-            "journal_id"
-        )
-        no_move = self.env["account.move"]
-        for journal in hashing_journals:
-            journal.has_unhashed_entries = bool(
-                journal._chains_to_hash(
-                    candidates.get(journal, no_move),
-                    include_pre_last_hash=False,
-                    early_stop=True,
-                )
-            )
 
     @api.depends_context("allowed_company_ids")
     @_debug.perf.timed
@@ -513,7 +480,15 @@ class AccountJournal(models.Model):
             self._update_general_dashboard_data(dashboard_data)
         with _debug.perf("dashboard_onboarding", cr=self.env.cr):
             self._update_onboarding_data(dashboard_data)
+        with _debug.perf("dashboard_to_secure", cr=self.env.cr):
+            self._update_to_secure_dashboard_data(dashboard_data)
         return dashboard_data
+
+    def _update_to_secure_dashboard_data(self, dashboard_data) -> None:
+        counts = self._get_entry_to_secure_counts()
+        _debug.logic("dashboard_entries_to_secure", journals=self, counts=counts)
+        for journal in self:
+            dashboard_data[journal.id]["number_to_secure"] = counts.get(journal.id, 0)
 
     def _update_dashboard_data_count(self, dashboard_data, model, name, domain) -> None:
         res = {
@@ -854,7 +829,6 @@ class AccountJournal(models.Model):
                     ),
                     "has_sequence_holes": journal.has_sequence_holes,
                     "title_has_sequence_holes": title_has_sequence_holes,
-                    "has_unhashed_entries": journal.has_unhashed_entries,
                     "drag_drop_settings": drag_drop_settings,
                 }
             )
@@ -1476,25 +1450,25 @@ class AccountJournal(models.Model):
         action["context"] = {**self._prepare_move_action_context(), **action["context"]}
         return action
 
-    def show_unhashed_entries(self):
+    def show_unhashed_entries(self) -> dict:
         self.check_singleton()
-        chains_to_hash = self._get_moves_to_hash(
-            include_pre_last_hash=True, early_stop=False
-        )
-        moves = self.env["account.move"].concat(
-            *[chain_moves["moves"] for chain_moves in chains_to_hash]
-        )
+        move_ids = [
+            move_id
+            for move_id, *_ in self.env.execute_query(
+                self.env["account.move"]._get_pending_securing_query(self.ids)
+            )
+        ]
         action = {
             "type": "ir.actions.act_window",
-            "name": self.env._("Journal Entries to Hash"),
+            "name": self.env._("Journal Entries to Secure"),
             "res_model": "account.move",
-            "domain": [("id", "in", moves.ids)],
+            "domain": [("id", "in", move_ids)],
             "views": [(False, "list"), (False, "form")],
         }
-        if len(moves.ids) == 1:
+        if len(move_ids) == 1:
             action.update(
                 {
-                    "res_id": moves[0].id,
+                    "res_id": move_ids[0],
                     "views": [(False, "form")],
                 }
             )

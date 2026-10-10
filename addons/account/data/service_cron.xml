@@ -14,6 +14,19 @@
             eval="(DateTime.now().replace(hour=2, minute=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
     </record>
 
+    <record id="ir_cron_secure_reconciled_chains" model="ir.cron">
+        <field
+            name="name">Account: Secure entries of hash-restricted journals up to their last reconciled date</field>
+        <field name="model_id" ref="model_account_move" />
+        <field name="state">code</field>
+        <field name="code">model._cron_secure_reconciled_chains()</field>
+        <field name="repeat_interval">1</field>
+        <field name="repeat_unit">day</field>
+        <field
+            name="nextcall"
+            eval="(DateTime.now().replace(hour=3, minute=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+    </record>
+
     <record id="ir_cron_account_move_send" model="ir.cron">
         <field name="name">Send invoices automatically</field>
         <field name="model_id" ref="model_account_move" />
