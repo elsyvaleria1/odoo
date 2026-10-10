@@ -1,4 +1,5 @@
 import random
+import re
 from ast import literal_eval
 from unittest.mock import patch
 
@@ -9,8 +10,10 @@ from odoo.tests import tagged
 from odoo.tests.common import users
 from odoo.tools import SQL, formataddr, mute_logger
 
-from odoo.addons.mail.models.mail_alias import dot_atom_text
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
+
+ATEXT = r"[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]"
+dot_atom_text = re.compile(rf"^{ATEXT}+(\.{ATEXT}+)*$")
 
 
 class TestMailAliasCommon(MailCommon):
@@ -625,6 +628,33 @@ class TestMailAlias(TestMailAliasCommon):
                 )
 
     @users("admin")
+    def test_a_parent_replies_through_its_oldest_alias(self):
+        container = self.env["mail.test.container"].create(
+            {"name": "Parent", "alias_name": "first-parented"}
+        )
+        first = container.alias_id
+        self.env["mail.alias"].create(
+            {
+                "alias_name": "second-parented",
+                "alias_domain_id": first.alias_domain_id.id,
+                "alias_model_id": first.alias_model_id.id,
+                "alias_parent_model_id": first.alias_parent_model_id.id,
+                "alias_parent_thread_id": container.id,
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE mail_alias SET alias_status = alias_status WHERE id = %s",
+            [first.id],
+        )
+        self.env.registry.clear_cache("mail")
+        self.assertEqual(
+            self.env["mail.alias"]
+            ._get_alias_addresses()
+            .by_parent[("mail.test.container", container.id)],
+            first.alias_full_name,
+        )
+
     def test_alias_setup(self):
         alias = self.env["mail.alias"].create(
             {

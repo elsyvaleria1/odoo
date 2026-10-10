@@ -136,6 +136,12 @@ class MailAliasDomain(models.Model):
                    AND alias.alias_domain_id IS NOT NULL
                    AND alias.alias_full_name IS NOT NULL
                  UNION
+                SELECT lower(alias.alias_name || '@' || domain.name), 'alias', domain.id
+                  FROM mail_alias alias
+                 CROSS JOIN mail_alias_domain domain
+                 WHERE alias.alias_incoming_local
+                   AND alias.alias_name IS NOT NULL
+                 UNION
                 SELECT lower(domain.bounce_alias || '@' || domain.name), 'bounce', domain.id
                   FROM mail_alias_domain domain
                  WHERE domain.bounce_alias IS NOT NULL

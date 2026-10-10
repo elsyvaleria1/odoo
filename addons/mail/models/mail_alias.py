@@ -21,8 +21,6 @@ if typing.TYPE_CHECKING:
 
 _debug = DebugLog(__name__)
 
-atext = r"[a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]"
-dot_atom_text = re.compile(r"^%s+(\.%s+)*$" % (atext, atext))
 alias_invalid_chars = re.compile(r"[^\w!#$%&'*+\-/=?^_`{|}~.]+")
 alias_dot_runs = re.compile(r"^\.+|\.+$|\.+(?=\.)")
 dns_name = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*$")
@@ -450,6 +448,7 @@ class MailAlias(models.Model):
               FROM mail_alias alias
               LEFT JOIN ir_model parent_model ON parent_model.id = alias.alias_parent_model_id
              WHERE alias.alias_name IS NOT NULL
+             ORDER BY alias.id
             """
         )
         rows = self.env.cr.fetchall()

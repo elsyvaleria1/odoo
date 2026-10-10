@@ -122,6 +122,27 @@ class TestMailGatewayRecipient(TransactionCase):
         alias.unlink()
         self.assertEqual(self._recipients(), before)
 
+    def test_a_local_part_alias_is_answered_on_every_domain(self):
+        other = self.env["mail.alias.domain"].create(
+            {
+                "name": "other-rcpt.example.com",
+                "bounce_alias": "bounce-other",
+                "catchall_alias": "catchall-other",
+            }
+        )
+        before = self._recipients()
+        self.env["mail.alias"].create(
+            {
+                "alias_name": "helpdesk",
+                "alias_domain_id": other.id,
+                "alias_incoming_local": True,
+                "alias_model_id": self.env.ref("base.model_res_partner").id,
+            }
+        )
+        self.assertEqual(
+            self._recipients(), {**before, "helpdesk@rcpt.example.com": "alias"}
+        )
+
     def test_a_renamed_domain_moves_every_address(self):
         before = self._recipients()
         self.alias_domain.name = "moved.example.com"
