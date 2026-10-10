@@ -66,7 +66,7 @@ class IotCommonTest(HttpCase):
                 session_id = message["session_id"]
                 if reply_key:
                     session_id = iot_channel_record._wrap_session_id(
-                        reply_key, session_id
+                        reply_key, session_id, message["iot_identifiers"][0]
                     )
                 answer = {
                     "session_id": session_id,
@@ -90,9 +90,11 @@ class IotCommonTest(HttpCase):
 
         original_send_reply = IotChannel._send_reply
 
-        def record_reply(iot_channel_record, message, message_type):
+        def record_reply(iot_channel_record, message, message_type, **kwargs):
             self.iot_websocket_messages.append({message_type: message})
-            return original_send_reply(iot_channel_record, message, message_type)
+            return original_send_reply(
+                iot_channel_record, message, message_type, **kwargs
+            )
 
         for name, mock in (
             ("_send_message", mock_send_message),

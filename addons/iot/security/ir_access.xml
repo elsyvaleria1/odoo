@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_iot_box_remote_debug" model="ir.access">
+        <field
+            name="name">iot.box: an IoT administrator opens a box to remote debugging and reads whether it is open</field>
+        <field name="model_id" ref="model_iot_box" />
+        <field name="group_id" ref="group_iot_admin" />
+        <field name="kind">permission</field>
+        <field name="verbs">remote_debug</field>
+    </record>
+
+</odoo>

@@ -19,6 +19,7 @@
         "wizards/wizard_ir_actions_report_print_iot_views.xml",
         "security/iot_security.xml",
         "security/ir.access.csv",
+        "security/ir_access.xml",
         "views/iot_views.xml",
         "views/iot_menus.xml",
     ],

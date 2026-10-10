@@ -27,6 +27,12 @@ class TestIotChannelAccess(HttpCase):
         cls.bob = new_test_user(
             cls.env, login="iot_bob", password="iot_bob_pw1", groups="base.group_user"
         )
+        new_test_user(
+            cls.env,
+            login="iot_admin",
+            password="iot_admin_pw1",
+            groups="base.group_user,iot.group_iot_admin",
+        )
         cls.box, cls.other_box = (
             cls.env["iot.box"]
             .sudo()
@@ -113,9 +119,9 @@ class TestIotChannelAccess(HttpCase):
 
     def test_an_answer_without_a_valid_route_reaches_nobody(self):
         channels = self.env["iot.channel"]
-        forged = channels._wrap_session_id(f"user.{self.alice.id}", "s-1").replace(
-            f"user.{self.alice.id}", f"user.{self.bob.id}"
-        )
+        forged = channels._wrap_session_id(
+            f"user.{self.alice.id}", "s-1", "box_shop"
+        ).replace(f"user.{self.alice.id}", f"user.{self.bob.id}")
         for session_id in ("s-1", forged, "", None):
             with self.subTest(session_id=session_id):
                 self.call_jsonrpc(
@@ -136,3 +142,119 @@ class TestIotChannelAccess(HttpCase):
                     },
                 )
         self.assertEqual(self.sent, [])
+
+    def test_a_user_sends_a_box_only_what_a_web_client_may(self):
+        self.authenticate("iot_alice", "iot_alice_pw1")
+        for message_type in ("remote_debug", "server_update", "server_clear"):
+            with (
+                self.subTest(message_type=message_type),
+                self.assertRaisesRegex(JsonRpcException, "AccessError"),
+            ):
+                self._call(
+                    "iot.channel",
+                    "send_message",
+                    [{"iot_identifiers": ["box_shop"], "token": "x"}, message_type],
+                )
+        self.assertEqual(self.sent, [])
+        self._call(
+            "iot.channel",
+            "send_message",
+            [{"iot_identifiers": ["box_shop"], "session_id": "t"}, "test_connection"],
+        )
+        self.authenticate("iot_admin", "iot_admin_pw1")
+        self._call(
+            "iot.channel",
+            "send_message",
+            [{"iot_identifiers": ["box_shop"], "status": True}, "remote_debug"],
+        )
+        self.assertEqual(
+            [message_type for _target, message_type, _message in self.sent],
+            ["test_connection", "remote_debug"],
+        )
+
+    def test_a_route_returns_only_through_the_box_it_was_sent_to(self):
+        self.authenticate("iot_alice", "iot_alice_pw1")
+        self._call(
+            "iot.channel",
+            "send_message",
+            [{"iot_identifiers": ["box_shop"], "session_id": "s-1"}],
+        )
+        [(_target, _type, request)] = self.sent
+        self.sent.clear()
+        answer = {
+            "session_id": request["session_id"],
+            "device_identifier": None,
+            "status": "success",
+        }
+        self.call_jsonrpc(
+            "/iot/box/send_websocket", {**answer, "iot_box_identifier": "box_back"}
+        )
+        self.assertEqual(self.sent, [], "replayed through another box")
+        self.call_jsonrpc(
+            "/iot/box/send_websocket", {**answer, "iot_box_identifier": "box_shop"}
+        )
+        self.assertEqual(len(self.sent), 1)
+
+    def test_an_upstream_box_answers_its_last_requester_without_a_route(self):
+        # upstream's iot_drivers answers an offer with no session id and its
+        # remote debug status with session 0
+        def offer(login, password):
+            self.authenticate(login, password)
+            self._call(
+                "iot.channel",
+                "send_message",
+                [{"iot_identifiers": ["box_shop"], "offer": {}}, "webrtc_offer"],
+            )
+
+        def answer():
+            self.sent.clear()
+            self.call_jsonrpc(
+                "/iot/box/webrtc_answer",
+                {"iot_box_identifier": "box_shop", "answer": {}},
+            )
+            return [target for target, _type, _message in self.sent]
+
+        offer("iot_alice", "iot_alice_pw1")
+        self.assertEqual(
+            answer(), [self._target(REPLY_CHANNEL, f"user.{self.alice.id}")]
+        )
+        offer("iot_bob", "iot_bob_pw1")
+        self.assertEqual(answer(), [self._target(REPLY_CHANNEL, f"user.{self.bob.id}")])
+
+        admin = self.env["res.users"].search([("login", "=", "iot_admin")])
+        self.authenticate("iot_admin", "iot_admin_pw1")
+        self._call(
+            "iot.channel",
+            "send_message",
+            [{"iot_identifiers": ["box_shop"], "status": True}, "remote_debug"],
+        )
+        self.sent.clear()
+        self.call_jsonrpc(
+            "/iot/box/send_websocket",
+            {
+                "session_id": 0,
+                "iot_box_identifier": "box_shop",
+                "device_identifier": None,
+                "status": "success",
+                "result": {"enabled": False},
+            },
+        )
+        self.assertEqual(
+            [target for target, _type, _message in self.sent],
+            [self._target(REPLY_CHANNEL, f"user.{admin.id}")],
+        )
+
+        self.sent.clear()
+        self.env["iot.device"].sudo().create(
+            {"iot_id": self.box.id, "name": "Scanner", "identifier": "scanner_1"}
+        )
+        self.call_jsonrpc(
+            "/iot/box/send_websocket",
+            {
+                "session_id": None,
+                "iot_box_identifier": "box_shop",
+                "device_identifier": "scanner_1",
+                "status": "success",
+            },
+        )
+        self.assertEqual(self.sent, [], "a device event nobody asked for")

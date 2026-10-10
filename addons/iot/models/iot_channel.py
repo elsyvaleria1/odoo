@@ -32,6 +32,13 @@ REPLY_ROUTE = tools.register_signed_scope(
     lifetime="undated: one request's round trip",
 )
 ROUTE_SEPARATOR = "|"
+# What a web client may ask of a box; the rest is the server's to send.
+CLIENT_MESSAGE_TYPES = frozenset({"iot_action", "webrtc_offer", "test_connection"})
+# Each is a verb of iot.box, granted by its ir.access row.
+ADMIN_MESSAGE_TYPES = frozenset({"remote_debug"})
+# Boxes run upstream's iot_drivers, which answers these without echoing the
+# session id: their answer returns to whoever last sent one to that box.
+UNROUTED_ANSWER_TYPES = frozenset({"webrtc_offer", "remote_debug"})
 
 
 class IotChannel(models.AbstractModel):
@@ -45,7 +52,24 @@ class IotChannel(models.AbstractModel):
     @api.model
     def send_message(self, message, message_type="iot_action"):
         self._check_iot_channel_access()
+        if message_type in ADMIN_MESSAGE_TYPES:
+            self._check_box_verb(message, message_type)
+        elif message_type not in CLIENT_MESSAGE_TYPES:
+            raise AccessError(
+                self.env._(
+                    "You may not send %(type)s to an IoT box.", type=message_type
+                )
+            )
         self._send_message(message, message_type, reply_key=self._user_reply_key())
+
+    def _check_box_verb(self, message, verb) -> None:
+        identifiers = set(message.get("iot_identifiers") or [])
+        if message.get("iot_identifier"):
+            identifiers.add(message["iot_identifier"])
+        boxes = self.env["iot.box"].search([("identifier", "in", list(identifiers))])
+        if len(boxes) != len(identifiers):
+            raise AccessError(self.env._("You cannot reach this IoT box."))
+        boxes.check_access(verb)
 
     def _check_iot_channel_access(self) -> None:
         if not self.env.su and not self.env.user._is_internal():
@@ -73,25 +97,37 @@ class IotChannel(models.AbstractModel):
         identifiers = set(message.get("iot_identifiers") or [])
         if message.get("iot_identifier"):
             identifiers.add(message["iot_identifier"])
-        if reply_key and message.get("session_id"):
-            message = {
-                **message,
-                "session_id": self._wrap_session_id(reply_key, message["session_id"]),
-            }
         boxes = (
             self.env["iot.box"].sudo().search([("identifier", "in", list(identifiers))])
         )
         for box in boxes:
+            sent = message
+            if reply_key and message.get("session_id"):
+                route = self._wrap_session_id(
+                    reply_key, message["session_id"], box.identifier
+                )
+                sent = {**message, "session_id": route}
+            if reply_key and message_type in UNROUTED_ANSWER_TYPES:
+                keys = box.unrouted_reply_keys or {}
+                if keys.get(message_type) != reply_key:
+                    box.unrouted_reply_keys = {**keys, message_type: reply_key}
             self.env["bus.bus"]._sendone(
                 channel_target(self.env, BOX_CHANNEL, self._box_key(box)),
                 message_type,
-                message,
+                sent,
             )
 
-    def _send_reply(self, message, message_type) -> None:
+    def _send_reply(self, message, message_type, box=None, unrouted=None) -> None:
         """Return a box's answer to whoever asked, and drop one whose route
-        is missing or forged."""
-        route = self._unwrap_session_id(message.get("session_id"))
+        is missing or forged. An answer upstream boxes send without a route
+        to a request of type ``unrouted`` goes to its last sender to ``box``."""
+        route = self._unwrap_session_id(
+            message.get("session_id"), message.get("iot_box_identifier")
+        )
+        if route is None and box and unrouted in UNROUTED_ANSWER_TYPES:
+            reply_key = (box.unrouted_reply_keys or {}).get(unrouted)
+            if reply_key:
+                route = (reply_key, message.get("session_id"))
         if route is None:
             _logger.debug(
                 "IoT %s answer without a valid route dropped (session %r)",
@@ -106,18 +142,20 @@ class IotChannel(models.AbstractModel):
             {**message, "session_id": session_id},
         )
 
-    def _wrap_session_id(self, reply_key, session_id) -> str:
+    def _wrap_session_id(self, reply_key, session_id, box_identifier) -> str:
         session_id = str(session_id)
-        signature = tools.hmac(self.env, REPLY_ROUTE, (reply_key, session_id))
+        signature = tools.hmac(
+            self.env, REPLY_ROUTE, (reply_key, session_id, box_identifier)
+        )
         return ROUTE_SEPARATOR.join((reply_key, session_id, signature))
 
-    def _unwrap_session_id(self, wrapped) -> tuple[str, str] | None:
+    def _unwrap_session_id(self, wrapped, box_identifier) -> tuple[str, str] | None:
         parts = str(wrapped or "").split(ROUTE_SEPARATOR)
-        if len(parts) != 3:
+        if len(parts) != 3 or not box_identifier:
             return None
         reply_key, session_id, signature = parts
         if not tools.is_hmac_valid(
-            self.env, REPLY_ROUTE, (reply_key, session_id), signature
+            self.env, REPLY_ROUTE, (reply_key, session_id, box_identifier), signature
         ):
             return None
         return reply_key, session_id

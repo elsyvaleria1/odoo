@@ -37,6 +37,9 @@ class IotBox(models.Model):
     _name = "iot.box"
     _description = "IoT Box"
     _inherits = {"device.device": "device_id"}
+    # Who may open a box to remote debugging is its verb's row
+    # (security/ir_access.xml), checked where the request leaves for the box.
+    _access_verbs = {"remote_debug": models.Verb(requires="read")}
 
     device_id = fields.Many2one(
         comodel_name="device.device",
@@ -219,6 +222,8 @@ class IotBox(models.Model):
         classification="secret.credential",
         groups="base.group_system",
     )
+    # who last sent this box a request upstream boxes answer without a route
+    unrouted_reply_keys = fields.Json(copy=False)
 
     @api.model_create_multi
     def create(self, vals_list):

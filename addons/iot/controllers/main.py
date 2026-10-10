@@ -183,12 +183,10 @@ class IoTController(IoTBoxLookup, http.Controller):
             )
             return
 
+        session_id = session_id or kwargs.get("owner")
         request.env["iot.channel"]._send_reply(
             {
-                "session_id": session_id
-                or kwargs.get(
-                    "owner"
-                ),  # TODO: replace "owner" by "session_id" in drivers
+                "session_id": session_id,
                 "iot_box_identifier": iot_box_identifier,
                 "device_identifier": device_identifier,
                 "message": {
@@ -198,6 +196,11 @@ class IoTController(IoTBoxLookup, http.Controller):
                 },
             },
             "operation_confirmation",
+            box=box,
+            # upstream's box reports its remote debug status as session 0
+            unrouted="remote_debug"
+            if not session_id and not device_identifier
+            else None,
         )
 
     @http.route("/iot/box/webrtc_answer", type="jsonrpc", auth="public")
@@ -217,6 +220,8 @@ class IoTController(IoTBoxLookup, http.Controller):
                 "answer": answer,
             },
             "webrtc_answer",
+            box=box,
+            unrouted="webrtc_offer",
         )
 
     @http.route("/iot/setup", type="jsonrpc", auth="public")
