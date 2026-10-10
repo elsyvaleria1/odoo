@@ -187,6 +187,10 @@ The canonical messaging surface. Grouped by concern.
 - `message_mail_with_source(source_ref, ...)` — send email (no persisted thread message)
 - `message_notify(...)` — send a notification not stored as a thread message
 - `_message_log(...)` / `_message_log_batch(...)` / `_message_log_with_view(...)` — internal-note logging
+- `_message_log_entries(entries, ...)` — the logging primitive the three above build on: any number of
+  internal notes over the records of `self`, several per record allowed, each entry a dict of `res_id`,
+  `body`, `author_id`, `subtype_xmlid`, `tracking_value_ids`; one `mail.message` and one
+  `mail.tracking.value` batch create whatever the entry count (account logs one note per edited journal item through it)
 - `_message_create(values_list)` — low-level create bypassing the post pipeline
 
 **Subscription (followers)**:

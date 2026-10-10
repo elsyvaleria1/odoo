@@ -991,6 +991,44 @@ class TestBaseAPIPerformance(BaseMailPerformance):
 
     @users("admin", "employee")
     @warmup
+    def test_message_log_entries(self):
+        record = self.env["mail.test.ticket"].create({"name": "Test"})
+        field_info = record.fields_get(["email_from"])["email_from"]
+
+        def entries(size):
+            return [
+                {
+                    "res_id": record.id,
+                    "body": Markup("<p>Entry %s</p>") % index,
+                    "tracking_value_ids": [
+                        [
+                            0,
+                            0,
+                            self.env["mail.tracking.value"]._prepare_tracking_values(
+                                f"old.{index}@test.example.com",
+                                f"new.{index}@test.example.com",
+                                "email_from",
+                                field_info,
+                                record,
+                            ),
+                        ]
+                    ],
+                }
+                for index in range(size)
+            ]
+
+        logged = entries(10)
+        with self.assertQueryCount(admin=2, employee=2):
+            record._message_log_entries(logged)
+
+        self.assertQueriesConstant(
+            lambda size: record._message_log_entries(entries(size)),
+            small=10,
+            large=40,
+        )
+
+    @users("admin", "employee")
+    @warmup
     def test_message_log_with_view(self):
         """Same shape as :meth:`test_message_log_batch`, one rendered view on top.
 

@@ -2861,26 +2861,76 @@ class MixinMailThread(models.AbstractModel):
             raise ValueError(
                 "Batch log cannot support attachments on more than 1 document"
             )
+        authors = authors or {}
+        tracking_values = tracking_values or {}
+        return self._message_log_entries(
+            [
+                {
+                    "res_id": record.id,
+                    "body": bodies.get(record.id),
+                    "author_id": authors.get(record.id),
+                    "tracking_value_ids": tracking_values.get(record.id, False),
+                }
+                for record in self
+            ],
+            subject=subject,
+            author_id=author_id,
+            email_from=email_from,
+            message_type=message_type,
+            partner_ids=partner_ids,
+            attachment_ids=attachment_ids,
+        )
 
-        self._mail_warm_author_emails((authors or {}).values())
-        default_author = self._message_compute_batch_author(author_id, email_from)
-        author_per_id = {None: default_author}
+    _MESSAGE_LOG_ENTRY_KEYS = frozenset(
+        {"res_id", "body", "author_id", "subtype_xmlid", "tracking_value_ids"}
+    )
 
-        def _author_values(record_id: int) -> tuple:
-            override = (authors or {}).get(record_id)
-            if override not in author_per_id:
-                author_per_id[override] = self._message_compute_batch_author(
-                    override, None
-                )
-            return author_per_id[override]
+    def _message_log_entries(
+        self,
+        entries: list[dict],
+        *,
+        subject: str | Literal[False] = False,
+        author_id: int | None = None,
+        email_from: str | None = None,
+        message_type: str = "notification",
+        subtype_xmlid: str = "mail.mt_note",
+        partner_ids: list[int] | Literal[False] = False,
+        attachment_ids: list[int] | Literal[False] = False,
+    ) -> MailMessage:
+        if not entries:
+            return self.env["mail.message"]
+        if len(entries) > 1 and attachment_ids:
+            raise ValueError(
+                "Batch log cannot support attachments on more than 1 message"
+            )
+        if (
+            unknown := {key for entry in entries for key in entry}
+            - self._MESSAGE_LOG_ENTRY_KEYS
+        ):
+            raise ValueError(f"Unsupported log entry keys: {sorted(unknown)}")
+        if foreign := {entry["res_id"] for entry in entries} - set(self.ids):
+            raise ValueError(
+                f"Log entries target {self._name} records outside the logged set: {sorted(foreign)}"
+            )
 
-        for record in self:
-            _author_values(record.id)
+        entry_author_ids = {entry.get("author_id") for entry in entries}
+        self._mail_warm_author_emails(entry_author_ids)
+        author_per_id = {
+            None: self._message_compute_batch_author(author_id, email_from)
+        }
+        for override in entry_author_ids - {None}:
+            author_per_id[override] = self._message_compute_batch_author(override, None)
         reply_to_per_author = {
             pair: per_record[False]
             for pair, per_record in self.env["mixin.mail.thread"]
             ._notify_get_reply_to_per_author(set(author_per_id.values()))
             .items()
+        }
+        subtype_per_xmlid = {
+            xmlid: self.env["ir.model.data"]._xmlid_to_res_id(xmlid)
+            for xmlid in {
+                entry.get("subtype_xmlid") or subtype_xmlid for entry in entries
+            }
         }
 
         base_message_values = {
@@ -2891,33 +2941,36 @@ class MixinMailThread(models.AbstractModel):
             "message_type": message_type,
             "is_internal": True,
             "subject": subject,
-            "subtype_id": self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_note"),
             "email_add_signature": False,
             "partner_ids": partner_ids,
         }
-
         values_list = []
-        for record in self:
-            record_author_id, record_email_from = _author_values(record.id)
+        for entry in entries:
+            entry_author_id, entry_email_from = author_per_id[entry.get("author_id")]
             values_list.append(
                 dict(
                     base_message_values,
-                    author_id=record_author_id,
-                    email_from=record_email_from,
-                    reply_to=reply_to_per_author[(record_author_id, record_email_from)],
-                    res_id=record.id,
-                    body=_escape_body(bodies.get(record.id)),
+                    author_id=entry_author_id,
+                    email_from=entry_email_from,
+                    reply_to=reply_to_per_author[(entry_author_id, entry_email_from)],
+                    res_id=entry["res_id"],
+                    subtype_id=subtype_per_xmlid[
+                        entry.get("subtype_xmlid") or subtype_xmlid
+                    ],
+                    body=_escape_body(entry.get("body")),
                     message_id=generate_tracking_message_id("message-notify"),
-                    tracking_value_ids=(tracking_values or {}).get(record.id, False),
+                    tracking_value_ids=entry.get("tracking_value_ids") or False,
                 )
             )
         _debug.pipeline(
-            "message_log_batch",
+            "message_log_entries",
             model=self._name,
-            count=len(self),
+            records=len(self),
+            count=len(values_list),
             message_type=message_type,
             authors=len(author_per_id),
-            tracked=len(tracking_values or {}),
+            subtypes=len(subtype_per_xmlid),
+            tracked=sum(1 for values in values_list if values["tracking_value_ids"]),
         )
         return self.sudo()._message_create(values_list)
 

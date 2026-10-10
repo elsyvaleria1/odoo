@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.fields import Command
+from odoo.orm.runtime.backend import COPY_THRESHOLD
 from odoo.tests import new_test_user, tagged
 
 from odoo.addons.account.tests.common import (
@@ -201,6 +202,69 @@ class TestAuditTrail(AccountTestInvoicingCommon):
         config.restrictive_audit_trail = True
         messages_company = ["Updated\nFalse ⇨ True (Restrictive Audit Trail)"]
         self.assertTrail(self.get_trail(config) - before, messages_company)
+
+    def _posted_move_with_lines(self, line_count):
+        revenue = self.company_data["default_account_revenue"]
+        move = self.env["account.move"].create(
+            {
+                "date": "2021-04-01",
+                "line_ids": [
+                    Command.create(
+                        {"balance": 10, "account_id": revenue.id, "name": f"d{index}"}
+                    )
+                    for index in range(line_count)
+                ]
+                + [
+                    Command.create(
+                        {"balance": -10 * line_count, "account_id": revenue.id}
+                    )
+                ],
+            }
+        )
+        move.action_post()
+        self.get_trail(move)
+        return move, move.line_ids.filtered(lambda line: line.balance > 0)
+
+    def test_posted_line_edits_log_one_message_per_journal_item(self):
+        self.env.company.account_config_id.restrictive_audit_trail = True
+        move, lines = self._posted_move_with_lines(20)
+        before = self.get_trail(move)
+
+        lines.write({"name": "renamed"})
+
+        trail = self.get_trail(move) - before
+        self.assertEqual(len(trail), len(lines))
+        for index, (line, message) in enumerate(
+            zip(lines.sorted("id"), trail.sorted("id"), strict=True)
+        ):
+            self.assertIn(f'data-oe-id="{line.id}"', str(message.body))
+            self.assertEqual(
+                message.account_audit_log_preview,
+                f"Journal Item #{line.id} updated\nd{index} ⇨ renamed (Label)",
+            )
+            trackings = message.sudo().tracking_value_ids
+            self.assertEqual(
+                (
+                    trackings.field_id.name,
+                    trackings.old_value_char,
+                    trackings.new_value_char,
+                ),
+                ("name", f"d{index}", "renamed"),
+            )
+            self.assertEqual(message.subtype_id, self.env.ref("mail.mt_note"))
+            self.assertEqual(message.message_type, "notification")
+            self.assertTrue(message.account_audit_log_restricted)
+        self.assertFalse(trail.notification_ids)
+
+    def test_posted_line_edits_log_in_constant_queries(self):
+        sizes = (20, COPY_THRESHOLD - 1, COPY_THRESHOLD, 2 * COPY_THRESHOLD)
+        lines = {size: self._posted_move_with_lines(size)[1] for size in sizes}
+
+        def rename(size):
+            lines[size].write({"name": "renamed"})
+
+        self.assertQueriesConstant(rename, small=sizes[0], large=sizes[1])
+        self.assertQueriesConstant(rename, small=sizes[2], large=sizes[3])
 
     def test_preview_hides_what_the_chatter_hides(self):
         self.get_trail(self.move)

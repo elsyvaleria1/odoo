@@ -2199,16 +2199,28 @@ class AccountMoveLine(models.Model):
             return
         tracked_fnames = self._get_tracked_fnames()
         ref_fields = self.fields_get(tracked_fnames)
-        _debug.pipeline("tracked_changes_logging", lines=self, moves=len(loggable))
+        entries = []
         for move, lines in loggable.items():
             for line in lines:
                 record, initial_values = tracked_pair(line, tracked_fnames)
                 tracking_value_ids = record._mail_track(ref_fields, initial_values)[1]
                 if tracking_value_ids:
-                    move._message_log(
-                        body=body_for_link(line._get_html_link(title=f"#{line.id}")),
-                        tracking_value_ids=tracking_value_ids,
+                    entries.append(
+                        {
+                            "res_id": move.id,
+                            "body": body_for_link(
+                                line._get_html_link(title=f"#{line.id}")
+                            ),
+                            "tracking_value_ids": tracking_value_ids,
+                        }
                     )
+        _debug.pipeline(
+            "tracked_changes_logging",
+            lines=self,
+            moves=len(loggable),
+            messages=len(entries),
+        )
+        self.env["account.move"].concat(*loggable)._message_log_entries(entries)
 
     def invalidate_model(self, fnames=None, flush=True):
         if fnames is None or "move_id" in fnames:

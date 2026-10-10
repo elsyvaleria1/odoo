@@ -1041,6 +1041,165 @@ class TestMessageLog(TestMessagePostCommon):
                 ],
             )
 
+    def _ticket_tracking_commands(self, record, index):
+        fields_info = record.fields_get(["email_from", "user_id"])
+        Tracking = self.env["mail.tracking.value"]
+        return [
+            [
+                0,
+                0,
+                Tracking._prepare_tracking_values(
+                    f"old.{index}@test.example.com",
+                    f"new.{index}@test.example.com",
+                    "email_from",
+                    fields_info["email_from"],
+                    record,
+                ),
+            ],
+            [
+                0,
+                0,
+                Tracking._prepare_tracking_values(
+                    self.env["res.users"],
+                    self.user_employee_2,
+                    "user_id",
+                    fields_info["user_id"],
+                    record,
+                ),
+            ],
+        ]
+
+    def _logged_message_snapshot(self, message):
+        return {
+            **{
+                fname: message[fname]
+                for fname in (
+                    "attachment_ids",
+                    "author_id",
+                    "body",
+                    "email_add_signature",
+                    "email_from",
+                    "is_internal",
+                    "message_type",
+                    "model",
+                    "notification_ids",
+                    "notified_partner_ids",
+                    "partner_ids",
+                    "record_alias_domain_id",
+                    "record_company_id",
+                    "reply_to",
+                    "res_id",
+                    "subject",
+                    "subtype_id",
+                )
+            },
+            "message_id_kind": "message-notify" in message.message_id,
+            "tracking": [
+                {key: value for key, value in values.items() if key != "id"}
+                for values in message.sudo().tracking_value_ids._tracking_value_format()
+            ],
+        }
+
+    @users("employee")
+    def test_message_log_entries_match_message_log(self):
+        record = self.test_records[0].with_env(self.env)
+        record.message_subscribe(self.partner_employee_2.ids)
+        specs = [
+            (
+                Markup("<p>Entry %s</p>") % index,
+                self._ticket_tracking_commands(record, index),
+            )
+            for index in range(5)
+        ]
+
+        with self.mock_mail_gateway():
+            singles = self.env["mail.message"].concat(
+                *(
+                    record._message_log(body=body, tracking_value_ids=tracking)
+                    for body, tracking in specs
+                )
+            )
+            entries = record._message_log_entries(
+                [
+                    {"res_id": record.id, "body": body, "tracking_value_ids": tracking}
+                    for body, tracking in specs
+                ]
+            )
+
+        self.assertFalse(self._new_mails)
+        self.assertEqual(len(entries), len(specs))
+        self.assertEqual(entries.ids, sorted(entries.ids))
+        self.assertGreater(entries[0].id, singles[-1].id)
+        for single, entry in zip(singles, entries, strict=True):
+            self.assertEqual(
+                self._logged_message_snapshot(entry),
+                self._logged_message_snapshot(single),
+            )
+            self.assertEqual(len(entry.sudo().tracking_value_ids), 2)
+
+    @users("employee")
+    def test_message_log_entries_per_entry_values(self):
+        records = self.test_records[:2].with_env(self.env)
+
+        messages = records._message_log_entries(
+            [
+                {"res_id": records[0].id, "body": "first"},
+                {
+                    "res_id": records[1].id,
+                    "body": "second",
+                    "author_id": self.partner_employee_2.id,
+                },
+                {
+                    "res_id": records[0].id,
+                    "body": "third",
+                    "subtype_xmlid": "mail.mt_comment",
+                },
+            ]
+        )
+
+        self.assertEqual(
+            [message.res_id for message in messages],
+            [records[0].id, records[1].id, records[0].id],
+        )
+        self.assertEqual(
+            [str(message.body) for message in messages],
+            ["<p>first</p>", "<p>second</p>", "<p>third</p>"],
+        )
+        self.assertEqual(
+            [message.author_id for message in messages],
+            [self.partner_employee, self.partner_employee_2, self.partner_employee],
+        )
+        self.assertEqual(
+            messages[1].email_from, self.partner_employee_2.email_formatted
+        )
+        self.assertEqual(
+            [message.subtype_id for message in messages],
+            [
+                self.env.ref("mail.mt_note"),
+                self.env.ref("mail.mt_note"),
+                self.env.ref("mail.mt_comment"),
+            ],
+        )
+        self.assertTrue(all(messages.mapped("is_internal")))
+        self.assertFalse(messages.notification_ids)
+
+    def test_message_log_entries_rejects_malformed_batches(self):
+        record, other = self.test_records[:2]
+        attachment = self.env["ir.attachment"].create(
+            {"name": "log.txt", "raw": b"log", "res_model": record._name}
+        )
+
+        self.assertFalse(record._message_log_entries([]))
+        with self.assertRaisesRegex(ValueError, "outside the logged set"):
+            record._message_log_entries([{"res_id": other.id}])
+        with self.assertRaisesRegex(ValueError, "Unsupported log entry keys"):
+            record._message_log_entries([{"res_id": record.id, "subject": "x"}])
+        with self.assertRaisesRegex(ValueError, "attachments on more than 1"):
+            record._message_log_entries(
+                [{"res_id": record.id}, {"res_id": record.id}],
+                attachment_ids=attachment.ids,
+            )
+
     @users("employee")
     def test_message_log_with_view(self):
         test_records = self.test_records.with_env(self.env)
