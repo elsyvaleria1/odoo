@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import lxml.html
 import werkzeug.exceptions
 from markupsafe import Markup
 
@@ -212,6 +213,18 @@ class TestErrorStatusEndToEnd(HttpCase):
         page = self.url_open("/http_routing/no_such_route", allow_redirects=False)
         self.assertEqual(page.status_code, 404)
         self.assertEqual('href="/contactus"' in page.text, "website" in self.env)
+
+    def test_the_404_illustration_is_served_where_the_page_is(self):
+        page = self.url_open("/http_routing/no_such_route", allow_redirects=False)
+        self.assertEqual(page.status_code, 404)
+        [src] = lxml.html.fromstring(page.content).xpath(
+            "//*[@id='wrap']//img[contains(@src, '404.svg')]/@src"
+        )
+        illustration = self.url_open(src, allow_redirects=False)
+        self.assertEqual(illustration.status_code, 200, src)
+        self.assertEqual(
+            illustration.headers["Content-Type"].partition(";")[0], "image/svg+xml", src
+        )
 
     def test_odoo_exception_keeps_its_http_status(self):
         self._raise(exceptions.ValidationError("nope"))

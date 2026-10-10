@@ -8,6 +8,7 @@
     "license": "LGPL-3",
     "depends": [
         "web",
+        "html_editor",
     ],
     "data": [
         "views/http_routing_template.xml",
