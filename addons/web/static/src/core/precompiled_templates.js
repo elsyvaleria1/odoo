@@ -7,6 +7,7 @@ import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { templates } from "@web/core/templates";
 import { makeAssetLog } from "@web/core/utils/asset_log";
+import { url } from "@web/core/utils/urls";
 import { session } from "@web/session";
 
 const log = makeAssetLog("precompiled_templates");
@@ -85,13 +86,17 @@ export const precompiledTemplatesService = {
         const load = (bundle, checksum, params) =>
             Promise.all(
                 variants.map((variant) =>
+                    // from the server's origin: a live chat embedded on
+                    // another site runs this on that site's
                     loadJS(
-                        precompiledTemplatesUrl(
-                            bundle,
-                            checksum,
-                            localization,
-                            variant,
-                            params,
+                        url(
+                            precompiledTemplatesUrl(
+                                bundle,
+                                checksum,
+                                localization,
+                                variant,
+                                params,
+                            ),
                         ),
                     ).catch((error) => {
                         log("unavailable, compiling in the browser", bundle, error);

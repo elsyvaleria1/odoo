@@ -429,3 +429,43 @@ test("a page that compiles in the browser has OWL's compiler before the service 
     expect(loaded).toEqual([["@odoo/owl/compiler"]]);
     expect(TemplateSet.compiler).toBe(compiler);
 });
+
+test("a page of another site reads the compiled templates from the server's origin", async () => {
+    // a live chat embedded on a customer's site: session.origin is the server
+    /** @type {string[]} */
+    const requested = [];
+    patchWithCleanup(assets, {
+        async loadJS(url) {
+            requested.push(url);
+        },
+    });
+    patchWithCleanup(session, {
+        origin: "https://odoo.example",
+        await_precompiled_templates: true,
+    });
+    const listeners = new Set(templates.bundleListeners);
+    templates.bundles.set("im_livechat.assets_embed_test", {
+        checksum: "0123",
+        params: {},
+    });
+    after(() => {
+        templates.bundles.delete("im_livechat.assets_embed_test");
+        for (const listener of templates.bundleListeners) {
+            if (!listeners.has(listener)) {
+                templates.bundleListeners.delete(listener);
+            }
+        }
+    });
+    await precompiledTemplatesService.start(
+        { debug: "" },
+        { localization: { code: "en_US", translationsHash: "f00d" } },
+    );
+    expect(requested).toInclude(
+        "https://odoo.example/web/assets/owl/0123/en_US/f00d/im_livechat.assets_embed_test.js",
+    );
+    expect(
+        requested.filter(
+            (url) => !url.startsWith("https://odoo.example/web/assets/owl/"),
+        ),
+    ).toEqual([]);
+});
