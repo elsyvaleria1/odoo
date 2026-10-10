@@ -13,6 +13,8 @@
                     <field name="state" />
                     <field name="check_ids" />
                     <field name="is_completed" />
+                    <field name="is_closed_outside_odoo" />
+                    <field name="closure_reason" />
                     <field name="type_external_id" />
                     <field name="report_opened_once" />
                     <field name="is_report_set" />
@@ -49,6 +51,7 @@
                                             <field
                                                 name="name"
                                                 class="oe_state_value pe-2 fs-5" />
+                                            <span invisible="not is_closed_outside_odoo" class="badge rounded-pill text-bg-secondary me-1" t-att-title="record.closure_reason.raw_value">Closed outside Odoo</span>
                                             <field
                                                 name="unresolved_check_count"
                                                 invisible="context.get('in_checks_view') or unresolved_check_count &lt;= 0"
@@ -173,11 +176,18 @@
                                             aria-labelledby="dropdownMenuButton"
                                             role="menu">
                                             <a
-                                                invisible="is_completed or not active"
+                                                invisible="is_completed or not active or next_state"
                                                 class="dropdown-item"
                                                 type="object"
                                                 name="action_mark_completed"
                                                 string="Mark as Completed" />
+                                            <a
+                                                invisible="not is_closable_outside_odoo or not active"
+                                                class="dropdown-item"
+                                                type="object"
+                                                name="action_open_close_outside_odoo_wizard"
+                                                string="Close as Handled Outside Odoo"
+                                                groups="account.group_account_manager" />
                                             <a
                                                 invisible="not has_move_entries or state not in ('reviewed', 'submitted', 'paid')"
                                                 class="dropdown-item"
@@ -270,6 +280,10 @@
                         name="done_returns"
                         string="Done"
                         domain="[('is_completed', '=', True)]" />
+                    <filter
+                        name="closed_outside_odoo_returns"
+                        string="Closed Outside Odoo"
+                        domain="[('is_closed_outside_odoo', '=', True)]" />
                     <separator />
                     <filter
                         name="date_deadline_filter"

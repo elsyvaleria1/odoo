@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wizard_account_return_close_view_form" model="ir.ui.view">
+        <field name="name">wizard.account.return.close.form</field>
+        <field name="model">wizard.account.return.close</field>
+        <field name="arch" type="xml">
+            <form string="Close as Handled Outside Odoo">
+                <p>
+                    The period of this return ends before the accounting opening date: it was filed and paid outside Odoo. Closing it completes it without filing it from Odoo.
+                </p>
+                <group>
+                    <field name="return_id" />
+                    <field
+                        name="reason"
+                        placeholder="e.g. Filed and paid by the previous accountant on the authority's portal" />
+                </group>
+                <footer>
+                    <button
+                        name="action_close"
+                        type="object"
+                        string="Close Return"
+                        class="btn-primary"
+                        data-hotkey="q" />
+                    <button
+                        special="cancel"
+                        string="Discard"
+                        class="btn-secondary"
+                        data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

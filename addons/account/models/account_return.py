@@ -116,6 +116,21 @@ class AccountReturn(models.Model):
         tracking=True,
         write_classification="account.return_workflow",
     )  # Set to true when all steps are done
+    is_closed_outside_odoo = fields.Boolean(
+        string="Closed Outside Odoo",
+        copy=False,
+        readonly=True,
+        tracking=True,
+        write_classification="account.return_workflow",
+    )
+    closure_reason = fields.Text(
+        copy=False,
+        readonly=True,
+        write_classification="account.return_workflow",
+    )
+    is_closable_outside_odoo = fields.Boolean(
+        compute="_compute_is_closable_outside_odoo"
+    )
     company_id = fields.Many2one(
         comodel_name="res.company",
         required=True,
@@ -610,6 +625,25 @@ class AccountReturn(models.Model):
         for record in self:
             record[record.type_id.states_workflow] = record.state
 
+    @api.depends(
+        "is_completed",
+        "state",
+        "date_to",
+        "company_id.account_config_id.account_opening_date",
+    )
+    def _compute_is_closable_outside_odoo(self) -> None:
+        for record in self:
+            record.is_closable_outside_odoo = (
+                not record.is_completed
+                and record.state == "new"
+                and record._is_before_accounting_opening()
+            )
+
+    def _is_before_accounting_opening(self) -> bool:
+        self.check_singleton()
+        opening_date = self.company_id.account_config_id.account_opening_date
+        return bool(opening_date) and self.date_to < opening_date
+
     @api.depends("type_id", "state", "type_id.states_workflow")
     @api.depends_context("lang")
     @_debug.perf.timed
@@ -972,7 +1006,15 @@ class AccountReturn(models.Model):
             state=self.state,
             date_lock=self.date_lock,
             posted_closing=posted_closing,
+            completed=self.is_completed,
         )
+        if self.is_completed:
+            raise UserError(
+                self.env._(
+                    "%(name)s is already completed; reset it before validating it.",
+                    name=self.display_name,
+                )
+            )
         if self.state != "new" or posted_closing:
             raise UserError(
                 self.env._(
@@ -1708,6 +1750,101 @@ class AccountReturn(models.Model):
     def action_mark_completed(self):
         _debug.lifecycle("action_mark_completed", records=self)
         self.check_singleton()
+        self._check_completable()
+        return self._mark_completed()
+
+    def _check_completable(self) -> None:
+        self.check_singleton()
+        allowed = not self.is_completed and not self.next_state
+        _debug.logic(
+            "completion_checked",
+            tax_return=self,
+            state=self.state,
+            next_state=self.next_state,
+            completed=self.is_completed,
+            allowed=allowed,
+        )
+        if self.is_completed:
+            raise UserError(
+                self.env._("%(name)s is already completed.", name=self.display_name)
+            )
+        if not allowed:
+            raise UserError(
+                self.env._(
+                    "%(name)s cannot be marked as completed before its last step: it is "
+                    "at %(state)s and must still go through %(next_state)s.",
+                    name=self.display_name,
+                    state=self.state,
+                    next_state=self.next_state,
+                )
+            )
+
+    def _check_closable_outside_odoo(self) -> None:
+        self.check_singleton()
+        _debug.logic(
+            "outside_closure_checked",
+            tax_return=self,
+            state=self.state,
+            completed=self.is_completed,
+            date_to=self.date_to,
+            opening_date=self.company_id.account_config_id.account_opening_date,
+        )
+        if self.is_completed:
+            raise UserError(
+                self.env._("%(name)s is already completed.", name=self.display_name)
+            )
+        if self.state != "new":
+            raise UserError(
+                self.env._(
+                    "%(name)s was already processed in Odoo (%(state)s); complete its "
+                    "workflow, or reset it, instead.",
+                    name=self.display_name,
+                    state=self.state,
+                )
+            )
+        if not self._is_before_accounting_opening():
+            raise UserError(
+                self.env._(
+                    "Only a return whose period ends before the accounting opening date "
+                    "of %(company)s can be closed as handled outside Odoo; %(name)s "
+                    "must go through its workflow.",
+                    company=self.company_id.display_name,
+                    name=self.display_name,
+                )
+            )
+
+    @_debug.perf.timed
+    def action_open_close_outside_odoo_wizard(self) -> dict:
+        _debug.lifecycle("action_open_close_outside_odoo_wizard", records=self)
+        self.env["wizard.account.return.close"].check_access("create")
+        self._check_closable_outside_odoo()
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Close as Handled Outside Odoo"),
+            "res_model": "wizard.account.return.close",
+            "views": [(False, "form")],
+            "target": "new",
+            "context": {"default_return_id": self.id},
+        }
+
+    @_debug.perf.timed
+    def _close_outside_odoo(self, reason) -> dict | None:
+        _debug.lifecycle("_close_outside_odoo", records=self)
+        self._check_closable_outside_odoo()
+        reason = (reason or "").strip()
+        if not reason:
+            raise UserError(
+                self.env._(
+                    "Say why %(name)s was handled outside Odoo.",
+                    name=self.display_name,
+                )
+            )
+        self._as_workflow_step().write(
+            {"is_closed_outside_odoo": True, "closure_reason": reason}
+        )
+        self.message_post(
+            body=self.env._("Closed as handled outside Odoo: %(reason)s", reason=reason)
+        )
         return self._mark_completed()
 
     def _mark_completed(self) -> dict | None:
@@ -1752,6 +1889,10 @@ class AccountReturn(models.Model):
         self.check_singleton()
         workflow_step = self._as_workflow_step()
         workflow_step.is_completed = False
+        if self.is_closed_outside_odoo:
+            workflow_step.write(
+                {"is_closed_outside_odoo": False, "closure_reason": False}
+            )
         if self.return_type_category == "audit":
             self.audit_status = "ongoing"
 

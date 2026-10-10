@@ -7,7 +7,7 @@ from freezegun import freeze_time
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 from odoo.tools.misc import ReadonlyDict
 from odoo.tools.translate import CodeTranslations
 
@@ -554,7 +554,6 @@ class TestAccountReturn(TestAccountReportsCommon):
                 profit_account, loss_account, *report_lines
             ),
         ):
-            existing_returns[0].action_mark_completed()
             existing_returns[0].action_validate(bypass_failing_tests=True)
 
         self.assertRecordValues(
@@ -772,8 +771,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        for existing_return in existing_returns:
-            existing_return.action_mark_completed()
+        existing_returns._as_workflow_step().write({"is_completed": True})
 
         self.assertRecordValues(
             existing_returns,
@@ -2565,7 +2563,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                 ("date_to", "=", "2023-12-31"),
             ]
         )
-        december_return.action_mark_completed()
+        december_return._close_outside_odoo("Filed before the company used Odoo")
 
         # January Return: 2.10 to recover
         january_return = self.env["account.return"].search(
@@ -3499,6 +3497,124 @@ class TestAccountReturn(TestAccountReportsCommon):
             )
         )
 
+    def test_mark_completed_refuses_a_return_before_its_last_step(self):
+        first_return = self._basic_returns(limit=1)
+        with self.assertRaisesRegex(UserError, "before its last step"):
+            first_return.action_mark_completed()
+
+        first_return.action_validate()
+        self.assertEqual(first_return.next_state, "submitted")
+        with self.assertRaisesRegex(UserError, "before its last step"):
+            first_return.action_mark_completed()
+        self.assertFalse(first_return.is_completed)
+
+    def test_mark_completed_completes_a_return_at_its_last_step(self):
+        self.audit_2024.state = "reviewed"
+        self.assertFalse(self.audit_2024.next_state)
+
+        self.audit_2024.action_mark_completed()
+
+        self.assertRecordValues(
+            self.audit_2024, [{"is_completed": True, "audit_status": "done"}]
+        )
+        with self.assertRaisesRegex(UserError, "already completed"):
+            self.audit_2024.action_mark_completed()
+
+    def test_close_outside_odoo_completes_a_return_from_before_the_opening(self):
+        december_return, january_return = self._basic_returns(limit=2)
+        self.assertTrue(december_return.is_closable_outside_odoo)
+        self.assertFalse(january_return.is_closable_outside_odoo)
+
+        wizard = self.env["wizard.account.return.close"].create(
+            {
+                "return_id": december_return.id,
+                "reason": "  Filed and paid by the previous accountant  ",
+            }
+        )
+        wizard.action_close()
+
+        self.assertRecordValues(
+            december_return,
+            [
+                {
+                    "state": "new",
+                    "is_completed": True,
+                    "is_closed_outside_odoo": True,
+                    "closure_reason": "Filed and paid by the previous accountant",
+                    "is_closable_outside_odoo": False,
+                }
+            ],
+        )
+        self.assertIn(
+            "Filed and paid by the previous accountant",
+            december_return.message_ids[:1].body,
+        )
+        with self.assertRaisesRegex(UserError, "already completed"):
+            december_return.action_validate()
+
+        january_return.action_validate()
+        self.assertEqual(january_return.state, "reviewed")
+
+    def test_close_outside_odoo_refuses_a_period_odoo_already_covers(self):
+        january_return = self._basic_returns(limit=2)[1]
+        with self.assertRaisesRegex(UserError, "accounting opening date"):
+            january_return._close_outside_odoo("Filed on paper")
+        self.assertFalse(january_return.is_completed)
+
+    def test_close_outside_odoo_refuses_a_return_already_processed(self):
+        december_return = self._basic_returns(limit=1)
+        december_return.action_validate()
+        with self.assertRaisesRegex(UserError, "already processed in Odoo"):
+            december_return._close_outside_odoo("Filed on paper")
+
+    def test_close_outside_odoo_needs_a_reason(self):
+        december_return = self._basic_returns(limit=1)
+        with self.assertRaisesRegex(UserError, "handled outside Odoo"):
+            december_return._close_outside_odoo("   ")
+        self.assertFalse(december_return.is_completed)
+
+    def test_close_outside_odoo_is_for_accounting_administrators(self):
+        december_return = self._basic_returns(limit=1)
+        accountant = new_test_user(
+            self.env,
+            login="accountant_closing_outside",
+            groups="account.group_account_user",
+            company_id=self.env.company.id,
+            company_ids=self.env.company.ids,
+        )
+        with self.assertRaises(AccessError):
+            december_return.with_user(
+                accountant
+            ).action_open_close_outside_odoo_wizard()
+        with self.assertRaises(AccessError):
+            self.env["wizard.account.return.close"].with_user(accountant).create(
+                {"return_id": december_return.id, "reason": "Filed on paper"}
+            )
+        self.assertFalse(december_return.is_completed)
+        self.assertTrue(
+            december_return.with_user(
+                self.simple_accountman
+            ).action_open_close_outside_odoo_wizard()
+        )
+
+    def test_reset_reopens_a_return_closed_outside_odoo(self):
+        december_return = self._basic_returns(limit=1)
+        december_return._close_outside_odoo("Filed on paper")
+
+        december_return.action_reset_tax_return_common()
+
+        self.assertRecordValues(
+            december_return,
+            [
+                {
+                    "is_completed": False,
+                    "is_closed_outside_odoo": False,
+                    "closure_reason": False,
+                    "is_closable_outside_odoo": True,
+                }
+            ],
+        )
+
     def test_a_client_cannot_write_where_a_return_stands_in_its_workflow(self):
         first_return = self._basic_returns(limit=1).with_user(self.simple_accountman)
         for vals in (
@@ -3507,6 +3623,8 @@ class TestAccountReturn(TestAccountReportsCommon):
             {"is_completed": True},
             {"date_lock": "2024-01-31"},
             {"date_submission": "2024-02-01"},
+            {"is_closed_outside_odoo": True},
+            {"closure_reason": "Filed on paper"},
         ):
             with self.subTest(vals=vals), self.assertRaises(AccessError):
                 first_return.write(vals)
@@ -3521,20 +3639,35 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_a_return_moves_along_its_workflow_for_its_users(self):
-        first_return = self._basic_returns(limit=1).with_user(self.simple_accountman)
-
-        first_return.action_validate()
-        self.assertEqual(first_return.state, "reviewed")
-        self.assertTrue(first_return.date_lock)
-        first_return.action_submit()
-        self.assertIn(first_return.state, ("submitted", "paid"))
-        self.assertTrue(first_return.date_submission)
-
-        first_return.action_reset_tax_return_common()
-        self.assertRecordValues(
-            first_return,
-            [{"state": "new", "is_completed": False, "date_lock": False}],
+        december_return, january_return = self._basic_returns(limit=2).with_user(
+            self.simple_accountman
         )
+        self.env["wizard.account.return.close"].with_user(
+            self.simple_accountman
+        ).create(
+            {"return_id": december_return.id, "reason": "Filed on paper"}
+        ).action_close()
+        self.assertRecordValues(
+            december_return, [{"is_completed": True, "is_closed_outside_odoo": True}]
+        )
+
+        january_return.action_validate()
+        self.assertEqual(january_return.state, "reviewed")
+        self.assertTrue(january_return.date_lock)
+        january_return.action_submit()
+        self.assertIn(january_return.state, ("submitted", "paid"))
+        self.assertTrue(january_return.date_submission)
+
+        january_return.action_reset_tax_return_common()
+        december_return.action_reset_tax_return_common()
+        self.assertRecordValues(
+            january_return | december_return,
+            [
+                {"state": "new", "is_completed": False, "date_lock": False},
+                {"state": "new", "is_completed": False, "date_lock": False},
+            ],
+        )
+        self.assertFalse(december_return.is_closed_outside_odoo)
 
     def test_every_workflow_field_of_a_return_is_written_only_by_its_steps(self):
         Return = self.env["account.return"]
@@ -3546,6 +3679,8 @@ class TestAccountReturn(TestAccountReportsCommon):
         for fname in (
             "state",
             "is_completed",
+            "is_closed_outside_odoo",
+            "closure_reason",
             "date_lock",
             "date_submission",
             *workflow_fields,

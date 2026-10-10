@@ -166,6 +166,7 @@
         "wizards/wizard_account_config_update_fiscal_year_views.xml",
         "views/mixin_account_return_submit_views.xml",
         "wizards/wizard_account_return_pay_views.xml",
+        "wizards/wizard_account_return_close_views.xml",
         "views/account_account_views_reports.xml",
         "views/account_tax_views_reports.xml",
         "views/account_return_type_views.xml",

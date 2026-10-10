@@ -32,6 +32,7 @@ from . import wizard_report_formula_export_attachment
 from . import wizard_report_formula_export_attachment_format
 from . import wizard_account_return_pay
 from . import wizard_account_return_create
+from . import wizard_account_return_close
 
 from . import wizard_mail_message_send
 from . import wizard_res_partner_merge

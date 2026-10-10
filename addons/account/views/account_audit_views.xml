@@ -15,6 +15,8 @@
                     js_class="account_return_audit_kanban"
                     on_create="account.action_create_account_audit">
                     <field name="state" />
+                    <field name="is_closed_outside_odoo" />
+                    <field name="closure_reason" />
                     <t t-name="card" class="o_audit_kanban_record">
                         <div class="d-flex flex-column w-100 h-100">
                             <div
@@ -28,6 +30,7 @@
                                         widget="account_return_name_badge" />
                                 </h5>
                                 <div class="pe-3">
+                                    <span invisible="not is_closed_outside_odoo" class="badge rounded-pill text-bg-secondary me-1" t-att-title="record.closure_reason.raw_value">Closed outside Odoo</span>
                                     <field
                                         name="audit_status"
                                         widget="account_return_selection_badge"
@@ -72,9 +75,22 @@
                         <a
                             class="dropdown-item"
                             type="object"
+                            name="action_validate"
+                            string="Mark as Completed"
+                            invisible="is_completed or state != 'new'" />
+                        <a
+                            class="dropdown-item"
+                            type="object"
                             name="action_mark_completed"
                             string="Mark as Completed"
-                            invisible="is_completed" />
+                            invisible="is_completed or next_state" />
+                        <a
+                            class="dropdown-item"
+                            type="object"
+                            name="action_open_close_outside_odoo_wizard"
+                            string="Close as Handled Outside Odoo"
+                            invisible="not is_closable_outside_odoo or not active"
+                            groups="account.group_account_manager" />
                         <a
                             class="dropdown-item"
                             type="object"
