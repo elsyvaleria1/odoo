@@ -1,5 +1,7 @@
 import pytz
 
+from odoo import fields
+
 from odoo.addons.insight_telegram.services import catalog
 
 ON_THE_WAY = ("documented", "in_transit", "at_destination", "out_for_delivery", "other")
@@ -11,29 +13,47 @@ def _when(ask, value) -> str:
     return f"{ask.format_day(local.date())} {local:%H:%M}"
 
 
-def _line(ask, picking, labels) -> str:
-    state = labels.get(picking.carrier_tracking_state) or ask.env._("not read yet")
+def _status(picking, reference) -> dict:
+    """Read one guide's snapshot, or the transfer summary when unambiguous."""
+    if reference:
+        for key, value in (picking.carrier_tracking_details or {}).items():
+            if key.upper() == reference:
+                return value
+        if len(picking._get_carrier_tracking_references()) > 1:
+            return {}
+    return {
+        "state": picking.carrier_tracking_state,
+        "text": picking.carrier_status_text,
+        "kind": picking.carrier_delivery_kind,
+        "branch": picking.carrier_status_branch,
+        "date": picking.date_carrier_status,
+        "received_by": picking.carrier_received_by,
+        "estimated": picking.carrier_estimated_delivery,
+    }
+
+
+def _line(ask, picking, labels, reference=None) -> str:
+    status = _status(picking, reference)
+    state = labels.get(status.get("state")) or ask.env._("not read yet")
     customer = picking.partner_id.display_name or ask.env._("(none)")
     parts = [
-        f"• {picking.carrier_tracking_ref} · {picking.name} · {customer}: **{state}**"
+        f"• {reference or picking.carrier_tracking_ref} · {picking.name} · {customer}: **{state}**"
     ]
-    if picking.carrier_delivery_kind == "pickup":
+    if status.get("text"):
+        parts.append(status["text"])
+    if status.get("kind") == "pickup":
         parts.append(ask.env._("Ocurre"))
-    if picking.carrier_status_branch:
-        parts.append(picking.carrier_status_branch)
-    if picking.date_carrier_status:
-        parts.append(_when(ask, picking.date_carrier_status))
-    if picking.carrier_tracking_state == "delivered":
-        if picking.carrier_received_by:
-            parts.append(
-                ask.env._("received by %(name)s", name=picking.carrier_received_by)
-            )
+    if status.get("branch"):
+        parts.append(status["branch"])
+    if status.get("date"):
+        parts.append(_when(ask, fields.Datetime.to_datetime(status["date"])))
+    if status.get("state") == "delivered":
+        if status.get("received_by"):
+            parts.append(ask.env._("received by %(name)s", name=status["received_by"]))
         if picking.state not in ("done", "cancel"):
             parts.append(ask.env._("not validated in Odoo yet"))
-    elif picking.carrier_estimated_delivery:
-        parts.append(
-            ask.env._("expected %(date)s", date=picking.carrier_estimated_delivery)
-        )
+    elif status.get("estimated"):
+        parts.append(ask.env._("expected %(date)s", date=status["estimated"]))
     return " · ".join(parts)
 
 
@@ -64,8 +84,12 @@ def run_tracking(ask):
         pickings = Picking.search(
             domain + [("carrier_tracking_ref", "ilike", reference)],
             order="create_date desc",
-            limit=catalog.MAX_MATCHES,
-        )
+        ).filtered(
+            lambda picking: (
+                reference
+                in {ref.upper() for ref in picking._get_carrier_tracking_references()}
+            )
+        )[: catalog.MAX_MATCHES]
         if not pickings:
             raise catalog.NotFound(
                 ask.env._(
@@ -73,8 +97,9 @@ def run_tracking(ask):
                 )
             )
         lines = ["**" + ask.env._("Tracking %(ref)s", ref=reference) + "**"]
-        lines += [_line(ask, picking, labels) for picking in pickings]
-        lines += _freshness(ask, pickings)
+        for picking in pickings:
+            lines.append(_line(ask, picking, labels, reference))
+            lines += _freshness(ask, picking, reference)
         return lines
     on_the_way = Picking.search(
         domain
@@ -112,12 +137,26 @@ def run_tracking(ask):
     return lines
 
 
-def _freshness(ask, pickings) -> list:
-    """When the carrier status was last read, so a stale answer says so."""
-    reads = [date for date in pickings.mapped("date_carrier_tracking_sync") if date]
-    if not reads:
+def _freshness(ask, pickings, reference=None) -> list:
+    """Distinguish successful reads from failed attempts and unread transfers."""
+    if not pickings:
         return []
-    return [ask.env._("(carrier status read %(when)s)", when=_when(ask, max(reads)))]
+    reads = [date for date in pickings.mapped("date_carrier_tracking_sync") if date]
+    if any(pickings.mapped("carrier_tracking_error")):
+        if reads:
+            return [
+                ask.env._(
+                    "(last update attempt %(when)s; an update failed, showing saved data)",
+                    when=_when(ask, max(reads)),
+                )
+            ]
+        return [ask.env._("(an update failed; showing saved data)")]
+    if not reads or (reference and not _status(pickings, reference).get("state")):
+        return [ask.env._("(carrier status has not been read yet)")]
+    lines = [ask.env._("(carrier status read %(when)s)", when=_when(ask, min(reads)))]
+    if len(reads) != len(pickings):
+        lines.append(ask.env._("(some shipments have not been read yet)"))
+    return lines
 
 
 catalog.QUERIES["tracking"] = catalog.Query(

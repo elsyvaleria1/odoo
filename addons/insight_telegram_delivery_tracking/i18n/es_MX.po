@@ -10,8 +10,8 @@ msgstr ""
 "PO-Revision-Date: 2026-10-09 23:31+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"MIME-Version: 1.0\n"
 "Language: es_MX\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -59,8 +59,8 @@ msgid ""
 "On the way: **%(count)s** · delivered by the carrier, not validated: "
 "**%(open)s**"
 msgstr ""
-"En camino: **%(count)s** · entregadas por el transportista y sin "
-"validar: **%(open)s**"
+"En camino: **%(count)s** · entregadas por el transportista y sin validar: "
+"**%(open)s**"
 
 #. module: insight_telegram_delivery_tracking
 #. odoo-python
@@ -97,3 +97,74 @@ msgstr "falta validarla en Odoo"
 #: code:addons/insight_telegram_delivery_tracking/services/tracking_query.py:0
 msgid "received by %(name)s"
 msgstr "recibió %(name)s"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/models/telegram_handler.py:0
+msgid "%(command)s — check the saved status and its read date."
+msgstr "%(command)s — consulta el estado guardado y su fecha de lectura."
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/services/tracking_query.py:0
+msgid "(an update failed; showing saved data)"
+msgstr "(falló una actualización; se muestran los datos guardados)"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/services/tracking_query.py:0
+msgid "(carrier status has not been read yet)"
+msgstr "(el estado del transportista todavía no se ha consultado)"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/services/tracking_query.py:0
+msgid "(last update attempt %(when)s; an update failed, showing saved data)"
+msgstr ""
+"(último intento de actualización: %(when)s; falló una actualización, se "
+"muestran los datos guardados)"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/services/tracking_query.py:0
+msgid "(some shipments have not been read yet)"
+msgstr "(algunos embarques todavía no se han consultado)"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/models/telegram_handler.py:0
+msgid "Check a shipment by its tracking number"
+msgstr "Consulta un embarque por su número de guía"
+
+#. module: insight_telegram_delivery_tracking
+#: model:ir.model.fields,field_description:insight_telegram_delivery_tracking.field_telegram_handler_delivery_tracking__display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: insight_telegram_delivery_tracking
+#: model:ir.model.fields,field_description:insight_telegram_delivery_tracking.field_telegram_handler_delivery_tracking__id
+msgid "ID"
+msgstr "ID"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/models/telegram_handler.py:0
+msgid "Send one complete tracking number: %(example)s"
+msgstr "Envía un número de guía completo: %(example)s"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/models/telegram_handler.py:0
+msgid "Shipment tracking"
+msgstr "Rastreo de embarques"
+
+#. module: insight_telegram_delivery_tracking
+#: model:ir.model,name:insight_telegram_delivery_tracking.model_telegram_handler_delivery_tracking
+msgid "Telegram: Carrier Tracking"
+msgstr "Telegram: rastreo de paquetería"
+
+#. module: insight_telegram_delivery_tracking
+#. odoo-python
+#: code:addons/insight_telegram_delivery_tracking/models/telegram_handler.py:0
+msgid "You do not have permission to consult these shipments."
+msgstr "No tienes permiso para consultar estos embarques."
