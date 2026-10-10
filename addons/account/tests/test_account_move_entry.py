@@ -1,5 +1,6 @@
 import contextlib
 from collections import defaultdict
+from datetime import timedelta
 from itertools import zip_longest
 from unittest.mock import patch
 
@@ -10,8 +11,15 @@ from lxml import etree
 
 from odoo import Command, fields
 from odoo.exceptions import LockError, RedirectWarning, UserError
+from odoo.fields import Domain
 from odoo.tests import Form, tagged
 
+from odoo.addons.account.models.account_move import (
+    AUTO_POST_MAX_ATTEMPTS,
+    AUTO_POST_RETRY_BASE_DELAY,
+    AUTO_POST_RETRY_MAX_DELAY,
+    auto_post_retry_delay,
+)
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 _AUTO_POST_LOGGER = "odoo.addons.account.models.account_move"
@@ -130,9 +138,9 @@ class TestAccountMove(AccountTestInvoicingCommon):
             self.assertEqual(self.test_move.state, "posted")
         self.assertEqual(nb_invoices, self.env["account.move"].search_count(domain=[]))
 
-    def _trigger_autopost_cron_failing_with(self, error, expect_log):
+    def _trigger_autopost_cron_failing_with(self, error, expect_log, at=None):
         with (
-            freeze_time(self.test_move.date + relativedelta(days=1)),
+            freeze_time(at or self.test_move.date + relativedelta(days=1)),
             self.sync_env_with_side_cursors(),
             patch.object(type(self.test_move), "_post", side_effect=error),
             expect_log as logs,
@@ -160,36 +168,196 @@ class TestAccountMove(AccountTestInvoicingCommon):
                     self.test_move.is_auto_post_failed,
                     "a failed move must leave the cron's selection until modified",
                 )
+                self.assertEqual(self.test_move.count_auto_post_attempt, 1)
                 self.test_move.ref = f"fixed after {type(error).__name__}"
                 self.assertFalse(self.test_move.is_auto_post_failed)
+                self.assertEqual(self.test_move.count_auto_post_attempt, 0)
 
-    def test_autopost_transient_or_unexpected_error_retries_entry(self):
-        self.test_move.auto_post = "at_date"
-        self.test_move.date = fields.Date.today()
-        for error in (
+    def test_autopost_failures_of_any_kind_flag_entry_after_max_attempts(self):
+        self.test_move.write({"auto_post": "at_date", "date": fields.Date.today()})
+        messages_before = self.test_move.message_ids
+        errors = [
             psycopg.errors.QueryCanceled("statement timeout"),
             psycopg.OperationalError("server closed the connection"),
+            ValueError("unexpected"),
             LockError("Cannot grab a lock on records"),
-        ):
-            with self.subTest(error=type(error).__name__):
-                self._trigger_autopost_cron_failing_with(
-                    error, self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
-                )
-                self.assertFalse(self.test_move.is_auto_post_failed)
-
-        logs = self._trigger_autopost_cron_failing_with(
-            ValueError("unexpected"), self.assertLogs(_AUTO_POST_LOGGER, "WARNING")
+            LockError("still locked"),
+        ]
+        self.assertEqual(len(errors), AUTO_POST_MAX_ATTEMPTS)
+        moment = fields.Datetime.to_datetime(
+            self.test_move.date + relativedelta(days=1)
         )
-        self.assertEqual(len(logs.output), 1, "only the retry is logged")
-        self.assertIn(f"skipping move {self.test_move.id}", logs.output[0])
-        self.assertFalse(self.test_move.is_auto_post_failed)
+        for attempts, error in enumerate(errors, start=1):
+            with self.subTest(attempts=attempts, error=type(error).__name__):
+                if isinstance(error, ValueError):
+                    expect_log = self.assertLogs(_AUTO_POST_LOGGER, "WARNING")
+                else:
+                    expect_log = self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
+                logs = self._trigger_autopost_cron_failing_with(
+                    error, expect_log, moment
+                )
+                if isinstance(error, ValueError):
+                    self.assertEqual(len(logs.output), 1, "only the retry is logged")
+                    self.assertIn(f"skipping move {self.test_move.id}", logs.output[0])
+                self.assertEqual(self.test_move.count_auto_post_attempt, attempts)
+                self.assertEqual(self.test_move.date_last_auto_post_attempt, moment)
+                self.assertEqual(
+                    self.test_move.is_auto_post_failed,
+                    attempts == AUTO_POST_MAX_ATTEMPTS,
+                )
+                moment += auto_post_retry_delay(attempts)
+        [message] = self.test_move.message_ids - messages_before
+        self.assertIn(f"after {AUTO_POST_MAX_ATTEMPTS} attempts", message.body)
+        self.assertIn("still locked", message.body)
+
+    def test_autopost_retry_waits_out_an_exponential_backoff(self):
+        self.test_move.write({"auto_post": "at_date", "date": fields.Date.today()})
+        Move = self.env["account.move"]
+        failed_at = fields.Datetime.now()
+
+        def is_due(at):
+            with freeze_time(at):
+                return bool(
+                    Move.search_count(
+                        Domain("id", "=", self.test_move.id)
+                        & Move._auto_post_due_domain()
+                    )
+                )
+
+        self.assertTrue(is_due(failed_at))
+        for attempts in range(1, AUTO_POST_MAX_ATTEMPTS):
+            with self.subTest(attempts=attempts):
+                self.test_move.write(
+                    {
+                        "count_auto_post_attempt": attempts,
+                        "date_last_auto_post_attempt": failed_at,
+                    }
+                )
+                delay = AUTO_POST_RETRY_BASE_DELAY * 2 ** (attempts - 1)
+                self.assertFalse(is_due(failed_at + delay - timedelta(seconds=1)))
+                self.assertTrue(is_due(failed_at + delay))
+        self.assertEqual(auto_post_retry_delay(30), AUTO_POST_RETRY_MAX_DELAY)
+
+    def test_autopost_attempts_reset_on_business_write_and_success(self):
+        self.test_move.write({"auto_post": "at_date", "date": fields.Date.today()})
+        failures = {
+            "count_auto_post_attempt": 3,
+            "date_last_auto_post_attempt": fields.Datetime.now() - timedelta(days=1),
+        }
+        self.test_move.write(failures)
+        self.test_move.ref = "edited"
+        self.assertEqual(self.test_move.count_auto_post_attempt, 0)
+        self.assertFalse(self.test_move.date_last_auto_post_attempt)
+
+        self.test_move.write(failures)
+        with patch.object(
+            type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: 0.0
+        ):
+            self.env["account.move"]._autopost_draft_entries()
+        self.assertEqual(self.test_move.state, "posted")
+        self.assertEqual(self.test_move.count_auto_post_attempt, 0)
+        self.assertFalse(self.test_move.date_last_auto_post_attempt)
+
+    def test_autopost_failing_entries_rotate_behind_healthy_ones(self):
+        failing = self.env["account.move"].create(
+            [
+                {
+                    "move_type": "entry",
+                    "date": fields.Date.today(),
+                    "auto_post": "at_date",
+                    "line_ids": [
+                        Command.create(self.entry_line_vals_1),
+                        Command.create(self.entry_line_vals_2),
+                    ],
+                }
+            ]
+            * 150
+        )
+        healthy = self.init_invoice(
+            "out_invoice",
+            amounts=[10.0],
+            invoice_date=fields.Date.today(),
+        )
+        healthy.auto_post = "at_date"
+        Move = type(self.env["account.move"])
+        original_post = Move._post
+
+        def post(records, soft=True):
+            if records & failing:
+                raise ValueError("cannot post")
+            return original_post(records, soft=soft)
+
+        with (
+            self.sync_env_with_side_cursors(),
+            patch.object(Move, "_post", post),
+            self.assertLogs(_AUTO_POST_LOGGER, "WARNING"),
+        ):
+            self.env.ref(
+                "account.ir_cron_auto_post_draft_entry"
+            ).method_direct_trigger()
+        self.assertEqual(healthy.state, "posted")
+        self.assertEqual(set(failing.mapped("state")), {"draft"})
+        self.assertEqual(set(failing.mapped("count_auto_post_attempt")), {1})
+        self.assertFalse(any(failing.mapped("is_auto_post_failed")))
+
+    def test_autopost_queue_serves_never_attempted_entries_first(self):
+        failing = self.env["account.move"].create(
+            [
+                {
+                    "move_type": "entry",
+                    "date": fields.Date.today(),
+                    "auto_post": "at_date",
+                    "line_ids": [
+                        Command.create(self.entry_line_vals_1),
+                        Command.create(self.entry_line_vals_2),
+                    ],
+                }
+            ]
+            * 150
+        )
+        failing.write(
+            {
+                "count_auto_post_attempt": 1,
+                "date_last_auto_post_attempt": fields.Datetime.now()
+                - timedelta(hours=2),
+            }
+        )
+        self.test_move.write(
+            {
+                "auto_post": "at_date",
+                "date": fields.Date.today() - relativedelta(days=1),
+            }
+        )
+        Move = type(self.env["account.move"])
+        original_post = Move._post
+
+        def post(records, soft=True):
+            if records & failing:
+                raise ValueError("cannot post")
+            return original_post(records, soft=soft)
+
+        with (
+            patch.object(Move, "_post", post),
+            patch.object(
+                type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: 0.0
+            ),
+            patch.object(self.env.cr, "rollback", lambda: None),
+            self.assertLogs(_AUTO_POST_LOGGER, "WARNING"),
+        ):
+            self.env["account.move"]._autopost_draft_entries()
+        self.assertEqual(self.test_move.state, "posted")
 
     def test_autopost_retry_requeues_failed_entry(self):
         self.test_move.write(
             {"auto_post": "at_date", "date": fields.Date.today(), "ref": "requeue"}
         )
         self.test_move.write(
-            {"is_auto_post_failed": True, "is_manually_modified": False}
+            {
+                "is_auto_post_failed": True,
+                "count_auto_post_attempt": AUTO_POST_MAX_ATTEMPTS,
+                "date_last_auto_post_attempt": fields.Datetime.now(),
+                "is_manually_modified": False,
+            }
         )
         self.assertFalse(
             self.env["account.move"].search_count(
@@ -198,6 +366,8 @@ class TestAccountMove(AccountTestInvoicingCommon):
         )
         self.test_move.action_retry_auto_post()
         self.assertFalse(self.test_move.is_auto_post_failed)
+        self.assertEqual(self.test_move.count_auto_post_attempt, 0)
+        self.assertFalse(self.test_move.date_last_auto_post_attempt)
         self.assertEqual(self.test_move.ref, "requeue")
         self.assertFalse(
             self.test_move.is_manually_modified,

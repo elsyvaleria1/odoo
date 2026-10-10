@@ -66,6 +66,21 @@ INVOICE_TEMPLATE_REPORTS = TransactionMemo(
 
 _debug = DebugLog(__name__)
 
+AUTO_POST_MAX_ATTEMPTS = 5
+AUTO_POST_RETRY_BASE_DELAY = timedelta(hours=1)
+AUTO_POST_RETRY_MAX_DELAY = timedelta(days=7)
+_AUTO_POST_RETRY_RESET = frozendict(
+    is_auto_post_failed=False,
+    count_auto_post_attempt=0,
+    date_last_auto_post_attempt=False,
+)
+
+
+def auto_post_retry_delay(attempts: int) -> timedelta:
+    return min(
+        AUTO_POST_RETRY_BASE_DELAY * 2 ** (attempts - 1), AUTO_POST_RETRY_MAX_DELAY
+    )
+
 
 MAX_HASH_VERSION = 5
 _UNRECONCILE_ENTRY_DELETION = object()
@@ -581,6 +596,14 @@ class AccountMove(models.Model):
         readonly=True,
     )
     is_auto_post_failed = fields.Boolean(
+        copy=False,
+        readonly=True,
+    )
+    count_auto_post_attempt = fields.Integer(
+        copy=False,
+        readonly=True,
+    )
+    date_last_auto_post_attempt = fields.Datetime(
         copy=False,
         readonly=True,
     )
@@ -1200,6 +1223,9 @@ class AccountMove(models.Model):
     )
     _duplicate_bills_idx = models.Index(
         "(ref) WHERE (move_type IN ('in_invoice', 'in_refund'))"
+    )
+    _auto_post_queue_idx = models.Index(
+        "(date_last_auto_post_attempt NULLS FIRST, date, id) WHERE (state = 'draft' AND auto_post != 'no')"
     )
 
     @_debug.perf.timed
@@ -4832,10 +4858,11 @@ class AccountMove(models.Model):
                     "skip_is_manually_modified"
                 ):
                     vals = dict(vals, is_manually_modified=True)
-                if "is_auto_post_failed" not in vals and any(
-                    self.mapped("is_auto_post_failed")
+                if vals.keys().isdisjoint(_AUTO_POST_RETRY_RESET) and any(
+                    move.is_auto_post_failed or move.count_auto_post_attempt
+                    for move in self
                 ):
-                    vals = dict(vals, is_auto_post_failed=False)
+                    vals = dict(vals, **_AUTO_POST_RETRY_RESET)
 
                 res = super(
                     AccountMove,
@@ -7543,15 +7570,40 @@ class AccountMove(models.Model):
     def _get_report_base_filename(self):
         return self._get_move_display_name()
 
+    @api.model
+    def _auto_post_due_domain(self) -> Domain:
+        now = fields.Datetime.now()
+        last_rung = AUTO_POST_MAX_ATTEMPTS - 1
+        retry_due = Domain.OR(
+            Domain(
+                "count_auto_post_attempt",
+                ">=" if attempts == last_rung else "=",
+                attempts,
+            )
+            & Domain(
+                "date_last_auto_post_attempt",
+                "<=",
+                now - auto_post_retry_delay(attempts),
+            )
+            for attempts in range(1, AUTO_POST_MAX_ATTEMPTS)
+        )
+        return Domain(
+            [
+                ("state", "=", "draft"),
+                ("date", "<=", fields.Date.context_today(self)),
+                ("auto_post", "!=", "no"),
+                ("is_auto_post_failed", "=", False),
+            ]
+        ) & (Domain("count_auto_post_attempt", "=", 0) | retry_due)
+
     @_debug.perf.timed
     def _autopost_draft_entries(self, batch_size=100) -> None:
-        domain = [
-            ("state", "=", "draft"),
-            ("date", "<=", fields.Date.context_today(self)),
-            ("auto_post", "!=", "no"),
-            ("is_auto_post_failed", "=", False),
-        ]
-        moves = self.search(domain, limit=batch_size)
+        domain = self._auto_post_due_domain()
+        moves = self.search(
+            domain,
+            order="date_last_auto_post_attempt NULLS FIRST, date, id",
+            limit=batch_size,
+        )
         remaining = len(moves) if len(moves) < batch_size else self.search_count(domain)
         self.env["ir.cron"]._commit_progress(remaining=remaining)
         moves = moves.try_lock_for_update()
@@ -7577,51 +7629,81 @@ class AccountMove(models.Model):
 
         for move in moves:
             try:
-                move = move.try_lock_for_update().filtered_domain(domain)
-                if not move:
-                    self.env["ir.cron"]._commit_progress(1)
-                    continue
-                move._post_check_business_rules()
-                move._post()
-                self.env["ir.cron"]._commit_progress(1)
+                if move := move.try_lock_for_update().filtered_domain(domain):
+                    move._post_check_business_rules()
+                    move._post()
             except PG_RETRY_EXCEPTIONS:
                 raise
             except (LockError, ConcurrencyError, psycopg.OperationalError) as e:
                 self.env.cr.rollback()
                 _debug.logic("cron_autopost_move_deferred", move=move, error=repr(e))
                 _logger.info(
-                    "Auto-post cron: move %s deferred to the next run after a "
-                    "transient error: %s",
+                    "Auto-post cron: move %s deferred after a transient error: %s",
                     move.id,
                     e,
                 )
+                move._record_auto_post_failure(e)
             except (UserError, RedirectWarning) as e:
                 self.env.cr.rollback()
-                move._mark_auto_post_failed()
-                msg = self.env._(
-                    "The move could not be posted for the following reason: %(error_message)s",
-                    error_message=e.args[0],
-                )
-                move.message_post(body=msg, message_type="comment")
-                self.env["ir.cron"]._commit_progress(1)
-            except Exception:
+                move._record_auto_post_failure(e, business=True)
+            except Exception as e:
                 self.env.cr.rollback()
                 _debug.logic("cron_autopost_move_unexpected_error", move=move)
                 _logger.warning(
-                    "Auto-post cron: skipping move %s this run after an "
-                    "unexpected error; it will be retried.",
+                    "Auto-post cron: skipping move %s after an unexpected error; "
+                    "it is retried with backoff.",
                     move.id,
                     exc_info=True,
                 )
+                move._record_auto_post_failure(e)
+            self.env["ir.cron"]._commit_progress(1)
 
-    def _mark_auto_post_failed(self) -> None:
-        _debug.logic("cron_autopost_move_failed", moves=self)
-        super().write({"is_auto_post_failed": True})
+    def _record_auto_post_failure(
+        self, error: Exception, *, business: bool = False
+    ) -> None:
+        move = self.try_lock_for_update()
+        if not move:
+            _debug.logic("cron_autopost_failure_unrecorded", move=self)
+            return
+        attempts = move.count_auto_post_attempt + 1
+        failed = business or attempts >= AUTO_POST_MAX_ATTEMPTS
+        _debug.logic(
+            "cron_autopost_attempt_failed",
+            move=move,
+            attempts=attempts,
+            failed=failed,
+            business=business,
+        )
+        super(AccountMove, move).write(
+            {
+                "count_auto_post_attempt": attempts,
+                "date_last_auto_post_attempt": fields.Datetime.now(),
+                "is_auto_post_failed": failed,
+            }
+        )
+        if not failed:
+            return
+        error_message = error.args[0] if error.args else type(error).__name__
+        if business:
+            body = self.env._(
+                "The move could not be posted for the following reason: %(error_message)s",
+                error_message=error_message,
+            )
+        else:
+            body = self.env._(
+                "The move could not be posted after %(attempts)s attempts; the last "
+                "one failed with: %(error_message)s",
+                attempts=attempts,
+                error_message=error_message,
+            )
+        move.message_post(body=body, message_type="comment")
 
     def action_retry_auto_post(self) -> None:
-        failed = self.filtered("is_auto_post_failed")
-        _debug.logic("auto_post_retry_requested", moves=failed)
-        super(AccountMove, failed).write({"is_auto_post_failed": False})
+        moves = self.filtered(
+            lambda move: move.is_auto_post_failed or move.count_auto_post_attempt
+        )
+        _debug.logic("auto_post_retry_requested", moves=moves)
+        super(AccountMove, moves).write(dict(_AUTO_POST_RETRY_RESET))
 
     def _as_sending_queue(self):
         return self.with_privilege(
