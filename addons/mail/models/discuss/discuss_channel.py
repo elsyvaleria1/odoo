@@ -1366,8 +1366,12 @@ class DiscussChannel(models.Model):
     def _message_update_content(
         self, message: MailMessage, /, *, partner_ids: list[int] | None = None, **kwargs
     ) -> None:
-        if partner_ids:
-            kwargs["partner_ids"] = self._get_allowed_message_partner_ids(partner_ids)
+        if partner_ids is not None:
+            kwargs["partner_ids"] = (
+                self._get_allowed_message_partner_ids(partner_ids)
+                if partner_ids
+                else []
+            )
         super()._message_update_content(message, **kwargs)
 
     def _check_can_update_message_content(self, message: MailMessage) -> None:
@@ -2089,7 +2093,7 @@ class DiscussChannel(models.Model):
             (member, last_message_id_by_channel_id[member.channel_id.id])
             for member in members
             if member.fetched_message_id.id
-            != last_message_id_by_channel_id[member.channel_id.id]
+            < last_message_id_by_channel_id[member.channel_id.id]
         ]
         if not outdated:
             return
@@ -2104,6 +2108,7 @@ class DiscussChannel(models.Model):
                     WHERE id = new.member_id
                       FOR NO KEY UPDATE SKIP LOCKED
                    )
+               AND COALESCE(member.fetched_message_id, 0) < new.last_message_id
          RETURNING member.id, member.fetched_message_id
             """,
             ([member.id for member, _ in outdated], [mid for _, mid in outdated]),

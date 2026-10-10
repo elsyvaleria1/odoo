@@ -59,8 +59,10 @@ class DiscussChannelWebclientController(WebclientController):
             channels = request.env["discuss.channel"].search(channel_domain)
             request.update_context(channels=request.env.context["channels"] | channels)
         if name == "discuss.channel":
+            if not isinstance(params, dict):
+                return
             channels = request.env["discuss.channel"].search(
-                [("id", "in", params["ids"])]
+                [("id", "in", to_record_ids(params.get("ids")))]
             )
             request.update_context(channels=request.env.context["channels"] | channels)
             if params.get("with_last_message"):

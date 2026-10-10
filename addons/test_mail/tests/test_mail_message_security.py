@@ -6,6 +6,7 @@ from markupsafe import Markup
 from odoo import SUPERUSER_ID
 from odoo.exceptions import AccessError
 from odoo.tests import HttpCase, tagged
+from odoo.tests.http import JsonRpcException
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
@@ -1380,6 +1381,37 @@ class TestMailMessageAccessBoundaries(MessageAccessCommon):
             Message._get_with_access(note.id, mode="read"),
             "the document is readable, the note is still internal",
         )
+
+    def test_an_internal_message_takes_no_reaction_through_the_document_fallback(self):
+        note = self.record_portal.message_post(
+            body="internal", subtype_xmlid="mail.mt_note", message_type="comment"
+        )
+        comment = self.record_portal.message_post(
+            body="public", subtype_xmlid="mail.mt_comment", message_type="comment"
+        )
+        Message = self.env["mail.message"].with_user(self.user_portal)
+        self.assertEqual(Message._get_with_access(comment.id, mode="create"), comment)
+        self.assertFalse(
+            Message._get_with_access(note.id, mode="create"),
+            "the document is writable, the note is still internal",
+        )
+
+    def test_a_portal_reaction_on_an_internal_note_is_refused_over_http(self):
+        note = self.record_portal.message_post(
+            body="internal", subtype_xmlid="mail.mt_note", message_type="comment"
+        )
+        self.authenticate(self.user_portal.login, self.user_portal.login)
+        try:
+            self.call_jsonrpc(
+                "/mail/message/reaction",
+                {"message_id": note.id, "content": "👍", "action": "add"},
+            )
+        except JsonRpcException as error:
+            refusal = str(error)
+        else:
+            refusal = None
+        self.assertFalse(note.sudo().reaction_ids, "no reaction lands on the note")
+        self.assertEqual(refusal, "werkzeug.exceptions.NotFound")
 
     def test_a_share_user_cannot_read_a_forbidden_message_by_attribute(self):
         note = self.record_portal.message_post(

@@ -4,7 +4,7 @@ from odoo.http import request, route
 from odoo.addons.mail.controllers.discuss.messaging_menu import (
     DiscussMessagingMenuController,
 )
-from odoo.addons.mail.controllers.utils import to_record_ids
+from odoo.addons.mail.controllers.utils import to_record_id, to_record_ids
 from odoo.addons.mail.controllers.webclient import WebclientController
 from odoo.addons.mail.tools.discuss import Store
 
@@ -38,10 +38,11 @@ class WebClient(WebclientController):
                 channels=request.env.context["channels"] | chats_looking_for_help
             )
         if name == "/im_livechat/session/data":
-            channel_id = params.get("channel_id")
-            if not channel_id:
+            if not isinstance(params, dict) or not params.get("channel_id"):
                 return
-            channel = request.env["discuss.channel"].search([("id", "=", channel_id)])
+            channel = request.env["discuss.channel"].search(
+                [("id", "=", to_record_id(params["channel_id"]))]
+            )
             if not channel:
                 return
             fields_to_store = channel._get_livechat_session_fields_to_store()
@@ -89,6 +90,7 @@ class WebClient(WebclientController):
     def _process_request_for_all(cls, store: Store, name, params):
         super()._process_request_for_all(store, name, params)
         if name == "init_livechat":
+            params = to_record_id(params) if params else False
             partner, guest = request.env["res.partner"]._get_current_persona()
             if partner:
                 store.add_global_values(

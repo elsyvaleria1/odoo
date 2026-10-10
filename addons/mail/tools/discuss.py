@@ -528,7 +528,7 @@ class Store:
                 )
                 or (
                     isinstance(self.channel, env.registry["res.groups"])
-                    and env.ref("base.group_user") in self.channel.implied_ids
+                    and env.ref("base.group_user") in self.channel.all_implied_ids
                 )
             )
 

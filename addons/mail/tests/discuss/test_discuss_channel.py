@@ -1352,6 +1352,20 @@ class TestChannelInternals(MailCommon, HttpCase):
                 attachment_ids=[],
             )
 
+    @users("employee")
+    def test_message_update_content_clears_mentions(self):
+        channel = self.env["discuss.channel"].create({"name": "Mentions"})
+        mentioned = mail_new_test_user(
+            self.env(su=True), groups="base.group_user", login="mentioned"
+        )
+        channel._add_members(users=mentioned)
+        message = channel.message_post(
+            body="Hello", message_type="comment", partner_ids=mentioned.partner_id.ids
+        )
+        self.assertEqual(message.partner_ids, mentioned.partner_id)
+        channel._message_update_content(message, body="Hello again", partner_ids=[])
+        self.assertFalse(message.partner_ids)
+
     def test_member_based_channel_naming(self):
         john = mail_new_test_user(self.env, groups="base.group_user", login="john")
         bob = mail_new_test_user(self.env, groups="base.group_user", login="bob")

@@ -248,3 +248,23 @@ class TestDiscussTools(TransactionCase):
             store.get_result()["res.partner"][0]["email"], "test_user_355_a@example.com"
         )
         self.assertNotIn("email", store.get_result()["res.partner"][1])
+
+    def test_a_group_target_is_internal_through_any_implication(self):
+        group_user = self.env.ref("base.group_user")
+        direct = self.env["res.groups"].create(
+            {"name": "direct", "implied_ids": [(4, group_user.id)]}
+        )
+        indirect = self.env["res.groups"].create(
+            {"name": "indirect", "implied_ids": [(4, direct.id)]}
+        )
+        outside = self.env["res.groups"].create({"name": "outside"})
+        for group, internal in (
+            (group_user, True),
+            (direct, True),
+            (indirect, True),
+            (outside, False),
+        ):
+            with self.subTest(group=group.name):
+                self.assertEqual(
+                    Store.Target(channel=group)._is_internal(self.env), internal
+                )

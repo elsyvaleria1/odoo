@@ -1,6 +1,7 @@
 from odoo import Command
 from odoo.http import request
 
+from odoo.addons.mail.controllers.utils import to_record_id
 from odoo.addons.mail.controllers.webclient import WebclientController
 from odoo.addons.mail.tools.discuss import Store
 
@@ -9,7 +10,9 @@ class WebClient(WebclientController):
     @classmethod
     def _process_request_for_all(cls, store: Store, name, params):
         if name == "init_livechat" and (
-            chat_request_channel := cls._link_visitor_to_livechat(params)
+            chat_request_channel := cls._link_visitor_to_livechat(
+                to_record_id(params) if params else False
+            )
         ):
             store.add(chat_request_channel, extra_fields={"open_chat_window": True})
             chat_request_channel.is_pending_chat_request = False

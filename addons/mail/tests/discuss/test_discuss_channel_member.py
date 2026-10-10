@@ -71,6 +71,45 @@ class TestDiscussChannelMember(MailCommon):
             cls.group | cls.group_restricted_channel | cls.public_channel
         ).channel_member_ids.unlink()
 
+    def test_member_references_stay_in_its_channel(self):
+        self.group._add_members(users=self.user_2 | self.user_3)
+        self.public_channel._add_members(users=self.user_1)
+        group_member = self.group.channel_member_ids.filtered(
+            lambda m: m.partner_id == self.user_2.partner_id
+        )
+        foreign_session = self.env["discuss.channel.rtc.session"].create(
+            {"channel_member_id": group_member.id}
+        )
+        foreign_message = self.group.message_post(
+            body="private", message_type="comment"
+        )
+        unfiled_message = self.env["mail.message"].create(
+            {"body": "no document", "message_type": "comment"}
+        )
+        self.assertFalse(unfiled_message.model)
+        own_member = self.public_channel.channel_member_ids.filtered(
+            lambda m: m.partner_id == self.user_1.partner_id
+        ).with_user(self.user_1)
+        for fname, value in (
+            ("rtc_inviting_session_id", foreign_session.id),
+            ("seen_message_id", foreign_message.id),
+            ("fetched_message_id", foreign_message.id),
+            ("seen_message_id", unfiled_message.id),
+            ("fetched_message_id", unfiled_message.id),
+        ):
+            with (
+                self.subTest(field=fname, message=value),
+                self.assertRaises(ValidationError),
+            ):
+                own_member.write({fname: value})
+        own_message = self.public_channel.message_post(
+            body="public", message_type="comment"
+        )
+        own_member.write(
+            {"seen_message_id": own_message.id, "fetched_message_id": own_message.id}
+        )
+        self.assertEqual(own_member.seen_message_id, own_message)
+
     def test_group_01(self):
         res = self.env["discuss.channel.member"].search(
             [("channel_id", "=", self.group.id)]

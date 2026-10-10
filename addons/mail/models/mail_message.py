@@ -225,7 +225,8 @@ class MailMessage(models.Model):
         string="Guest",
     )
     is_current_user_or_guest_author = fields.Boolean(
-        compute="_compute_is_current_user_or_guest_author"
+        compute="_compute_is_current_user_or_guest_author",
+        compute_sudo=True,
     )
     partner_ids: ResPartner = fields.Many2many(
         comodel_name="res.partner",
@@ -537,22 +538,27 @@ class MailMessage(models.Model):
         elif message.sudo(False).has_access(mode):
             return message
 
-        guarded = mode == "read" or any(kwargs.values())
         if (
-            guarded
-            and not self.env.user._is_internal()
+            not self.env.user._is_internal()
             and message.sudo(False)._get_forbidden_internal(mode)
+            and (
+                mode == "read"
+                or any(kwargs.values())
+                or not message.is_current_user_or_guest_author
+            )
         ):
             _debug.logic("access_refused", message=message_id, mode=mode, by="internal")
             return self.browse()
 
-        if message.res_id and message._is_thread_model():
-            thread_su = self.env[message.model].browse(message.res_id).sudo()
+        values = message._get_access_values("create")[message.id]
+        model, res_id = values["model"], values["res_id"]
+        if res_id and self._is_thread_model_name(model):
+            thread_su = self.env[model].browse(res_id).sudo()
             access_mode = thread_su._mail_get_operation_for_mail_message_operation(
                 mode
             ).get(thread_su)
-            if access_mode and self.env[message.model]._get_thread_with_access(
-                message.res_id, mode=access_mode, message_operation=mode, **kwargs
+            if access_mode and self.env[model]._get_thread_with_access(
+                res_id, mode=access_mode, message_operation=mode, **kwargs
             ):
                 _debug.logic(
                     "access",

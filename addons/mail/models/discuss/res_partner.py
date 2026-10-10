@@ -9,6 +9,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, email_normalize, single_email_re
 
 from odoo.addons.mail.tools.discuss import Store, to_record_id
+from odoo.addons.mail.tools.paging import clamp_limit
 
 _debug = DebugLog(__name__)
 
@@ -67,6 +68,7 @@ class ResPartner(models.Model):
         self, search_term: str, channel_id: int | None = None, limit: int = 30
     ) -> dict:
         store = Store()
+        limit = clamp_limit(limit)
         channel_invites = self._search_for_channel_invite(
             store, search_term, channel_id, limit
         )

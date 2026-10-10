@@ -457,6 +457,8 @@ class TestMailControllerContract(MailControllerCommon):
                         [["nested"]],
                         [],
                         ["mail.canned.response", None, None, "one too many"],
+                        ["discuss.channel", None],
+                        ["discuss.channel", {}],
                     ]
                 },
             )

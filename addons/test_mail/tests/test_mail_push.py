@@ -820,6 +820,26 @@ class TestWebPushNotification(SMSCommon):
         push_to_end_point.reset_mock()
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
+    def test_call_invitation_icon_is_the_logged_in_caller(self, push_to_end_point):
+        caller = self.env["res.users"].sudo().create({"name": "Caller", "login": "caller"})
+        stale_guest = self.env["mail.guest"].sudo().create({"name": "Old Visitor"})
+        channel = (
+            self.env["discuss.channel"]
+            .with_user(caller)
+            ._get_or_create_chat(partners_to=[self.user_email.partner_id.id])
+        )
+        member = channel.sudo().channel_member_ids.filtered(
+            lambda channel_member: channel_member.partner_id == caller.partner_id
+        )
+        member.with_context(guest=stale_guest)._rtc_join_call()
+        push_to_end_point.assert_called_once()
+        payload = json_loads(push_to_end_point.call_args.kwargs["payload"])
+        self.assertEqual(
+            payload["options"]["icon"],
+            f"/web/image/res.partner/{caller.partner_id.id}/avatar_128",
+        )
+
+    @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_notify_by_push_tracking(self, push_to_end_point):
         container_update_subtype = self.env.ref(
             "test_mail.st_mail_test_ticket_container_upd"

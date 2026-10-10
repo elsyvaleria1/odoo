@@ -561,6 +561,8 @@ class WhatsappMessage(models.Model):
         if self.state == "read":
             channel_member._mark_message_read(self.mail_message_id)
         elif self.state == "delivered":
+            if channel_member.fetched_message_id.id >= self.mail_message_id.id:
+                return
             channel_member.write({"fetched_message_id": self.mail_message_id.id})
             channel._bus_send(
                 "discuss.channel.member/fetched",

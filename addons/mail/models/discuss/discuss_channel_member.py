@@ -183,6 +183,50 @@ class DiscussChannelMember(models.Model):
                     self.env._("Channel members cannot include public users.")
                 )
 
+    @api.constrains("rtc_inviting_session_id", "seen_message_id", "fetched_message_id")
+    def _check_references_in_own_channel(self) -> None:
+        foreign = self.env.execute_query(
+            SQL(
+                """
+                SELECT member.id
+                  FROM discuss_channel_member member
+             LEFT JOIN discuss_channel_rtc_session session
+                    ON session.id = member.rtc_inviting_session_id
+             LEFT JOIN mail_message seen ON seen.id = member.seen_message_id
+             LEFT JOIN mail_message fetched ON fetched.id = member.fetched_message_id
+                 WHERE member.id = ANY(%(ids)s)
+                   AND ((session.id IS NOT NULL
+                         AND session.channel_id IS DISTINCT FROM member.channel_id)
+                        OR (seen.id IS NOT NULL
+                            AND (seen.model, seen.res_id)
+                                IS DISTINCT FROM ('discuss.channel', member.channel_id))
+                        OR (fetched.id IS NOT NULL
+                            AND (fetched.model, fetched.res_id)
+                                IS DISTINCT FROM ('discuss.channel', member.channel_id)))
+                """,
+                ids=self.ids,
+                to_flush=[
+                    self._fields["channel_id"],
+                    self._fields["fetched_message_id"],
+                    self._fields["rtc_inviting_session_id"],
+                    self._fields["seen_message_id"],
+                    self.env["discuss.channel.rtc.session"]._fields["channel_id"],
+                    self.env["mail.message"]._fields["model"],
+                    self.env["mail.message"]._fields["res_id"],
+                ],
+            )
+        )
+        if foreign:
+            _debug.logic(
+                "foreign_reference_refused", members=[row[0] for row in foreign]
+            )
+            raise ValidationError(
+                self.env._(
+                    "A channel member can only refer to calls and messages of "
+                    "its own channel."
+                )
+            )
+
     @api.depends_context("uid", "guest")
     def _compute_is_self(self) -> None:
         if not self:
@@ -851,9 +895,10 @@ class DiscussChannelMember(models.Model):
                 )
                 icon = f"/web/image/discuss.channel/{self.channel_id.id}/avatar_128"
                 if self.channel_id._channel_type_policy().push_icon_is_sender:
-                    if guest := self.env["mail.guest"]._get_guest_from_context():
+                    partner, guest = self.env["res.partner"]._get_current_persona()
+                    if guest:
                         icon = f"/web/image/mail.guest/{guest.id}/avatar_128"
-                    elif partner := self.env.user.partner_id:
+                    elif partner:
                         icon = f"/web/image/res.partner/{partner.id}/avatar_128"
                 languages = {partner.lang for partner in devices.partner_id}
                 payload_by_lang = {}
