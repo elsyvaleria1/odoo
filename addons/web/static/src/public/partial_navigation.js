@@ -5,7 +5,11 @@ import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Modal, Offcanvas } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
-import { PARTIAL_NAVIGATION_HEADER, swapPage } from "@web/public/page_swap";
+import {
+    PARTIAL_NAVIGATION_HEADER,
+    swapHead,
+    swapRegions,
+} from "@web/public/page_swap";
 
 /** @typedef {{ url: string, html: string }} FetchedPage */
 
@@ -299,14 +303,15 @@ export class PartialNavigation extends Interaction {
             browser.location.assign(url);
             return;
         }
-        if (push) {
-            browser.history.pushState({ partialNavigation: this.key }, "", fetched.url);
-        }
         // the region may be display: contents, which has no box of its own
         const anchor = () => this.el.firstElementChild || this.el;
         const scrolledPast = anchor().getBoundingClientRect().top < 0;
         const el = this.el;
-        swapPage(page, [el], this.services["public.interactions"]);
+        swapHead(page);
+        if (push) {
+            browser.history.pushState({ partialNavigation: this.key }, "", fetched.url);
+        }
+        swapRegions(page, [el], this.services["public.interactions"]);
         if (scrolledPast) {
             (el.firstElementChild || el).scrollIntoView({ block: "start" });
         }

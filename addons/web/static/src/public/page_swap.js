@@ -122,24 +122,14 @@ function swapOutOfBand(page, regions, nextRegions, interactions) {
 }
 
 /**
- * Brings this page in step with `page`, a fetched page for the URL shown: its
- * title, what its <head> and <html> say about it, each of `regions` morphed
- * from its same-keyed counterpart, and the out-of-band elements. Changes
- * nothing and answers false when `page` lacks one of the regions: the caller
- * then loads it in full.
+ * The title, and what <head> and <html> say about the page, taken from `page`.
+ * A caller that changes the URL does it after this and before the regions:
+ * analytics read the title as the URL changes, and the regions' interactions
+ * read the URL as they start.
  *
  * @param {Document} page
- * @param {HTMLElement[]} regions elements of this page carrying `data-fragment`
- * @param {InteractionService} interactions
- * @returns {boolean}
  */
-export function swapPage(page, regions, interactions) {
-    const nextRegions = regions.map((region) =>
-        page.querySelector(`[data-fragment="${CSS.escape(region.dataset.fragment)}"]`),
-    );
-    if (nextRegions.some((region) => !region)) {
-        return false;
-    }
+export function swapHead(page) {
     const title = page.querySelector("title")?.textContent;
     if (title) {
         document.title = title;
@@ -153,9 +143,59 @@ export function swapPage(page, regions, interactions) {
         ),
     );
     syncPageAttributes(document.documentElement, page.documentElement);
+}
+
+/**
+ * @param {Document} page
+ * @param {HTMLElement[]} regions
+ * @returns {HTMLElement[] | null} null when `page` lacks one of them
+ */
+function nextRegionsOf(page, regions) {
+    const nextRegions = regions.map((region) =>
+        page.querySelector(`[data-fragment="${CSS.escape(region.dataset.fragment)}"]`),
+    );
+    return nextRegions.some((region) => !region)
+        ? null
+        : /** @type {HTMLElement[]} */ (nextRegions);
+}
+
+/**
+ * Morphs each of `regions` from its same-keyed counterpart in `page`, and the
+ * out-of-band elements. Changes nothing and answers false when `page` lacks
+ * one of the regions.
+ *
+ * @param {Document} page
+ * @param {HTMLElement[]} regions elements of this page carrying `data-fragment`
+ * @param {InteractionService} interactions
+ * @returns {boolean}
+ */
+export function swapRegions(page, regions, interactions) {
+    const nextRegions = nextRegionsOf(page, regions);
+    if (!nextRegions) {
+        return false;
+    }
     const swapped = regions.map((region, index) =>
         swapFragment(region, nextRegions[index].outerHTML, "morph", interactions),
     );
     swapOutOfBand(page, swapped, nextRegions, interactions);
     return true;
+}
+
+/**
+ * Brings this page in step with `page`, a fetched page for the URL shown: its
+ * head (swapHead), then its regions (swapRegions). Changes nothing and
+ * answers false when `page` lacks one of the regions: the caller then loads it
+ * in full.
+ *
+ * @param {Document} page
+ * @param {HTMLElement[]} regions elements of this page carrying `data-fragment`
+ * @param {InteractionService} interactions
+ * @returns {boolean}
+ */
+export function swapPage(page, regions, interactions) {
+    if (!nextRegionsOf(page, regions)) {
+        return false;
+    }
+    swapHead(page);
+    return swapRegions(page, regions, interactions);
 }

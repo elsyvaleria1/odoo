@@ -74,6 +74,34 @@ test("a link in scope swaps the region in place, pushes the URL and takes the ti
     expect(document.title).toBe("Orders by name");
 });
 
+test("the URL is pushed once the head is the next page's, and before the region swaps", async () => {
+    await startInteraction(PartialNavigation, region("<tr><td>SO1</td></tr>"));
+    serve(() =>
+        page("<tr><td>SO2</td></tr><tr><td>SO1</td></tr>", "Orders by name").replace(
+            "</title>",
+            '</title><link rel="canonical" href="https://example.com/my/orders?sortby=name"/>',
+        ),
+    );
+    after(() => document.head.querySelector('link[rel="canonical"]')?.remove());
+    patchWithCleanup(browser.history, {
+        pushState: () =>
+            expect.step(
+                `push under "${document.title}", ${document.head
+                    .querySelector('link[rel="canonical"]')
+                    ?.getAttribute("href")}, ${queryAll("tbody tr").length} row(s)`,
+            ),
+    });
+
+    await click(".o_sort");
+    await animationFrame();
+
+    expect.verifySteps([
+        "fetch /my/orders?sortby=name",
+        'push under "Orders by name", https://example.com/my/orders?sortby=name, 1 row(s)',
+    ]);
+    expect("tbody tr").toHaveCount(2);
+});
+
 test("a link outside the scopes navigates as usual", async () => {
     await startInteraction(PartialNavigation, region(""));
     serve(() => page(""));
