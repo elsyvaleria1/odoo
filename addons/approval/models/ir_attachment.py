@@ -21,6 +21,10 @@ _APPROVAL_LOCKED_FIELDS = frozenset(
 )
 
 
+# where the bytes of an attachment live, not what they are
+_STORAGE_LOCATION_FIELDS = frozenset({"type", "url"})
+
+
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
@@ -83,6 +87,15 @@ class IrAttachment(models.Model):
 
     def write(self, vals):
         if not vals.keys() & _APPROVAL_LOCKED_FIELDS:
+            return super().write(vals)
+        if (
+            self.env.su
+            and self.env.context.get("attachment_storage_relocation")
+            and vals.keys() <= _STORAGE_LOCATION_FIELDS
+        ):
+            # moving the bytes to another store (filestore <-> bucket) leaves
+            # the document a decided request holds unchanged; only the system
+            # may do it, a user call cannot become superuser
             return super().write(vals)
         targeted = self._approval_attachments_in_self()
         blocked_ids = set(targeted.mapped("res_id"))

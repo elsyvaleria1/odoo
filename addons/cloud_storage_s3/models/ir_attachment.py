@@ -333,13 +333,25 @@ class IrAttachment(models.Model):
             # The local file stays referenced, so writing ``type`` back to
             # ``binary`` undoes the move until _s3_release_local_files runs.
             # Only type and url are written: content values would recompute
-            # file_size, checksum and index_content from empty bytes.
-            attach.write(
-                {
-                    "type": "cloud_storage",
-                    "url": s3.object_url(bucket, region, key, endpoint),
-                }
-            )
+            # file_size, checksum and index_content from empty bytes. The
+            # context names it a relocation, which a lock on the document's
+            # content (a decided approval) lets through.
+            try:
+                with self.env.cr.savepoint():
+                    attach.with_context(attachment_storage_relocation=True).write(
+                        {
+                            "type": "cloud_storage",
+                            "url": s3.object_url(bucket, region, key, endpoint),
+                        }
+                    )
+            except Exception:
+                _logger.warning(
+                    "S3 move: attachment %s was uploaded but not switched",
+                    attach.id,
+                    exc_info=True,
+                )
+                outcome["write_refused"].append(attach.id)
+                continue
             outcome["moved"].append(attach.id)
         return dict(outcome)
 

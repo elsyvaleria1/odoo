@@ -145,6 +145,26 @@ class TestAttachmentUnlinkProtection(common.TransactionCase):
         )
         self.assertEqual(attachment.s3_blob_name, attachment.store_fname)
 
+    def test_attachment_storage_relocation_allowed_in_terminal(self):
+        attachment = self._terminal_attachment("Relocation OK")
+        moved = {"type": "cloud_storage", "url": "https://bucket.example/blob"}
+        attachment.with_context(attachment_storage_relocation=True).write(moved)
+        self.assertEqual(attachment.type, "cloud_storage")
+
+    def test_attachment_storage_relocation_refused_without_the_system(self):
+        attachment = self._terminal_attachment("Relocation Refused")
+        moved = {"type": "cloud_storage", "url": "https://bucket.example/blob"}
+        with self.assertRaises(UserError):
+            attachment.write(moved)
+        with self.assertRaises(UserError):
+            attachment.with_user(self.admin_user).with_context(
+                attachment_storage_relocation=True
+            ).write(moved)
+        with self.assertRaises(UserError):
+            attachment.with_context(attachment_storage_relocation=True).write(
+                {**moved, "name": "renamed.pdf"}
+            )
+
     def test_attachment_read_allowed_in_terminal(self):
         request, attachment = self._draft_request_with_attachment("Read OK")
         request.action_confirm()
