@@ -152,8 +152,17 @@ class TestTrackReminderToggle(TestEventOnlineCommon, HttpCase):
         self.assertTrue(response.headers["Location"].endswith("/event/agenda?x=1"))
         self.assertEqual(len(self._reminder_mails()), 1)
 
-    def test_the_agenda_renders_each_bell_as_a_form_of_its_own(self):
-        response = self.url_open(f"{self.event_0.website_url}/agenda")
+    def test_every_page_renders_each_bell_as_a_form_of_its_own(self):
+        for url in (
+            f"{self.event_0.website_url}/agenda",
+            f"{self.event_0.website_url}/track",
+            self.track.website_url,
+        ):
+            with self.subTest(url=url):
+                self._assert_bells_are_forms(url)
+
+    def _assert_bells_are_forms(self, url):
+        response = self.url_open(url)
 
         self.assertEqual(response.status_code, 200)
         page = html.fromstring(response.content)
