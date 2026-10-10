@@ -37,6 +37,22 @@ class TestReceiverAuthority(DeviceHttpCase):
             },
         )
 
+    def _declared(self):
+        # Every installed module extending the gate adds its own privilege:
+        # the set held is the gate's declaration, device's two among it.
+        declared = frozenset(
+            self.env.ref(name).id
+            for name in self.env["device.device"]._inbound_receiver_privileges()
+        )
+        self.assertLessEqual(
+            {
+                self.env.ref("device.privilege_receive_device_data").id,
+                self.env.ref("integration.privilege_keep_inbound_exchange").id,
+            },
+            declared,
+        )
+        return declared
+
     def _point(self):
         return self.env["device.data.log"].search(
             [("device_id", "=", self.device.id)], order="id desc", limit=1
@@ -61,13 +77,7 @@ class TestReceiverAuthority(DeviceHttpCase):
             response = self._push()
 
         self.assertEqual(response.status_code, 200)
-        privileges = frozenset(
-            {
-                self.env.ref("device.privilege_receive_device_data").id,
-                self.env.ref("integration.privilege_keep_inbound_exchange").id,
-            }
-        )
-        self.assertEqual(seen, [(self.receiver.id, False, False, privileges)])
+        self.assertEqual(seen, [(self.receiver.id, False, False, self._declared())])
         point = self._point()
         self.assertEqual(point.create_uid, self.receiver)
         self.device.invalidate_recordset()
@@ -100,13 +110,7 @@ class TestReceiverAuthority(DeviceHttpCase):
         )
         self.assertEqual(job.user_id, self.receiver)
         self.assertFalse(job.elevated)
-        self.assertEqual(
-            set(job.privileges),
-            {
-                self.env.ref("device.privilege_receive_device_data").id,
-                self.env.ref("integration.privilege_keep_inbound_exchange").id,
-            },
-        )
+        self.assertEqual(set(job.privileges), self._declared())
         job.action_run_now()
         self.assertEqual(job.state, "done")
         self.assertEqual(self._point().create_uid, self.receiver)

@@ -36,15 +36,17 @@ class TestWebBundleSize(TransactionCase):
     # addons path: these roots plus what the loader installs with them
     CALIBRATION_ROOTS = frozenset({"hr_attendance", "test_lint"})
 
+    # About a tenth above what the install measured; a budget twice the bundle
+    # holds nothing back.
     BUDGETS = {
         "web.assets_web": 5_012_000,
-        "web.assets_frontend": 3_290_000,
-        "web.assets_frontend_lazy": 3_279_000,
+        "web.assets_frontend": 1_700_000,
+        "web.assets_frontend_lazy": 1_699_000,
         "web.assets_emoji": 515_000,
-        "web.assets_frontend_minimal": 98_000,
+        "web.assets_frontend_minimal": 11_500,
         "web.assets_web_dark": 5_012_000,
         "web.assets_web_print": 5_010_000,
-        "web.report_assets_common": 77_800,
+        "web.report_assets_common": 11_100,
         "web.report_assets_pdf": 1_000_000,
     }
 
@@ -64,24 +66,41 @@ class TestWebBundleSize(TransactionCase):
                     closure.add(current)
                     pending.extend(modules[current].dependencies_id.mapped("name"))
 
+        def grow():
+            grown = True
+            while grown:
+                grown = False
+                for name, module in modules.items():
+                    if name in closure or not module.auto_install:
+                        continue
+                    triggers = module.dependencies_id.filtered("auto_install_required")
+                    if (
+                        triggers
+                        and set(triggers.mapped("name")) <= closure
+                        and module._is_auto_install_satisfiable()
+                        and not (
+                            module.country_ids and not module.country_ids & countries
+                        )
+                    ):
+                        add(name)
+                        grown = True
+
         for root in cls.CALIBRATION_ROOTS:
             add(root)
-        grown = True
-        while grown:
-            grown = False
-            for name, module in modules.items():
-                if name in closure or not module.auto_install:
-                    continue
-                triggers = module.dependencies_id.filtered("auto_install_required")
-                if (
-                    triggers
-                    and set(triggers.mapped("name")) <= closure
-                    and module._is_auto_install_satisfiable()
-                    and not (module.country_ids and not module.country_ids & countries)
-                ):
-                    add(name)
-                    grown = True
+        grow()
+        # ai_auto_install's post-init hook installs ai wherever the server
+        # offers pgvector: a module the loader adds that no manifest names.
+        if "ai_auto_install" in closure and "ai" in modules and cls._pgvector_offered():
+            add("ai")
+            grow()
         return closure
+
+    @classmethod
+    def _pgvector_offered(cls):
+        cls.env.cr.execute(
+            "SELECT 1 FROM pg_available_extensions WHERE name = 'vector'"
+        )
+        return bool(cls.env.cr.fetchone())
 
     @classmethod
     def setUpClass(cls):
