@@ -121,7 +121,9 @@ class TestWebsocketWorkerBundle(HttpCaseWithUserDemo):
             sources[url] = response
             pending.extend(
                 imported
-                for imported in re.findall(r'from\s*"([^"]+)"', response.text)
+                for imported in re.findall(
+                    r'(?:from|import)\s*"([^"]+)"', response.text
+                )
                 if imported not in sources
             )
         return sources
@@ -166,10 +168,36 @@ class TestWebsocketWorkerBundle(HttpCaseWithUserDemo):
             self.assertEqual(source.headers.get("Access-Control-Allow-Origin"), "*")
             self.assertNotIn("Set-Cookie", source.headers)
 
-    def test_worker_source_serves_only_the_worker_directory(self):
-        for name in ("nope", "bus_service", "..%2Fservices%2Fbus_service"):
-            response = self.url_open(f"/bus/websocket_worker_source/{name}.js")
-            self.assertEqual(response.status_code, 404, name)
+    def test_without_a_build_the_worker_runs_what_a_module_adds_to_its_bundle(self):
+        added = "bus/static/src/outdated_page_watcher_service.js"
+        self.env["ir.asset"].create(
+            {"name": "added", "bundle": "bus.websocket_worker_assets", "path": added}
+        )
+        with self._without_standalone_build():
+            entry = self.url_open(self._get_bundle().headers["Location"]).text
+            source = self.url_open(f"/bus/websocket_worker_source/{added}").text
+        imports = re.findall(r'import "([^"]+)"', entry)
+        self.assertEqual(
+            [url.split("/bus/websocket_worker_source/")[1] for url in imports],
+            [*self.env["ir.qweb"]._get_websocket_worker_sources()],
+        )
+        self.assertEqual(imports[-1].rsplit("/", 1)[-1], added.rsplit("/", 1)[-1])
+        self.assertIn(
+            f'"{self.base_url()}/bus/websocket_worker_source/'
+            'bus/static/src/workers/websocket_worker_constants.js"',
+            source,
+        )
+        self.assertIn('from "@web/core/browser/browser"', source)
+
+    def test_worker_source_serves_only_the_worker_bundle(self):
+        for path in (
+            "nope.js",
+            "bus/static/src/services/bus_service.js",
+            "bus/static/src/workers/../services/bus_service.js",
+            "bus/static/src/workers/base_worker",
+        ):
+            response = self.url_open(f"/bus/websocket_worker_source/{path}")
+            self.assertEqual(response.status_code, 404, path)
 
 
 @common.tagged("-at_install", "post_install")
