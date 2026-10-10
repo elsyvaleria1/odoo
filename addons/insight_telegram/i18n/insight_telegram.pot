@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 20:57+0000\n"
-"PO-Revision-Date: 2026-10-09 20:57+0000\n"
+"POT-Creation-Date: 2026-10-10 06:28+0000\n"
+"PO-Revision-Date: 2026-10-10 06:28+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -23,8 +23,20 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Forget this conversation and start over."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "%(count)s more matched; ask for one by its number."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "%(count)s more units: ask for a person."
 msgstr ""
 
 #. module: insight_telegram
@@ -53,8 +65,44 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(line)s (removed)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(lines)s (as it will stand):"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. %(model)s %(records)s:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. Change %(model)s %(records)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. Create %(model)s"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "%(products)s products, %(orders)s manufacturing orders"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "(#%(number)s above)"
 msgstr ""
 
 #. module: insight_telegram
@@ -72,7 +120,19 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
+msgid "(old: it may be off or without signal)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
 msgid "(the number in brackets is the late ones)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "**Total: %(amount)s** (before taxes)"
 msgstr ""
 
 #. module: insight_telegram
@@ -115,6 +175,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "Active employees"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Add: %(records)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -202,6 +268,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Attach the files you sent"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "Bank and cash balances"
 msgstr ""
@@ -215,6 +287,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "Cancelled: nothing was changed."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Change %(line)s: %(values)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -284,6 +362,19 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid ""
+"Done from the Telegram bot at the request of %(person)s, who authorized it."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Done, I forgot our conversation: we start from zero."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "Done:"
 msgstr ""
@@ -309,9 +400,21 @@ msgstr ""
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "First choose the company:"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid ""
 "For example: «how much did we sell this month by branch?» or «how much do "
 "customers owe us?»"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "Forget this conversation and start over"
 msgstr ""
 
 #. module: insight_telegram
@@ -324,6 +427,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "Hi! Ask me about the business in your own words."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "How much did we sell this month by branch?"
 msgstr ""
 
 #. module: insight_telegram
@@ -365,8 +474,21 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "I found no GPS unit for «%(value)s»."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I found no file to send for that request."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid ""
+"I found no one called exactly «%(value)s» with a GPS; I took %(names)s."
 msgstr ""
 
 #. module: insight_telegram
@@ -400,9 +522,21 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Last signal: %(day)s %(time)s"
+msgstr ""
+
+#. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_agent_model_id
 #: model:ir.model.fields,help:insight_telegram.field_telegram_bot__insight_ai_model_id
 msgid "Leave empty to use the vendor default."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Leave only: %(records)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -430,6 +564,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "More than 90 days late"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Moving at %(speed)s km/h"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "No"
 msgstr ""
 
 #. module: insight_telegram
@@ -615,6 +761,12 @@ msgid "Received from customers"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Remove: %(records)s"
+msgstr ""
+
+#. module: insight_telegram
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_insight_log_view_search
 msgid "Report"
 msgstr ""
@@ -635,8 +787,26 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/documents.py:0
+msgid "Statement"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "Stock on hand"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Stopped"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Stopped, engine on"
 msgstr ""
 
 #. module: insight_telegram
@@ -682,6 +852,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/documents.py:0
 msgid "Tell me whose documents you want: the name."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"That button belongs to an earlier proposal: use the buttons under the latest"
+" one."
 msgstr ""
 
 #. module: insight_telegram
@@ -734,6 +912,20 @@ msgid ""
 "The vendor that reads each question and picks the report that answers it. "
 "One short call per question: a fast, inexpensive model is enough, since the "
 "figures come from the reports, never from it."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"There are no changes waiting: they were already applied, cancelled, or "
+"expired after an hour."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "There is nothing waiting for a company."
 msgstr ""
 
 #. module: insight_telegram
@@ -801,10 +993,28 @@ msgid ""
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "Where they are"
+msgstr ""
+
+#. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
 msgid ""
 "Whether a report answered. The unanswered questions are the ones the "
 "catalogue should learn next."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "Which company? Choose it below; «cancelar» discards them."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Yes"
 msgstr ""
 
 #. module: insight_telegram
@@ -843,6 +1053,12 @@ msgstr ""
 
 #. module: insight_telegram
 #. odoo-python
+#: code:addons/insight_telegram/services/catalog.py:0
+msgid "at %(partner)s's land (%(distance)s m)"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "bank and cash balances"
 msgstr ""
@@ -851,6 +1067,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "bills received"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "button %(button)s"
 msgstr ""
 
 #. module: insight_telegram
@@ -980,6 +1202,12 @@ msgid "stock"
 msgstr ""
 
 #. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "the changes waiting for your authorization"
+msgstr ""
+
+#. module: insight_telegram
 #: model_terms:ir.ui.view,arch_db:insight_telegram.telegram_bot_view_form_ask
 msgid "vendor default"
 msgstr ""
@@ -994,6 +1222,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "what we owe suppliers"
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "where people and vehicles are (GPS)"
 msgstr ""
 
 #. module: insight_telegram

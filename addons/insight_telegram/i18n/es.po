@@ -1143,8 +1143,11 @@ msgstr "Estado de cuenta"
 #. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/services/catalog.py:0
-msgid "I found no one called exactly «%(value)s» with a GPS; I took %(names)s."
-msgstr "No encontré a nadie llamado exactamente «%(value)s» con GPS; tomé a %(names)s."
+msgid ""
+"I found no one called exactly «%(value)s» with a GPS; I took %(names)s."
+msgstr ""
+"No encontré a nadie llamado exactamente «%(value)s» con GPS; tomé a "
+"%(names)s."
 
 #. module: insight_telegram
 #. odoo-python
@@ -1199,3 +1202,145 @@ msgstr "Detenido"
 #: code:addons/insight_telegram/services/catalog.py:0
 msgid "%(count)s more units: ask for a person."
 msgstr "%(count)s unidades más: pregunta por una persona."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "%(command)s - Forget this conversation and start over."
+msgstr "%(command)s - Olvida esta conversación y empieza de cero."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(line)s (removed)"
+msgstr "%(line)s (se quita)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(lines)s (as it will stand):"
+msgstr "%(lines)s (cómo queda):"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. %(model)s %(records)s:"
+msgstr "%(number)s. %(model)s %(records)s:"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. Change %(model)s %(records)s"
+msgstr "%(number)s. Modificar %(model)s %(records)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "%(number)s. Create %(model)s"
+msgstr "%(number)s. Crear %(model)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "(#%(number)s above)"
+msgstr "(la #%(number)s de arriba)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "**Total: %(amount)s** (before taxes)"
+msgstr "**Total: %(amount)s** (antes de impuestos)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Add: %(records)s"
+msgstr "Agregar: %(records)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Attach the files you sent"
+msgstr "Adjuntar los archivos que mandaste"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Change %(line)s: %(values)s"
+msgstr "Cambiar %(line)s: %(values)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid ""
+"Done from the Telegram bot at the request of %(person)s, who authorized it."
+msgstr ""
+"Hecho desde el bot de Telegram a petición de %(person)s, autorizado por la "
+"persona."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "How much did we sell this month by branch?"
+msgstr "¿Cuánto vendimos este mes por sucursal?"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Leave only: %(records)s"
+msgstr "Dejar solo: %(records)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "No"
+msgstr "No"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Remove: %(records)s"
+msgstr "Quitar: %(records)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"That button belongs to an earlier proposal: use the buttons under the latest"
+" one."
+msgstr ""
+"Ese botón es de una propuesta anterior: usa los botones de la más reciente."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"There are no changes waiting: they were already applied, cancelled, or "
+"expired after an hour."
+msgstr ""
+"No hay cambios esperando: ya se aplicaron, se cancelaron o vencieron después"
+" de una hora."
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "Yes"
+msgstr "Sí"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/services/write_ops.py:0
+msgid "button %(button)s"
+msgstr "botón %(button)s"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_handler.py:0
+msgid "the changes waiting for your authorization"
+msgstr "los cambios en espera de tu autorización"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid "where people and vehicles are (GPS)"
+msgstr "dónde están las personas y los vehículos (GPS)"
