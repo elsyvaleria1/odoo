@@ -167,11 +167,8 @@
             "web/static/src/scss/mimetypes.scss",
             "bus/static/src/*.js",
             "bus/static/src/services/**/*.js",
-            "bus/static/src/workers/*.js",
-            (
-                "remove",
-                "bus/static/src/workers/bus_worker_script.js",
-            ),
+            "bus/static/src/workers/bus_worker_utils.js",
+            "bus/static/src/workers/websocket_worker_constants.js",
             (
                 "remove",
                 "bus/static/src/outdated_page_watcher_service.js",
@@ -230,6 +227,8 @@
             "web/static/tests/_framework/**/*",
             "web/static/tests/helpers/cleanup.js",
             "web/static/tests/web_test_helpers.js",
+            "bus/static/src/workers/base_worker.js",
+            "bus/static/src/workers/websocket_worker.js",
             "bus/static/tests/bus_test_helpers.js",
             "mail/static/tests/mail_test_helpers.js",
             "mail/static/tests/mail_test_helpers_contains.js",

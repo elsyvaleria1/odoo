@@ -39,7 +39,7 @@ test("show warning when bus connection encounters issues", async () => {
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
-        ["BUS:RECONNECTING", () => asyncStep("BUS:RECONNECTING")],
+        ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
     );
     await start();
     await openDiscuss();
@@ -48,7 +48,7 @@ test("show warning when bus connection encounters issues", async () => {
     MockServer.env["bus.bus"]._simulateDisconnection(
         WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
     );
-    await waitForSteps(["BUS:RECONNECTING"]);
+    await waitForSteps(["BUS:DISCONNECT"]);
     expect(await waitFor(".o-bus-ConnectionAlert", { timeout: 2500 })).toHaveText(
         "Real-time connection lost...",
     );

@@ -35,12 +35,11 @@ test("disconnect during vacuum should ask for reload", async () => {
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
-        ["BUS:RECONNECTING", () => asyncStep("BUS:RECONNECTING")],
         ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
     );
     onRpc("/bus/has_missed_notifications", () => true);
     await mountWithCleanup(WebClient);
-    getService("legacy_multi_tab").setSharedValue(lastNotificationIdKey(), 1);
+    getService("shared_storage").setSharedValue(lastNotificationIdKey(), 1);
     startBusService();
     expect(await getService("multi_tab").isOnMainTab()).toBe(true);
     await runAllTimers();
@@ -48,7 +47,7 @@ test("disconnect during vacuum should ask for reload", async () => {
     MockServer.env["bus.bus"]._simulateDisconnection(
         WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE,
     );
-    await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECTING"]);
+    await waitForSteps(["BUS:DISCONNECT"]);
     await runAllTimers();
     await waitForSteps(["BUS:RECONNECT"]);
     await waitFor(".o_notification");
@@ -63,10 +62,11 @@ test("reconnect after going offline after bus gc should ask for reload", async (
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
+        ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
     );
     onRpc("/bus/has_missed_notifications", () => true);
     await mountWithCleanup(WebClient);
-    getService("legacy_multi_tab").setSharedValue(lastNotificationIdKey(), 1);
+    getService("shared_storage").setSharedValue(lastNotificationIdKey(), 1);
     startBusService();
     expect(await getService("multi_tab").isOnMainTab()).toBe(true);
     await runAllTimers();
@@ -75,7 +75,7 @@ test("reconnect after going offline after bus gc should ask for reload", async (
     await waitForSteps(["BUS:DISCONNECT"]);
     browser.dispatchEvent(new Event("online"));
     await runAllTimers();
-    await waitForSteps(["BUS:CONNECT"]);
+    await waitForSteps(["BUS:RECONNECT"]);
     await waitFor(".o_notification");
     expect(".o_notification_content:first").toHaveText(
         "The page is out of date. Save your work and refresh to get the latest updates and avoid potential issues.",
@@ -103,7 +103,7 @@ test("J10: a DISCONNECTED first worker state is not treated as a prior connectio
                 return Promise.resolve(true);
             },
         },
-        legacy_multi_tab: {
+        shared_storage: {
             bus: new EventBus(),
             getSharedValue: () => 1, // non-empty watermark: probe not short-circuited
             setSharedValue: () => {},
@@ -130,7 +130,7 @@ test("J9: joining while connecting does not probe missed notifications on the fi
     });
     addBusServiceListeners(["BUS:CONNECT", () => asyncStep("BUS:CONNECT")]);
     await mountWithCleanup(WebClient);
-    getService("legacy_multi_tab").setSharedValue(lastNotificationIdKey(), 1);
+    getService("shared_storage").setSharedValue(lastNotificationIdKey(), 1);
     startBusService();
     expect(await getService("multi_tab").isOnMainTab()).toBe(true);
     await runAllTimers();

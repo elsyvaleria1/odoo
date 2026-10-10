@@ -89,3 +89,30 @@ test("a notice this tab caused is ignored", async () => {
 
     expect.verifySteps([]);
 });
+
+test("a read answered after a newer one does not overwrite it", async () => {
+    const notify = await startWithBus(lines(1));
+    expect.verifySteps(["subscribe fragment.invalidated"]);
+    /** @type {((html: string) => void)[]} */
+    const answers = [];
+    patchWithCleanup(browser, {
+        fetch: () =>
+            new Promise((resolve) =>
+                answers.push((html) =>
+                    resolve(
+                        /** @type {Response} */ ({ ok: true, text: async () => html }),
+                    ),
+                ),
+            ),
+    });
+    const notice = { keys: ["cart.lines"], events: {}, origin: "another-tab" };
+    const older = notify(notice);
+    const newer = notify(notice);
+    answers[1](`<html><body>${lines(3)}</body></html>`);
+    await newer;
+    answers[0](`<html><body>${lines(2)}</body></html>`);
+    await older;
+    await animationFrame();
+
+    expect(".line").toHaveText("3");
+});

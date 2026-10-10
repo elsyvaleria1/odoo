@@ -4,15 +4,12 @@ import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 
 /**
- * Despite the name, this is NOT a main-tab election service (that is
- * `multi_tab` / multi_tab_service.js): it is a cross-tab key/value store on
- * localStorage (get/set/removeSharedValue + a "shared_value_updated" bus),
- * used e.g. for the bus notification watermark, composer preferences and RTC
- * device choices. The name is a historical leftover from when election and
- * storage lived in one service; the registry id "legacy_multi_tab" is kept
- * because consumers across addons depend on it.
+ * A key/value store on localStorage shared by the tabs of an origin
+ * (get/set/removeSharedValue), with a "shared_value_updated" event on its
+ * `bus` when another tab changes a value: the bus watermark, the composer's
+ * preference, the bus log switch. Main-tab election is `multi_tab`'s.
  */
-export const legacyMultiTabService = {
+export const sharedStorageService = {
     start() {
         const bus = new EventBus();
 
@@ -79,8 +76,6 @@ export const legacyMultiTabService = {
         return {
             bus,
             generateLocalStorageKey,
-            getItemFromStorage,
-            setItemInStorage,
             /**
              * Get value shared between all the tabs.
              *
@@ -115,4 +110,4 @@ export const legacyMultiTabService = {
     },
 };
 
-registry.category("services").add("legacy_multi_tab", legacyMultiTabService);
+registry.category("services").add("shared_storage", sharedStorageService);

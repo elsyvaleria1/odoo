@@ -18,7 +18,13 @@ patch(OutOfFocusService.prototype, {
         this.titleService = services.title;
         this.counter = 0;
         this.contributingMessageLocalIds = new Set();
-        env.bus.addEventListener("window_focus", () => this.onWindowFocus());
+        // Focus gained here or in another tab: the user sees the messages.
+        // A tab losing it says nothing about what was read.
+        env.bus.addEventListener("window_focus", ({ detail: focused }) => {
+            if (focused) {
+                this.onWindowFocus();
+            }
+        });
     },
     clearUnreadMessage() {
         log.logic("clearUnreadMessage", () => ({ counter: this.counter }));

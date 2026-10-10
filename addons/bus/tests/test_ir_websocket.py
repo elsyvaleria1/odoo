@@ -2,6 +2,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
+from odoo.libs.json import dumps as json_dumps
+from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 from ..models.bus import channel_with_db
@@ -27,6 +29,41 @@ class TestIrWebsocket(WebsocketCase):
             ws.ping()
             ws.recv_data_frame(control_frame=True)
         self.assertIn("bus.Bus only string channels are allowed.", log.output[0])
+
+    def test_a_watermark_past_the_newest_row_is_reset_on_its_socket(self):
+        newest = self.env["bus.bus"]._bus_last_id()
+        ws = self.websocket_connect()
+        ws.send(
+            json_dumps(
+                {
+                    "event_name": "subscribe",
+                    "data": {
+                        "channels": [],
+                        "last": newest + 1000,
+                        "report_watermark_reset": True,
+                    },
+                }
+            )
+        )
+        self.assertEqual(
+            json_loads(ws.recv()), {"event": "watermark_reset", "last": newest}
+        )
+
+    def test_a_client_that_does_not_ask_is_not_told_of_a_reset(self):
+        # An IoT box reads every frame as a list of notifications.
+        newest = self.env["bus.bus"]._bus_last_id()
+        ws = self.websocket_connect()
+        ws.send(
+            json_dumps(
+                {
+                    "event_name": "subscribe",
+                    "data": {"channels": [], "last": newest + 1000},
+                }
+            )
+        )
+        ws.ping()
+        _opcode, frame = ws.recv_data_frame(control_frame=True)
+        self.assertEqual(frame.opcode, 10)
 
     def test_build_bus_channel_list(self):
         test_user = new_test_user(
@@ -116,9 +153,10 @@ class TestSubscribeDataValidation(TransactionCase):
             last_id.assert_called_once()
 
     def test_out_of_range_last_is_clamped(self):
-        beyond = self.env["bus.bus"].sudo()._bus_last_id() + 1000
-        data = self.env["ir.websocket"]._prepare_subscribe_data([], beyond)
+        newest = self.env["bus.bus"].sudo()._bus_last_id()
+        data = self.env["ir.websocket"]._prepare_subscribe_data([], newest + 1000)
         self.assertEqual(data["last"], 0)
+        self.assertEqual(data["watermark_reset"], newest)
 
     def test_in_range_last_is_preserved(self):
         self.env["bus.bus"]._sendone("some_channel", "type", "message")
@@ -126,6 +164,7 @@ class TestSubscribeDataValidation(TransactionCase):
         in_range = self.env["bus.bus"].sudo()._bus_last_id()
         data = self.env["ir.websocket"]._prepare_subscribe_data([], in_range)
         self.assertEqual(data["last"], in_range)
+        self.assertIsNone(data["watermark_reset"])
 
     def test_negative_last_is_clamped_to_zero(self):
         data = self.env["ir.websocket"]._prepare_subscribe_data([], -5)

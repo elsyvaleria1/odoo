@@ -66,9 +66,23 @@ test("reconnecting/reconnect event is broadcasted", async () => {
     });
     await waitForSteps(["broadcast BUS:CONNECT"]);
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
-    await waitForSteps(["broadcast BUS:DISCONNECT", "broadcast BUS:RECONNECTING"]);
+    await waitForSteps(["broadcast BUS:DISCONNECT"]);
     await runAllTimers();
     await waitForSteps(["broadcast BUS:RECONNECT"]);
+});
+
+test("a connection back after a stop is a reconnect too", async () => {
+    // offline -> BUS:STOP, online -> BUS:START: the tabs were connected before,
+    // and what listens for a reconnect (resync, refetch) must hear one.
+    const worker = await startWebSocketWorker((type) => {
+        if (["BUS:CONNECT", "BUS:RECONNECT"].includes(type)) {
+            asyncStep(type);
+        }
+    });
+    await waitForSteps(["BUS:CONNECT"]);
+    worker._stop();
+    worker._start();
+    await waitForSteps(["BUS:RECONNECT"]);
 });
 
 test("notification event is broadcasted", async () => {
@@ -200,7 +214,7 @@ test("last notification id adopts the new DB's watermark on a database change", 
         startTs: 1,
     });
     worker.lastNotificationId = 100;
-    worker.messageWaitQueue = ["stale-from-db1"];
+    worker.pendingMessages.set("some_event", "stale-from-db1");
     // Switch to a different DB, carrying that DB's own watermark.
     worker._initializeConnection(client, {
         db: "db2",
@@ -211,7 +225,7 @@ test("last notification id adopts the new DB's watermark on a database change", 
     });
     expect(worker.currentDB).toBe("db2");
     expect(worker.lastNotificationId).toBe(5);
-    expect(worker.messageWaitQueue).toEqual([]);
+    expect(worker.pendingMessages.size).toBe(0);
     // A DB change with no known watermark for the new DB falls back to 0.
     worker._initializeConnection(client, {
         db: "db3",
@@ -266,7 +280,7 @@ test("every reconnect re-subscribes with the current channels", async () => {
     const subscriptions = [];
     onWebsocketEvent("subscribe", ({ channels }) => subscriptions.push(channels));
     const worker = await startWebSocketWorker((type) => {
-        if (["BUS:DISCONNECT", "BUS:RECONNECTING", "BUS:RECONNECT"].includes(type)) {
+        if (["BUS:DISCONNECT", "BUS:RECONNECT"].includes(type)) {
             asyncStep(type);
         }
     });
@@ -278,7 +292,7 @@ test("every reconnect re-subscribes with the current channels", async () => {
     // Force an unclean close → automatic reconnect, WITHOUT changing channels.
     subscriptions.length = 0;
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
-    await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECTING"]);
+    await waitForSteps(["BUS:DISCONNECT"]);
     await runAllTimers();
     await waitForSteps(["BUS:RECONNECT"]);
     // The open-time subscribe is debounced (~300ms after reopen); fire it.
@@ -352,7 +366,6 @@ test("a late event from a superseded socket is ignored (epoch guard)", async () 
     // A stale close from the OLD socket: ignored → no disconnect/reconnect.
     worker._onWebsocketClose({ type: "close", currentTarget: staleSocket, code: 1006 });
     expect(broadcasts).not.toInclude("BUS:DISCONNECT");
-    expect(broadcasts).not.toInclude("BUS:RECONNECTING");
 });
 
 test("client that sent BUS:LEAVE can come back", async () => {
@@ -392,7 +405,7 @@ test("reconnect sends exactly one fresh subscribe and flushes queued app message
     // An application message sent while stopped is queued; a subscribe is not
     // (nothing subscribes while the socket is down).
     worker._sendToServer({ event_name: "some_event", data: 1 });
-    expect(worker.messageWaitQueue).toHaveLength(1);
+    expect(worker.pendingMessages.size).toBe(1);
     worker._start();
     // Intercept at the socket-instance level: the open-time subscribe from
     // `_updateChannels` AND the queue flush (which calls `websocket.send`
@@ -414,7 +427,7 @@ test("reconnect sends exactly one fresh subscribe and flushes queued app message
     expect(subscribes[0].data.last).toBe(worker.lastNotificationId);
     // The queued application message went through, after the subscribe.
     expect(sentFrames.some((f) => f.event_name === "some_event")).toBe(true);
-    expect(worker.messageWaitQueue).toHaveLength(0);
+    expect(worker.pendingMessages.size).toBe(0);
 });
 
 test("a send chained on the subscribe gate is re-queued when the connection is torn down", async () => {
@@ -428,7 +441,7 @@ test("a send chained on the subscribe gate is re-queued when the connection is t
     worker._sendToServer({ event_name: "some_event", data: 1 });
     worker._stop(); // resolves the gate and drops the connection
     await runAllTimers();
-    expect(worker.messageWaitQueue).toEqual([
+    expect([...worker.pendingMessages.values()]).toEqual([
         JSON.stringify({ event_name: "some_event", data: 1 }),
     ]);
 });
@@ -467,7 +480,7 @@ test("stop reports DISCONNECTED and re-queues sends pending on the first subscri
     // report DISCONNECTED to newly opened tabs.
     await runAllTimers();
     expect(worker.state).toBe("DISCONNECTED");
-    expect(worker.messageWaitQueue).toEqual([
+    expect([...worker.pendingMessages.values()]).toEqual([
         JSON.stringify({ event_name: "some_event", data: 1 }),
     ]);
 });
@@ -782,14 +795,14 @@ test("J2: BUS:SET_CHANNELS replaces the map atomically and drops count<=0", asyn
 
 test("J4: BUS:STOP after a scheduled retry prevents the reconnect", async () => {
     const worker = await startWebSocketWorker((type) => {
-        if (["BUS:CONNECT", "BUS:RECONNECT", "BUS:RECONNECTING"].includes(type)) {
+        if (["BUS:CONNECT", "BUS:DISCONNECT", "BUS:RECONNECT"].includes(type)) {
             asyncStep(type);
         }
     });
     await waitForSteps(["BUS:CONNECT"]);
     // Abnormal close schedules an exponential-backoff retry.
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
-    await waitForSteps(["BUS:RECONNECTING"]);
+    await waitForSteps(["BUS:DISCONNECT"]);
     // A BUS:STOP (e.g. going offline) must cancel that pending timer.
     worker._stop();
     await runAllTimers();
@@ -841,12 +854,10 @@ test("worker answers BUS:PING probes... only pings silent clients", async () => 
     expect(pinged).toEqual([]);
 });
 
-test("the reconnect flush is paced so it cannot trip the server rate limiter", async () => {
-    // The server rate-limits INCOMING frames (`Websocket._limit_rate`) and
-    // answers a breach by closing with TRY_LATER. Flushing the offline queue
-    // in one tight loop killed the connection as soon as `websocket_rate_limit_burst`
-    // (default 10) messages had piled up — measured over the wire: 9 queued
-    // messages survive, 10 close the freshly opened socket.
+test("what is sent while offline goes out once per event name, in the order last sent", async () => {
+    // A long outage with a chatty sender held every message, stale by the
+    // time it ended, and the flush had to be paced under the server's rate
+    // limit. Only the last message of each event name is worth sending.
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);
@@ -854,9 +865,10 @@ test("the reconnect flush is paced so it cannot trip the server rate limiter", a
     await runAllTimers();
     worker._stop();
     for (let i = 0; i < 20; i++) {
-        worker._sendToServer({ event_name: "queued", data: i });
+        worker._sendToServer({ event_name: "update_presence", data: i });
     }
-    expect(worker.messageWaitQueue).toHaveLength(20);
+    worker._sendToServer({ event_name: "other", data: "x" });
+    expect(worker.pendingMessages.size).toBe(2);
     worker._start();
     const sentFrames = [];
     const ogSend = worker.websocket.send.bind(worker.websocket);
@@ -868,62 +880,48 @@ test("the reconnect flush is paced so it cannot trip the server rate limiter", a
     };
     await waitUntil(() => worker.state !== "CONNECTING");
     await advanceTime(300); // debounced open-time `_updateChannels`
-    // First chunk only: subscribe + FLUSH_CHUNK_SIZE, comfortably under the
-    // server's burst of 10.
-    expect(sentFrames.filter((f) => f.event_name === "queued")).toHaveLength(
-        worker.FLUSH_CHUNK_SIZE,
-    );
-    expect(worker.messageWaitQueue).toHaveLength(20 - worker.FLUSH_CHUNK_SIZE);
-    // The rest drains on the following ticks, never more than a chunk at a time.
-    await advanceTime(worker.FLUSH_CHUNK_DELAY);
-    expect(sentFrames.filter((f) => f.event_name === "queued")).toHaveLength(
-        worker.FLUSH_CHUNK_SIZE * 2,
-    );
-    // 20 messages / 4 per chunk = 5 chunks; two have gone out. Each chunk
-    // re-arms its own timer, so step the clock rather than draining once.
-    for (let i = 0; i < 3; i++) {
-        await advanceTime(worker.FLUSH_CHUNK_DELAY);
-    }
-    expect(sentFrames.filter((f) => f.event_name === "queued")).toHaveLength(20);
-    expect(worker.messageWaitQueue).toHaveLength(0);
+    expect(sentFrames.map((f) => [f.event_name, f.data.channels ?? f.data])).toEqual([
+        ["subscribe", ["chA"]],
+        ["update_presence", 19],
+        ["other", "x"],
+    ]);
+    expect(worker.pendingMessages.size).toBe(0);
 });
 
-test("a paced flush interrupted by a disconnect keeps the remaining messages", async () => {
+test("a fresh connection resumes below the ids still held back", async () => {
+    // The server holds an id back for NOTIFICATION_HOLD_BACK_MS: a lower id
+    // committed after the drop would be skipped by `last = highest seen`.
     const worker = await startWebSocketWorker();
-    const client = { postMessage() {}, addEventListener() {} };
-    worker.registerClient(client);
-    worker._addChannel(client, "chA");
-    await runAllTimers();
-    worker._stop();
-    for (let i = 0; i < 20; i++) {
-        worker._sendToServer({ event_name: "queued", data: i });
-    }
-    worker._start();
-    await waitUntil(() => worker.state !== "CONNECTING");
-    await advanceTime(300);
-    const leftAfterFirstChunk = worker.messageWaitQueue.length;
-    expect(leftAfterFirstChunk).toBe(20 - worker.FLUSH_CHUNK_SIZE);
-    worker._stop(); // connection dies mid-flush
-    await advanceTime(worker.FLUSH_CHUNK_DELAY * 3);
-    // Un-sent messages are still queued for the next connection, and the
-    // cancelled flush does not keep firing against the dead socket.
-    expect(worker.messageWaitQueue).toHaveLength(leftAfterFirstChunk);
+    worker._onWebsocketMessage(
+        new MessageEvent("message", {
+            data: JSON.stringify([
+                { id: 40, message: { type: "x", payload: 1 } },
+                { id: 42, message: { type: "x", payload: 2 } },
+            ]),
+        }),
+    );
+    expect(worker.lastNotificationId).toBe(42);
+    expect(worker._resumeFrom()).toBe(39);
+    await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS + 1);
+    expect(worker._resumeFrom()).toBe(42);
 });
 
-test("the offline message queue is bounded, dropping the stalest entries", async () => {
-    // Nothing capped the queue: a long outage with a chatty sender grew it
-    // without limit, and the messages were stale by the time it ended anyway.
-    const worker = await startWebSocketWorker();
-    worker._stop();
-    for (let i = 0; i < worker.MESSAGE_QUEUE_MAX + 5; i++) {
-        worker._sendToServer({ event_name: "queued", data: i });
-    }
-    expect(worker.messageWaitQueue).toHaveLength(worker.MESSAGE_QUEUE_MAX);
-    // The most RECENT messages are the ones kept.
-    const first = JSON.parse(worker.messageWaitQueue[0]);
-    const last = JSON.parse(worker.messageWaitQueue.at(-1));
-    expect(first.data).toBe(5);
-    expect(last.data).toBe(worker.MESSAGE_QUEUE_MAX + 4);
+test("the server's watermark reset lowers the worker's and the tabs' watermark", async () => {
+    const worker = await startWebSocketWorker((type, data) => {
+        if (type === "BUS:WATERMARK_RESET") {
+            asyncStep(`${type} ${data}`);
+        }
+    });
+    worker.lastNotificationId = 5000;
+    worker.seenNotificationIds.set(4999, Date.now());
+    worker._onWebsocketMessage(
+        new MessageEvent("message", {
+            data: JSON.stringify({ event: "watermark_reset", last: 12 }),
+        }),
+    );
+    await waitForSteps(["BUS:WATERMARK_RESET 12"]);
+    expect(worker.lastNotificationId).toBe(12);
+    expect(worker.seenNotificationIds.size).toBe(0);
 });
 
 test("a very large notification batch is broadcast, not swallowed", async () => {

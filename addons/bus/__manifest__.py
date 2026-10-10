@@ -17,11 +17,8 @@
             "bus/static/src/*.js",
             "bus/static/src/debug/**/*",
             "bus/static/src/services/**/*.js",
-            "bus/static/src/workers/*",
-            (
-                "remove",
-                "bus/static/src/workers/bus_worker_script.js",
-            ),
+            "bus/static/src/workers/bus_worker_utils.js",
+            "bus/static/src/workers/websocket_worker_constants.js",
         ],
         "web.assets_frontend": [
             "bus/static/src/*.js",
@@ -35,13 +32,12 @@
                 "remove",
                 "bus/static/src/simple_notification_service.js",
             ),
-            "bus/static/src/workers/*",
-            (
-                "remove",
-                "bus/static/src/workers/bus_worker_script.js",
-            ),
+            "bus/static/src/workers/bus_worker_utils.js",
+            "bus/static/src/workers/websocket_worker_constants.js",
         ],
         "web.assets_unit_tests": [
+            "bus/static/src/workers/base_worker.js",
+            "bus/static/src/workers/websocket_worker.js",
             "bus/static/tests/**/*",
         ],
         "web.assets_unit_tests_setup": [

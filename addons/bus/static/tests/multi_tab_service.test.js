@@ -149,3 +149,18 @@ test("a bfcache re-acquire invalidated in the same task still settles isOnMainTa
     }
     expect(resolved).toBe(true);
 });
+
+test("a refused lock settles the tab as main instead of hanging", async () => {
+    // A LockManager can refuse outright (SecurityError in an opaque-origin
+    // frame); every `await isOnMainTab()` used to wait forever.
+    patchWithCleanup(browser.navigator, {
+        locks: {
+            request() {
+                return Promise.reject(new DOMException("refused", "SecurityError"));
+            },
+        },
+    });
+    patchWithCleanup(console, { warn: () => {} });
+    const env = await makeMockEnv();
+    expect(await env.services.multi_tab.isOnMainTab()).toBe(true);
+});

@@ -42,15 +42,22 @@ class IrWebsocket(models.AbstractModel):
         if not isinstance(last, int) or isinstance(last, bool):
             raise ValueError("bus.Bus subscription 'last' must be an integer.")
         last = max(0, last)
-        if last:
-            last = 0 if last > self.env["bus.bus"].sudo()._bus_last_id() else last
+        newest = self.env["bus.bus"].sudo()._bus_last_id() if last else 0
+        reset = last > newest
         channels = [resolve_capability(self.env, c) or c for c in channels]
         # What an override did not turn into a channel of its own is a name the
         # client made up, and a made-up name is one anyone can say.
         channels = [
             c for c in self._get_bus_channels(channels) if not isinstance(c, str)
         ]
-        return {"channels": OrderedSet(channels), "last": last}
+        # A watermark past the newest row was drawn from another history (a
+        # database restored or recreated under the same name): the client is
+        # told the one it now stands at, or it would keep it forever.
+        return {
+            "channels": OrderedSet(channels),
+            "last": 0 if reset else last,
+            "watermark_reset": newest if reset else None,
+        }
 
     def _after_subscribe_data(self, data):
         pass
@@ -64,6 +71,14 @@ class IrWebsocket(models.AbstractModel):
         dispatch.subscribe(
             data["channels"], data["last"], self.env.registry.db_name, wsrequest.ws
         )
+        # Only to a client that asks: an IoT box reads every frame as a list
+        # of notifications.
+        if data["watermark_reset"] is not None and og_data.get(
+            "report_watermark_reset"
+        ):
+            wsrequest.ws._send(
+                {"event": "watermark_reset", "last": data["watermark_reset"]}
+            )
         self._after_subscribe_data(data)
 
     def _on_websocket_closed(self, cookies):

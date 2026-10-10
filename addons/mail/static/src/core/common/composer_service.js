@@ -10,16 +10,16 @@ const HTML_ENABLED_KEY = "mail.html_composer.enabled";
 export class ComposerService {
     /**
      * @param {import("@web/env").OdooEnv} env
-     * @param {Pick<import("services").ServiceFactories, "legacy_multi_tab">} services
+     * @param {Pick<import("services").ServiceFactories, "shared_storage">} services
      */
     constructor(env, services) {
         this.env = env;
-        this.multiTab = services.legacy_multi_tab;
+        this.sharedStorage = services.shared_storage;
         this.htmlEnabled = this.readHtmlEnabled();
     }
 
     setup() {
-        this.multiTab.bus.addEventListener(
+        this.sharedStorage.bus.addEventListener(
             "shared_value_updated",
             /** @param {CustomEvent<{key: string}>} ev */ ({ detail }) => {
                 if (detail.key === HTML_ENABLED_KEY) {
@@ -33,7 +33,7 @@ export class ComposerService {
     }
 
     readHtmlEnabled() {
-        return this.multiTab.getSharedValue(HTML_ENABLED_KEY, false) === true;
+        return this.sharedStorage.getSharedValue(HTML_ENABLED_KEY, false) === true;
     }
 
     setHtmlComposer() {
@@ -51,15 +51,15 @@ export class ComposerService {
         }
         log.logic("setHtmlEnabled", () => ({ htmlEnabled }));
         this.htmlEnabled = htmlEnabled;
-        this.multiTab.setSharedValue(HTML_ENABLED_KEY, htmlEnabled);
+        this.sharedStorage.setSharedValue(HTML_ENABLED_KEY, htmlEnabled);
     }
 }
 
 export const composerService = {
-    dependencies: ["mail.store", "legacy_multi_tab"],
+    dependencies: ["mail.store", "shared_storage"],
     /**
      * @param {import("@web/env").OdooEnv} env
-     * @param {Pick<import("services").ServiceFactories, "legacy_multi_tab">} services
+     * @param {Pick<import("services").ServiceFactories, "shared_storage">} services
      */
     start(env, services) {
         const composer = proxy(new ComposerService(env, services));

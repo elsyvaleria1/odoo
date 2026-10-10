@@ -151,9 +151,10 @@
             "bus/static/src/services/bus_service.js",
             "bus/static/src/services/worker_service.js",
             "bus/static/src/bus_parameters_service.js",
-            "bus/static/src/legacy_multi_tab_service.js",
+            "bus/static/src/shared_storage_service.js",
             "bus/static/src/multi_tab_service.js",
-            "bus/static/src/workers/*",
+            "bus/static/src/workers/bus_worker_utils.js",
+            "bus/static/src/workers/websocket_worker_constants.js",
         ],
         "point_of_sale._assets_pos": [
             "web/static/src/scss/functions.scss",

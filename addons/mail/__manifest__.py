@@ -214,11 +214,8 @@
             "web/static/src/core/formatters.js",
             "bus/static/src/*.js",
             "bus/static/src/services/**/*.js",
-            "bus/static/src/workers/*.js",
-            (
-                "remove",
-                "bus/static/src/workers/bus_worker_script.js",
-            ),
+            "bus/static/src/workers/bus_worker_utils.js",
+            "bus/static/src/workers/websocket_worker_constants.js",
             (
                 "include",
                 "html_editor._assets_editor",

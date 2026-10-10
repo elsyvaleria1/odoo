@@ -1,6 +1,6 @@
 declare module "services" {
     import { busParametersService } from "@bus/bus_parameters_service";
-    import { legacyMultiTabService } from "@bus/legacy_multi_tab_service";
+    import { sharedStorageService } from "@bus/shared_storage_service";
     import { multiTabService } from "@bus/multi_tab_service";
     import { outdatedPageWatcherService } from "@bus/outdated_page_watcher_service";
     import { busMonitoringservice } from "@bus/services/bus_monitoring_service";
@@ -17,7 +17,7 @@ declare module "services" {
         "bus.parameters": typeof busParametersService;
         bus_service: typeof busService;
         "bus.logs_service": typeof busLogsService;
-        legacy_multi_tab: typeof legacyMultiTabService;
+        shared_storage: typeof sharedStorageService;
         multi_tab: typeof multiTabService;
         presence: typeof presenceService;
         worker_service: typeof workerService;

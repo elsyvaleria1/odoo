@@ -26,6 +26,11 @@ export class LiveFragments extends Interaction {
     setup() {
         /** @param {{ keys?: string[], events?: Record<string, any>, origin?: string | null }} notice */
         this.onInvalidated = (notice) => this.refresh(notice);
+        // Two notices close together start two reads that may answer out of
+        // order: a key renders only from the latest read asked for it.
+        this.refreshes = 0;
+        /** @type {Map<string, number>} */
+        this.latestRefreshOf = new Map();
     }
 
     start() {
@@ -57,6 +62,10 @@ export class LiveFragments extends Interaction {
         if (!regions.length) {
             return;
         }
+        const refresh = ++this.refreshes;
+        for (const key of keys) {
+            this.latestRefreshOf.set(key, refresh);
+        }
         const response = await this.waitFor(
             browser.fetch(browser.location.href, {
                 credentials: "same-origin",
@@ -70,6 +79,9 @@ export class LiveFragments extends Interaction {
         const page = new DOMParser().parseFromString(html, "text/html");
         const interactions = this.services["public.interactions"];
         for (const region of regions) {
+            if (this.latestRefreshOf.get(region.dataset.fragment ?? "") !== refresh) {
+                continue;
+            }
             const next = page.querySelector(
                 `[data-fragment="${CSS.escape(region.dataset.fragment)}"]`,
             );

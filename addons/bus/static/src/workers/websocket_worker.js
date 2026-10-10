@@ -9,7 +9,7 @@ import {
 /**
  * Type of events that can be sent from the worker to its clients.
  *
- * @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:RECONNECTING' | 'BUS:NOTIFICATION' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent
+ * @typedef { 'BUS:CONNECT' | 'BUS:RECONNECT' | 'BUS:DISCONNECT' | 'BUS:NOTIFICATION' | 'BUS:WATERMARK_RESET' | 'BUS:INITIALIZED' | 'BUS:OUTDATED'| 'BUS:WORKER_STATE_UPDATED' | 'BUS:PROVIDE_LOGS' | 'BUS:PING' } WorkerEvent
  */
 
 /**
@@ -102,29 +102,14 @@ export class WebsocketWorker {
     // so remembering it here would be pure memory overhead. Kept a bit larger
     // than the server's to absorb clock/scheduling slack.
     SEEN_NOTIFICATION_RETENTION_MS = 15_000;
+    // The server's hold-back (`NOTIFICATION_HOLD_BACK_SECONDS`): an id it
+    // dispatched less than this long ago may still have a lower one, drawn
+    // earlier and committed later, behind it. A fresh connection resumes
+    // below the lowest of those, not at the highest id seen.
+    NOTIFICATION_HOLD_BACK_MS = 10_000;
     // Defensive cap: a pathological notification flood must not grow the
     // seen-id map without bound between prunes.
     SEEN_NOTIFICATION_MAX_COUNT = 10_000;
-    // Pacing for the reconnect flush of `messageWaitQueue`.
-    //
-    // The server rate-limits INCOMING frames (`Websocket._limit_rate`, a GCRA
-    // bucket: a burst of `websocket_rate_limit_burst` frames, default 10, then
-    // one per `websocket_rate_limit_delay`, default 0.2s) and answers a breach
-    // by closing with TRY_LATER. Flushing the queue in one tight loop
-    // therefore killed the connection outright as soon as 10 messages had
-    // piled up while offline -- measured exactly: 9 queued messages survive,
-    // 10 close the freshly opened socket. Two uncoordinated subsystems, one
-    // constant apart from a reconnect loop.
-    //
-    // 4 frames per second stays under the server's *sustainable* rate
-    // (1/delay = 5/s) rather than merely under its burst, so the limiter's
-    // bucket never empties no matter how long the queue is.
-    FLUSH_CHUNK_SIZE = 4;
-    FLUSH_CHUNK_DELAY = 1000;
-    // Nothing bounded the offline queue. Presence/keepalive-style messages are
-    // worthless by the time a long outage ends, so keep the most recent ones
-    // and drop the stale head rather than growing without limit.
-    MESSAGE_QUEUE_MAX = 200;
 
     constructor(name) {
         this.name = name;
@@ -145,11 +130,12 @@ export class WebsocketWorker {
         this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
         this.connectTimeout = null;
         this._stableTimeout = null;
-        this.debugModeByClient = new Map();
-        this.isDebug = false;
         this.active = true;
         this.state = CONNECTION_STATE.IDLE;
         this.isReconnecting = false;
+        // Whether any connection of this worker ever opened: every later open
+        // is a reconnect, whatever closed the previous one.
+        this.hasConnected = false;
         this.loggingEnabled = null;
         // Current WebSocket connection (socket + its subscribe gate and
         // subscription cache), or null when no socket is live. See `Connection`.
@@ -166,9 +152,10 @@ export class WebsocketWorker {
         // batches (its hold-back window for out-of-order commits), so a
         // monotonic watermark filter would silently drop them.
         this.seenNotificationIds = new Map();
-        this.messageWaitQueue = [];
-        // Handle of the paced flush in progress, so `_stop` can cancel it.
-        this._flushTimeout = null;
+        // Messages sent while no socket was open, the latest per event name:
+        // what is sent is state (presence), and only its last value is worth
+        // anything once the connection is back.
+        this.pendingMessages = new Map();
         // Sticky for the whole debounce window: a forced request must not be
         // downgraded by a plain one arriving after it. Consumed when the
         // updater fires.
@@ -475,8 +462,6 @@ export class WebsocketWorker {
     _unregisterClient(client) {
         this.channelsByClient.delete(client);
         this.lastSeenByClient.delete(client);
-        this.debugModeByClient.delete(client);
-        this.isDebug = [...this.debugModeByClient.values()].some(Boolean);
         this._debouncedUpdateChannels();
     }
 
@@ -533,8 +518,6 @@ export class WebsocketWorker {
      *
      * @param {Object} param0
      * @param {string} [param0.db] Database name.
-     * @param {String} [param0.debug] Current debugging mode for the
-     * given client.
      * @param {Number} [param0.lastNotificationId] Last notification id
      * known by the client.
      * @param {String} [param0.websocketURL] URL of the websocket endpoint.
@@ -546,11 +529,9 @@ export class WebsocketWorker {
      */
     _initializeConnection(
         client,
-        { db, debug, lastNotificationId, uid, websocketURL, startTs },
+        { db, lastNotificationId, uid, websocketURL, startTs },
     ) {
         if (this.newestStartTs && this.newestStartTs > startTs) {
-            this.debugModeByClient.set(client, debug);
-            this.isDebug = [...this.debugModeByClient.values()].some(Boolean);
             this._finishClientInitialization(client);
             return;
         }
@@ -563,8 +544,6 @@ export class WebsocketWorker {
             this.lastNotificationId ?? 0,
             lastNotificationId ?? 0,
         );
-        this.debugModeByClient.set(client, debug);
-        this.isDebug = [...this.debugModeByClient.values()].some(Boolean);
         const isCurrentUserKnown = uid !== undefined;
         if (this.isWaitingForNewUID && isCurrentUserKnown) {
             this.isWaitingForNewUID = false;
@@ -577,6 +556,8 @@ export class WebsocketWorker {
         ) {
             this.currentUID = uid;
             this.currentDB = db || this.currentDB;
+            // Another user or database: what opens next is a first connection.
+            this.hasConnected = false;
             if (this.websocket) {
                 this.websocket.close(WEBSOCKET_CLOSE_CODES.CLEAN);
             }
@@ -607,7 +588,7 @@ export class WebsocketWorker {
             // now-stale queued messages referencing the old DB's channels.
             this.lastNotificationId = lastNotificationId ?? 0;
             this.seenNotificationIds.clear();
-            this.messageWaitQueue = [];
+            this.pendingMessages.clear();
         }
         this._finishClientInitialization(client);
     }
@@ -692,7 +673,7 @@ export class WebsocketWorker {
         // non-subscribe messages sent while the socket was open (but before its
         // first subscribe went out) wait on it. Resolving is safe — the chained
         // callback re-checks `_isWebsocketConnected()` (false here) and
-        // re-queues into `messageWaitQueue` for the next open. No replacement
+        // re-queues into `pendingMessages` for the next open. No replacement
         // gate is needed: the next `_start` brings a fresh Connection with its
         // own, and `lastSubscription` dies with this connection too.
         this._connection?.subscribeDeferred.resolve();
@@ -724,7 +705,6 @@ export class WebsocketWorker {
             return;
         }
         // WebSocket was not closed cleanly, let's try to reconnect.
-        this.broadcast("BUS:RECONNECTING", { closeCode: code });
         this.isReconnecting = true;
         if (code === WEBSOCKET_CLOSE_CODES.SESSION_EXPIRED) {
             this.isWaitingForNewUID = true;
@@ -785,6 +765,10 @@ export class WebsocketWorker {
             this._logDebug("_onWebsocketMessage: ignored non-JSON frame");
             return;
         }
+        if (payload?.event === "watermark_reset") {
+            this._resetWatermark(payload.last);
+            return;
+        }
         if (!Array.isArray(payload)) {
             // The server delivers notification batches as a JSON array. A frame
             // that is valid JSON but not an array (e.g. an echoed control frame)
@@ -811,14 +795,9 @@ export class WebsocketWorker {
         if (!notifications.length) {
             return;
         }
-        // Track the greatest id seen (batches are not guaranteed ascending),
-        // used only as the `last` value of (re)subscribes. Max is correct
-        // there: within a connection the server ignores later `last` values
-        // (`initialize_last_id` only adopts it while its own last_id is 0)
-        // and holds its `last_id` back server-side for out-of-order commits;
-        // on a fresh connection the server adopts it as the polling floor,
-        // and any held-back lower ids it re-sends are handled by the
-        // seen-id filter above.
+        // Track the greatest id seen (batches are not guaranteed ascending):
+        // the watermark a fresh worker is seeded with, and what a connection
+        // resumes from when nothing is still held back (see `_resumeFrom`).
         //
         // A loop, NOT `Math.max(this.lastNotificationId, ...ids)`: the spread
         // passes one argument per notification and throws `RangeError: Maximum
@@ -846,6 +825,40 @@ export class WebsocketWorker {
     }
 
     /**
+     * The `last` a subscribe sends. A fresh connection's server side starts
+     * with no history, so resuming at the highest id seen would skip an id
+     * the old connection was still holding back for: drawn below it,
+     * committed after the drop. Below the lowest id seen within the hold-back
+     * window instead; what comes back twice, the seen-id filter drops.
+     *
+     * @returns {number}
+     */
+    _resumeFrom() {
+        const heldSince = Date.now() - this.NOTIFICATION_HOLD_BACK_MS;
+        let resumeFrom = this.lastNotificationId;
+        for (const [id, seenAt] of this.seenNotificationIds) {
+            if (seenAt >= heldSince && id <= resumeFrom) {
+                resumeFrom = id - 1;
+            }
+        }
+        return resumeFrom;
+    }
+
+    /**
+     * The server answered a subscribe whose `last` lies past its newest
+     * notification (a database restored or recreated under the same name):
+     * adopt the watermark it stands at, and have the tabs do the same.
+     *
+     * @param {number} last
+     */
+    _resetWatermark(last) {
+        this._logDebug("_resetWatermark", this.lastNotificationId, last);
+        this.lastNotificationId = last;
+        this.seenNotificationIds.clear();
+        this.broadcast("BUS:WATERMARK_RESET", last);
+    }
+
+    /**
      * Forget seen notification ids that are older than the retention window
      * (they can no longer be legitimately re-sent by the server), and cap the
      * map size defensively.
@@ -865,18 +878,11 @@ export class WebsocketWorker {
         }
     }
 
-    async _logDebug(title, ...args) {
+    _logDebug(title, ...args) {
         if (this.loggingEnabled) {
-            try {
-                await logger.log({
-                    dt: new Date().toISOString(),
-                    event: title,
-                    args,
-                    worker: UUID,
-                });
-            } catch (e) {
-                console.error(e);
-            }
+            logger
+                .log({ dt: new Date().toISOString(), event: title, args, worker: UUID })
+                .catch((e) => console.error(e));
         }
     }
 
@@ -897,7 +903,10 @@ export class WebsocketWorker {
         // not restored by nulling worker fields.
         const connection = this._connection;
         this._updateState(CONNECTION_STATE.CONNECTED);
-        this.broadcast(this.isReconnecting ? "BUS:RECONNECT" : "BUS:CONNECT");
+        this.broadcast(
+            this.hasConnected || this.isReconnecting ? "BUS:RECONNECT" : "BUS:CONNECT",
+        );
+        this.hasConnected = true;
         this._debouncedUpdateChannels();
         // A server that accepts and then closes at once (stopping, rate
         // limiting, failing) must not reset the backoff of its clients.
@@ -918,54 +927,36 @@ export class WebsocketWorker {
                 // open instead of writing to a dead or superseded socket.
                 return;
             }
-            // Flush the queued application messages after this connection's own
-            // subscribe. No subscribe can be queued: `_updateChannels` only ever
-            // subscribes while the socket is open (sending directly), so the
-            // queue holds application messages only. Paced, not in one burst --
-            // see FLUSH_CHUNK_SIZE.
-            this._flushMessageQueue(connection);
+            // Send the pending application messages after this connection's
+            // own subscribe. No subscribe is ever pending: `_updateChannels`
+            // only subscribes while the socket is open, sending directly.
+            this._flushPendingMessages();
         });
         this._restartConnectionCheckInterval();
     }
 
     /**
-     * Send the messages queued while offline, in chunks small enough that the
-     * server's incoming-frame rate limiter never trips (see FLUSH_CHUNK_SIZE).
-     *
-     * Messages are removed from the queue only as they are sent, so a socket
-     * that dies mid-flush leaves the remainder queued for the next connection
-     * instead of dropping it.
-     *
-     * @param {Connection} connection the connection this flush belongs to
+     * Send what was held while no socket was open. At most one message per
+     * event name, so the server's incoming-frame rate limit is never near.
      */
-    _flushMessageQueue(connection) {
-        this._flushTimeout = null;
-        if (this._connection !== connection || !this._isWebsocketConnected()) {
-            // Closed or superseded: keep what is left for the next open.
-            return;
-        }
-        for (const message of this.messageWaitQueue.splice(0, this.FLUSH_CHUNK_SIZE)) {
-            this.websocket.send(message);
-        }
-        if (this.messageWaitQueue.length) {
-            this._flushTimeout = setTimeout(
-                () => this._flushMessageQueue(connection),
-                this.FLUSH_CHUNK_DELAY,
-            );
+    _flushPendingMessages() {
+        const pending = [...this.pendingMessages.values()];
+        this.pendingMessages.clear();
+        for (const payload of pending) {
+            this.websocket.send(payload);
         }
     }
 
     /**
-     * Queue a message for the next connection, bounded by MESSAGE_QUEUE_MAX.
+     * Hold a message for the next connection; a later one of the same event
+     * name replaces it.
      *
+     * @param {{event_name: string}} message
      * @param {string} payload serialized message
      */
-    _queueMessage(payload) {
-        while (this.messageWaitQueue.length >= this.MESSAGE_QUEUE_MAX) {
-            this.messageWaitQueue.shift();
-            this._logDebug("message_queue_overflow: dropped oldest queued message");
-        }
-        this.messageWaitQueue.push(payload);
+    _holdMessage(message, payload) {
+        this.pendingMessages.delete(message.event_name);
+        this.pendingMessages.set(message.event_name, payload);
     }
 
     /**
@@ -1051,7 +1042,7 @@ export class WebsocketWorker {
             // application messages ever reach here while offline — subscribes
             // are sent by `_updateChannels`, which no-ops unless the socket is
             // open, so nothing stale can pile up in the queue.
-            this._queueMessage(payload);
+            this._holdMessage(message, payload);
             return;
         }
         if (message["event_name"] === "subscribe") {
@@ -1065,7 +1056,7 @@ export class WebsocketWorker {
                 if (this._connection === connection && this._isWebsocketConnected()) {
                     this.websocket.send(payload);
                 } else {
-                    this._queueMessage(payload);
+                    this._holdMessage(message, payload);
                 }
             });
         }
@@ -1124,10 +1115,6 @@ export class WebsocketWorker {
         // (the other place clearing this interval) will not run: clear it here
         // to avoid leaking a timer on every stop cycle.
         clearInterval(this._connectionCheckInterval);
-        // Same for a paced queue flush in progress: it targets the socket
-        // this stop is tearing down.
-        clearTimeout(this._flushTimeout);
-        this._flushTimeout = null;
         // Cancel pending debounced work so it can't fire against the *next*
         // connection: a trailing `_updateChannels`/`_sendToServer` would act on
         // a socket this stop is tearing down.
@@ -1149,7 +1136,7 @@ export class WebsocketWorker {
         // socket listeners, so `_onWebsocketClose` (which resolves the gate and
         // reports DISCONNECTED) will not run. A pending send chained on the gate
         // would otherwise be orphaned; with the connection dropped it re-checks
-        // `_isWebsocketConnected()` (false) and re-queues into `messageWaitQueue`.
+        // `_isWebsocketConnected()` (false) and re-queues into `pendingMessages`.
         // Dropping it also stops `_initializeConnection` from reporting a live
         // connection to tabs opened while stopped. `lastSubscription` dies with
         // the connection, so the next connect re-subscribes.
@@ -1184,7 +1171,11 @@ export class WebsocketWorker {
             connection.lastSubscription = allTabsChannelsString;
             this._sendToServer({
                 event_name: "subscribe",
-                data: { channels: allTabsChannels, last: this.lastNotificationId },
+                data: {
+                    channels: allTabsChannels,
+                    last: this._resumeFrom(),
+                    report_watermark_reset: true,
+                },
             });
             connection.subscribeDeferred.resolve();
         }

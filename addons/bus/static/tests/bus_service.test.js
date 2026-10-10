@@ -287,6 +287,7 @@ test("disconnect on offline, re-connect on online", async () => {
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
+        ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
     );
     await makeMockEnv();
     startBusService();
@@ -296,7 +297,7 @@ test("disconnect on offline, re-connect on online", async () => {
     manuallyDispatchProgrammaticEvent(window, "online");
     await waitForSteps(["online"]);
     await runAllTimers();
-    await waitForSteps(["BUS:CONNECT"]);
+    await waitForSteps(["BUS:RECONNECT"]);
 });
 
 test("no disconnect on offline/online when bus is inactive", async () => {
@@ -323,7 +324,6 @@ test("can reconnect after late close event", async () => {
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
         ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
-        ["BUS:RECONNECTING", () => asyncStep("BUS:RECONNECTING")],
     );
     const closeDeferred = new Deferred();
     await makeMockEnv();
@@ -349,7 +349,7 @@ test("can reconnect after late close event", async () => {
     manuallyDispatchProgrammaticEvent(window, "online");
     await waitForSteps(["online"]);
     await runAllTimers();
-    await waitForSteps(["BUS:DISCONNECT", "BUS:CONNECT"]);
+    await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECT"]);
     // Trigger the close event, it shouldn't have any effect since it is
     // related to an old connection that is no longer in use.
     closeDeferred.resolve();
@@ -358,7 +358,7 @@ test("can reconnect after late close event", async () => {
     MockServer.env["bus.bus"]._simulateDisconnection(
         WEBSOCKET_CLOSE_CODES.KEEP_ALIVE_TIMEOUT,
     );
-    await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECTING", "BUS:RECONNECT"]);
+    await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECT"]);
 });
 
 test("fallback on simple worker when shared worker failed to initialize", async () => {
@@ -467,7 +467,7 @@ test("reconnect on demande after clean close code", async () => {
     await waitForSteps(["BUS:DISCONNECT"]);
     await runAllTimers();
     startBusService();
-    await waitForSteps(["BUS:CONNECT"]);
+    await waitForSteps(["BUS:RECONNECT"]);
 });
 
 test("remove from main tab candidates when version is outdated", async () => {
@@ -620,6 +620,7 @@ test("worker state is available from the bus service", async () => {
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
         ["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")],
+        ["BUS:RECONNECT", () => asyncStep("BUS:RECONNECT")],
     );
     await makeMockEnv();
     startBusService();
@@ -630,7 +631,7 @@ test("worker state is available from the bus service", async () => {
     await runAllTimers();
     expect(getService("bus_service").workerState).toBe(CONNECTION_STATE.DISCONNECTED);
     startBusService();
-    await waitForSteps(["BUS:CONNECT"]);
+    await waitForSteps(["BUS:RECONNECT"]);
     expect(getService("bus_service").workerState).toBe(CONNECTION_STATE.CONNECTED);
 });
 
@@ -833,7 +834,7 @@ test("J14: several batches within the debounce window write the watermark at mos
     getService("bus_service").addChannel("ch");
     await waitForChannels(["ch"]);
     const writes = [];
-    patchWithCleanup(getService("legacy_multi_tab"), {
+    patchWithCleanup(getService("shared_storage"), {
         setSharedValue(key, value) {
             if (key === lastNotificationIdKey()) {
                 writes.push(value);
@@ -849,7 +850,7 @@ test("J14: several batches within the debounce window write the watermark at mos
     await runAllTimers();
     expect(writes.length).toBeLessThanOrEqual(1);
     // The stored watermark is the highest id seen (never rewound).
-    expect(getService("legacy_multi_tab").getSharedValue(lastNotificationIdKey())).toBe(
+    expect(getService("shared_storage").getSharedValue(lastNotificationIdKey())).toBe(
         3,
     );
 });

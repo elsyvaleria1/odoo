@@ -91,7 +91,7 @@ test("computer sleep doesn't mark connection as lost", async () => {
     await manuallyDispatchProgrammaticEvent(window, "online"); // Online event is triggered when the computer wakes up.
     unlockWebsocket();
     await runAllTimers();
-    await waitForSteps(["BUS:CONNECT"]);
+    await waitForSteps(["BUS:RECONNECT"]);
     expect(getService("bus.monitoring_service").isConnectionLost).toBe(false);
 });
 

@@ -28,14 +28,14 @@ function handleProvideLogs(messageEv) {
 }
 
 export const busLogsService = {
-    dependencies: ["bus_service", "legacy_multi_tab", "worker_service"],
+    dependencies: ["bus_service", "shared_storage", "worker_service"],
     /**
      * @param {import("@web/env").OdooEnv}
      * @param {Partial<import("services").Services>} services
      */
-    start(env, { bus_service, legacy_multi_tab, worker_service }) {
+    start(env, { bus_service, shared_storage, worker_service }) {
         const state = proxy({
-            enabled: legacy_multi_tab.getSharedValue("bus_log_menu.enabled", false),
+            enabled: shared_storage.getSharedValue("bus_log_menu.enabled", false),
             toggleLogging() {
                 state.enabled = !state.enabled;
                 // Always forward to the worker: `setLoggingEnabled` no-ops
@@ -44,10 +44,10 @@ export const busLogsService = {
                 // though the shared worker (alive via other tabs) is what holds
                 // the logging flag.
                 bus_service.setLoggingEnabled(state.enabled);
-                legacy_multi_tab.setSharedValue("bus_log_menu.enabled", state.enabled);
+                shared_storage.setSharedValue("bus_log_menu.enabled", state.enabled);
             },
         });
-        legacy_multi_tab.bus.addEventListener("shared_value_updated", ({ detail }) => {
+        shared_storage.bus.addEventListener("shared_value_updated", ({ detail }) => {
             if (detail.key === "bus_log_menu.enabled") {
                 state.enabled = JSON.parse(detail.newValue);
                 // Forward the cross-tab toggle to the shared worker too:

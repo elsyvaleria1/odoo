@@ -50,7 +50,7 @@ export function lastNotificationIdKey() {
  *  @emits BUS:CONNECT
  *  @emits BUS:DISCONNECT
  *  @emits BUS:RECONNECT
- *  @emits BUS:RECONNECTING
+ *  @emits BUS:WATERMARK_RESET
  *  @emits BUS:WORKER_STATE_UPDATED
  */
 export const busService = {
@@ -58,7 +58,7 @@ export const busService = {
         "bus.parameters",
         "localization",
         "multi_tab",
-        "legacy_multi_tab",
+        "shared_storage",
         "worker_service",
     ],
 
@@ -66,7 +66,7 @@ export const busService = {
         env,
         {
             multi_tab: multiTab,
-            legacy_multi_tab: legacyMultiTab,
+            shared_storage: sharedStorage,
             "bus.parameters": params,
             worker_service: workerService,
         },
@@ -95,9 +95,9 @@ export const busService = {
          * (reads don't fire cross-tab `storage` events).
          */
         function writeWatermarkIfNewer() {
-            const stored = legacyMultiTab.getSharedValue(lastNotificationIdKey(), 0);
+            const stored = sharedStorage.getSharedValue(lastNotificationIdKey(), 0);
             if (stored < state.lastNotificationId) {
-                legacyMultiTab.setSharedValue(
+                sharedStorage.setSharedValue(
                     lastNotificationIdKey(),
                     state.lastNotificationId,
                 );
@@ -183,6 +183,15 @@ export const busService = {
                     connectionInitializedDeferred.resolve();
                     break;
                 }
+                case "BUS:WATERMARK_RESET":
+                    // The only way down for the watermark: written if newer
+                    // everywhere else, a stale one would come back from this
+                    // tab's memory or from storage.
+                    state.lastNotificationId = data;
+                    browser.clearTimeout(watermarkWriteTimeout);
+                    watermarkWriteTimeout = null;
+                    sharedStorage.setSharedValue(lastNotificationIdKey(), data);
+                    break;
                 case "BUS:WORKER_STATE_UPDATED":
                     state.workerState = data;
                     break;
@@ -242,8 +251,7 @@ export const busService = {
                         session.websocket_worker_version
                     }`,
                     db: session.db,
-                    debug: odoo.debug,
-                    lastNotificationId: legacyMultiTab.getSharedValue(
+                    lastNotificationId: sharedStorage.getSharedValue(
                         lastNotificationIdKey(),
                         0,
                     ),

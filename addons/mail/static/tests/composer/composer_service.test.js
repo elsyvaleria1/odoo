@@ -10,7 +10,7 @@ defineMailModels();
 const KEY = "mail.html_composer.enabled";
 
 function emitSharedValueUpdate(env, newValue) {
-    env.services.legacy_multi_tab.bus.trigger("shared_value_updated", {
+    env.services.shared_storage.bus.trigger("shared_value_updated", {
         key: KEY,
         newValue,
     });
@@ -18,7 +18,7 @@ function emitSharedValueUpdate(env, newValue) {
 
 function writeRawSharedValue(env, raw) {
     browser.localStorage.setItem(
-        env.services.legacy_multi_tab.generateLocalStorageKey(KEY),
+        env.services.shared_storage.generateLocalStorageKey(KEY),
         raw,
     );
 }
@@ -34,10 +34,10 @@ test("cross-tab update: a garbage stored value does not throw in the bus listene
 test("cross-tab update: removal reads back as a boolean, not null", async () => {
     const env = await makeMockEnv();
     const composer = env.services["mail.composer"];
-    env.services.legacy_multi_tab.setSharedValue(KEY, true);
+    env.services.shared_storage.setSharedValue(KEY, true);
     emitSharedValueUpdate(env, "true");
     expect(composer.htmlEnabled).toBe(true);
-    env.services.legacy_multi_tab.removeSharedValue(KEY);
+    env.services.shared_storage.removeSharedValue(KEY);
     emitSharedValueUpdate(env, null);
     expect(composer.htmlEnabled).toBe(false);
 });
@@ -46,10 +46,10 @@ test("cross-tab update: a normal toggle from another tab is applied", async () =
     const env = await makeMockEnv();
     const composer = env.services["mail.composer"];
     expect(composer.htmlEnabled).toBe(false);
-    env.services.legacy_multi_tab.setSharedValue(KEY, true);
+    env.services.shared_storage.setSharedValue(KEY, true);
     emitSharedValueUpdate(env, "true");
     expect(composer.htmlEnabled).toBe(true);
-    env.services.legacy_multi_tab.setSharedValue(KEY, false);
+    env.services.shared_storage.setSharedValue(KEY, false);
     emitSharedValueUpdate(env, "false");
     expect(composer.htmlEnabled).toBe(false);
 });
@@ -68,7 +68,7 @@ test("the cross-tab listener agrees with the startup reader on every raw value",
     ]) {
         writeRawSharedValue(env, raw);
         const asStartupWouldRead =
-            env.services.legacy_multi_tab.getSharedValue(KEY, false) === true;
+            env.services.shared_storage.getSharedValue(KEY, false) === true;
         emitSharedValueUpdate(env, raw);
         expect(composer.htmlEnabled).toBe(asStartupWouldRead);
         expect(composer.htmlEnabled).toBe(raw === "true");

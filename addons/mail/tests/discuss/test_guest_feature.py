@@ -36,7 +36,9 @@ class TestGuestFeature(WebsocketCase, MailCommon):
         guest = self.env["mail.guest"].create({"name": "Guest"})
         guest_websocket = self.websocket_connect()
         self.subscribe(
-            guest_websocket, [f"mail.guest_{guest._format_auth_cookie()}"], guest.id
+            guest_websocket,
+            [f"mail.guest_{guest._format_auth_cookie()}"],
+            self.env["bus.bus"]._bus_last_id(),
         )
         guest._bus_send("lambda", {"foo": "bar"})
         self.trigger_notification_dispatching([guest])
@@ -54,7 +56,9 @@ class TestGuestFeature(WebsocketCase, MailCommon):
         self._reset_bus()
         guest_websocket = self.websocket_connect()
         self.subscribe(
-            guest_websocket, [f"mail.guest_{guest._format_auth_cookie()}"], guest.id
+            guest_websocket,
+            [f"mail.guest_{guest._format_auth_cookie()}"],
+            self.env["bus.bus"]._bus_last_id(),
         )
         channel._bus_send("lambda", {"foo": "bar"})
         self.trigger_notification_dispatching([channel])

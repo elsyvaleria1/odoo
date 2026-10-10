@@ -111,7 +111,8 @@ export class BusBus extends models.Model {
 
     /**
      * Re-broadcast stored notifications newer than `last` that still match the
-     * current subscription. Mirrors the server replaying missed notifications
+     * current subscription; with `last` 0, all of them (the server then serves
+     * a lookback window of its own). Mirrors the server replaying missed notifications
      * on (re)subscribe; the worker's own seen-id dedup drops anything the tab
      * already processed, so a replay is a no-op unless there is a genuine gap.
      *
@@ -124,9 +125,6 @@ export class BusBus extends models.Model {
      * @param {number} [last]
      */
     _replayForSubscribe(last) {
-        if (!last) {
-            return;
-        }
         /** @type {import("mock_models").IrWebSocket} */
         const IrWebSocket = this.env["ir.websocket"];
         const authenticatedUserId =

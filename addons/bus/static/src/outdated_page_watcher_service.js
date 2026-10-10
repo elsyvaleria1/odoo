@@ -28,11 +28,11 @@ export class OutdatedPageWatcherService {
      * @param {import("@web/env").OdooEnv}
      * @param {Partial<import("services").Services>} services
      */
-    setup(env, { bus_service, multi_tab, legacy_multi_tab, notification }) {
+    setup(env, { bus_service, multi_tab, shared_storage, notification }) {
         this.notification = notification;
         this.multi_tab = multi_tab;
-        this.legacy_multi_tab = legacy_multi_tab;
-        this.lastNotificationId = legacy_multi_tab.getSharedValue(
+        this.shared_storage = shared_storage;
+        this.lastNotificationId = shared_storage.getSharedValue(
             lastNotificationIdKey(),
         );
         this.closeNotificationFn = undefined;
@@ -67,7 +67,7 @@ export class OutdatedPageWatcherService {
         bus_service.addEventListener(
             "BUS:DISCONNECT",
             () =>
-                (this.lastNotificationId = legacy_multi_tab.getSharedValue(
+                (this.lastNotificationId = shared_storage.getSharedValue(
                     lastNotificationIdKey(),
                 )),
         );
@@ -90,7 +90,7 @@ export class OutdatedPageWatcherService {
             }
             wasBusAlreadyConnected = true;
         });
-        legacy_multi_tab.bus.addEventListener(
+        shared_storage.bus.addEventListener(
             "shared_value_updated",
             ({ detail: { key } }) => {
                 if (key === hasMissedNotificationsKey()) {
@@ -111,10 +111,7 @@ export class OutdatedPageWatcherService {
         );
         if (hasMissedNotifications) {
             this.showOutdatedPageNotification();
-            this.legacy_multi_tab.setSharedValue(
-                hasMissedNotificationsKey(),
-                Date.now(),
-            );
+            this.shared_storage.setSharedValue(hasMissedNotificationsKey(), Date.now());
         }
     }
 
@@ -141,7 +138,7 @@ export class OutdatedPageWatcherService {
 }
 
 export const outdatedPageWatcherService = {
-    dependencies: ["bus_service", "multi_tab", "legacy_multi_tab", "notification"],
+    dependencies: ["bus_service", "multi_tab", "shared_storage", "notification"],
     start(env, services) {
         return new OutdatedPageWatcherService(env, services);
     },

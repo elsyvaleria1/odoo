@@ -3,11 +3,13 @@ import { EventBus } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Deferred } from "@web/core/utils/concurrency";
+import { session } from "@web/session";
 
 /**
  * Main-tab election over the Web Locks API.
  *
- * A single exclusive lock arbitrates the one "main tab" per origin: whichever
+ * A single exclusive lock arbitrates the one "main tab" per database and side
+ * (backend or frontend) of an origin: whichever
  * tab holds it is main, and when it releases the lock (tab closed, `pagehide`,
  * or `unregister()`) the browser hands it to the next waiter, which becomes
  * main. The browser does the arbitration, race-free, with no heartbeats.
@@ -28,7 +30,13 @@ import { Deferred } from "@web/core/utils/concurrency";
  * - `unregister(): void` — terminal: the tab permanently gives up main-tab duties.
  * - `bus`: EventBus emitting "become_main_tab" / "no_longer_main_tab".
  */
-const MAIN_TAB_LOCK = "odoo.bus.main_tab";
+// Per database: another database's tabs do another user's duties. Per side:
+// the duties (sounds, native notifications, ringing) are the backend's, and a
+// website tab opened first would otherwise hold them away from every backend
+// tab of the browser.
+const MAIN_TAB_LOCK = `odoo.bus.main_tab.${session.db}.${
+    session.is_frontend ? "frontend" : "backend"
+}`;
 
 export const multiTabService = {
     start() {
@@ -77,9 +85,21 @@ export const multiTabService = {
         }
 
         function ignoreAbort(error) {
-            if (error?.name !== "AbortError") {
-                throw error;
+            if (error?.name === "AbortError") {
+                return;
             }
+            // Refused outright (e.g. SecurityError in an opaque-origin
+            // frame): no tab can arbitrate through the lock, so behave as
+            // without the API rather than leave every isOnMainTab() waiting.
+            console.warn("Main-tab lock refused; this tab acts as main:", error);
+            becomeMainWithoutLocks();
+        }
+        function becomeMainWithoutLocks() {
+            if (!isMain && !terminated) {
+                isMain = true;
+                bus.trigger("become_main_tab");
+            }
+            settled.resolve();
         }
 
         function acquire() {
@@ -92,11 +112,7 @@ export const multiTabService = {
                 // main" so a single-tab user still gets notifications/sounds.
                 // The rare no-locks multi-tab case may duplicate them — an
                 // acceptable fallback for a browser this fork does not target.
-                if (!isMain) {
-                    isMain = true;
-                    bus.trigger("become_main_tab");
-                }
-                settled.resolve();
+                becomeMainWithoutLocks();
                 return;
             }
             const myAttempt = ++attempt;

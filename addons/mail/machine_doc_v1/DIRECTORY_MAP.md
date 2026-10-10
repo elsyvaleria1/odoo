@@ -132,5 +132,5 @@ there is no unlayered `views/fields/`. Unlike the tables above, these rows are *
 | `security/` | `ir.access.csv` |
 | `migrations/` | `19.0.1.20/post-migration.py`, `19.0.1.21/pre-migration.py` |
 | `static/lib/` | Vendored libs: idb-keyval, lame, odoo_sfu, selfie_segmentation (see `ASSET_LAYERS.md`) |
-| `static/tests/` | 164 HOOT `*.test.js` + helpers + tours — see `TEST_TAGS.md` |
+| `static/tests/` | 165 HOOT `*.test.js` + helpers + tours — see `TEST_TAGS.md` |
 | `push-to-talk-extension/` | Browser extension source for the push-to-talk feature |
