@@ -1,5 +1,6 @@
 import contextlib
 import io
+import zipfile
 from datetime import date
 from types import SimpleNamespace
 from unittest.mock import PropertyMock, patch
@@ -13,6 +14,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.insight_telegram.models.telegram_chat import (
     CHUNK_LIMIT,
+    _answers_the_agent,
     _chunks,
     _decision,
 )
@@ -25,6 +27,10 @@ from odoo.addons.insight_telegram.services.insight_assistant import (
 from odoo.addons.insight_telegram.services.odoo_reader import OdooReader
 from odoo.addons.insight_telegram.services.odoo_tools import OdooTools
 from odoo.addons.telegram.tests.common import TelegramBotTestCase
+
+DOCX_MIMETYPE = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
 
 
 @tagged("post_install", "-at_install")
@@ -936,7 +942,7 @@ class TestWriteOperations(TransactionCase):
             }
 
         removal = write_ops.check(self.env, remove([2, order.line_ids[0].id]))
-        self.assertIn("(se quita)", "\n".join(write_ops.describe(self.env, [removal])))
+        self.assertIn("(removed)", "\n".join(write_ops.describe(self.env, [removal])))
         write_ops.apply(self.env(su=True), [removal], [], self.env.user)
         self.assertEqual(len(order.line_ids), 1, "a draft line is removed")
         for operation in (
@@ -1001,7 +1007,7 @@ class TestWriteOperations(TransactionCase):
                 "ids": [order.id],
                 "values": {
                     "line_ids": [
-                        [1, first.id, {"price_unit": 6}],
+                        [1, first.id, {"price_unit": 6, "discount": 50}],
                         [2, second.id],
                         [
                             0,
@@ -1018,10 +1024,11 @@ class TestWriteOperations(TransactionCase):
         )
         text = "\n".join(write_ops.describe(self.env, [operation]))
         self.assertIn("✏️", text, "the changed line is marked")
-        self.assertIn("(se quita)", text)
+        self.assertIn("(removed)", text)
         self.assertIn("➕", text)
-        # 10 × 6 + 4 × 0; the removed 3 × 7 is not counted
-        self.assertIn("Total: $60.00", text.replace("$ ", "$"))
+        self.assertIn("50", text, "a discount set on a line is shown")
+        # 10 × 6 at 50 % + 4 × 0; the removed 3 × 7 is not counted
+        self.assertIn("Total: $30.00", text.replace("$ ", "$"))
 
     def test_a_proposal_reads_as_the_screen_shows_it(self):
         customer, product = self._sale()
@@ -1092,6 +1099,105 @@ class TestWriteOperations(TransactionCase):
                 },
             )
 
+    def test_replacing_or_taking_lines_is_refused(self):
+        customer, product = self._sale()
+        line = [0, 0, {"product_id": product.id, "product_qty": 1}]
+        order = self.env["sale.order"].create(
+            {"partner_id": customer.id, "line_ids": [line, line]}
+        )
+        other = self.env["sale.order"].create(
+            {"partner_id": customer.id, "line_ids": [line]}
+        )
+        for command in (
+            [6, 0, order.line_ids[:1].ids],
+            [6, 0, []],
+            [4, other.line_ids.id],
+        ):
+            with (
+                self.subTest(command=command),
+                self.assertRaisesRegex(write_ops.OperationError, "not allowed"),
+            ):
+                write_ops.check(
+                    self.env,
+                    {
+                        "op": "write",
+                        "model": "sale.order",
+                        "ids": [order.id],
+                        "values": {"line_ids": [command]},
+                    },
+                )
+        self.assertEqual(len(order.line_ids), 2, "nothing was deleted")
+
+    def test_a_many2many_still_links_and_unlinks(self):
+        if "project.task" not in self.env:
+            self.skipTest("project is not installed")
+        project = self.env["project.project"].create({"name": "Ask Probe Project"})
+        task = self.env["project.task"].create(
+            {"name": "Ask Probe Task", "project_id": project.id}
+        )
+        # assigning users links them: it creates and deletes nothing
+        operation = write_ops.check(
+            self.env,
+            {
+                "op": "write",
+                "model": "project.task",
+                "ids": [task.id],
+                "values": {"user_ids": [[6, 0, self.env.user.ids]]},
+            },
+        )
+        text = "\n".join(write_ops.describe(self.env, [operation]))
+        self.assertIn(self.env.user.display_name, text)
+
+    def test_a_line_cannot_reach_the_technical_side(self):
+        partner = self.env["res.partner"].create({"name": "Ask Probe Owner"})
+        with self.assertRaisesRegex(write_ops.OperationError, "res.users"):
+            write_ops.check(
+                self.env,
+                {
+                    "op": "write",
+                    "model": "res.partner",
+                    "ids": [partner.id],
+                    "values": {
+                        "user_ids": [[0, 0, {"login": "ask-probe", "name": "Probe"}]]
+                    },
+                },
+            )
+
+    def test_only_a_screen_button_can_be_pressed(self):
+        if "sale.order" in self.env:
+            self.assertTrue(
+                write_ops._is_screen_button(self.env, "sale.order", "action_confirm")
+            )
+        self.assertFalse(
+            write_ops._is_screen_button(self.env, "res.partner", "action_probe_never")
+        )
+        for method in ("action_archive", "action_undo_reconciliation"):
+            with (
+                self.subTest(method=method),
+                self.assertRaisesRegex(write_ops.OperationError, "not allowed"),
+            ):
+                write_ops.check(
+                    self.env,
+                    {
+                        "op": "action",
+                        "model": "res.partner",
+                        "ids": [1],
+                        "method": method,
+                    },
+                )
+
+    def test_a_user_email_is_not_changed_through_the_bot(self):
+        with self.assertRaisesRegex(write_ops.OperationError, "Odoo user"):
+            write_ops.check(
+                self.env,
+                {
+                    "op": "write",
+                    "model": "res.partner",
+                    "ids": [self.env.user.partner_id.id],
+                    "values": {"email": "elsewhere@example.com"},
+                },
+            )
+
     def test_an_unknown_field_is_explained(self):
         with self.assertRaisesRegex(write_ops.OperationError, "no field"):
             write_ops.check(
@@ -1134,7 +1240,7 @@ class TestWriteOperations(TransactionCase):
                 [("res_model", "=", "sale.order"), ("res_id", "=", order.id)]
             )
         )
-        self.assertIn("a petición de", order.message_ids[:1].body)
+        self.assertIn("at the request of", order.message_ids[:1].body)
 
     def test_a_failing_operation_changes_nothing(self):
         customer, _product = self._sale()
@@ -1279,6 +1385,49 @@ class TestFiles(TransactionCase):
         self.assertEqual(_decision("cancelar"), "cancel")
         self.assertEqual(_decision("no autorizo"), "cancel")
         self.assertIsNone(_decision("¿cuánto vendimos?"))
+        for authorizing in ("Sí, autorizo.", "si lo autorizo", "Autorizo, gracias"):
+            with self.subTest(text=authorizing):
+                self.assertEqual(_decision(authorizing), "authorize")
+        for cancelling in ("No", "Cancélalo", "descartar"):
+            with self.subTest(text=cancelling):
+                self.assertEqual(_decision(cancelling), "cancel")
+        # a sentence that only mentions authorizing is a new question
+        for question in (
+            "No, no lo autorizo todavía",
+            "¿Quién autorizó la OC 123?",
+            "confirmo mañana",
+            "todavía no autorizo, cambia el precio",
+            "cancela el pedido S00123",
+        ):
+            with self.subTest(text=question):
+                self.assertIsNone(_decision(question))
+
+    def test_a_link_is_no_question_of_the_agent(self):
+        now = fields.Datetime.to_string(fields.Datetime.now())
+        located = [
+            {
+                "interpretation": {"query": "none"},
+                "answer": "Está aquí: https://www.google.com/maps?q=19.1,-99.5",
+                "at": now,
+            }
+        ]
+        self.assertFalse(_answers_the_agent(located))
+
+    def test_an_office_file_that_unpacks_too_much_is_refused(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("word/document.xml", "x" * 5000)
+        with patch.object(files, "MAX_UNPACKED", 1000):
+            block = files.blocks(
+                [
+                    (
+                        "bomb.docx",
+                        buffer.getvalue(),
+                        DOCX_MIMETYPE,
+                    )
+                ]
+            )
+        self.assertIn("could not be read", block[0]["text"])
 
 
 @tagged("post_install", "-at_install")
@@ -1367,10 +1516,23 @@ class TestSuperBotFlow(TelegramBotTestCase):
             }
         )
         shell = self.env["res.company"].create({"name": "Ask Probe Shell Co"})
+        unserved = self.env["res.company"].create({"name": "Ask Probe Unserved"})
+        self.env["account.journal"].create(
+            {
+                "name": "Ask Probe Unserved Misc",
+                "code": "APU",
+                "type": "general",
+                "company_id": unserved.id,
+            }
+        )
+        self.test_bot.company_ids = self.env.company | other | shell
         self.assertNotIn(other, self.test_user.company_ids)
-        companies = self.test_chat.with_user(self.test_user)._insight_companies()
+        companies = self.test_chat.with_user(self.test_user)._insight_companies(
+            self.test_bot
+        )
         self.assertIn(other, companies, "not only the person's own companies")
         self.assertNotIn(shell, companies, "a company with no journal is left out")
+        self.assertNotIn(unserved, companies, "only the companies the bot serves")
 
     def test_the_company_is_picked_with_a_button(self):
         if "sale.order" not in self.env:
@@ -1440,6 +1602,77 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self.assertEqual(printed.call_count, 1, "printed once, as it stands now")
         self.assertEqual(printed.call_args.args[1], partner)
         self.assertEqual(send.call_count, 1)
+
+    def test_pending_changes_are_the_handlers_flow(self):
+        proposal = [
+            {
+                "op": "create",
+                "model": "res.partner",
+                "values": {"name": "Ask Probe Flow"},
+            }
+        ]
+        self._job({"text": "crea Ask Probe Flow"}, agent=("Propongo.", proposal))
+        self.assertEqual(self.test_chat.flow_owner, "telegram.handler.insight")
+        self.assertTrue(self.test_chat._insight_pending())
+        # /cancelar, the core's command, discards them
+        with self.mock_api_gateway_post(self.mock_ok):
+            owner = self.env["telegram.router"]._cancel_flow(
+                self.test_bot, self.test_chat
+            )
+        self.assertEqual(owner._name, "telegram.handler.insight")
+        self.assertFalse(self.test_chat._insight_pending())
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "=", "Ask Probe Flow")])
+        )
+
+    def test_a_button_acts_only_on_its_own_proposal(self):
+        first = [
+            {
+                "op": "create",
+                "model": "res.partner",
+                "values": {"name": "Ask Probe First"},
+            }
+        ]
+        second = [
+            {
+                "op": "create",
+                "model": "res.partner",
+                "values": {"name": "Ask Probe Second"},
+            }
+        ]
+        self._job({"text": "crea First"}, agent=("Propongo.", first))
+        old_nonce = self.test_chat._insight_pending()["nonce"]
+        self._job({"text": "mejor crea Second"}, agent=("Propongo.", second))
+        sent, _mocks = self._job({"insight_action": "authorize", "nonce": old_nonce})
+        self.assertIn("earlier proposal", sent)
+        self.assertFalse(
+            self.env["res.partner"].search([("name", "like", "Ask Probe Second")])
+        )
+        nonce = self.test_chat._insight_pending()["nonce"]
+        with patch(
+            "odoo.addons.insight_telegram.services.documents.print_records",
+            return_value=[],
+        ):
+            self._job({"insight_action": "authorize", "nonce": nonce})
+        self.assertTrue(
+            self.env["res.partner"].search([("name", "=", "Ask Probe Second")])
+        )
+        sent, _mocks = self._job({"insight_action": "authorize", "nonce": nonce})
+        self.assertIn("no changes waiting", sent)
+
+    def test_an_audio_file_is_heard(self):
+        heard = SimpleNamespace(text="¿cuántos clientes hay?", failure=None)
+        with patch.object(InsightAssistant, "hear", return_value=heard) as hear:
+            self._job(
+                {
+                    "audio": {
+                        "file_id": "audio-1",
+                        "mime_type": "audio/mpeg",
+                        "duration": 4,
+                    }
+                }
+            )
+        self.assertEqual(hear.call_count, 1)
 
     def test_cancelling_discards_the_proposals(self):
         proposal = [

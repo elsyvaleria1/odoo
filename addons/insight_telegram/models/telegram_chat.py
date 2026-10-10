@@ -1,5 +1,6 @@
 import logging
 import re
+import uuid
 from datetime import datetime, timedelta
 
 import pytz
@@ -13,6 +14,20 @@ from ..services.insight_agent import InsightAgent
 from ..services.insight_assistant import HELP, SEND_DOCUMENT, InsightAssistant
 from ..services.odoo_reader import OdooReader
 from ..services.odoo_tools import STATEMENT_ID, OdooTools
+from .telegram_handler import (
+    AUTHORIZE,
+    AUTHORIZE_ACTION,
+    CANCEL,
+    CANCEL_ACTION,
+    COMPANY,
+    DETAIL,
+    HANDLER,
+    PDF,
+    PICK_COMPANY,
+    STATEMENT_PDF,
+    callback,
+)
+from odoo.addons.speech_telegram.tools.voice import voice_payload
 from odoo.addons.telegram.tools import format as tg
 from odoo.addons.telegram.tools import keyboard as kb
 from odoo.addons.telegram.tools.authority import keeping, operating
@@ -29,12 +44,24 @@ DEFAULT_TZ = "America/Mexico_City"
 # Below Telegram's 4096 so a chunk never needs truncating once tags are added.
 CHUNK_LIMIT = 3800
 AGENT = "agent"
-PENDING_KEY = "telegram_insight_pending"
+# where the changes waiting for authorization were kept before they became
+# the handler's flow: only cleared now
+LEGACY_PENDING_KEY = "telegram_insight_pending"
 FILES_KEY = "telegram_insight_files"
-# changes not authorized within this long are dropped
-PENDING_TTL = timedelta(hours=1)
-_AUTHORIZE_WORDS = ("autoriz", "authoriz", "confirmo", "apruebo")
-_CANCEL_WORDS = ("cancel", "no autoriz", "descart")
+# how recent the agent's question must be for a message to be its reply
+FOLLOW_UP_WINDOW = timedelta(minutes=30)
+# a whole reply that authorizes or cancels, once normalized: a sentence that
+# only mentions authorizing ("¿quién autorizó…?", "no lo autorizo todavía")
+# is a new question, never a decision
+_AUTHORIZE = re.compile(
+    r"^(si )?(lo )?(autorizo|autorizado|autorizalo|confirmo|apruebo|authorize|"
+    r"i authorize|approve|approved)( (todo|gracias|por favor|porfa|porfavor))*$"
+)
+_CANCEL = re.compile(
+    r"^(no|no (lo )?autorizo|cancelar|cancela|cancelalo|cancelado|descartar|"
+    r"descarta|descartalo|cancel)( (todo|gracias|por favor|porfa))*$"
+)
+_URL = re.compile(r"https?://\S+")
 # below this, the classifier doubts its report answers the question
 CONFIDENCE_FLOOR = 0.6
 _BOLD = re.compile(r"\*\*(.+?)\*\*")
@@ -73,12 +100,17 @@ class TelegramChat(models.Model):
         if action == PICK_COMPANY:
             self._insight_pick_company(bot, chat, message, reader_user, tr_env)
             return
+        if action in (AUTHORIZE_ACTION, CANCEL_ACTION):
+            self._insight_decide_button(bot, chat, message, tr_env)
+            return
         if action:
             self._insight_statement_action(bot, chat, message, reader_user, tr_env)
             return
 
         question = (message.get("text") or message.get("caption") or "").strip()
-        attached = _files_of(message)
+        # a recording, a voice note or an audio file, is heard, not read
+        recording = voice_payload(message)
+        attached = [] if recording else _files_of(message)
         if attached:
             chat._set_context(
                 FILES_KEY,
@@ -87,7 +119,7 @@ class TelegramChat(models.Model):
                     "at": fields.Datetime.to_string(fields.Datetime.now()),
                 },
             )
-        if not question and not attached:
+        if recording or (not question and not attached):
             heard = assistant.hear(chat, message)
             question = (heard.text or "").strip()
             if not question:
@@ -101,35 +133,11 @@ class TelegramChat(models.Model):
 
         pending = chat._insight_pending()
         decision = _decision(question) if pending else None
-        if decision == "authorize" and pending.get("needs_company"):
-            bot.send_message(
-                chat.chat_id,
-                tr_env._("First choose the company:"),
-                reply_markup=self._insight_company_buttons(tr_env),
-            )
-            return
         if decision:
-            pdfs = []
-            if decision == "authorize":
-                answer, pdfs = self._insight_authorize(bot, pending, tr_env)
-            else:
-                answer = tr_env._("Cancelled: nothing was changed.")
-            chat._insight_set_pending(None)
-            self._insight_reply(
-                bot, chat, question, {"decision": decision}, answer, decision
-            )
-            # each record created goes with its PDF, after the links
-            for filename, content in pdfs:
-                bot.send_document(chat.chat_id, content, filename)
+            self._insight_decide(bot, chat, pending, decision, question, tr_env)
             return
 
-        tz = self.env.user.tz or reader_user.tz or DEFAULT_TZ
-        today = datetime.now(pytz.timezone(tz)).date()
-        reader = OdooReader(
-            self.env.registry,
-            reader_user.id,
-            context={"lang": tr_env.lang, "tz": tz},
-        )
+        reader, tz, today = self._insight_reader(reader_user, tr_env)
         queries = available_queries(self.env)
         interpretation, answer, answered_by, proposals = {}, "", False, []
         markup = None
@@ -197,12 +205,14 @@ class TelegramChat(models.Model):
             with reader.env() as env:
                 needs_company = write_ops.needs_company(env, proposals)
                 summary = write_ops.describe(env, proposals)
+            nonce = uuid.uuid4().hex[:8]
             chat._insight_set_pending(
                 {
                     "operations": proposals,
                     "files": [list(item) for item in attached],
                     "at": fields.Datetime.to_string(fields.Datetime.now()),
                     "needs_company": needs_company,
+                    "nonce": nonce,
                 }
             )
             answer = "\n".join(
@@ -213,9 +223,9 @@ class TelegramChat(models.Model):
                 ]
             )
             markup = (
-                self._insight_company_buttons(tr_env)
+                self._insight_company_buttons(bot, tr_env, nonce)
                 if needs_company
-                else self._insight_authorize_buttons(tr_env)
+                else self._insight_authorize_buttons(tr_env, nonce)
             )
             interpretation = {**interpretation, "proposals": proposals}
         self._insight_reply(
@@ -235,13 +245,7 @@ class TelegramChat(models.Model):
                 tr_env,
             )
         else:
-            tz = self.env.user.tz or reader_user.tz or DEFAULT_TZ
-            today = datetime.now(pytz.timezone(tz)).date()
-            reader = OdooReader(
-                self.env.registry,
-                reader_user.id,
-                context={"lang": tr_env.lang, "tz": tz},
-            )
+            reader, tz, today = self._insight_reader(reader_user, tr_env)
             query = available_queries(self.env)["statement"]
             with reader.env() as env:
                 answer = catalog.answer(
@@ -299,45 +303,60 @@ class TelegramChat(models.Model):
         ]
 
     @staticmethod
-    def _insight_authorize_buttons(tr_env):
+    def _insight_authorize_buttons(tr_env, nonce):
         return kb.confirm_cancel(
-            tr_env._("✅ Authorize"), "ins_ok", tr_env._("❌ Cancel"), "ins_no"
+            tr_env._("✅ Authorize"),
+            callback(AUTHORIZE, nonce),
+            tr_env._("❌ Cancel"),
+            callback(CANCEL, nonce),
         )
 
-    def _insight_companies(self):
-        """The companies a change may be made in: every one that operates,
-        whatever the person's own companies are, as the bot writes in
-        superuser mode. One operates when it has accounting journals; a shell
-        company without any (the database's default one) is left out."""
+    def _insight_companies(self, bot):
+        """The companies a change may be made in: every one the bot serves
+        that operates, whatever the person's own companies are."""
+        # the bot writes in superuser mode, so the person's companies do not
+        # bound it, the bot's do; a company operates when it has accounting
+        # journals, which leaves out a shell one such as the database's default
         system = self.env["res.company"].sudo().env
-        companies = system["res.company"].search([])
-        operating = system["account.journal"].search([]).company_id
-        return (companies & operating or companies).sorted("display_name")
+        companies = keeping(bot).company_ids or system["res.company"].search([])
+        with_journals = (
+            system["account.journal"]
+            .search([("company_id", "in", companies.ids)])
+            .company_id
+        )
+        return (companies & with_journals or companies).sorted("display_name")
 
-    def _insight_company_buttons(self, tr_env):
-        """One button per company of the person, and one to cancel."""
+    def _insight_company_buttons(self, bot, tr_env, nonce):
+        """One button per company a change may be made in, and one to cancel."""
         rows = [
-            [kb.button(f"🏢 {company.display_name}", f"ins_co:{company.id}")]
-            for company in self._insight_companies()
+            [
+                kb.button(
+                    f"🏢 {company.display_name}", callback(COMPANY, company.id, nonce)
+                )
+            ]
+            for company in self._insight_companies(bot)
         ]
-        rows.append([kb.button(tr_env._("❌ Cancel"), "ins_no")])
+        rows.append([kb.button(tr_env._("❌ Cancel"), callback(CANCEL, nonce))])
         return kb.keyboard(*rows)
 
     def _insight_pick_company(self, bot, chat, message, reader_user, tr_env):
         """A company button: the pending changes get it, and wait for the
         authorization."""
         pending = chat._insight_pending()
-        company = self._insight_companies().filtered(
+        company = self._insight_companies(bot).filtered(
             lambda found: found.id == int(message.get("company_id") or 0)
         )
-        if not pending or not pending.get("needs_company") or not company:
+        if (
+            not pending
+            or not pending.get("needs_company")
+            or not company
+            or not _same_proposal(pending, message)
+        ):
             bot.send_message(
                 chat.chat_id, tr_env._("There is nothing waiting for a company.")
             )
             return
-        reader = OdooReader(
-            self.env.registry, reader_user.id, context={"lang": tr_env.lang}
-        )
+        reader, _tz, _today = self._insight_reader(reader_user, tr_env)
         with reader.env() as env:
             operations = write_ops.set_company(env, pending["operations"], company.id)
             summary = write_ops.describe(env, operations)
@@ -352,8 +371,86 @@ class TelegramChat(models.Model):
             {"action": PICK_COMPANY, "company_id": company.id},
             answer,
             PICK_COMPANY,
-            markup=self._insight_authorize_buttons(tr_env),
+            markup=self._insight_authorize_buttons(tr_env, pending.get("nonce")),
         )
+
+    def _insight_decide_button(self, bot, chat, message, tr_env) -> None:
+        """An Authorize or Cancel button: the decision on the proposal it was
+        shown under, if that one still waits."""
+        pending = chat._insight_pending()
+        if not pending:
+            bot.send_message(
+                chat.chat_id,
+                tr_env._(
+                    "There are no changes waiting: they were already applied, "
+                    "cancelled, or expired after an hour."
+                ),
+            )
+            return
+        if not _same_proposal(pending, message):
+            bot.send_message(
+                chat.chat_id,
+                tr_env._(
+                    "That button belongs to an earlier proposal: use the buttons "
+                    "under the latest one."
+                ),
+            )
+            return
+        decision = (
+            "authorize" if message["insight_action"] == AUTHORIZE_ACTION else "cancel"
+        )
+        label = (
+            tr_env._("✅ Authorize")
+            if decision == "authorize"
+            else tr_env._("❌ Cancel")
+        )
+        self._insight_decide(bot, chat, pending, decision, label, tr_env)
+
+    def _insight_decide(self, bot, chat, pending, decision, question, tr_env) -> None:
+        """Apply or discard the pending changes, and say what happened."""
+        if decision == "authorize" and pending.get("needs_company"):
+            bot.send_message(
+                chat.chat_id,
+                tr_env._("First choose the company:"),
+                reply_markup=self._insight_company_buttons(
+                    bot, tr_env, pending.get("nonce")
+                ),
+            )
+            return
+        pdfs = []
+        if decision == "authorize":
+            answer, pdfs = self._insight_authorize(bot, pending, tr_env)
+        else:
+            answer = tr_env._("Cancelled: nothing was changed.")
+        chat._insight_set_pending(None)
+        self._insight_reply(
+            bot, chat, question, {"decision": decision}, answer, decision
+        )
+        # each record created or changed goes with its PDF, after the links
+        for filename, content in pdfs:
+            bot.send_document(chat.chat_id, content, filename)
+
+    def _insight_reader(self, reader_user, tr_env) -> tuple:
+        """The read-only reader of an answer, in the asker's timezone, with
+        that timezone and its current date."""
+        tz = self.env.user.tz or reader_user.tz or DEFAULT_TZ
+        today = datetime.now(pytz.timezone(tz)).date()
+        reader = OdooReader(
+            self.env.registry,
+            reader_user.id,
+            context={"lang": tr_env.lang, "tz": tz},
+        )
+        return reader, tz, today
+
+    def _insight_super_env(self, user, lang=None):
+        """`user`'s environment in superuser mode over every company, `user`'s
+        own one first: the default of anything left unset."""
+        env = self.env(user=user.id, su=True)
+        companies = user.company_id | env["res.company"].search([])
+        context = {**env.context, "allowed_company_ids": companies.ids}
+        if lang:
+            context["lang"] = lang
+        return env(context=context)
 
     def _insight_download(self, bot, attached) -> list:
         """``[(name, bytes, mimetype)]`` of the files a message carries."""
@@ -369,17 +466,7 @@ class TelegramChat(models.Model):
         superuser mode but in their name: what was done, with a link to each
         record, and the PDF Odoo prints for each record created or changed."""
         requester = self.env.user
-        env = self.env(user=requester.id, su=True)
-        # the person's own company first: it is the default of anything
-        # the operations leave unset
-        companies = requester.company_id | env["res.company"].search([])
-        env = env(
-            context={
-                **env.context,
-                "lang": tr_env.lang,
-                "allowed_company_ids": companies.ids,
-            }
-        )
+        env = self._insight_super_env(requester, tr_env.lang)
         try:
             touched = write_ops.apply(
                 env,
@@ -417,14 +504,7 @@ class TelegramChat(models.Model):
         sent. Printing writes report caches, so it runs in this job's own
         transaction, as the reader in superuser mode over every company."""
         kind = interpretation.get("document_kind") or "credit_file"
-        env = self.env(user=reader_user.id, su=True)
-        env = env(
-            context={
-                **env.context,
-                "lang": tr_env.lang,
-                "allowed_company_ids": env["res.company"].search([]).ids,
-            }
-        )
+        env = self._insight_super_env(reader_user, tr_env.lang)
         try:
             files, names = documents.collect(env, kind, interpretation)
         except NotFound as error:
@@ -478,27 +558,28 @@ class TelegramChat(models.Model):
         as the reader in superuser mode over every company."""
         if not requests:
             return
-        env = self.env(user=reader.uid, su=True)
-        env = env(
-            context={
-                **env.context,
-                "allowed_company_ids": env["res.company"].search([]).ids,
-            }
-        )
+        env = self._insight_super_env(self.env["res.users"].browse(reader.uid))
         bot.send_chat_action(chat, "upload_document")
         for report_id, model, ids in requests:
             if report_id == STATEMENT_ID:
+                files = []
                 for partner in env["res.partner"].browse(ids).exists():
-                    for filename, content in documents.statements(env, partner):
-                        bot.send_document(chat.chat_id, content, filename)
-                continue
-            report = env["ir.actions.report"].browse(report_id)
-            for record in env[model].browse(ids).exists():
-                content, _format = env["ir.actions.report"]._render_qweb_pdf(
-                    report.id, record.ids
+                    try:
+                        files += documents.statements(env, partner)
+                    except Exception:
+                        _logger.info(
+                            "insight_telegram could not print the statement of %s",
+                            partner,
+                            exc_info=True,
+                        )
+            else:
+                report = env["ir.actions.report"].browse(report_id)
+                files = documents.print_records(
+                    env, env[model].browse(ids).exists(), report
                 )
-                name = (record.display_name or report.name).replace("/", "-")
-                bot.send_document(chat.chat_id, content, f"{name}.pdf")
+            # a document that fails to print is left out, never the answer
+            for filename, content in files:
+                bot.send_document(chat.chat_id, content, filename)
 
     def _insight_recent_files(self) -> list:
         """The files sent in this chat lately, for a follow-up about them."""
@@ -511,21 +592,31 @@ class TelegramChat(models.Model):
         return [tuple(item) for item in recent.get("files", [])]
 
     def _insight_pending(self):
-        """The changes waiting for this chat's authorization, if still fresh."""
-        pending = self._get_context(PENDING_KEY)
-        if not pending:
+        """The changes waiting for this chat's authorization: the handler's
+        open flow, which expires with the core's flow lifetime."""
+        self.check_singleton()
+        if not self._flow_is_open() or self.flow_owner != HANDLER:
             return None
-        cutoff = fields.Datetime.to_string(fields.Datetime.now() - PENDING_TTL)
-        return pending if pending.get("at", "") >= cutoff else None
+        return dict(self.flow_data or {}) or None
 
     def _insight_set_pending(self, pending) -> None:
-        self._set_context(PENDING_KEY, pending)
+        """Keep `pending` as the handler's flow, or end it on None."""
+        self.check_singleton()
+        if not pending:
+            if self.flow_owner == HANDLER:
+                self._flow_end()
+            return
+        if self._flow_is_open() and self.flow_owner == HANDLER:
+            self._flow_advance(data=pending)
+        else:
+            self._flow_start(HANDLER, "authorize", pending)
 
     def _insight_forget(self) -> None:
         """Start the conversation over: no history, files or pending changes."""
         self._set_context(HISTORY_KEY, [])
         self._set_context(FILES_KEY, None)
-        self._set_context(PENDING_KEY, None)
+        self._set_context(LEGACY_PENDING_KEY, None)
+        self._insight_set_pending(None)
 
     def _insight_history(self) -> list:
         """The recent questions of this chat and how each was read, oldest
@@ -550,24 +641,17 @@ class TelegramChat(models.Model):
         self._set_context(HISTORY_KEY, history[-HISTORY_SIZE:])
 
 
-PICK_COMPANY = "pick_company"
-STATEMENT_DETAIL = "statement_detail"
-STATEMENT_PDF = "statement_pdf"
-
-
 def _statement_buttons(tr_env, extras, interpretation):
     """The breakdown and PDF buttons under a statement's summary."""
     partner_id = extras.get("statement_partner_id")
     if interpretation.get("query") != "statement" or not partner_id:
         return None
-    buttons = [kb.button(tr_env._("📎 PDF"), f"ins_pdf:{partner_id}")]
+    buttons = [kb.button(tr_env._("📎 PDF"), callback(PDF, partner_id))]
     if not interpretation.get("detail"):
-        buttons.insert(0, kb.button(tr_env._("📋 Breakdown"), f"ins_det:{partner_id}"))
+        buttons.insert(
+            0, kb.button(tr_env._("📋 Breakdown"), callback(DETAIL, partner_id))
+        )
     return kb.keyboard(buttons)
-
-
-# how recent the agent's question must be for a message to be its reply
-FOLLOW_UP_WINDOW = timedelta(minutes=30)
 
 
 def _answers_the_agent(history) -> bool:
@@ -586,26 +670,39 @@ def _answers_the_agent(history) -> bool:
         return True
     if interpretation.get("query") != "none":
         return False
-    return "?" in (last.get("answer") or "")[-400:]
+    # a link's query string ("maps?q=") is no question
+    answer = _URL.sub("", last.get("answer") or "")
+    return "?" in answer[-400:]
 
 
 def _decision(text):
-    """Whether a reply authorizes or cancels the pending changes, else None."""
-    words = remove_accents(text or "").lower().strip(" .!¡¿?")
-    if any(words.startswith(word) for word in _CANCEL_WORDS) or words == "no":
+    """Whether a reply, as a whole, authorizes or cancels the pending
+    changes, else None: anything else is a new question."""
+    words = " ".join(
+        re.sub(r"[^\w\s]", " ", remove_accents(text or "").lower()).split()
+    )
+    if _CANCEL.match(words):
         return "cancel"
-    if any(word in words for word in _AUTHORIZE_WORDS) and len(words) <= 60:
+    if _AUTHORIZE.match(words):
         return "authorize"
     return None
 
 
+def _same_proposal(pending, message) -> bool:
+    """Whether a button was shown under the proposal still pending: a button
+    from before buttons carried their proposal counts as the current one."""
+    nonce = message.get("nonce")
+    return not nonce or not pending.get("nonce") or nonce == pending["nonce"]
+
+
 def _files_of(message) -> list:
-    """``[(file_id, name, mimetype)]`` of the photo or files a message carries."""
+    """``[(file_id, name, mimetype)]`` of the photo or files a message carries;
+    a recording is heard instead (`voice_payload`)."""
     found = []
     if message.get("photo"):
         photo = message["photo"][-1]
         found.append((photo["file_id"], "photo.jpg", "image/jpeg"))
-    for kind in ("document", "audio", "video"):
+    for kind in ("document", "video"):
         item = message.get(kind)
         if item:
             found.append(
@@ -648,6 +745,7 @@ def _help_text(tr_env, queries, with_agent):
         "statement": tr_env._("account statements"),
         "salaries": tr_env._("salaries"),
         "headcount": tr_env._("employees"),
+        "location": tr_env._("where people and vehicles are (GPS)"),
     }
     listed = ", ".join(label for key, label in topics.items() if key in queries)
     lines = [
