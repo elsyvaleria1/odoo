@@ -2533,9 +2533,15 @@ class TestCashFlowReport(TestAccountReportsCommon):
             fields.Date.from_string("2016-01-01"),
             fields.Date.from_string("2016-01-01"),
         )
-        self.account_operating.tag_ids = [
-            Command.link(self.env.ref("account.account_tag_investing").id)
-        ]
+        self.env.flush_all()
+        self.env.cr.execute(
+            "INSERT INTO account_account_account_tag VALUES (%s, %s)",
+            [
+                self.account_operating.id,
+                self.env.ref("account.account_tag_investing").id,
+            ],
+        )
+        self.env.invalidate_all()
         move = self.env["account.move"].create(
             {
                 "move_type": "entry",

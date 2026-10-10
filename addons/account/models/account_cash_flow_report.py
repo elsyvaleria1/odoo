@@ -1,4 +1,4 @@
-from odoo import models
+from odoo import api, models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, Query
 
@@ -229,6 +229,23 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _get_cashflow_tag_ids(self):
         """Get the account tag ids that are relevant for the cash flow report."""
         return self._get_tags_ids().values()
+
+    @api.model
+    def _get_cash_flow_tag_families(self):
+        Tag = self.env["account.account.tag"]
+        registry = self.env.registry
+        pending = ["account.cash.flow.report.handler"]
+        seen = set()
+        families = {}
+        while pending:
+            name = pending.pop()
+            if name in seen:
+                continue
+            seen.add(name)
+            pending.extend(registry[name]._inherit_children)
+            tag_ids = frozenset(self.env[name]._get_cashflow_tag_ids())
+            families.setdefault(tag_ids, Tag.browse(sorted(tag_ids)))
+        return list(families.values())
 
     def _get_cash_flow_tag_join(self, cash_flow_tag_ids) -> SQL:
         return SQL(

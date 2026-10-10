@@ -5,7 +5,7 @@ from unittest.mock import patch
 from markupsafe import Markup
 
 from odoo import Command
-from odoo.exceptions import RedirectWarning, UserError
+from odoo.exceptions import RedirectWarning, UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.account.models.chart_template import (
@@ -1692,6 +1692,30 @@ class TestChartTemplate(AccountTestInvoicingCommon):
             {"Test account tag", "Test account tag 2"},
             set(accounts[1].tag_ids.mapped("name")),
         )
+
+    def test_a_template_account_with_two_cash_flow_tags_is_refused(self):
+        def local_get_data(self, template_code):
+            data = test_get_data(self, template_code)
+            data["account.account"]["test_account"] = {
+                "name": "Two cash flow tags",
+                "code": "777779",
+                "account_type": "income_other",
+                "tag_ids": "account.account_tag_operating,account.account_tag_investing",
+            }
+            return data
+
+        with (
+            patch.object(
+                AccountChartTemplate,
+                "_prepare_chart_template_data",
+                side_effect=local_get_data,
+                autospec=True,
+            ),
+            self.assertRaisesRegex(ValidationError, "several cash-flow tags"),
+        ):
+            self.env["account.chart.template"].try_loading(
+                "test", company=self.company, install_demo=False
+            )
 
     def test_chart_template_company_without_country(self):
         company = self.env["res.company"].create(

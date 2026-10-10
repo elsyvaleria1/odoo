@@ -178,10 +178,7 @@ class TestAccountMergeWizard(TestAccountMergeCommon):
                         self.company_data["default_tax_sale"].id,
                         self.company_data_2["default_tax_sale"].id,
                     ],
-                    "tag_ids": [
-                        self.env.ref("account.account_tag_operating").id,
-                        self.env.ref("account.account_tag_investing").id,
-                    ],
+                    "tag_ids": [self.env.ref("account.account_tag_operating").id],
                 },
                 {
                     "company_ids": [self.company_1.id, self.company_2.id],
@@ -191,10 +188,7 @@ class TestAccountMergeWizard(TestAccountMergeCommon):
                         self.company_data["default_tax_sale"].id,
                         self.company_data_2["default_tax_sale"].id,
                     ],
-                    "tag_ids": [
-                        self.env.ref("account.account_tag_operating").id,
-                        self.env.ref("account.account_tag_investing").id,
-                    ],
+                    "tag_ids": [self.env.ref("account.account_tag_operating").id],
                 },
             ],
         )
@@ -376,3 +370,67 @@ class TestAccountMergeWizard(TestAccountMergeCommon):
         self.assertEqual(root_account.company_ids, self.company_1 | branch)
         self.assertEqual(root_account.with_company(self.company_1).code, "999971")
         self.assertEqual(root_account.with_company(branch).code, "999971")
+
+    def _create_branch_accounts(self, tags_per_account):
+        branches = self.env["res.company"].create(
+            [
+                {"name": f"Cash flow branch {index}", "parent_id": self.company_1.id}
+                for index in range(len(tags_per_account) - 1)
+            ]
+        )
+        companies = self.company_1 | branches
+        self.env.user.company_ids |= branches
+        Account = self.env["account.account"].with_context(
+            allowed_company_ids=companies.ids
+        )
+        return Account.concat(
+            *(
+                Account.create(
+                    {
+                        "code": f"99981{index}",
+                        "name": f"Cash flow merge {index}",
+                        "account_type": "expense",
+                        "company_ids": [Command.set(company.ids)],
+                        "tag_ids": [Command.set(tags.ids)],
+                    }
+                )
+                for index, (company, tags) in enumerate(
+                    zip(companies, tags_per_account, strict=True)
+                )
+            )
+        )
+
+    def test_merge_keeps_the_destination_cash_flow_tag_and_every_other_tag(self):
+        operating = self.env.ref("account.account_tag_operating")
+        investing = self.env.ref("account.account_tag_investing")
+        kept, joined = self.env["account.account.tag"].create(
+            [
+                {"name": "Destination tag", "applicability": "accounts"},
+                {"name": "Source tag", "applicability": "accounts"},
+            ]
+        )
+        destination, source = self._create_branch_accounts(
+            [investing | kept, operating | joined]
+        )
+
+        self._create_account_merge_wizard(destination | source).action_merge()
+
+        self.assertFalse(source.exists())
+        self.assertEqual(destination.tag_ids, investing | kept | joined)
+
+    def test_merge_takes_the_first_source_cash_flow_tag_when_the_destination_has_none(
+        self,
+    ):
+        financing = self.env.ref("account.account_tag_financing")
+        operating = self.env.ref("account.account_tag_operating")
+        unrelated = self.env["account.account.tag"].create(
+            {"name": "Unrelated", "applicability": "accounts"}
+        )
+        accounts = self._create_branch_accounts(
+            [unrelated, unrelated, financing, operating]
+        )
+
+        self._create_account_merge_wizard(accounts).action_merge()
+
+        self.assertFalse(accounts[1:].exists())
+        self.assertEqual(accounts[0].tag_ids, unrelated | financing)

@@ -78,10 +78,32 @@ class WizardAccountAccountMerge(models.TransientModel):
             destination=accounts[:1],
             codes=code_by_company,
         )
-        return code_by_company
+        return code_by_company, self._get_dropped_cash_flow_tags(accounts)
 
     @api.model
-    def _finalize_merge(self, account, companies, code_by_company) -> None:
+    def _get_dropped_cash_flow_tags(self, accounts):
+        dropped = self.env["account.account.tag"]
+        for family in self.env[
+            "account.cash.flow.report.handler"
+        ]._get_cash_flow_tag_families():
+            cash_flow_tags = accounts.tag_ids & family
+            if len(cash_flow_tags) < 2:
+                continue
+            kept = next(
+                tags for account in accounts if (tags := account.tag_ids & family)
+            ).sorted("id")[:1]
+            dropped |= cash_flow_tags - kept
+            _debug.logic(
+                "merged_account_cash_flow_tag_kept",
+                destination=accounts[:1],
+                kept=kept,
+                dropped=cash_flow_tags - kept,
+            )
+        return dropped
+
+    @api.model
+    def _finalize_merge(self, account, companies, prepared) -> None:
+        code_by_company, dropped_cash_flow_tags = prepared
         self.env.cr.execute(
             SQL(
                 """
@@ -94,5 +116,7 @@ class WizardAccountAccountMerge(models.TransientModel):
             )
         )
         _debug.perf.count("merged_account_codes_written", rows=self.env.cr.rowcount)
-        super()._finalize_merge(account, companies, code_by_company)
+        if dropped_cash_flow_tags:
+            account.tag_ids -= dropped_cash_flow_tags
+        super()._finalize_merge(account, companies, prepared)
         self.env.add_to_compute(self.env["account.account"]._fields["tag_ids"], account)

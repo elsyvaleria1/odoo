@@ -3,6 +3,7 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError, ValidationError
+from odoo.modules.module import get_module_path, load_script
 from odoo.tests import Form, new_test_user, tagged
 from odoo.tools import mute_logger
 
@@ -145,6 +146,65 @@ class TestAccountAccount(TestAccountMergeCommon):
         self.assertRecordValues(
             account_copy_3.with_company(company_3), [{"code": "180026"}]
         )
+
+    def _create_cash_flow_tagged_account(self, code, *tags):
+        return self.env["account.account"].create(
+            {
+                "code": code,
+                "name": f"Cash flow {code}",
+                "account_type": "expense",
+                "tag_ids": [Command.set([tag.id for tag in tags])],
+            }
+        )
+
+    def test_an_account_refuses_a_second_cash_flow_tag(self):
+        operating = self.env.ref("account.account_tag_operating")
+        investing = self.env.ref("account.account_tag_investing")
+        unrelated = self.env["account.account.tag"].create(
+            {"name": "Unrelated", "applicability": "accounts"}
+        )
+        account = self._create_cash_flow_tagged_account("180101", operating, unrelated)
+
+        with self.assertRaisesRegex(
+            ValidationError, f"{operating.name}.*{investing.name}"
+        ):
+            account.tag_ids = [Command.link(investing.id)]
+        with self.assertRaises(ValidationError):
+            self._create_cash_flow_tagged_account("180102", operating, investing)
+
+        account.tag_ids = [Command.set((investing | unrelated).ids)]
+        self.assertEqual(account.tag_ids, investing | unrelated)
+
+    def test_cash_flow_tags_migration_keeps_the_lowest_id_tag(self):
+        operating = self.env.ref("account.account_tag_operating")
+        financing = self.env.ref("account.account_tag_financing")
+        investing = self.env.ref("account.account_tag_investing")
+        unrelated = self.env["account.account.tag"].create(
+            {"name": "Unrelated", "applicability": "accounts"}
+        )
+        doubled = self._create_cash_flow_tagged_account("180111", investing, unrelated)
+        single = self._create_cash_flow_tagged_account("180112", financing)
+        self.env.flush_all()
+        self.env.cr.execute(
+            "INSERT INTO account_account_account_tag VALUES (%s, %s), (%s, %s)",
+            [doubled.id, operating.id, doubled.id, financing.id],
+        )
+        self.env.invalidate_all()
+        script = load_script(
+            f"{get_module_path('account')}/migrations/1.40/end-10-cash_flow_tags.py",
+            "odoo.addons.account.migrations.end_10_cash_flow_tags_1_40",
+        )
+
+        with self.assertLogs(
+            "odoo.addons.account.migrations.end_10_cash_flow_tags_1_40"
+        ) as logs:
+            script.migrate(self.env.cr, "1.39")
+
+        self.assertEqual(doubled.tag_ids, operating | unrelated)
+        self.assertEqual(single.tag_ids, financing)
+        self.assertEqual(len(logs.output), 1)
+        self.assertIn(operating.name, logs.output[0])
+        self.assertIn(investing.name, logs.output[0])
 
     def test_write_on_code_from_branch(self):
         branch = self.env["res.company"].create(
@@ -1133,10 +1193,7 @@ class TestAccountAccount(TestAccountMergeCommon):
                         self.company_data["default_tax_sale"].id,
                         self.company_data_2["default_tax_sale"].id,
                     ],
-                    "tag_ids": [
-                        self.env.ref("account.account_tag_operating").id,
-                        self.env.ref("account.account_tag_investing").id,
-                    ],
+                    "tag_ids": [self.env.ref("account.account_tag_operating").id],
                 }
             ],
         )
@@ -1179,10 +1236,7 @@ class TestAccountAccount(TestAccountMergeCommon):
                     "name": "My First Account",
                     "code": "100234",
                     "tax_ids": self.company_data["default_tax_sale"].ids,
-                    "tag_ids": [
-                        self.env.ref("account.account_tag_operating").id,
-                        self.env.ref("account.account_tag_investing").id,
-                    ],
+                    "tag_ids": [self.env.ref("account.account_tag_operating").id],
                 }
             ],
         )
@@ -1197,10 +1251,7 @@ class TestAccountAccount(TestAccountMergeCommon):
                     "name": "My First Account",
                     "code": "100235",
                     "tax_ids": self.company_data_2["default_tax_sale"].ids,
-                    "tag_ids": [
-                        self.env.ref("account.account_tag_operating").id,
-                        self.env.ref("account.account_tag_investing").id,
-                    ],
+                    "tag_ids": [self.env.ref("account.account_tag_operating").id],
                 }
             ],
         )

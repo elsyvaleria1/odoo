@@ -328,6 +328,27 @@ class AccountAccount(models.Model):
                     )
                 )
 
+    @api.constrains("tag_ids")
+    def _check_single_cash_flow_tag(self) -> None:
+        families = self.env[
+            "account.cash.flow.report.handler"
+        ]._get_cash_flow_tag_families()
+        for account in self:
+            for family in families:
+                if len(cash_flow_tags := account.tag_ids & family) > 1:
+                    _debug.logic(
+                        "cash_flow_tags_refused", account=account, tags=cash_flow_tags
+                    )
+                    raise ValidationError(
+                        self.env._(
+                            "The account %(account)s carries several cash-flow "
+                            "tags (%(tags)s). The cash flow report files an "
+                            "account under one activity only: keep one of them.",
+                            account=account.display_name,
+                            tags=", ".join(cash_flow_tags.mapped("name")),
+                        )
+                    )
+
     @api.constrains("company_ids", "account_type")
     def _check_company_consistency(self) -> None:
         self.invalidate_recordset(fnames=["company_ids"])
