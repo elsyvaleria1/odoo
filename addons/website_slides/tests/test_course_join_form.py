@@ -167,3 +167,72 @@ class TestCourseJoinForm(HttpCase):
         )
         self.assertTrue(forms)
         self.assertFalse(page.xpath("//form//form"))
+
+    def test_the_fullscreen_player_s_join_form_comes_back_to_its_lesson(self):
+        preview = self.channel.slide_ids
+        preview.is_preview = True
+        locked = self.env["slide.slide"].create(
+            {
+                "name": "Locked lesson",
+                "channel_id": self.channel.id,
+                "slide_category": "article",
+                "html_content": "<p>Members only</p>",
+                "is_published": True,
+                "slide_resource_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": "Notes",
+                            "resource_type": "url",
+                            "link": "https://example.com",
+                        },
+                    )
+                ],
+            }
+        )
+        self.authenticate("course_learner", "course_learner")
+
+        page = self._page(f"/slides/slide/{preview.id}?fullscreen=1")
+
+        (form,) = page.xpath(
+            f"//form[@action='/slides/channel/{self.channel.id}/join']"
+        )
+        redirect = form.xpath("input[@name='redirect']/@value")[0]
+        self.assertTrue(redirect.startswith("/slides/slide/"), redirect)
+        self.assertTrue(redirect.endswith(f"-{locked.id}?fullscreen=1"), redirect)
+        self.assertFalse(page.xpath("//form//form"))
+
+    def test_a_preview_lesson_opens_beside_a_locked_one_with_resources(self):
+        # QWeb evaluates t-foreach before t-if: a guard on the loop's own node
+        # read the locked lesson's resources as the visitor, and the page 403d
+        preview = self.channel.slide_ids
+        preview.is_preview = True
+        self.env["slide.slide"].create(
+            {
+                "name": "Locked lesson",
+                "channel_id": self.channel.id,
+                "slide_category": "article",
+                "html_content": "<p>Members only</p>",
+                "is_published": True,
+                "slide_resource_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": "Notes",
+                            "resource_type": "url",
+                            "link": "https://example.com",
+                        },
+                    )
+                ],
+            }
+        )
+        self.authenticate("course_learner", "course_learner")
+
+        for url in (
+            f"/slides/slide/{preview.id}",
+            f"/slides/slide/{preview.id}?fullscreen=1",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(self.url_open(url).status_code, 200)

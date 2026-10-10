@@ -255,25 +255,26 @@
                             <ul
                                 t-if="aside_slide.sudo().slide_resource_ids or aside_slide.has_questions"
                                 class="o_wslides_lesson_aside_list_links list-group mb-1 list-unstyled fw-light">
-                                <t
-                                    t-if="can_access_channel"
-                                    t-foreach="aside_slide.slide_resource_ids"
-                                    t-as="resource">
-                                    <li class="ps-3">
-                                        <a
-                                            t-if="resource.resource_type == 'url'"
-                                            t-att-href="resource.link"
-                                            target="new"
-                                            class="text-decoration-none small">
-                                            <i class="fa-solid fa-link" /><span t-field="resource.name" />
-                                        </a>
-                                        <a
-                                            t-else=""
-                                            t-att-href="resource.download_url"
-                                            class="text-decoration-none small">
-                                            <i class="fa-solid fa-download" /><span t-field="resource.name" />
-                                        </a>
-                                        </li>
+                                <t t-if="can_access_channel">
+                                    <t
+                                        t-foreach="aside_slide.slide_resource_ids"
+                                        t-as="resource">
+                                        <li class="ps-3">
+                                            <a
+                                                t-if="resource.resource_type == 'url'"
+                                                t-att-href="resource.link"
+                                                target="new"
+                                                class="text-decoration-none small">
+                                                <i class="fa-solid fa-link" /><span t-field="resource.name" />
+                                            </a>
+                                            <a
+                                                t-else=""
+                                                t-att-href="resource.download_url"
+                                                class="text-decoration-none small">
+                                                <i class="fa-solid fa-download" /><span t-field="resource.name" />
+                                            </a>
+                                            </li>
+                                    </t>
                                 </t>
                                 <div
                                     t-else=""
