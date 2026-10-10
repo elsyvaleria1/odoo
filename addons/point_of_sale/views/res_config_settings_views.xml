@@ -860,6 +860,14 @@
                                         name="pos_customer_display_bg_img"
                                         filename="pos_customer_display_bg_img_name"
                                         class="w-100" />
+                                    <button
+                                        name="revoke_customer_display_links"
+                                        type="object"
+                                        string="Revoke Display Links"
+                                        help="Every customer display opened so far stops and shows the link is no longer valid; open tills open the next one with a new link."
+                                        confirm="Every open customer display of this point of sale will stop. Continue?"
+                                        icon="oi-arrow-right"
+                                        class="btn-link p-0" />
                                 </setting>
                                 <setting
                                     string="IoT Box"

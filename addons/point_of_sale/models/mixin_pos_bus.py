@@ -75,9 +75,24 @@ class MixinPosBus(models.AbstractModel):
             _debug.lifecycle("access_token_rotated", record=record)
             record.access_token = _new_access_token()
 
+    def _pos_bus_audience_generation(self, audience) -> int:
+        """How many times ``audience``'s link and channel were revoked alone,
+        beside the record's token: 0 for an audience only the token revokes."""
+        return 0
+
     def _pos_bus_key(self, audience) -> str:
         token = self._pos_bus_get_or_create_token()
-        return f"{self._name}.{self.id}.{audience}.{token_revision(token)}"
+        generation = self._pos_bus_audience_generation(audience)
+        revision = token_revision(f"{token}:{generation}" if generation else token)
+        return f"{self._name}.{self.id}.{audience}.{revision}"
+
+    def _pos_bus_revoke(self, audience, generation_field) -> None:
+        """Revoke ``audience``'s link and channel: its open screens are told
+        to reload, and their link then opens nothing."""
+        for record in self:
+            record._notify("LINK_REVOKED", {}, audience=audience)
+            _debug.lifecycle("audience_revoked", record=record, audience=audience)
+            record[generation_field] += 1
 
     def _pos_bus_channel(self, audience="till") -> str:
         """The name the devices of ``audience`` subscribe with; it also

@@ -1,6 +1,7 @@
 /** @odoo-module native */
 import { proxy } from "@odoo/owl";
 import { getOnNotified } from "@point_of_sale/utils";
+import { browser } from "@web/core/browser/browser";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
@@ -11,6 +12,9 @@ export const CustomerDisplayDataService = {
     dependencies: ["bus_service", "notification"],
     async start(env, { bus_service, notification }) {
         const data = proxy({});
+        const onNotified = getOnNotified(bus_service, session.bus_channel);
+        // a revoked link reloads into the page refusing it
+        onNotified("LINK_REVOKED", () => browser.location.reload());
         log.lifecycle("start", () => ({
             source: session.proxy_ip ? "iot_poll" : "bus+broadcast",
             device: session.device_uuid,
@@ -70,16 +74,13 @@ export const CustomerDisplayDataService = {
                 }));
                 Object.assign(data, event.data);
             };
-            getOnNotified(bus_service, session.bus_channel)(
-                `UPDATE_CUSTOMER_DISPLAY-${session.device_uuid}`,
-                (payload) => {
-                    log.pipeline("[bus] update", () => ({
-                        lines: payload?.lines?.length,
-                        finalized: payload?.finalized,
-                    }));
-                    Object.assign(data, payload);
-                },
-            );
+            onNotified(`UPDATE_CUSTOMER_DISPLAY-${session.device_uuid}`, (payload) => {
+                log.pipeline("[bus] update", () => ({
+                    lines: payload?.lines?.length,
+                    finalized: payload?.finalized,
+                }));
+                Object.assign(data, payload);
+            });
         }
         return data;
     },

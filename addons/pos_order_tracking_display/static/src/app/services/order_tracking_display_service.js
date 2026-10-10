@@ -2,6 +2,7 @@
 import { proxy } from "@odoo/owl";
 import { getOnNotified } from "@point_of_sale/utils";
 import { computeDurationSinceDate } from "@pos_enterprise/app/utils/utils";
+import { browser } from "@web/core/browser/browser";
 import { deserializeDateTime } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -15,6 +16,8 @@ const orderTrackingDisplayService = {
             bus_service,
             session.preparation_display.bus_channel,
         );
+        // a revoked link reloads into the page refusing it
+        onNotified("LINK_REVOKED", () => browser.location.reload());
         onNotified("NEW_ORDERS", (newOrders) => {
             Object.assign(orders, newOrders);
         });

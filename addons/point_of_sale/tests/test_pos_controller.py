@@ -446,6 +446,47 @@ class TestPoSControllerInput(TestPointOfSaleHttpCommon):
             ),
         )
 
+    def test_revoking_display_links_stops_open_displays_and_hands_tills_the_new_link(
+        self,
+    ):
+        config = self.main_pos_config
+        config.open_ui()
+        url = f"/pos_customer_display/{config.id}/test-device?access_token="
+        old_token = config.customer_display_token
+        old_display = config._pos_bus_key("customer_display")
+        till = config._pos_bus_key("till")
+        sent = []
+        with patch.object(
+            type(self.env["bus.bus"]),
+            "_sendone",
+            lambda _bus, target, notification_type, message: sent.append(
+                (target, notification_type.rpartition("-")[2], message)
+            ),
+        ):
+            self.env["res.config.settings"].create(
+                {"pos_config_id": config.id}
+            ).revoke_customer_display_links()
+        new_token = config.customer_display_token
+        self.assertNotEqual(new_token, old_token)
+        self.assertEqual(self.url_open(url + old_token).status_code, 404)
+        self.assertEqual(self.url_open(url + new_token).status_code, 200)
+        self.assertEqual(config._pos_bus_key("till"), till, "the tills hear on")
+        self.assertEqual(
+            sent,
+            [
+                (
+                    channel_target(self.env, POS_CHANNEL, old_display),
+                    "LINK_REVOKED",
+                    {},
+                ),
+                (
+                    channel_target(self.env, POS_CHANNEL, till),
+                    "CUSTOMER_DISPLAY_TOKEN",
+                    {"token": new_token},
+                ),
+            ],
+        )
+
     def test_the_till_is_handed_its_bus_capability(self):
         config = self.main_pos_config
         config.with_user(self.pos_user).open_ui()

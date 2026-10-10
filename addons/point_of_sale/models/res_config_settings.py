@@ -726,3 +726,7 @@ class ResConfigSettings(models.TransientModel):
                 rec.pos_epson_printer_ip = format_epson_certified_domain(
                     rec.pos_epson_printer_ip
                 )
+
+    def revoke_customer_display_links(self) -> None:
+        self.check_singleton()
+        self.pos_config_id.action_revoke_customer_display_links()

@@ -1,18 +1,19 @@
-from odoo import models, tools
+from odoo import fields, models, tools
 
-from odoo.addons.bus.tools.channel_capability import token_revision
 from odoo.addons.pos_enterprise.utils.date_utils import compute_seconds_since
 
 TRACKING_ACCESS = tools.register_signed_scope(
     "pos_order_tracking_display.access",
     purpose="open one preparation display's public order-tracking screen: order "
     "numbers and their state, never the kitchen display's channel or routes",
-    lifetime="undated: until the preparation display's access token is rotated",
+    lifetime="undated: until its link is revoked or the display's access token rotated",
 )
 
 
 class PosPrepDisplay(models.Model):
     _inherit = "pos.prep.display"
+
+    tracking_generation = fields.Integer(copy=False)
 
     def _get_pos_orders(self) -> dict:
         self.check_singleton()
@@ -68,8 +69,17 @@ class PosPrepDisplay(models.Model):
         orders = self._get_pos_orders()
         self._notify("NEW_ORDERS", orders, audience="order_tracking")
 
-    def _tracking_message(self) -> tuple:
-        return (self.id, token_revision(self._pos_bus_get_or_create_token()))
+    def _tracking_message(self) -> str:
+        return self._pos_bus_key("order_tracking")
+
+    def _pos_bus_audience_generation(self, audience) -> int:
+        if audience == "order_tracking":
+            return self.tracking_generation
+        return super()._pos_bus_audience_generation(audience)
+
+    def action_revoke_tracking_link(self) -> None:
+        self.check_access("write")
+        self._pos_bus_revoke("order_tracking", "tracking_generation")
 
     def _tracking_token(self) -> str:
         self.check_singleton()

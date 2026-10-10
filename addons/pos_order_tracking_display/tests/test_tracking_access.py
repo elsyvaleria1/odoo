@@ -40,6 +40,28 @@ class TestOrderTrackingAccess(HttpCase):
             self._target("order_tracking"),
         )
 
+    def test_revoking_the_tracking_link_stops_the_open_screen_and_its_old_link(self):
+        old_token = self.display._tracking_token()
+        old_tracking = self._target("order_tracking")
+        kitchen = self._target("till")
+        sent = []
+        with patch.object(
+            type(self.env["bus.bus"]),
+            "_sendone",
+            lambda _bus, target, message_type, _message: sent.append(
+                (target, message_type.rpartition("-")[2])
+            ),
+        ):
+            self.display.action_revoke_tracking_link()
+        self.assertEqual(sent, [(old_tracking, "LINK_REVOKED")])
+        self.assertEqual(self._target("till"), kitchen, "the kitchen hears on")
+        new_token = self.display._tracking_token()
+        self.assertNotEqual(new_token, old_token)
+        for token, status in ((old_token, 404), (new_token, 200)):
+            with self.subTest(status=status):
+                page = self.url_open(f"/pos-order-tracking/?access_token={token}")
+                self.assertEqual(page.status_code, status)
+
     def test_the_tracking_screen_hears_order_numbers_and_nothing_else(self):
         sent = []
         with patch.object(

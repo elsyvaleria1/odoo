@@ -394,6 +394,10 @@ export class PosStore extends WithLazyGetterTrap {
             "CLOSING_SESSION",
             this.closingSessionNotification.bind(this),
         );
+        // the display links were revoked: the next display opens with the new one
+        this.data.connectWebSocket("CUSTOMER_DISPLAY_TOKEN", ({ token }) => {
+            this.config.customer_display_token = token;
+        });
         const endAfter = log.perf("afterProcessServerData");
         const process = await this.afterProcessServerData();
         endAfter({ selectedOrder: this.selectedOrderUuid });

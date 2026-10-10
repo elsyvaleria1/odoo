@@ -10,7 +10,6 @@ from odoo.service.common import exp_version
 from odoo.tools import SQL
 from odoo.tools.authority_keys import declare_authority_keys
 
-from odoo.addons.bus.tools.channel_capability import token_revision
 from odoo.addons.point_of_sale.models.pos_printer import format_epson_certified_domain
 
 _debug = DebugLog(__name__)
@@ -228,6 +227,7 @@ class PosConfig(models.Model):
     # what the till hands a customer display: it opens the display and its
     # channel, not the till's
     customer_display_token = fields.Char(compute="_compute_customer_display_token")
+    customer_display_generation = fields.Integer(copy=False)
     restrict_price_control = fields.Boolean(
         string="Restrict Price Modifications to Managers",
         help="Only users with Manager access rights for PoS app can modify the product prices on orders.",
@@ -613,7 +613,7 @@ class PosConfig(models.Model):
 
     @api.model
     def _get_pos_client_excluded_fields(self) -> set:
-        return {"session_ids"}
+        return {"session_ids", "customer_display_generation"}
 
     @api.model
     def _load_pos_data_fields(self, config):
@@ -1775,9 +1775,24 @@ class PosConfig(models.Model):
             f"UPDATE_CUSTOMER_DISPLAY-{device_uuid}", order, audience="customer_display"
         )
 
-    def _customer_display_message(self) -> tuple:
-        return (self.id, token_revision(self._pos_bus_get_or_create_token()))
+    def _customer_display_message(self) -> str:
+        return self._pos_bus_key("customer_display")
 
+    def _pos_bus_audience_generation(self, audience) -> int:
+        if audience == "customer_display":
+            return self.customer_display_generation
+        return super()._pos_bus_audience_generation(audience)
+
+    def action_revoke_customer_display_links(self) -> None:
+        self.check_access("write")
+        self._pos_bus_revoke("customer_display", "customer_display_generation")
+        for config in self:
+            # an open till opens its next display with the new link
+            config._notify(
+                "CUSTOMER_DISPLAY_TOKEN", {"token": config.customer_display_token}
+            )
+
+    @api.depends("access_token", "customer_display_generation")
     def _compute_customer_display_token(self) -> None:
         for config in self:
             config.customer_display_token = config.id and tools.hmac(

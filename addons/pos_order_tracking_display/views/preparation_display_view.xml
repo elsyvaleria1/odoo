@@ -16,4 +16,21 @@
         </field>
     </record>
 
+    <record id="preparation_display_view_form_inherit" model="ir.ui.view">
+        <field name="name">preparation.display.form.view.inherit</field>
+        <field name="model">pos.prep.display</field>
+        <field name="inherit_id" ref="pos_enterprise.preparation_display_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button
+                        name="action_revoke_tracking_link"
+                        type="object"
+                        string="Revoke Order Status Screen Link"
+                        confirm="Every order status screen opened with the current link stops. Continue?" />
+                </header>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
