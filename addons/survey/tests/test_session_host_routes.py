@@ -226,6 +226,22 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
             f"/s/{self.form.session_code}", code, login="session_host", timeout=60
         )
 
+    def test_the_host_page_loads_each_script_once(self):
+        IrAsset = self.env["ir.asset"]
+        params = IrAsset._prepare_assets_params()
+        bundles = (
+            "web.assets_frontend",
+            "survey.survey_assets",
+            "survey.survey_user_input_session_assets",
+        )
+        seen = {}
+        for bundle in bundles:
+            for entry in IrAsset._get_asset_paths(bundle, params):
+                if entry.path.endswith(".js"):
+                    seen.setdefault(entry.path, []).append(bundle)
+        twice = {path: owners for path, owners in seen.items() if len(owners) > 1}
+        self.assertFalse(twice, "a script in two bundles runs, and registers, twice")
+
     def test_the_host_walks_the_screens_the_server_answers(self):
         self.question.write(
             {
