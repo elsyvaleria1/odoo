@@ -28,6 +28,7 @@ from . import account_move_quick_edit
 from . import account_move_recurring
 from . import account_move_sequence
 from . import account_move_sync
+from . import account_move_tax_override
 from . import account_move_line
 from . import account_move_line_tax_details
 from . import mixin_account_move_send

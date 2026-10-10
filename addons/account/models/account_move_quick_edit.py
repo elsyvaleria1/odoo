@@ -1,3 +1,4 @@
+import copy
 from datetime import date, timedelta
 from typing import Self
 
@@ -218,7 +219,7 @@ class AccountMove(models.Model):
     def _check_total_amount(self, amount_total) -> None:
         if not self.tax_totals or not amount_total:
             return
-        totals = self.tax_totals
+        totals = copy.deepcopy(self.tax_totals)
         tax_amount_rounding_error = amount_total - totals["total_amount_currency"]
         if not self.currency_id.is_zero(tax_amount_rounding_error):
             for subtotal in totals["subtotals"][:1]:
@@ -227,4 +228,4 @@ class AccountMove(models.Model):
                         tax_amount_rounding_error
                     )
                     totals["total_amount_currency"] = amount_total
-                    self.tax_totals = totals
+                    self._update_tax_overrides_from_totals(totals)

@@ -12,6 +12,7 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 import { formatMonetary } from "@web/core/formatters";
 import { parseFloat } from "@web/core/parsers";
 import { registry } from "@web/core/registry";
+import { _t } from "@web/core/translation";
 import { elementRef } from "@web/core/utils/element_ref";
 import { formatFloat } from "@web/core/utils/format/numbers";
 import { useNumpadDecimal } from "@web/fields/numpad_decimal_hook";
@@ -51,6 +52,14 @@ class TaxGroupComponent extends Component {
         return formatMonetary(value, { currencyId: this.props.currencyId });
     }
 
+    get manualTitle() {
+        return _t("Typed by hand; computed: %(amount)s", {
+            amount: this.formatMonetary(
+                this.props.taxGroup.computed_tax_amount_currency,
+            ),
+        });
+    }
+
     /** @returns {string} */
     formatAmount(value) {
         return formatFloat(value, { digits: this.props.currencyPd });
@@ -84,6 +93,15 @@ class TaxGroupComponent extends Component {
             subtotal: this.props.subtotal,
             taxGroup: this.props.taxGroup,
             amount: newValue,
+        });
+    }
+
+    onResetTaxGroup() {
+        this.setState("disable");
+        this.props.onChangeTaxGroup({
+            subtotal: this.props.subtotal,
+            taxGroup: this.props.taxGroup,
+            amount: this.props.taxGroup.computed_tax_amount_currency,
         });
     }
 }

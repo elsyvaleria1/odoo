@@ -1840,11 +1840,7 @@ class AccountTax(models.Model):
             return
 
         total_per_tax_line_key = defaultdict(
-            lambda: {
-                "currency": None,
-                "tax_amount_currency": 0.0,
-                "tax_amount": 0.0,
-            }
+            lambda: {"tax_amount_currency": 0.0, "tax_amount": 0.0}
         )
         for tax_line in tax_lines:
             tax_rep = tax_line["tax_repartition_line_id"]
@@ -1852,14 +1848,20 @@ class AccountTax(models.Model):
             tax = tax_rep.tax_id
             currency = tax_line["currency_id"]
             tax_line_key = (tax.id, currency.id, tax_rep.document_type == "refund")
-            total_per_tax_line_key[tax_line_key]["currency"] = currency
             total_per_tax_line_key[tax_line_key]["tax_amount_currency"] += (
                 sign * tax_line["amount_currency"]
             )
             total_per_tax_line_key[tax_line_key]["tax_amount"] += (
                 sign * tax_line["balance"]
             )
+        self._round_tax_details_tax_amounts_to_targets(
+            base_lines, company, total_per_tax_line_key
+        )
 
+    @api.model
+    def _round_tax_details_tax_amounts_to_targets(
+        self, base_lines, company, total_per_tax_line_key
+    ) -> None:
         def grouping_function(base_line, tax_data):
             if not tax_data:
                 return None

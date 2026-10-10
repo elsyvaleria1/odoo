@@ -37,12 +37,25 @@ function totals(taxAmount) {
     };
 }
 
+/** @param {number} taxAmount @param {number} computedAmount */
+function manualTotals(taxAmount, computedAmount) {
+    const values = totals(taxAmount);
+    Object.assign(values.subtotals[0].tax_groups[0], {
+        manual_tax_amount: true,
+        computed_tax_amount_currency: computedAmount,
+    });
+    return values;
+}
+
 class Move extends models.Model {
     _name = "move";
 
     tax_totals = fields.Json();
 
-    _records = [{ id: 1, tax_totals: totals(15) }];
+    _records = [
+        { id: 1, tax_totals: totals(15) },
+        { id: 2, tax_totals: manualTotals(16, 15) },
+    ];
 }
 
 defineModels([Move]);
@@ -117,5 +130,37 @@ describe("TaxTotalsComponent editing", () => {
         await editTaxGroup("not a number");
 
         expect(queryOne(".o_tax_group_edit_input input").value).toBe("15.00");
+    });
+});
+
+describe("TaxTotalsComponent manual amounts", () => {
+    test("marks a manual group and offers no reset on a computed one", async () => {
+        await mountView({ type: "form", resModel: "move", resId: 1, arch: ARCH });
+        expect(".o_tax_group_manual").toHaveCount(0);
+        expect(".o_tax_group_reset").toHaveCount(0);
+    });
+
+    test("shows the badge with the computed amount", async () => {
+        await mountView({ type: "form", resModel: "move", resId: 2, arch: ARCH });
+        expect(".o_tax_group_manual").toHaveText("manual");
+        expect(queryOne(".o_tax_group_manual").title).toMatch(
+            /^Typed by hand; computed: \$\s15\.00$/,
+        );
+    });
+
+    test("reset writes the computed amount back", async () => {
+        onRpc("move", "web_save", ({ args }) => {
+            expect.step("web_save");
+            expect(
+                args[1].tax_totals.subtotals[0].tax_groups[0].tax_amount_currency,
+            ).toBe(15);
+            expect(args[1].tax_totals.total_amount_currency).toBe(115);
+        });
+        await mountView({ type: "form", resModel: "move", resId: 2, arch: ARCH });
+
+        await contains(".o_tax_group_reset").click();
+        await contains(".o_form_button_save").click();
+
+        await expect.waitForSteps(["web_save"]);
     });
 });

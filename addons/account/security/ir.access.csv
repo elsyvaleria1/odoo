@@ -32,6 +32,8 @@ account_move_see_all,All Journal Entries,model_account_move,group_account_invoic
 account_move_rule_group_readonly,Readonly Move,model_account_move,group_account_readonly,permission,r,,,
 account_move_line_see_all,All Journal Items,model_account_move_line,group_account_invoice,permission,cud,,,
 account_move_line_rule_group_readonly,Readonly Move Line,model_account_move_line,group_account_readonly,permission,r,,,
+account_move_tax_override_read,Manual tax amounts: read with the entry,model_account_move_tax_override,base.group_user,permission,r,,,"[('move_id', 'access', 'read')]"
+account_move_tax_override_write,Manual tax amounts: change with the entry,model_account_move_tax_override,base.group_user,permission,cud,,,"[('move_id', 'access', 'write')]"
 account_invoice_rule_portal,Portal Personal Account Invoices,model_account_move,base.group_portal,permission,r,partner,,"['&', ('state', 'not in', ('cancel', 'draft')), ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund'))]"
 account_invoice_line_rule_portal,Portal Invoice Lines,model_account_move_line,base.group_portal,permission,r,partner,,"['&', ('parent_state', 'not in', ('cancel', 'draft')), ('move_id.move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund'))]"
 access_account_analytic_account,account.analytic.account,analytic.model_account_analytic_account,base.group_user,permission,r,,,

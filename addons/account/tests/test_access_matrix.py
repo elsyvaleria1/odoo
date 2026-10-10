@@ -57,6 +57,16 @@ class TestAccountAccessMatrix(AccessMatrixCase):
             manager_ab="rwcd post",
         ),
         Cell(
+            "account.move.tax.override",
+            "tax_override",
+            billing_a="rwcd",
+            basic_a="rwcd",
+            accountant_a="rwcd",
+            manager_a="rwcd",
+            reader_a="r",
+            manager_ab="rwcd",
+        ),
+        Cell(
             "account.move.line",
             "invoice_c_line",
             billing_a="rwcd",
@@ -733,6 +743,19 @@ class TestAccountAccessMatrix(AccessMatrixCase):
 
         invoice_c = move(a, "out_invoice", customer_c)
         invoice_draft = move(a, "out_invoice", customer_d, post=False)
+        draft_tax = invoice_draft.invoice_line_ids.tax_ids[:1]
+        assert draft_tax, "the draft invoice carries no tax to adjust by hand"
+        computed = invoice_draft._get_computed_tax_amounts()[draft_tax]
+        tax_override = env["account.move.tax.override"].create(
+            {
+                "move_id": invoice_draft.id,
+                "tax_id": draft_tax.id,
+                "currency_id": invoice_draft.currency_id.id,
+                "amount_currency": computed["tax_amount_currency"] + 0.01,
+                "amount_computed_currency": computed["tax_amount_currency"],
+                "amount_base_currency": computed["base_amount_currency"],
+            }
+        )
         bill = move(a, "in_invoice", customer_d)
         invoice_b = move(b, "out_invoice", customer_d)
         paid = move(a, "out_invoice", customer_d)
@@ -827,6 +850,7 @@ class TestAccountAccessMatrix(AccessMatrixCase):
         return {
             "invoice_c": invoice_c,
             "invoice_draft": invoice_draft,
+            "tax_override": tax_override,
             "bill": bill,
             "invoice_b": invoice_b,
             "invoice_c_line": invoice_c.invoice_line_ids,

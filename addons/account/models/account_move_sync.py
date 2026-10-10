@@ -23,7 +23,13 @@ NON_DEDUCTIBLE_BASE_DISPLAY_TYPES = (
     "non_deductible_product_total",
 )
 MOVE_TRACKED_FIELDS = ("currency_id", "move_type", "invoice_currency_rate")
-TAX_LINE_TRACKED_FIELDS = ("amount_currency", "balance", "analytic_distribution")
+TAX_LINE_REBUILDING_MOVE_FIELDS = ("currency_id", "move_type")
+TAX_LINE_TRACKED_FIELDS = (
+    "amount_currency",
+    "balance",
+    "analytic_distribution",
+    "tax_repartition_line_id",
+)
 INVOICE_BASE_LINE_TRACKED_FIELDS = (
     "price_unit",
     "quantity",
@@ -462,10 +468,16 @@ class AccountMove(models.Model):
                 for line in lines
             }
 
+        move_values = {
+            fname: snapshot_value(self, fname) for fname in MOVE_TRACKED_FIELDS
+        }
+        if self.is_tax_overridden:
+            move_values["tax_overrides"] = {
+                override.tax_id.id: override.amount_currency
+                for override in self.tax_override_ids
+            }
         return {
-            "move": {
-                fname: snapshot_value(self, fname) for fname in MOVE_TRACKED_FIELDS
-            },
+            "move": move_values,
             "base_lines": snapshot_lines(base_lines, base_fields),
             "tax_lines": snapshot_lines(tax_lines, TAX_LINE_TRACKED_FIELDS),
         }
@@ -485,12 +497,6 @@ class AccountMove(models.Model):
 
         tax_before, tax_after = before["tax_lines"], after["tax_lines"]
         base_before, base_after = before["base_lines"], after["base_lines"]
-
-        if move.is_invoice(include_receipts=True) and (
-            move_field_has_changed("currency_id") or move_field_has_changed("move_type")
-        ):
-            _debug.logic("tax_rounding_currency_or_type_changed", move=move)
-            return FROM_BASE
 
         if any(
             line not in base_after
@@ -516,14 +522,10 @@ class AccountMove(models.Model):
                     for fname in tax_before[line]
                 )
             )
-            if (
-                round_from_tax_lines
-                and not move.is_invoice(include_receipts=True)
-                and any(
-                    line[field]
-                    for line in changed_lines
-                    for field in ("amount_currency", "balance")
-                )
+            if round_from_tax_lines and any(
+                line[field]
+                for line in changed_lines
+                for field in ("amount_currency", "balance")
             ):
                 _debug.logic(
                     "tax_rounding_amounts_edited_skipped",
@@ -546,29 +548,292 @@ class AccountMove(models.Model):
         return SKIP
 
     @_debug.perf.timed
-    def _get_unsaved_tax_rounding_mode(self) -> tuple:
-        self.check_singleton()
-        origin = self._origin
-        if not origin or not self.is_invoice(include_receipts=True):
-            _debug.logic("unsaved_tax_rounding_without_origin", move=self)
-            return FROM_BASE
-        if self.state != "draft":
-            _debug.logic("unsaved_tax_rounding_not_draft", move=self)
-            return FROM_TAX
-        grouping_key_fields = self._get_tax_line_grouping_key_fields()
+    def _get_invoice_tax_sync_mode(self, move, before, after):
+        if before == after:
+            return SKIP
+        tax_before, tax_after = before["tax_lines"], after["tax_lines"]
+        edited_tax_lines = (
+            []
+            if any(
+                before["move"].get(fname, after["move"][fname]) != after["move"][fname]
+                for fname in TAX_LINE_REBUILDING_MOVE_FIELDS
+            )
+            else [
+                values
+                for line, values in tax_after.items()
+                if line not in tax_before
+                or values["amount_currency"] != tax_before[line]["amount_currency"]
+                or self.env.is_protected(line._fields["amount_currency"], line)
+            ]
+            + [values for line, values in tax_before.items() if line not in tax_after]
+        )
+        if edited_tax_lines:
+            taxes = (
+                self.env["account.tax.repartition.line"]
+                .browse(
+                    {
+                        repartition_line_id
+                        for values in edited_tax_lines
+                        for repartition_line_id in values["tax_repartition_line_id"]
+                    }
+                )
+                .tax_id
+            )
+            _debug.logic("invoice_tax_lines_edited", move=move, taxes=taxes)
+            move._capture_tax_overrides_from_tax_lines(taxes)
+        if (
+            before["move"] == after["move"]
+            and before["base_lines"] == after["base_lines"]
+        ):
+            _debug.logic("invoice_only_tax_lines_edited", move=move)
+            return SKIP
+        move._drop_inapplicable_tax_overrides()
+        return FROM_BASE
 
-        def snapshot(move):
-            return move._get_tax_sync_snapshot(
-                grouping_key_fields,
-                move.invoice_line_ids.filtered(
-                    lambda line: line.display_type == "product"
-                ),
-                move._get_tax_amls(),
+    def _get_draft_tax_overrides(self):
+        self.check_singleton()
+        if (
+            not self.is_tax_overridden
+            or self.state != "draft"
+            or not self.is_invoice(include_receipts=True)
+        ):
+            return self.env["account.move.tax.override"]
+        return self.tax_override_ids
+
+    def _get_tax_amounts(self, base_lines) -> dict:
+        AccountTax = self.env["account.tax"]
+        currency = self.currency_id
+
+        def by_tax(base_line, tax_data):
+            return (tax_data["tax"], base_line["is_refund"]) if tax_data else None
+
+        amounts = {}
+        for key, values in AccountTax._aggregate_base_lines_aggregated_values(
+            AccountTax._aggregate_base_lines_tax_details(base_lines, by_tax)
+        ).items():
+            if not key:
+                continue
+            tax, is_refund = key
+            amounts[tax] = {
+                "is_refund": is_refund,
+                "base_amount_currency": currency.round(values["base_amount_currency"]),
+                "tax_amount_currency": currency.round(values["tax_amount_currency"]),
+                "tax_amount": self.company_currency_id.round(values["tax_amount"]),
+            }
+        return amounts
+
+    def _get_computed_tax_amounts(self) -> dict:
+        base_lines, _tax_lines = self._get_rounded_base_and_tax_lines(
+            round_from_tax_lines=False, apply_tax_overrides=False
+        )
+        return self._get_tax_amounts(base_lines)
+
+    @_debug.perf.timed
+    def _apply_tax_overrides(self, base_lines) -> None:
+        overrides = self._get_draft_tax_overrides()
+        if not overrides:
+            return
+        currency = self.currency_id
+        company_currency = self.company_currency_id
+        rate = self.invoice_currency_rate or 1.0
+        computed = self._get_tax_amounts(base_lines)
+        targets = {}
+        for override in overrides:
+            values = computed.get(override.tax_id)
+            if override._get_inapplicable_reason(currency, values):
+                continue
+            delta = currency.round(
+                override.amount_currency - values["tax_amount_currency"]
+            )
+            if currency.is_zero(delta):
+                continue
+            delta_balance = (
+                delta
+                if currency == company_currency
+                else company_currency.round(override.amount_currency / rate)
+                - company_currency.round(values["tax_amount_currency"] / rate)
+            )
+            targets[(override.tax_id.id, currency.id, values["is_refund"])] = {
+                "tax_amount_currency": override.amount_currency,
+                "tax_amount": values["tax_amount"] + delta_balance,
+            }
+        _debug.logic(
+            "tax_overrides_applied",
+            move=self,
+            overrides=overrides,
+            applied=len(targets),
+        )
+        if targets:
+            self.env["account.tax"]._round_tax_details_tax_amounts_to_targets(
+                base_lines, self.company_id, targets
             )
 
-        mode = self._get_tax_rounding_mode(self, snapshot(origin), snapshot(self))
-        _debug.logic("unsaved_tax_rounding_mode", move=self, mode=mode)
-        return FROM_TAX if mode is SKIP else mode
+    def _get_tax_override_commands(self, target_amounts, computed_amounts, taxes):
+        self.check_singleton()
+        currency = self.currency_id
+        existing = self.tax_override_ids.grouped("tax_id")
+        commands = []
+        for tax in taxes:
+            override = existing.get(tax)
+            computed = computed_amounts.get(tax)
+            target = target_amounts.get(tax)
+            if (
+                not computed
+                or not target
+                or currency.compare_amounts(
+                    target["tax_amount_currency"], computed["tax_amount_currency"]
+                )
+                == 0
+            ):
+                if override:
+                    commands.append(Command.unlink(override.id))
+                continue
+            values = {
+                "currency_id": currency.id,
+                "amount_currency": target["tax_amount_currency"],
+                "amount_computed_currency": computed["tax_amount_currency"],
+                "amount_base_currency": computed["base_amount_currency"],
+            }
+            if not override:
+                commands.append(Command.create({"tax_id": tax.id, **values}))
+            elif any(
+                override._fields[fname].convert_to_write(override[fname], override)
+                != value
+                for fname, value in values.items()
+            ):
+                commands.append(Command.update(override.id, values))
+        return commands
+
+    @_debug.perf.timed
+    def _capture_tax_overrides_from_tax_lines(self, taxes=None) -> None:
+        for move in self:
+            if (
+                not move.id
+                or move.state != "draft"
+                or not move.is_invoice(include_receipts=True)
+            ):
+                continue
+            stored_base_lines, _tax_lines = move._get_rounded_base_and_tax_lines(
+                include_cash_rounding=False
+            )
+            stored = move._get_tax_amounts(stored_base_lines)
+            computed = move._get_computed_tax_amounts()
+            commands = move._get_tax_override_commands(
+                stored,
+                computed,
+                taxes if taxes is not None else stored.keys() | computed.keys(),
+            )
+            _debug.logic("tax_overrides_captured", move=move, commands=len(commands))
+            if commands:
+                move.tax_override_ids = commands
+
+    @_debug.perf.timed
+    def _update_tax_overrides_from_origin(self, origin) -> None:
+        self.check_singleton()
+        if (
+            self.state != "draft"
+            or not self.is_invoice(include_receipts=True)
+            or self.currency_id != origin.currency_id
+        ):
+            return
+        origin_base_lines, _tax_lines = origin._get_rounded_base_and_tax_lines(
+            include_cash_rounding=False
+        )
+        target = origin._get_tax_amounts(origin_base_lines)
+        computed = self._get_computed_tax_amounts()
+        commands = self._get_tax_override_commands(
+            target, computed, target.keys() | computed.keys()
+        )
+        _debug.logic(
+            "tax_overrides_carried", move=self, origin=origin, commands=len(commands)
+        )
+        if commands:
+            self.tax_override_ids = commands
+
+    @_debug.perf.timed
+    def _update_tax_overrides_from_totals(self, tax_totals) -> None:
+        self.check_singleton()
+        currency = self.currency_id
+        if not currency:
+            return
+        requested = {
+            tax_group["id"]: tax_group["tax_amount_currency"]
+            for subtotal in tax_totals["subtotals"]
+            for tax_group in subtotal["tax_groups"]
+        }
+        displayed = {
+            tax_group["id"]: tax_group
+            for subtotal in self._get_tax_totals_values()["subtotals"]
+            for tax_group in subtotal["tax_groups"]
+        }
+        current_base_lines, _tax_lines = self._get_rounded_base_and_tax_lines(
+            include_cash_rounding=False
+        )
+        current = self._get_tax_amounts(current_base_lines)
+        computed = self._get_computed_tax_amounts()
+        target_amounts = dict(current)
+        taxes = self.env["account.tax"]
+        for group_id, amount in requested.items():
+            shown = displayed.get(group_id)
+            if not shown or not currency.compare_amounts(
+                amount, shown["tax_amount_currency"]
+            ):
+                continue
+            group_taxes = [tax for tax in current if tax.tax_group_id.id == group_id]
+            if not group_taxes:
+                continue
+            taxes |= self.env["account.tax"].union(*group_taxes)
+            reset_amount = shown.get(
+                "computed_tax_amount_currency", shown["tax_amount_currency"]
+            )
+            _debug.logic(
+                "tax_group_amount_requested",
+                move=self,
+                tax_group=group_id,
+                amount=amount,
+                reset=not currency.compare_amounts(amount, reset_amount),
+            )
+            if not currency.compare_amounts(amount, reset_amount):
+                for tax in group_taxes:
+                    target_amounts[tax] = computed.get(tax)
+                continue
+            biggest = max(
+                group_taxes, key=lambda tax: abs(current[tax]["tax_amount_currency"])
+            )
+            target_amounts[biggest] = {
+                **current[biggest],
+                "tax_amount_currency": currency.round(
+                    current[biggest]["tax_amount_currency"]
+                    + amount
+                    - shown["tax_amount_currency"]
+                ),
+            }
+        if commands := self._get_tax_override_commands(target_amounts, computed, taxes):
+            self.tax_override_ids = commands
+
+    @_debug.perf.timed
+    def _drop_inapplicable_tax_overrides(self) -> list:
+        self.check_singleton()
+        overrides = self._get_draft_tax_overrides()
+        if not overrides:
+            return []
+        computed = self._get_computed_tax_amounts()
+        dropped = []
+        for override in overrides:
+            reason = override._get_inapplicable_reason(
+                self.currency_id, computed.get(override.tax_id)
+            )
+            if not reason:
+                continue
+            _debug.logic(
+                "tax_override_inapplicable", move=self, override=override, reason=reason
+            )
+            dropped.append((override.tax_id, override.amount_currency, reason))
+            if self.id:
+                override.with_context(tax_override_drop_reason=reason).unlink()
+            else:
+                self.tax_override_ids = [Command.unlink(override.id)]
+        return dropped
 
     @_debug.perf.timed
     def _prepare_non_deductible_tax_line_vals(
@@ -640,7 +905,12 @@ class AccountMove(models.Model):
             for move in container["records"]:
                 if move.state != "draft":
                     continue
-                mode = self._get_tax_rounding_mode(
+                get_mode = (
+                    self._get_invoice_tax_sync_mode
+                    if move.is_invoice(include_receipts=True)
+                    else self._get_tax_rounding_mode
+                )
+                mode = get_mode(
                     move, before.get(move, EMPTY_TAX_SYNC_SNAPSHOT), snapshot(move)
                 )
                 if mode is SKIP:

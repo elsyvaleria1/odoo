@@ -32,6 +32,7 @@ from odoo.tools import (
     date_utils,
     escape_psql,
     float_compare,
+    format_amount,
     format_date,
     format_list,
     formatLang,
@@ -991,6 +992,18 @@ class AccountMove(models.Model):
         inverse="_inverse_tax_totals",
         exportable=False,
         help="Edit Tax amounts if you encounter rounding issues.",
+    )
+    tax_override_ids = fields.One2many(
+        comodel_name="account.move.tax.override",
+        inverse_name="move_id",
+        string="Manual Tax Amounts",
+        copy=False,
+    )
+    is_tax_overridden = fields.Boolean(
+        string="Has Manual Tax Amounts",
+        compute="_compute_is_tax_overridden",
+        precompute=True,
+        store=True,
     )
     payment_state = fields.Selection(
         selection=PAYMENT_STATE_SELECTION,
@@ -2646,6 +2659,7 @@ class AccountMove(models.Model):
         round_from_tax_lines=True,
         reapply_currency_rate=False,
         include_cash_rounding=True,
+        apply_tax_overrides=True,
     ) -> tuple:
         self.check_singleton()
         AccountTax = self.env["account.tax"]
@@ -2707,11 +2721,9 @@ class AccountMove(models.Model):
             base_lines += self._prepare_non_deductible_base_lines_for_taxes_computation_from_product_lines(
                 base_amls
             )
-            if round_from_tax_lines:
-                round_from_tax_lines, reapply_unsaved_rate = (
-                    self._get_unsaved_tax_rounding_mode()
-                )
-                reapply_currency_rate = reapply_currency_rate or reapply_unsaved_rate
+            round_from_tax_lines = (
+                round_from_tax_lines and is_invoice and self.state != "draft"
+            )
             tax_amls = (
                 self._get_tax_amls()
                 if round_from_tax_lines
@@ -2732,6 +2744,8 @@ class AccountMove(models.Model):
             self.company_id,
             tax_lines=tax_lines if round_from_tax_lines else [],
         )
+        if apply_tax_overrides and not round_from_tax_lines:
+            self._apply_tax_overrides(base_lines)
         _debug.pipeline(
             "base_and_tax_lines_rounded",
             move=self,
@@ -2754,26 +2768,53 @@ class AccountMove(models.Model):
         "partner_id",
         "currency_id",
         "company_id",
+        "state",
+        "is_tax_overridden",
+        "tax_override_ids.amount_currency",
+        "tax_override_ids.amount_computed_currency",
     )
     @_debug.perf.timed
     def _compute_tax_totals(self) -> None:
         for move in self:
             if move.is_invoice(include_receipts=True):
-                base_lines, _tax_lines = move._get_rounded_base_and_tax_lines()
-                move.tax_totals = self.env["account.tax"]._get_tax_totals_summary(
-                    base_lines=base_lines,
-                    currency=move.currency_id,
-                    company=move.company_id,
-                    cash_rounding=move.sudo().invoice_cash_rounding_id,
-                )
-                move.tax_totals["display_in_company_currency"] = (
-                    move.company_id.account_config_id.display_invoice_tax_company_currency
-                    and move.company_currency_id != move.currency_id
-                    and move.tax_totals["has_tax_groups"]
-                    and move.is_sale_document(include_receipts=True)
-                )
+                move.tax_totals = move._get_tax_totals_values()
             else:
                 move.tax_totals = None
+
+    @api.depends("tax_override_ids")
+    def _compute_is_tax_overridden(self) -> None:
+        for move in self:
+            move.is_tax_overridden = bool(move.tax_override_ids)
+
+    def _get_tax_totals_values(self) -> dict:
+        self.check_singleton()
+        base_lines, _tax_lines = self._get_rounded_base_and_tax_lines()
+        tax_totals = self.env["account.tax"]._get_tax_totals_summary(
+            base_lines=base_lines,
+            currency=self.currency_id,
+            company=self.company_id,
+            cash_rounding=self.sudo().invoice_cash_rounding_id,
+        )
+        tax_totals["display_in_company_currency"] = (
+            self.company_id.account_config_id.display_invoice_tax_company_currency
+            and self.company_currency_id != self.currency_id
+            and tax_totals["has_tax_groups"]
+            and self.is_sale_document(include_receipts=True)
+        )
+        overrides_by_group = self._get_draft_tax_overrides().grouped("tax_group_id")
+        for subtotal in tax_totals["subtotals"]:
+            for tax_group in subtotal["tax_groups"]:
+                overrides = overrides_by_group.get(
+                    self.env["account.tax.group"].browse(tax_group["id"])
+                )
+                if overrides:
+                    tax_group["manual_tax_amount"] = True
+                    tax_group["computed_tax_amount_currency"] = self.currency_id.round(
+                        tax_group["tax_amount_currency"]
+                        - sum(overrides.mapped("amount_currency"))
+                        + sum(overrides.mapped("amount_computed_currency"))
+                    )
+        return tax_totals
 
     @api.depends(
         "show_payment_term_details",
@@ -3726,52 +3767,47 @@ class AccountMove(models.Model):
                     "tax_totals_inverse_skipped", moves=self, reason="recursion"
                 )
                 return
-        with self._sync_dynamic_line(
-            existing_key_fname="term_key",
-            needed_vals_fname="needed_terms",
-            needed_dirty_fname="needed_terms_dirty",
-            line_type="payment_term",
-            container={"records": self},
-        ):
-            for move in self:
-                if not move.is_invoice(include_receipts=True):
-                    continue
-                invoice_totals = move.tax_totals
-                lines_by_tax_group_id = move.line_ids.grouped(
-                    lambda line: line.tax_group_id.id
-                )
+        for move in self:
+            if move.is_invoice(include_receipts=True) and move.state == "draft":
+                move._update_tax_overrides_from_totals(move.tax_totals)
 
-                for subtotal in invoice_totals["subtotals"]:
-                    for tax_group in subtotal["tax_groups"]:
-                        tax_lines = lines_by_tax_group_id.get(
-                            tax_group["id"], move.line_ids.browse()
-                        )
+    @api.onchange("tax_totals")
+    def _onchange_tax_totals(self) -> None:
+        if not self.env.context.get("tax_totals_edited"):
+            return
+        for move in self:
+            if (
+                move.tax_totals
+                and move.is_invoice(include_receipts=True)
+                and move.state == "draft"
+            ):
+                move._update_tax_overrides_from_totals(move.tax_totals)
 
-                        target_tax_line = tax_lines.filtered(
-                            lambda line: line.display_type == "tax"
-                        )[:1]
-                        if target_tax_line:
-                            tax_group_old_amount = sum(
-                                tax_lines.mapped("amount_currency")
-                            )
-                            sign = -1 if move.is_inbound() else 1
-                            delta_amount = (
-                                tax_group_old_amount
-                                - tax_group.get(
-                                    "non_deductible_tax_amount_currency", 0.0
-                                )
-                            ) * sign - tax_group["tax_amount_currency"]
-
-                            if not move.currency_id.is_zero(delta_amount):
-                                _debug.logic(
-                                    "tax_group_amount_adjusted",
-                                    move=move,
-                                    line=target_tax_line,
-                                    tax_group=tax_group["id"],
-                                    delta_amount=delta_amount,
-                                )
-                                target_tax_line.amount_currency -= delta_amount * sign
-            self.env.add_to_compute(self._fields["amount_total"], self)
+    @api.onchange("invoice_line_ids", "currency_id", "partner_id", "fiscal_position_id")
+    def _onchange_drop_inapplicable_tax_overrides(self) -> dict | None:
+        dropped = [
+            dropped
+            for move in self
+            if move.is_invoice(include_receipts=True)
+            for dropped in move._drop_inapplicable_tax_overrides()
+        ]
+        if not dropped:
+            return None
+        return {
+            "warning": {
+                "title": self.env._("Manual tax amounts removed"),
+                "message": "\n".join(
+                    self.env._(
+                        "%(tax)s: the manual amount %(amount)s no longer applies, %(reason)s.",
+                        tax=tax.name,
+                        amount=format_amount(self.env, amount, self.currency_id),
+                        reason=reason,
+                    )
+                    for tax, amount, reason in dropped
+                ),
+                "type": "notification",
+            }
+        }
 
     @_debug.perf.timed
     def _inverse_amount_total(self) -> None:
@@ -5054,6 +5090,8 @@ class AccountMove(models.Model):
                             key=lambda item: item[0] != "product_id",
                         )
                     )
+        if "tax_totals" in field_names:
+            self = self.with_context(tax_totals_edited=True)
         return super().onchange(values, field_names, fields_spec)
 
     @_debug.perf.timed
@@ -5949,11 +5987,14 @@ class AccountMove(models.Model):
                 "reversed_entry_id": move.id,
                 "partner_id": move.partner_id.id,
             }
-            reverse_moves += move.with_context(
+            reverse_move = move.with_context(
                 move_reverse_cancel=cancel,
                 include_business_fields=True,
                 skip_invoice_sync=move.move_type == "entry",
             ).copy(default_values)
+            if move.is_invoice(include_receipts=True):
+                reverse_move._update_tax_overrides_from_origin(move)
+            reverse_moves += reverse_move
 
         reverse_moves.with_context(skip_invoice_sync=cancel).write(
             {
@@ -7383,6 +7424,7 @@ class AccountMove(models.Model):
             )
         self.line_ids.analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
         self.state = "draft"
+        self._capture_tax_overrides_from_tax_lines()
         self._as_sending_queue().sending_data = False
 
         self._detach_attachments()

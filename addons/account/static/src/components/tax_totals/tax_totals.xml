@@ -22,6 +22,15 @@
                         </span>
                     </t>
                     <t t-else="">
+                        <t t-if="this.props.taxGroup.manual_tax_amount">
+                            <button
+                                type="button"
+                                class="btn btn-link btn-sm p-0 me-2 o_tax_group_reset"
+                                title="Reset to the computed amount"
+                                t-on-click.prevent="this.onResetTaxGroup">
+                                <i class="fa-solid fa-rotate-left"/>
+                            </button>
+                        </t>
                         <span class="o_tax_group_edit" t-on-click.prevent="() => this.setState('edit')">
                             <span class="o_tax_group_amount_value o_list_monetary" dir="ltr">
                                 <i class="fa-solid fa-pencil me-2"/> <t t-out="this.formatMonetary(this.props.taxGroup.tax_amount_currency)"/>
@@ -34,6 +43,10 @@
                         <t t-out="this.formatMonetary(this.props.taxGroup.tax_amount_currency)" style="white-space: nowrap;"/>
                     </span>
                 </t>
+                <span
+                    t-if="this.props.taxGroup.manual_tax_amount"
+                    class="badge rounded-pill text-bg-warning ms-2 o_tax_group_manual"
+                    t-att-title="this.manualTitle">manual</span>
             </td>
         </tr>
     </t>
