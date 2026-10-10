@@ -9,6 +9,7 @@ from odoo.addons.iot.models.iot_channel import (
     BOX_CHANNEL,
     REPLY_CHANNEL,
     ROUTE_LIFETIME,
+    ROUTE_SEPARATOR,
 )
 
 
@@ -127,7 +128,8 @@ class TestIotChannelAccess(HttpCase):
         forged = channels._wrap_session_id(
             f"user.{self.alice.id}", "s-1", "box_shop"
         ).replace(f"user.{self.alice.id}", f"user.{self.bob.id}")
-        for session_id in ("s-1", forged, "", None):
+        superscript = ROUTE_SEPARATOR.join(("k", "s-1", "²", "signature"))
+        for session_id in ("s-1", forged, superscript, "", None):
             with self.subTest(session_id=session_id):
                 self.call_jsonrpc(
                     "/iot/box/send_websocket",

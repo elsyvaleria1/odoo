@@ -1790,9 +1790,10 @@ class TestWorkflowBusChannel(TransactionCase):
         )
 
     def test_a_malformed_channel_is_dropped_rather_than_raising(self):
-        channels = self._channels(["automation.workflow/not-a-number"])
+        malformed = ["automation.workflow/not-a-number", "automation.workflow/²"]
+        channels = self._channels(malformed)
 
-        self.assertNotIn("automation.workflow/not-a-number", channels)
+        self.assertFalse(set(malformed) & set(channels))
 
     def test_other_channels_are_left_alone(self):
         channels = self._channels(["some.other/channel"])

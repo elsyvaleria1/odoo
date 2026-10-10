@@ -170,7 +170,12 @@ class IotChannel(models.AbstractModel):
 
     def _unwrap_session_id(self, wrapped, box_identifier) -> tuple[str, str] | None:
         parts = str(wrapped or "").split(ROUTE_SEPARATOR)
-        if len(parts) != 4 or not box_identifier or not parts[2].isdigit():
+        if (
+            len(parts) != 4
+            or not box_identifier
+            or not parts[2].isascii()
+            or not parts[2].isdigit()
+        ):
             return None
         reply_key, session_id, issued, signature = parts
         if time.time() - int(issued) > ROUTE_LIFETIME:

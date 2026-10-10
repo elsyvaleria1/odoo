@@ -19,7 +19,7 @@ class IrWebsocket(models.AbstractModel):
             for channel in requested:
                 channels.remove(channel)
                 suffix = channel[len(CHANNEL_PREFIX) :]
-                if suffix.isdigit():
+                if suffix.isascii() and suffix.isdigit():
                     rule_ids.add(int(suffix))
             readable = (
                 self.env["automation.rule"]
