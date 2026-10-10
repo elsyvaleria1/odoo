@@ -343,11 +343,11 @@ class TestMarinTaxLineFixes(AccountTestInvoicingCommon):
     def test_show_tax_exigibility_follows_cash_basis_setting(self):
         config = self.env.company.account_config_id
         config.tax_exigibility = False
-        self.tax_sale.invalidate_recordset(["show_tax_exigibility"])
-        self.assertFalse(self.tax_sale.show_tax_exigibility)
+        self.tax_sale.invalidate_recordset(["is_tax_exigibility_enabled"])
+        self.assertFalse(self.tax_sale.is_tax_exigibility_enabled)
         config.tax_exigibility = True
-        self.tax_sale.invalidate_recordset(["show_tax_exigibility"])
-        self.assertTrue(self.tax_sale.show_tax_exigibility)
+        self.tax_sale.invalidate_recordset(["is_tax_exigibility_enabled"])
+        self.assertTrue(self.tax_sale.is_tax_exigibility_enabled)
 
     def test_tax_totals_amounts_carry_no_float_noise(self):
         invoice = self._invoice([("A", 10.2, self.tax_sale)])

@@ -43,9 +43,9 @@ class AccountTax(models.Model):
         string="Include in Analytic Cost",
         help="If set, the amount computed by this tax will be assigned to the same analytic account as the invoice line (if any)",
     )
-    show_tax_exigibility = fields.Boolean(
+    is_tax_exigibility_enabled = fields.Boolean(
         string="Show Use Cash Basis Option",
-        compute="_compute_show_tax_exigibility",
+        compute="_compute_is_tax_exigibility_enabled",
     )
     tax_exigibility = fields.Selection(
         selection=[
@@ -124,8 +124,8 @@ class AccountTax(models.Model):
         return set()
 
     @api.depends_context("company")
-    def _compute_show_tax_exigibility(self) -> None:
-        self.show_tax_exigibility = (
+    def _compute_is_tax_exigibility_enabled(self) -> None:
+        self.is_tax_exigibility_enabled = (
             self._get_settings_company().account_config_id.tax_exigibility
         )
 

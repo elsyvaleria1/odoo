@@ -197,16 +197,16 @@ class TestMarinAccountMoveLifecycle(AccountTestInvoicingCommon):
                 "invoice_line_ids": [Command.create({"product_id": self.product_a.id})],
             }
         )
-        self.assertFalse(invoice.invoice_currency_rate_manual)
+        self.assertFalse(invoice.is_invoice_currency_rate_manual)
         invoice.invoice_currency_rate = 7.0
-        self.assertTrue(invoice.invoice_currency_rate_manual)
+        self.assertTrue(invoice.is_invoice_currency_rate_manual)
         invoice.action_post()
         self.assertEqual(invoice.invoice_currency_rate, 7.0)
         draft = invoice.copy()
-        self.assertFalse(draft.invoice_currency_rate_manual)
+        self.assertFalse(draft.is_invoice_currency_rate_manual)
         draft.invoice_currency_rate = 7.0
         draft.refresh_invoice_currency_rate()
-        self.assertFalse(draft.invoice_currency_rate_manual)
+        self.assertFalse(draft.is_invoice_currency_rate_manual)
 
     def _autopost_failing_bill(self):
         return self.env["account.move"].create(
@@ -231,11 +231,11 @@ class TestMarinAccountMoveLifecycle(AccountTestInvoicingCommon):
             for _run in range(3):
                 self.env["account.move"]._autopost_draft_entries()
         self.assertEqual(bill.state, "draft")
-        self.assertTrue(bill.auto_post_failed)
+        self.assertTrue(bill.is_auto_post_failed)
         self.assertEqual(len(bill.message_ids - before), 1)
 
         bill.partner_id = self.partner_a
-        self.assertFalse(bill.auto_post_failed)
+        self.assertFalse(bill.is_auto_post_failed)
         with patch.object(
             type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: 0.0
         ):

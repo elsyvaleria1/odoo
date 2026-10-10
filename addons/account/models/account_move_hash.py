@@ -161,7 +161,7 @@ class AccountMove(models.Model):
         )
         return warnings
 
-    def _set_chain_warnings(self, chain, include_pre_last_hash=False) -> set:
+    def _update_chain_warnings(self, chain, include_pre_last_hash=False) -> set:
         if "warnings" not in chain:
             chain["warnings"] = self._get_chain_warnings(
                 chain["moves"].with_env(self.env),
@@ -248,7 +248,7 @@ class AccountMove(models.Model):
             "remaining_moves": self - moves,
         }
         if with_warnings:
-            self._set_chain_warnings(info, include_pre_last_hash)
+            self._update_chain_warnings(info, include_pre_last_hash)
         _debug.logic(
             "chain_last_hashed_hash",
             journal=journal,

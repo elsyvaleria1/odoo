@@ -44,9 +44,9 @@
                     domain="[('auto_post', '=', 'no')]"
                     context="{'default_journal_type': 'general'}" />
                 <filter
-                    name="auto_post_failed"
+                    name="is_auto_post_failed"
                     string="Auto-post Failed"
-                    domain="[('auto_post_failed', '=', True), ('state', '=', 'draft')]" />
+                    domain="[('is_auto_post_failed', '=', True), ('state', '=', 'draft')]" />
                 <separator />
                 <filter
                     name="sales"
@@ -194,9 +194,9 @@
                     string="To Review"
                     domain="[('checked', '=', False), ('state', '!=', 'draft')]" />
                 <filter
-                    name="auto_post_failed"
+                    name="is_auto_post_failed"
                     string="Auto-post Failed"
-                    domain="[('auto_post_failed', '=', True), ('state', '=', 'draft')]" />
+                    domain="[('is_auto_post_failed', '=', True), ('state', '=', 'draft')]" />
                 <separator />
                 <filter
                     name="open"
@@ -937,7 +937,7 @@
                     class="alert alert-warning"
                     role="alert"
                     name="auto_post_failed_alert"
-                    invisible="not auto_post_failed or state != 'draft'">
+                    invisible="not is_auto_post_failed or state != 'draft'">
                     Automatic posting failed for this entry; the reason is in the chatter. It is
                     retried once the entry is saved with a change, or <button name="action_retry_auto_post" type="object" groups="account.group_account_invoice" class="oe_link" style="padding: 0; vertical-align: baseline;">retry
                     automatic posting</button> once the cause is fixed. </div>
@@ -1095,7 +1095,7 @@
                     <field name="tax_cash_basis_created_move_ids" invisible="1" />
                     <field name="quick_edit_mode" invisible="1" />
                     <field name="hide_post_button" invisible="1" />
-                    <field name="auto_post_failed" invisible="1" />
+                    <field name="is_auto_post_failed" invisible="1" />
                     <field name="quick_encoding_vals" invisible="1" />
                     <field name="show_delivery_date" invisible="1" />
                     <field name="is_being_sent" invisible="1" />

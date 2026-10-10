@@ -105,7 +105,7 @@ class WizardAccountMoveHash(models.TransientModel):
         if with_warnings:
             moves_sudo = self.env["account.move"].sudo()
             for chain in chains:
-                moves_sudo._set_chain_warnings(chain)
+                moves_sudo._update_chain_warnings(chain)
         return chains
 
     @_debug.perf.timed

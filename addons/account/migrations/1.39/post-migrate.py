@@ -33,10 +33,10 @@ def migrate(cr, version):
     if not manual:
         return
     cr.execute(
-        "UPDATE account_move SET invoice_currency_rate_manual = TRUE WHERE id = ANY(%s)",
+        "UPDATE account_move SET is_invoice_currency_rate_manual = TRUE WHERE id = ANY(%s)",
         [manual.ids],
     )
-    manual.invalidate_recordset(["invoice_currency_rate_manual"])
+    manual.invalidate_recordset(["is_invoice_currency_rate_manual"])
     _logger.info(
         "account: %s draft invoice(s) keep their hand-typed currency rate",
         len(manual),

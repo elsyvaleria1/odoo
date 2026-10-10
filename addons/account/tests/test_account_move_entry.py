@@ -157,11 +157,11 @@ class TestAccountMove(AccountTestInvoicingCommon):
                     error, self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
                 )
                 self.assertTrue(
-                    self.test_move.auto_post_failed,
+                    self.test_move.is_auto_post_failed,
                     "a failed move must leave the cron's selection until modified",
                 )
                 self.test_move.ref = f"fixed after {type(error).__name__}"
-                self.assertFalse(self.test_move.auto_post_failed)
+                self.assertFalse(self.test_move.is_auto_post_failed)
 
     def test_autopost_transient_or_unexpected_error_retries_entry(self):
         self.test_move.auto_post = "at_date"
@@ -175,27 +175,29 @@ class TestAccountMove(AccountTestInvoicingCommon):
                 self._trigger_autopost_cron_failing_with(
                     error, self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
                 )
-                self.assertFalse(self.test_move.auto_post_failed)
+                self.assertFalse(self.test_move.is_auto_post_failed)
 
         logs = self._trigger_autopost_cron_failing_with(
             ValueError("unexpected"), self.assertLogs(_AUTO_POST_LOGGER, "WARNING")
         )
         self.assertEqual(len(logs.output), 1, "only the retry is logged")
         self.assertIn(f"skipping move {self.test_move.id}", logs.output[0])
-        self.assertFalse(self.test_move.auto_post_failed)
+        self.assertFalse(self.test_move.is_auto_post_failed)
 
     def test_autopost_retry_requeues_failed_entry(self):
         self.test_move.write(
             {"auto_post": "at_date", "date": fields.Date.today(), "ref": "requeue"}
         )
-        self.test_move.write({"auto_post_failed": True, "is_manually_modified": False})
+        self.test_move.write(
+            {"is_auto_post_failed": True, "is_manually_modified": False}
+        )
         self.assertFalse(
             self.env["account.move"].search_count(
-                [("id", "=", self.test_move.id), ("auto_post_failed", "=", False)]
+                [("id", "=", self.test_move.id), ("is_auto_post_failed", "=", False)]
             )
         )
         self.test_move.action_retry_auto_post()
-        self.assertFalse(self.test_move.auto_post_failed)
+        self.assertFalse(self.test_move.is_auto_post_failed)
         self.assertEqual(self.test_move.ref, "requeue")
         self.assertFalse(
             self.test_move.is_manually_modified,
@@ -213,16 +215,16 @@ class TestAccountMove(AccountTestInvoicingCommon):
     def test_autopost_failure_is_shown_and_filterable(self):
         form = etree.fromstring(self.env.ref("account.view_move_form").arch)
         [alert] = form.xpath("//div[@name='auto_post_failed_alert']")
-        self.assertIn("auto_post_failed", alert.get("invisible"))
+        self.assertIn("is_auto_post_failed", alert.get("invisible"))
         self.assertTrue(alert.xpath(".//button[@name='action_retry_auto_post']"))
         for search_view in ("view_account_move_filter", "view_account_invoice_filter"):
             with self.subTest(view=search_view):
                 arch = etree.fromstring(self.env.ref(f"account.{search_view}").arch)
-                [flt] = arch.xpath("//filter[@name='auto_post_failed']")
-                self.assertIn("auto_post_failed", flt.get("domain"))
+                [flt] = arch.xpath("//filter[@name='is_auto_post_failed']")
+                self.assertIn("is_auto_post_failed", flt.get("domain"))
 
         views = self.env["account.move"].get_views([(False, "form"), (False, "search")])
-        self.assertIn("auto_post_failed", views["models"]["account.move"]["fields"])
+        self.assertIn("is_auto_post_failed", views["models"]["account.move"]["fields"])
 
     def test_posting_future_invoice_fails(self):
         self.test_move.date = fields.Date.today() + relativedelta(days=1)

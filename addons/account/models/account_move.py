@@ -580,7 +580,7 @@ class AccountMove(models.Model):
         copy=False,
         readonly=True,
     )
-    auto_post_failed = fields.Boolean(
+    is_auto_post_failed = fields.Boolean(
         copy=False,
         readonly=True,
     )
@@ -885,8 +885,8 @@ class AccountMove(models.Model):
         readonly=False,
         help="Currency rate from company currency to document currency.",
     )
-    invoice_currency_rate_manual = fields.Boolean(
-        compute="_compute_invoice_currency_rate_manual",
+    is_invoice_currency_rate_manual = fields.Boolean(
+        compute="_compute_is_invoice_currency_rate_manual",
         precompute=True,
         store=True,
         copy=False,
@@ -1752,8 +1752,8 @@ class AccountMove(models.Model):
         "invoice_date",
         "taxable_supply_date",
     )
-    def _compute_invoice_currency_rate_manual(self) -> None:
-        self.invoice_currency_rate_manual = False
+    def _compute_is_invoice_currency_rate_manual(self) -> None:
+        self.is_invoice_currency_rate_manual = False
 
     def _inverse_invoice_currency_rate(self) -> None:
         for move in self:
@@ -1765,11 +1765,11 @@ class AccountMove(models.Model):
                 )
                 != 0
             )
-            if move.invoice_currency_rate_manual != manual:
+            if move.is_invoice_currency_rate_manual != manual:
                 _debug.logic(
                     "invoice_currency_rate_manual_set", move=move, manual=manual
                 )
-                move.invoice_currency_rate_manual = manual
+                move.is_invoice_currency_rate_manual = manual
 
     @api.depends("move_type")
     def _compute_direction_sign(self) -> None:
@@ -3854,7 +3854,7 @@ class AccountMove(models.Model):
         named = self.filtered(lambda move: move.name and move.name != "/")
         cleared = (self - named).filtered("made_sequence_gap")
         if cleared:
-            cleared._set_sequence_gap_flag(False)
+            cleared._update_sequence_gap_flag(False)
             cleared.journal_id.invalidate_recordset(["has_sequence_holes"])
         named._update_sequence_made_gap()
 
@@ -4832,10 +4832,10 @@ class AccountMove(models.Model):
                     "skip_is_manually_modified"
                 ):
                     vals = dict(vals, is_manually_modified=True)
-                if "auto_post_failed" not in vals and any(
-                    self.mapped("auto_post_failed")
+                if "is_auto_post_failed" not in vals and any(
+                    self.mapped("is_auto_post_failed")
                 ):
-                    vals = dict(vals, auto_post_failed=False)
+                    vals = dict(vals, is_auto_post_failed=False)
 
                 res = super(
                     AccountMove,
@@ -6152,7 +6152,7 @@ class AccountMove(models.Model):
         if invoice.invoice_date:
             return
         if invoice.is_sale_document(include_receipts=True):
-            is_manual_rate = invoice.invoice_currency_rate_manual
+            is_manual_rate = invoice.is_invoice_currency_rate_manual
             _debug.logic(
                 "invoice_date_defaulted", move=invoice, manual_rate=is_manual_rate
             )
@@ -6160,7 +6160,7 @@ class AccountMove(models.Model):
                 self.env.protecting(
                     [
                         self._fields["invoice_currency_rate"],
-                        self._fields["invoice_currency_rate_manual"],
+                        self._fields["is_invoice_currency_rate_manual"],
                     ],
                     invoice,
                 )
@@ -6760,10 +6760,10 @@ class AccountMove(models.Model):
         for made_gap in (True, False):
             browse(
                 [move.id for move, flag in changed.items() if flag is made_gap]
-            )._set_sequence_gap_flag(made_gap)
+            )._update_sequence_gap_flag(made_gap)
         self.journal_id.invalidate_recordset(["has_sequence_holes"])
 
-    def _set_sequence_gap_flag(self, made_gap) -> None:
+    def _update_sequence_gap_flag(self, made_gap) -> None:
         if self:
             super().write({"made_sequence_gap": made_gap})
 
@@ -7549,7 +7549,7 @@ class AccountMove(models.Model):
             ("state", "=", "draft"),
             ("date", "<=", fields.Date.context_today(self)),
             ("auto_post", "!=", "no"),
-            ("auto_post_failed", "=", False),
+            ("is_auto_post_failed", "=", False),
         ]
         moves = self.search(domain, limit=batch_size)
         remaining = len(moves) if len(moves) < batch_size else self.search_count(domain)
@@ -7616,12 +7616,12 @@ class AccountMove(models.Model):
 
     def _mark_auto_post_failed(self) -> None:
         _debug.logic("cron_autopost_move_failed", moves=self)
-        super().write({"auto_post_failed": True})
+        super().write({"is_auto_post_failed": True})
 
     def action_retry_auto_post(self) -> None:
-        failed = self.filtered("auto_post_failed")
+        failed = self.filtered("is_auto_post_failed")
         _debug.logic("auto_post_retry_requested", moves=failed)
-        super(AccountMove, failed).write({"auto_post_failed": False})
+        super(AccountMove, failed).write({"is_auto_post_failed": False})
 
     def _as_sending_queue(self):
         return self.with_privilege(
