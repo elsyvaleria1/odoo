@@ -1,10 +1,11 @@
 import logging
 
-from odoo import Command
+from odoo import Command, http
 from odoo.exceptions import AccessDenied, UserError, ValidationError
 from odoo.http import root
 from odoo.tests import HttpCase, tagged
 
+from odoo.addons.web.controllers.utils import FRAGMENTS_HEADER
 from odoo.addons.website_sale.tests.common import MockRequest, WebsiteSaleCommon
 from odoo.addons.website_sale_mondialrelay.controllers.controllers import MondialRelay
 
@@ -86,9 +87,13 @@ class TestMondialRelayShipping(WebsiteSaleCommon, HttpCase):
         session = self.authenticate(None, None)
         session["sale_order_id"] = self.cart.id
         root.session_store.save(session)
-        result = self.call_jsonrpc(
-            "/website_sale_mondialrelay/update_shipping", params=self._relay_payload()
+        response = self.url_open(
+            "/website_sale_mondialrelay/update_shipping",
+            data={**self._relay_payload(), "csrf_token": http.Request.csrf_token(self)},
+            allow_redirects=False,
         )
+        self.assertEqual(response.status_code, 303, response.text)
+        self.assertTrue(response.headers["Location"].endswith("/shop/checkout"))
         self.cart.invalidate_recordset()
         shipping = self.cart.partner_shipping_id
         _logger.debug(
@@ -96,10 +101,9 @@ class TestMondialRelayShipping(WebsiteSaleCommon, HttpCase):
             shipping.id,
             shipping._phone_get_number().id,
         )
-        self.assertEqual(result["new_partner_shipping_id"], shipping.id)
         self.assertEqual(shipping._phone_get_number(), preferred)
         self.assertEqual(shipping.ref, "MR#R123")
-        self.assertIn("Relay preference", str(result["address"]))
+        self.assertIn("Relay preference", shipping.display_name)
         wizard = self.env["wizard.sale.order.add.shipping"].create(
             {"order_id": self.cart.id, "carrier_id": self.cart.carrier_id.id}
         )
@@ -197,3 +201,23 @@ class TestMondialRelayShipping(WebsiteSaleCommon, HttpCase):
         self.assertEqual(parsed["id"], "123")
         self.assertEqual(parsed["zip"], "1000")
         self.assertEqual(payload["ID"], 123)
+
+    def test_the_relay_form_answers_a_fragment_request_by_reloading_the_checkout(self):
+        self.cart.carrier_id = self.env.ref(
+            "delivery_mondialrelay.delivery_carrier_mondialrelay_be_lu"
+        )
+        session = self.authenticate(None, None)
+        session["sale_order_id"] = self.cart.id
+        root.session_store.save(session)
+
+        response = self.url_open(
+            "/website_sale_mondialrelay/update_shipping",
+            data={**self._relay_payload(), "csrf_token": http.Request.csrf_token(self)},
+            headers={FRAGMENTS_HEADER: "1"},
+        )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual((body["fragments"], body["redirect"]), ([], "/shop/checkout"))
+        self.cart.invalidate_recordset()
+        self.assertEqual(self.cart.partner_shipping_id.ref, "MR#R123")

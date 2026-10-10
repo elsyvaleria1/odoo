@@ -3,6 +3,7 @@ from odoo.exceptions import AccessDenied, UserError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.web.controllers.utils import fragments_or_redirect
 from odoo.addons.website_sale.controllers.delivery import Delivery
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
@@ -12,8 +13,9 @@ _debug = DebugLog(__name__)
 class MondialRelay(http.Controller):
     @http.route(
         ["/website_sale_mondialrelay/update_shipping"],
-        type="jsonrpc",
+        type="http",
         auth="public",
+        methods=["POST"],
         website=True,
     )
     def mondial_relay_update_shipping(self, **data):
@@ -51,16 +53,11 @@ class MondialRelay(http.Controller):
         if order_sudo.partner_shipping_id != partner_shipping:
             order_sudo.partner_shipping_id = partner_shipping
 
-        return {
-            "address": request.env["ir.qweb"]._render(
-                "website_sale.address_on_checkout",
-                {
-                    "order": order_sudo,
-                    "only_services": order_sudo.only_services,
-                },
-            ),
-            "new_partner_shipping_id": order_sudo.partner_shipping_id.id,
-        }
+        # the new address moves the delivery rates and the addresses shown:
+        # the checkout is loaded again, as it was after the old JSON answer
+        return fragments_or_redirect(
+            request.env, "/shop/checkout", redirect="/shop/checkout"
+        )
 
     def _parse_relay_address(self, data):
         fields = {

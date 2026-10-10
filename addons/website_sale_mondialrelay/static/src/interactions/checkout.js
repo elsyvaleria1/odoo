@@ -1,10 +1,8 @@
 /** @odoo-module native */
 import { ThirdPartyScriptError } from "@web/core/errors/error_service";
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 import { Modal, Tooltip } from "@web/libs/bootstrap";
-import { patchDynamicContent } from "@web/public/utils";
 import { Checkout } from "@website_sale/interactions/checkout";
 const errorHandlerRegistry = registry.category("error_handlers");
 
@@ -17,11 +15,6 @@ function corsIgnoredErrorHandler(env, error) {
 patch(Checkout.prototype, {
     setup() {
         super.setup();
-        patchDynamicContent(this.dynamicContent, {
-            "#btn_confirm_relay": {
-                "t-on-click": this.onClickBtnConfirmRelay.bind(this),
-            },
-        });
         this.mondialRelayModal = undefined;
         this.useDeliveryAsBillingTooltip = undefined;
         const useDeliveryAsBillingLabel = this.el.querySelector(
@@ -52,9 +45,8 @@ patch(Checkout.prototype, {
             if (!this.mondialRelayModal) {
                 this._loadMondialRelayModal(result);
             } else {
-                this.mondialRelayModal
-                    .querySelector("#btn_confirm_relay")
-                    .classList.toggle("disabled", !result.mondial_relay.current);
+                this.mondialRelayModal.querySelector("#btn_confirm_relay").disabled =
+                    !result.mondial_relay.current;
                 Modal.getOrCreateInstance(this.mondialRelayModal).show();
             }
         }
@@ -101,11 +93,12 @@ patch(Checkout.prototype, {
      * @param {Object} result
      */
     _loadMondialRelayModal(result) {
-        this.renderAt("website_sale_mondialrelay", {}, document.querySelector("body"));
+        this.renderAt(
+            "website_sale_mondialrelay",
+            { csrf_token: odoo.csrf_token },
+            document.querySelector("body"),
+        );
         this.mondialRelayModal = document.querySelector("#modal_mondialrelay");
-        this.mondialRelayModal
-            .querySelector("#btn_confirm_relay")
-            .addEventListener("click", this.onClickBtnConfirmRelay.bind(this));
 
         const loadScript = (url) =>
             new Promise((resolve) => {
@@ -135,10 +128,14 @@ patch(Checkout.prototype, {
                     ShowResultsOnMap: true,
                     AutoSelect: result.mondial_relay.current,
                     OnParcelShopSelected: (RelaySelected) => {
-                        this.lastRelaySelected = RelaySelected;
-                        this.mondialRelayModal
-                            .querySelector("#btn_confirm_relay")
-                            .classList.remove("disabled");
+                        for (const input of this.mondialRelayModal.querySelectorAll(
+                            ".o_mondialrelay_field",
+                        )) {
+                            input.value = RelaySelected[input.name] ?? "";
+                        }
+                        this.mondialRelayModal.querySelector(
+                            "#btn_confirm_relay",
+                        ).disabled = false;
                     },
                     OnNoResultReturned: () => {
                         const randInt = Math.floor(Math.random() * 100);
@@ -162,17 +159,5 @@ patch(Checkout.prototype, {
                 Modal.getOrCreateInstance(this.mondialRelayModal).show();
                 window.jQuery(zoneWidget).trigger("MR_RebindMap");
             });
-    },
-
-    async onClickBtnConfirmRelay() {
-        if (!this.lastRelaySelected) {
-            return;
-        }
-        await this.waitFor(
-            rpc("/website_sale_mondialrelay/update_shipping", {
-                ...this.lastRelaySelected,
-            }),
-        );
-        location.reload();
     },
 });

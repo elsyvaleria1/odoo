@@ -12,10 +12,15 @@
                         <div class="w-100" id="o_zone_widget">
                         </div>
                     </div>
-                    <footer class="modal-footer">
-                        <button type="button" id="btn_confirm_relay" class="btn btn-primary disabled" aria-label="Choose this Parcel Point">Send to this Parcel Point</button>
+                    <form id="o_mondialrelay_form" class="modal-footer" method="post"
+                          action="/website_sale_mondialrelay/update_shipping" data-fragment-form="">
+                        <input type="hidden" name="csrf_token" t-att-value="csrf_token"/>
+                        <t t-foreach="['ID', 'Nom', 'Adresse1', 'Adresse2', 'CP', 'Ville', 'Pays']" t-as="field">
+                            <input type="hidden" class="o_mondialrelay_field" t-att-name="field"/>
+                        </t>
+                        <button type="submit" id="btn_confirm_relay" class="btn btn-primary" disabled="disabled" aria-label="Choose this Parcel Point">Send to this Parcel Point</button>
                         <button type="button" class="btn" data-bs-dismiss="modal" aria-label="Cancel">Cancel</button>
-                    </footer>
+                    </form>
                 </div>
             </div>
         </div>
