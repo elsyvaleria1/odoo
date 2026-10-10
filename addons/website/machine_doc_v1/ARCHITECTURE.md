@@ -72,9 +72,14 @@ ir.http._dispatch  (models/ir_http.py — website=True routes)
    │  _pre_dispatch: record arguments check_access('read') under that context,
    │      then can_access_from_current_website → 404/403
    v
-Route match / _serve_fallback
-   ├─ website.rewrite hit? → _serve_redirect (301/302/308/404)
-   └─ website.page hit?    → _serve_page
+Route match (website.rewrite 308/404 are routing-map rules)
+   / _serve_fallback, first hit wins:
+   ├─ website.page hit?    → _serve_page
+   ├─ 301/302 rule hit?    → _serve_redirect, matched on the routed path;
+   │                         a target with no language prefix is followed
+   │                         in the visitor's language
+   └─ path ends in "/"?    → _serve_without_trailing_slash (301)
+   _serve_page:
                               │
                               v
                      website.page._get_response

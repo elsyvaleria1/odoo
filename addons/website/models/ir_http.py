@@ -444,15 +444,6 @@ class IrHttp(models.AbstractModel):
             )
             return request.redirect(page_info["url"])
 
-        if not page_info and req_page != "/" and req_page.endswith("/"):
-            path = cls._lang_url_prefix_unless_default(
-                request.httprequest.path[:-1], request.lang
-            )
-            if request.httprequest.query_string:
-                path += "?" + request.httprequest.query_string.decode("utf-8")
-            _debug.logic("serve_page", verdict="trailing_slash", path=req_page, to=path)
-            return request.redirect(path, code=301)
-
         if page_info:
             _debug.logic(
                 "serve_page", verdict="page", path=req_page, page=page_info["id"]
@@ -463,9 +454,23 @@ class IrHttp(models.AbstractModel):
         return False
 
     @classmethod
-    def _serve_redirect(cls):
+    def _serve_without_trailing_slash(cls):
         req_page = request.httprequest.path
-        req_page_with_qs = request.httprequest.environ["REQUEST_URI"]
+        if req_page == "/" or not req_page.endswith("/"):
+            return None
+        path = cls._lang_url_prefix_unless_default(req_page[:-1], request.lang)
+        if request.httprequest.query_string:
+            path += "?" + request.httprequest.query_string.decode("utf-8")
+        _debug.logic("serve_fallback", verdict="trailing_slash", path=req_page, to=path)
+        return request.redirect(path, code=301)
+
+    @classmethod
+    def _serve_redirect(cls):
+        # the path as routed, not REQUEST_URI: that one still carries the
+        # language prefix, which no url_from is written with
+        req_page = request.httprequest.path
+        query = request.httprequest.query_string.decode("utf-8")
+        req_page_with_qs = f"{req_page}?{query}" if query else req_page
         Rewrite = request.env["website.rewrite"].sudo()
         domain = Domain("redirect_type", "in", ("301", "302")) & Domain(
             "url_from",
@@ -498,19 +503,34 @@ class IrHttp(models.AbstractModel):
             _debug.pipeline("serve_fallback", verdict="page")
             return website_page
 
+        # before the trailing-slash redirect: a rule written for /old/ answers
+        # /old/ in one hop, not through /old
         redirect = cls._serve_redirect()
         if redirect:
+            target = redirect.url_to
+            # a target without a language prefix is followed in the visitor's
+            # language: /fr/old leads to /fr/new, not to the default /new a
+            # cookie-less crawler would then be served
+            if cls._lang_url_split(cls._url_split_suffix(target)[0])[0] is None:
+                target = cls._url_for(target)
             _debug.pipeline(
                 "serve_fallback",
                 verdict="redirect",
                 code=redirect.redirect_type,
-                to=redirect.url_to,
+                to=target,
             )
+            # the query only: request.params also holds a POST's form and
+            # files, which a Location would publish -- passwords included
             return request.redirect(
-                get_url_with_params(redirect.url_to, request.params),
+                get_url_with_params(
+                    target, request.httprequest.args.to_dict(flat=False), doseq=True
+                ),
                 code=redirect.redirect_type,
                 local=False,
             )
+
+        if response := cls._serve_without_trailing_slash():
+            return response
         _debug.pipeline("serve_fallback", verdict="unhandled")
         return None
 

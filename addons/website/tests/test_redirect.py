@@ -471,6 +471,78 @@ class TestWebsiteRedirectServe(HttpCase):
 
 
 @tagged("-at_install", "post_install")
+class TestWebsiteRedirectFallback(HttpCase):
+    def setUp(self):
+        super().setUp()
+        website = self.env.ref("website.default_website")
+        lang_fr = self.env["res.lang"]._activate_lang("fr_FR")
+        lang_fr.url_code = "fr"
+        website.language_ids = self.env.ref("base.lang_en") + lang_fr
+        website.default_lang_id = self.env.ref("base.lang_en")
+
+    def _rule(self, url_from, url_to="/contactus"):
+        self.env["website.rewrite"].create(
+            {
+                "name": url_from,
+                "redirect_type": "301",
+                "url_from": url_from,
+                "url_to": url_to,
+            }
+        )
+
+    def _location(self, url):
+        self.opener.cookies.clear()
+        response = self.url_open(url, allow_redirects=False)
+        _logger.debug(
+            "%s -> %s %s",
+            url,
+            response.status_code,
+            response.headers.get("Location"),
+        )
+        self.assertEqual(response.status_code, 301, url)
+        return response.headers["Location"]
+
+    def test_a_rule_for_a_slashed_url_answers_it_in_one_hop(self):
+        self._rule("/challenge-slashed/")
+        self.assertURLEqual(self._location("/challenge-slashed/"), "/contactus")
+
+    def test_an_unmatched_slashed_url_still_drops_its_slash(self):
+        self.assertURLEqual(
+            self._location("/fr/challenge-nothing/?q=1"), "/fr/challenge-nothing?q=1"
+        )
+
+    def test_a_rule_with_a_query_matches_under_a_language_prefix(self):
+        self._rule("/challenge-query?a=1")
+        self.assertURLEqual(
+            self._location("/fr/challenge-query?a=1"), "/fr/contactus?a=1"
+        )
+
+    def test_a_redirected_post_keeps_its_form_out_of_the_location(self):
+        self._rule("/challenge-form")
+        self.opener.cookies.clear()
+        response = self.url_open(
+            "/challenge-form?a=1&a=2",
+            data={"login": "admin", "password": "s3cret"},
+            files={"doc": ("doc.txt", b"hi")},
+            allow_redirects=False,
+        )
+        _logger.debug("POST -> %s", response.headers.get("Location"))
+        self.assertEqual(response.status_code, 301)
+        self.assertURLEqual(response.headers["Location"], "/contactus?a=1&a=2")
+
+    def test_a_rule_is_followed_in_the_visitors_language(self):
+        self._rule("/challenge-lang")
+        self._rule("/challenge-pinned", "/en/contactus")
+        self._rule("/challenge-away", "https://example.com/elsewhere")
+        self.assertURLEqual(self._location("/fr/challenge-lang"), "/fr/contactus")
+        self.assertURLEqual(self._location("/challenge-lang"), "/contactus")
+        self.assertURLEqual(self._location("/fr/challenge-pinned"), "/en/contactus")
+        self.assertEqual(
+            self._location("/fr/challenge-away"), "https://example.com/elsewhere"
+        )
+
+
+@tagged("-at_install", "post_install")
 class TestWebsiteRewriteOrdering(TransactionCase):
     def _rewrite(self, name, **values):
         return self.env["website.rewrite"].create(

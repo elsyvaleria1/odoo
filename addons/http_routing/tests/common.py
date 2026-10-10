@@ -1,4 +1,5 @@
 import contextlib
+import threading
 from functools import partial
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
@@ -187,6 +188,17 @@ def MockRequest(
         odoo.http._request_stack.push(request)
         s.callback(odoo.http._request_stack.pop)
         if mock_router:
-            s.enter_context(patch("odoo.http.root.get_routing_map", router))
+            real_get_routing_map = odoo.http.root.get_routing_map
+            owner = threading.get_ident()
+
+            # the mocked request is this thread's alone (_request_stack is
+            # context-local); a request an HttpCase serves meanwhile, in the
+            # server thread, routes through the real map
+            def get_routing_map(*args, **kwargs):
+                if threading.get_ident() != owner:
+                    return real_get_routing_map(*args, **kwargs)
+                return router(*args, **kwargs)
+
+            s.enter_context(patch("odoo.http.root.get_routing_map", get_routing_map))
 
         yield request
