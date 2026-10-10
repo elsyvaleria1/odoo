@@ -149,14 +149,14 @@ know, and an unknown tab or filter is a `BadRequest`. Here: the `notification` a
 | `/discuss/channel/attachments` | jsonrpc | public +guest (readonly) | `load_attachments` | Load channel attachments (paged) |
 | `/discuss/channel/join` | jsonrpc | public +guest | `discuss_channel_join` | Join a channel |
 | `/discuss/channel/update_avatar` | jsonrpc | **user** (default) | `discuss_channel_avatar_update` | Update channel `image_128` |
-| `/discuss/channel/sub_channel/create` | jsonrpc | public +guest | `discuss_channel_sub_channel_create` | Create a sub-channel |
+| `/discuss/channel/sub_channel/create` | jsonrpc | user (internal only) | `discuss_channel_sub_channel_create` | Create a sub-channel |
 | `/discuss/channel/sub_channel/fetch` | jsonrpc | public +guest | `discuss_channel_sub_channel_fetch` | Fetch sub-channels (paged/search) |
 | `/discuss/channel/sub_channel/delete` | jsonrpc | user | `discuss_delete_sub_channel` | Delete a sub-channel (creator only) |
 
-> `/discuss/channel/update_avatar` has no explicit `auth=` → falls back to `http.route`'s
-> `auth="user"` default. Two `channel.py` routes require login: `update_avatar` (implicit
-> default) and `/discuss/channel/sub_channel/delete` (explicit `auth="user"`). All the other
-> `channel.py` routes are `auth="public"` +guest.
+> Three `channel.py` routes require login (`auth="user"`): `update_avatar`,
+> `/discuss/channel/sub_channel/create` (which also refuses a non-internal user: portal users
+> and guests read channels but cannot create one) and `/discuss/channel/sub_channel/delete`.
+> All the other `channel.py` routes are `auth="public"` +guest.
 
 ### controllers/discuss/public_page.py — `PublicPageController`
 The anonymous discuss public-page entry points (render the standalone Discuss app).

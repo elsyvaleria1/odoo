@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError, ValidationError
-from odoo.tests.common import HttpCase, new_test_user, tagged
+from odoo.tests.common import HttpCase, JsonRpcException, new_test_user, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -255,3 +255,14 @@ class TestDiscussSubChannels(HttpCase):
             partner_ids=[alice_user.partner_id.id],
         )
         self.assertIn(alice_user.partner_id, sub_channel.channel_member_ids.partner_id)
+
+    def test_14_only_internal_users_reach_the_sub_channel_route(self):
+        new_test_user(self.env, "portal_user", groups="base.group_portal")
+        parent = self.env["discuss.channel"].create({"name": "Open to portal"})
+        self.authenticate("portal_user", "portal_user")
+        with self.assertRaisesRegex(JsonRpcException, "Forbidden"):
+            self.call_jsonrpc(
+                "/discuss/channel/sub_channel/create",
+                {"parent_channel_id": parent.id},
+            )
+        self.assertFalse(parent.sub_channel_ids)

@@ -168,5 +168,7 @@ class MailCannedResponse(models.Model):
                 """,
                 last_used=fields.Datetime.now(),
                 ids=ids,
+                to_flush=self._fields["last_used"],
             )
         )
+        self.browse(ids).invalidate_recordset(["last_used"])

@@ -40,16 +40,10 @@ def get_self_member_or_404(channel_id: Any) -> models.Model:
 
 
 def message_fetch_response(
-    *,
-    domain: Any = None,
-    thread: models.Model | None = None,
-    fetch_params: dict | None = None,
-    mark_done: bool = False,
-    extra_fields: Any = None,
-    add_followers: bool = False,
+    *, thread: models.Model, fetch_params: dict | None = None, mark_done: bool = False
 ) -> dict:
     res = request.env["mail.message"]._message_fetch(
-        domain=domain,
+        None,
         thread=thread,
         **request.env["mail.message"]._filter_fetch_params(fetch_params),
     )
@@ -58,20 +52,14 @@ def message_fetch_response(
         messages.set_message_done()
     _debug.pipeline(
         "fetch_response",
-        model=thread._name if thread else None,
-        record=thread.id if thread else None,
+        model=thread._name,
+        record=thread.id,
         messages=len(messages),
         mark_done=mark_done and not request.env.user._is_public(),
-        add_followers=add_followers,
     )
-    store_kwargs = {}
-    if extra_fields is not None:
-        store_kwargs["extra_fields"] = extra_fields
-    if add_followers:
-        store_kwargs["add_followers"] = True
     return {
         **res,
-        "data": Store().add(messages, **store_kwargs).get_result(),
+        "data": Store().add(messages).get_result(),
         "messages": messages.ids,
     }
 

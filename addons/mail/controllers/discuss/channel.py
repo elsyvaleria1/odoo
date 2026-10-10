@@ -4,7 +4,7 @@ from markupsafe import Markup
 
 from odoo import http
 from odoo.exceptions import UserError
-from odoo.http import NotFound, request
+from odoo.http import Forbidden, NotFound, request
 from odoo.libs.debug_log import DebugLog
 
 from odoo.addons.mail.controllers.utils import (
@@ -283,15 +283,16 @@ class ChannelController(http.Controller):
         "/discuss/channel/sub_channel/create",
         methods=["POST"],
         type="jsonrpc",
-        auth="public",
+        auth="user",
     )
-    @add_guest_to_context
     def discuss_channel_sub_channel_create(
         self,
         parent_channel_id: int,
         from_message_id: int | None = None,
         name: str | None = None,
     ) -> dict:
+        if not request.env.user._is_internal():
+            raise Forbidden
         channel = get_channel_or_404(parent_channel_id)
         sub_channel = channel._create_sub_channel(
             to_record_id(from_message_id) if from_message_id else None, name

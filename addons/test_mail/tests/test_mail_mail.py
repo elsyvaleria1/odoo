@@ -29,6 +29,7 @@ from odoo.addons.mail.models.ir_mail_server import (
     SMTPSessionLost,
 )
 from odoo.addons.mail.tests.common import MailCommon
+from odoo.addons.mail.tools.discuss import Store
 from odoo.addons.mail.tools.failure_type import (
     DELIVERY_FAILURE_TYPES,
     OUTGOING_FAILURE_TYPES,
@@ -4404,3 +4405,37 @@ class TestMailMailSettlingDatabaseError(MailQueueCronCase):
             self.assertRaises(psycopg.errors.DivisionByZero),
         ):
             (first | second).send()
+
+
+@tagged("mail_mail")
+class TestNotificationUpdateReachesReaders(MailCommon):
+
+    def _pushed_channels(self, messages):
+        channels = []
+        original = Store.bus_send
+
+        def capture(store, *args, **kwargs):
+            channels.append(store.target.channel)
+            return original(store, *args, **kwargs)
+
+        with patch.object(Store, "bus_send", capture):
+            messages._notify_message_notification_update()
+        return channels
+
+    def _message_by_employee(self, access):
+        record = self.env["mail.test.access"].create(
+            {"name": f"access {access}", "access": access}
+        )
+        return record.message_post(
+            author_id=self.partner_employee.id,
+            body=Markup("<p>Note</p>"),
+            message_type="comment",
+        )
+
+    def test_an_author_who_cannot_read_the_record_is_not_pushed(self):
+        channels = self._pushed_channels(self._message_by_employee("admin"))
+        self.assertNotIn(self.user_employee, channels)
+
+    def test_an_author_who_reads_the_record_is_pushed(self):
+        channels = self._pushed_channels(self._message_by_employee("internal"))
+        self.assertIn(self.user_employee, channels)

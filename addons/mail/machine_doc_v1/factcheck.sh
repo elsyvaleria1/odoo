@@ -606,10 +606,10 @@ assert_eq "TEST_TAGS.md cites 35 mock model files" \
 assert_eq "wizard .py files (excl __init__) is 9" \
     "$(find "$MAIL/wizards" -name '*.py' ! -name '__init__.py' | wc -l)" "9"
 
-# ROUTE_MAP: two channel.py routes require login (update_avatar + sub_channel/delete).
-# The literal said 1 while the line above it said two, so this could never pass.
-assert_eq "channel.py's two auth=user routes (update_avatar + sub_channel/delete)" \
-    "$(grep -c 'auth="user"' "$MAIL/controllers/discuss/channel.py")" "2"
+# ROUTE_MAP: three channel.py routes require login (update_avatar, sub_channel/create,
+# sub_channel/delete).
+assert_eq "channel.py's three auth=user routes (update_avatar + sub_channel/create + sub_channel/delete)" \
+    "$(grep -c 'auth="user"' "$MAIL/controllers/discuss/channel.py")" "3"
 
 # ================= Round-3 fact-check: previously uncovered claims =================
 # Everything below was wrong or missing in the docs and had NO assertion guarding it.

@@ -2030,31 +2030,17 @@ class DiscussChannel(models.Model):
         return self.env["discuss.channel.member"]
 
     def _get_or_create_persona_for_channel(
-        self,
-        guest_name: str,
-        timezone: str | None,
-        country_code: str | None,
-        create_member_params: dict | None = None,
-        post_joined_message: bool = True,
-    ) -> tuple:
+        self, guest_name: str, timezone: str | None, country_code: str | None
+    ) -> tuple[ResPartner, MailGuest]:
         self.check_singleton()
-        guest = self.env["mail.guest"]
-        if member := self.self_member_id:
-            return member.partner_id, member.guest_id
-        if not self.env.user._is_public():
-            self._add_members(
-                users=self.env.user, post_joined_message=post_joined_message
-            )
-        else:
-            guest = guest._get_or_create_guest(
+        channel = self
+        if not self.self_member_id and self.env.user._is_public():
+            guest = self.env["mail.guest"]._get_or_create_guest(
                 guest_name=guest_name, country_code=country_code, timezone=timezone
             )
-            self.with_context(guest=guest)._add_members(
-                guests=guest,
-                create_member_params=create_member_params,
-                post_joined_message=post_joined_message,
-            )
-        return self.env.user.partner_id if not guest else self.env["res.partner"], guest
+            channel = self.with_context(guest=guest)
+        member = channel._get_or_create_member_for_self()
+        return member.partner_id, member.guest_id
 
     def channel_join(self) -> None:
         self._add_members(users=self.env.user)

@@ -1,6 +1,6 @@
 import typing
 from collections import defaultdict
-from typing import Literal
+from typing import Literal, Self
 
 from odoo import models, modules, tools
 from odoo.exceptions import MissingError
@@ -13,6 +13,7 @@ from odoo.addons.mail.tools.discuss import Store, StoreFieldsInput, StoreFieldSp
 
 if typing.TYPE_CHECKING:
     from .mail_followers import MailFollowers
+    from odoo.addons.bus.models.res_users import ResUsers
 
 _debug = DebugLog(__name__)
 
@@ -358,21 +359,9 @@ class MailMessage(models.Model):
 
     def _notify_message_notification_update(self) -> None:
         record_by_message = self._record_by_message()
-        ids_by_model = defaultdict(list)
-        for record in record_by_message.values():
-            ids_by_model[record._name].append(record.id)
-        accessible_ids_by_model = {
-            model: set(
-                self.env[model].browse(ids).exists()._filtered_access("read")._ids
-            )
-            for model, ids in ids_by_model.items()
-        }
         message_ids_by_partner = defaultdict(OrderedSet)
         for message in self:
-            record = record_by_message.get(message)
-            if not record or record.id not in accessible_ids_by_model.get(
-                record._name, ()
-            ):
+            if message not in record_by_message:
                 continue
             if not self.env.user._is_public():
                 message_ids_by_partner[self.env.user.partner_id].add(message.id)
@@ -384,13 +373,40 @@ class MailMessage(models.Model):
         _debug.pipeline(
             "notification_update",
             messages=len(self),
-            models=len(ids_by_model),
             partners=len(message_ids_by_partner),
         )
         for partner, message_ids in message_ids_by_partner.items():
-            if user := partner.main_user_id:
+            if not (user := partner.main_user_id):
+                continue
+            messages = self.browse(message_ids)._filtered_record_readable_by(
+                user, record_by_message
+            )
+            if messages:
                 store = Store(bus_channel=user)
-                self.browse(message_ids).with_user(
-                    user
-                )._message_notifications_to_store(store)
+                messages.with_user(user)._message_notifications_to_store(store)
                 store.bus_send()
+
+    def _filtered_record_readable_by(
+        self, user: ResUsers, record_by_message: dict
+    ) -> Self:
+        ids_by_model = defaultdict(list)
+        for message in self:
+            record = record_by_message[message]
+            ids_by_model[record._name].append(record.id)
+        readable_ids_by_model = {
+            model: set(
+                self.env[model]
+                .with_user(user)
+                .browse(ids)
+                .exists()
+                ._filtered_access("read")
+                ._ids
+            )
+            for model, ids in ids_by_model.items()
+        }
+        return self.filtered(
+            lambda message: (
+                record_by_message[message].id
+                in readable_ids_by_model[record_by_message[message]._name]
+            )
+        )

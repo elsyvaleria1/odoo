@@ -157,3 +157,14 @@ class TestCannedResponseBroadcast(TransactionCase):
             legacy._broadcast()
         self.assertTrue(sent, "sanity: the response is broadcast")
         self.assertNotIn(portal, sent)
+
+
+@tagged("post_install", "-at_install")
+class TestCannedResponseUsage(TransactionCase):
+    def test_a_registered_use_is_read_back_in_the_same_transaction(self):
+        response = self.env["mail.canned.response"].create(
+            {"source": "usage", "substitution": "Used"}
+        )
+        self.assertFalse(response.last_used)
+        response._register_usage([response.id])
+        self.assertTrue(response.last_used)
