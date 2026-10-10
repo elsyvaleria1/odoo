@@ -80,21 +80,35 @@ class MailTrackingValue(models.Model):
     )
 
     def _filtered_has_field_access(self, env: Environment) -> Self:
-        def has_field_access(tracking: MailTrackingValue) -> bool:
+        kept_ids = set()
+        judged = defaultdict(list)
+        for tracking in self:
             if not tracking.field_id:
-                return env.is_system()
+                if env.is_system():
+                    kept_ids.add(tracking.id)
+                continue
             model = env[tracking.field_id.model]
             model_field = model._fields.get(tracking.field_id.name)
             if not model_field or not model._has_field_access(model_field, "read"):
-                return False
+                continue
+            if model._field_access_domain(model_field, "read") is None:
+                kept_ids.add(tracking.id)
+                continue
             message = tracking.mail_message_id
-            if model_field.access_classes is None or message.model != model._name:
-                return True
-            return bool(
-                model.browse(message.res_id)._filtered_field_access(model_field)
+            if message.model == model._get_reference_model_name():
+                judged[model._name, model_field.name].append(
+                    (tracking.id, message.res_id)
+                )
+        for (model_name, field_name), pairs in judged.items():
+            model = env[model_name]
+            readable = set(
+                model.browse(list(dict.fromkeys(res_id for _id, res_id in pairs)))
+                ._filtered_field_access(model._fields[field_name])
+                ._ids
             )
+            kept_ids.update(id_ for id_, res_id in pairs if res_id in readable)
 
-        accessible = self.filtered(has_field_access)
+        accessible = self.filtered(lambda tracking: tracking.id in kept_ids)
         if _debug.logic.enabled and len(accessible) != len(self):
             _debug.logic(
                 "tracking_values_hidden",
@@ -111,14 +125,25 @@ class MailTrackingValue(models.Model):
             message = tracking.mail_message_id
             ids_by_thread[message.model, message.res_id].append(tracking.id)
         thread_class = env.registry["mixin.mail.thread"]
+        res_ids_by_model = defaultdict(dict)
+        for model, res_id in ids_by_thread:
+            if res_id and model in env and isinstance(env[model], thread_class):
+                res_ids_by_model[model][res_id] = None
+        threads = {
+            model: env[model].browse(list(res_ids))
+            for model, res_ids in res_ids_by_model.items()
+        }
         kept_ids = []
         for (model, res_id), ids in ids_by_thread.items():
             values = displayed.browse(ids)
-            if res_id and model in env and isinstance(env[model], thread_class):
+            if model in threads:
+                thread = (
+                    threads[model]
+                    .browse(res_id)
+                    .with_prefetch(threads[model]._prefetch_ids)
+                )
                 try:
-                    values = (
-                        env[model].browse(res_id)._track_filtered_for_display(values)
-                    )
+                    values = thread._track_filtered_for_display(values)
                 except MissingError:
                     _debug.logic("tracking_thread_missing", model=model, record=res_id)
             kept_ids += values.ids

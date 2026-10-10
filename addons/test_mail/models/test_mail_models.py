@@ -150,6 +150,7 @@ class MailTestTrack(models.Model):
     track_enable_default_log = fields.Boolean(default=False)
     parent_id = fields.Many2one("mail.test.track", string="Parent")
     company_amount = fields.Float(company_dependent=True, tracking=True)
+    admin_note = fields.Char(tracking=True, groups="base.group_system")
 
     def _track_filtered_for_display(self, tracking_values):
         values = super()._track_filtered_for_display(tracking_values)

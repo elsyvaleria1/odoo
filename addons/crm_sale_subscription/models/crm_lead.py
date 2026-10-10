@@ -42,7 +42,7 @@ class CrmLead(models.Model):
 
     def _track_filtered_for_display(self, tracking_values):
         if not self.env.user.has_group("crm.group_use_recurring_revenues"):
-            return tracking_values.filtered(
+            tracking_values = tracking_values.filtered(
                 lambda t: t.field_id.name != "recurring_revenue"
             )
         return super()._track_filtered_for_display(tracking_values)

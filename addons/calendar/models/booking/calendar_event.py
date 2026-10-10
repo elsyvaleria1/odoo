@@ -801,7 +801,9 @@ class CalendarEvent(models.Model):
 
     def _track_filtered_for_display(self, tracking_values):
         if self.appointment_type_id:
-            return tracking_values.filtered(lambda t: t.field_id.name != "active")
+            tracking_values = tracking_values.filtered(
+                lambda t: t.field_id.name != "active"
+            )
         return super()._track_filtered_for_display(tracking_values)
 
     def _track_get_default_log_message(self, tracked_fields):

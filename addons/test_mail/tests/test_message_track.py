@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.tests import Form, tagged, users
+from odoo.tests import Form, new_test_user, tagged, users
 from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import MailCommon
@@ -2080,6 +2080,85 @@ class TestTrackingFieldsOfEveryWriter(MailCommon):
             Command.link(self.env.ref("base.group_user").id),
         ]
         self.assertEqual(tracked._track_get_fields(), {"name", "partner_id", "secret"})
+
+
+@tagged("mail_track")
+class TestTrackingFieldReadOnSomeRecords(MailCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company_other = cls.env["res.company"].create({"name": "Tracking B"})
+        companies = cls.env.company | cls.company_other
+        cls.scoped_admin = new_test_user(
+            cls.env,
+            login="tracking_scoped_admin",
+            groups="base.group_user",
+            company_ids=[Command.set(companies.ids)],
+        )
+        cls.env["res.users.grant"].create(
+            {
+                "user_id": cls.scoped_admin.id,
+                "group_id": cls.env.ref("base.group_system").id,
+                "company_ids": [Command.set(cls.env.company.ids)],
+            }
+        )
+        cls.records = (
+            cls.env["mail.test.track"]
+            .with_context(mail_notrack=False)
+            .create(
+                [
+                    {"name": f"In {company.name}", "company_id": company.id}
+                    for company in companies
+                    for _ in range(2)
+                ]
+            )
+        )
+        cls.env.flush_all()
+        cls.cr.flush()
+        cls.records.with_user(cls.user_admin).admin_note = "noted"
+        cls.env.flush_all()
+        cls.cr.flush()
+
+    def _visible(self, records):
+        env = self.env(
+            user=self.scoped_admin,
+            context={"allowed_company_ids": self.records.company_id.ids},
+        )
+        trackings = records.message_ids.sudo().tracking_value_ids
+        return trackings._filtered_has_field_access(env).mail_message_id.mapped(
+            lambda message: message.res_id
+        )
+
+    def test_its_tracking_shows_on_the_records_the_group_reaches(self):
+        in_a, in_b = self.records[:2], self.records[2:]
+        self.assertEqual(sorted(self._visible(self.records)), sorted(in_a.ids))
+        self.assertFalse(self._visible(in_b))
+
+    def test_the_records_are_judged_at_once(self):
+        env = self.env(
+            user=self.scoped_admin,
+            context={"allowed_company_ids": self.records.company_id.ids},
+        )
+
+        def queries(records):
+            trackings = records.message_ids.sudo().tracking_value_ids
+            self.env.invalidate_all()
+            before = self.cr.sql_log_count
+            trackings._filtered_has_field_access(env)
+            return self.cr.sql_log_count - before
+
+        queries(self.records)
+        self.assertEqual(queries(self.records), queries(self.records[:1]))
+
+    def test_a_message_moved_off_its_record_hides_it(self):
+        simple = self.env["mail.test.simple"].create({"name": "Moved to"})
+        self.records.message_ids.sudo().write(
+            {"model": simple._name, "res_id": simple.id}
+        )
+        self.assertFalse(self._visible(simple))
+        trackings = simple.message_ids.sudo().tracking_value_ids
+        self.assertEqual(len(trackings._filtered_has_field_access(self.env)), 4)
 
 
 @tagged("mail_track")
