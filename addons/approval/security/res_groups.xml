@@ -7,6 +7,20 @@
         <field name="category_id" ref="base.module_category_human_resources" />
     </record>
 
+    <record id="privilege_walk_authority" model="res.groups">
+        <field name="name">Walk Approval Authority</field>
+        <field
+            name="comment">A step that walks to the approver whose limit covers the amount reads everyone's limits, the grants they qualify and the managers it climbs, whoever routes the request.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+    <record id="privilege_read_delegations" model="res.groups">
+        <field name="name">Read Standing Delegations</field>
+        <field
+            name="comment">A segregation-of-duties check reads which users stand in, as delegates of pending requests, for the duties it weighs, whoever's rights it is checking.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="group_approval_approver" model="res.groups">
         <field name="name">Approver</field>
         <field name="sequence" eval="5" />
@@ -22,20 +36,6 @@
         <field
             name="comment">Held by everyone a step names or an approver delegates to, and granted on that. Lets its members read the document of a request they are deciding, while they decide it. Grants nothing else.</field>
         <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
-    </record>
-
-    <record id="privilege_walk_authority" model="res.groups">
-        <field name="name">Walk Approval Authority</field>
-        <field
-            name="comment">A step that walks to the approver whose limit covers the amount reads everyone's limits, the grants they qualify and the managers it climbs, whoever routes the request.</field>
-        <field name="is_privilege" eval="True" />
-    </record>
-
-    <record id="privilege_read_delegations" model="res.groups">
-        <field name="name">Read Standing Delegations</field>
-        <field
-            name="comment">A segregation-of-duties check reads which users stand in, as delegates of pending requests, for the duties it weighs, whoever's rights it is checking.</field>
-        <field name="is_privilege" eval="True" />
     </record>
 
     <record id="group_approval_manager" model="res.groups">
