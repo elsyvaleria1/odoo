@@ -235,6 +235,14 @@ assert_eq "route URL set is exactly the documented one (sha256)" \
     "4cb9d293898033997f1ba55216bb9c282b7ebe81cf4d0b40c3c6375d66ec04e2"
 assert_doc_cites "ARCHITECTURE.md cites the route count" "$route_handlers" \
     'files · \*\*%s\*\* routes' ARCHITECTURE.md
+# The URL strings beside the handler count were bare until a dropped route left them
+# stale: gated here, from the same walk the digest above hashes.
+assert_doc_cites "ARCHITECTURE.md cites the URL string count" \
+    "$(echo "$route_urls" | cut -d' ' -f1)" 'routes across \*\*%s\*\* URL strings' ARCHITECTURE.md
+assert_doc_cites "ROUTE_MAP.md cites the URL string count" \
+    "$(echo "$route_urls" | cut -d' ' -f1)" 'across \*\*%s URL strings\*\*' ROUTE_MAP.md
+assert_doc_cites "DIRECTORY_MAP.md cites the route count" "$route_handlers" \
+    'controller files, %s routes' DIRECTORY_MAP.md
 # The two central data endpoints exist.
 # Count the ROUTE, not every mention: the previous form counted grep hits for the
 # URL anywhere in the file (3 and 2), so a docstring losing the word took it red
