@@ -96,7 +96,7 @@ SEO-aware. All ABSTRACT.
 searchable.mixin, page_options.mixin]`, `_order = "website_id"`. A CMS page that
 delegates to `ir.ui.view`.
 
-**Fields:** `url` (required), `view_id` (delegate, cascade), `website_id`
+**Fields:** `url` (required; a btree `_url_idx` for the `=` lookup of every page view, a trigram index for the `unaccent ILIKE` one of every 404), `view_id` (delegate, cascade), `website_id`
 (related view, stored), `arch` (related), `website_indexed`, `date_publish`,
 `menu_ids`, `is_in_menu`/`is_homepage`/`is_visible` (computes),
 `is_new_page_template`. Constants: `_CACHE_DURATION = 3600`,

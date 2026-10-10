@@ -46,6 +46,7 @@ class WebsitePage(models.Model):
 
     url = fields.Char(
         string="Page URL",
+        index="trigram",
         required=True,
     )
     view_id = fields.Many2one(
@@ -97,6 +98,11 @@ class WebsitePage(models.Model):
         depends_context=("website_id",),
         readonly=False,
     )
+
+    # every page view looks its page up by `url =`, every 404 and mistyped
+    # case by `unaccent(url) ILIKE`: this btree serves the first, the field's
+    # trigram the second
+    _url_idx = models.Index("(url)")
 
     @api.depends("url", "website_id")
     @api.depends_context("website_id")
