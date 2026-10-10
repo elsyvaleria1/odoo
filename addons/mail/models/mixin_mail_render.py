@@ -398,9 +398,7 @@ class MixinMailRender(models.AbstractModel):
             return False
         for template in self.sudo():
             for fname in sorted(scanned):
-                engine = getattr(
-                    template._fields[fname], "render_engine", "inline_template"
-                )
+                engine = template._get_template_field_engine(fname)
                 if engine == "qweb_view":
                     continue
                 check = (
@@ -555,20 +553,20 @@ class MixinMailRender(models.AbstractModel):
             for fname in scanned
         }
 
-    def _get_shipped_template_expressions(self) -> frozenset[str]:
+    def _get_shipped_template_expressions(self) -> dict[str, frozenset[str]]:
         if "template_fs" not in self._fields:
-            return frozenset()
+            return {}
         return self._get_module_template_expressions()
 
     @tools.ormcache()
-    def _get_module_template_expressions(self) -> frozenset[str]:
+    def _get_module_template_expressions(self) -> dict[str, frozenset[str]]:
         templates = self.with_context(active_test=False).search(
             [("template_fs", "!=", False)]
         )
         external_ids = templates._get_external_ids()
         dynamic_fields = self._get_dynamic_field_names()
         documents: dict[str, etree._ElementTree | None] = {}
-        expressions: set[str] = set()
+        expressions: dict[str, set[str]] = {}
         for template in templates:
             path = template.template_fs
             if path not in documents:
@@ -589,17 +587,22 @@ class MixinMailRender(models.AbstractModel):
                     for field in record.iterfind("field"):
                         fname = field.get("name")
                         if fname in dynamic_fields:
-                            expressions |= self._get_source_expressions(
-                                _field_source(field),
-                                self._get_template_field_engine(fname),
+                            expressions.setdefault(template.render_model, set()).update(
+                                self._get_source_expressions(
+                                    _field_source(field),
+                                    self._get_template_field_engine(fname),
+                                )
                             )
         _debug.logic(
             "module_template_expressions",
             model=self._name,
             templates=len(templates),
-            expressions=len(expressions),
+            models=len(expressions),
+            expressions=sum(len(spelled) for spelled in expressions.values()),
         )
-        return frozenset(expressions)
+        return tools.frozendict(
+            {model: frozenset(spelled) for model, spelled in expressions.items()}
+        )
 
     def _check_template_authoring(
         self, previous: dict, fnames: Collection[str] | None = None
@@ -609,19 +612,23 @@ class MixinMailRender(models.AbstractModel):
         scanned = self._get_dynamic_field_names()
         if fnames is not None:
             scanned &= set(fnames)
-        shipped: frozenset[str] | None = None
+        shipped: dict[str, frozenset[str]] | None = None
         errors = []
         for record in self:
             for fname in sorted(scanned):
                 before = previous.get((record.id, fname), set())
 
-                def trusted(expression: str, before: set[str] = before) -> bool:
+                def trusted(
+                    expression: str,
+                    before: set[str] = before,
+                    model: str = record.render_model,
+                ) -> bool:
                     nonlocal shipped
                     if expression in before:
                         return True
                     if shipped is None:
                         shipped = self._get_shipped_template_expressions()
-                    return expression in shipped
+                    return expression in shipped.get(model, ())
 
                 errors += [
                     f"{record._fields[fname].string}: {error}"
@@ -657,7 +664,7 @@ class MixinMailRender(models.AbstractModel):
                 for error in template._get_source_authoring_errors(
                     template[fname],
                     template._get_template_field_engine(fname),
-                    shipped.__contains__,
+                    shipped.get(template.render_model, frozenset()).__contains__,
                 )
             ]
             if errors:

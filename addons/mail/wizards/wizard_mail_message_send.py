@@ -160,6 +160,7 @@ class WizardMailMessageSend(models.TransientModel):
         string="Use template",
         domain="[('model', '=', model), '|', ('user_id','=', False), ('user_id', '=', uid)]",
     )
+    template_render_langs = fields.Json(compute="_compute_template_render_langs")
     template_render_values = fields.Json(compute="_compute_template_render_values")
     template_render_attachments = fields.Json(
         compute="_compute_template_render_attachments"
@@ -450,6 +451,34 @@ class WizardMailMessageSend(models.TransientModel):
                 ]
             composer.template_render_attachments = values
 
+    @api.depends("composition_mode", "model", "res_domain", "res_ids", "template_id")
+    def _compute_template_render_langs(self) -> None:
+        res_ids_by_template = defaultdict(dict)
+        for composer in self:
+            composer.template_render_langs = False
+            if (
+                composer.template_id
+                and composer.composition_mode == "comment"
+                and not composer.composition_batch
+            ):
+                res_ids_by_template[composer.template_id][composer] = (
+                    composer._evaluate_res_ids() or [0]
+                )[0]
+        for template, res_id_by_composer in res_ids_by_template.items():
+            langs = template._get_res_ids_lang(
+                list(dict.fromkeys(res_id_by_composer.values()))
+            )
+            for composer, res_id in res_id_by_composer.items():
+                composer.template_render_langs = [[res_id, langs[res_id]]]
+
+    def _get_template_res_ids_lang(self) -> dict[int, str] | None:
+        langs = {}
+        for composer in self:
+            if not composer.template_render_langs:
+                return None
+            langs.update(composer.template_render_langs)
+        return langs
+
     def _render_template_fields_batch(self, fnames) -> dict:
         rendered = {}
         res_ids_by_template = defaultdict(dict)
@@ -467,7 +496,11 @@ class WizardMailMessageSend(models.TransientModel):
                 rendered[composer] = composer._render_template_fields(fnames)
         for template, res_id_by_composer in res_ids_by_template.items():
             values = template._prepare_mail_vals(
-                list(dict.fromkeys(res_id_by_composer.values())), fnames
+                list(dict.fromkeys(res_id_by_composer.values())),
+                fnames,
+                res_ids_lang=self.browse()
+                .concat(*res_id_by_composer)
+                ._get_template_res_ids_lang(),
             )
             for composer, res_id in res_id_by_composer.items():
                 rendered[composer] = dict(values[res_id])
@@ -488,7 +521,9 @@ class WizardMailMessageSend(models.TransientModel):
         ):
             return False
         res_ids = self._evaluate_res_ids() or [0]
-        return self.template_id._prepare_mail_vals(res_ids, fnames)[res_ids[0]]
+        return self.template_id._prepare_mail_vals(
+            res_ids, fnames, res_ids_lang=self._get_template_res_ids_lang()
+        )[res_ids[0]]
 
     @api.depends("composition_mode", "model", "res_domain", "res_ids", "template_id")
     def _compute_attachment_ids(self) -> None:
@@ -722,11 +757,13 @@ class WizardMailMessageSend(models.TransientModel):
                 composer.partner_ids = False
         for rendering, res_id_by_composer in by_rendering.items():
             _template, allow_suggested, _without_record = rendering
-            rendered = next(iter(res_id_by_composer))._prepare_template_vals(
+            composers = self.browse().concat(*res_id_by_composer)
+            rendered = composers[0]._prepare_template_vals(
                 list(dict.fromkeys(res_id_by_composer.values())),
                 {"email_cc", "email_to", "partner_ids"},
                 allow_suggested=allow_suggested,
                 find_or_create_partners=True,
+                res_ids_lang=composers._get_template_res_ids_lang(),
             )
             for composer, res_id in res_id_by_composer.items():
                 if partner_ids := rendered[res_id].get("partner_ids"):

@@ -357,8 +357,7 @@ the rows it does not get back *are* the raced pairs), `_get_recipient_data(...)`
 Fields: `author_id`, `mail_message_id` (req), `mail_mail_id`, `res_partner_id`,
 `mail_email_address`, `notification_type` (inbox/email/sms/…), `notification_status`
 (ready/sent/bounce/exception/canceled), `is_read`, `read_date`, `failure_type`, `failure_reason`.
-Methods: `_gc_notifications(max_age_days=180)`, `format_failure_reason()`,
-`_filtered_for_web_client()`, `_to_store_defaults(...)`.
+Methods: `_gc_notifications(max_age_days=180)`, `_filtered_for_web_client()`, `_to_store_defaults(...)`.
 
 ### `mail.activity` (`mail_activity.py`, `_rec_name="summary"`)
 Fields: `res_model_id`/`res_model`/`res_id`/`res_name`, `activity_type_id`, `activity_category`,

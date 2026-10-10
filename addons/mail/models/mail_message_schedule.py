@@ -251,15 +251,10 @@ class MailMessageSchedule(models.Model):
         return True
 
     def _grouped_by_model(self) -> dict:
-        grouped = {}
-        for schedule in self:
-            model = (
+        return self.grouped(
+            lambda schedule: (
                 schedule.mail_message_id.model
                 if schedule.mail_message_id.model and schedule.mail_message_id.res_id
                 else False
             )
-            if model not in grouped:
-                grouped[model] = schedule
-            else:
-                grouped[model] += schedule
-        return grouped
+        )

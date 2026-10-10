@@ -2476,6 +2476,53 @@ class TestMailMailSendGuarantees(MailCommon):
             "and nothing is dropped on the way: 1 raw-address message + 16 partners",
         )
 
+    def test_a_mail_that_does_not_fit_the_minute_waits_for_the_next(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "mail.server.personal.limit.minutes", "5"
+        )
+        owner = self.user_employee
+        self.env["ir.mail_server"].create(
+            {
+                "from_filter": owner.email,
+                "name": "Next minute server",
+                "owner_user_id": owner.id,
+                "smtp_host": "smtp.example.com",
+                "smtp_port": 25,
+            }
+        )
+        partners = self.env["res.partner"].create(
+            [
+                {"name": f"Next {idx}", "email": f"next{idx}@test.example.com"}
+                for idx in range(5)
+            ]
+        )
+        with self.mock_datetime_and_now("2025-01-01 20:30:23"):
+            filling, raw = (
+                self.env["mail.mail"]
+                .with_user(owner)
+                .sudo()
+                .create(
+                    [
+                        {
+                            "email_from": owner.email,
+                            "recipient_ids": [Command.set(partners[:4].ids)],
+                            "state": "outgoing",
+                        },
+                        {
+                            "email_from": owner.email,
+                            "email_to": "raw@test.example.com",
+                            "recipient_ids": [Command.set(partners[4:].ids)],
+                            "state": "outgoing",
+                        },
+                    ]
+                )
+            )
+            with self.mock_smtplib_connection(), self.mock_mail_gateway():
+                (filling | raw).send()
+        self.assertEqual(filling.state, "sent")
+        self.assertEqual(raw.state, "outgoing")
+        self.assertEqual(raw.scheduled_date, datetime(2025, 1, 1, 20, 31))
+
     def test_personal_server_cost_over_charges_an_already_notified_partner(self):
         record = (
             self.env["mail.test.gateway"]

@@ -643,7 +643,7 @@ class MailTemplate(models.Model):
     def _compile_field_expressions(self, fname: str) -> list[str]:
         self.check_singleton()
         source = str(self[fname])
-        engine = getattr(self._fields[fname], "render_engine", "inline_template")
+        engine = self._get_template_field_engine(fname)
         if engine == "qweb":
             node = self._get_qweb_template_node(source)[0]
             expressions = list(_iter_qweb_expressions(node))
@@ -1019,7 +1019,6 @@ class MailTemplate(models.Model):
                 )._message_get_default_recipients()
                 for res_id, recipients in default_recipients.items():
                     values = dict(recipients)
-                    partner_to_by_res_id[res_id] = values.pop("partner_to", "")
                     emails_by_res_id.setdefault(res_id, {}).update(
                         {
                             key: values.pop(key)
@@ -1038,11 +1037,6 @@ class MailTemplate(models.Model):
                         partner_to_by_res_id[res_id] = value
                     else:
                         emails_by_res_id.setdefault(res_id, {})[field] = value
-
-        for res_id in res_ids:
-            incoming = (render_results or {}).get(res_id)
-            if incoming and "partner_to" in incoming:
-                partner_to_by_res_id.setdefault(res_id, incoming.pop("partner_to"))
 
         if find_or_create_partners:
             self._update_recipient_vals_partner_ids(

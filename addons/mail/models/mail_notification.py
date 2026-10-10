@@ -187,17 +187,6 @@ class MailNotification(models.Model):
                 self.env.ref("mail.ir_cron_delete_notification")._trigger()
                 return
 
-    def format_failure_reason(self) -> str:
-        self.check_singleton()
-        if self.failure_type != "unknown":
-            return dict(
-                self._fields["failure_type"]._description_selection(self.env)
-            ).get(self.failure_type, self.env._("No Error"))
-        else:
-            if self.failure_reason:
-                return self.env._("Unknown error: %(error)s", error=self.failure_reason)
-            return self.env._("Unknown error")
-
     def _filtered_for_web_client(self) -> Self:
         def _is_relevant_for_web_client(notif: MailNotification) -> bool:
             if (

@@ -1306,7 +1306,7 @@ class MailMail(models.Model):
         server_limit_minute: datetime.datetime,
         max_send: int,
     ) -> None:
-        owner_limit_count = mail_server.owner_limit_count
+        owner_limit_count = max_send
         scheduled_per_mail = {}
         for mail in self:
             cost = mail._personal_server_cost()
@@ -1938,7 +1938,7 @@ class MailMail(models.Model):
         email_list: list[dict],
         batch: _SendBatch,
         mark: _SendingMark,
-        pending_notification_ids: list[int] | None = None,
+        pending_notification_ids: list[int],
     ) -> None:
         self.check_singleton()
         nothing_left_to_deliver = (
@@ -2002,7 +2002,7 @@ class MailMail(models.Model):
         outcome: _SendOutcome,
         batch: _SendBatch,
         mark: _SendingMark,
-        pending_notification_ids: list[int] | None = None,
+        pending_notification_ids: list[int],
     ) -> None:
         self.check_singleton()
         undelivered = (
@@ -2035,10 +2035,6 @@ class MailMail(models.Model):
             {"failure_reason": False, "failure_type": False, "state": "outgoing"}
         )
         notifications = self.env["mail.notification"].browse(pending_notification_ids)
-        if pending_notification_ids is None:
-            notifications = notifications.search(
-                self._get_domain_pending_email_notifications(self.ids)
-            )
         if notifications:
             notifications._with_delivery_privilege().write(
                 {
@@ -2057,7 +2053,7 @@ class MailMail(models.Model):
         outcome: _SendOutcome,
         batch: _SendBatch,
         mark: _SendingMark,
-        pending_notification_ids: list[int] | None = None,
+        pending_notification_ids: list[int],
     ) -> None:
         self.check_singleton()
         outcome.failure_type, outcome.failure_reason = self._classify_send_error(
@@ -2096,21 +2092,17 @@ class MailMail(models.Model):
 
     def _mark_sending(
         self,
-        pending_notification_ids: list[int] | None = None,
-        recipient_bearing_ids: frozenset[int] | None = None,
+        pending_notification_ids: list[int],
+        recipient_bearing_ids: frozenset[int],
     ) -> _SendingMark:
         self.check_singleton()
-        no_recipients = (
-            self.id not in recipient_bearing_ids
-            if recipient_bearing_ids is not None
-            else not self._has_any_recipient()
-        )
+        no_recipients = self.id not in recipient_bearing_ids
         mark = _SendingMark(had_recipients=not no_recipients)
         _debug.logic(
             "mark_sending",
             mail=self.id,
             no_recipients=no_recipients,
-            pending=len(pending_notification_ids or ()),
+            pending=len(pending_notification_ids),
         )
         placeholder = self.env._(
             "Placeholder recorded before sending. Still present means the send "
@@ -2128,13 +2120,7 @@ class MailMail(models.Model):
                 "failure_type": "mail_email_missing" if no_recipients else "unknown",
             }
         )
-        notifs = (
-            self.env["mail.notification"].browse(pending_notification_ids)
-            if pending_notification_ids is not None
-            else self.env["mail.notification"].search(
-                self._get_domain_pending_email_notifications(self.ids)
-            )
-        )
+        notifs = self.env["mail.notification"].browse(pending_notification_ids)
         if notifs:
             mark.previously_failing_ids = notifs.filtered(
                 lambda notif: (

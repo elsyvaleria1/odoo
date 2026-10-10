@@ -10,7 +10,7 @@ Reference for running targeted subsets of the `mail` module's tests — Python
 
 Almost every mail test class is decorated `@tagged("post_install", "-at_install", …)` — the
 suites need a fully-installed database (mail wires into `res.partner`, `res.users`, the bus,
-etc.). Of **184** tagged classes, **152** carry `post_install`/`-at_install`. Note both
+etc.). Of **183** tagged classes, **152** carry `post_install`/`-at_install`. Note both
 decorator spellings are in use (`@tagged(...)` and `@odoo.tests.tagged(...)`, the latter in
 e.g. `test_js.py` and `discuss/test_discuss_attachment_controller.py`) — grep for both or you
 will undercount. Topic tags on top of that are
@@ -45,7 +45,7 @@ Class counts measured 2026-08-17 at `dd172d10485`; `factcheck.sh` pins them.
 | `discuss_action` | 1 | `discuss/test_discuss_action.py` | Discuss client-action loading |
 | `RTC` | 1 | `discuss/test_rtc.py` | WebRTC call session model |
 | `is_tour` | 1 | `discuss/test_discuss_channel_as_guest.py` | Guest browser tours |
-| `mail_notification` | 1 | `test_mail_notification.py` | `format_failure_reason`, in the recipient's language |
+| `mail_notification` | 1 | `test_mail_notification.py` | A Reply-To at the header length boundary |
 | `web_manifest` | 1 | `test_webmanifest.py` | Service worker + web manifest served to the browser |
 | `neutralize` | 1 | `test_mail_neutralize.py` | What `data/neutralize.sql` switches off in a copy: link-preview fetching and the ICE servers |
 | `messaging_menu` | — | `discuss/test_messaging_menu.py` | The messaging-menu `/mail/data` names: tab counters, per-tab load-more, most popular channels. Tag added after `dd172d10485`, so it has no count in this table |

@@ -109,6 +109,10 @@ class TestMailTemplateAuthoring(MailCommon):
         self.env.registry.clear_cache()
         self.create_as_editor(body_html=body)
         shipped.with_user(self.editor).copy({"name": "My copy"})
+        with self.assertRaises(AccessError):
+            self.create_as_editor(
+                body_html=body, model_id=self.env["ir.model"]._get_id("res.company")
+            )
 
         shipped.body_html = '<p t-out="object.env.company.name"/>'
         with self.assertRaises(AccessError):
