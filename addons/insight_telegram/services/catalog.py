@@ -1,3 +1,4 @@
+import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -9,6 +10,8 @@ from babel.dates import format_date
 from odoo import fields
 from odoo.fields import Domain
 from odoo.tools import SQL, remove_accents
+
+_logger = logging.getLogger(__name__)
 
 TOP = 10
 MAX_TOP = 30
@@ -202,10 +205,17 @@ class NotFound(Exception):
 
 
 def money(amount, currency) -> str:
-    return f"${amount:,.2f} {currency.name}"
+    """`amount` with thousands separators and its currency, symbol where the
+    currency puts it: ``$1,234.50 MXN``, ``1,234.50 € EUR``."""
+    text = f"{amount:,.2f}"
+    symbol = currency.symbol or ""
+    if currency.position == "after":
+        return f"{text} {symbol} {currency.name}".replace("  ", " ").strip()
+    return f"{symbol}{text} {currency.name}".strip()
 
 
 def quantity(amount) -> str:
+    """A quantity with thousands separators and no trailing zeros."""
     return f"{amount:,.2f}".rstrip("0").rstrip(".")
 
 
@@ -1020,7 +1030,6 @@ def run_credit(ask):
 
 
 STATEMENT_DAYS = 90
-STATEMENT_DOCUMENTS = 15
 
 
 def run_statement(ask):
@@ -1204,6 +1213,9 @@ def _aging(ask, moves, sign, currency) -> list:
 
 
 LOCATIONS = 10
+# addresses looked up live per answer: each is a remote call of up to ten
+# seconds, made while the read-only transaction is open
+LIVE_ADDRESSES = 2
 # a reading older than this is said to be old: the unit may be off or out
 # of coverage, and where it was is not where it is
 STALE_READING = timedelta(hours=2)
@@ -1216,35 +1228,59 @@ def _tracked_devices(env):
     devices = env["device.device"].search(
         [("is_gps_device", "=", True), ("log_gps_last_id", "!=", False)]
     )
+    if "hr.employee" not in env:
+        # without employees a unit tracks no one: it is found by its name
+        return dict.fromkeys(devices, None)
     owners = {}
     if "asset_operator_id" in devices._fields:
         for device in devices:
             owners[device] = device.asset_operator_id
-    if "hr.employee" in env:
-        employees = env["hr.employee"].search(
-            [("resource_id.gps_device_id", "in", devices.ids)]
-        )
-        for employee in employees:
-            owners[employee.resource_id.gps_device_id] = employee
+    employees = env["hr.employee"].search(
+        [("resource_id.gps_device_id", "in", devices.ids)]
+    )
+    for employee in employees:
+        owners[employee.resource_id.gps_device_id] = employee
     return {device: owners.get(device) or env["hr.employee"] for device in devices}
 
 
 def _whose(ask, tracked, value):
     """The units `value` names: by the person they track, as said or
     dictated, else by the unit or its plate."""
+    found = None
+    if "hr.employee" in ask.env:
+        found = _tracked_people(ask, tracked, value)
+    if found:
+        return [device for device, owner in tracked.items() if owner and owner & found]
+    text = remove_accents(value).lower()
+    return [
+        device
+        for device in tracked
+        if text
+        in remove_accents(
+            f"{device.display_name} {getattr(device, 'asset_license_plate', '') or ''}"
+        ).lower()
+    ]
+
+
+def _tracked_people(ask, tracked, value):
+    """The tracked people `value` names, as said or dictated."""
     people = ask.env["hr.employee"].browse(
         sorted({employee.id for employee in tracked.values() if employee})
     )
     found = find(ask.env, "hr.employee", value, ("name",), [("id", "in", people.ids)])
     if not found:
         # a dictated surname is often misheard ("Carreira" for "Ferreyra"):
-        # any word that names one of the tracked people
-        words = [word for word in _WORD.findall(value) if len(word) >= 3]
+        # any word that begins one of a tracked person's names
+        words = [
+            remove_accents(word).lower()
+            for word in _WORD.findall(value)
+            if len(word) >= 3
+        ]
         found = people.filtered(
             lambda employee: any(
-                remove_accents(word).lower()
-                in remove_accents(employee.name or "").lower()
+                name.startswith(word)
                 for word in words
+                for name in remove_accents(employee.name or "").lower().split()
             )
         )
         if found:
@@ -1256,17 +1292,7 @@ def _whose(ask, tracked, value):
                     names=", ".join(found.mapped("name")),
                 )
             )
-    if found:
-        return [device for device, owner in tracked.items() if owner & found]
-    text = remove_accents(value).lower()
-    return [
-        device
-        for device in tracked
-        if text
-        in remove_accents(
-            f"{device.display_name} {getattr(device, 'asset_license_plate', '') or ''}"
-        ).lower()
-    ]
+    return found
 
 
 def _place_text(device, live):
@@ -1293,6 +1319,8 @@ def _place_text(device, live):
             try:
                 address = device._reverse_geocode(latitude, longitude)
             except Exception:
+                # the geocoder is a remote service: no address, still an answer
+                _logger.info("No address for %s", device, exc_info=True)
                 address = False
     if address:
         parts.append(address)
@@ -1311,11 +1339,11 @@ def run_location(ask):
     zone = pytz.timezone(ask.tz)
     now = fields.Datetime.now()
     lines = ["📍 **" + ask.env._("Where they are") + "**"]
-    for device in devices[: LOCATIONS if not value else 5]:
+    for index, device in enumerate(devices[: LOCATIONS if not value else 5]):
         reading = device.log_gps_last_id
         owner = tracked[device]
         plate = getattr(device, "asset_license_plate", "") or ""
-        title = owner.name or device.display_name
+        title = (owner and owner.name) or device.display_name
         lines.append("")
         lines.append(f"**{title}**" + (f" · {plate}" if plate else ""))
         local = pytz.UTC.localize(reading.timestamp).astimezone(zone)
@@ -1342,7 +1370,7 @@ def run_location(ask):
                     else ask.env._("Stopped")
                 )
             )
-        place = _place_text(device, live=bool(value))
+        place = _place_text(device, live=bool(value) and index < LIVE_ADDRESSES)
         if place:
             lines.append("🏠 " + place)
         latitude = device.log_gps_last_latitude

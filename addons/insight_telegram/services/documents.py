@@ -16,19 +16,32 @@ FILED_KINDS = {
     "guarantee_release": ("liberaci", "release"),
 }
 
-# Documents Odoo prints, by the report that prints them and how the record
-# is found: a partner for a statement, else the document's reference.
+# The report a model's records are printed with: Odoo's own main print, the
+# first one installed of those listed. These are report_name values, the
+# template each report prints, not xml ids: an xml id of that name is the
+# template's view, not the report. A model not listed uses the first report
+# its Print menu offers.
+MAIN_REPORTS = {
+    "purchase.order": ("purchase.report_purchaseorder",),
+    "sale.order": ("sale.report_saleorder",),
+    "account.move": ("account.report_invoice_with_payments",),
+    "account.payment": (
+        "marin.report_payment_receipt",
+        "account.report_payment_receipt",
+    ),
+    "stock.picking": ("stock.report_deliveryslip",),
+}
+
+# Documents Odoo prints, by the model whose main report prints them: a
+# partner's for a statement, else the document found by its reference.
 PRINTED_KINDS = {
     # a statement is the Customer Statement accounting report, not a report
     # action: the follow-up letter Odoo prints for a partner is another thing
-    "statement": ("res.partner", ()),
-    "invoice": ("account.move", ("account.report_invoice_with_payments",)),
-    "payment_receipt": (
-        "account.payment",
-        ("marin.report_payment_receipt", "account.report_payment_receipt"),
-    ),
-    "sale_order": ("sale.order", ("sale.report_saleorder",)),
-    "purchase_order": ("purchase.order", ("purchase.report_purchaseorder",)),
+    "statement": "res.partner",
+    "invoice": "account.move",
+    "payment_receipt": "account.payment",
+    "sale_order": "sale.order",
+    "purchase_order": "purchase.order",
 }
 
 KINDS = (*FILED_KINDS, "credit_file", *PRINTED_KINDS)
@@ -135,25 +148,8 @@ def _printed(env, kind, params):
     if kind == "statement":
         partner = _partner(env, params)
         return statements(env, partner), partner.mapped("display_name")
-    model, reports = PRINTED_KINDS[kind]
-    if model not in env:
-        raise NotFound(env._("That document cannot be printed on this database."))
-    # the names are report_name values, the template each report prints, not
-    # xml ids: an xml id of that name is the template's view, not the report
-    report = env["ir.actions.report"].search(
-        [("report_name", "in", list(reports)), ("model", "=", model)],
-        limit=1,
-        order="id",
-    )
-    if len(reports) > 1 and report:
-        # the first name listed is preferred where several are installed
-        for name in reports:
-            preferred = report.search(
-                [("report_name", "=", name), ("model", "=", model)], limit=1
-            )
-            if preferred:
-                report = preferred
-                break
+    model = PRINTED_KINDS[kind]
+    report = _first_report(env, model, MAIN_REPORTS[model]) if model in env else None
     if not report:
         raise NotFound(env._("That document cannot be printed on this database."))
     reference = (params.get("reference") or "").strip()
@@ -183,45 +179,49 @@ def _printed(env, kind, params):
             content, _format = env["ir.actions.report"]._render_qweb_pdf(
                 report.id, record.ids
             )
-        name = (record.display_name or kind).replace("/", "-")
-        files.append((f"{name}.pdf", content))
+        files.append((filename(record, kind), content))
     return files, records.mapped("display_name")
 
 
-# The report each model's records are sent with once created: Odoo's own
-# main print. A model not listed uses the first report its Print menu offers.
-MAIN_REPORTS = {
-    "purchase.order": ("purchase.report_purchaseorder",),
-    "sale.order": ("sale.report_saleorder",),
-    "account.move": ("account.report_invoice_with_payments",),
-    "account.payment": (
-        "marin.report_payment_receipt",
-        "account.report_payment_receipt",
-    ),
-    "stock.picking": ("stock.report_deliveryslip",),
-}
+def filename(record, fallback) -> str:
+    """The name a record's PDF is sent under: its name, slashes replaced."""
+    return f"{(record.display_name or fallback).replace('/', '-')}.pdf"
+
+
+def _first_report(env, model, names):
+    """The first PDF report of `model` among `names` that is installed."""
+    found = env["ir.actions.report"].search(
+        [
+            ("model", "=", model),
+            ("report_type", "=", "qweb-pdf"),
+            ("report_name", "in", list(names)),
+        ]
+    )
+    by_name = {report.report_name: report for report in found}
+    return next((by_name[name] for name in names if name in by_name), None)
 
 
 def main_report(env, model):
     """The PDF report a record of `model` is printed with, or nothing."""
-    Report = env["ir.actions.report"]
-    base = [("model", "=", model), ("report_type", "=", "qweb-pdf")]
-    names = MAIN_REPORTS.get(model, ())
-    if names:
-        found = Report.search(base + [("report_name", "in", list(names))])
-        by_name = {report.report_name: report for report in found}
-        for name in names:
-            if name in by_name:
-                return by_name[name]
-    return Report.search(
-        base + [("binding_model_id", "!=", False)], limit=1, order="id"
+    report = _first_report(env, model, MAIN_REPORTS.get(model, ()))
+    if report:
+        return report
+    return env["ir.actions.report"].search(
+        [
+            ("model", "=", model),
+            ("report_type", "=", "qweb-pdf"),
+            ("binding_model_id", "!=", False),
+        ],
+        limit=1,
+        order="id",
     )
 
 
-def print_records(env, records):
-    """``[(filename, bytes)]``: each record printed by its model's main
-    report; a model with none, or a report that fails, is left out."""
-    report = main_report(env, records._name) if records else None
+def print_records(env, records, report=None):
+    """``[(filename, bytes)]``: each record printed by `report`, else by its
+    model's main report; a model with none, or a record that fails to
+    print, is left out."""
+    report = report or (main_report(env, records._name) if records else None)
     if not report:
         return []
     files = []
@@ -233,6 +233,5 @@ def print_records(env, records):
         except Exception:
             _logger.info("insight_telegram could not print %s", record, exc_info=True)
             continue
-        name = (record.display_name or report.name).replace("/", "-")
-        files.append((f"{name}.pdf", content))
+        files.append((filename(record, report.name), content))
     return files

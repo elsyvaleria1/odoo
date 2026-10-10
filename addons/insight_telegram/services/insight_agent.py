@@ -198,7 +198,7 @@ class InsightAgent(BotAssistant):
         tools = list(self._tool_specs)
         # the tool list is the same every round: caching it with the system
         # prompt makes every round after the first read it from the cache
-        tools[-1]["cache_control"] = {"type": "ephemeral"}
+        tools[-1] = {**tools[-1], "cache_control": {"type": "ephemeral"}}
 
         def request(client, ai_model):
             # the loop speaks the Anthropic Messages wire; a fallback hop to
