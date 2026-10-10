@@ -163,6 +163,10 @@ def _resolve_retry_error_name(exc: Exception) -> str | None:
     return None
 
 
+def is_retryable(exc: BaseException) -> bool:
+    return isinstance(exc, Exception) and _resolve_retry_error_name(exc) is not None
+
+
 def retrying[T](
     func: Callable[[], T],
     env: Environment,
@@ -271,5 +275,6 @@ __all__ = (
     "PG_CONCURRENCY_ERRORS_TO_RETRY",
     "PG_CONCURRENCY_EXCEPTIONS_TO_RETRY",
     "RetryParticipant",
+    "is_retryable",
     "retrying",
 )

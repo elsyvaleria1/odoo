@@ -10,14 +10,13 @@ from odoo import api, fields, models, modules
 from odoo.api import ValuesType
 from odoo.exceptions import (
     AccessError,
-    ConcurrencyError,
     MissingError,
     UserError,
     ValidationError,
 )
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
-from odoo.service.transaction import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.service.transaction import is_retryable
 from odoo.tools.access_scan import prepare_document_access_error
 from odoo.tools.misc import clean_context
 from odoo.tools.owner_reach import CONCRETE
@@ -275,9 +274,7 @@ class MailScheduledMessage(models.Model):
                     )
                     scheduled_message.unlink()
             except Exception as error:
-                transient = isinstance(error, ConcurrencyError) or (
-                    getattr(error, "sqlstate", None) in PG_CONCURRENCY_ERRORS_TO_RETRY
-                )
+                transient = is_retryable(error)
                 _debug.logic(
                     "post_failed",
                     scheduled=scheduled_message.id,

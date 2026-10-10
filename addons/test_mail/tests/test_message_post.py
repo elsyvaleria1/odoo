@@ -7,7 +7,7 @@ from freezegun import freeze_time
 from markupsafe import Markup, escape
 
 from odoo import tools
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ConcurrencyError
 from odoo.libs.json import loads as json_loads
 from odoo.service.model import call_kw
 from odoo.tests import tagged
@@ -1971,6 +1971,32 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
             Schedule.search([("mail_message_id", "in", (good_msg + bad_msg).ids)]),
             "both schedules consumed: the healthy one sent, the poison one dropped",
         )
+
+    @mute_logger("odoo.addons.mail.models.mail_message_schedule")
+    def test_message_schedule_cron_keeps_a_notification_lost_to_a_concurrent_row(
+        self,
+    ):
+        Schedule = self.env["mail.message.schedule"].sudo()
+        test_record = self.test_records_simple[0].with_env(self.env)
+        test_record.message_subscribe(self.partner_1.ids)
+        msg = test_record.message_post(
+            body="<p>raced</p>", message_type="comment", subtype_xmlid="mail.mt_comment"
+        )
+        schedule = Schedule.create(
+            {"mail_message_id": msg.id, "scheduled_datetime": datetime(2020, 1, 1)}
+        )
+
+        def _notify_thread(self, message, *args, **kwargs):
+            raise ConcurrencyError(
+                "res.partner was created by a concurrent transaction"
+            )
+
+        with patch.object(
+            type(self.env["mail.test.simple"]), "_notify_thread", _notify_thread
+        ):
+            Schedule._send_notifications_cron()
+
+        self.assertTrue(schedule.exists())
 
     @mute_logger("odoo.addons.mail.models.mail_message_schedule")
     def test_message_schedule_cron_batches(self):

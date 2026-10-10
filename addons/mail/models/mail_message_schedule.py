@@ -11,7 +11,7 @@ from odoo.api import ValuesType
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
-from odoo.service.transaction import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.service.transaction import is_retryable
 
 if typing.TYPE_CHECKING:
     from .mail_message import MailMessage
@@ -122,9 +122,7 @@ class MailMessageSchedule(models.Model):
                 with self._undo_on_failure(auto_commit):
                     schedule._send_notifications()
             except Exception as error:
-                transient = (
-                    getattr(error, "sqlstate", None) in PG_CONCURRENCY_ERRORS_TO_RETRY
-                )
+                transient = is_retryable(error)
                 _debug.logic(
                     "send_failed",
                     schedule=schedule.id,
