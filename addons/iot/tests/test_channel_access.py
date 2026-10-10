@@ -90,7 +90,7 @@ class TestIotChannelAccess(HttpCase):
         bob = self._call("iot.channel", "get_iot_channel", [0])
         self.assertNotEqual(alice, bob)
         self.assertEqual(
-            resolve_capability(self.env, alice),
+            resolve_capability(self.env(user=self.alice), alice),
             self._target(REPLY_CHANNEL, f"user.{self.alice.id}"),
         )
 
@@ -283,3 +283,18 @@ class TestIotChannelAccess(HttpCase):
                     },
                 )
                 self.assertEqual(len(self.sent), delivered)
+
+    def test_a_user_reply_channel_resolves_for_that_user_only(self):
+        channels = self.env["iot.channel"]
+        alice = channels.with_user(self.alice)._reply_channel(f"user.{self.alice.id}")
+        portal = self.env["res.users"].search([("login", "=", "iot_portal")])
+        self.assertEqual(
+            resolve_capability(self.env(user=self.alice), alice),
+            self._target(REPLY_CHANNEL, f"user.{self.alice.id}"),
+        )
+        for user in (self.bob, portal, self.env.ref("base.public_user")):
+            with self.subTest(user=user.login):
+                self.assertIsNone(resolve_capability(self.env(user=user), alice))
+        kiosk = channels._reply_channel("kiosk.1.abc")
+        public_env = self.env(user=self.env.ref("base.public_user"))
+        self.assertTrue(resolve_capability(public_env, kiosk))

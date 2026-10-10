@@ -1,25 +1,36 @@
 import hashlib
+from collections.abc import Callable
 
 from odoo.tools import hmac, is_hmac_valid, register_signed_scope
 
 # A client subscribes to a channel by naming it, so a name a client can say is
 # a name it can read. A string channel is therefore a capability: the server
 # mints it for one audience, signed for one declared scope, and sends to the
-# internal channel it stands for, which no client can name.
+# internal channel it stands for, which no client can name. A scope whose
+# audience is people rather than devices also names its holder: the capability
+# then resolves only for a subscriber that holder admits, so a name that leaves
+# with someone who lost the right is worth nothing to them.
 PREFIX = "bus"
 TARGET = "bus.capability"
 
 _SCOPES: dict[str, str] = {}
+_HOLDERS: dict[str, Callable] = {}
 
 
-def register_channel_scope(name: str, *, purpose: str, lifetime: str) -> str:
+def register_channel_scope(
+    name: str, *, purpose: str, lifetime: str, holder: Callable | None = None
+) -> str:
     """Declare a scope of bus channels: what a holder of one receives, and
     what revokes it (the key changes when its record's token is rotated, or
-    never). Returns the name, for the module to keep as its constant."""
+    never). ``holder(env, key)`` says whether the subscriber of ``env`` may
+    hold the channel of ``key``; without it the capability is a bearer's.
+    Returns the name, for the module to keep as its constant."""
     _check_part(name)
     _SCOPES[name] = register_signed_scope(
         f"bus.channel.{name}", purpose=purpose, lifetime=lifetime
     )
+    if holder is not None:
+        _HOLDERS[name] = holder
     return name
 
 
@@ -48,6 +59,9 @@ def resolve_capability(env, name: str) -> tuple | None:
     if not key or signed_scope is None:
         return None
     if not is_hmac_valid(env, signed_scope, key, signature):
+        return None
+    holder = _HOLDERS.get(scope)
+    if holder is not None and not holder(env, key):
         return None
     return (env.cr.dbname, TARGET, scope, key)
 

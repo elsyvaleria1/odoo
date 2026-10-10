@@ -1,5 +1,6 @@
 from odoo.tests import new_test_user, tagged
 
+from odoo.addons.bus.tools.channel_capability import resolve_capability
 from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 
@@ -33,3 +34,17 @@ class TestPosBusToken(CommonPosTest):
         self.assertEqual(len(set(after)), 2)
         self.assertFalse(set(before) & set(after))
         self.assertEqual({len(token) for token in before + after}, {36})
+
+    def test_a_till_channel_resolves_only_for_a_user_who_reads_its_point_of_sale(self):
+        config = self.pos_config_usd
+        till = config._pos_bus_channel("till")
+        display = config._pos_bus_channel("customer_display")
+        public = self.env.ref("base.public_user")
+        portal = new_test_user(
+            self.env, login="pos_bus_token_portal", groups="base.group_portal"
+        )
+        self.assertTrue(resolve_capability(self.env(user=self.cashier), till))
+        for user in (public, portal):
+            with self.subTest(user=user.id):
+                self.assertIsNone(resolve_capability(self.env(user=user), till))
+                self.assertTrue(resolve_capability(self.env(user=user), display))

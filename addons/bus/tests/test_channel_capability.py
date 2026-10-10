@@ -1,13 +1,21 @@
 from odoo.libs.json import loads as json_loads
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, new_test_user, tagged
 
 from ..tools.channel_capability import (
     channel_capability,
     channel_target,
+    register_channel_scope,
     resolve_capability,
 )
 from .common import TEST_CHANNEL as TEST_SCOPE
 from .common import WebsocketCase
+
+HELD_CHANNEL = register_channel_scope(
+    "bus_test_held",
+    purpose="tests: a channel only the user its key names may hold",
+    lifetime="undated",
+    holder=lambda env, key: key == str(env.uid),
+)
 
 
 @tagged("-at_install", "post_install")
@@ -39,6 +47,23 @@ class TestChannelCapability(TransactionCase):
             channel_capability(self.env, TEST_SCOPE, "4:2")
         with self.assertRaises(ValueError):
             channel_target(self.env, "unregistered", "42")
+
+    def test_a_held_capability_resolves_only_for_the_holder_it_names(self):
+        alice = new_test_user(self.env, login="held_alice", groups="base.group_user")
+        bob = new_test_user(self.env, login="held_bob", groups="base.group_user")
+        name = channel_capability(self.env, HELD_CHANNEL, str(alice.id))
+        target = channel_target(self.env, HELD_CHANNEL, str(alice.id))
+        self.assertEqual(resolve_capability(self.env(user=alice), name), target)
+        self.assertIsNone(resolve_capability(self.env(user=bob), name))
+        public = self.env.ref("base.public_user")
+        for user, expected in ((alice, {target}), (bob, set()), (public, set())):
+            with self.subTest(user=user.login):
+                channels = (
+                    self.env["ir.websocket"]
+                    .with_user(user)
+                    ._prepare_subscribe_data([name], 0)["channels"]
+                )
+                self.assertEqual(set(channels) & {target}, expected)
 
 
 @tagged("-at_install", "post_install")

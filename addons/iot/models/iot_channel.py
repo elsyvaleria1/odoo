@@ -22,10 +22,22 @@ BOX_CHANNEL = register_channel_scope(
     "payment-terminal commands",
     lifetime="until the box is paired again and its token changes",
 )
+USER_REPLY_PREFIX = "user."
+
+
+def _holds_reply_channel(env, key) -> bool:
+    # a user's answers are that user's alone; a kiosk's go to the device
+    # holding the kiosk's link
+    if not key.startswith(USER_REPLY_PREFIX):
+        return True
+    return key == f"{USER_REPLY_PREFIX}{env.uid}" and env.user._is_internal()
+
+
 REPLY_CHANNEL = register_channel_scope(
     "iot.reply",
     purpose="the IoT boxes' answers to the requests of one user or one kiosk",
     lifetime="undated for a user; a kiosk's until its self-ordering token is rotated",
+    holder=_holds_reply_channel,
 )
 REPLY_ROUTE = tools.register_signed_scope(
     "iot.reply_route",
@@ -80,7 +92,7 @@ class IotChannel(models.AbstractModel):
             raise AccessError(self.env._("Only internal users can reach IoT boxes."))
 
     def _user_reply_key(self) -> str:
-        return f"user.{self.env.uid}"
+        return f"{USER_REPLY_PREFIX}{self.env.uid}"
 
     def _kiosk_reply_key(self, pos_config) -> str:
         token = pos_config.self_ordering_access_token or ""

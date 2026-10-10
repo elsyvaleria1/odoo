@@ -12,11 +12,33 @@ from odoo.addons.bus.tools.channel_capability import (
 
 _debug = DebugLog(__name__)
 
+# The audiences a person holds: a till or a kitchen display is opened by a user
+# who reads its record. A customer display or a tracking screen is a device,
+# whose link is the capability.
+USER_AUDIENCES = frozenset({"till"})
+
+
+def _holds_pos_channel(env, key) -> bool:
+    model, record_id, audience, _revision = _split_pos_bus_key(key)
+    if audience not in USER_AUDIENCES:
+        return True
+    if model not in env or not record_id.isdigit():
+        return False
+    record = env[model].browse(int(record_id)).exists()
+    return bool(record) and record.has_access("read")
+
+
+def _split_pos_bus_key(key) -> tuple[str, str, str, str]:
+    model, record_id, audience, revision = (key.rsplit(".", 3) + ["", "", ""])[:4]
+    return model, record_id, audience, revision
+
+
 POS_CHANNEL = register_channel_scope(
     "pos.bus",
     purpose="one point-of-sale record's notifications to one audience of its "
     "devices: the till, its customer display, its order-tracking screen",
     lifetime="until the record's access token is rotated",
+    holder=_holds_pos_channel,
 )
 
 
