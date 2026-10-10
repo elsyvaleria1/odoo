@@ -145,6 +145,9 @@ class AccountEcSalesReportHandler(models.AbstractModel):
             report, options, previous_options=previous_options
         )
         self._init_core_custom_options(report, options, previous_options)
+        companies = self.env["res.company"].browse(
+            report.get_report_company_ids(options)
+        )
         options.update(
             {
                 "sales_report_taxes": {
@@ -153,7 +156,7 @@ class AccountEcSalesReportHandler(models.AbstractModel):
                         .search(
                             [
                                 *self.env["account.tax"]._check_company_domain(
-                                    self.env.company
+                                    companies
                                 ),
                                 ("amount", "=", 0.0),
                                 ("amount_type", "=", "percent"),
@@ -175,18 +178,25 @@ class AccountEcSalesReportHandler(models.AbstractModel):
             .search([("code", "in", tuple(self._get_ec_country_codes(options)))])
             .ids
         )
-        other_country_ids = tuple(
-            set(country_ids)
-            - {self.env.company.tax_config_id.account_fiscal_country_id.id}
-        )
+        company_domains = []
+        for company in companies:
+            other_country_ids = tuple(
+                set(country_ids) - {company.tax_config_id.account_fiscal_country_id.id}
+            )
+            company_domains.append(
+                [
+                    "&",
+                    ("company_id", "=", company.id),
+                    "|",
+                    ("move_id.partner_shipping_id.country_id", "in", other_country_ids),
+                    "&",
+                    ("move_id.partner_shipping_id", "=", False),
+                    ("partner_id.country_id", "in", other_country_ids),
+                ]
+            )
         options.setdefault("forced_domain", []).extend(
-            [
-                "|",
-                ("move_id.partner_shipping_id.country_id", "in", other_country_ids),
-                "&",
-                ("move_id.partner_shipping_id", "=", False),
-                ("partner_id.country_id", "in", other_country_ids),
-            ]
+            ["|"] * (len(company_domains) - 1)
+            + [leaf for domain in company_domains for leaf in domain]
         )
 
         report._init_options_journals(options, previous_options=previous_options)
@@ -197,7 +207,7 @@ class AccountEcSalesReportHandler(models.AbstractModel):
             report=report,
             goods_taxes=len(options["sales_report_taxes"]["goods"]),
             ec_countries=len(country_ids),
-            other_countries=len(other_country_ids),
+            companies=companies,
         )
 
     @_debug.perf.timed

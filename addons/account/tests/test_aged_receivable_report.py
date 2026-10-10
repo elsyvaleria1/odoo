@@ -1374,6 +1374,37 @@ class TestAgedReceivableReport(TestAccountReportsCommon):
             options,
         )
 
+    def test_aged_receivable_horizontal_group_keeps_every_period(self):
+        horizontal_group = self.env["account.report.horizontal.group"].create(
+            {
+                "name": "By journal",
+                "report_ids": [Command.set(self.report.ids)],
+                "rule_ids": [Command.create({"field_name": "journal_id"})],
+            }
+        )
+        options = self._generate_options(
+            self.report,
+            "2017-02-01",
+            "2017-02-01",
+            default_options={"selected_horizontal_group_id": horizontal_group.id},
+        )
+        self.assertGreater(len(options["column_groups"]), 1)
+
+        aged_line = self.report._get_lines(options)[0]
+        periods_by_group = {}
+        totals_by_group = {}
+        for column in aged_line["columns"]:
+            group = column["column_group_key"]
+            if column["expression_label"].startswith("period"):
+                periods_by_group[group] = periods_by_group.get(group, 0.0) + (
+                    column["no_format"] or 0.0
+                )
+            elif column["expression_label"] == "total":
+                totals_by_group[group] = column["no_format"] or 0.0
+        for group, total in totals_by_group.items():
+            self.assertAlmostEqual(periods_by_group[group], total)
+        self.assertAlmostEqual(sum(totals_by_group.values()), 1950.0)
+
     def test_aged_receivable_unfold_all_queries_do_not_grow_with_partners(self):
         options = self._generate_options(
             self.report,

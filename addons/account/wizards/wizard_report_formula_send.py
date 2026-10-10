@@ -26,11 +26,9 @@ class WizardReportFormulaSend(models.TransientModel):
     )
 
     # == PRINT ==
-    enable_download = fields.Boolean()
     checkbox_download = fields.Boolean(string="Download")
 
     # == MAIL ==
-    enable_send_mail = fields.Boolean(default=True)
     checkbox_send_mail = fields.Boolean(
         string="Email",
         default=True,
@@ -171,26 +169,37 @@ class WizardReportFormulaSend(models.TransientModel):
         for wizard in self:
             wizard.mode = "single" if len(wizard.partner_ids) == 1 else "multi"
 
-    @api.depends("checkbox_send_mail")
+    @api.model
+    def _get_statement_recipients(self, partner):
+        if partner.email:
+            return partner
+        return partner.child_ids.filtered(
+            lambda contact: contact.type == "invoice" and contact.email
+        )
+
+    def _get_partners_without_recipient(self):
+        self.check_singleton()
+        if self.mode == "single":
+            return self.mail_partner_ids.filtered(lambda partner: not partner.email)
+        return self.mail_partner_ids.filtered(
+            lambda partner: not self._get_statement_recipients(partner)
+        )
+
+    @api.depends("mode", "mail_partner_ids")
     def _compute_send_mail_extra_fields(self) -> None:
         for wizard in self:
             wizard.display_mail_composer = wizard.mode == "single"
-            partners_without_mail_data = wizard.mail_partner_ids.filtered(
-                lambda x: not x.email
-            )
             wizard.send_mail_readonly = (
-                partners_without_mail_data == wizard.mail_partner_ids
+                wizard._get_partners_without_recipient() == wizard.mail_partner_ids
             )
 
-    @api.depends("mail_partner_ids", "checkbox_send_mail", "send_mail_readonly")
+    @api.depends("mode", "mail_partner_ids", "checkbox_send_mail", "send_mail_readonly")
     @_debug.perf.timed
     def _compute_warnings(self) -> None:
         for wizard in self:
             warnings = {}
 
-            partners_without_mail = wizard.mail_partner_ids.filtered(
-                lambda x: not x.email
-            )
+            partners_without_mail = wizard._get_partners_without_recipient()
             if wizard.send_mail_readonly or (
                 wizard.checkbox_send_mail and partners_without_mail
             ):
@@ -270,14 +279,14 @@ class WizardReportFormulaSend(models.TransientModel):
         }
 
     @_debug.perf.timed
-    def _process_send_and_print(
-        self, report, options, recipient_partner_ids=None, wizard=None
-    ):
+    def _process_send_and_print(self, report, options, wizard=None):
         """Generate the report of each partner of the options, then mail and/or download it.
+
+        Each partner's report is mailed to the recipients edited in a single-recipient wizard,
+        else to that partner or, without an email, to its invoice contacts.
 
         :param recordset report: the report.formula to generate
         :param dict options: report options; options['partner_ids'] holds the partners to process
-        :param list recipient_partner_ids: ids of the partners that will receive the mail message
         :param wizard: the wizard.report.formula.send wizard; absent when sending by cron, in which
                        case the values stored in report.send_and_print_values are used
         :return: a download action if attachments have to be downloaded, else None
@@ -315,14 +324,15 @@ class WizardReportFormulaSend(models.TransientModel):
 
         partner_ids = options.get("partner_ids", [])
         partners = self.env["res.partner"].browse(partner_ids)
+        single_recipients = (
+            wizard.mail_partner_ids if wizard and wizard.mode == "single" else None
+        )
         _debug.logic(
             "recipients_resolved",
             report=report,
             partners=partners,
-            recipients_defaulted=not recipient_partner_ids,
+            edited_recipients=single_recipients,
         )
-        if not recipient_partner_ids:
-            recipient_partner_ids = partners.filtered("email").ids
 
         email_from = (
             mail_template_id._render_field("email_from", partner_ids)
@@ -330,17 +340,24 @@ class WizardReportFormulaSend(models.TransientModel):
             else {}
         )
         downloadable_attachments = self.env["ir.attachment"]
+        mailed_partners = self.env["res.partner"]
 
         for partner in partners:
             options["partner_ids"] = partner.ids
             report_attachment = partner._create_partner_account_report_attachment(
                 report, options
             )
+            recipients = (
+                single_recipients
+                if single_recipients is not None
+                else self._get_statement_recipients(partner)
+            )
 
-            if to_email and recipient_partner_ids:
-                if wizard and wizard.mode == "single":
-                    subject = self.mail_subject
-                    body = self.mail_body
+            if to_email and recipients:
+                mailed_partners |= partner
+                if single_recipients is not None:
+                    subject = wizard.mail_subject
+                    body = wizard.mail_body
                 else:
                     subject = self._get_mail_field_value(
                         partner, mail_template_id, partner.lang, "subject"
@@ -357,7 +374,7 @@ class WizardReportFormulaSend(models.TransientModel):
                     body=body,
                     subject=subject,
                     email_from=email_from.get(partner.id),
-                    partner_ids=recipient_partner_ids,
+                    partner_ids=recipients.ids,
                     attachment_ids=attachments_ids + report_attachment.ids,
                     email_add_signature=False,
                 )
@@ -369,7 +386,7 @@ class WizardReportFormulaSend(models.TransientModel):
             "partners_processed",
             report=report,
             partners=len(partners),
-            mailed=bool(to_email and recipient_partner_ids),
+            mailed_partners=mailed_partners,
             downloadable_attachments=downloadable_attachments,
         )
         if downloadable_attachments:
@@ -439,6 +456,5 @@ class WizardReportFormulaSend(models.TransientModel):
         return self._process_send_and_print(
             report=self.account_report_id,
             options=options,
-            recipient_partner_ids=self.mail_partner_ids.ids,
             wizard=self,
         )

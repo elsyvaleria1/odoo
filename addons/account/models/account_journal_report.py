@@ -148,10 +148,11 @@ class AccountJournalReportHandler(models.AbstractModel):
                     COUNT(DISTINCT move_id) FILTER (WHERE am.state = 'draft' OR NOT am.checked) AS to_review,
                     ARRAY_AGG(DISTINCT %(account_code)s) AS account_code,
                     ARRAY_AGG(DISTINCT j.code) AS journal_code,
-                    SUM("account_move_line".debit) AS debit,
-                    SUM("account_move_line".credit) AS credit,
-                    SUM("account_move_line".balance) AS balance
+                    SUM(%(debit)s) AS debit,
+                    SUM(%(credit)s) AS credit,
+                    SUM(%(balance)s) AS balance
                 FROM %(table)s
+                %(currency_table_join)s
                 JOIN account_move am ON am.id = account_move_line.move_id
                 JOIN account_journal j ON j.id = am.journal_id
                 JOIN res_company cp ON cp.id = am.company_id
@@ -162,6 +163,12 @@ class AccountJournalReportHandler(models.AbstractModel):
             """,
             select_from_groupby=select_from_groupby,
             account_code=account_code,
+            debit=report._currency_table_apply_rate(SQL('"account_move_line".debit')),
+            credit=report._currency_table_apply_rate(SQL('"account_move_line".credit')),
+            balance=report._currency_table_apply_rate(
+                SQL('"account_move_line".balance')
+            ),
+            currency_table_join=report._currency_table_aml_join(options),
             table=query.from_clause,
             search_conditions=query.where_clause,
             case_statement=self._get_payment_lines_filter_case_statement(options),
@@ -199,8 +206,8 @@ class AccountJournalReportHandler(models.AbstractModel):
             for idx, col in enumerate(options.get("columns", []))
         }
         to_review_index = colname_to_idx.get("to_review")
+        section_end_journal_ids = {}
         for i, line in enumerate(lines):
-            new_lines.append(line)
             line_id = line["id"]
 
             line_model, res_id = report._get_model_info_from_id(line_id)
@@ -216,19 +223,39 @@ class AccountJournalReportHandler(models.AbstractModel):
                 line["account_id"] = res_ids_map["account.account"]
                 line["date"] = options["date"]
 
-                journal = self.env["account.journal"].browse(line["journal_id"])
-
-                # If it is the last line of the journal section
-                # Check if the journal has taxes and if so, add the tax summaries
+                # The last line of a journal section gets the journal's tax summary
                 if (
                     i + 1 == len(lines)
-                    or (
-                        i + 1 < len(lines)
-                        and report._get_model_info_from_id(lines[i + 1]["id"])[0]
-                        != "account.account"
-                    )
-                ) and self._section_has_tax(options, journal.id):
-                    tax_summary_line = {
+                    or report._get_model_info_from_id(lines[i + 1]["id"])[0]
+                    != "account.account"
+                ):
+                    section_end_journal_ids[i] = line["journal_id"]
+
+        # If we render the first level it means that we need to render
+        # the global tax summary lines
+        render_global_summary = (
+            report._get_model_info_from_id(lines[0]["id"])[0] == "report.formula.line"
+        )
+        journal_ids_with_tax = (
+            self._get_journal_ids_with_tax(options)
+            if section_end_journal_ids or render_global_summary
+            else set()
+        )
+        tax_summary_journals = self.env["account.journal"].browse(
+            sorted(set(section_end_journal_ids.values()) & journal_ids_with_tax)
+        )
+        tax_summaries = self._get_tax_summary_sections(
+            options,
+            tax_summary_journals,
+            with_global=render_global_summary and bool(journal_ids_with_tax),
+        )
+
+        for i, line in enumerate(lines):
+            new_lines.append(line)
+            journal_id = section_end_journal_ids.get(i)
+            if journal_id is not None and journal_id in tax_summaries:
+                new_lines.append(
+                    {
                         "id": report._get_generic_line_id(
                             False,
                             False,
@@ -237,36 +264,31 @@ class AccountJournalReportHandler(models.AbstractModel):
                         ),
                         "name": "",
                         "parent_id": line["parent_id"],
-                        "journal_id": journal.id,
+                        "journal_id": journal_id,
                         "is_tax_section_line": True,
                         "columns": [],
                         "colspan": len(options["columns"]) + 1,
                         "level": 4,
-                        **self._get_tax_summary_section(
-                            options, {"id": journal.id, "type": journal.type}
-                        ),
-                    }
-                    new_lines.append(tax_summary_line)
-
-        # If we render the first level it means that we need to render
-        # the global tax summary lines
-        if report._get_model_info_from_id(lines[0]["id"])[0] == "report.formula.line":
-            if self._section_has_tax(options, False):
-                # We only add the global summary line if it has taxes
-                new_lines.append(
-                    {
-                        "id": report._get_generic_line_id(
-                            False, False, markup="tax_report_section_heading"
-                        ),
-                        "name": self.env._("Global Tax Summary"),
-                        "level": 0,
-                        "columns": [],
-                        "unfoldable": False,
-                        "colspan": len(options["columns"]) + 1,
-                        # We want it to take the whole line. It makes it easier to unfold it.
+                        **tax_summaries[journal_id],
                     }
                 )
-                summary_line = {
+
+        if None in tax_summaries:
+            new_lines.append(
+                {
+                    "id": report._get_generic_line_id(
+                        False, False, markup="tax_report_section_heading"
+                    ),
+                    "name": self.env._("Global Tax Summary"),
+                    "level": 0,
+                    "columns": [],
+                    "unfoldable": False,
+                    "colspan": len(options["columns"]) + 1,
+                    # We want it to take the whole line. It makes it easier to unfold it.
+                }
+            )
+            new_lines.append(
+                {
                     "id": report._get_generic_line_id(
                         False, False, markup="tax_report_section"
                     ),
@@ -276,9 +298,9 @@ class AccountJournalReportHandler(models.AbstractModel):
                     "colspan": len(options["columns"]) + 1,
                     "level": 4,
                     "class": "o_account_reports_ja_subtable",
-                    **self._get_tax_summary_section(options),
+                    **tax_summaries[None],
                 }
-                new_lines.append(summary_line)
+            )
 
         if _debug.pipeline.enabled:
             _debug.pipeline(
@@ -1041,12 +1063,13 @@ class AccountJournalReportHandler(models.AbstractModel):
         - journals_vals (mandatory):                    List of dicts holding the lines, columns and tax summaries
             - lines (mandatory):                        A list of dicts, in the format returned by _get_export_lines_for_journal
             - columns (mandatory):                      A list of columns for this journal, in the format returned by _get_columns_for_journal
-            - tax_summary (optional):                   A dict of tax summary data for the journal, in the format returned by _get_tax_summary_section
-        - global_tax_summary:                           A dict of global tax summary data, in the format returned by _get_tax_summary_section
+            - tax_summary (optional):                   A dict of tax summary data for the journal, in the format returned by _get_tax_summary_sections
+        - global_tax_summary:                           A dict of global tax summary data, in the format returned by _get_tax_summary_sections
         :rtype: dict
         """
         # Ensure that all the data is synchronized with the database before we read it
         self.env.flush_all()
+        report._init_currency_table(options)
         query = report._get_report_query(options, "strict_range")
         account_alias = query.left_join(
             lhs_alias="account_move_line",
@@ -1068,7 +1091,7 @@ class AccountJournalReportHandler(models.AbstractModel):
                 account_move_line.date,
                 am.invoice_date,
                 account_move_line.amount_currency,
-                account_move_line.tax_base_amount,
+                %(tax_base_amount)s AS tax_base_amount,
                 account_move_line.currency_id AS move_line_currency,
                 account_move_line.display_type AS display_type,
                 am.id AS move_id,
@@ -1081,9 +1104,9 @@ class AccountJournalReportHandler(models.AbstractModel):
                 %(account_code)s AS account_code,
                 %(account_name)s AS account_name,
                 %(account_alias)s.account_type AS account_type,
-                COALESCE(account_move_line.debit, 0) AS debit,
-                COALESCE(account_move_line.credit, 0) AS credit,
-                COALESCE(account_move_line.balance, 0) AS balance,
+                COALESCE(%(debit)s, 0) AS debit,
+                COALESCE(%(credit)s, 0) AS credit,
+                COALESCE(%(balance)s, 0) AS balance,
                 %(j_name)s AS journal_name,
                 j.code AS journal_code,
                 j.type AS journal_type,
@@ -1092,6 +1115,7 @@ class AccountJournalReportHandler(models.AbstractModel):
                 array_remove(array_agg(DISTINCT %(tax_name)s), NULL) AS taxes,
                 array_remove(array_agg(DISTINCT %(tag_name)s), NULL) AS tax_grids
             FROM %(table)s
+            %(currency_table_join)s
             JOIN account_move am ON am.id = account_move_line.move_id
             LEFT JOIN res_partner p ON p.id = account_move_line.partner_id
             JOIN account_journal j ON j.id = am.journal_id
@@ -1104,7 +1128,7 @@ class AccountJournalReportHandler(models.AbstractModel):
             LEFT JOIN account_account_tag tag ON tag_rel.account_account_tag_id = tag.id
             LEFT JOIN res_currency journal_curr ON journal_curr.id = j.currency_id
             WHERE %(case_statement)s AND %(search_conditions)s
-            GROUP BY "account_move_line".id, am.id, p.id, %(account_alias)s.id, j.id, cp.id, journal_curr.id, account_code, account_name
+            GROUP BY "account_move_line".id, am.id, p.id, %(account_alias)s.id, j.id, cp.id, journal_curr.id, account_code, account_name, account_currency_table.rate
             ORDER BY
                 CASE j.type
                     WHEN 'sale' THEN 1
@@ -1129,6 +1153,15 @@ class AccountJournalReportHandler(models.AbstractModel):
                 ) NULLS FIRST
             """,
             table=query.from_clause,
+            currency_table_join=report._currency_table_aml_join(options),
+            debit=report._currency_table_apply_rate(SQL('"account_move_line".debit')),
+            credit=report._currency_table_apply_rate(SQL('"account_move_line".credit')),
+            balance=report._currency_table_apply_rate(
+                SQL('"account_move_line".balance')
+            ),
+            tax_base_amount=report._currency_table_apply_rate(
+                SQL('"account_move_line".tax_base_amount')
+            ),
             case_statement=self._get_payment_lines_filter_case_statement(options),
             search_conditions=query.where_clause,
             account_code=account_code,
@@ -1156,22 +1189,45 @@ class AccountJournalReportHandler(models.AbstractModel):
         )
 
         journals_vals = []
-        any_journal_group_has_taxes = False
-
-        for journal_entry_dict in result.values():
-            account_move_vals_list = list(journal_entry_dict.values())
-            journal_vals = {
+        account_move_vals_lists = [
+            list(journal_entry_dict.values()) for journal_entry_dict in result.values()
+        ]
+        journal_headers = [
+            {
                 "id": account_move_vals_list[0][0]["journal_id"],
                 "name": account_move_vals_list[0][0]["journal_name"],
                 "code": account_move_vals_list[0][0]["journal_code"],
                 "type": account_move_vals_list[0][0]["journal_type"],
             }
+            for account_move_vals_list in account_move_vals_lists
+        ]
+        exported_journal_ids = {header["id"] for header in journal_headers}
+        # Read before the tax summaries: the tax report rebuilds the currency table for its own periods.
+        initial_balances = self._query_bank_journal_initial_balances(
+            options,
+            {
+                header["id"]
+                for header in journal_headers
+                if self._is_bank_journal_export_required(header)
+            },
+        )
+        journal_ids_with_tax = self._get_journal_ids_with_tax(options)
+        tax_summaries = self._get_tax_summary_sections(
+            options,
+            self.env["account.journal"].browse(
+                sorted(exported_journal_ids & journal_ids_with_tax)
+            ),
+            with_global=bool(exported_journal_ids & journal_ids_with_tax),
+        )
 
-            if self._section_has_tax(options, journal_vals["id"]):
-                journal_vals["tax_summary"] = self._get_tax_summary_section(
-                    options, journal_vals
-                )
-                any_journal_group_has_taxes = True
+        for journal_vals, account_move_vals_list in zip(
+            journal_headers, account_move_vals_lists, strict=True
+        ):
+            journal_vals["initial_balance"] = initial_balances.get(
+                journal_vals["id"], 0.0
+            )
+            if journal_vals["id"] in tax_summaries:
+                journal_vals["tax_summary"] = tax_summaries[journal_vals["id"]]
 
             journal_vals["lines"] = self._get_export_lines_for_journal(
                 report, options, export_type, journal_vals, account_move_vals_list
@@ -1194,13 +1250,11 @@ class AccountJournalReportHandler(models.AbstractModel):
             "global_tax_summary_needed",
             report=report,
             journals=len(journals_vals),
-            needed=any_journal_group_has_taxes,
+            needed=None in tax_summaries,
         )
         return {
             "journals_vals": journals_vals,
-            "global_tax_summary": self._get_tax_summary_section(options)
-            if any_journal_group_has_taxes
-            else False,
+            "global_tax_summary": tax_summaries.get(None, False),
         }
 
     @_debug.perf.timed
@@ -1411,10 +1465,7 @@ class AccountJournalReportHandler(models.AbstractModel):
         """
         lines = []
 
-        # Initial balance
-        current_balance = self._query_bank_journal_initial_balance(
-            options, journal_vals["id"]
-        )
+        current_balance = journal_vals["initial_balance"]
         lines.append(
             {
                 "name": {"data": self.env._("Starting Balance")},
@@ -1670,63 +1721,109 @@ class AccountJournalReportHandler(models.AbstractModel):
             return SQL("TRUE")
 
     @_debug.perf.timed
-    def _query_bank_journal_initial_balance(self, options, journal_id):
-        report = self.env.ref("account.journal_report")
+    def _query_bank_journal_initial_balances(self, options, journal_ids) -> dict:
+        if not journal_ids:
+            return {}
+        report = self.env["report.formula"].browse(options["report_id"])
         query = report._get_report_query(
-            options, "to_beginning_of_period", domain=[("journal_id", "=", journal_id)]
+            options,
+            "to_beginning_of_period",
+            domain=[("journal_id", "in", list(journal_ids))],
         )
-        query = SQL(
-            """
-                SELECT
-                    COALESCE(SUM(account_move_line.balance), 0) AS balance
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT journal.id AS journal_id,
+                       COALESCE(SUM(%(balance)s), 0) AS balance
                 FROM %(table)s
+                %(currency_table_join)s
                 JOIN account_journal journal ON journal.id = "account_move_line".journal_id AND account_move_line.account_id = journal.default_account_id
                 WHERE %(search_conditions)s
                 GROUP BY journal.id
             """,
-            table=query.from_clause,
-            search_conditions=query.where_clause,
+                table=query.from_clause,
+                balance=report._currency_table_apply_rate(
+                    SQL('"account_move_line".balance')
+                ),
+                currency_table_join=report._currency_table_aml_join(options),
+                search_conditions=query.where_clause,
+            )
         )
-        self.env.cr.execute(query)
-        result = self.env.cr.dictfetchall()
+        initial_balances = dict(self.env.cr.fetchall())
         _debug.perf.count(
-            "bank_initial_balance_fetched", journal=journal_id, rows=len(result)
+            "bank_journal_initial_balances_fetched",
+            journals=len(journal_ids),
+            rows=len(initial_balances),
         )
-        return result[0]["balance"] if len(result) >= 1 else 0
+        return initial_balances
 
     ##########################################################################
     # Tax Grids
     ##########################################################################
 
-    def _section_has_tax(self, options, journal_id) -> bool:
+    def _get_journal_ids_with_tax(self, options) -> set:
         report = self.env["report.formula"].browse(options.get("report_id"))
-        aml_has_tax_domain = Domain("tax_ids", "!=", False)
-        if journal_id:
-            aml_has_tax_domain &= Domain("journal_id", "=", journal_id)
-        aml_has_tax_domain &= report._get_domain_options(options, "strict_range")
-        return bool(
-            self.env["account.move.line"].search_count(aml_has_tax_domain, limit=1)
+        domain = Domain("tax_ids", "!=", False) & report._get_domain_options(
+            options, "strict_range"
         )
-
-    @_debug.perf.timed
-    def _get_tax_summary_section(self, options, journal_vals=None) -> dict:
-        """
-        Get the tax summary of a journal, or the global tax summary when no journal is given.
-
-        :param journal_vals: The journal values to restrict the summary to, or None
-        :return: A dict of tax summary data
-        :rtype: dict
-        """
-        tax_data = {
-            "date_from": options.get("date", {}).get("date_from"),
-            "date_to": options.get("date", {}).get("date_to"),
+        return {
+            journal.id
+            for [journal] in self.env["account.move.line"]._read_group(
+                domain, ["journal_id"]
+            )
         }
 
-        if journal_vals:
-            tax_data["journal_id"] = journal_vals["id"]
-            tax_data["journal_type"] = journal_vals["type"]
+    def _get_used_tax_ids_by_journal(self, options, journal_ids) -> dict:
+        report = self.env["report.formula"].browse(options.get("report_id"))
+        domain = (
+            Domain("journal_id", "in", list(journal_ids))
+            & Domain("tax_ids", "!=", False)
+            & report._get_domain_options(options, "strict_range")
+        )
+        used_tax_ids_by_journal = {journal_id: set() for journal_id in journal_ids}
+        for journal, tax in self.env["account.move.line"]._read_group(
+            domain, ["journal_id", "tax_ids"]
+        ):
+            used_tax_ids_by_journal[journal.id].update((tax | tax.children_tax_ids).ids)
+        return used_tax_ids_by_journal
 
-        tax_report_lines = self._get_generic_tax_summary_for_sections(options, tax_data)
+    @_debug.perf.timed
+    def _get_tax_summary_sections(self, options, journals, with_global=True) -> dict:
+        """
+        Get the tax summary of each journal, and the global tax summary under the key None.
+
+        :param journals: The journals to summarize
+        :param with_global: Whether to also compute the global tax summary
+        :return: A dict mapping each journal id (None for the global summary) to its tax summary data
+        :rtype: dict
+        """
+        section_keys = [*([None] if with_global else []), *journals.ids]
+        _debug.logic(
+            "tax_summary_sections_requested",
+            report=options.get("report_id"),
+            journals=journals,
+            with_global=with_global,
+        )
+        if not section_keys:
+            return {}
+
+        tax_report_options = self._get_generic_tax_report_options(options)
+        tax_report_lines_by_key = self._get_generic_tax_summary_for_sections(
+            options, tax_report_options, section_keys
+        )
+        tax_grid_summary_lines_by_key = self._get_tax_grids_summary(
+            options, tax_report_options, section_keys
+        )
+        return {
+            key: self._build_tax_summary_section(
+                tax_report_lines_by_key[key], tax_grid_summary_lines_by_key[key]
+            )
+            for key in section_keys
+        }
+
+    def _build_tax_summary_section(
+        self, tax_report_lines, tax_grid_summary_lines
+    ) -> dict:
         tax_non_deductible_column = any(
             line.get("tax_non_deductible_no_format")
             for country_vals_list in tax_report_lines.values()
@@ -1742,40 +1839,26 @@ class AccountJournalReportHandler(models.AbstractModel):
             for country_vals_list in tax_report_lines.values()
             for line in country_vals_list
         )
-        extra_columns = (
-            int(tax_non_deductible_column)
-            + int(tax_deductible_column)
-            + int(tax_due_column)
-        )
-
-        tax_grid_summary_lines = self._get_tax_grids_summary(options, tax_data)
-        _debug.pipeline(
-            "tax_summary_section_built",
-            report=options.get("report_id"),
-            journal=tax_data.get("journal_id"),
-            tax_countries=len(tax_report_lines),
-            grid_countries=len(tax_grid_summary_lines),
-            extra_columns=extra_columns,
-        )
-
         return {
             "tax_report_lines": tax_report_lines,
             "tax_non_deductible_column": tax_non_deductible_column,
             "tax_deductible_column": tax_deductible_column,
             "tax_due_column": tax_due_column,
-            "extra_columns": extra_columns,
+            "extra_columns": int(tax_non_deductible_column)
+            + int(tax_deductible_column)
+            + int(tax_due_column),
             "tax_grid_summary_lines": tax_grid_summary_lines,
         }
 
     @_debug.perf.timed
-    def _get_generic_tax_report_options(self, options, data):
+    def _get_generic_tax_report_options(self, options):
         """
-        Return an options dict fetching the generic tax report with the parameters of this journal.
+        Return an options dict fetching the generic tax report with the parameters of the journal report.
 
         :return: The generic tax report options
         :rtype: dict
         """
-        # Forced bits are the journal, the dates, the generic tax report variant (which holds every
+        # Forced bits are the dates, the generic tax report variant (which holds every
         # tax) and whether to take all entries or only the posted ones.
         generic_tax_report = self.env.ref("account.generic_tax_report")
         previous_option = options.copy()
@@ -1783,48 +1866,65 @@ class AccountJournalReportHandler(models.AbstractModel):
         previous_option.update(
             {
                 "selected_variant_id": generic_tax_report.id,
-                "date_from": data.get("date_from"),
-                "date_to": data.get("date_to"),
+                "date_from": options.get("date", {}).get("date_from"),
+                "date_to": options.get("date", {}).get("date_to"),
             }
         )
         tax_report_options = generic_tax_report.get_options(previous_option)
         journal_report = self.env["report.formula"].browse(options["report_id"])
         # list(...), not the Domain itself: forced_domain travels inside options,
-        # which json.dumps for the export and the client. The deprecated
-        # list + Domain shim also returned a list, so the type is unchanged.
+        # which json.dumps for the export and the client.
         tax_report_options["forced_domain"] = list(
             Domain(tax_report_options.get("forced_domain", []))
             & journal_report._get_domain_options(options, "strict_range")
         )
-
-        # Even though it doesn't have a journal selector, we can force a journal in the options to only get the lines for a specific journal.
-        if data.get("journal_id") or data.get("journal_type"):
-            tax_report_options["journals"] = [
-                {
-                    "id": data.get("journal_id"),
-                    "model": "account.journal",
-                    "type": data.get("journal_type"),
-                    "selected": True,
-                }
-            ]
-
-        _debug.logic(
-            "tax_report_options_forced",
-            report=journal_report,
-            tax_report=generic_tax_report,
-            journal=data.get("journal_id"),
-            journal_type=data.get("journal_type"),
-            journal_forced=bool(data.get("journal_id") or data.get("journal_type")),
-        )
         return tax_report_options
 
-    @_debug.perf.timed
-    def _get_tax_grids_summary(self, options, data):
+    def _get_tax_summary_section_options(self, tax_report_options, section_keys):
+        """Return the generic tax report options with one column group per tax summary section.
+
+        :return: the options, and the column group key of each section key
+        :rtype: tuple
         """
-        Fetch the details of all grids that have been used in the provided journal, grouped by the
+        base_key, base_group = next(iter(tax_report_options["column_groups"].items()))
+        base_columns = [
+            column
+            for column in tax_report_options["columns"]
+            if column["column_group_key"] == base_key
+        ]
+        column_groups = {}
+        columns = []
+        group_key_by_section = {}
+        for section_key in section_keys:
+            group_key = base_key if section_key is None else f"journal_{section_key}"
+            group_key_by_section[section_key] = group_key
+            column_groups[group_key] = (
+                base_group
+                if section_key is None
+                else {
+                    **base_group,
+                    "forced_domain": [
+                        *base_group.get("forced_domain", []),
+                        ("journal_id", "=", section_key),
+                    ],
+                }
+            )
+            columns += [
+                {**column, "column_group_key": group_key} for column in base_columns
+            ]
+        return (
+            {**tax_report_options, "column_groups": column_groups, "columns": columns},
+            group_key_by_section,
+        )
+
+    @_debug.perf.timed
+    def _get_tax_grids_summary(self, options, tax_report_options, section_keys):
+        """
+        Fetch the details of all grids that have been used in each section, grouped by the
         country the tag belongs to so that multivat environments stay separated.
 
-        :return: a dict of the following shape:
+        :return: a dict mapping each section key (a journal id, None for the global summary) to a dict of the
+        following shape:
         {
             country_code: {
                 tag_name: {
@@ -1838,31 +1938,33 @@ class AccountJournalReportHandler(models.AbstractModel):
         :rtype: dict
         """
         report = self.env.ref("account.journal_report")
-        # Use the same option as we use to get the tax details, but this time to generate the query used to fetch the
-        # grid information
-        tax_report_options = self._get_generic_tax_report_options(options, data)
         query = report._get_report_query(tax_report_options, "strict_range")
         country_code = self.env["res.country"]._field_to_sql("country", "code")
         tag_name = self.env["account.account.tag"]._field_to_sql("tag", "name")
         query = SQL(
             """
                 SELECT
+                    "account_move_line".journal_id,
                     %(country_code)s AS country_code,
                     tag.id,
                     %(tag_name)s AS name,
-                    SUM(COALESCE("account_move_line".debit, 0)) AS debit,
-                    SUM(COALESCE("account_move_line".credit, 0)) AS credit
+                    SUM(COALESCE(%(debit)s, 0)) AS debit,
+                    SUM(COALESCE(%(credit)s, 0)) AS credit
                 FROM %(table_references)s
+                %(currency_table_join)s
                 JOIN account_account_tag_account_move_line_rel rel ON "account_move_line".id = rel.account_move_line_id
                 JOIN account_account_tag tag ON tag.id = rel.account_account_tag_id
                 JOIN res_country country ON country.id = tag.country_id
                 WHERE %(search_condition)s
                   AND applicability = 'taxes'
-             GROUP BY country_code, tag.id
+             GROUP BY "account_move_line".journal_id, country_code, tag.id
              ORDER BY country_code, %(tag_name)s
         """,
             country_code=country_code,
             tag_name=tag_name,
+            debit=report._currency_table_apply_rate(SQL('"account_move_line".debit')),
+            credit=report._currency_table_apply_rate(SQL('"account_move_line".credit')),
+            currency_table_join=report._currency_table_aml_join(tax_report_options),
             table_references=query.from_clause,
             search_condition=query.where_clause,
         )
@@ -1870,50 +1972,64 @@ class AccountJournalReportHandler(models.AbstractModel):
         query_res = self.env.cr.fetchall()
         _debug.perf.count("tax_grid_rows_fetched", rows=len(query_res))
 
-        res = {}
         id2tag = (
             self.env["account.account.tag"]
-            .browse([tag_id for _country_name, tag_id, *__ in query_res])
+            .browse([tag_id for _journal_id, _country_name, tag_id, *__ in query_res])
             .grouped("id")
         )  # for prefetching
-        for country_code, tag_id, name, debit, credit in query_res:
+        amounts_by_key = {section_key: {} for section_key in section_keys}
+        for journal_id, country_code, tag_id, name, debit, credit in query_res:
             if id2tag[tag_id].balance_negate:
                 debit, credit = credit, debit
-            balance = debit - credit
-            res.setdefault(country_code, {}).setdefault(name, {})
-            res[country_code][name].setdefault("tag_ids", []).append(tag_id)
-            res[country_code][name]["balance"] = report._format_value(
-                options, balance, "monetary"
-            )
-            res[country_code][name]["balance_no_format"] = balance
-            res[country_code][name]["+"] = report._format_value(
-                options, debit, "monetary"
-            )
-            res[country_code][name]["+_no_format"] = debit
-            res[country_code][name]["-"] = report._format_value(
-                options, credit, "monetary"
-            )
-            res[country_code][name]["-_no_format"] = credit
-            res[country_code][name]["impact"] = report._format_value(
-                options, balance, "monetary"
-            )
+            for section_key in (None, journal_id):
+                if section_key not in amounts_by_key:
+                    continue
+                grid = (
+                    amounts_by_key[section_key]
+                    .setdefault(country_code, {})
+                    .setdefault(name, {"tag_ids": [], "+": 0.0, "-": 0.0})
+                )
+                if tag_id not in grid["tag_ids"]:
+                    grid["tag_ids"].append(tag_id)
+                grid["+"] += debit
+                grid["-"] += credit
+
+        res = {}
+        for section_key, amounts_by_country in amounts_by_key.items():
+            res[section_key] = {}
+            for country_code, grids in amounts_by_country.items():
+                for name, grid in grids.items():
+                    balance = grid["+"] - grid["-"]
+                    res[section_key].setdefault(country_code, {})[name] = {
+                        "tag_ids": grid["tag_ids"],
+                        "balance": report._format_value(options, balance, "monetary"),
+                        "balance_no_format": balance,
+                        "+": report._format_value(options, grid["+"], "monetary"),
+                        "+_no_format": grid["+"],
+                        "-": report._format_value(options, grid["-"], "monetary"),
+                        "-_no_format": grid["-"],
+                        "impact": report._format_value(options, balance, "monetary"),
+                    }
 
         _debug.pipeline(
             "tax_grids_summarized",
             report=report,
-            journal=data.get("journal_id"),
+            sections=len(section_keys),
             rows=len(query_res),
-            countries=len(res),
         )
         return res
 
     @_debug.perf.timed
-    def _get_generic_tax_summary_for_sections(self, options, data):
+    def _get_generic_tax_summary_for_sections(
+        self, options, tax_report_options, section_keys
+    ):
         """
-        Build the tax summary of the journal from the generic tax report computation, grouped by
-        the country the tax belongs to so that multivat environments stay separated.
+        Build the tax summary of each section from a single generic tax report computation having
+        one column group per section, grouped by the country the tax belongs to so that multivat
+        environments stay separated.
 
-        :return: a dict of the following shape:
+        :return: a dict mapping each section key (a journal id, None for the global summary) to a dict
+        of the following shape:
         {
             country_code: [
                 {name, line_id, base_amount{_no_format}, tax_amount{_no_format},
@@ -1926,10 +2042,12 @@ class AccountJournalReportHandler(models.AbstractModel):
         """
         # Specific options are forced into the tax report so that only the needed lines are computed.
         report = self.env["report.formula"].browse(options["report_id"])
-        tax_report_options = self._get_generic_tax_report_options(options, data)
-        tax_report_options["account_journal_report_tax_deductibility_columns"] = True
+        section_options, group_key_by_section = self._get_tax_summary_section_options(
+            tax_report_options, section_keys
+        )
+        section_options["account_journal_report_tax_deductibility_columns"] = True
         tax_report = self.env.ref("account.generic_tax_report")
-        tax_report_lines = tax_report._get_lines(tax_report_options)
+        tax_report_lines = tax_report._get_lines(section_options)
 
         # Address the cells by expression label, not by position. Three of these
         # five columns are appended to the line by the tax report and never to
@@ -1942,15 +2060,24 @@ class AccountJournalReportHandler(models.AbstractModel):
             "tax_deductible": "tax_deductible",
             "tax_due": "tax_due",
         }
-        tax_values = {}
+        tax_values_by_key = {section_key: {} for section_key in section_keys}
+        zero_journal_taxes = []
         for tax_report_line in tax_report_lines:
             model, line_id = report._parse_line_id(tax_report_line.get("id"))[-1][1:]
-            if model == "account.tax":
-                by_label = {
-                    column["expression_label"]: column["no_format"]
-                    for column in tax_report_line["columns"]
+            if model != "account.tax":
+                continue
+            by_group_and_label = {
+                (column["column_group_key"], column["expression_label"]): column[
+                    "no_format"
+                ]
+                for column in tax_report_line["columns"]
+            }
+            for section_key, group_key in group_key_by_section.items():
+                missing = {
+                    label
+                    for label in wanted_columns.values()
+                    if (group_key, label) not in by_group_and_label
                 }
-                missing = set(wanted_columns.values()) - set(by_label)
                 if missing:
                     raise UserError(
                         self.env._(
@@ -1958,52 +2085,50 @@ class AccountJournalReportHandler(models.AbstractModel):
                             labels=", ".join(sorted(missing)),
                         )
                     )
-                tax_values[line_id] = {
-                    key: by_label[label] for key, label in wanted_columns.items()
+                values = {
+                    key: by_group_and_label[group_key, label] or 0.0
+                    for key, label in wanted_columns.items()
                 }
+                tax_values_by_key[section_key][line_id] = values
+                if section_key is not None and not any(values.values()):
+                    zero_journal_taxes.append((section_key, line_id))
+
+        # A journal column reads 0 both for a tax the journal never used and for one whose
+        # amounts net to zero in it; only the former is left out of that journal's summary.
+        if zero_journal_taxes:
+            used_tax_ids_by_journal = self._get_used_tax_ids_by_journal(
+                options, {journal_id for journal_id, _tax_id in zero_journal_taxes}
+            )
+            for journal_id, tax_id in zero_journal_taxes:
+                if tax_id not in used_tax_ids_by_journal[journal_id]:
+                    del tax_values_by_key[journal_id][tax_id]
 
         _debug.pipeline(
             "tax_summary_values_read",
             report=report,
-            journal=data.get("journal_id"),
+            sections=len(section_keys),
             tax_report_lines=len(tax_report_lines),
-            taxes=len(tax_values),
         )
         # Make the final data dict that will be used by the template, using the taxes information.
-        taxes = self.env["account.tax"].browse(tax_values.keys())
-        res = {}
-        for tax in taxes:
-            res.setdefault(tax.country_id.code, []).append(
-                {
-                    "base_amount": report._format_value(
-                        options, tax_values[tax.id]["base_amount"], "monetary"
-                    ),
-                    "base_amount_no_format": tax_values[tax.id]["base_amount"],
-                    "tax_amount": report._format_value(
-                        options, tax_values[tax.id]["tax_amount"], "monetary"
-                    ),
-                    "tax_amount_no_format": tax_values[tax.id]["tax_amount"],
-                    "tax_non_deductible": report._format_value(
-                        options, tax_values[tax.id]["tax_non_deductible"], "monetary"
-                    ),
-                    "tax_non_deductible_no_format": tax_values[tax.id][
-                        "tax_non_deductible"
-                    ],
-                    "tax_deductible": report._format_value(
-                        options, tax_values[tax.id]["tax_deductible"], "monetary"
-                    ),
-                    "tax_deductible_no_format": tax_values[tax.id]["tax_deductible"],
-                    "tax_due": report._format_value(
-                        options, tax_values[tax.id]["tax_due"], "monetary"
-                    ),
-                    "tax_due_no_format": tax_values[tax.id]["tax_due"],
-                    "name": tax.name,
-                    "line_id": report._get_generic_line_id("account.tax", tax.id),
-                }
-            )
-
-        # Return the result, ordered by country code
-        return dict(sorted(res.items()))
+        res_by_key = {}
+        for section_key, tax_values in tax_values_by_key.items():
+            res = {}
+            for tax in self.env["account.tax"].browse(tax_values.keys()):
+                values = tax_values[tax.id]
+                res.setdefault(tax.country_id.code, []).append(
+                    {
+                        **{
+                            key: report._format_value(options, value, "monetary")
+                            for key, value in values.items()
+                        },
+                        **{f"{key}_no_format": value for key, value in values.items()},
+                        "name": tax.name,
+                        "line_id": report._get_generic_line_id("account.tax", tax.id),
+                    }
+                )
+            # Ordered by country code
+            res_by_key[section_key] = dict(sorted(res.items()))
+        return res_by_key
 
     ##########################################################################
     # Actions

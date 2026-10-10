@@ -49,20 +49,17 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
         for key in rates:
             rates[key] /= company_rate
 
+        previous_rates = previous_options.get("currency_rates") or {}
         options["currency_rates"] = {
             str(currency_id.id): {
                 "currency_id": currency_id.id,
                 "currency_name": currency_id.name,
                 "currency_main": self.env.company.currency_id.name,
-                "rate": (
-                    rates[currency_id.id]
-                    if not previous_options.get("currency_rates", {})
-                    .get(str(currency_id.id), {})
-                    .get("rate")
-                    else float(
-                        previous_options["currency_rates"][str(currency_id.id)]["rate"]
-                    )
+                "rate": self._get_revaluation_rate(
+                    previous_rates.get(str(currency_id.id)) or {},
+                    rates[currency_id.id],
                 ),
+                "system_rate": rates[currency_id.id],
             }
             for currency_id in active_currencies
         }
@@ -75,7 +72,7 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
             str(self.env.company.currency_id.id)
         )
         options["custom_rate"] = any(
-            not float_is_zero(cr["rate"] - rates[cr["currency_id"]], 20)
+            not float_is_zero(cr["rate"] - cr["system_rate"], 20)
             for cr in options["currency_rates"].values()
         )
         _debug.logic(
@@ -106,6 +103,23 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
                 "AccountReportLineName": "account.MulticurrencyRevaluationReportLineName",
             },
         }
+
+    def _get_revaluation_rate(self, previous_rate, system_rate) -> float:
+        rate = previous_rate.get("rate")
+        previous_system_rate = previous_rate.get("system_rate")
+        user_edited = (
+            rate
+            and previous_system_rate is not None
+            and not float_is_zero(float(rate) - previous_system_rate, 20)
+        )
+        _debug.logic(
+            "revaluation_rate_carried_over",
+            user_edited=bool(user_edited),
+            rate=rate,
+            previous_system_rate=previous_system_rate,
+            system_rate=system_rate,
+        )
+        return float(rate) if user_edited else system_rate
 
     def _customize_warnings(
         self, report, options, all_column_groups_expression_totals, warnings

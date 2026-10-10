@@ -132,6 +132,119 @@ class AccountSalesReportTest(AccountSalesReportCommon):
         )
 
     @freeze_time("2019-12-31")
+    def test_ec_sales_report_includes_every_selected_company(self):
+        company_2 = self.company_data_2["company"]
+        goods_taxes = self.env["account.tax"].create(
+            [
+                {
+                    "name": "goods",
+                    "amount_type": "percent",
+                    "amount": 0,
+                    "type_tax_use": "sale",
+                    "company_ids": [Command.set(company.ids)],
+                }
+                for company in self.company + company_2
+            ]
+        )
+        self._create_invoices([(self.partner_a, goods_taxes[0], 100)])
+        invoice_2 = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "company_id": company_2.id,
+                "journal_id": self.company_data_2["default_journal_sale"].id,
+                "partner_id": self.partner_b.id,
+                "invoice_date": "2019-12-01",
+                "currency_id": self.company_data["currency"].id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line_1",
+                            "price_unit": 300.0,
+                            "account_id": self.company_data_2[
+                                "default_account_revenue"
+                            ].id,
+                            "tax_ids": [Command.set(goods_taxes[1].ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        invoice_2.action_post()
+
+        report = self.env.ref("account.generic_ec_sales_report").with_context(
+            allowed_company_ids=(self.company + company_2).ids
+        )
+        options = self._generate_options(report, "2019-12-01", "2019-12-31")
+
+        self.assertLessEqual(
+            set(goods_taxes.ids), set(options["sales_report_taxes"]["goods"])
+        )
+        self.assertEqual(
+            [line["name"] for line in report._get_lines(options)],
+            [self.partner_a.name, self.partner_b.name, "Total"],
+        )
+
+    @freeze_time("2019-12-31")
+    def test_ec_sales_report_excludes_each_company_own_country(self):
+        company_2 = self.company_data_2["company"]
+        company_2.tax_config_id.account_fiscal_country_id = self.partner_a.country_id
+        goods_taxes = self.env["account.tax"].create(
+            [
+                {
+                    "name": "goods",
+                    "amount_type": "percent",
+                    "amount": 0,
+                    "type_tax_use": "sale",
+                    "company_ids": [Command.set(company.ids)],
+                    "country_id": company.tax_config_id.account_fiscal_country_id.id,
+                    "tax_group_id": self.env["account.tax.group"]
+                    .create(
+                        {
+                            "name": "goods",
+                            "company_ids": [Command.set(company.ids)],
+                            "country_id": company.tax_config_id.account_fiscal_country_id.id,
+                        }
+                    )
+                    .id,
+                }
+                for company in self.company + company_2
+            ]
+        )
+        self._create_invoices([(self.partner_b, goods_taxes[0], 100)])
+        domestic_invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "company_id": company_2.id,
+                "journal_id": self.company_data_2["default_journal_sale"].id,
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2019-12-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line_1",
+                            "price_unit": 300.0,
+                            "account_id": self.company_data_2[
+                                "default_account_revenue"
+                            ].id,
+                            "tax_ids": [Command.set(goods_taxes[1].ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        domestic_invoice.action_post()
+
+        report = self.env.ref("account.generic_ec_sales_report").with_context(
+            allowed_company_ids=(self.company + company_2).ids
+        )
+        options = self._generate_options(report, "2019-12-01", "2019-12-31")
+
+        self.assertEqual(
+            [line["name"] for line in report._get_lines(options)],
+            [self.partner_b.name, "Total"],
+        )
+
+    @freeze_time("2019-12-31")
     def test_ec_sales_report_with_northern_irish_customer(self):
         """
         Ensure that partners located in Northern Ireland are included in the EC sales report.

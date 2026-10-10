@@ -70,6 +70,9 @@ class WizardReportFormulaExportAttachmentFormat(models.TransientModel):
             )
 
         elif report_action["type"] == "ir.actions.act_url":
+            report_options = self.env.context.get(
+                "account_report_generation_options", {}
+            )
             query_params = parse_qs(urlparse(report_action["url"]).query)
             model = query_params["model"][0]
             model_id = int(query_params["id"][0])

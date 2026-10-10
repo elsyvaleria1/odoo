@@ -707,11 +707,11 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
-                ("partner_a", 0.0, 1000.0, 19150.0),
+                ("partner_a", 0.0, 0.0, 19150.0),
                 ("partner_b", 0.0, 0.0, 1200.00),
                 ("partner_c", 0.0, 0.0, -21350.0),
-                ("Unknown Partner", 1000.0, 0.0, 0.0),
-                ("Total", 1000.0, 1000.0, -1000.0),
+                ("Unknown Partner", 0.0, 0.0, 0.0),
+                ("Total", 0.0, 0.0, -1000.0),
             ],
             options,
         )
@@ -726,13 +726,13 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
-                ("partner_a", 0.0, 1000.0, 19150.0),
-                ("Initial Balance", "", 1000.0, 19150.0),
-                ("Total partner_a", 0.0, 1000.0, 19150.0),
+                ("partner_a", 0.0, 0.0, 19150.0),
+                ("Initial Balance", "", "", 19150.0),
+                ("Total partner_a", 0.0, 0.0, 19150.0),
                 ("partner_b", 0.0, 0.0, 1200.0),
                 ("partner_c", 0.0, 0.0, -21350.0),
-                ("Unknown Partner", 1000.0, 0.0, 0.0),
-                ("Total", 1000.0, 1000.0, -1000.0),
+                ("Unknown Partner", 0.0, 0.0, 0.0),
+                ("Total", 0.0, 0.0, -1000.0),
             ],
             options,
         )

@@ -1,4 +1,6 @@
 # pylint: disable=C0326
+from unittest.mock import patch
+
 from odoo import Command
 from odoo.tests import tagged
 
@@ -917,6 +919,213 @@ class TestJournalReport(TestAccountReportsCommon):
                             "credit": None,
                             "balance": "$\xa0400.00",
                         },
+                    ],
+                },
+            ],
+        )
+
+    def test_tax_summaries_run_the_tax_report_once(self):
+        purchase_bill = self.init_invoice(
+            "in_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-10",
+            amounts=[100.0],
+            taxes=self.company_data["default_tax_purchase"],
+            post=True,
+        )
+        options = self._generate_options(
+            self.report,
+            "2017-01-01",
+            "2017-01-31",
+            default_options={"unfold_all": True, "show_payment_lines": False},
+        )
+        tax_report = self.env.ref("account.generic_tax_report")
+        report_class = type(self.env["report.formula"])
+        get_lines = report_class._get_lines
+        tax_report_runs = []
+
+        def counting_get_lines(report, *args, **kwargs):
+            if report == tax_report:
+                tax_report_runs.append(report)
+            return get_lines(report, *args, **kwargs)
+
+        with patch.object(report_class, "_get_lines", counting_get_lines):
+            lines = self.report._get_lines(options)
+
+        self.assertEqual(len(tax_report_runs), 1)
+        journal_summaries = {
+            line["journal_id"]: line
+            for line in lines
+            if line.get("is_tax_section_line") and line.get("journal_id")
+        }
+        self.assertEqual(
+            set(journal_summaries),
+            {self.default_sale_journal.id, purchase_bill.journal_id.id},
+        )
+        purchase_taxes = [
+            tax_line["name"]
+            for tax_lines in journal_summaries[purchase_bill.journal_id.id][
+                "tax_report_lines"
+            ].values()
+            for tax_line in tax_lines
+        ]
+        self.assertEqual(
+            purchase_taxes, [self.company_data["default_tax_purchase"].name]
+        )
+
+    def test_tax_summary_keeps_a_tax_netting_to_zero_in_its_journal(self):
+        sale_tax = self.company_data["default_tax_sale"]
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2031-03-01",
+            amounts=[100.0],
+            taxes=sale_tax,
+            post=True,
+        )
+        invoice._reverse_moves(
+            [{"invoice_date": "2031-03-02", "date": "2031-03-02"}]
+        ).action_post()
+        bill = self.init_invoice(
+            "in_invoice",
+            partner=self.partner_a,
+            invoice_date="2031-03-10",
+            amounts=[100.0],
+            taxes=self.company_data["default_tax_purchase"],
+            post=True,
+        )
+        options = self._generate_options(
+            self.report,
+            "2031-03-01",
+            "2031-03-31",
+            default_options={"unfold_all": True, "show_payment_lines": False},
+        )
+
+        summary_taxes = {
+            line["journal_id"]: [
+                (tax_line["name"], tax_line["tax_amount_no_format"])
+                for tax_lines in line["tax_report_lines"].values()
+                for tax_line in tax_lines
+            ]
+            for line in self.report._get_lines(options)
+            if line.get("is_tax_section_line") and line.get("journal_id")
+        }
+        self.assertEqual(summary_taxes[invoice.journal_id.id], [(sale_tax.name, 0.0)])
+        self.assertEqual(
+            summary_taxes[bill.journal_id.id],
+            [(self.company_data["default_tax_purchase"].name, 15.0)],
+        )
+
+    def test_journal_lines_are_converted_to_the_report_currency(self):
+        company_2 = self.company_data_2["company"]
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2017-01-05",
+                "company_id": company_2.id,
+                "journal_id": self.company_data_2["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "debit": 300.0,
+                            "account_id": self.company_data_2[
+                                "default_account_revenue"
+                            ].id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "credit": 300.0,
+                            "account_id": self.company_data_2[
+                                "default_account_expense"
+                            ].id,
+                        }
+                    ),
+                ],
+            }
+        )
+        move.action_post()
+        report = self.report.with_context(
+            allowed_company_ids=(self.company_data["company"] + company_2).ids
+        )
+        options = self._generate_options(report, "2017-01-01", "2017-01-31")
+        rate = self.env["res.currency"]._get_conversion_rate(
+            company_2.currency_id,
+            self.company_data["currency"],
+            self.company_data["company"],
+            "2017-01-31",
+        )
+        journal_line = next(
+            line
+            for line in report._get_lines(options)
+            if report._get_model_info_from_id(line["id"])
+            == ("account.journal", self.company_data_2["default_journal_misc"].id)
+        )
+        debit = next(
+            column["no_format"]
+            for column in journal_line["columns"]
+            if column["expression_label"] == "debit"
+        )
+        self.assertAlmostEqual(debit, 300.0 * rate)
+        self.assertNotAlmostEqual(rate, 1.0)
+
+    def test_export_lines_are_converted_to_the_report_currency(self):
+        company_2 = self.company_data_2["company"]
+        bank_journal_2 = self.company_data_2["default_journal_bank"]
+        revenue_2 = self.company_data_2["default_account_revenue"]
+        for date, amount in (("2016-12-15", 500.0), ("2017-01-10", 200.0)):
+            self.env["account.move"].create(
+                {
+                    "move_type": "entry",
+                    "date": date,
+                    "company_id": company_2.id,
+                    "journal_id": bank_journal_2.id,
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "debit": amount,
+                                "account_id": bank_journal_2.default_account_id.id,
+                            }
+                        ),
+                        Command.create({"credit": amount, "account_id": revenue_2.id}),
+                    ],
+                }
+            ).action_post()
+        report = self.report.with_context(
+            allowed_company_ids=(self.company_data["company"] + company_2).ids
+        )
+        options = self._generate_options(report, "2017-01-01", "2017-01-31")
+        rate = self.env["res.currency"]._get_conversion_rate(
+            company_2.currency_id,
+            self.company_data["currency"],
+            self.company_data["company"],
+            "2017-01-31",
+        )
+        self.assertNotAlmostEqual(rate, 1.0)
+
+        journals_vals = report.env[
+            report.custom_handler_model_name
+        ]._generate_document_data_for_export(report, options, "pdf")["journals_vals"]
+
+        def money(amount):
+            return report._format_value(options, amount, "monetary")
+
+        self.assert_journal_vals_for_export(
+            report,
+            options,
+            [vals for vals in journals_vals if vals["id"] == bank_journal_2.id],
+            [
+                {
+                    "id": bank_journal_2.id,
+                    "lines": [
+                        {"name": "Starting Balance", "balance": money(500.0 * rate)},
+                        {
+                            "debit": money(0.0),
+                            "credit": money(200.0 * rate),
+                            "balance": money(700.0 * rate),
+                        },
+                        {},
+                        {"name": "Total", "balance": money(700.0 * rate)},
                     ],
                 },
             ],

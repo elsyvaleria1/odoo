@@ -185,16 +185,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         interval = options["aging_interval"]
         periods = [(False, fields.Date.to_string(date_to))]
         # Since we added the first period in the list we have to do one less iteration
-        nb_periods = (
-            len(
-                [
-                    column
-                    for column in options["columns"]
-                    if column["expression_label"].startswith("period")
-                ]
-            )
-            - 1
-        )
+        nb_periods = self._get_aging_period_count(options) - 1
         for i in range(nb_periods):
             start_date = minus_days(date_to, (interval * i) + 1)
             # The last element of the list will have False for the end date
@@ -342,14 +333,10 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                     + COALESCE(SUM(part_credit.credit_amount_currency), 0)
                 ) AS amount_currency,
                 ARRAY_AGG(DISTINCT account_move_line.partner_id) AS partner_id,
-                ARRAY_AGG(account_move_line.payment_id) AS payment_id,
                 ARRAY_AGG(DISTINCT aged_move.invoice_date) AS invoice_date,
-                ARRAY_AGG(DISTINCT COALESCE(%(aging_date_field)s, account_move_line.date)) AS report_date,
                 ARRAY_AGG(DISTINCT %(account_code)s) AS account_name,
                 ARRAY_AGG(DISTINCT COALESCE(%(aging_date_field)s, account_move_line.date)) AS due_date,
                 ARRAY_AGG(DISTINCT account_move_line.currency_id) AS currency_id,
-                COUNT(account_move_line.id) AS aml_count,
-                ARRAY_AGG(%(account_code)s) AS account_code,
                 %(select_period_query)s
 
             FROM %(table_references)s
@@ -486,7 +473,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         self, internal_type, report, options, lines_to_expand_by_function
     ):
         rslt = {}  # In the form {full_sub_groupby_key: all_column_group_expression_totals for this groupby computation}
-        report_periods = 6  # The report has 6 periods
+        report_periods = self._get_aging_period_count(options)
 
         for (
             expand_function_name,
@@ -603,6 +590,15 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         )
         return rslt
 
+    def _get_aging_period_count(self, options) -> int:
+        return len(
+            {
+                column["expression_label"]
+                for column in options["columns"]
+                if column["expression_label"].startswith("period")
+            }
+        )
+
     @_debug.perf.timed
     def _prepare_partner_values(self):
         return {
@@ -660,16 +656,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         domain = []
         if period != "total" and period[-1].isdigit():
             period_number = int(period[-1])
-            last_period_number = (
-                len(
-                    [
-                        column
-                        for column in options["columns"]
-                        if column["expression_label"].startswith("period")
-                    ]
-                )
-                - 1
-            )
+            last_period_number = self._get_aging_period_count(options) - 1
             date_to = fields.Date.from_string(options["date"]["date_to"])
             aging_interval = options["aging_interval"]
             if period_number == 0:

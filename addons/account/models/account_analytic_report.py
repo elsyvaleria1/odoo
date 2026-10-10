@@ -228,7 +228,7 @@ class AccountReport(models.AbstractModel):
         return SQL(
             """
             (
-                SELECT %(fields_to_insert)s
+                SELECT %(fields_to_insert)s, %(analytic_filter_columns)s
                 FROM account_analytic_line
                 LEFT JOIN account_move_line
                     ON account_analytic_line.move_line_id = account_move_line.id
@@ -237,6 +237,38 @@ class AccountReport(models.AbstractModel):
             )
         """,
             fields_to_insert=fields_to_insert,
+            analytic_filter_columns=self._select_shadowed_analytic_filter_columns(
+                "account_analytic_line", "account_move_line"
+            ),
+        )
+
+    @api.model
+    def _select_shadowed_analytic_filter_columns(
+        self, analytic_line_alias, move_line_alias
+    ) -> SQL:
+        project_plan, other_plans = self.env["account.analytic.plan"]._get_all_plans()
+        plans = project_plan + other_plans
+        return SQL(
+            """
+            ARRAY_REMOVE(ARRAY[%(own_accounts)s], NULL)::text[] AS analytic_own_account_ids,
+            ARRAY_REMOVE(ARRAY[%(own_root_plans)s], NULL)::int[] AS analytic_root_plan_ids,
+            %(source_accounts)s AS analytic_source_account_ids
+            """,
+            own_accounts=SQL(", ").join(
+                SQL.identifier(analytic_line_alias, plan._column_name())
+                for plan in plans
+            ),
+            own_root_plans=SQL(", ").join(
+                SQL(
+                    "CASE WHEN %s IS NOT NULL THEN %s END",
+                    SQL.identifier(analytic_line_alias, plan._column_name()),
+                    plan.id,
+                )
+                for plan in plans
+            ),
+            source_accounts=self.env["account.move.line"]._query_analytic_accounts(
+                move_line_alias
+            ),
         )
 
     @_debug.perf.timed
@@ -259,15 +291,8 @@ class AccountReport(models.AbstractModel):
         )
         if options.get("analytic_accounts"):
             if "analytic_accounts_list" in options:
-                # the table `account_move_line` will be shadowed by _create_aml_shadowing_query_for_analytic_groupby and thus analytic_distribution will be a single ID
-                analytic_account_ids = tuple(
-                    str(account_id) for account_id in options["analytic_accounts"]
-                )
                 query.add_where(
-                    SQL(
-                        """account_move_line.analytic_distribution = ANY(%s)""",
-                        list(analytic_account_ids),
-                    )
+                    self._get_shadowed_analytic_filter(options["analytic_accounts"])
                 )
             else:
                 # Real `account_move_line` table so real JSON with percentage
@@ -283,6 +308,29 @@ class AccountReport(models.AbstractModel):
                 )
 
         return query
+
+    def _get_shadowed_analytic_filter(self, analytic_account_ids) -> SQL:
+        # A shadowed row is one analytic line, carrying the accounts of its own plans only: it matches
+        # on its own accounts, or on the source move line's accounts of the plans the row does not carry.
+        accounts = self.env["account.analytic.account"].browse(analytic_account_ids)
+        conditions = [
+            SQL(
+                "account_move_line.analytic_own_account_ids && %s::text[]",
+                [str(account_id) for account_id in accounts.ids],
+            )
+        ]
+        for root_plan, plan_accounts in accounts.grouped("root_plan_id").items():
+            conditions.append(
+                SQL(
+                    """(
+                        NOT %s = ANY(account_move_line.analytic_root_plan_ids)
+                        AND account_move_line.analytic_source_account_ids && %s::text[]
+                    )""",
+                    root_plan.id,
+                    [str(account_id) for account_id in plan_accounts.ids],
+                )
+            )
+        return SQL("(%s)", SQL(" OR ").join(conditions))
 
     @_debug.perf.timed
     def action_audit_cell(self, options, params):

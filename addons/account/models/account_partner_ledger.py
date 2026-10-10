@@ -264,6 +264,44 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             },
         }
 
+    def _init_statement_display_options(
+        self, options, send_action, send_sequence
+    ) -> None:
+        options["buttons"].append(
+            {
+                "name": self.env._("Send"),
+                "action": send_action,
+                "sequence": send_sequence,
+                "always_show": True,
+            }
+        )
+        options["custom_display_config"]["components"]["AccountReportLine"] = (
+            "PartnerLedgerFollowupLine"
+        )
+        options["custom_display_config"]["templates"]["AccountReportHeader"] = (
+            "account.PartnerLedgerFollowupHeader"
+        )
+        if self.env.ref(
+            "account.pdf_export_main_customer_report", raise_if_not_found=False
+        ):
+            options["custom_display_config"].setdefault("pdf_export", {})[
+                "pdf_export_main"
+            ] = "account.pdf_export_main_customer_report"
+
+    def _get_statement_send_action(self, options, name, mail_template_xmlid) -> dict:
+        template = self.env.ref(mail_template_xmlid, raise_if_not_found=False)
+        return {
+            "name": name,
+            "type": "ir.actions.act_window",
+            "views": [[False, "form"]],
+            "res_model": "wizard.report.formula.send",
+            "target": "new",
+            "context": {
+                "default_mail_template_id": template.id if template else False,
+                "default_report_options": options,
+            },
+        }
+
     def _has_foreign_currency_lines(self, report, options) -> bool:
         # The Amount Currency column is only filled for lines whose currency differs
         # from the company's: _get_query_sums returns NULL as soon as they match. A
@@ -664,7 +702,9 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
         # Correct the sums per partner, for the lines without partner reconciled with a line having a partner
         new_options = self._get_options_initial_balance(options)
-        self._add_sums_of_lines_without_partners(new_options, init_balance_by_col_group)
+        self._add_sums_of_lines_without_partners(
+            new_options, init_balance_by_col_group, with_period_movements=False
+        )
         _debug.pipeline(
             "initial_balances_read",
             report=report,
@@ -691,14 +731,16 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             column_group["forced_options"]["date"] = new_options["date"]
         return new_options
 
-    def _add_sums_of_lines_without_partners(self, options, result_dict) -> None:
+    def _add_sums_of_lines_without_partners(
+        self, options, result_dict, with_period_movements=True
+    ) -> None:
         fields2inverse = {
             "balance": ("balance", -1),
             "debit": ("credit", 1),
             "amount": ("amount", -1),
             "credit": ("debit", 1),
         }
-        query = self._get_sums_without_partner(options)
+        query = self._get_sums_without_partner(options, with_period_movements)
         self.env.cr.execute(query)
         rows = self.env.cr.dictfetchall()
         _debug.perf.count("sums_without_partner_fetched", rows=len(rows))
@@ -713,7 +755,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                     )
 
     @_debug.perf.timed
-    def _get_sums_without_partner(self, options):
+    def _get_sums_without_partner(self, options, with_period_movements=True):
         """Get the sum of lines without partner reconciled with a line with a partner, grouped by partner."""
         # Those lines belong to the partner for the reconciled amount, as they may clear some of the partner
         # invoice/bill and therefore have to be accounted in the partner balance.
@@ -732,6 +774,32 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 partners=len(partner_ids),
             )
             query = report._get_report_query(column_group_options, "from_beginning")
+            date_from = report._get_date_bounds_info(
+                column_group_options, "strict_range"
+            )[0]
+            _debug.logic(
+                "sums_without_partner_movements",
+                report=report,
+                column_group=column_group_key,
+                with_period_movements=with_period_movements,
+                date_from=date_from,
+            )
+            if with_period_movements:
+                in_period = (
+                    SQL("partial.max_date >= %s", date_from)
+                    if date_from
+                    else SQL("TRUE")
+                )
+                debit = SQL(
+                    "CASE WHEN %s AND aml_with_partner.balance <= 0 THEN partial.amount ELSE 0 END",
+                    in_period,
+                )
+                credit = SQL(
+                    "CASE WHEN %s AND aml_with_partner.balance >= 0 THEN partial.amount ELSE 0 END",
+                    in_period,
+                )
+            else:
+                debit = credit = None
             queries.append(
                 SQL(
                     """
@@ -755,12 +823,8 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                     sums_select=self._get_sums_select(
                         report,
                         SQL("-SIGN(aml_with_partner.balance) * partial.amount"),
-                        debit=SQL(
-                            "CASE WHEN aml_with_partner.balance > 0 THEN 0 ELSE partial.amount END"
-                        ),
-                        credit=SQL(
-                            "CASE WHEN aml_with_partner.balance < 0 THEN 0 ELSE partial.amount END"
-                        ),
+                        debit=debit,
+                        credit=credit,
                     ),
                     table_references=query.from_clause,
                     currency_table_join=report._currency_table_aml_join(

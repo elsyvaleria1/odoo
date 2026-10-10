@@ -219,6 +219,25 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
+    def test_rates_follow_the_date_unless_edited(self):
+        currency_key = str(self.other_currency.id)
+        january_21 = self._generate_options(self.report, "2023-01-01", "2023-01-21")
+        self.assertEqual(january_21["currency_rates"][currency_key]["rate"], 1.0)
+
+        january_31 = self.report.get_options(
+            {**january_21, "date": {**january_21["date"], "date_to": "2023-01-31"}}
+        )
+        self.assertEqual(january_31["currency_rates"][currency_key]["rate"], 4.0)
+        self.assertFalse(january_31["custom_rate"])
+
+        january_21["currency_rates"][currency_key]["rate"] = 3.0
+        edited = self.report.get_options(
+            {**january_21, "date": {**january_21["date"], "date_to": "2023-01-31"}}
+        )
+        self.assertEqual(edited["currency_rates"][currency_key]["rate"], 3.0)
+        self.assertEqual(edited["currency_rates"][currency_key]["system_rate"], 4.0)
+        self.assertTrue(edited["custom_rate"])
+
     def test_same_currency(self):
         """Two moves in the same currency, the first bill reconciled with a bank statement line.
         The statement line and the move share the same currency (CAD).

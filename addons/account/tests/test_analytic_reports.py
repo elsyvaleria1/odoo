@@ -457,6 +457,100 @@ class TestAnalyticReport(TestAccountReportsCommon):
             },
         )
 
+    def test_report_analytic_filter_and_groupby_on_another_plan(self):
+        other_plan = self.env["account.analytic.plan"].create({"name": "Other Plan"})
+        other_account = self.env["account.analytic.account"].create(
+            {"name": "Other Account", "plan_id": other_plan.id}
+        )
+        out_invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "date": "2023-02-01",
+                "invoice_date": "2023-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_a.id,
+                            "price_unit": 1000.0,
+                            "tax_ids": [Command.clear()],
+                            "analytic_distribution": {
+                                self.analytic_account_parent.id: 100,
+                                other_account.id: 100,
+                            },
+                        }
+                    )
+                ],
+            }
+        )
+        out_invoice.action_post()
+
+        options = self._generate_options(
+            self.report,
+            "2023-01-01",
+            "2023-12-31",
+            default_options={
+                "analytic_accounts": [self.analytic_account_parent.id],
+                "analytic_plans_groupby": [other_plan.id],
+            },
+        )
+
+        self.assertLinesValues(
+            self.report._get_lines(options)[:1],
+            [0, 1, 2],
+            [["Revenue", 1000.00, 1000.00]],
+            options,
+            currency_map={
+                1: {"currency": self.env.company.currency_id},
+                2: {"currency": self.env.company.currency_id},
+            },
+        )
+
+    def test_report_analytic_filter_and_groupby_on_the_same_plan(self):
+        out_invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "date": "2023-02-01",
+                "invoice_date": "2023-02-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_a.id,
+                            "price_unit": 1000.0,
+                            "tax_ids": [Command.clear()],
+                            "analytic_distribution": {
+                                self.analytic_account_parent.id: 40,
+                                self.analytic_account_parent_2.id: 60,
+                            },
+                        }
+                    )
+                ],
+            }
+        )
+        out_invoice.action_post()
+
+        options = self._generate_options(
+            self.report,
+            "2023-01-01",
+            "2023-12-31",
+            default_options={
+                "analytic_accounts": [self.analytic_account_parent.id],
+                "analytic_plans_groupby": [self.analytic_plan_parent.id],
+            },
+        )
+
+        self.assertLinesValues(
+            self.report._get_lines(options)[:1],
+            [0, 1, 2],
+            [["Revenue", 400.00, 1000.00]],
+            options,
+            currency_map={
+                1: {"currency": self.env.company.currency_id},
+                2: {"currency": self.env.company.currency_id},
+            },
+        )
+
     def test_audit_cell_analytic_groupby_and_filter(self):
         """
         Test that the analytic filters are applied on the auditing of the cells

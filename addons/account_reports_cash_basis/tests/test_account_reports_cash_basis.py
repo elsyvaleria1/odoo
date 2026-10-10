@@ -1115,6 +1115,39 @@ class TestAccountReports(TestAccountReportsCommon):
             options,
         )
 
+    def test_analytic_cash_basis_filter_and_groupby_on_another_plan(self):
+        other_plan_account = self.env["account.analytic.account"].create(
+            {"name": "other plan account", "plan_id": self.analytic_other_plan.id}
+        )
+        self._create_entry_and_partial_payment(
+            analytic_distribution={
+                self.analytic_account_partner_a_1.id: 100,
+                other_plan_account.id: 100,
+            }
+        )
+        self._create_entry_and_partial_payment(
+            analytic_distribution={other_plan_account.id: 100}
+        )
+        report = self.env.ref("account.profit_and_loss")
+        report.filter_analytic = True
+        options = self._generate_options(
+            report,
+            fields.Date.to_date("2016-01-01"),
+            fields.Date.to_date("2016-12-31"),
+            default_options={
+                "analytic_accounts": [self.analytic_account_partner_a_1.id],
+                "analytic_plans_groupby": [self.analytic_other_plan.id],
+                "report_cash_basis": True,
+            },
+        )
+
+        self.assertLinesValues(
+            report._get_lines(options)[:1],
+            [0, 1, 2],
+            [("Revenue", 230.0, 230.0)],
+            options,
+        )
+
     def test_analytic_cash_basis_analytic_line_on_payment(self):
         """The analytic groupby column reports the amount of the analytic line linked to a payment."""
         # Second entry, without analytic distribution: the analytic line is created on the payment below.

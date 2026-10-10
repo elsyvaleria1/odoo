@@ -880,7 +880,7 @@ class AccountReportExport(models.Model):
 
     @_debug.perf.timed
     def _generate_file_data_with_error_check(
-        self, options, content_generator, generator_params, errors
+        self, options, content_generator, generator_params, errors: dict | None = None
     ):
         """Checks for critical errors (i.e. errors that would cause the rendering to fail) in the generator values.
         If at least one error is critical, the 'wizard.report.formula.export.error' wizard is opened
@@ -906,7 +906,7 @@ class AccountReportExport(models.Model):
         :rtype: dict
         """
         if errors is None:
-            errors = []
+            errors = {}
         self.check_singleton()
         if any(error_value.get("level") == "danger" for error_value in errors.values()):
             _debug.logic("file_generation_blocked", report=self, errors=len(errors))

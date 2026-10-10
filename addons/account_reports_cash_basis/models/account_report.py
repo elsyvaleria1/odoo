@@ -275,10 +275,17 @@ class AccountReport(models.Model):
         query = SQL(
             """
             -- Create a temporary table
-            CREATE TEMPORARY TABLE IF NOT EXISTS analytic_cash_basis_temp_account_move_line (LIKE account_move_line) ON COMMIT DROP;
+            CREATE TEMPORARY TABLE IF NOT EXISTS analytic_cash_basis_temp_account_move_line (
+                LIKE account_move_line,
+                analytic_own_account_ids text[],
+                analytic_root_plan_ids int[],
+                analytic_source_account_ids text[]
+            ) ON COMMIT DROP;
 
-            INSERT INTO analytic_cash_basis_temp_account_move_line (%s)
-            SELECT %s
+            INSERT INTO analytic_cash_basis_temp_account_move_line (
+                %s, analytic_own_account_ids, analytic_root_plan_ids, analytic_source_account_ids
+            )
+            SELECT %s, %s
             FROM ONLY cash_basis_temp_account_move_line cash_basis_aml
             JOIN ONLY account_move_line aml ON aml.id = cash_basis_aml.id
             JOIN account_analytic_line aal ON aml.id = aal.move_line_id;
@@ -290,6 +297,7 @@ class AccountReport(models.Model):
         """,
             SQL(", ").join(SQL.identifier(field_name) for field_name in stored_fields),
             SQL(", ").join(selected_fields),
+            self._select_shadowed_analytic_filter_columns("aal", "aml"),
         )
 
         self.env.cr.execute(query)
