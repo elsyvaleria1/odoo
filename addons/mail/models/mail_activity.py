@@ -532,9 +532,8 @@ class MailActivity(models.Model):
         if self.activity_type_id:
             self.update(self._values_from_type(self.activity_type_id))
 
-    @api.model
     def _values_from_type(self, activity_type: MailActivityType) -> ValuesType:
-        assignee = activity_type.default_user_id or self.env.user
+        assignee = activity_type.default_user_id or self.user_id or self.env.user
         values = {
             "user_id": assignee.id,
             "date_deadline": activity_type._get_date_deadline(assignee),
@@ -638,8 +637,20 @@ class MailActivity(models.Model):
         if (known := cache.get(ACTIVITY_MODELS_KEY)) is None:
             self.env.cr.execute(
                 SQL(
-                    "SELECT DISTINCT res_model, res_model_id FROM mail_activity "
-                    "WHERE res_model IS NOT NULL"
+                    """
+                    WITH RECURSIVE model_ids(id) AS (
+                        SELECT MIN(res_model_id) FROM mail_activity
+                         UNION ALL
+                        SELECT (SELECT MIN(res_model_id) FROM mail_activity
+                                 WHERE res_model_id > model_ids.id)
+                          FROM model_ids
+                         WHERE model_ids.id IS NOT NULL
+                    )
+                    SELECT ir_model.model, ir_model.id
+                      FROM model_ids
+                      JOIN ir_model ON ir_model.id = model_ids.id
+                    """,
+                    to_flush=self._fields["res_model_id"],
                 )
             )
             rows = self.env.cr.fetchall()
@@ -648,6 +659,11 @@ class MailActivity(models.Model):
                 frozenset(model_id for _name, model_id in rows),
             )
         return known
+
+    @api.model
+    def _may_be_on_model(self, model_name: str) -> bool:
+        known = self.env.cr.cache.get(ACTIVITY_MODELS_KEY)
+        return known is None or model_name in known[0]
 
     @api.model
     def _note_models_to_come(
@@ -682,7 +698,7 @@ class MailActivity(models.Model):
                 "res_model_id", context.get("default_res_model_id")
             ) or vals.get("res_model", context.get("default_res_model")):
                 continue
-            if self._assignee_of(vals) != self.env.user:
+            if (assignee := self._assignee_of(vals)) and assignee != self.env.user:
                 raise AccessError(
                     self.env._(
                         "A personal activity -- one with no document -- can only be "
@@ -1076,16 +1092,7 @@ class MailActivity(models.Model):
         if self.env.context.get("active_model") == "mail.activity":
             active_ids = self.env.context.get("active_ids", [])
         else:
-            activity_groups = self.env["res.users"]._get_activity_groups()
-            activity_model_id = self.env["ir.model"]._get_id("mail.activity")
-            active_ids = next(
-                (
-                    g["activity_ids"]
-                    for g in activity_groups
-                    if g["id"] == activity_model_id
-                ),
-                [],
-            )
+            active_ids = self.env["res.users"]._get_activity_ids_without_record_access()
         action["context"] = {
             **action_context,
             "active_ids": active_ids,

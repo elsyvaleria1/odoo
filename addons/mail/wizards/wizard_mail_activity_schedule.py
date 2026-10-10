@@ -224,10 +224,10 @@ class WizardMailActivitySchedule(models.TransientModel):
                     warnings |= plan_warnings
                 if not scheduler.res_ids:
                     errors.add(self.env._("Can't launch a plan without a record."))
-            if not scheduler.res_ids and not scheduler.activity_user_id:
+            if not scheduler.res_model and not scheduler.activity_user_id:
                 errors.add(
                     self.env._(
-                        "Can't schedule activities without either a record or a user."
+                        "Scheduling personal activities requires an assigned user."
                     )
                 )
             if _debug.logic.enabled and (errors or warnings):

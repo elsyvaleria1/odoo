@@ -1,6 +1,7 @@
 import logging
 import typing
 from collections import defaultdict
+from collections.abc import Iterator
 from datetime import timedelta
 from typing import Literal, Self
 
@@ -688,7 +689,7 @@ class ResUsers(models.Model):
             .search(
                 [("user_id", "=", self.env.uid)],
                 order="date_deadline, id",
-                limit=limit,
+                limit=limit + 1,
             )
         )
         _debug.perf.count(
@@ -697,14 +698,14 @@ class ResUsers(models.Model):
             activities=len(activities),
             limit=limit,
         )
-        if len(activities) >= limit:
+        if len(activities) > limit:
             _logger.warning(
-                "Activity systray for user %s read %s activities, its limit "
-                "(mail.activity.systray.limit): the counters are undercounts.",
+                "Activity systray for user %s has more than %s activities, its "
+                "limit (mail.activity.systray.limit): the counters are undercounts.",
                 self.env.uid,
                 limit,
             )
-        return activities
+        return activities[:limit]
 
     @api.model
     def _group_activity_ids_by_record(
@@ -767,6 +768,26 @@ class ResUsers(models.Model):
         activity_ids_by_bucket = defaultdict(list)
         res_ids_by_bucket = defaultdict(list)
         state_by_activity_id = self._get_activity_states(activity_ids_by_record)
+        for bucket, res_id, activity_ids in self._iter_activity_buckets(
+            activity_ids_by_record
+        ):
+            activity_ids_by_bucket[bucket].extend(activity_ids)
+            res_ids_by_bucket[bucket].append(res_id)
+            states = {state_by_activity_id[activity_id] for activity_id in activity_ids}
+            if "overdue" in states:
+                counts_by_bucket[bucket]["overdue_count"] += 1
+                counts_by_bucket[bucket]["due_count"] += 1
+            elif "today" in states:
+                counts_by_bucket[bucket]["today_count"] += 1
+                counts_by_bucket[bucket]["due_count"] += 1
+            else:
+                counts_by_bucket[bucket]["planned_count"] += 1
+        return counts_by_bucket, activity_ids_by_bucket, res_ids_by_bucket
+
+    @api.model
+    def _iter_activity_buckets(
+        self, activity_ids_by_record: dict[str, dict[int, list[int]]]
+    ) -> Iterator[tuple[ActivityBucket, int, list[int]]]:
         for model_name, activity_ids_by_res_id in activity_ids_by_record.items():
             allowed_ids, unallowed_ids = self._get_readable_activity_record_ids(
                 model_name, activity_ids_by_res_id.keys()
@@ -774,25 +795,20 @@ class ResUsers(models.Model):
             subkeys = self._activity_bucket_subkeys(model_name, allowed_ids)
             for res_id, activity_ids in activity_ids_by_res_id.items():
                 if res_id in unallowed_ids:
-                    bucket = (ORPHAN_BUCKET, "")
+                    yield (ORPHAN_BUCKET, ""), res_id, activity_ids
                 elif res_id in allowed_ids:
-                    bucket = (model_name, subkeys.get(res_id, ""))
-                else:
-                    continue
-                activity_ids_by_bucket[bucket].extend(activity_ids)
-                res_ids_by_bucket[bucket].append(res_id)
-                states = {
-                    state_by_activity_id[activity_id] for activity_id in activity_ids
-                }
-                if "overdue" in states:
-                    counts_by_bucket[bucket]["overdue_count"] += 1
-                    counts_by_bucket[bucket]["due_count"] += 1
-                elif "today" in states:
-                    counts_by_bucket[bucket]["today_count"] += 1
-                    counts_by_bucket[bucket]["due_count"] += 1
-                else:
-                    counts_by_bucket[bucket]["planned_count"] += 1
-        return counts_by_bucket, activity_ids_by_bucket, res_ids_by_bucket
+                    yield (model_name, subkeys.get(res_id, "")), res_id, activity_ids
+
+    @api.model
+    def _get_activity_ids_without_record_access(self) -> list[int]:
+        return [
+            activity_id
+            for bucket, _res_id, activity_ids in self._iter_activity_buckets(
+                self._group_activity_ids_by_record(self._get_systray_activities())
+            )
+            if bucket == (ORPHAN_BUCKET, "")
+            for activity_id in activity_ids
+        ]
 
     @api.model
     def _get_activity_states(

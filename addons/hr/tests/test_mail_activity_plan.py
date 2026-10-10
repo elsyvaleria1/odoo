@@ -426,6 +426,18 @@ class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
         self.assertEqual(result["responsible"], self.env.user)
         self.assertIn("Manager", result["warning"])
 
+    def test_a_loop_nobody_in_has_a_user_answers_no_user(self):
+        coach = self.env["hr.employee"].create({"name": "Userless coach"})
+        looped = self.env["hr.employee"].create(
+            {"name": "Looped", "coach_id": coach.id}
+        )
+        coach.parent_id = looped
+        result = self._template("coach")._get_responsible_and_complaints(False, looped)
+
+        self.assertTrue(result["error"])
+        self.assertEqual(result["responsible"]._name, "res.users")
+        self.assertFalse(result["responsible"])
+
     def test_a_configured_coach_is_still_the_responsible(self):
         result = self._template("coach")._get_responsible_and_complaints(
             False, self.employee_1

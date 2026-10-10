@@ -5128,3 +5128,143 @@ class TestActivityClockSeam(ActivityScheduleCase):
                     [("activity_state", "=", "overdue")]
                 ),
             )
+
+
+@tests.tagged("mail_activity")
+class TestActivityDoneRedirect(ActivityScheduleCase):
+
+    def test_it_lists_what_the_systray_group_lists(self):
+        Activity = self.env["mail.activity"]
+        for record in self.env["mail.test.activity"].create(
+            [{"name": "Readable"}, {"name": "Also readable"}]
+        ):
+            record.activity_schedule(
+                "mail.mail_activity_data_todo", user_id=self.user_employee.id
+            )
+        Activity.create(
+            [
+                {
+                    "activity_type_id": self.activity_type_todo.id,
+                    "summary": f"personal {idx}",
+                    "user_id": self.user_employee.id,
+                }
+                for idx in range(2)
+            ]
+        )
+        Users = self.env["res.users"].with_user(self.user_employee)
+        other = next(
+            group
+            for group in Users._get_activity_groups()
+            if group["model"] == "mail.activity"
+        )
+        self.assertEqual(len(other["activity_ids"]), 2)
+        self.assertEqual(
+            Users._get_activity_ids_without_record_access(), other["activity_ids"]
+        )
+
+
+@tests.tagged("mail_activity")
+class TestActivityUnlinkSkipsModelsWithoutActivities(ActivityScheduleCase):
+    def _activity_on(self, record):
+        return self.env["mail.activity"].create(
+            {
+                "activity_type_id": self.activity_type_todo.id,
+                "res_id": record.id,
+                "res_model_id": self.env["ir.model"]._get_id(record._name),
+                "user_id": self.user_employee.id,
+            }
+        )
+
+    def _activity_searches_during(self, operation):
+        Activity = self.env["mail.activity"]
+        original = type(Activity)._search
+        domains = []
+
+        def counted(model, domain, *args, **kwargs):
+            domains.append(domain)
+            return original(model, domain, *args, **kwargs)
+
+        with patch.object(type(Activity), "_search", counted):
+            operation()
+        return domains
+
+    def test_a_model_the_transaction_knows_has_none_is_not_searched(self):
+        tag = self.env["mail.test.track"].create({"name": "no activities"})
+        self.env["mail.activity"]._activity_models()
+        self.assertFalse(self._activity_searches_during(tag.unlink))
+
+    def test_an_activity_created_after_the_fill_is_still_unlinked(self):
+        self.env["mail.activity"]._activity_models()
+        record = self.env["mail.test.track"].create({"name": "first activity here"})
+        activity = self._activity_on(record)
+        record.unlink()
+        self.assertFalse(activity.exists())
+
+    def test_the_index_scan_finds_what_a_distinct_finds(self):
+        self._activity_on(self.env["mail.test.track"].create({"name": "tracked"}))
+        self.env.flush_all()
+        self.env.cr.execute(
+            "SELECT DISTINCT res_model, res_model_id FROM mail_activity "
+            "WHERE res_model IS NOT NULL"
+        )
+        rows = self.env.cr.fetchall()
+        self.env.cr.cache.pop(mail_activity_module.ACTIVITY_MODELS_KEY, None)
+        self.assertEqual(
+            self.env["mail.activity"]._known_activity_models(),
+            (
+                frozenset(name for name, _id in rows),
+                frozenset(model_id for _name, model_id in rows),
+            ),
+        )
+
+
+@tests.tagged("mail_activity")
+class TestActivityWithoutAssigneeSaysSo(ActivityScheduleCase):
+    def test_a_personal_activity_without_assignee_names_the_missing_assignee(self):
+        with mute_logger("odoo.db.cursor"), self.assertRaises(IntegrityError) as caught:
+            self.env["mail.activity"].with_user(self.user_employee).create(
+                {"activity_type_id": self.activity_type_todo.id, "summary": "nobody"}
+            )
+        self.assertIn("check_user_id_is_set_if_model", str(caught.exception))
+
+    def test_the_personal_wizard_without_assignee_says_it_needs_one(self):
+        with self.assertRaisesRegex(
+            exceptions.ValidationError, "requires an assigned user"
+        ):
+            self.env["wizard.mail.activity.schedule"].create(
+                {
+                    "activity_type_id": self.activity_type_todo.id,
+                    "activity_user_id": False,
+                }
+            )
+
+
+@tests.tagged("mail_activity")
+class TestActivitySystrayLimitWarning(ActivityScheduleCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env["ir.config_parameter"].sudo().set_param(
+            "mail.activity.systray.limit", "2"
+        )
+        cls.records = cls.env["mail.test.activity"].create(
+            [{"name": f"Doc {idx}"} for idx in range(3)]
+        )
+
+    def _schedule(self, records):
+        for record in records:
+            record.activity_schedule(
+                "mail.mail_activity_data_todo", user_id=self.user_employee.id
+            )
+
+    def test_exactly_the_limit_is_no_undercount(self):
+        self._schedule(self.records[:2])
+        Users = self.env["res.users"].with_user(self.user_employee)
+        with self.assertNoLogs("odoo.addons.mail.models.res_users", "WARNING"):
+            self.assertEqual(len(Users._get_systray_activities()), 2)
+
+    def test_one_past_the_limit_warns_and_keeps_the_limit(self):
+        self._schedule(self.records)
+        Users = self.env["res.users"].with_user(self.user_employee)
+        with self.assertLogs("odoo.addons.mail.models.res_users", "WARNING"):
+            self.assertEqual(len(Users._get_systray_activities()), 2)

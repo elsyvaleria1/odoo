@@ -143,16 +143,15 @@ class Base(models.AbstractModel):
         return result
 
     def _mail_unlink_activities(self, record_ids: list[int]) -> None:
+        Activity = self.env["mail.activity"]
+        model_name = self._get_reference_model_name()
+        if not Activity._may_be_on_model(model_name):
+            _debug.logic("activities_unlink_skipped", model=model_name)
+            return
         activities = (
-            self.env["mail.activity"]
-            .with_context(active_test=False)
+            Activity.with_context(active_test=False)
             .sudo()
-            .search(
-                [
-                    ("res_model", "=", self._get_reference_model_name()),
-                    ("res_id", "in", record_ids),
-                ]
-            )
+            .search([("res_model", "=", model_name), ("res_id", "in", record_ids)])
         )
         if not activities:
             return

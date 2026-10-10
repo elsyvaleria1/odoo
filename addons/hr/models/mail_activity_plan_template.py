@@ -60,7 +60,7 @@ class MailActivityPlanTemplate(models.Model):
                         Please double-check that everyone reports to the correct manager."
                     ),
                     "warning": False,
-                    "responsible": False,
+                    "responsible": self.env["res.users"],
                 }
             else:
                 viewed_responsible.append(responsible_parent)
@@ -75,7 +75,11 @@ class MailActivityPlanTemplate(models.Model):
             return super()._get_responsible_and_complaints(
                 on_demand_responsible, employee
             )
-        result = {"error": "", "warning": "", "responsible": False}
+        result = {
+            "error": False,
+            "warning": False,
+            "responsible": self.env["res.users"],
+        }
         _debug.logic(
             "responsible_type",
             template=self.id,
