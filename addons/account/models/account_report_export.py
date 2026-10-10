@@ -469,7 +469,13 @@ class AccountReportExport(models.Model):
                     {
                         "prefix": term.prefix,
                         "balance": term.balance_character,
-                        "exclude": list(term.excluded_prefixes),
+                        "require": [term.required_tag.token]
+                        if term.required_tag
+                        else [],
+                        "exclude": [
+                            *term.excluded_prefixes,
+                            *(tag.token for tag in term.excluded_tags),
+                        ],
                         "line": expr.report_line_id,
                     }
                     for term in parse_account_codes_formula(expr.formula)
@@ -485,6 +491,7 @@ class AccountReportExport(models.Model):
                         [
                             *common_account_domain,
                             get_domain_account(account_code["prefix"]),
+                            *map(get_domain_account, account_code["require"]),
                             *[
                                 excl_domain
                                 for excl_tuple in exclude_domain_accounts
@@ -494,8 +501,10 @@ class AccountReportExport(models.Model):
                     )
 
                     # Check that the code exists in the CoA or that the tag is linked to an account
-                    prefixes_to_check = [account_code["prefix"]] + account_code[
-                        "exclude"
+                    prefixes_to_check = [
+                        account_code["prefix"],
+                        *account_code["require"],
+                        *account_code["exclude"],
                     ]
                     for prefix_to_check in prefixes_to_check:
                         account_domain = get_domain_account(prefix_to_check)

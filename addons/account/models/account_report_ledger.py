@@ -1781,6 +1781,7 @@ class AccountReport(models.Model):
             for tag in acc["tag_ids"]:
                 tags_map[tag].append(acc)
 
+        resolve_tag = functools.cache(self._resolve_account_codes_tag)
         account_ids_by_prefix_key = {}
         prefix_details_by_formula = {}  # in the form {formula: [(1, prefix_key, balance_character), ...]}
         for formula in formulas:
@@ -1796,9 +1797,9 @@ class AccountReport(models.Model):
                     )
                 ) from None
             for term in terms:
-                # Two terms can include the same prefix but exclude different ones
-                # (104\(1041) and 104\(1042)), so the exclusions are part of the key.
-                prefix_key = (term.prefix, *term.excluded_prefixes)
+                # Two terms can include the same prefix but filter it differently
+                # (104\(1041) and 104\(1042)), so the filters are part of the key.
+                prefix_key = term.key
                 prefix_details_by_formula[formula].append(
                     (term.sign, prefix_key, term.balance_character)
                 )
@@ -1806,11 +1807,12 @@ class AccountReport(models.Model):
                     account_ids_by_prefix_key[prefix_key] = {
                         account["id"]
                         for account in self._get_account_codes_term_accounts(
-                            term, accounts, tags_map
+                            term, accounts, tags_map, resolve_tag
                         )
-                        if not (
-                            term.excluded_prefixes
-                            and account["code"].startswith(term.excluded_prefixes)
+                        if term.matches_account(
+                            account["code"],
+                            account["tag_ids"],
+                            resolve_tag,
                         )
                     }
 
@@ -1827,9 +1829,9 @@ class AccountReport(models.Model):
                     )
         return terms_by_account_id, account_ids_by_balance_character
 
-    def _get_account_codes_term_accounts(self, term, accounts, tags_map):
+    def _get_account_codes_term_accounts(self, term, accounts, tags_map, resolve_tag):
         if term.is_tag:
-            tag_id = self._resolve_account_codes_tag(term)
+            tag_id = resolve_tag(term.tag)
             return tags_map[tag_id] if tag_id else []
         idx = bisect.bisect_left(accounts, term.prefix, key=lambda acc: acc["code"])
         return itertools.takewhile(
@@ -1837,14 +1839,17 @@ class AccountReport(models.Model):
             itertools.islice(accounts, idx, None),
         )
 
-    def _resolve_account_codes_tag(self, term) -> int | None:
-        tag_id = (
-            self.env["ir.model.data"]._xmlid_to_res_id(term.tag_ref)
-            if term.tag_ref
-            else term.tag_id
-        )
+    def _resolve_account_codes_tag(self, tag) -> int | None:
+        if tag.ref:
+            model, tag_id = self.env["ir.model.data"]._xmlid_to_res_model_res_id(
+                tag.ref
+            )
+            if model != "account.account.tag":
+                tag_id = None
+        else:
+            tag_id = tag.id
         if not tag_id:
-            _debug.logic("account_codes_tag_unresolved", report=self, tag=term.prefix)
+            _debug.logic("account_codes_tag_unresolved", report=self, tag=tag.token)
         return tag_id or None
 
     def _get_account_codes_query(
@@ -3787,11 +3792,51 @@ class AccountReportExpression(models.Model):
 
     @api.constrains("engine", "formula")
     def _check_formula_account_codes(self) -> None:
+        report = self.env["report.formula"]
+        tag_ids_by_expression = {}
         for expression in self.filtered(lambda x: x.engine == "account_codes"):
             try:
-                parse_account_codes_formula(expression.formula)
+                terms = parse_account_codes_formula(expression.formula)
             except AccountCodesFormulaError:
                 expression._raise_formula_error()
+            tag_ids_by_expression[expression] = {
+                tag.token: report._resolve_account_codes_tag(tag)
+                for term in terms
+                for tag in term.tags
+            }
+        existing = set(
+            self.env["account.account.tag"]
+            .browse(
+                [
+                    tag_id
+                    for tag_ids in tag_ids_by_expression.values()
+                    for tag_id in tag_ids.values()
+                    if tag_id
+                ]
+            )
+            .exists()
+            .ids
+        )
+        for expression, tag_ids in tag_ids_by_expression.items():
+            missing = [
+                prefix for prefix, tag_id in tag_ids.items() if tag_id not in existing
+            ]
+            if not missing:
+                continue
+            _debug.logic(
+                "account_codes_formula_tag_missing", expression=expression, tags=missing
+            )
+            raise ValidationError(
+                self.env._(
+                    "The formula of expression '%(label)s' on line '%(line)s' names "
+                    "account tags that do not exist: %(tags)s. Install the module "
+                    "defining them, or create them, before the report that reads "
+                    "them.",
+                    label=expression.label,
+                    line=expression.report_line_name,
+                    tags=", ".join(missing),
+                )
+            )
 
     @api.model_create_multi
     def create(self, vals_list):

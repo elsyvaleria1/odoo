@@ -650,8 +650,9 @@ class AccountReportActions(models.Model):
         elif target_expression.engine == "account_codes":
             account = self.env["account.account"].browse(account_id)
             for term in parse_account_codes_formula(target_expression.formula):
-                tag_id = self.env.ref(term.tag_ref).id if term.tag_ref else term.tag_id
-                if term.matches_account(account.code, account.tag_ids.ids, tag_id):
+                if term.matches_account(
+                    account.code, account.tag_ids.ids, self._resolve_account_codes_tag
+                ):
                     value_to_set *= term.sign
                     break
 

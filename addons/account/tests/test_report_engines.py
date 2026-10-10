@@ -3389,15 +3389,83 @@ class TestReportEngines(TestAccountReportsCommon):
         )
         self.assertEqual(get_groups(4, 1), [])
 
-    def test_engine_account_codes_unresolved_tag_matches_nothing(self):
+    def test_engine_account_codes_formula_naming_a_missing_tag_is_refused(self):
         tag = self.env["account.account.tag"].create(
             {"name": "account_codes tagged", "applicability": "accounts"}
+        )
+        self.env["ir.model.data"].create(
+            {
+                "module": "account",
+                "name": "account_codes_engine_not_a_tag",
+                "model": "res.partner",
+                "res_id": tag.id,
+            }
+        )
+        refused = {
+            "missing xmlid": "tag(account.account_codes_engine_missing_tag)",
+            "xmlid of another model": "tag(account.account_codes_engine_not_a_tag)",
+            "missing id": f"tag({tag.id + 1000000})",
+            "one of several": f"tag({tag.id}) + 101 - tag(account.nowhere_tag)",
+        }
+        for case, formula in refused.items():
+            with (
+                self.subTest(case=case),
+                self.assertRaisesRegex(ValidationError, "do not exist"),
+                self.env.cr.savepoint(),
+            ):
+                self._create_report(
+                    [
+                        self._prepare_test_report_line(
+                            self._prepare_test_expression_account_codes(formula)
+                        )
+                    ]
+                )
+
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_account_codes(f"tag({tag.id})")
+                ),
+            ]
+        )
+        expression = report.line_ids.expression_ids
+        with (
+            self.assertRaisesRegex(ValidationError, "account.nowhere_tag"),
+            self.env.cr.savepoint(),
+        ):
+            expression.formula = "tag(account.nowhere_tag)"
+        with (
+            self.assertRaisesRegex(ValidationError, "do not exist"),
+            self.env.cr.savepoint(),
+        ):
+            self.env["report.formula.line"].create(
+                {
+                    "report_id": report.id,
+                    "name": "shortcut",
+                    "account_codes_formula": "-tag(account.nowhere_tag)",
+                }
+            )
+        self.assertEqual(expression.formula, f"tag({tag.id})")
+
+    def test_engine_account_codes_tag_unresolved_after_the_report_matches_nothing(
+        self,
+    ):
+        tag = self.env["account.account.tag"]._load_records(
+            [
+                {
+                    "xml_id": "account.account_codes_engine_unresolved_tag",
+                    "values": {
+                        "name": "account_codes tagged",
+                        "applicability": "accounts",
+                    },
+                }
+            ]
         )
         report = self._create_report(
             [
                 self._prepare_test_report_line(
                     self._prepare_test_expression_account_codes(
-                        "tag(account.account_codes_engine_missing_tag)"
+                        "tag(account.account_codes_engine_unresolved_tag)"
                     ),
                     groupby="account_id",
                 ),
@@ -3410,20 +3478,136 @@ class TestReportEngines(TestAccountReportsCommon):
             ]
         )
         move.line_ids.account_id.filtered(lambda a: a.code == "200001").tag_ids = tag
+        options = self._generate_options(
+            report, "2020-01-01", "2020-01-01", default_options={"unfold_all": True}
+        )
+        self.assertEqual(
+            report._get_lines(options)[0]["columns"][0]["no_format"], -1000.0
+        )
+
+        xmlid = self.env["ir.model.data"].search(
+            [
+                ("module", "=", "account"),
+                ("name", "=", "account_codes_engine_unresolved_tag"),
+            ]
+        )
+        for case, unresolve in (
+            (
+                "xmlid re-pointed to another model",
+                lambda: xmlid.write({"model": "res.partner"}),
+            ),
+            ("xmlid deleted", xmlid.unlink),
+        ):
+            with self.subTest(case=case), self.env.cr.savepoint() as savepoint:
+                unresolve()
+                self.env.registry.clear_cache("xmlid")
+                report_lines = report._get_lines(options)
+                self.assertLinesValues(
+                    report_lines, [0, 1], [("test_line_1", 0.0)], options
+                )
+                action_dict = report.action_audit_cell(
+                    options,
+                    self._get_audit_params_from_report_line(
+                        options, report.line_ids, report_lines[0]
+                    ),
+                )
+                self.assertFalse(move.line_ids.filtered_domain(action_dict["domain"]))
+                savepoint.rollback()
+
+    def test_engine_account_codes_tag_filter_and_tag_exclusion_partition_a_prefix(
+        self,
+    ):
+        first, second = self.env["account.account.tag"]._load_records(
+            [
+                {
+                    "xml_id": f"account.account_codes_engine_partition_{name}",
+                    "values": {
+                        "name": f"account_codes partition {name}",
+                        "applicability": "accounts",
+                    },
+                }
+                for name in ("first", "second")
+            ]
+        )
+        first_ref = "tag(account.account_codes_engine_partition_first)"
+        second_ref = "tag(account.account_codes_engine_partition_second)"
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_account_codes(formula),
+                    groupby="account_id",
+                )
+                for formula in (
+                    f"101[{first_ref}]",
+                    rf"101[{second_ref}]\({first_ref})",
+                    rf"101\({first_ref},{second_ref})",
+                    "101",
+                    f"-{first_ref}[{second_ref}]C",
+                )
+            ]
+        )
+        move = self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(1.0, account_code="101001"),
+                self._prepare_test_account_move_line(10.0, account_code="101002"),
+                self._prepare_test_account_move_line(100.0, account_code="101003"),
+                self._prepare_test_account_move_line(1000.0, account_code="101004"),
+                self._prepare_test_account_move_line(-10000.0, account_code="102001"),
+            ]
+        )
+        accounts = {line.account_id.code: line.account_id for line in move.line_ids}
+        accounts["101001"].tag_ids = first
+        accounts["101002"].tag_ids = second
+        accounts["101003"].tag_ids = first | second
+        accounts["102001"].tag_ids = first | second
 
         options = self._generate_options(
             report, "2020-01-01", "2020-01-01", default_options={"unfold_all": True}
         )
         report_lines = report._get_lines(options)
-        self.assertLinesValues(report_lines, [0, 1], [("test_line_1", 0.0)], options)
+        self.assertLinesValues(
+            report_lines,
+            [0, 1],
+            [
+                ("test_line_1", 101.0),
+                ("101001 101001", 1.0),
+                ("101003 101003", 100.0),
+                ("test_line_2", 10.0),
+                ("101002 101002", 10.0),
+                ("test_line_3", 1000.0),
+                ("101004 101004", 1000.0),
+                ("test_line_4", 1111.0),
+                ("101001 101001", 1.0),
+                ("101002 101002", 10.0),
+                ("101003 101003", 100.0),
+                ("101004 101004", 1000.0),
+                ("test_line_5", 10000.0),
+                ("102001 102001", 10000.0),
+            ],
+            options,
+        )
 
         action_dict = report.action_audit_cell(
             options,
             self._get_audit_params_from_report_line(
-                options, report.line_ids, report_lines[0]
+                options, report.line_ids[1], report_lines[3]
             ),
         )
-        self.assertFalse(move.line_ids.filtered_domain(action_dict["domain"]))
+        self.assertEqual(
+            move.line_ids.filtered_domain(action_dict["domain"]).account_id,
+            accounts["101002"],
+        )
+
+        for formula in (
+            "101[tag(account.nowhere_tag)]",
+            r"101\(101001,tag(account.nowhere_tag))",
+        ):
+            with (
+                self.subTest(formula=formula),
+                self.assertRaisesRegex(ValidationError, "account.nowhere_tag"),
+                self.env.cr.savepoint(),
+            ):
+                report.line_ids[0].expression_ids.formula = formula
 
     def test_engine_account_codes_formula_is_checked_on_engine_change(self):
         report = self._create_report(
