@@ -1,5 +1,4 @@
 /** @odoo-module native */
-import { browser } from "@web/core/browser/browser";
 import { rpc, RPCError } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
@@ -596,24 +595,10 @@ export class PaymentForm extends Interaction {
      * @param {number} tokenId - The id of the token whose deletion was requested.
      * @return {void}
      */
-    async _archiveToken(tokenId) {
-        try {
-            await this.waitFor(
-                rpc("/payment/archive_token", {
-                    token_id: tokenId,
-                }),
-            );
-            browser.location.reload();
-        } catch (error) {
-            if (error instanceof RPCError) {
-                this._displayErrorDialog(
-                    _t("Cannot delete payment method"),
-                    error.data.message,
-                );
-            } else {
-                return Promise.reject(error);
-            }
-        }
+    _archiveToken(tokenId) {
+        const form = document.getElementById("o_payment_archive_token_form");
+        form.querySelector('input[name="token_id"]').value = tokenId;
+        form.requestSubmit();
     }
 
     // #=== GETTERS ===#

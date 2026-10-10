@@ -9,6 +9,7 @@ from odoo.http import request
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.controllers.post_processing import PaymentPostProcessing
 from odoo.addons.portal.controllers import portal
+from odoo.addons.web.controllers.utils import fragments_or_redirect
 
 
 class PaymentPortal(portal.CustomerPortal):
@@ -514,13 +515,17 @@ class PaymentPortal(portal.CustomerPortal):
             # Display the portal homepage to the user
             return request.redirect("/my/home")
 
-    @http.route("/payment/archive_token", type="jsonrpc", auth="user")
-    def archive_token(self, token_id):
-        """Check that a user has write access on a token and archive the token if so.
+    @http.route("/payment/archive_token", type="http", auth="user", methods=["POST"])
+    def archive_token(self, token_id=None, redirect=None, **kwargs):
+        """Check that a user has write access on a token, archive the token if so, and
+        come back to the page the form names.
 
-        :param int token_id: The token to archive, as a `payment.token` id
-        :return: None
+        :param str token_id: The token to archive, as a `payment.token` id
+        :param str redirect: The local page to come back to
+        :return: A redirection, or the fragment answer saying where to go
         """
+        back = redirect or "/my/payment_method"
+        token_id = self._cast_as_int(token_id)
         partner_sudo = request.env.user.partner_id
         token_sudo = (
             request.env["payment.token"]
@@ -539,6 +544,7 @@ class PaymentPortal(portal.CustomerPortal):
         )
         if token_sudo:
             token_sudo.active = False
+        return fragments_or_redirect(request.env, back, redirect=back)
 
     @staticmethod
     def _cast_as_int(str_value):

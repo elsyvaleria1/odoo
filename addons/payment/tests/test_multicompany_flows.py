@@ -1,3 +1,4 @@
+from odoo import http
 from odoo.fields import Command
 from odoo.tests import tagged
 from odoo.tools import mute_logger
@@ -134,6 +135,10 @@ class TestMultiCompanyFlows(PaymentHttpCommon):
 
         # Archive token in company A
         url = self._build_url("/payment/archive_token")
-        self.call_jsonrpc(url, {"token_id": token.id})
+        self.url_open(
+            url,
+            data={"token_id": token.id, "csrf_token": http.Request.csrf_token(self)},
+            allow_redirects=False,
+        )
 
         self.assertFalse(token.active)

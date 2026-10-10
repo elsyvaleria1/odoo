@@ -126,6 +126,21 @@
         <t t-call="payment.availability_report" />
         </form>
         <t t-else="" t-call="payment.no_pms_available_warning" />
+        <!-- outside the payment form: a form may hold no other -->
+        <form
+            t-if="allow_token_deletion and tokens_sudo"
+            id="o_payment_archive_token_form"
+            class="d-none"
+            method="post"
+            action="/payment/archive_token"
+            data-fragment-form="">
+        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+        <input type="hidden" name="token_id" />
+        <input
+            type="hidden"
+            name="redirect"
+            t-att-value="request.httprequest.full_path.rstrip('?')" />
+        </form>
     </template>
 
     <template id="payment.token_form" name="Payment Token Form">
