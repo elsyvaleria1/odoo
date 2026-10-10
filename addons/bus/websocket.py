@@ -12,7 +12,7 @@ import time
 from collections import deque
 from contextlib import contextmanager, suppress
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 import psycopg
 from werkzeug.datastructures import ImmutableMultiDict, MultiDict
@@ -1297,6 +1297,22 @@ class WebsocketRequest:
         return ImmutableMultiDict(cookies)
 
 
+def is_own_http_port_origin(origin, host_url) -> bool:
+    # Prefork without a reverse proxy serves pages on http_port and websockets
+    # on gevent_port: a page of this server's own HTTP port is another origin
+    # only by its port.
+    try:
+        theirs, ours = urlsplit(origin), urlsplit(host_url)
+        return (
+            bool(theirs.hostname)
+            and (theirs.scheme, theirs.hostname) == (ours.scheme, ours.hostname)
+            and theirs.port == config["http_port"]
+            and ours.port == config["gevent_port"]
+        )
+    except ValueError:
+        return False
+
+
 class WebsocketConnectionHandler:
     SUPPORTED_VERSIONS = {"13"}
     _HANDSHAKE_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -1430,7 +1446,11 @@ class WebsocketConnectionHandler:
 
     @staticmethod
     def _normalize_origin(origin) -> str:
-        url = urlparse(origin.strip())
+        try:
+            url = urlparse(origin.strip())
+        except ValueError:
+            # an origin no URL can be read from is nobody's: never trusted
+            return ""
         scheme = url.scheme.lower()
         netloc = url.netloc.lower()
         default_port = {"http": ":80", "https": ":443", "ws": ":80", "wss": ":443"}
@@ -1441,6 +1461,8 @@ class WebsocketConnectionHandler:
 
     @classmethod
     def _is_trusted_origin(cls, origin, request) -> bool:
+        if is_own_http_port_origin(origin, request.httprequest.host_url):
+            return True
         origin = cls._normalize_origin(origin)
         expected = cls._normalize_origin(
             f"{request.httprequest.scheme}://{request.httprequest.host}"

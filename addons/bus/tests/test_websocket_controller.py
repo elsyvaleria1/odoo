@@ -1,7 +1,5 @@
 import contextlib
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-from urllib.parse import urlsplit
 
 import psycopg
 
@@ -9,7 +7,6 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.tests import JsonRpcException, common
 from odoo.tools import mute_logger
 
-from ..controllers.websocket import resolve_cors_worker_bundle
 from ..websocket import CloseCode, InvalidDatabaseError, WebsocketRequest
 from .common import WebsocketCase
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
@@ -75,31 +72,32 @@ class TestWebsocketWorkerBundle(HttpCaseWithUserDemo):
         self.assertEqual(conditional.status_code, 304)
         self.assertFalse(conditional.content)
 
-    def test_cors_headers_echoed_only_for_this_exact_origin(self):
-        base = self.base_url()
-        host = urlsplit(base).hostname
-
-        response = self._get_bundle(headers={"Origin": base})
-        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), base)
-        self.assertEqual(
-            response.headers.get("Access-Control-Allow-Credentials"), "true"
+    def test_another_site_reads_the_same_bundle_without_credentials(self):
+        own = self._get_bundle()
+        if own.status_code in (301, 302, 303, 307, 308):
+            self.skipTest("esbuild unavailable: degraded raw-file path in use")
+        response = self.url_open(
+            "/bus/websocket_worker_bundle/anonymous",
+            headers={"Origin": "https://customer.example"},
+            allow_redirects=False,
         )
-        self.assertIn("Origin", response.headers.get("Vary", ""))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "*")
+        self.assertNotIn("Access-Control-Allow-Credentials", response.headers)
+        self.assertNotIn("Set-Cookie", response.headers)
+        self.assertEqual(response.content, own.content)
 
-        for refused in (
-            f"http://{host}:8072",
-            f"https://{host}",
+    def test_the_bundle_of_the_page_origin_answers_no_other_origin(self):
+        # a worker shared by the tabs is started from the page's own origin;
+        # another site reads the anonymous bundle
+        for origin in (
+            self.base_url(),
+            "http://127.0.0.1:8072",
             "https://evil.example",
-            f"http://{host}:8072.evil.example",
-            "http://[",
         ):
-            response = self._get_bundle(headers={"Origin": refused})
-            self.assertEqual(
-                response.status_code, 200, f"{refused} must be refused, not raised on"
-            )
+            response = self._get_bundle(headers={"Origin": origin})
+            self.assertEqual(response.status_code, 200)
             self.assertNotIn("Access-Control-Allow-Origin", response.headers)
-            self.assertNotIn("Access-Control-Allow-Credentials", response.headers)
-            self.assertIn("Origin", response.headers.get("Vary", ""))
 
         response = self._get_bundle()
         self.assertNotIn("Access-Control-Allow-Origin", response.headers)
@@ -164,42 +162,3 @@ class TestInvalidDatabase(WebsocketCase):
             self.assertRaises(InvalidDatabaseError),
         ):
             req.serve_websocket_message(json_dumps({"event_name": "noop"}))
-
-
-class TestWorkerBundleCrossPortCors(common.BaseCase):
-    def _resolve(self, origin, host_url):
-        httprequest = SimpleNamespace(
-            headers={"Origin": origin} if origin else {},
-            host_url=host_url,
-            is_secure=host_url.startswith("https"),
-        )
-        with patch(
-            "odoo.addons.bus.controllers.websocket.config",
-            {"http_port": 8069, "gevent_port": 8072},
-        ):
-            return resolve_cors_worker_bundle(SimpleNamespace(httprequest=httprequest))
-
-    def test_a_page_of_the_http_port_reads_the_bundle_from_the_evented_port(self):
-        self.assertEqual(
-            self._resolve("http://app.example:8069", "http://app.example:8072/"),
-            "http://app.example:8069",
-        )
-
-    def test_the_same_origin_is_still_answered(self):
-        self.assertEqual(
-            self._resolve("http://app.example:8069", "http://app.example:8069/"),
-            "http://app.example:8069",
-        )
-
-    def test_any_other_origin_is_refused(self):
-        for origin, host_url in (
-            ("http://app.example:9999", "http://app.example:8072/"),
-            ("http://evil.example:8069", "http://app.example:8072/"),
-            ("https://app.example:8069", "http://app.example:8072/"),
-            ("http://app.example:8069", "http://app.example:9000/"),
-            ("http://app.example:8072", "http://app.example:8069/"),
-            ("http://[", "http://app.example:8072/"),
-            (None, "http://app.example:8072/"),
-        ):
-            with self.subTest(origin=origin, host_url=host_url):
-                self.assertIsNone(self._resolve(origin, host_url))

@@ -6,6 +6,7 @@ import {
     getService,
     makeMockEnv,
     makeMockServer,
+    mockService,
     patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
@@ -110,4 +111,52 @@ test("J5: FAILED worker warns once across many sends/handlers", async () => {
         (m) => typeof m === "string" && m.includes("worker messages are dropped"),
     );
     expect(failWarnings).toHaveLength(1);
+});
+
+/**
+ * @param {string} serverURL
+ */
+async function startWorkerFor(serverURL) {
+    const started = [];
+    const fetched = [];
+    await makeMockServer();
+    patchWithCleanup(browser, {
+        SharedWorker: class extends browser.SharedWorker {
+            constructor(url) {
+                super(...arguments);
+                started.push(String(url));
+            }
+        },
+    });
+    patchWithCleanup(globalThis, {
+        fetch: async (url, init) => {
+            fetched.push([String(url), init.credentials]);
+            return new Response("/* bundle */");
+        },
+    });
+    mockService("bus.parameters", { serverURL });
+    await makeMockEnv();
+    await getService("worker_service").ensureWorkerStarted();
+    return { started, fetched };
+}
+
+test("a bus on another port of the page's host shares a worker of the page's origin", async () => {
+    // prefork without a proxy: a blob would make one "shared" worker per tab
+    const port = location.port === "8072" ? "8073" : "8072";
+    const { started, fetched } = await startWorkerFor(
+        `${location.protocol}//${location.hostname}:${port}`,
+    );
+    expect(fetched).toEqual([]);
+    expect(started).toHaveLength(1);
+    expect(
+        started[0].startsWith(`${window.origin}/bus/websocket_worker_bundle?v=`),
+    ).toBe(true);
+});
+
+test("a bus of another site is read anonymously and started from a blob", async () => {
+    const { started, fetched } = await startWorkerFor("https://odoo.example");
+    expect(
+        fetched.map(([url, credentials]) => [url.split("?")[0], credentials]),
+    ).toEqual([["https://odoo.example/bus/websocket_worker_bundle/anonymous", "omit"]]);
+    expect(started[0].startsWith("blob:")).toBe(true);
 });

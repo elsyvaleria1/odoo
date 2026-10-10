@@ -44,17 +44,22 @@ export class WorkerService {
 
     async startWorker() {
         this._state = WORKER_STATE.INITIALIZING;
-        let workerURL = `${this.params.serverURL}/bus/websocket_worker_bundle?v=${session.websocket_worker_version}`;
+        // A worker shared by the tabs needs a script of the page's own origin:
+        // a blob is new per tab, so is a worker started from one. On the same
+        // host -- prefork without a proxy has the bus on another port -- the
+        // page's origin serves the bundle, and only the websocket goes to the
+        // bus's port. A page of another site (a live chat embedded there) has
+        // no choice: it reads the public bundle anonymously.
+        const sameHost = new URL(this.params.serverURL).hostname === location.hostname;
+        const version = session.websocket_worker_version;
+        let workerURL = `${window.origin}/bus/websocket_worker_bundle?v=${version}`;
         let blobURL = null;
-        if (this.params.serverURL !== window.origin) {
-            // Cross-origin scenario (e.g. prefork mode without a reverse proxy:
-            // HTTP workers on port 8069, gevent on port 8072). Using importScripts
-            // from a data: URL would be cross-origin and the browser omits the
-            // session cookie, so Odoo cannot resolve the database and returns 404.
-            // Instead, pre-fetch the bundle from the page context (which carries
-            // the session cookie), then create a same-origin Blob URL for the Worker.
+        if (!sameHost) {
             try {
-                const response = await fetch(workerURL, { credentials: "include" });
+                const response = await fetch(
+                    `${this.params.serverURL}/bus/websocket_worker_bundle/anonymous?v=${version}`,
+                    { credentials: "omit" },
+                );
                 if (!response.ok) {
                     throw new Error(
                         `Bundle fetch failed with status ${response.status}`,

@@ -904,7 +904,30 @@ class TestTrustedOrigin(BaseCase):
         request = MagicMock()
         request.httprequest.scheme = scheme
         request.httprequest.host = host
+        request.httprequest.host_url = f"{scheme}://{host}/"
         return request
+
+    def test_a_page_of_the_own_http_port_is_trusted_on_the_evented_port(self):
+        # prefork without a proxy: pages on http_port, websockets on gevent_port
+        with patch(
+            "odoo.addons.bus.websocket.config", {"http_port": 8069, "gevent_port": 8072}
+        ):
+            trusted = WebsocketConnectionHandler._is_trusted_origin
+            evented = self._request("http", "app.example:8072")
+            self.assertTrue(trusted("http://app.example:8069", evented))
+            for origin in (
+                "http://app.example:9999",
+                "http://evil.example:8069",
+                "https://app.example:8069",
+                "http://[",
+            ):
+                with self.subTest(origin=origin):
+                    self.assertFalse(trusted(origin, evented))
+            self.assertFalse(
+                trusted(
+                    "http://app.example:8069", self._request("http", "app.example:9000")
+                )
+            )
 
     def test_matching_origin_is_trusted(self):
         request = self._request("http", "example.com:8069")
@@ -928,6 +951,12 @@ class TestTrustedOrigin(BaseCase):
             WebsocketConnectionHandler._is_trusted_origin(
                 "http://attacker.example.com", request
             )
+        )
+
+    def test_an_unreadable_origin_is_not_trusted(self):
+        request = self._request("http", "example.com:8069")
+        self.assertFalse(
+            WebsocketConnectionHandler._is_trusted_origin("http://[", request)
         )
 
     def test_scheme_mismatch_is_not_trusted(self):
