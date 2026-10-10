@@ -111,7 +111,6 @@
                                         name="next_activity_ids"
                                         widget="many2many_tags"
                                         optional="hide"
-                                        options="{                                             'no_quick_create': True,                                             'edit_tags': True,                                             }"
                                         invisible="not next_activity_ids" />
                                 </list>
                                 <kanban class="o_kanban_mobile">

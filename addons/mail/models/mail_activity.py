@@ -241,7 +241,6 @@ class MailActivity(models.Model):
     )
 
     @api.depends("previous_activity_type_id.suggested_next_type_ids")
-    @api.onchange("previous_activity_type_id")
     def _compute_has_recommended_activities(self) -> None:
         for record in self:
             record.has_recommended_activities = bool(
@@ -894,7 +893,6 @@ class MailActivity(models.Model):
             if leaf.field_expr == "state"
         )
 
-    @api.model
     @api.model
     def _search(
         self,

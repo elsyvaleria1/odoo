@@ -200,6 +200,14 @@ class WizardMailActivitySchedule(models.TransientModel):
             warnings = set()
             applied_on = scheduler._get_applied_on_records()
             if scheduler.res_model:
+                if not scheduler.res_ids and not scheduler.plan_id:
+                    errors.add(
+                        self.env._(
+                            "Select the records to schedule the activity on, at most "
+                            "%(limit)s at once.",
+                            limit=self._batch_size,
+                        )
+                    )
                 if applied_on and (
                     "company_id" in scheduler.env[applied_on._name]._fields
                     and len(applied_on.mapped("company_id")) > 1

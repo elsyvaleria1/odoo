@@ -346,6 +346,13 @@ class TestActivitySchedule(ActivityScheduleCase):
             test_plan.template_ids, expected_next_activities, strict=True
         ):
             self.assertEqual(template.next_activity_ids.mapped("name"), expected_names)
+        self.test_type_3.triggered_next_type_id = self.test_type_1
+        self.assertEqual(
+            test_plan.template_ids[2].next_activity_ids,
+            self.test_type_1,
+            "the next activities follow their activity type",
+        )
+        self.test_type_3.triggered_next_type_id = False
         with (
             self.subTest(test_case="Check plan summary"),
             freeze_time(self.reference_now),
@@ -579,6 +586,21 @@ class TestPlanScheduleShape(ActivityScheduleCase):
                 "res_model": "mail.test.activity",
             }
         )
+
+    def test_too_many_records_is_an_error_not_a_silent_no_op(self):
+        Wizard = self.env["wizard.mail.activity.schedule"]
+        with patch.object(type(Wizard), "_batch_size", 2):
+            wizard = Wizard.with_context(
+                active_ids=self.records.ids, active_model=self.records._name
+            ).new(
+                {
+                    "activity_type_id": self.activity_type_todo.id,
+                    "res_model": self.records._name,
+                }
+            )
+            self.assertFalse(wizard.res_ids)
+            self.assertTrue(wizard.has_error)
+            self.assertIn("at most 2", wizard.error)
 
     def test_launching_a_plan_groups_its_creates(self):
         wizard = self._wizard()

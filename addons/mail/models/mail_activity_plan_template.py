@@ -90,8 +90,6 @@ class MailActivityPlanTemplate(models.Model):
         comodel_name="mail.activity.type",
         string="Next Activities",
         compute="_compute_next_activity_ids",
-        store=True,
-        readonly=False,
     )
 
     @api.constrains("activity_type_id", "plan_id")
@@ -118,7 +116,10 @@ class MailActivityPlanTemplate(models.Model):
                     )
                 )
 
-    @api.depends("activity_type_id")
+    @api.depends(
+        "activity_type_id.triggered_next_type_id",
+        "activity_type_id.suggested_next_type_ids",
+    )
     def _compute_next_activity_ids(self) -> None:
         for template in self:
             activity_type = template.activity_type_id
