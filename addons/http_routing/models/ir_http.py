@@ -15,6 +15,7 @@ from odoo import api, exceptions, http, models, tools
 from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.http import Response, request
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import lazy
 from odoo.tools.urls import keep_query
 
 from odoo.addons.base.models import ir_http
@@ -175,8 +176,10 @@ class IrHttp(models.AbstractModel):
 
         router = http.root.get_routing_map(request.db, env=request.env)
         try:
+            # matched as the link will be followed, not as this request came:
+            # a page answering a POST still links to its GET-only neighbours
             rule, args = router.bind_to_environ(request.httprequest.environ).match(
-                path_info=url, return_rule=True
+                path_info=url, method="GET", return_rule=True
             )
             for key, val in list(args.items()):
                 if isinstance(val, models.BaseModel):
@@ -213,8 +216,8 @@ class IrHttp(models.AbstractModel):
         return path + suffix
 
     @classmethod
-    def _url_lang(cls, path_or_uri: str, lang_code: str | None = None) -> str:
-        location = (path_or_uri or "").strip()
+    def _url_for(cls, url_from: str, lang_code: str | None = None) -> str:
+        location = (url_from or "").strip()
         force_lang = lang_code is not None
         try:
             url = urllib.parse.urlparse(location)
@@ -266,8 +269,11 @@ class IrHttp(models.AbstractModel):
         return path + suffix
 
     @classmethod
-    def _url_for(cls, url_from: str, lang_code: str | None = None) -> str:
-        return cls._url_lang(url_from, lang_code=lang_code)
+    def _is_multilang_routing(cls, routing: dict[str, typing.Any]) -> bool:
+        return bool(
+            routing.get("website")
+            and routing.get("multilang", routing["type"] == "http")
+        )
 
     @classmethod
     def _is_asset_or_webclient_path(cls, path: str) -> bool:
@@ -277,7 +283,7 @@ class IrHttp(models.AbstractModel):
     def _is_multilang_url(
         self, local_url: str, lang_url_codes: list[str] | None = None
     ) -> bool:
-        if not lang_url_codes:
+        if lang_url_codes is None:
             lang_url_codes = self.env["ir.http"]._frontend_url_codes()
         path, _suffix = self._url_split_suffix(local_url)
         path = self._lang_url_unprefix(path, lang_url_codes)
@@ -291,10 +297,7 @@ class IrHttp(models.AbstractModel):
         try:
             _, func = self.env["ir.http"].url_rewrite(path)
 
-            return not func or (
-                func.routing.get("website", False)
-                and func.routing.get("multilang", func.routing["type"] == "http")
-            )
+            return not func or self._is_multilang_routing(func.routing)
         except Exception:
             _logger.warning(
                 "Could not determine multilang status for %r, assuming False",
@@ -377,15 +380,16 @@ class IrHttp(models.AbstractModel):
             return super()._match(path)
 
         # See /1, match a non website endpoint
-        matched = None
+        matched = not_found = None
         try:
             rule, args = cls._match_and_flag(path)
             if not request.is_frontend:
                 return rule, args
             matched = (rule, args)
-        except NotFound:
-            _, url_lang_str, *rest = path.split("/", 2) + ["", ""]
-            path_no_lang = "/" + rest[0]
+        except NotFound as exc:
+            not_found = exc
+            url_lang_str, _, rest = path[1:].partition("/")
+            path_no_lang = "/" + rest
         else:
             url_lang_str = ""
             path_no_lang = path
@@ -408,20 +412,24 @@ class IrHttp(models.AbstractModel):
         if not nearest_url_lang:
             url_lang_str = None
 
-        path = cls._reroute_for_lang(
+        served_path = cls._reroute_for_lang(
             path, path_no_lang, url_lang_str, default_lang, allow_redirect
         )
 
         if matched is not None:
             return matched
 
-        try:
-            return cls._match_and_flag(path)
-        except NotFound:
-            _debug.logic("frontend_not_found", path=path)
-            request.is_frontend = True
-            request.is_frontend_multilang = True
-            raise
+        if served_path != path:
+            try:
+                return cls._match_and_flag(served_path)
+            except NotFound as exc:
+                not_found = exc
+        _debug.logic(
+            "frontend_not_found", path=served_path, rerouted=served_path != path
+        )
+        request.is_frontend = True
+        request.is_frontend_multilang = True
+        raise not_found
 
     @classmethod
     def _match_and_flag(
@@ -430,9 +438,7 @@ class IrHttp(models.AbstractModel):
         rule, args = super()._match(path)
         routing = rule.endpoint.routing
         request.is_frontend = routing.get("website", False)
-        request.is_frontend_multilang = request.is_frontend and routing.get(
-            "multilang", routing["type"] == "http"
-        )
+        request.is_frontend_multilang = cls._is_multilang_routing(routing)
         _debug.logic(
             "route_flagged",
             path=path,
@@ -652,7 +658,9 @@ class IrHttp(models.AbstractModel):
         code = 500
         values = {
             "exception": exception,
-            "traceback": "".join(traceback.format_exception(exception)),
+            # shown to an editor or in debug mode only: a crawler's 404 flood
+            # should not format a stack per request
+            "traceback": lazy(lambda: "".join(traceback.format_exception(exception))),
         }
 
         if isinstance(exception, exceptions.UserError):
@@ -742,7 +750,11 @@ class IrHttp(models.AbstractModel):
         code, values = cls._prepare_exception_code_and_values(exception)
 
         request.env.cr.rollback()
-        if code in (404, 403):
+        # an unrouted URL has been through the fallback already, in
+        # _serve_ir_http_fallback, before this NotFound was raised
+        if code in (404, 403) and not getattr(
+            request.attempt_scratch, "fallback_tried", False
+        ):
             try:
                 response = cls._serve_fallback()
                 if response:

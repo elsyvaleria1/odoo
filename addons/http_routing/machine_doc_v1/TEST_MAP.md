@@ -18,7 +18,7 @@ Give each concurrent run its own `-d` and its own `-p` / `--gevent-port`.
 | File | Class | Kind | Covers |
 |---|---|---|---|
 | `test_url.py` | `TestUrlCommon` | fixture | not a test: the shared two-language fixture (`fr_FR` + `en_US` default) every class below inherits |
-| | `TestUrlLang` | unit | `_url_for` / `_url_lang`: lang insert / strip / replace, fragments, trailing slashes, `[lang]` placeholder |
+| | `TestUrlLang` | unit | `_url_for`: lang insert / strip / replace, fragments, trailing slashes, `[lang]` placeholder |
 | | `TestUrlLangContext` | unit | a context with no usable `lang` (`None`, `False`, absent) must still produce a URL |
 | | `TestLangUrlPrefix`, `TestLangUrlUnprefix` | unit | the two path/language primitives and their round trip |
 | | `TestUrlSplitSuffix` | unit | RFC 3986 `path[?query][#fragment]`, incl. losslessness |

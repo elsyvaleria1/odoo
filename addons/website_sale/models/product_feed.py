@@ -163,9 +163,7 @@ class ProductFeed(models.Model):
             "title": website_homepage.website_meta_title or self.website_id.name,
             "link": urls.urljoin(
                 self.website_id.get_base_url(),
-                self.env["ir.http"]._url_lang(
-                    homepage_url, lang_code=self.lang_id.code
-                ),
+                self.env["ir.http"]._url_for(homepage_url, lang_code=self.lang_id.code),
             ),
             "description": website_homepage.website_meta_description or self.website_id,
             "items": self._prepare_gmc_items(),
@@ -193,7 +191,7 @@ class ProductFeed(models.Model):
                 url_ = urlunsplit(parsed_url._replace(query=urlencode(query)))
             return urls.urljoin(
                 base_url,
-                self.env["ir.http"]._url_lang(url_, lang_code=self.lang_id.code),
+                self.env["ir.http"]._url_for(url_, lang_code=self.lang_id.code),
             )
 
         return {

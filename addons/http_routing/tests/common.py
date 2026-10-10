@@ -1,5 +1,6 @@
 import contextlib
 from functools import partial
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 from urllib.parse import parse_qsl, urlparse
 
@@ -17,6 +18,7 @@ from odoo.tools import DotDict, config, frozendict
 
 FRONTEND_PROBE_ROUTE = "/http_routing/frontend_probe"
 OFF_FRONTEND_REFUSAL_ROUTE = "/http_routing/off_frontend_refusal_probe"
+GET_ONLY_PROBE_ROUTE = "/http_routing/get_only_probe"
 
 
 class FrontendProbe(odoo.http.Controller):
@@ -29,6 +31,20 @@ class FrontendProbe(odoo.http.Controller):
         readonly=True,
     )
     def frontend_probe(self):
+        return odoo.http.Response("probe", content_type="text/plain")
+
+
+class GetOnlyProbe(odoo.http.Controller):
+    @odoo.http.route(
+        GET_ONLY_PROBE_ROUTE + '/<model("res.partner"):partner>',
+        type="http",
+        auth="public",
+        methods=["GET"],
+        website=True,
+        sitemap=False,
+        readonly=True,
+    )
+    def get_only_probe(self, partner):
         return odoo.http.Response("probe", content_type="text/plain")
 
 
@@ -108,6 +124,7 @@ def MockRequest(
             args=MultiDict(parse_qsl(urlparse(path).query)),
         ),
         type="http",
+        attempt_scratch=SimpleNamespace(),
         future_response=odoo.http.FutureResponse(),
         params={},
         session=DotDict(

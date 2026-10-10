@@ -52,7 +52,7 @@ done < <(grep -oP '@http\.route\(\s*"\K[^"]+' "$MOD/controllers/main.py")
 # --------------------------------------------------------------- primitives --
 # The URL-grammar primitives the docs promise everything routes through.
 for meth in _url_split_suffix _lang_url_prefix _lang_url_split _frontend_url_codes \
-            _url_lang _url_localized _is_multilang_url url_rewrite \
+            _url_for _url_localized _is_multilang_url url_rewrite \
             _reroute_for_lang _redirect_lang _get_error_template; do
     if grep -q "def $meth" "$MOD/models/ir_http.py"; then
         assert_doc_cites "$meth" "$meth"

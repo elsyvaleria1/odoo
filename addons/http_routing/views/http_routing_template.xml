@@ -163,13 +163,6 @@
         </t>
     </template>
 
-    <template id="422">
-        <t t-call="http_routing.error_page">
-            <t t-set="error_title">Oops! Something went wrong.</t>
-            <t t-set="error_hint">Take a look at the error message below.</t>
-        </t>
-    </template>
-
     <template id="500">
         <!-- Use only the values ir_http._handle_error passes in: the cursor can
             already be broken when this renders, so no request.csrf_token(), no

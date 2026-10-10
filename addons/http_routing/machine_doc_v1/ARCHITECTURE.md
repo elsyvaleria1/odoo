@@ -108,7 +108,7 @@ Built on them:
 
 | Caller | Question it answers |
 |---|---|
-| `_url_for` / `_url_lang` | "make this href right for the current page's language" — every href of every frontend page (`ir.qweb._post_processing_att`) |
+| `_url_for` | "make this href right for the current page's language" — every href of every frontend page (`ir.qweb._post_processing_att`) |
 | `_url_localized` | "give me this URL *in* language X", re-slugging its `<model(…)>` segments |
 | `_is_multilang_url` | "is the content at this path translated?" — never for `_is_asset_or_webclient_path`, which `website`'s rewriting `_url_for` excludes on the same test |
 | `url_rewrite` | "what does the routing table say this path resolves to?" (ormcached, request-free) |
@@ -116,7 +116,7 @@ Built on them:
 `_lang_url_split` takes the codes explicitly so a **request-free** caller — a
 sitemap builder, a cron, `_is_multilang_url` — can ask at all.
 
-`_url_lang` puts a language in a URL only when the site serves it, with one
+`_url_for` puts a language in a URL only when the site serves it, with one
 deliberate exception: a language the *caller named* (`_url_for(url, "de_DE")`)
 is kept, as its `url_code`, even when the site does not list it, because the
 target may serve more languages than the site does — `survey` serves every
@@ -136,6 +136,14 @@ exception ─→ _prepare_exception_code_and_values ─→ (status, values)
                              _get_error_html  ─→ (status, html)
 ```
 
+**The fallback runs once per request.** An unrouted URL has been through
+`_serve_fallback` in the core (`_serve_ir_http_fallback`) before its `NotFound`
+reaches `_handle_error`, which marks `request.attempt_scratch.fallback_tried`;
+`_handle_error` tries the fallback itself only for a 404/403 raised by a
+*routed* endpoint. Running it twice cost every unrouted 404 a second CMS-page,
+attachment and redirect lookup (5 queries, ~4 ms). The traceback in the error
+values is `lazy` for the same reason: only an editor or debug mode renders it.
+
 **Status and template are two decisions, taken by two methods**, and that split
 is load-bearing: `_handle_error` keys the `_serve_fallback` attempt off the
 *status*, so an override that smuggled a template through the status (as
@@ -154,7 +162,7 @@ a site where every missing URL told crawlers and monitors something else.
 | xmlid | Role |
 |---|---|
 | `http_routing.error_page` | the shared 4xx body: heading, hint, then the debug accordion or the error message |
-| `http_routing.400`, `http_routing.403`, `http_routing.415`, `http_routing.422`, `http_routing.4xx` | one `t-call` each into `error_page`, carrying only a `t-set` heading and hint |
+| `http_routing.400`, `http_routing.403`, `http_routing.415`, `http_routing.4xx` | one `t-call` each into `error_page`, carrying only a `t-set` heading and hint. A status with nothing to add over `4xx` gets no template of its own (422, a refused form, is one): `_get_error_html` falls back to `4xx` |
 | `http_routing.404` | its own page (illustration + popular links); `website` inherits it |
 | `http_routing.500` | deliberately standalone — **no `frontend_layout`, no assets, no `csrf_token`**, because the cursor may already be broken when it renders |
 | `http_routing.http_error` | the generic fallback, and the page ~20 controllers across other modules answer a refusal with, through `_serve_error_page` — treat its values as a public contract |

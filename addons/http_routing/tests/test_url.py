@@ -7,6 +7,7 @@ from odoo.tests import TransactionCase, tagged
 
 from .common import (
     FRONTEND_PROBE_ROUTE,
+    GET_ONLY_PROBE_ROUTE,
     MockRequest,
     route_frontend_probe,
     setup_frontend_langs,
@@ -529,28 +530,40 @@ class TestUrlLocalized(TestUrlCommon):
                 "generating a URL must not flag the request as routed",
             )
 
+    def _router_raising(self, exception):
+        router = MagicMock()
+        router.return_value.bind_to_environ.return_value.match.side_effect = exception
+        return patch("odoo.http.root.get_routing_map", router)
+
     def test_request_redirect_degrades(self):
-        self.patch(
-            self.registry["ir.http"],
-            "_match",
-            Mock(side_effect=werkzeug.routing.RequestRedirect("http://x/moved")),
-        )
-        with MockRequest(self.env, context={"lang": "en_US"}, mock_router=False):
+        with (
+            MockRequest(self.env, context={"lang": "en_US"}, mock_router=False),
+            self._router_raising(werkzeug.routing.RequestRedirect("http://x/moved")),
+        ):
             self.assertEqual(
                 self.IrHttp._url_localized(self.EP, lang_code="fr_FR"),
                 "/fr" + self.EP,
             )
 
     def test_method_not_allowed_degrades(self):
-        self.patch(
-            self.registry["ir.http"],
-            "_match",
-            Mock(side_effect=werkzeug.exceptions.MethodNotAllowed()),
-        )
-        with MockRequest(self.env, context={"lang": "en_US"}, mock_router=False):
+        with (
+            MockRequest(self.env, context={"lang": "en_US"}, mock_router=False),
+            self._router_raising(werkzeug.exceptions.MethodNotAllowed()),
+        ):
             self.assertEqual(
                 self.IrHttp._url_localized(self.EP, lang_code="fr_FR"),
                 "/fr" + self.EP,
+            )
+
+    def test_a_get_only_link_is_rebuilt_while_answering_a_post(self):
+        partner = self.env["res.partner"].create({"name": "Current Name"})
+        stale = f"{GET_ONLY_PROBE_ROUTE}/old-name-{partner.id}"
+        with MockRequest(
+            self.env, method="POST", context={"lang": "en_US"}, mock_router=False
+        ):
+            self.assertEqual(
+                self.IrHttp._url_localized(stale, lang_code="fr_FR"),
+                f"/fr{GET_ONLY_PROBE_ROUTE}/current-name-{partner.id}",
             )
 
 

@@ -299,3 +299,38 @@ class TestBackendLangUrl(TransactionCase):
 
     def test_named_unserved_lang_is_kept_as_its_url_code(self):
         self.assertEqual(self._url_for("en_US", "de_DE"), "/de/contactus")
+
+
+@tagged("-at_install", "post_install")
+class TestFrontendLangsCache(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.en = cls.env.ref("base.lang_en")
+        cls.fr = cls.env["res.lang"]._activate_lang("fr_FR")
+        cls.de = cls.env["res.lang"]._activate_lang("de_DE")
+        cls.site_a = cls.env.ref("website.default_website")
+        cls.site_a.language_ids = cls.en + cls.fr
+        cls.site_b = cls.env["website"].create(
+            {"name": "B", "language_ids": [(6, 0, (cls.en + cls.de).ids)]}
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.env.registry.clear_cache()
+
+    def _frontend(self, website, is_frontend=True, **ctx):
+        with MockRequest(self.env, website=website, is_frontend=is_frontend):
+            return set(self.env["res.lang"].with_context(**ctx)._get_frontend())
+
+    def test_an_off_frontend_answer_is_not_served_to_the_frontend(self):
+        self.assertIn(
+            "de_DE", self._frontend(self.site_a, False, website_id=self.site_a.id)
+        )
+        self.assertEqual(
+            self._frontend(self.site_a, website_id=self.site_a.id), {"en_US", "fr_FR"}
+        )
+
+    def test_a_website_answer_is_not_served_to_another_website(self):
+        self.assertEqual(self._frontend(self.site_a), {"en_US", "fr_FR"})
+        self.assertEqual(self._frontend(self.site_b), {"en_US", "de_DE"})

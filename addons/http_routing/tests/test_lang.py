@@ -257,6 +257,12 @@ class TestLangLadder(HttpCase):
         self.assertEqual(r.status_code, 200)
 
     def test_direct_match_matches_only_once(self):
+        calls = self._count_matches()
+        r = self.url_open(self.EP, allow_redirects=False)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(calls, [self.EP])
+
+    def _count_matches(self):
         IrHttp = self.registry["ir.http"]
         matcher = IrHttp._match_and_flag
         calls = []
@@ -266,9 +272,21 @@ class TestLangLadder(HttpCase):
             return matcher(path)
 
         self.patch(IrHttp, "_match_and_flag", counting)
-        r = self.url_open(self.EP, allow_redirects=False)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(calls, [self.EP])
+        return calls
+
+    def test_an_unrouted_url_is_matched_once(self):
+        calls = self._count_matches()
+        r = self.url_open("/http_routing/no_such_route", allow_redirects=False)
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(calls, ["/http_routing/no_such_route"])
+
+    def test_an_unrouted_url_behind_a_lang_is_matched_again_unprefixed(self):
+        calls = self._count_matches()
+        r = self.url_open("/fr/http_routing/no_such_route", allow_redirects=False)
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(
+            calls, ["/fr/http_routing/no_such_route", "/http_routing/no_such_route"]
+        )
 
     def test_case_5_missing_lang_redirects_adding_lang(self):
         r = self.url_open(

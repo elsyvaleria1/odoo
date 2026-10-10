@@ -105,14 +105,14 @@ class TestErrorHtml(TransactionCase):
         return served, self.rendered[-1]
 
     def test_status_with_a_template_uses_it(self):
-        for code in (400, 403, 404, 415, 422, 500):
+        for code in (400, 403, 404, 415, 500):
             with self.subTest(code=code):
                 served, template = self._render(code)
                 self.assertEqual(served, code)
                 self.assertEqual(template, "http_routing.%s" % code)
 
     def test_4xx_without_a_template_falls_back_to_4xx(self):
-        for code in (401, 405, 409, 429):
+        for code in (401, 405, 409, 422, 429):
             with self.subTest(code=code):
                 served, template = self._render(code)
                 self.assertEqual(served, code)
@@ -182,6 +182,31 @@ class TestErrorStatusEndToEnd(HttpCase):
         with self.assertLogs("odoo.addons.http_routing.models.ir_http", "ERROR"):
             response = self.url_open(self.EP, allow_redirects=False)
         self.assertEqual(response.status_code, 404)
+
+    def _count_fallbacks(self):
+        IrHttp = self.registry["ir.http"]
+        serve_fallback = IrHttp._serve_fallback
+        calls = []
+
+        def counting(cls):
+            calls.append(request.httprequest.path)
+            return serve_fallback()
+
+        self.patch(IrHttp, "_serve_fallback", classmethod(counting))
+        return calls
+
+    def test_an_unrouted_url_tries_the_fallback_once(self):
+        calls = self._count_fallbacks()
+        response = self.url_open("/http_routing/no_such_route", allow_redirects=False)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(calls, ["/http_routing/no_such_route"])
+
+    def test_a_routed_404_still_tries_the_fallback(self):
+        calls = self._count_fallbacks()
+        self._raise(werkzeug.exceptions.NotFound())
+        response = self.url_open(self.EP, allow_redirects=False)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(calls, [self.EP])
 
     def test_odoo_exception_keeps_its_http_status(self):
         self._raise(exceptions.ValidationError("nope"))
@@ -293,7 +318,6 @@ class TestErrorPageTranslatability(TransactionCase):
         "400": ["400: Bad Request"],
         "403": ["403: Forbidden"],
         "415": ["415: Unsupported Media Type"],
-        "422": ["Oops! Something went wrong."],
         "4xx": ["Oops! Something went wrong."],
     }
 

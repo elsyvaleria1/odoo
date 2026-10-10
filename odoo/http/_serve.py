@@ -581,6 +581,7 @@ class _RequestServeMixin(RequestState):
             cr=self._debug_cr,
             path=getattr(self.httprequest, "path", None),
         ) as span:
+            self.attempt_scratch.fallback_tried = True
             response = ir_http._serve_fallback()
             span.set(served=bool(response))
         _debug.pipeline(

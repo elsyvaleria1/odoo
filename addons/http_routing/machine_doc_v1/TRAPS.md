@@ -7,7 +7,7 @@ quietly.
 
 ## 1. The two "is this URL local?" guards are NOT duplicates
 
-`_url_lang` tests scheme/netloc via `urlparse`; `_url_localized` tests the
+`_url_for` tests scheme/netloc via `urlparse`; `_url_localized` tests the
 leading slashes. Same shape, **different question**:
 
 ```python
@@ -15,7 +15,7 @@ _url_for("#top", "fr_FR")  # -> "/fr/current/page#top"
 _url_localized("#top", "fr_FR")  # -> "#top"
 ```
 
-`_url_lang` asks *"is this relative"*, so `urljoin` can root it against the
+`_url_for` asks *"is this relative"*, so `urljoin` can root it against the
 current page — with a language forced it deliberately accepts a bare fragment,
 which is exactly what a language switcher needs to keep the anchor.
 `_url_localized` asks *"is this already a path I can match against the routing
@@ -88,7 +88,7 @@ which addons were installed. Now `check_singleton()` on both.
 
 ## 7. Emitting a trailing slash costs the visitor a redirect
 
-Every slashed frontend URL 301s to its bare form. `_url_lang` normalizes the path
+Every slashed frontend URL 301s to its bare form. `_url_for` normalizes the path
 once, before the branches, so all four spellings of a link agree; only the
 "insert a prefix" branch used to, which gave one link three different answers.
 → `TestUrlLang.test_trailing_slash_dropped_by_every_branch`
@@ -145,7 +145,7 @@ instead also changes its whole dispatch (the website's companies in the
 context, `website_id`, the multilang redirect).
 → `test_website`'s `tests/test_error.py`
 
-## 12. `_url_lang` treats a named language and a context language differently
+## 12. `_url_for` treats a named language and a context language differently
 
 `_url_for(url)` takes the language from the context, `_url_for(url, code)` from
 the caller. When the site does not serve that language, the first gets **no**
@@ -153,7 +153,7 @@ prefix and the second keeps the language, as its `url_code`:
 
 ```python
 # website serves en_US + fr_FR; a backend user reads in de_DE
-_url_for("/slides/embed/7")             # -> "/slides/embed/7"
+_url_for("/slides/embed/7")  # -> "/slides/embed/7"
 _url_for("/survey/print/tok", "de_DE")  # -> "/de/survey/print/tok"
 ```
 
