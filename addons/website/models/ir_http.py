@@ -478,16 +478,13 @@ class IrHttp(models.AbstractModel):
             sources = (req_page_with_qs, req_page)
         else:
             sources = Rewrite._get_redirect_source_urls(req_page, req_page_with_qs)
-        domain = Domain("redirect_type", "in", ("301", "302")) & Domain(
-            "url_from", "in", sources
-        )
+        # one query: ordering on website_id sorts the generic rules (NULL)
+        # after this website's, so a website's own rule wins as it should
         return Rewrite.search(
-            domain & Domain("website_id", "=", request.website.id),
-            order="url_from DESC, id",
-            limit=1,
-        ) or Rewrite.search(
-            domain & Domain("website_id", "=", False),
-            order="url_from DESC, id",
+            Domain("redirect_type", "in", ("301", "302"))
+            & Domain("url_from", "in", sources)
+            & Domain("website_id", "in", [request.website.id, False]),
+            order="website_id, url_from DESC, id",
             limit=1,
         )
 

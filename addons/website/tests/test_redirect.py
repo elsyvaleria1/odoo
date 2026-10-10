@@ -525,6 +525,21 @@ class TestWebsiteRedirectFallback(HttpCase):
             self._location("/fr/challenge-query?a=1"), "/fr/contactus?a=1"
         )
 
+    def test_a_websites_own_rule_beats_a_closer_generic_spelling(self):
+        self._rule("/challenge-mixed?q=1", "/generic-target")
+        self.env["website.rewrite"].create(
+            {
+                "name": "specific",
+                "redirect_type": "301",
+                "url_from": "/challenge-mixed",
+                "url_to": "/specific-target",
+                "website_id": self.env.ref("website.default_website").id,
+            }
+        )
+        self.assertURLEqual(
+            self._location("/challenge-mixed?q=1"), "/specific-target?q=1"
+        )
+
     def test_a_redirected_post_keeps_its_form_out_of_the_location(self):
         self._rule("/challenge-form")
         self.opener.cookies.clear()
