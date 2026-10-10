@@ -6,16 +6,38 @@
             t-set="_btn_style"
             t-value="'btn-link' if reminder_light else (track.is_reminder_on and '') or ''" />
         <t t-set="_btn_size" t-value="'btn-sm' if reminder_small else ''" />
-        <div
-            t-att-class="'o_wetrack_js_reminder %s %s' % (_btn_style, _btn_size)"
-            role="button"
-            t-att-data-track-id="track.id"
-            t-att-data-reminder-on="bool(track.is_reminder_on)">
+        <form
+            class="o_wetrack_js_reminder d-inline-block"
+            method="post"
+            action="/event/track/toggle_reminder"
+            t-att-data-fragment-form="'website_event_track.reminder.%s' % track.id"
+            t-att-data-track-id="track.id">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input type="hidden" name="track_id" t-att-value="track.id" />
+            <input
+                type="hidden"
+                name="redirect"
+                t-att-value="request.httprequest.full_path.rstrip('?')" />
+            <button
+                type="submit"
+                t-att-class="'o_wetrack_reminder_toggle border-0 bg-transparent p-0 %s %s %s' % (_btn_style, _btn_size, 'text-white' if reminder_light and not light_theme else 'text-dark')">
+                <t t-call="website_event_track.track_widget_reminder_state" />
+            </button>
+        </form>
+    </template>
+
+    <template id="track_widget_reminder_state">
+        <span
+            class="d-contents"
+            t-att-data-fragment="'website_event_track.reminder.%s' % track.id">
+            <input
+                type="hidden"
+                name="set_reminder_on"
+                t-att-value="'0' if track.is_reminder_on else '1'" />
             <i
-                t-att-class="'o_wetrack_js_reminder_bell %s %s' % ('fa-solid fa-bell' if track.is_reminder_on else 'fa-regular fa-bell', 'text-white' if reminder_light and not light_theme else 'text-dark')"
-                t-att-title="'Favorite On' if track.is_reminder_on else 'Set Favorite'"
-                t-att-data-is-reminder-light="reminder_light" />
-        </div>
+                t-att-class="'o_wetrack_js_reminder_bell fa-bell %s' % ('fa-solid' if track.is_reminder_on else 'fa-regular')"
+                t-att-title="'Favorite On' if track.is_reminder_on else 'Set Favorite'" />
+        </span>
     </template>
 
 </odoo>

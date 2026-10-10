@@ -7,3 +7,4 @@ from . import test_website_visitor
 from . import test_track_proposal_answers_json
 
 from . import test_calendar_file
+from . import test_track_reminder_toggle

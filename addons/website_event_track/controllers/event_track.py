@@ -15,6 +15,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import is_html_empty, plaintext2html
 from odoo.tools.misc import babel_locale_parse
 
+from odoo.addons.web.controllers.utils import Fragment, fragments_or_redirect
+
 _debug = DebugLog(__name__)
 
 
@@ -407,36 +409,61 @@ class EventTrackController(http.Controller):
         }
 
     @http.route(
-        "/event/track/toggle_reminder", type="jsonrpc", auth="public", website=True
+        "/event/track/toggle_reminder",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
     )
-    def track_reminder_toggle(self, track_id, set_reminder_on):
-        track = self._get_track(track_id, allow_sudo=True)
-        force_create = set_reminder_on or track.wishlisted_by_default
+    def track_reminder_toggle(self, track_id, set_reminder_on, redirect=None, **kwargs):
+        track = self._get_track(int(track_id), allow_sudo=True)
+        reminder_on = set_reminder_on == "1"
+        events = {}
+        if self._toggle_track_reminder(track, reminder_on):
+            email = None
+            if reminder_on and not request.env.user._is_public():
+                email = self._send_track_email_reminder(track.id, None)
+            events["website_event_track:reminder_toggled"] = {
+                "track_id": track.id,
+                "reminder_on": reminder_on,
+                "email": email,
+            }
+        track.invalidate_recordset(["is_reminder_on"])
+        return fragments_or_redirect(
+            request.env,
+            redirect or track.website_url,
+            Fragment(
+                "website_event_track.track_widget_reminder_state",
+                {"track": track},
+                key=f"website_event_track.reminder.{track.id}",
+            ),
+            events=events,
+        )
+
+    def _toggle_track_reminder(self, track, reminder_on):
+        force_create = reminder_on or track.wishlisted_by_default
         event_track_partner = track._acquire_event_track_visitors(
             force_create=force_create
         )
-
+        if not event_track_partner:
+            return False
         if not track.wishlisted_by_default:
-            if (
-                not event_track_partner
-                or event_track_partner.is_wishlisted == set_reminder_on
-            ):
-                return {"error": "ignored"}
-            event_track_partner.is_wishlisted = set_reminder_on
+            if event_track_partner.is_wishlisted == reminder_on:
+                return False
+            event_track_partner.is_wishlisted = reminder_on
         else:
-            if (
-                not event_track_partner
-                or event_track_partner.is_blacklisted != set_reminder_on
-            ):
-                return {"error": "ignored"}
-            event_track_partner.is_blacklisted = not set_reminder_on
-
-        return {"reminderOn": set_reminder_on}
+            if event_track_partner.is_blacklisted != reminder_on:
+                return False
+            event_track_partner.is_blacklisted = not reminder_on
+        return True
 
     @http.route(
         "/event/track/send_email_reminder", type="jsonrpc", auth="public", website=True
     )
     def send_email_reminder(self, track_id, email_to):
+        return self._send_track_email_reminder(track_id, email_to)
+
+    def _send_track_email_reminder(self, track_id, email_to):
         template = self.env.ref(
             "website_event_track.mail_template_data_track_reminder",
             raise_if_not_found=False,

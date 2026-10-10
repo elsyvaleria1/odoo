@@ -11,14 +11,14 @@ const reminderToggleSteps = function (talkName, reminderOn, toggleReminder) {
         steps = steps.concat([
             {
                 content: `Check Favorite for ${talkName} was already on`,
-                trigger: "div.o_wetrack_js_reminder i.fa-bell",
+                trigger: ".o_wetrack_js_reminder i.fa-solid.fa-bell",
             },
         ]);
     } else {
         steps = steps.concat([
             {
                 content: `Check Favorite for ${talkName} was off`,
-                trigger: "div.o_wetrack_js_reminder i.fa-bell",
+                trigger: ".o_wetrack_js_reminder i.fa-regular.fa-bell",
             },
         ]);
         if (toggleReminder) {
@@ -46,7 +46,8 @@ const reminderToggleSteps = function (talkName, reminderOn, toggleReminder) {
             steps = steps.concat([
                 {
                     content: `Check Favorite for ${talkName} is now on`,
-                    trigger: "div.o_wetrack_js_reminder i.fa-bell",
+                    trigger:
+                        ".o_wetrack_js_reminder i.fa-solid.fa-bell[title='Favorite On']",
                 },
             ]);
         }

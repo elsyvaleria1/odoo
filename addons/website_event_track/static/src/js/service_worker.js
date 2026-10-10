@@ -138,15 +138,32 @@ const buildCacheKey = ({ url, body: { method, params } }) =>
     });
 
 /**
- * @returns {int}
+ * What a fragment form hears for a reminder toggle queued while offline: no
+ * fragment to swap, and an event saying what was asked.
+ *
+ * @param {Request} request the toggle's form submission
+ * @returns {Promise<Response>}
  */
-const uniqueRequestId = () => Math.floor(Math.random() * 1000 * 1000 * 1000);
-
-/**
- * @returns {Response}
- */
-const buildEmptyResponse = () =>
-    new Response(JSON.stringify({ jsonrpc: "2.0", id: uniqueRequestId(), result: {} }));
+const buildQueuedReminderResponse = async (request) => {
+    const form = await request.formData();
+    return new Response(
+        JSON.stringify({
+            fragments: [],
+            events: [
+                {
+                    name: "website_event_track:reminder_queued",
+                    detail: {
+                        track_id: Number(form.get("track_id")),
+                        reminder_on: form.get("set_reminder_on") === "1",
+                    },
+                },
+            ],
+            redirect: null,
+            data: {},
+        }),
+        { headers: { "Content-Type": "application/json" } },
+    );
+};
 
 /**
  * @param {Request} request
@@ -254,6 +271,7 @@ const processFetchRequest = async (request, options) => {
                 console.warn("An error occurs when reading the cache request", err);
             }
         } else if (isSyncableURL(requestCopy.url)) {
+            const formCopy = requestCopy.clone();
             const pendingRequests =
                 (await get(pendingRequestsQueueName, syncStore)) || [];
             const serializedRequest = await serializeRequest(requestCopy);
@@ -270,7 +288,7 @@ const processFetchRequest = async (request, options) => {
                         throw requestError;
                     });
             }
-            return buildEmptyResponse();
+            return buildQueuedReminderResponse(formCopy);
         } else {
             console.warn(
                 `Offline ${requestCopy.method} request currently not supported`,

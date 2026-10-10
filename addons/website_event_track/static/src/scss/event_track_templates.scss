@@ -1,11 +1,6 @@
 .o_wevent_event .o_wetrack_js_reminder {
-    &.btn-link {
-        padding: 0;
-    }
-
     i {
         &.fa-bell {
-            color: o-palette-token(--o-gray-600, $o-gray-600);
             -webkit-text-stroke-color: o-palette-token(--o-gray-600, $o-gray-600);
         }
     }
