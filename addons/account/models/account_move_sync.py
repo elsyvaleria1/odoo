@@ -36,6 +36,7 @@ SKIP = None
 FROM_BASE = (False, False)
 FROM_TAX = (True, False)
 FROM_TAX_REAPPLY_RATE = (True, True)
+EMPTY_TAX_SYNC_SNAPSHOT = frozendict(move={}, base_lines={}, tax_lines={})
 
 
 @contextmanager
@@ -47,6 +48,13 @@ def sync_boundary(prepare, commit):
 
 def written_value(record, fname):
     return record._fields[fname].convert_to_write(record[fname], record)
+
+
+def snapshot_value(record, fname):
+    value = record[fname]
+    if isinstance(value, models.BaseModel):
+        return value._origin._ids
+    return written_value(record, fname)
 
 
 def values_differ(record, values) -> bool:
@@ -212,6 +220,11 @@ class AccountMove(models.Model):
                 existing_cash_rounding_line.amount_currency, diff_amount_currency
             )
             == 0
+            and (
+                not existing_cash_rounding_line.tax_repartition_line_id
+                or existing_cash_rounding_line.tax_repartition_line_id
+                == self._get_biggest_tax_line().tax_repartition_line_id
+            )
         ):
             _debug.logic("cash_rounding_line_unchanged", move=self)
             return
@@ -411,9 +424,14 @@ class AccountMove(models.Model):
             )
         )
 
-    def _get_tax_amls(self):
+    def _get_tax_amls(self, include_cash_rounding=False):
         self.check_singleton()
-        return self.line_ids.filtered("tax_repartition_line_id")
+        return self.line_ids.filtered(
+            lambda line: (
+                line.tax_repartition_line_id
+                and (include_cash_rounding or line.display_type != "rounding")
+            )
+        )
 
     def _get_base_line_tracked_fields(self, grouping_key_fields) -> tuple:
         self.check_singleton()
@@ -424,61 +442,88 @@ class AccountMove(models.Model):
         )
         return (*grouping_key_fields, *extra_fields)
 
+    def _get_tax_line_grouping_key_fields(self) -> tuple:
+        AccountTax = self.env["account.tax"]
+        return tuple(
+            AccountTax._prepare_base_line_grouping_key(
+                AccountTax._prepare_base_line_for_taxes_computation(None)
+            )
+        )
+
+    def _get_tax_sync_snapshot(self, grouping_key_fields, base_lines, tax_lines):
+        self.check_singleton()
+        base_fields = self._get_base_line_tracked_fields(grouping_key_fields)
+
+        def snapshot_lines(lines, fnames):
+            return {
+                line._origin or line: {
+                    fname: snapshot_value(line, fname) for fname in fnames
+                }
+                for line in lines
+            }
+
+        return {
+            "move": {
+                fname: snapshot_value(self, fname) for fname in MOVE_TRACKED_FIELDS
+            },
+            "base_lines": snapshot_lines(base_lines, base_fields),
+            "tax_lines": snapshot_lines(tax_lines, TAX_LINE_TRACKED_FIELDS),
+        }
+
     @_debug.perf.timed
-    def _get_tax_rounding_mode(self, move, before):
+    def _get_tax_rounding_mode(self, move, before, after):
 
-        def field_has_changed(values, record, field):
-            return written_value(record, field) != values.get(record, {}).get(field)
+        def move_field_has_changed(field):
+            return before["move"].get(field) != after["move"][field]
 
-        def changed_lines_of(values, records):
+        def changed_lines_of(part):
             return [
-                record
-                for record in records
-                if record not in values
-                or any(
-                    field_has_changed(values, record, field) for field in values[record]
-                )
+                line
+                for line, values in after[part].items()
+                if values != before[part].get(line)
             ]
 
-        tax_lines = move._get_tax_amls()
-        base_lines = move._get_tax_base_amls()
-        tax_before = before["tax_lines"].get(move, {})
-        base_before = before["base_lines"].get(move, {})
+        tax_before, tax_after = before["tax_lines"], after["tax_lines"]
+        base_before, base_after = before["base_lines"], after["base_lines"]
 
         if move.is_invoice(include_receipts=True) and (
-            field_has_changed(before["moves"], move, "currency_id")
-            or field_has_changed(before["moves"], move, "move_type")
+            move_field_has_changed("currency_id") or move_field_has_changed("move_type")
         ):
             _debug.logic("tax_rounding_currency_or_type_changed", move=move)
             return FROM_BASE
 
         if any(
-            line not in base_lines
+            line not in base_after
             for line, values in base_before.items()
             if values["tax_ids"]
         ):
-            if changed_lines_of(tax_before, tax_lines):
+            if changed_lines_of("tax_lines"):
                 _debug.logic("tax_rounding_base_removed_tax_edited", move=move)
                 return FROM_TAX
             _debug.logic("tax_rounding_base_line_removed", move=move)
             return FROM_BASE
 
-        if changed_lines := changed_lines_of(base_before, base_lines):
+        if changed_lines := changed_lines_of("base_lines"):
             round_from_tax_lines = all(
-                not line.tax_ids and not base_before.get(line, {}).get("tax_ids")
+                not base_after[line]["tax_ids"]
+                and not base_before.get(line, {}).get("tax_ids")
                 for line in changed_lines
             ) or (
-                list(tax_before) != list(tax_lines)
+                list(tax_before) != list(tax_after)
                 or any(
                     self.env.is_protected(line._fields[fname], line)
-                    for line in tax_lines
+                    for line in tax_after
                     for fname in tax_before[line]
                 )
             )
-            if round_from_tax_lines and any(
-                line[field]
-                for line in changed_lines
-                for field in ("amount_currency", "balance")
+            if (
+                round_from_tax_lines
+                and not move.is_invoice(include_receipts=True)
+                and any(
+                    line[field]
+                    for line in changed_lines
+                    for field in ("amount_currency", "balance")
+                )
             ):
                 _debug.logic(
                     "tax_rounding_amounts_edited_skipped",
@@ -494,11 +539,36 @@ class AccountMove(models.Model):
             )
             return FROM_TAX if round_from_tax_lines else FROM_BASE
 
-        if field_has_changed(before["moves"], move, "invoice_currency_rate"):
+        if move_field_has_changed("invoice_currency_rate"):
             _debug.logic("tax_rounding_rate_changed", move=move)
             return FROM_TAX_REAPPLY_RATE
 
         return SKIP
+
+    @_debug.perf.timed
+    def _get_unsaved_tax_rounding_mode(self) -> tuple:
+        self.check_singleton()
+        origin = self._origin
+        if not origin or not self.is_invoice(include_receipts=True):
+            _debug.logic("unsaved_tax_rounding_without_origin", move=self)
+            return FROM_BASE
+        if self.state != "draft":
+            _debug.logic("unsaved_tax_rounding_not_draft", move=self)
+            return FROM_TAX
+        grouping_key_fields = self._get_tax_line_grouping_key_fields()
+
+        def snapshot(move):
+            return move._get_tax_sync_snapshot(
+                grouping_key_fields,
+                move.invoice_line_ids.filtered(
+                    lambda line: line.display_type == "product"
+                ),
+                move._get_tax_amls(),
+            )
+
+        mode = self._get_tax_rounding_mode(self, snapshot(origin), snapshot(self))
+        _debug.logic("unsaved_tax_rounding_mode", move=self, mode=mode)
+        return FROM_TAX if mode is SKIP else mode
 
     @_debug.perf.timed
     def _prepare_non_deductible_tax_line_vals(
@@ -553,40 +623,15 @@ class AccountMove(models.Model):
 
     @_debug.perf.timed
     def _sync_tax_lines(self, container):
-        AccountTax = self.env["account.tax"]
-        grouping_key_fields = tuple(
-            AccountTax._prepare_base_line_grouping_key(
-                AccountTax._prepare_base_line_for_taxes_computation(None)
-            )
-        )
+        grouping_key_fields = self._get_tax_line_grouping_key_fields()
 
-        def snapshot(record, fnames):
-            return {fname: written_value(record, fname) for fname in fnames}
+        def snapshot(move):
+            return move._get_tax_sync_snapshot(
+                grouping_key_fields, move._get_tax_base_amls(), move._get_tax_amls()
+            )
 
         def prepare():
-            return {
-                "moves": {
-                    move: snapshot(move, MOVE_TRACKED_FIELDS)
-                    for move in container["records"]
-                },
-                "base_lines": {
-                    move: {
-                        line: snapshot(
-                            line,
-                            move._get_base_line_tracked_fields(grouping_key_fields),
-                        )
-                        for line in move._get_tax_base_amls()
-                    }
-                    for move in container["records"]
-                },
-                "tax_lines": {
-                    move: {
-                        line: snapshot(line, TAX_LINE_TRACKED_FIELDS)
-                        for line in move._get_tax_amls()
-                    }
-                    for move in container["records"]
-                },
-            }
+            return {move: snapshot(move) for move in container["records"]}
 
         def commit(before):
             to_delete = []
@@ -595,7 +640,9 @@ class AccountMove(models.Model):
             for move in container["records"]:
                 if move.state != "draft":
                     continue
-                mode = self._get_tax_rounding_mode(move, before)
+                mode = self._get_tax_rounding_mode(
+                    move, before.get(move, EMPTY_TAX_SYNC_SNAPSHOT), snapshot(move)
+                )
                 if mode is SKIP:
                     _debug.logic("_sync_tax_lines_unchanged_skipped", move=move)
                     continue
@@ -637,6 +684,7 @@ class AccountMove(models.Model):
         base_lines_values, tax_lines_values = move._get_rounded_base_and_tax_lines(
             round_from_tax_lines=round_from_tax_lines,
             reapply_currency_rate=reapply_currency_rate,
+            include_cash_rounding=False,
         )
         AccountTax._add_accounting_data_in_base_lines_tax_details(
             base_lines_values,
@@ -703,7 +751,6 @@ class AccountMove(models.Model):
         to_delete.extend(
             tax_line_vals["record"].id
             for tax_line_vals in tax_results["tax_lines_to_delete"]
-            if tax_line_vals["record"].display_type != "rounding"
         )
         to_create.extend(
             {**tax_line_vals, "display_type": "tax", "move_id": move.id}
@@ -714,28 +761,42 @@ class AccountMove(models.Model):
 
         return to_delete, to_create, to_update
 
+    def _get_non_deductible_amounts(self, product_lines) -> list:
+        self.check_singleton()
+        if not self.is_purchase_document(include_receipts=True):
+            return []
+        sign = self.direction_sign
+        rate = self.invoice_currency_rate or 1.0
+        amounts = []
+        for line in product_lines:
+            if line.display_type != "product" or not line._is_partially_deductible():
+                continue
+            non_deductible_subtotal = self.currency_id.round(
+                line.price_subtotal * (1 - line.deductible_amount / 100)
+            )
+            amounts.append(
+                (
+                    line,
+                    self.currency_id.round(sign * non_deductible_subtotal),
+                    self.company_currency_id.round(
+                        sign * non_deductible_subtotal / rate
+                    ),
+                )
+            )
+        return amounts
+
     @_debug.perf.timed
     def _prepare_non_deductible_line_vals(self, move):
         product_lines = move.line_ids.filtered(
             lambda line: line.display_type == "product"
         )
-        sign = move.direction_sign
-        rate = move.invoice_currency_rate or 1.0
         amount_currency_total = 0.0
         balance_total = 0.0
         vals_list = []
 
-        for line in product_lines:
-            if not line._is_partially_deductible():
-                continue
-            percentage = 1 - line.deductible_amount / 100
-            non_deductible_subtotal = line.currency_id.round(
-                line.price_subtotal * percentage
-            )
-            amount_currency = line.currency_id.round(sign * non_deductible_subtotal)
-            balance = line.company_currency_id.round(
-                sign * non_deductible_subtotal / rate
-            )
+        for line, amount_currency, balance in move._get_non_deductible_amounts(
+            product_lines
+        ):
             amount_currency_total += amount_currency
             balance_total += balance
             vals_list.append(
@@ -799,14 +860,7 @@ class AccountMove(models.Model):
             )
 
         def has_non_deductible_lines(move) -> bool:
-            return bool(
-                move.is_purchase_document(include_receipts=True)
-                and any(
-                    line._is_partially_deductible()
-                    for line in move.line_ids
-                    if line.display_type == "product"
-                )
-            )
+            return bool(move._get_non_deductible_amounts(move.line_ids))
 
         def concerned(move):
             return move.state == "draft" and (

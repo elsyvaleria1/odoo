@@ -2040,9 +2040,7 @@ class AccountMove(models.Model):
             "untaxed_amount_currency": 0.0,
             "untaxed_amount": 0.0,
         }
-        base_lines, _tax_lines = invoice._get_rounded_base_and_tax_lines(
-            round_from_tax_lines=False
-        )
+        base_lines, _tax_lines = invoice._get_rounded_base_and_tax_lines()
         AccountTax._add_accounting_data_in_base_lines_tax_details(
             base_lines,
             invoice.company_id,
@@ -2059,7 +2057,13 @@ class AccountMove(models.Model):
         for _base_line, to_update in tax_results["base_lines_to_update"]:
             amounts["untaxed_amount_currency"] -= to_update["amount_currency"]
             amounts["untaxed_amount"] -= to_update["balance"]
-        for tax_line_vals in tax_results["tax_lines_to_add"]:
+        non_deductible_tax_vals = self._prepare_non_deductible_tax_line_vals(
+            invoice, base_lines
+        )
+        for tax_line_vals in (
+            *tax_results["tax_lines_to_add"],
+            *([non_deductible_tax_vals] if non_deductible_tax_vals else []),
+        ):
             amounts["tax_amount_currency"] -= tax_line_vals["amount_currency"]
             amounts["tax_amount"] -= tax_line_vals["balance"]
         return amounts
@@ -2511,74 +2515,63 @@ class AccountMove(models.Model):
         self, product_amls
     ):
         self.check_singleton()
-        non_deductible_product_lines = product_amls.filtered(
-            lambda line: (
-                line.display_type == "product"
-                and float_compare(line.deductible_amount, 100, precision_digits=2) != 0
-            )
-        )
+        non_deductible_amounts = self._get_non_deductible_amounts(product_amls)
         _debug.logic(
             "non_deductible_product_lines_found",
             move=self,
             product_lines=len(product_amls),
-            non_deductible=len(non_deductible_product_lines),
+            non_deductible=len(non_deductible_amounts),
         )
-        if not non_deductible_product_lines:
+        if not non_deductible_amounts:
             return []
 
+        AccountTax = self.env["account.tax"]
         sign = self.direction_sign
-        rate = self.invoice_currency_rate
-
-        non_deductible_lines_base_total_currency = 0.0
-        non_deductible_lines = []
-        for line in non_deductible_product_lines:
-            percentage = 1 - line.deductible_amount / 100
-            non_deductible_subtotal = line.currency_id.round(
-                line.price_subtotal * percentage
-            )
-            non_deductible_base_currency = (
-                line.company_currency_id.round(sign * non_deductible_subtotal / rate)
-                if rate
-                else 0.0
-            )
-            non_deductible_lines_base_total_currency += non_deductible_base_currency
-
-            non_deductible_lines += [
-                self.env["account.tax"]._prepare_base_line_for_taxes_computation(
-                    None,
-                    price_unit=-non_deductible_base_currency,
-                    quantity=1.0,
-                    sign=1,
-                    special_mode="total_excluded",
-                    special_type="non_deductible",
-                    tax_ids=line.tax_ids.filtered(
-                        lambda tax: tax.amount_type != "fixed"
-                    ),
-                    currency_id=self.currency_id,
-                )
-            ]
-        non_deductible_lines += [
-            self.env["account.tax"]._prepare_base_line_for_taxes_computation(
+        common_kwargs = {
+            "quantity": 1.0,
+            "sign": sign,
+            "special_mode": "total_excluded",
+            "special_type": "non_deductible",
+            "is_refund": self._is_refund(),
+            "rate": self.invoice_currency_rate,
+            "currency_id": self.currency_id,
+            "partner_id": self.commercial_partner_id,
+        }
+        non_deductible_lines = [
+            AccountTax._prepare_base_line_for_taxes_computation(
                 None,
-                price_unit=non_deductible_lines_base_total_currency,
-                quantity=1.0,
-                sign=1,
-                special_mode="total_excluded",
-                special_type=False,
-                currency_id=self.currency_id,
+                price_unit=-sign * amount_currency,
+                tax_ids=line.tax_ids.filtered(lambda tax: tax.amount_type != "fixed"),
+                account_id=line.account_id,
+                **common_kwargs,
             )
+            for line, amount_currency, _balance in non_deductible_amounts
         ]
+        total_amount_currency = sum(
+            amount_currency
+            for _line, amount_currency, _balance in non_deductible_amounts
+        )
+        non_deductible_lines.append(
+            AccountTax._prepare_base_line_for_taxes_computation(
+                None,
+                price_unit=sign * total_amount_currency,
+                **common_kwargs,
+            )
+        )
         _debug.pipeline(
             "non_deductible_base_lines_prepared",
             move=self,
             lines=len(non_deductible_lines),
-            base_total_currency=non_deductible_lines_base_total_currency,
+            total_amount_currency=total_amount_currency,
         )
         return non_deductible_lines
 
     @_debug.perf.timed
     def _get_rounded_base_and_tax_lines(
-        self, round_from_tax_lines=True, reapply_currency_rate=False
+        self,
+        round_from_tax_lines=True,
+        reapply_currency_rate=False,
+        include_cash_rounding=True,
     ) -> tuple:
         self.check_singleton()
         AccountTax = self.env["account.tax"]
@@ -2605,7 +2598,6 @@ class AccountMove(models.Model):
             for line in base_amls
         ]
 
-        tax_lines = []
         if self.id:
             epd_amls = self.line_ids.filtered(lambda line: line.display_type == "epd")
             base_lines += [
@@ -2631,22 +2623,7 @@ class AccountMove(models.Model):
                 self._prepare_non_deductible_base_line_for_taxes_computation(line)
                 for line in non_deductible_base_lines
             ]
-            AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
-            tax_amls = self.line_ids.filtered("tax_repartition_line_id")
-            tax_lines = [
-                self._prepare_tax_line_for_taxes_computation(tax_line)
-                for tax_line in tax_amls
-            ]
-            if reapply_currency_rate and (rate := self.invoice_currency_rate):
-                for tax_line in tax_lines:
-                    tax_line["balance"] = self.company_currency_id.round(
-                        tax_line["amount_currency"] / rate
-                    )
-            AccountTax._round_base_lines_tax_details(
-                base_lines,
-                self.company_id,
-                tax_lines=tax_lines if round_from_tax_lines else [],
-            )
+            tax_amls = self._get_tax_amls(include_cash_rounding=include_cash_rounding)
         else:
             base_lines += (
                 self._prepare_epd_base_lines_for_taxes_computation_from_product_lines(
@@ -2656,8 +2633,31 @@ class AccountMove(models.Model):
             base_lines += self._prepare_non_deductible_base_lines_for_taxes_computation_from_product_lines(
                 base_amls
             )
-            AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
-            AccountTax._round_base_lines_tax_details(base_lines, self.company_id)
+            if round_from_tax_lines:
+                round_from_tax_lines, reapply_unsaved_rate = (
+                    self._get_unsaved_tax_rounding_mode()
+                )
+                reapply_currency_rate = reapply_currency_rate or reapply_unsaved_rate
+            tax_amls = (
+                self._get_tax_amls()
+                if round_from_tax_lines
+                else self.env["account.move.line"]
+            )
+        AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
+        tax_lines = [
+            self._prepare_tax_line_for_taxes_computation(tax_line)
+            for tax_line in tax_amls
+        ]
+        if reapply_currency_rate and (rate := self.invoice_currency_rate):
+            for tax_line in tax_lines:
+                tax_line["balance"] = self.company_currency_id.round(
+                    tax_line["amount_currency"] / rate
+                )
+        AccountTax._round_base_lines_tax_details(
+            base_lines,
+            self.company_id,
+            tax_lines=tax_lines if round_from_tax_lines else [],
+        )
         _debug.pipeline(
             "base_and_tax_lines_rounded",
             move=self,
@@ -2673,6 +2673,8 @@ class AccountMove(models.Model):
         "invoice_line_ids.tax_line_id",
         "invoice_line_ids.price_total",
         "invoice_line_ids.price_subtotal",
+        "line_ids.amount_currency",
+        "line_ids.balance",
         "invoice_payment_term_id",
         "invoice_cash_rounding_id",
         "partner_id",
@@ -3671,8 +3673,10 @@ class AccountMove(models.Model):
                             tax_group["id"], move.line_ids.browse()
                         )
 
-                        if tax_lines:
-                            first_tax_line = tax_lines[0]
+                        target_tax_line = tax_lines.filtered(
+                            lambda line: line.display_type == "tax"
+                        )[:1]
+                        if target_tax_line:
                             tax_group_old_amount = sum(
                                 tax_lines.mapped("amount_currency")
                             )
@@ -3688,11 +3692,11 @@ class AccountMove(models.Model):
                                 _debug.logic(
                                     "tax_group_amount_adjusted",
                                     move=move,
-                                    line=first_tax_line,
+                                    line=target_tax_line,
                                     tax_group=tax_group["id"],
                                     delta_amount=delta_amount,
                                 )
-                                first_tax_line.amount_currency -= delta_amount * sign
+                                target_tax_line.amount_currency -= delta_amount * sign
             self.env.add_to_compute(self._fields["amount_total"], self)
 
     @_debug.perf.timed
@@ -5058,33 +5062,35 @@ class AccountMove(models.Model):
 
     @_debug.perf.timed
     def _prepare_aggregated_taxes_base_lines(
-        self,
-        filter_invl_to_apply=None,
-        round_from_tax_lines=None,
-        postfix_function=None,
+        self, filter_invl_to_apply=None, round_from_tax_lines=True
     ):
         self.check_singleton()
         AccountTax = self.env["account.tax"]
-        base_amls = self.line_ids.filtered(
-            lambda x: (
-                x.display_type == "product"
-                and (not filter_invl_to_apply or filter_invl_to_apply(x))
-            )
-        )
         base_lines = [
-            self._prepare_product_base_line_for_taxes_computation(x) for x in base_amls
+            self._prepare_product_base_line_for_taxes_computation(line)
+            for line in self.line_ids
+            if line.display_type == "product"
         ]
-        tax_amls = self.line_ids.filtered("tax_repartition_line_id")
         tax_lines = self._prepare_tax_lines_for_taxes_computation(
-            tax_amls, round_from_tax_lines
+            self._get_tax_amls(include_cash_rounding=True), round_from_tax_lines
         )
         AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
-        if postfix_function:
-            postfix_function(base_lines)
         AccountTax._round_base_lines_tax_details(
             base_lines, self.company_id, tax_lines=tax_lines
         )
-        return base_lines
+        _debug.logic(
+            "aggregated_taxes_base_lines_rounded",
+            move=self,
+            from_tax_lines=bool(tax_lines),
+            line_filter=bool(filter_invl_to_apply),
+        )
+        if not filter_invl_to_apply:
+            return base_lines
+        return [
+            base_line
+            for base_line in base_lines
+            if filter_invl_to_apply(base_line["record"])
+        ]
 
     def _accumulate_aggregated_tax_totals(self, results, base_lines, grouping_function):
         AccountTax = self.env["account.tax"]
@@ -5146,18 +5152,12 @@ class AccountMove(models.Model):
         filter_invl_to_apply=None,
         filter_tax_values_to_apply=None,
         grouping_key_generator=None,
-        round_from_tax_lines=None,
-        postfix_function=None,
+        round_from_tax_lines=True,
     ):
         self.check_singleton()
-        if round_from_tax_lines is None:
-            round_from_tax_lines = bool(
-                filter_tax_values_to_apply or filter_invl_to_apply
-            )
         base_lines = self._prepare_aggregated_taxes_base_lines(
             filter_invl_to_apply=filter_invl_to_apply,
             round_from_tax_lines=round_from_tax_lines,
-            postfix_function=postfix_function,
         )
 
         results = {

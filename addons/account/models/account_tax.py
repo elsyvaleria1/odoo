@@ -43,9 +43,9 @@ class AccountTax(models.Model):
         string="Include in Analytic Cost",
         help="If set, the amount computed by this tax will be assigned to the same analytic account as the invoice line (if any)",
     )
-    hide_tax_exigibility = fields.Boolean(
-        string="Hide Use Cash Basis Option",
-        compute="_compute_hide_tax_exigibility",
+    show_tax_exigibility = fields.Boolean(
+        string="Show Use Cash Basis Option",
+        compute="_compute_show_tax_exigibility",
     )
     tax_exigibility = fields.Selection(
         selection=[
@@ -124,8 +124,8 @@ class AccountTax(models.Model):
         return set()
 
     @api.depends_context("company")
-    def _compute_hide_tax_exigibility(self) -> None:
-        self.hide_tax_exigibility = (
+    def _compute_show_tax_exigibility(self) -> None:
+        self.show_tax_exigibility = (
             self._get_settings_company().account_config_id.tax_exigibility
         )
 
@@ -585,30 +585,6 @@ class AccountTax(models.Model):
             return present[0]
         return Markup().join(Markup(body) for body in present)
 
-    def _get_repartition_lines(self, document_type) -> list:
-        return [
-            Command.create(
-                {
-                    "document_type": document_type,
-                    "repartition_type": repartition_type,
-                    "tag_ids": [],
-                }
-            )
-            for repartition_type in ("base", "tax")
-        ]
-
-    @api.depends("company_ids")
-    def _compute_invoice_repartition_line_ids(self) -> None:
-        for tax in self:
-            if not tax.invoice_repartition_line_ids:
-                tax.invoice_repartition_line_ids = tax._get_repartition_lines("invoice")
-
-    @api.depends("company_ids")
-    def _compute_refund_repartition_line_ids(self) -> None:
-        for tax in self:
-            if not tax.refund_repartition_line_ids:
-                tax.refund_repartition_line_ids = tax._get_repartition_lines("refund")
-
     def _unmerge_action_xmlid(self):
         return "account.action_unmerge_taxes"
 
@@ -637,7 +613,6 @@ class AccountTax(models.Model):
             companies=len(new_id_by_company_id),
             source_lines=len(source_lines),
         )
-        self.env["account.move.line"].flush_model(["tax_repartition_line_id"])
         for company, new_tax in new_record_by_company.items():
             mapping = {
                 old.id: new.id
@@ -652,24 +627,10 @@ class AccountTax(models.Model):
             )
             if not mapping:
                 continue
-            self.env.cr.execute(
-                SQL(
-                    """
-                    UPDATE account_move_line
-                       SET tax_repartition_line_id =
-                           (%(mapping)s::jsonb->>tax_repartition_line_id::text)::int
-                     WHERE tax_repartition_line_id = ANY(%(old_ids)s)
-                       AND company_id = ANY(%(company_ids)s)
-                    """,
-                    mapping=json_dumps({str(k): v for k, v in mapping.items()}),
-                    old_ids=list(mapping),
-                    company_ids=company_ids_by_new_id[new_tax.id],
-                )
+            rows = self.env["account.tax.repartition.line"]._remap_move_lines(
+                mapping, company_ids=company_ids_by_new_id[new_tax.id]
             )
-            _debug.perf.count(
-                "move_lines_remapped", company=company, rows=self.env.cr.rowcount
-            )
-        self.env["account.move.line"].invalidate_model(["tax_repartition_line_id"])
+            _debug.perf.count("move_lines_remapped", company=company, rows=rows)
 
     def _get_first_tax(self, domain, orders) -> Self:
         return self.search(domain, order=",".join(orders), limit=1)
@@ -755,13 +716,6 @@ class AccountTax(models.Model):
                 record, field, kwargs, fallback
             )
 
-        currency = (
-            load("currency_id", None)
-            or load("company_currency_id", None)
-            or load("company_id", self.env["res.company"]).currency_id
-            or self.env["res.currency"]
-        )
-
         return {
             **kwargs,
             "record": record,
@@ -772,7 +726,7 @@ class AccountTax(models.Model):
             "group_tax_id": load("group_tax_id", self.env["account.tax"]),
             "tax_ids": load("tax_ids", self.env["account.tax"]),
             "tax_tag_ids": load("tax_tag_ids", self.env["account.account.tag"]),
-            "currency_id": currency,
+            "currency_id": self._get_line_currency_from_record(record, kwargs),
             "partner_id": load("partner_id", self.env["res.partner"]),
             "account_id": load("account_id", self.env["account.account"]),
             "analytic_distribution": load("analytic_distribution", None),
@@ -801,8 +755,6 @@ class AccountTax(models.Model):
         return {
             **base_line_grouping_key,
             "tax_repartition_line_id": tax_rep.id,
-            "partner_id": base_line["partner_id"].id,
-            "currency_id": base_line["currency_id"].id,
             "group_tax_id": tax_data["group"].id,
             "analytic_distribution": (
                 base_line_grouping_key["analytic_distribution"]
@@ -1194,59 +1146,43 @@ class AccountTax(models.Model):
         *,
         include_caba_tags=False,
     ) -> dict:
-        company = self._get_settings_company()
-        company = company._get_accessible_branches()[:1] or company
-
-        currency = currency or company.currency_id
-        special_mode = self._get_all_special_mode(handle_price_include)
-        base_line = self._prepare_base_line_for_taxes_computation(
-            None,
-            partner_id=partner,
-            currency_id=currency,
-            product_id=product,
-            tax_ids=self,
-            price_unit=price_unit,
+        base_line, company = self._prepare_compute_all_base_line(
+            price_unit,
+            currency=currency,
             quantity=quantity,
+            product=product,
+            partner=partner,
             is_refund=is_refund,
-            special_mode=special_mode,
-        )
-        self._add_tax_details_in_base_line(
-            base_line, company, rounding_method=rounding_method
+            handle_price_include=handle_price_include,
+            rounding_method=rounding_method,
         )
         self._add_accounting_data_to_base_line_tax_details(
             base_line, company, include_caba_tags=include_caba_tags, rounded=False
         )
 
         tax_details = base_line["tax_details"]
-        total_void = total_excluded = tax_details["raw_total_excluded_currency"]
-        total_included = tax_details["raw_total_included_currency"]
-        round_base = self.env.context.get("round_base", True)
-
         taxes, void_amount = self._get_all_tax_values(
-            tax_details, currency, partner, round_base
+            tax_details,
+            base_line["currency_id"],
+            partner,
+            self.env.context.get("round_base", True),
         )
-        total_void += void_amount
+        totals = self._get_compute_all_totals(base_line)
         _debug.logic(
             "compute_all",
             compute_all=self,
             price=price_unit,
             qty=quantity,
-            special=special_mode,
-            excl=total_excluded,
-            incl=total_included,
+            special=base_line["special_mode"],
+            excl=totals["total_excluded"],
+            incl=totals["total_included"],
             taxes=len(taxes),
         )
-
-        if round_base:
-            total_excluded = currency.round(total_excluded)
-            total_included = currency.round(total_included)
-
         return {
             "base_tags": base_line["tax_tag_ids"].ids,
             "taxes": taxes,
-            "total_excluded": total_excluded,
-            "total_included": total_included,
-            "total_void": total_void,
+            **totals,
+            "total_void": tax_details["raw_total_excluded_currency"] + void_amount,
         }
 
 
@@ -1289,6 +1225,33 @@ class AccountTaxRepartitionLine(models.Model):
                 line.account_id.id or 0,
             )
         )
+
+    @api.model
+    def _remap_move_lines(self, mapping, company_ids=None) -> int:
+        if not mapping:
+            return 0
+        AccountMoveLine = self.env["account.move.line"]
+        AccountMoveLine.flush_model(["tax_repartition_line_id"])
+        self.env.cr.execute(
+            SQL(
+                """
+                UPDATE account_move_line
+                   SET tax_repartition_line_id =
+                       (%(mapping)s::jsonb->>tax_repartition_line_id::text)::int
+                 WHERE tax_repartition_line_id = ANY(%(old_ids)s)
+                   %(company_filter)s
+                """,
+                mapping=json_dumps({str(k): v for k, v in mapping.items()}),
+                old_ids=list(mapping),
+                company_filter=(
+                    SQL("AND company_id = ANY(%s)", list(company_ids))
+                    if company_ids is not None
+                    else SQL()
+                ),
+            )
+        )
+        AccountMoveLine.invalidate_model(["tax_repartition_line_id"])
+        return self.env.cr.rowcount
 
     @api.depends_context("company")
     def _compute_tag_ids_domain(self) -> None:

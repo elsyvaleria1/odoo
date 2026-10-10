@@ -1652,7 +1652,41 @@ export const accountTaxHelpers = {
             tax_totals_summary.tax_amount +
             cash_rounding_base_amount;
 
+        this.round_tax_totals_summary_amounts(
+            tax_totals_summary,
+            currency,
+            company.currency_id,
+        );
         return tax_totals_summary;
+    },
+
+    /**
+     * [!] Mirror of the same method in account_tax.py.
+     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
+     */
+    round_tax_totals_summary_amounts(tax_totals_summary, currency, company_currency) {
+        const round_amounts = (values) => {
+            for (const [key, value] of Object.entries(values)) {
+                if (typeof value !== "number") {
+                    continue;
+                }
+                if (key.endsWith("amount_currency")) {
+                    if (currency?.rounding) {
+                        values[key] = roundPrecision(value, currency.rounding);
+                    }
+                } else if (key.endsWith("amount") && company_currency?.rounding) {
+                    values[key] = roundPrecision(value, company_currency.rounding);
+                }
+            }
+        };
+
+        round_amounts(tax_totals_summary);
+        for (const subtotal of tax_totals_summary.subtotals) {
+            round_amounts(subtotal);
+            for (const tax_group of subtotal.tax_groups) {
+                round_amounts(tax_group);
+            }
+        }
     },
 
     // -------------------------------------------------------------------------

@@ -1413,6 +1413,19 @@ class AccountTax(models.Model):
             value = value._origin
         return value
 
+    def _get_line_currency_from_record(self, record, extra_values):
+        def load(field, fallback):
+            return self._get_base_line_field_value_from_record(
+                record, field, extra_values, fallback
+            )
+
+        return (
+            load("currency_id", None)
+            or load("company_currency_id", None)
+            or load("company_id", self.env["res.company"]).currency_id
+            or self.env["res.currency"]
+        )
+
     @api.model
     def _prepare_base_line_for_taxes_computation(self, record, **kwargs):
         def load(field, fallback):
@@ -1420,12 +1433,7 @@ class AccountTax(models.Model):
                 record, field, kwargs, fallback
             )
 
-        currency = (
-            load("currency_id", None)
-            or load("company_currency_id", None)
-            or load("company_id", self.env["res.company"]).currency_id
-            or self.env["res.currency"]
-        )
+        currency = self._get_line_currency_from_record(record, kwargs)
 
         base_line = {
             **kwargs,
@@ -2450,7 +2458,30 @@ class AccountTax(models.Model):
             + cash_rounding_base_amount
         )
 
+        self._round_tax_totals_summary_amounts(
+            tax_totals_summary, currency, company.currency_id
+        )
         return tax_totals_summary
+
+    @api.model
+    def _round_tax_totals_summary_amounts(
+        self, tax_totals_summary, currency, company_currency
+    ) -> None:
+        def round_amounts(values):
+            for key, value in values.items():
+                if not isinstance(value, float):
+                    continue
+                if key.endswith("amount_currency"):
+                    if currency:
+                        values[key] = currency.round(value)
+                elif key.endswith("amount") and company_currency:
+                    values[key] = company_currency.round(value)
+
+        round_amounts(tax_totals_summary)
+        for subtotal in tax_totals_summary["subtotals"]:
+            round_amounts(subtotal)
+            for tax_group in subtotal["tax_groups"]:
+                round_amounts(tax_group)
 
     @api.model
     def _exclude_tax_groups_from_tax_totals_summary(self, tax_totals, ids_to_exclude):
@@ -4165,31 +4196,17 @@ class AccountTax(models.Model):
         ``_add_tax_details_in_base_lines``) directly instead, since this method
         pays the per-line dict-building overhead once per call.
         """
-        company = self._get_settings_company()
-        company = company._get_accessible_branches()[:1] or company
-
-        currency = currency or company.currency_id
-        special_mode = self._get_all_special_mode(handle_price_include)
-
-        base_line = self._prepare_base_line_for_taxes_computation(
-            None,
-            partner_id=partner,
-            currency_id=currency,
-            product_id=product,
-            tax_ids=self,
-            price_unit=price_unit,
+        base_line, _company = self._prepare_compute_all_base_line(
+            price_unit,
+            currency=currency,
             quantity=quantity,
+            product=product,
+            partner=partner,
             is_refund=is_refund,
-            special_mode=special_mode,
+            handle_price_include=handle_price_include,
+            rounding_method=rounding_method,
         )
-        self._add_tax_details_in_base_line(
-            base_line, company, rounding_method=rounding_method
-        )
-
         tax_details = base_line["tax_details"]
-        total_excluded = tax_details["raw_total_excluded_currency"]
-        total_included = tax_details["raw_total_included_currency"]
-
         taxes = []
         for tax_data in tax_details["taxes_data"]:
             tax = tax_data["tax"]
@@ -4207,15 +4224,46 @@ class AccountTax(models.Model):
                 }
             )
 
+        return {"taxes": taxes, **self._get_compute_all_totals(base_line)}
+
+    def _prepare_compute_all_base_line(
+        self,
+        price_unit,
+        currency=None,
+        quantity=1.0,
+        product=None,
+        partner=None,
+        is_refund=False,
+        handle_price_include=True,
+        rounding_method=None,
+    ) -> tuple:
+        company = self._get_settings_company()
+        company = company._get_accessible_branches()[:1] or company
+        base_line = self._prepare_base_line_for_taxes_computation(
+            None,
+            partner_id=partner,
+            currency_id=currency or company.currency_id,
+            product_id=product,
+            tax_ids=self,
+            price_unit=price_unit,
+            quantity=quantity,
+            is_refund=is_refund,
+            special_mode=self._get_all_special_mode(handle_price_include),
+        )
+        self._add_tax_details_in_base_line(
+            base_line, company, rounding_method=rounding_method
+        )
+        return base_line, company
+
+    def _get_compute_all_totals(self, base_line) -> dict:
+        tax_details = base_line["tax_details"]
+        total_excluded = tax_details["raw_total_excluded_currency"]
+        total_included = tax_details["raw_total_included_currency"]
         if self.env.context.get("round_base", True):
+            currency = base_line["currency_id"]
             total_excluded = currency.round(total_excluded)
             total_included = currency.round(total_included)
-
-        return {
-            "taxes": taxes,
-            "total_excluded": total_excluded,
-            "total_included": total_included,
-        }
+        return {"total_excluded": total_excluded, "total_included": total_included}
 
     def _filtered_of_company(self, company):
         # a membership test: the active filter would fetch every sharing company's row

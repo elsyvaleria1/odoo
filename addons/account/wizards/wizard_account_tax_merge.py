@@ -1,7 +1,5 @@
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.json import dumps as json_dumps
-from odoo.tools import SQL
 
 _debug = DebugLog(__name__)
 
@@ -55,15 +53,7 @@ class WizardAccountTaxMerge(models.TransientModel):
                 line.account_id.id,
                 tuple(sorted(line.tag_ids.ids)),
             )
-            for line in tax.repartition_line_ids.sorted(
-                lambda line: (
-                    line.document_type,
-                    line.repartition_type,
-                    line.sequence,
-                    line.factor_percent,
-                    line.account_id.id or 0,
-                )
-            )
+            for line in tax.repartition_line_ids._sorted_for_positional_pairing()
         )
 
     @api.depends("tax_ids")
@@ -86,22 +76,7 @@ class WizardAccountTaxMerge(models.TransientModel):
         for tax in taxes_to_remove:
             for old, new in zip(ordered(tax), destination, strict=True):
                 mapping[old.id] = new.id
-        if not mapping:
-            return
-        self.env["account.move.line"].flush_model(["tax_repartition_line_id"])
-        self.env.cr.execute(
-            SQL(
-                """
-                UPDATE account_move_line
-                   SET tax_repartition_line_id =
-                       (%(mapping)s::jsonb->>tax_repartition_line_id::text)::int
-                 WHERE tax_repartition_line_id IN %(old_ids)s
-                """,
-                mapping=json_dumps({str(k): v for k, v in mapping.items()}),
-                old_ids=tuple(mapping),
-            )
-        )
-        self.env["account.move.line"].invalidate_model(["tax_repartition_line_id"])
+        self.env["account.tax.repartition.line"]._remap_move_lines(mapping)
 
     @api.model
     def _prepare_merge(self, taxes):
