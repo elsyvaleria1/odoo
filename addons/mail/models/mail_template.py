@@ -116,6 +116,7 @@ _MODIFYING_STATEMENT = re.compile(
 _MODIFYING_CTE = re.compile(
     r"WITH\b.*\b(INSERT|UPDATE|DELETE|MERGE)\b", re.IGNORECASE | re.DOTALL
 )
+_LEADING_SQL_NOISE = re.compile(r"(?:\s+|--[^\n]*(?:\n|$)|/\*.*?\*/|\()*", re.DOTALL)
 
 
 def _iter_inline_expressions(source: str) -> Iterator[str]:
@@ -725,7 +726,8 @@ class MailTemplate(models.Model):
         def watch(_cr, query, _params, _start, _delay):
             nonlocal modified
             if not modified:
-                code = str(getattr(query, "code", query)).lstrip()
+                code = str(getattr(query, "code", query))
+                code = code[_LEADING_SQL_NOISE.match(code).end() :]
                 modified = bool(
                     _MODIFYING_STATEMENT.match(code) or _MODIFYING_CTE.match(code)
                 )

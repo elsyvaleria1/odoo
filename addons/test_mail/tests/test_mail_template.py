@@ -620,6 +620,15 @@ class TestMailTemplateSaveGate(MailCommon):
                 " ON mail_test_ticket.id = source.id"
                 " WHEN MATCHED THEN UPDATE SET name = 'probed'"
             ),
+            "/* hint */ UPDATE mail_test_ticket SET name = 'probed' WHERE id = %s",
+            (
+                "-- refresh\n  /* a */ /* b */\n"
+                "UPDATE mail_test_ticket SET name = 'probed' WHERE id = %s"
+            ),
+            (
+                "(WITH renamed AS (UPDATE mail_test_ticket SET name = 'probed'"
+                " WHERE id = %s RETURNING id) SELECT id FROM renamed)"
+            ),
         ):
 
             def writing_render(template, *args, statement=statement, **kwargs):
