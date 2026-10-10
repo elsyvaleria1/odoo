@@ -20,7 +20,12 @@ from odoo.tools.translate import LazyTranslate
 from odoo.tools.urls import keep_query
 
 from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
-from odoo.addons.web.controllers.utils import Fragment, fragments_or_redirect
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    fragments_or_redirect,
+    render_fragments,
+)
 from odoo.addons.website.controllers.main import QueryURL
 from odoo.addons.website.models.ir_http import sitemap_qs2dom
 from odoo.addons.website_profile.controllers.main import WebsiteProfile
@@ -1567,11 +1572,17 @@ class WebsiteSlides(WebsiteProfile):
         website=True,
     )
     def slide_quiz_question_add_or_update(
-        self, slide_id, question, sequence, answer_ids, existing_question_id=None
-    ) -> dict[str, str]:
+        self,
+        slide_id,
+        question,
+        sequence,
+        answer_ids,
+        existing_question_id=None,
+        placeholder=None,
+    ) -> FragmentResponse:
         fetch_res = self._get_slide(slide_id)
         if fetch_res.get("error"):
-            return fetch_res
+            return render_fragments(request.env, data=fetch_res)
         slide = fetch_res["slide"]
 
         if not slide.channel_id.can_publish:
@@ -1579,44 +1590,74 @@ class WebsiteSlides(WebsiteProfile):
 
         slide._check_quiz_survey()
 
+        answer_commands = [
+            Command.create(
+                {
+                    "sequence": answer["sequence"],
+                    "value": answer["text_value"],
+                    "is_correct": answer["is_correct"],
+                    "answer_score": 1.0 if answer["is_correct"] else 0.0,
+                    "comment": answer["comment"],
+                }
+            )
+            for answer in answer_ids
+        ]
         new_question_values = {
             "sequence": sequence,
             "title": question,
             "survey_id": slide.survey_id.id,
             "question_type": "simple_choice",
-            "suggested_answer_ids": [
-                Command.create(
-                    {
-                        "sequence": answer["sequence"],
-                        "value": answer["text_value"],
-                        "is_correct": answer["is_correct"],
-                        "answer_score": 1.0 if answer["is_correct"] else 0.0,
-                        "comment": answer["comment"],
-                    }
-                )
-                for answer in answer_ids
-            ],
+            "suggested_answer_ids": answer_commands,
         }
 
         try:
             survey_question = request.env["survey.question"].new(new_question_values)
             survey_question._check_fields(new_question_values.keys())
         except ValidationError as e:
-            return {"error": e.args[0]}
+            return render_fragments(request.env, data={"error": e.args[0]})
 
+        existing_sudo = request.env["survey.question"]
         if existing_question_id:
-            request.env["survey.question"].sudo().search(
-                [
-                    ("survey_id", "=", slide.survey_id.id),
-                    ("id", "=", int(existing_question_id)),
-                ]
-            ).unlink()
+            existing_sudo = (
+                request.env["survey.question"]
+                .sudo()
+                .search(
+                    [
+                        ("survey_id", "=", slide.survey_id.id),
+                        ("id", "=", int(existing_question_id)),
+                    ]
+                )
+            )
+
+        if not existing_sudo:
+            # a new question takes the place of the page's placeholder, which the
+            # page names (questions deleted since its rendering do not renumber
+            # it), and leaves the placeholder for the next one
+            prefix = f"website_slides.quiz_question_new.{slide.id}."
+            number = (placeholder or "").removeprefix(prefix)
+            if not (placeholder or "").startswith(prefix) or not number.isdigit():
+                raise werkzeug.exceptions.BadRequest
 
         self._get_own_slide_progress_sudo(slide).write({"completed": False})
 
-        survey_question = (
-            request.env["survey.question"].sudo().create(new_question_values)
-        )
+        if existing_sudo:
+            # edited in place, so the question keeps its id and its region:
+            # its old answers go, and with them the attendees' answer lines
+            existing_sudo.write(
+                {
+                    "title": question,
+                    "suggested_answer_ids": [
+                        Command.delete(answer.id)
+                        for answer in existing_sudo.suggested_answer_ids
+                    ]
+                    + answer_commands,
+                }
+            )
+            survey_question = existing_sudo
+        else:
+            survey_question = (
+                request.env["survey.question"].sudo().create(new_question_values)
+            )
         is_editor = slide.channel_id.can_publish
         question_data = {
             "id": survey_question.id,
@@ -1632,15 +1673,28 @@ class WebsiteSlides(WebsiteProfile):
                 for a in survey_question.suggested_answer_ids
             ],
         }
-        return {
-            "question_html": request.env["ir.qweb"]._render(
-                "website_slides.lesson_content_quiz_question",
-                {
-                    "slide": slide,
-                    "question": question_data,
-                },
+        values = {"slide": slide, "question": question_data}
+        if existing_sudo:
+            return render_fragments(
+                request.env,
+                Fragment(
+                    "website_slides.lesson_content_quiz_question",
+                    values,
+                    key=f"website_slides.quiz_question.{survey_question.id}",
+                ),
             )
-        }
+        return render_fragments(
+            request.env,
+            Fragment(
+                "website_slides.lesson_content_quiz_question_added",
+                {
+                    **values,
+                    "fragment_key": placeholder,
+                    "next_sequence": int(number) + 1,
+                },
+                key=placeholder,
+            ),
+        )
 
     @http.route("/slides/slide/quiz/get", type="jsonrpc", auth="public", website=True)
     def slide_quiz_get(self, slide_id):

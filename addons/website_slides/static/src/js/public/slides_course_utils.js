@@ -48,19 +48,6 @@ export function findSlide(slideList, matcher) {
 }
 
 /**
- * @param {string|Node} rendered
- * @returns {Node}
- */
-export function parseQuestionMarkup(rendered) {
-    if (rendered instanceof Node) {
-        return rendered;
-    }
-    const template = document.createElement("template");
-    template.innerHTML = String(rendered).trim();
-    return template.content.firstElementChild || template.content;
-}
-
-/**
  * @param {Document} [doc]
  * @returns {number|undefined}
  */

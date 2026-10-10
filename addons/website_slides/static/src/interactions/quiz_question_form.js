@@ -14,8 +14,7 @@ export class QuestionFormBehavior {
      * @param {boolean} [options.update]
      * @param {integer} options.sequence
      * @param {integer} options.slideId
-     * @param {Function} options.onDisplayCreated
-     * @param {Function} options.onDisplayUpdated
+     * @param {Function} options.onSaved
      * @param {Function} options.onResetDisplay
      */
     constructor(host, targetEl, position, options) {
@@ -25,8 +24,7 @@ export class QuestionFormBehavior {
         this.update = options.update;
         this.sequence = options.sequence;
         this.slideId = options.slideId;
-        this.onDisplayCreated = options.onDisplayCreated;
-        this.onDisplayUpdated = options.onDisplayUpdated;
+        this.onSaved = options.onSaved;
         this.onResetDisplay = options.onResetDisplay;
 
         [this.el] = host.renderAt(
@@ -141,9 +139,7 @@ export class QuestionFormBehavior {
      * @param {HTMLElement} target
      */
     _validateQuestion(ev, target) {
-        this._createOrUpdateQuestion({
-            update: target.classList.contains("o_wslides_js_quiz_update"),
-        });
+        this._createOrUpdateQuestion();
     }
 
     _cancelValidation() {
@@ -153,7 +149,7 @@ export class QuestionFormBehavior {
     /**
      * @param {Object} options
      */
-    async _createOrUpdateQuestion(options) {
+    async _createOrUpdateQuestion() {
         const form = this.el.querySelector("form");
         const errorContainer = this.el.querySelector(
             ".o_wslides_js_quiz_validation_error",
@@ -161,25 +157,21 @@ export class QuestionFormBehavior {
 
         if (this._isValidForm(form)) {
             const values = this._serializeForm(form);
-            const result = await this.host.waitFor(
+            const response = await this.host.waitFor(
                 rpc("/slides/slide/quiz/question_add_or_update", values),
             );
 
-            if (result.error) {
+            if (response.data?.error) {
                 errorContainer.classList.remove("d-none");
                 errorContainer.querySelector(
                     ".o_wslides_js_quiz_validation_error_text",
-                ).textContent = result.error;
-            } else if (options.update) {
-                errorContainer.classList.add("d-none");
-                this.onDisplayUpdated(
-                    this,
-                    result.question_html,
-                    this.editedQuestionEl,
-                );
+                ).textContent = response.data.error;
             } else {
                 errorContainer.classList.add("d-none");
-                this.onDisplayCreated(this, result.question_html);
+                // the edited question is answered in place, a new one where
+                // the placeholder stood
+                this.host.swapFragments(response);
+                this.onSaved(this);
             }
         } else {
             errorContainer.classList.remove("d-none");
@@ -232,6 +224,11 @@ export class QuestionFormBehavior {
         }
         return {
             existing_question_id: this.el.dataset.id,
+            placeholder: this.update
+                ? undefined
+                : document.querySelector(
+                      `[data-fragment^="website_slides.quiz_question_new.${this.slideId}."]`,
+                  )?.dataset.fragment,
             sequence: this.sequence,
             question: form.querySelector(".o_wslides_quiz_question input[type=text]")
                 .value,

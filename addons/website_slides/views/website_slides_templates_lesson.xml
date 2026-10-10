@@ -595,9 +595,13 @@
                         t-else=""
                         class="o_wslides_js_lesson_quiz col"
                         t-att-data-id="slide.id">
-                        <t
-                            t-if="slide.channel_id.can_upload"
-                            t-call="website_slides.lesson_content_quiz_add_buttons" />
+                        <t t-if="slide.channel_id.can_upload">
+                            <div
+                                class="d-contents"
+                                t-att-data-fragment="'website_slides.quiz_question_new.%s.1' % slide.id" />
+                            <t
+                                t-call="website_slides.lesson_content_quiz_add_buttons" />
+                        </t>
                     </div>
                 </div>
             </div>
@@ -686,6 +690,10 @@
                 <t t-foreach="slide_questions" t-as="question">
                     <t t-call="website_slides.lesson_content_quiz_question" />
                 </t>
+                <div
+                    t-if="slide.channel_id.can_upload"
+                    class="d-contents"
+                    t-att-data-fragment="'website_slides.quiz_question_new.%s.%s' % (slide.id, len(slide_questions) + 1)" />
                 <t
                     t-if="slide.channel_id.can_upload"
                     t-call="website_slides.lesson_content_quiz_add_buttons" />
@@ -697,6 +705,7 @@
             name="Lesson: Quiz question template">
             <div
                 t-att-class="'o_wslides_js_lesson_quiz_question mt-3 %s' % ('completed-disabled' if slide_completed else ('disabled' if not (slide.channel_id.is_member or slide.is_preview) else ''))"
+                t-att-data-fragment="'website_slides.quiz_question.%s' % question['id']"
                 t-att-data-question-id="question['id']"
                 t-att-data-title="question['question']">
                 <div class="row d-flex mb-2 mx-0">
@@ -760,6 +769,16 @@
                         </span>
                     </div>
                 </div>
+            </div>
+        </template>
+        <template
+            id="lesson_content_quiz_question_added"
+            name="Lesson: Quiz question added">
+            <div class="d-contents" t-att-data-fragment="fragment_key">
+                <t t-call="website_slides.lesson_content_quiz_question" />
+                <div
+                    class="d-contents"
+                    t-att-data-fragment="'website_slides.quiz_question_new.%s.%s' % (slide.id, next_sequence)" />
             </div>
         </template>
         <template

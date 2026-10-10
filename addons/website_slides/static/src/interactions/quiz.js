@@ -11,7 +11,6 @@ import { attachCourseJoin } from "@website_slides/interactions/course_join";
 import { CoursePage } from "@website_slides/interactions/course_page";
 import { QuestionFormBehavior } from "@website_slides/interactions/quiz_question_form";
 import { SlideQuizFinishDialog } from "@website_slides/js/public/components/slide_quiz_finish_dialog/slide_quiz_finish_dialog";
-import { parseQuestionMarkup } from "@website_slides/js/public/slides_course_utils";
 
 export class QuizBehavior {
     /**
@@ -551,8 +550,7 @@ export class QuizBehavior {
 
     _questionFormCallbacks() {
         return {
-            onDisplayCreated: this._displayCreatedQuestion.bind(this),
-            onDisplayUpdated: this._displayUpdatedQuestion.bind(this),
+            onSaved: this._onQuestionSaved.bind(this),
             onResetDisplay: this._resetDisplay.bind(this),
         };
     }
@@ -581,38 +579,17 @@ export class QuizBehavior {
 
     /**
      * @param {QuestionFormBehavior} questionForm
-     * @param {String} newQuestionRenderedTemplate
      */
-    _displayCreatedQuestion(questionForm, newQuestionRenderedTemplate) {
-        const questions = this.el.querySelectorAll(
-            ".o_wslides_js_lesson_quiz_question",
-        );
-        const lastQuestion = questions[questions.length - 1];
-        const questionEl = parseQuestionMarkup(newQuestionRenderedTemplate);
-        if (lastQuestion) {
-            lastQuestion.after(questionEl);
-        } else {
-            this.el.prepend(questionEl);
+    _onQuestionSaved(questionForm) {
+        if (!questionForm.update) {
+            this.quiz.questionsCount++;
+            const addQuestionBtn = this.el.querySelector(
+                ".o_wslides_js_quiz_add_question",
+            );
+            if (addQuestionBtn) {
+                addQuestionBtn.classList.remove("d-none");
+            }
         }
-        this.quiz.questionsCount++;
-        questionForm.destroy();
-        const addQuestionBtn = this.el.querySelector(".o_wslides_js_quiz_add_question");
-        if (addQuestionBtn) {
-            addQuestionBtn.classList.remove("d-none");
-        }
-    }
-
-    /**
-     * @param {QuestionFormBehavior} questionForm
-     * @param {String} newQuestionRenderedTemplate
-     * @param {HTMLElement} editedQuestionEl
-     */
-    _displayUpdatedQuestion(
-        questionForm,
-        newQuestionRenderedTemplate,
-        editedQuestionEl,
-    ) {
-        editedQuestionEl.replaceWith(parseQuestionMarkup(newQuestionRenderedTemplate));
         questionForm.destroy();
     }
 

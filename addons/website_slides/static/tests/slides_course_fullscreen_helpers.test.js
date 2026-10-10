@@ -2,7 +2,6 @@ import { describe, expect, test } from "@odoo/hoot";
 import {
     findSlide,
     getDocumentMaxPage,
-    parseQuestionMarkup,
     parseSlideBoolean,
     parseSlideDataset,
 } from "@website_slides/js/public/slides_course_utils";
@@ -53,20 +52,6 @@ test("findSlide matches normalised slides by id and quiz flag", () => {
     expect(findSlide(slides, { id: 11, isQuiz: true })).toBe(slides[1]);
     expect(findSlide(slides, { id: 10, isQuiz: false })).toBe(slides[0]);
     expect(findSlide(slides, { id: "10", isQuiz: "false" })).toBe(undefined);
-});
-
-test("parseQuestionMarkup turns server markup into an element, not a text node", () => {
-    const node = parseQuestionMarkup(
-        '<p class="o_wslides_js_lesson_quiz_question">Q?</p>',
-    );
-    expect(node.nodeType).toBe(Node.ELEMENT_NODE);
-    expect(node.classList.contains("o_wslides_js_lesson_quiz_question")).toBe(true);
-    expect(node.textContent).toBe("Q?");
-});
-
-test("parseQuestionMarkup passes an existing node through untouched", () => {
-    const el = document.createElement("div");
-    expect(parseQuestionMarkup(el)).toBe(el);
 });
 
 test("parseSlideDataset normalises emailSharing, so `=== 'True'` cannot work", () => {
